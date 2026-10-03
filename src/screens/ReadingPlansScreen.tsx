@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -143,6 +144,10 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
     return Object.values(p).filter(Boolean).length;
   };
 
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   // If a plan is selected, show detail view
   if (selectedPlan) {
     const currentPlanProgress = progressMap[selectedPlan.id] || {};
@@ -150,17 +155,19 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
     const percent = Math.round((completedCount / selectedPlan.durationDays) * 100);
 
     return (
-      <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => setSelectedPlanId(null)}
-          accessibilityRole="button"
-          accessibilityLabel="Back to all plans"
-        >
-          <Text style={[styles.backText, { color: colors.accent }]}>← All Plans</Text>
-        </TouchableOpacity>
+      <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
+        <View style={styles.contentWrap}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setSelectedPlanId(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Back to all plans"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← All Plans</Text>
+          </TouchableOpacity>
 
-        <SectionHeader eyebrow={selectedPlan.pace} title={selectedPlan.title} />
+          <SectionHeader eyebrow={selectedPlan.pace} title={selectedPlan.title} />
 
         {/* Progress Card */}
         <View
@@ -254,6 +261,7 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
             );
           }}
         />
+        </View>
       </View>
     );
   }
@@ -262,20 +270,22 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
   return (
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
     >
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Library"
-        >
-          <Text style={[styles.backText, { color: colors.accent }]}>← Library</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.contentWrap}>
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Library"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Library</Text>
+          </TouchableOpacity>
+        )}
 
-      <SectionHeader eyebrow="Khatmah" title="Reading Plans" />
+        <SectionHeader eyebrow="Khatmah" title="Reading Plans" />
 
       <Text style={[styles.introText, { color: colors.textSecondary }]}>
         Choose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.
@@ -349,6 +359,7 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
           );
         })}
       </View>
+      </View>
     </ScrollView>
   );
 }
@@ -356,18 +367,26 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingVertical: 20,
     paddingBottom: 0,
   },
   content: {
-    padding: 20,
+    paddingVertical: 20,
     paddingBottom: 40,
+  },
+  contentWrap: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 6,
     paddingRight: 12,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

@@ -167,10 +167,13 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
     setHistory(loadZakatCalculations());
   }, []);
 
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   return (
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, { paddingHorizontal: paddingH }]}
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.container, { maxWidth: maxW }]}>
@@ -180,8 +183,9 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
             onPress={onBack}
             accessibilityRole="button"
             accessibilityLabel="Back to Tools"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
+            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
           </TouchableOpacity>
         )}
 
@@ -770,10 +774,12 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   backButton: {
-    marginBottom: 12,
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 6,
-    paddingHorizontal: 4,
+    paddingRight: 12,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

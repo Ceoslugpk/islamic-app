@@ -5,6 +5,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -26,6 +27,9 @@ export default function BookmarksScreen({
   onOpenVerse,
 }: BookmarksScreenProps) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
 
   useEffect(() => {
@@ -88,35 +92,38 @@ export default function BookmarksScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <View style={styles.header}>
-        {onBack && (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={`Back to ${backLabel}`}
-            onPress={onBack}
-            style={styles.backBtn}
-          >
-            <Text style={[styles.backText, { color: colors.accent }]}>
-              ← {backLabel}
-            </Text>
-          </TouchableOpacity>
-        )}
-        <SectionHeader eyebrow="Saved Verses" title="Bookmarks" />
-      </View>
+      <View style={styles.contentWrap}>
+        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
+          {onBack && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={`Back to ${backLabel}`}
+              onPress={onBack}
+              style={styles.backBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>
+                ← {backLabel}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <SectionHeader eyebrow="Saved Verses" title="Bookmarks" />
+        </View>
 
-      <FlatList
-        data={bookmarks}
-        keyExtractor={(item) => `${item.surah}:${item.ayah}`}
-        renderItem={renderBookmark}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <EmptyState
-            icon="bookmark-outline"
-            title="No bookmarks yet"
-            subtitle="Tap the bookmark icon on any ayah in the Quran reader to save it here for quick access."
-          />
-        }
-      />
+        <FlatList
+          data={bookmarks}
+          keyExtractor={(item) => `${item.surah}:${item.ayah}`}
+          renderItem={renderBookmark}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: paddingH }]}
+          ListEmptyComponent={
+            <EmptyState
+              icon="bookmark-outline"
+              title="No bookmarks yet"
+              subtitle="Tap the bookmark icon on any ayah in the Quran reader to save it here for quick access."
+            />
+          }
+        />
+      </View>
     </View>
   );
 }
@@ -125,13 +132,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  contentWrap: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+  },
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
   },
   backBtn: {
-    marginBottom: 8,
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

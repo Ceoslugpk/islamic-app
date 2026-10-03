@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -27,6 +27,9 @@ import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { GeometricPattern } from '../components/GeometricPattern';
 import { QiblaCompass } from '../components/QiblaCompass';
+import { useLocation } from '../lib/useLocation';
+import { useSettings } from '../lib/settings';
+import { LocationPermissionNote } from '../components/LocationPermissionNote';
 
 const KAABA_LABEL = 'Holy Kaaba, Makkah';
 
@@ -50,6 +53,14 @@ function mapAccuracy(acc: number): CompassAccuracy {
 export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
   const { colors } = useTheme();
   const { haptic } = useHaptics();
+  const { settings } = useSettings();
+  const {
+    location: gpsLocation,
+    status: locStatus,
+    loading: locLoading,
+    request: requestLocation,
+    refresh: refreshLocation,
+  } = useLocation(true);
 
   // Heading & Bearing state
   const [heading, setHeading] = useState<number | null>(null);
@@ -64,7 +75,6 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
   const [accuracy, setAccuracy] = useState<CompassAccuracy>('unknown');
   const [calibrating, setCalibrating] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [permissionDenied, setPermissionDenied] = useState<boolean>(false);
   const [recalibrating, setRecalibrating] = useState<boolean>(false);
 
   // Refs for subscriptions & smoothing
@@ -81,6 +91,34 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
   const rotation =
     heading !== null && bearing !== null ? (bearing - heading + 360) % 360 : 0;
   const isAligned = heading !== null && bearing !== null && isFacingQibla(rotation, 4);
+
+  // Effective location: GPS if available, otherwise manual location
+  const effectiveLocation = useMemo(() => {
+    if (gpsLocation) return gpsLocation;
+    return settings.manualLocation;
+  }, [gpsLocation, settings.manualLocation]);
+
+  // Compute bearing and distance whenever effective location changes
+  useEffect(() => {
+    const lat = effectiveLocation.latitude;
+    const lng = effectiveLocation.longitude;
+    latRef.current = lat;
+    lngRef.current = lng;
+    setCoords({ lat, lng });
+
+    const qBearing = qiblaBearing(lat, lng);
+    const qDistance = distanceToKaabaKm(lat, lng);
+    const qDecl = magneticDeclination(lat, lng);
+    setBearing(qBearing);
+    setDistance(qDistance);
+    setDeclination(qDecl);
+
+    if (gpsLocation) {
+      setLocLabel(gpsLocation.label);
+    } else {
+      setLocLabel(`Using manual location (${settings.manualLocation.label || 'Dubai, UAE'})`);
+    }
+  }, [effectiveLocation, gpsLocation, settings.manualLocation.label]);
 
   // Trigger haptic vibration when user turns and faces Qibla
   useEffect(() => {
@@ -106,58 +144,10 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
   const startCompass = useCallback(async () => {
     cleanupSubscriptions();
     setError(null);
-    setPermissionDenied(false);
     setCalibrating(true);
 
     try {
-      // 1. Request location permissions
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setError('Location permission is needed to calculate the exact Qibla bearing.');
-        setPermissionDenied(true);
-        setCalibrating(false);
-        // Fallback default coordinates for display (Dubai)
-        const defaultLat = 25.2048;
-        const defaultLng = 55.2708;
-        setBearing(qiblaBearing(defaultLat, defaultLng));
-        setDistance(distanceToKaabaKm(defaultLat, defaultLng));
-        setLocLabel('Default location (Dubai)');
-        return;
-      }
-
-      // 2. Fetch current coordinates
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      const lat = loc.coords.latitude;
-      const lng = loc.coords.longitude;
-      latRef.current = lat;
-      lngRef.current = lng;
-      setCoords({ lat, lng });
-
-      // Compute bearing, distance, and declination
-      const qBearing = qiblaBearing(lat, lng);
-      const qDistance = distanceToKaabaKm(lat, lng);
-      const qDecl = magneticDeclination(lat, lng);
-      setBearing(qBearing);
-      setDistance(qDistance);
-      setDeclination(qDecl);
-
-      // Reverse geocode for clean location name
-      try {
-        const rev = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-        if (rev && rev.length > 0) {
-          const item = rev[0];
-          const name = [item.city || item.subregion, item.country].filter(Boolean).join(', ');
-          setLocLabel(name || `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`);
-        } else {
-          setLocLabel(`${lat.toFixed(2)}°, ${lng.toFixed(2)}°`);
-        }
-      } catch {
-        setLocLabel(`${lat.toFixed(2)}°, ${lng.toFixed(2)}°`);
-      }
-
-      // 3. Web Platform: graceful static mode
+      // 1. Web Platform: graceful static mode
       if (Platform.OS === 'web') {
         setSource('static');
         setAccuracy('unknown');
@@ -165,7 +155,7 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
         return;
       }
 
-      // 4. Primary Heading: Location.watchHeadingAsync (OS-level sensor fusion)
+      // 2. Primary Heading: Location.watchHeadingAsync (OS-level sensor fusion)
       let headingStarted = false;
       try {
         const sub = await Location.watchHeadingAsync((headingData) => {
@@ -181,12 +171,12 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
 
         locationSubRef.current = sub;
         headingStarted = true;
-      } catch (headingErr) {
+      } catch {
         // Location heading API not available on this device/emulator
         headingStarted = false;
       }
 
-      // 5. Fallback Heading: Raw Magnetometer
+      // 3. Fallback Heading: Raw Magnetometer
       if (!headingStarted) {
         const isMagAvail = await Magnetometer.isAvailableAsync().catch(() => false);
         if (isMagAvail) {
@@ -213,14 +203,8 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
           setCalibrating(false);
         }
       }
-    } catch (err: any) {
-      const msg = String(err?.message || '');
-      if (msg.toLowerCase().includes('permission') || msg.toLowerCase().includes('denied')) {
-        setError('Location permission is needed for accurate Qibla direction.');
-        setPermissionDenied(true);
-      } else {
-        setError('Could not initialize compass sensor.');
-      }
+    } catch {
+      setError('Could not initialize compass sensor.');
       setCalibrating(false);
     }
   }, [cleanupSubscriptions]);
@@ -243,6 +227,7 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
     haptic('light');
     setRecalibrating(true);
     smoothHeadingRef.current = 0;
+    await refreshLocation();
     await startCompass();
     setRecalibrating(false);
   };
@@ -277,31 +262,31 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
           subtitle="True bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas."
         />
 
-        {/* Error / Permission Denied Banner */}
+        {/* Error / Compass Notice Banner */}
         {error && (
           <Card style={styles.errorCard} padded>
             <View style={styles.errorHeader}>
               <Ionicons name="warning-outline" size={20} color={colors.accent} />
               <Text style={[styles.errorTitle, { color: colors.textPrimary }]}>
-                {permissionDenied ? 'Location Permission Needed' : 'Compass Notice'}
+                Compass Notice
               </Text>
             </View>
             <Text style={[styles.errorDescription, { color: colors.textSecondary }]}>
               {error}
             </Text>
-            {permissionDenied && (
-              <TouchableOpacity
-                style={[styles.grantBtn, { backgroundColor: colors.accent }]}
-                onPress={startCompass}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="navigate-outline" size={16} color={colors.bgBase} />
-                <Text style={[styles.grantBtnText, { color: colors.bgBase }]}>
-                  Enable Location Access
-                </Text>
-              </TouchableOpacity>
-            )}
           </Card>
+        )}
+
+        {/* Location Permission Note */}
+        {(locStatus === 'denied' || locStatus === 'unavailable') && (
+          <LocationPermissionNote
+            status={locStatus}
+            onEnable={async () => {
+              await requestLocation(true);
+            }}
+            loading={locLoading}
+            fallbackCity={settings.manualLocation.label || 'Dubai, UAE'}
+          />
         )}
 
         {/* Status Pill */}

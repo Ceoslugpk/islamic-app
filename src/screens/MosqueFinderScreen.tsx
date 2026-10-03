@@ -12,7 +12,6 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
-import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
@@ -22,6 +21,7 @@ import { distanceKm } from '../lib/qibla';
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
+import { LocationPermissionNote } from '../components/LocationPermissionNote';
 
 export interface MosqueItem {
   id: string;
@@ -37,7 +37,13 @@ const RADIUS_OPTIONS = [5, 10, 20]; // in km
 export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
   const { settings } = useSettings();
-  const { location: hookGpsLocation, status: locStatus, request: requestLocation } = useLocation(true);
+  const {
+    location: hookGpsLocation,
+    status: locStatus,
+    loading: locLoading,
+    request: requestLocation,
+    refresh: refreshLocation,
+  } = useLocation(true);
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
 
@@ -221,49 +227,15 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
     setSearchedQuery('');
 
     try {
-      await requestLocation();
-
-      if (Platform.OS !== 'web') {
-        try {
-          const { status: perm } = await Location.getForegroundPermissionsAsync();
-          if (perm === 'granted') {
-            const pos = await Location.getCurrentPositionAsync({
-              accuracy: Location.Accuracy.Balanced,
-            });
-            let label = `${pos.coords.latitude.toFixed(2)}°, ${pos.coords.longitude.toFixed(2)}°`;
-            try {
-              const geo = await Location.reverseGeocodeAsync({
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-              });
-              if (geo && geo.length > 0) {
-                const g = geo[0];
-                const parts = [g.city || g.subregion, g.region, g.country].filter(Boolean);
-                if (parts.length > 0) label = parts.join(', ');
-              }
-            } catch {
-              // Coordinates fallback
-            }
-
-            const fresh: Loc = {
-              latitude: pos.coords.latitude,
-              longitude: pos.coords.longitude,
-              label,
-            };
-            setFreshGps(fresh);
-            const now = new Date();
-            const h = now.getHours().toString().padStart(2, '0');
-            const m = now.getMinutes().toString().padStart(2, '0');
-            setGpsTimestamp(`${h}:${m}`);
-            await fetchMosquesForCenter(fresh.latitude, fresh.longitude, radiusKm);
-            return;
-          }
-        } catch {
-          // Fall back to hook location or manual location
-        }
-      }
-
-      if (hookGpsLocation) {
+      const fresh = await refreshLocation();
+      if (fresh) {
+        setFreshGps(fresh);
+        const now = new Date();
+        const h = now.getHours().toString().padStart(2, '0');
+        const m = now.getMinutes().toString().padStart(2, '0');
+        setGpsTimestamp(`${h}:${m}`);
+        await fetchMosquesForCenter(fresh.latitude, fresh.longitude, radiusKm);
+      } else if (hookGpsLocation) {
         const now = new Date();
         const h = now.getHours().toString().padStart(2, '0');
         const m = now.getMinutes().toString().padStart(2, '0');
@@ -378,6 +350,9 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
     ? 'GPS AUTO'
     : `MANUAL (${settings.manualLocation.label || 'Dubai, UAE'})`;
 
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   return (
     <View style={[styles.screen, { backgroundColor: colors.bgBase }]}>
       <FlatList
@@ -385,7 +360,7 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.content,
-          { maxWidth: maxW, alignSelf: 'center', width: '100%' },
+          { maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH },
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -412,8 +387,9 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
                 onPress={onBack}
                 accessibilityRole="button"
                 accessibilityLabel="Back to Tools"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
+                <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
               </TouchableOpacity>
             )}
 
@@ -551,91 +527,16 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
                 </Text>
               </TouchableOpacity>
 
-              {/* Permission Denied Notice */}
-              {!areaSearchCenter && locStatus === 'denied' && (
-                <View
-                  style={[
-                    styles.statusNotice,
-                    {
-                      backgroundColor: colors.accentDim,
-                      borderColor: colors.borderSubtle,
-                    },
-                  ]}
-                >
-                  <Ionicons name="alert-circle-outline" size={16} color={colors.accent} />
-                  <View style={styles.statusNoticeTextWrap}>
-                    <Text style={[styles.statusNoticeTitle, { color: colors.accent }]}>
-                      Location Permission Denied
-                    </Text>
-                    <Text
-                      style={[styles.statusNoticeDesc, { color: colors.textSecondary }]}
-                    >
-                      Enable location in your device settings to search near you. Currently
-                      searching near your manual location (
-                      {settings.manualLocation.label || 'Dubai, UAE'}).
-                    </Text>
-                    {onBack && (
-                      <TouchableOpacity
-                        style={styles.statusNoticeLink}
-                        onPress={onBack}
-                        accessibilityRole="button"
-                        accessibilityLabel="Set city in Tools"
-                      >
-                        <Text
-                          style={[styles.statusNoticeLinkText, { color: colors.accent }]}
-                        >
-                          Change city in Tools → Location / Cities →
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                </View>
+              {/* Location Permission / Status Notice */}
+              {!areaSearchCenter && (locStatus === 'denied' || locStatus === 'unavailable') && (
+                <LocationPermissionNote
+                  status={locStatus}
+                  onEnable={handleUseMyLocation}
+                  loading={isLocating || locLoading}
+                  fallbackCity={settings.manualLocation.label || 'Dubai, UAE'}
+                  style={{ marginTop: 12 }}
+                />
               )}
-
-              {/* Web Browser Notice */}
-              {!areaSearchCenter &&
-                (Platform.OS === 'web' || locStatus === 'unavailable') && (
-                  <View
-                    style={[
-                      styles.statusNotice,
-                      {
-                        backgroundColor: colors.accentDim,
-                        borderColor: colors.borderSubtle,
-                      },
-                    ]}
-                  >
-                    <Ionicons name="globe-outline" size={16} color={colors.accent} />
-                    <View style={styles.statusNoticeTextWrap}>
-                      <Text style={[styles.statusNoticeTitle, { color: colors.accent }]}>
-                        Web Browser · Manual Location Active
-                      </Text>
-                      <Text
-                        style={[styles.statusNoticeDesc, { color: colors.textSecondary }]}
-                      >
-                        GPS is not available on this browser. Searching near your manual
-                        location ({settings.manualLocation.label || 'Dubai, UAE'}), or use
-                        the area search bar above.
-                      </Text>
-                      {onBack && (
-                        <TouchableOpacity
-                          style={styles.statusNoticeLink}
-                          onPress={onBack}
-                          accessibilityRole="button"
-                          accessibilityLabel="Configure manual city in Tools"
-                        >
-                          <Text
-                            style={[
-                              styles.statusNoticeLinkText,
-                              { color: colors.accent },
-                            ]}
-                          >
-                            Change manual city in Tools → Location / Cities →
-                          </Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </View>
-                )}
 
               {/* Area Search Active Banner */}
               {areaSearchCenter && (
@@ -899,8 +800,12 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   backButton: {
-    paddingVertical: 8,
-    marginBottom: 8,
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

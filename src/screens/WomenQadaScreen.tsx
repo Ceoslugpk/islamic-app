@@ -81,10 +81,13 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
     refreshData();
   };
 
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   return (
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW }]}
+      contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
     >
       {onBack && (
         <TouchableOpacity
@@ -92,8 +95,9 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
           onPress={onBack}
           accessibilityRole="button"
           accessibilityLabel="Back to Tools"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
+          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
         </TouchableOpacity>
       )}
 
@@ -272,8 +276,12 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   backBtn: {
-    marginBottom: 12,
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

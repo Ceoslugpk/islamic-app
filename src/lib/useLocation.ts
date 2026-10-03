@@ -1,68 +1,164 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { Location as Loc } from './prayerTimes';
 
-interface UseLocationResult {
+export type LocationPermissionStatus = 'pending' | 'granted' | 'denied' | 'unavailable';
+
+export interface UseLocationResult {
   location: Loc | null;
-  status: 'pending' | 'granted' | 'denied' | 'unavailable';
-  request: () => Promise<void>;
+  status: LocationPermissionStatus;
+  loading: boolean;
+  isDenied: boolean;
+  isUnavailable: boolean;
+  request: (force?: boolean) => Promise<Loc | null>;
+  refresh: () => Promise<Loc | null>;
 }
 
-/**
- * Request GPS location once and cache it. On web, GPS isn't reliable in all
- * environments, so we skip the permission ask and report 'pending' (callers
- * fall back to manual). On native, full permission flow.
- */
-export function useLocation(askOnMount = false): UseLocationResult {
-  const [location, setLocation] = useState<Loc | null>(null);
-  const [status, setStatus] = useState<UseLocationResult['status']>('pending');
-  const askedRef = useRef(false);
+// Module-level cache to share across screens and prevent duplicate native calls
+let cachedLocation: Loc | null = null;
+let cachedStatus: LocationPermissionStatus | null = null;
+let inFlightRequest: Promise<Loc | null> | null = null;
 
-  async function request() {
-    if (askedRef.current) return;
-    askedRef.current = true;
-    if (Platform.OS === 'web') {
-      setStatus('unavailable'); // web: no reliable GPS prompt in this build
-      return;
-    }
-    try {
-      const { status: perm } = await Location.requestForegroundPermissionsAsync();
-      if (perm !== 'granted') {
-        setStatus('denied');
-        return;
-      }
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-      const label = await reverseGeocode(pos.coords.latitude, pos.coords.longitude);
-      setLocation({
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        label,
-      });
-      setStatus('granted');
-    } catch (e) {
-      setStatus('unavailable');
-    }
-  }
-
-  useEffect(() => {
-    if (askOnMount) request();
-  }, [askOnMount]);
-
-  return { location, status, request };
-}
-
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
+export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
     if (geo && geo.length > 0) {
       const g = geo[0];
-      return [g.city, g.region, g.country].filter(Boolean).join(', ') || `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+      const city = g.city || g.subregion || g.district;
+      const parts = [city, g.region, g.country].filter(Boolean);
+      return parts.join(', ') || `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
     }
   } catch {
-    // fall through
+    // fall through to coordinate string
   }
-  return `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+  return `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+}
+
+/**
+ * Central hook for GPS location across the app.
+ * - Requests permission once and caches location across screens.
+ * - On web, short-circuits to 'unavailable' immediately so screens never hang.
+ * - Exposes status, clear isDenied/isUnavailable flags, loading, request(), and refresh().
+ */
+export function useLocation(askOnMount = false): UseLocationResult {
+  const [location, setLocation] = useState<Loc | null>(cachedLocation);
+  const [status, setStatus] = useState<LocationPermissionStatus>(() => {
+    if (Platform.OS === 'web') return 'unavailable';
+    return cachedStatus || 'pending';
+  });
+  const [loading, setLoading] = useState<boolean>(false);
+  const askedRef = useRef(false);
+
+  const performRequest = useCallback(async (force = false): Promise<Loc | null> => {
+    // Web environment: short-circuit to 'unavailable' immediately
+    if (Platform.OS === 'web') {
+      setStatus('unavailable');
+      cachedStatus = 'unavailable';
+      setLoading(false);
+      return null;
+    }
+
+    // Return cached location if valid and not forcing a fresh GPS read
+    if (!force && cachedLocation && cachedStatus === 'granted') {
+      setLocation(cachedLocation);
+      setStatus('granted');
+      return cachedLocation;
+    }
+
+    // Reuse in-flight promise to avoid duplicate concurrent calls
+    if (inFlightRequest) {
+      setLoading(true);
+      try {
+        const res = await inFlightRequest;
+        if (res) {
+          setLocation(res);
+          setStatus('granted');
+        }
+        return res;
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    setLoading(true);
+
+    const exec = async (): Promise<Loc | null> => {
+      try {
+        const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+        if (permStatus !== 'granted') {
+          setStatus('denied');
+          cachedStatus = 'denied';
+          return null;
+        }
+
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const label = await reverseGeocode(lat, lng);
+
+        const newLoc: Loc = {
+          latitude: lat,
+          longitude: lng,
+          label,
+        };
+
+        cachedLocation = newLoc;
+        cachedStatus = 'granted';
+        setLocation(newLoc);
+        setStatus('granted');
+        return newLoc;
+      } catch (err: any) {
+        const msg = String(err?.message || '').toLowerCase();
+        if (msg.includes('denied') || msg.includes('permission')) {
+          setStatus('denied');
+          cachedStatus = 'denied';
+        } else {
+          setStatus('unavailable');
+          cachedStatus = 'unavailable';
+        }
+        return null;
+      } finally {
+        setLoading(false);
+        inFlightRequest = null;
+      }
+    };
+
+    inFlightRequest = exec();
+    return inFlightRequest;
+  }, []);
+
+  const request = useCallback((force?: boolean) => {
+    askedRef.current = true;
+    return performRequest(Boolean(force));
+  }, [performRequest]);
+
+  const refresh = useCallback(() => {
+    return performRequest(true);
+  }, [performRequest]);
+
+  useEffect(() => {
+    if (askOnMount && !askedRef.current) {
+      askedRef.current = true;
+      if (Platform.OS === 'web') {
+        setStatus('unavailable');
+        cachedStatus = 'unavailable';
+      } else {
+        performRequest(false);
+      }
+    }
+  }, [askOnMount, performRequest]);
+
+  return {
+    location,
+    status,
+    loading,
+    isDenied: status === 'denied',
+    isUnavailable: status === 'unavailable',
+    request,
+    refresh,
+  };
 }

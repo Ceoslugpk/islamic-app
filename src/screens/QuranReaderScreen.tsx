@@ -19,7 +19,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
 import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
-import { ArabicText, AyahText } from '../components/ArabicText';
+import { ArabicText, AyahText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
+import {
+  useSettings,
+  QURAN_FONT_SIZE_MIN,
+  QURAN_FONT_SIZE_MAX,
+  QURAN_FONT_SIZE_STEP,
+} from '../lib/settings';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
@@ -46,6 +52,7 @@ import {
 } from '../lib/quranAudio';
 import {
   loadAudioSettings,
+  loadQuranCache,
   saveAudioSettings,
   saveLastReadPosition,
   saveRecentlyPlayed,
@@ -60,14 +67,7 @@ interface QuranReaderScreenProps {
 
 type ReadingMode = 'cards' | 'mushaf';
 
-const STORAGE_KEY_FONT_SIZE = 'quran-font-size';
-const STORAGE_KEY_SHOW_TRANSLATION = 'quran-show-translation';
 const STORAGE_KEY_READING_MODE = 'quran-reading-mode';
-
-const DEFAULT_FONT_SIZE = 24;
-const MIN_FONT_SIZE = 18;
-const MAX_FONT_SIZE = 40;
-const FONT_SIZE_STEP = 2;
 
 const VIEWABILITY_CONFIG: ViewabilityConfig = {
   itemVisiblePercentThreshold: 1,
@@ -83,16 +83,20 @@ export default function QuranReaderScreen({
   const { colors } = useTheme();
   const { haptic } = useHaptics();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
+  const { settings, setQuranFontSize, setQuranShowTranslation } = useSettings();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
   const [toolsMenuOpen, setToolsMenuOpen] = useState<boolean>(false);
-  const [surah, setSurah] = useState<SurahDetail | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const cacheKey = `surah:${surahNumber}:${edition.editionIdentifier}`;
+  const [surah, setSurah] = useState<SurahDetail | null>(() => loadQuranCache<SurahDetail>(cacheKey));
+  const [loading, setLoading] = useState<boolean>(() => !loadQuranCache<SurahDetail>(cacheKey));
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
-  const [showTranslation, setShowTranslation] = useState<boolean>(true);
+  const fontSize = settings.quranFontSize;
+  const showTranslation = settings.quranShowTranslation;
+  const arabicFamilies = QURAN_FONT_FAMILIES[settings.quranArabicFont];
+  const ayahLineHeight = Math.round(fontSize * settings.quranLineHeight);
   const [readingMode, setReadingMode] = useState<ReadingMode>('cards');
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
 
@@ -135,24 +139,12 @@ export default function QuranReaderScreen({
   useEffect(() => {
     (async () => {
       try {
-        const [savedFontSize, savedShowTranslation, savedMode, audioSettings, reciterList] =
-          await Promise.all([
-            AsyncStorage.getItem(STORAGE_KEY_FONT_SIZE),
-            AsyncStorage.getItem(STORAGE_KEY_SHOW_TRANSLATION),
-            AsyncStorage.getItem(STORAGE_KEY_READING_MODE),
-            Promise.resolve(loadAudioSettings()),
-            fetchReciters().catch(() => [] as Reciter[]),
-          ]);
+        const [savedMode, audioSettings, reciterList] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEY_READING_MODE),
+          Promise.resolve(loadAudioSettings()),
+          fetchReciters().catch(() => [] as Reciter[]),
+        ]);
 
-        if (savedFontSize) {
-          const parsed = parseInt(savedFontSize, 10);
-          if (!isNaN(parsed) && parsed >= MIN_FONT_SIZE && parsed <= MAX_FONT_SIZE) {
-            setFontSize(parsed);
-          }
-        }
-        if (savedShowTranslation !== null) {
-          setShowTranslation(savedShowTranslation === 'true');
-        }
         if (savedMode === 'mushaf' || savedMode === 'cards') {
           setReadingMode(savedMode);
         }
@@ -189,9 +181,16 @@ export default function QuranReaderScreen({
     };
   }, [surahNumber]);
 
-  // Fetch Surah data
+  // Fetch Surah data (cache-first: instant display from cache, graceful background refresh if forced)
   const loadSurah = useCallback(async (force = false) => {
-    if (!force) setLoading(true);
+    const key = `surah:${surahNumber}:${edition.editionIdentifier}`;
+    const cached = !force ? loadQuranCache<SurahDetail>(key) : null;
+    if (cached) {
+      setSurah(cached);
+      setLoading(false);
+    } else if (!force) {
+      setLoading(true);
+    }
     setError(null);
     try {
       const data = await fetchSurah(surahNumber, true, edition.editionIdentifier, force);
@@ -208,12 +207,24 @@ export default function QuranReaderScreen({
       saveReadingPosition(surahNumber, startAyah);
       recordSurahVisit(surahNumber, data.englishName, data.name);
     } catch {
-      setError('Could not load Surah. Please check your connection.');
+      if (!cached) {
+        setError('Could not load Surah. Please check your connection.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [surahNumber, initialAyah, edition.editionIdentifier]);
+
+  // Synchronously update surah from cache on param/edition change to avoid unrendered frames
+  useEffect(() => {
+    const key = `surah:${surahNumber}:${edition.editionIdentifier}`;
+    const cached = loadQuranCache<SurahDetail>(key);
+    if (cached) {
+      setSurah(cached);
+      setLoading(false);
+    }
+  }, [surahNumber, edition.editionIdentifier]);
 
   useEffect(() => {
     loadSurah();
@@ -235,19 +246,11 @@ export default function QuranReaderScreen({
   }, [surah, initialAyah]);
 
   const handleAdjustFontSize = (delta: number) => {
-    setFontSize((current) => {
-      const updated = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, current + delta));
-      AsyncStorage.setItem(STORAGE_KEY_FONT_SIZE, String(updated)).catch(() => {});
-      return updated;
-    });
+    setQuranFontSize(fontSize + delta);
   };
 
   const handleToggleTranslation = () => {
-    setShowTranslation((curr) => {
-      const next = !curr;
-      AsyncStorage.setItem(STORAGE_KEY_SHOW_TRANSLATION, String(next)).catch(() => {});
-      return next;
-    });
+    setQuranShowTranslation(!showTranslation);
   };
 
   const handleToggleReadingMode = () => {
@@ -441,7 +444,7 @@ export default function QuranReaderScreen({
               {surah.englishNameTranslation}
             </Text>
           </View>
-          <ArabicText size={arabicSize} style={styles.arabicSurahName}>
+          <ArabicText size={arabicSize} fontFamily={arabicFamilies.regular} style={styles.arabicSurahName}>
             {surah.name}
           </ArabicText>
         </View>
@@ -506,8 +509,12 @@ export default function QuranReaderScreen({
         {/* Bismillah (except Surah 9 At-Tawbah and Surah 1 where it is Ayah 1) */}
         {surah.number !== 9 && surah.number !== 1 && (
           <View style={styles.bismillahBox}>
-            <ArabicText size={26} style={[styles.bismillahText, { color: colors.textPrimary }]}>
-              بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+            <ArabicText
+              size={26}
+              fontFamily={arabicFamilies.regular}
+              style={[styles.bismillahText, { color: colors.textPrimary }]}
+            >
+              بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
             </ArabicText>
           </View>
         )}
@@ -601,6 +608,8 @@ export default function QuranReaderScreen({
           text={item.text}
           numberInSurah={item.numberInSurah}
           size={fontSize}
+          fontFamily={arabicFamilies.regular}
+          lineHeight={ayahLineHeight}
         />
 
         {/* Translation */}
@@ -634,7 +643,7 @@ export default function QuranReaderScreen({
             {tafsirLoading ? (
               <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 8 }} />
             ) : (
-              <ArabicText size={17} style={styles.inlineTafsirText}>
+              <ArabicText size={17} fontFamily={arabicFamilies.regular} style={styles.inlineTafsirText}>
                 {tafsirText || ''}
               </ArabicText>
             )}
@@ -674,10 +683,10 @@ export default function QuranReaderScreen({
               <Text key={`mushaf-${a.numberInSurah}`}>
                 <Text
                   style={{
-                    fontFamily: 'Amiri_400Regular',
+                    fontFamily: arabicFamilies.regular,
                     fontSize: fontSize + 2,
                     color: colors.textPrimary,
-                    lineHeight: Math.round((fontSize + 2) * 2.1),
+                    lineHeight: Math.round((fontSize + 2) * settings.quranLineHeight),
                     writingDirection: 'rtl',
                   }}
                 >
@@ -685,7 +694,7 @@ export default function QuranReaderScreen({
                 </Text>
                 <Text
                   style={{
-                    fontFamily: 'Amiri_400Regular',
+                    fontFamily: arabicFamilies.regular,
                     fontSize: fontSize - 2,
                     color: colors.accent,
                   }}
@@ -915,8 +924,12 @@ export default function QuranReaderScreen({
               </View>
               <View style={styles.toolsMenuFontControls}>
                 <TouchableOpacity
-                  style={[styles.toolsMenuFontBtn, { borderColor: colors.borderSubtle }]}
-                  onPress={() => handleAdjustFontSize(-FONT_SIZE_STEP)}
+                  style={[
+                    styles.toolsMenuFontBtn,
+                    { borderColor: colors.borderSubtle, opacity: fontSize <= QURAN_FONT_SIZE_MIN ? 0.4 : 1 },
+                  ]}
+                  onPress={() => handleAdjustFontSize(-QURAN_FONT_SIZE_STEP)}
+                  disabled={fontSize <= QURAN_FONT_SIZE_MIN}
                   accessibilityRole="button"
                   accessibilityLabel="Decrease font size"
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -924,8 +937,12 @@ export default function QuranReaderScreen({
                   <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>A−</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.toolsMenuFontBtn, { borderColor: colors.borderSubtle }]}
-                  onPress={() => handleAdjustFontSize(FONT_SIZE_STEP)}
+                  style={[
+                    styles.toolsMenuFontBtn,
+                    { borderColor: colors.borderSubtle, opacity: fontSize >= QURAN_FONT_SIZE_MAX ? 0.4 : 1 },
+                  ]}
+                  onPress={() => handleAdjustFontSize(QURAN_FONT_SIZE_STEP)}
+                  disabled={fontSize >= QURAN_FONT_SIZE_MAX}
                   accessibilityRole="button"
                   accessibilityLabel="Increase font size"
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
@@ -1166,20 +1183,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
+    maxWidth: 680,
+    alignSelf: 'center',
+    width: '100%',
   },
   navBarCompact: {
     minHeight: 44,
   },
   navBarTablet: {
-    maxWidth: 680,
-    alignSelf: 'center',
-    width: '100%',
+    minHeight: 52,
   },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 4,
+    paddingRight: 8,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

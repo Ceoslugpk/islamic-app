@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
@@ -19,7 +19,13 @@ export type ToolsItemKey =
   | 'women-cycle'
   | 'women-purity'
   | 'women-guidance'
-  | 'women-qada';
+  | 'women-qada'
+  | 'umrah-guide'
+  | 'umrah-resources'
+  | 'hajj-journey'
+  | 'makkah-live'
+  | 'madinah-live'
+  | 'hajj-live';
 
 interface ToolsItem {
   key: ToolsItemKey;
@@ -99,6 +105,47 @@ const BASE_GROUPS: ToolsGroup[] = [
       },
     ],
   },
+  {
+    label: 'Hajj & Umrah',
+    items: [
+      {
+        key: 'umrah-guide',
+        title: 'Umrah Guide',
+        subtitle: 'Step-by-step rituals · Ihram, Tawaf, Sa\'i & Halq',
+        icon: 'walk',
+      },
+      {
+        key: 'umrah-resources',
+        title: 'Umrah Resources',
+        subtitle: 'Packing checklist, duas, etiquette & tips',
+        icon: 'list',
+      },
+      {
+        key: 'hajj-journey',
+        title: 'Hajj Journey',
+        subtitle: 'Day-by-day timeline · Tarwiyah, Arafah to Tashreeq',
+        icon: 'map',
+      },
+      {
+        key: 'makkah-live',
+        title: 'Makkah Live TV',
+        subtitle: 'Masjid al-Haram · 24/7 official live broadcast',
+        icon: 'videocam',
+      },
+      {
+        key: 'madinah-live',
+        title: 'Madinah Live',
+        subtitle: 'Masjid an-Nabawi · 24/7 official Sunnah TV stream',
+        icon: 'tv',
+      },
+      {
+        key: 'hajj-live',
+        title: 'Hajj Live',
+        subtitle: 'Holy sites broadcast · Arafah, Mina & Muzdalifah',
+        icon: 'radio',
+      },
+    ],
+  },
 ];
 
 export default function ToolsScreen({
@@ -146,63 +193,82 @@ export default function ToolsScreen({
           },
         ],
       },
+      BASE_GROUPS[2],
     ];
   }, [settings.womenWorshipEnabled]);
 
-  return (
-    <ScrollView style={{ backgroundColor: colors.bgBase }} contentContainerStyle={styles.content}>
-      <SectionHeader
-        eyebrow="Tools"
-        title="Utilities"
-        subtitle="Essential calculators, compass, daily trackers & mosque finder"
-      />
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
 
-      {groups.map((group, gi) => (
-        <View key={group.label} style={gi > 0 ? styles.groupGap : undefined}>
-          <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{group.label}</Text>
-          <View style={styles.list}>
-            {group.items.map((item, i) => (
-              <View key={item.key}>
-                {item.sectionHeader ? (
-                  <View style={[styles.subHeaderWrap, { borderTopColor: colors.borderSubtle }]}>
-                    <Text style={[styles.subHeaderLabel, { color: colors.accent }]}>
-                      {item.sectionHeader}
-                    </Text>
-                  </View>
-                ) : (
-                  i > 0 && <Hairline />
-                )}
-                <TouchableOpacity
-                  style={styles.row}
-                  onPress={() => onOpen(item.key)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${item.title}`}
-                >
-                  <View
-                    style={[
-                      styles.iconBox,
-                      { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface },
-                    ]}
+  return (
+    <ScrollView
+      style={{ backgroundColor: colors.bgBase }}
+      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
+    >
+      <View style={styles.contentWrap}>
+        <SectionHeader
+          eyebrow="Tools"
+          title="Utilities"
+          subtitle="Essential calculators, compass, daily trackers & mosque finder"
+        />
+
+        {groups.map((group, gi) => (
+          <View key={group.label} style={gi > 0 ? styles.groupGap : undefined}>
+            <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{group.label}</Text>
+            <View style={styles.list}>
+              {group.items.map((item, i) => (
+                <View key={item.key}>
+                  {item.sectionHeader ? (
+                    <View style={[styles.subHeaderWrap, { borderTopColor: colors.borderSubtle }]}>
+                      <Text style={[styles.subHeaderLabel, { color: colors.accent }]}>
+                        {item.sectionHeader}
+                      </Text>
+                    </View>
+                  ) : (
+                    i > 0 && <Hairline />
+                  )}
+                  <TouchableOpacity
+                    style={styles.row}
+                    onPress={() => onOpen(item.key)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${item.title}`}
                   >
-                    <Ionicons name={item.icon} size={18} color={colors.accent} />
-                  </View>
-                  <View style={styles.rowMain}>
-                    <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{item.title}</Text>
-                    <Text style={[styles.rowSub, { color: colors.textMuted }]}>{item.subtitle}</Text>
-                  </View>
-                  <Text style={[styles.arrow, { color: colors.accent }]}>›</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+                    <View
+                      style={[
+                        styles.iconBox,
+                        { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface },
+                      ]}
+                    >
+                      <Ionicons name={item.icon} size={18} color={colors.accent} />
+                    </View>
+                    <View style={styles.rowMain}>
+                      <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                        {item.title}
+                      </Text>
+                      <Text style={[styles.rowSub, { color: colors.textMuted }]} numberOfLines={2}>
+                        {item.subtitle}
+                      </Text>
+                    </View>
+                    <Text style={[styles.arrow, { color: colors.accent }]}>›</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
           </View>
-        </View>
-      ))}
+        ))}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingBottom: 40 },
+  content: { paddingVertical: 20, paddingBottom: 40 },
+  contentWrap: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+  },
   groupLabel: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,

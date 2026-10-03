@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -98,23 +99,29 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
   const rounds = Math.floor(currentCount / target);
   const progressInRound = currentCount % target;
 
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   return (
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
     >
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Library"
-        >
-          <Text style={[styles.backText, { color: colors.accent }]}>← Library</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.contentWrap}>
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Library"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Library</Text>
+          </TouchableOpacity>
+        )}
 
-      <SectionHeader eyebrow="Dhikr & Remembrance" title="Tasbih" />
+        <SectionHeader eyebrow="Dhikr & Remembrance" title="Tasbih" />
 
       {/* Dhikr Selector Tabs */}
       <ScrollView
@@ -265,20 +272,28 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
       <Text style={[styles.footnote, { color: colors.textMuted }]}>
         Tap anywhere on the large dial to count. Your count for each phrase is automatically saved offline.
       </Text>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    padding: 20,
+    paddingVertical: 20,
     paddingBottom: 40,
+  },
+  contentWrap: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 6,
     paddingRight: 12,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

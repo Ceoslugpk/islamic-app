@@ -6,6 +6,7 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -108,24 +109,33 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
       }));
   }, [completed]);
 
-  return (
-    <ScrollView style={{ backgroundColor: colors.bgBase }} contentContainerStyle={styles.content}>
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Tools"
-        >
-          <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
-        </TouchableOpacity>
-      )}
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
 
-      <SectionHeader
-        eyebrow="Daily Obligations"
-        title="Salah Tracker"
-        subtitle="Track your daily 5 prayers and build a consistent habit"
-      />
+  return (
+    <ScrollView
+      style={{ backgroundColor: colors.bgBase }}
+      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
+    >
+      <View style={styles.contentWrap}>
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backBtn}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Tools"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
+          </TouchableOpacity>
+        )}
+
+        <SectionHeader
+          eyebrow="Daily Obligations"
+          title="Salah Tracker"
+          subtitle="Track your daily 5 prayers and build a consistent habit"
+        />
 
       {/* Summary Scorecard */}
       <View style={styles.statsRow}>
@@ -259,14 +269,22 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
           </View>
         </>
       )}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
+  contentWrap: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+  },
   backBtn: {
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 6,
     paddingRight: 12,
     marginBottom: 4,

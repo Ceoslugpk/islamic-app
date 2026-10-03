@@ -4,10 +4,37 @@ import { Location } from './prayerTimes';
 import { AccentKey } from './accents';
 import { NamesLanguage } from './names99';
 import { setAudioTranslationEnabled } from './quranAudio';
+import { setActiveAdhanReciterId } from './audio';
 
 export type TimeFormat = '12h' | '24h';
 export type LocationMode = 'auto' | 'manual';
 export type ThemeMode = 'system' | 'ink' | 'paper';
+export type QuranArabicFont = 'amiri' | 'notonaskh';
+
+// Quran reader display ranges (shared by Settings UI + reader)
+export const QURAN_FONT_SIZE_MIN = 18;
+export const QURAN_FONT_SIZE_MAX = 40;
+export const QURAN_FONT_SIZE_STEP = 2;
+export const QURAN_FONT_SIZE_DEFAULT = 24;
+export const QURAN_LINE_HEIGHT_MIN = 1.4;
+export const QURAN_LINE_HEIGHT_MAX = 2.2;
+export const QURAN_LINE_HEIGHT_STEP = 0.1;
+export const QURAN_LINE_HEIGHT_DEFAULT = 1.6;
+
+// Legacy AsyncStorage keys used by QuranReaderScreen before settings owned them
+const LEGACY_QURAN_FONT_SIZE = 'quran-font-size';
+const LEGACY_QURAN_SHOW_TRANSLATION = 'quran-show-translation';
+
+export function clampQuranFontSize(value: number): number {
+  if (!Number.isFinite(value)) return QURAN_FONT_SIZE_DEFAULT;
+  return Math.max(QURAN_FONT_SIZE_MIN, Math.min(QURAN_FONT_SIZE_MAX, Math.round(value)));
+}
+
+export function clampQuranLineHeight(value: number): number {
+  if (!Number.isFinite(value)) return QURAN_LINE_HEIGHT_DEFAULT;
+  const rounded = Math.round(value * 10) / 10;
+  return Math.max(QURAN_LINE_HEIGHT_MIN, Math.min(QURAN_LINE_HEIGHT_MAX, rounded));
+}
 
 export interface AppSettings {
   methodId: number;
@@ -18,6 +45,7 @@ export interface AppSettings {
   remindersEnabled: boolean;
   reminderOffsetMinutes: number;
   quranReminderEnabled: boolean;
+  adhanReciterId: string;
   themeMode: ThemeMode;
   accentKey: AccentKey;
   translationAudioEnabled: boolean;
@@ -26,6 +54,10 @@ export interface AppSettings {
   womenPinHash: string | null;
   womenLockEnabled: boolean;
   hapticsEnabled: boolean;
+  quranArabicFont: QuranArabicFont;
+  quranFontSize: number;
+  quranLineHeight: number;
+  quranShowTranslation: boolean;
 }
 
 interface SettingsContextValue {
@@ -38,6 +70,7 @@ interface SettingsContextValue {
   setReminders: (enabled: boolean) => void;
   setReminderOffsetMinutes: (minutes: number) => void;
   setQuranReminderEnabled: (enabled: boolean) => void;
+  setAdhanReciterId: (id: string) => void;
   setThemeMode: (m: ThemeMode) => void;
   setAccentKey: (key: AccentKey) => void;
   setTranslationAudioEnabled: (enabled: boolean) => void;
@@ -46,6 +79,10 @@ interface SettingsContextValue {
   setWomenPinHash: (hash: string | null) => void;
   setWomenLockEnabled: (enabled: boolean) => void;
   setHapticsEnabled: (enabled: boolean) => void;
+  setQuranArabicFont: (font: QuranArabicFont) => void;
+  setQuranFontSize: (size: number) => void;
+  setQuranLineHeight: (multiplier: number) => void;
+  setQuranShowTranslation: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -59,6 +96,7 @@ const DEFAULTS: AppSettings = {
   remindersEnabled: false,
   reminderOffsetMinutes: 15,
   quranReminderEnabled: false,
+  adhanReciterId: 'default',
   themeMode: 'system',
   accentKey: 'amber',
   translationAudioEnabled: true,
@@ -67,6 +105,10 @@ const DEFAULTS: AppSettings = {
   womenPinHash: null,
   womenLockEnabled: false,
   hapticsEnabled: true,
+  quranArabicFont: 'amiri',
+  quranFontSize: QURAN_FONT_SIZE_DEFAULT,
+  quranLineHeight: QURAN_LINE_HEIGHT_DEFAULT,
+  quranShowTranslation: true,
 };
 
 const STORAGE_KEY = 'islamic-settings';
@@ -78,17 +120,49 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          const next = { ...DEFAULTS, ...parsed };
-          setSettings(next);
-          setAudioTranslationEnabled(next.translationAudioEnabled);
-        } else {
-          setAudioTranslationEnabled(DEFAULTS.translationAudioEnabled);
+        const [raw, legacyFontSize, legacyShowTranslation] = await Promise.all([
+          AsyncStorage.getItem(STORAGE_KEY),
+          AsyncStorage.getItem(LEGACY_QURAN_FONT_SIZE),
+          AsyncStorage.getItem(LEGACY_QURAN_SHOW_TRANSLATION),
+        ]);
+        const parsed: Partial<AppSettings> = raw ? JSON.parse(raw) : {};
+        const next: AppSettings = { ...DEFAULTS, ...parsed };
+
+        if (next.quranArabicFont !== 'amiri' && next.quranArabicFont !== 'notonaskh') {
+          next.quranArabicFont = DEFAULTS.quranArabicFont;
+        }
+        next.quranFontSize = clampQuranFontSize(next.quranFontSize);
+        next.quranLineHeight = clampQuranLineHeight(next.quranLineHeight);
+        next.quranShowTranslation =
+          typeof next.quranShowTranslation === 'boolean'
+            ? next.quranShowTranslation
+            : DEFAULTS.quranShowTranslation;
+
+        // Adopt legacy QuranReaderScreen AsyncStorage values once, when settings
+        // don't own them yet — settings become the source of truth from here on.
+        let migrated = false;
+        if (typeof parsed.quranFontSize !== 'number' && legacyFontSize) {
+          const legacy = parseInt(legacyFontSize, 10);
+          if (!isNaN(legacy)) {
+            next.quranFontSize = clampQuranFontSize(legacy);
+            migrated = true;
+          }
+        }
+        if (typeof parsed.quranShowTranslation !== 'boolean' && legacyShowTranslation !== null) {
+          next.quranShowTranslation = legacyShowTranslation === 'true';
+          migrated = true;
+        }
+
+        setSettings(next);
+        setAudioTranslationEnabled(next.translationAudioEnabled);
+        setActiveAdhanReciterId(next.adhanReciterId || 'default');
+        if (migrated) {
+          AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
         }
       } catch {
         // fall back to defaults
+        setAudioTranslationEnabled(DEFAULTS.translationAudioEnabled);
+        setActiveAdhanReciterId(DEFAULTS.adhanReciterId);
       } finally {
         setReady(true);
       }
@@ -111,6 +185,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setReminders: (remindersEnabled) => setSettings((prev) => persist({ ...prev, remindersEnabled })),
     setReminderOffsetMinutes: (reminderOffsetMinutes) => setSettings((prev) => persist({ ...prev, reminderOffsetMinutes })),
     setQuranReminderEnabled: (quranReminderEnabled) => setSettings((prev) => persist({ ...prev, quranReminderEnabled })),
+    setAdhanReciterId: (adhanReciterId) => {
+      setActiveAdhanReciterId(adhanReciterId);
+      setSettings((prev) => persist({ ...prev, adhanReciterId }));
+    },
     setThemeMode: (themeMode) => setSettings((prev) => persist({ ...prev, themeMode })),
     setAccentKey: (accentKey) => setSettings((prev) => persist({ ...prev, accentKey })),
     setTranslationAudioEnabled: (translationAudioEnabled) => {
@@ -122,6 +200,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setWomenPinHash: (womenPinHash) => setSettings((prev) => persist({ ...prev, womenPinHash })),
     setWomenLockEnabled: (womenLockEnabled) => setSettings((prev) => persist({ ...prev, womenLockEnabled })),
     setHapticsEnabled: (hapticsEnabled) => setSettings((prev) => persist({ ...prev, hapticsEnabled })),
+    setQuranArabicFont: (quranArabicFont) => setSettings((prev) => persist({ ...prev, quranArabicFont })),
+    setQuranFontSize: (quranFontSize) =>
+      setSettings((prev) => persist({ ...prev, quranFontSize: clampQuranFontSize(quranFontSize) })),
+    setQuranLineHeight: (quranLineHeight) =>
+      setSettings((prev) => persist({ ...prev, quranLineHeight: clampQuranLineHeight(quranLineHeight) })),
+    setQuranShowTranslation: (quranShowTranslation) =>
+      setSettings((prev) => persist({ ...prev, quranShowTranslation })),
   };
 
   if (!ready) return null;

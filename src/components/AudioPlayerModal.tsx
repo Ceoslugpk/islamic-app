@@ -19,16 +19,22 @@ import {
   addQueueListener,
   canPlayNext,
   canPlayPrevious,
+  getAudioEditionForLanguage,
   getAudioQueue,
   getQueueIndex,
+  LANGUAGE_AUDIO_EDITIONS,
+  PlaybackSegmentType,
   playNext,
   playPrevious,
   playQueueItem,
   PlaylistItem,
   safeLoadSettings,
+  switchToLanguageSegment,
   updateAudioSettings,
 } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
+import { useQuranLanguage } from '../lib/quranLanguageState';
+import { getLanguageFlag } from '../lib/quranLanguages';
 
 export interface AudioPlayerModalProps {
   visible: boolean;
@@ -46,6 +52,12 @@ export function AudioPlayerModal({
   const isTablet = width >= 640;
 
   const { playback, status, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
+  const { language, edition, flag, setLanguage } = useQuranLanguage();
+  const transAudio = getAudioEditionForLanguage(language);
+  const activeSegment: PlaybackSegmentType = playback?.segmentType || 'arabic';
+
+  const [switchingSegment, setSwitchingSegment] = useState(false);
+  const [langPickerOpen, setLangPickerOpen] = useState(false);
 
   const [queue, setQueue] = useState<PlaylistItem[]>(getAudioQueue());
   const [queueIndex, setQueueIndex] = useState<number>(getQueueIndex());
@@ -56,6 +68,26 @@ export function AudioPlayerModal({
   const [touchX, setTouchX] = useState<number | null>(null);
   const [dragRatio, setDragRatio] = useState<number | null>(null);
   const progressWidth = useRef<number>(0);
+
+  const handleSwitchSegment = async (target: PlaybackSegmentType) => {
+    if (switchingSegment) return;
+    if (target === 'translation' && !transAudio) return;
+    setSwitchingSegment(true);
+    try {
+      await switchToLanguageSegment(target);
+    } finally {
+      setSwitchingSegment(false);
+    }
+  };
+
+  const handleSelectLanguage = async (newLang: string) => {
+    await setLanguage(newLang);
+    setLangPickerOpen(false);
+    const targetEdition = getAudioEditionForLanguage(newLang);
+    if (targetEdition && playback && activeSegment === 'translation') {
+      await switchToLanguageSegment('translation');
+    }
+  };
 
   // Subscribe to queue updates
   useEffect(() => {
@@ -295,6 +327,180 @@ export function AudioPlayerModal({
                     {playback.ayah ? ` · Ayah ${playback.ayah}` : ' · Full Surah'}
                   </Text>
                 )}
+              </View>
+
+              {/* Dual-Language Segmented Switch (Arabic vs Translation) */}
+              <View
+                style={[
+                  styles.langSegmentContainer,
+                  {
+                    backgroundColor: colors.bgBase,
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
+              >
+                {/* Arabic Segment */}
+                <TouchableOpacity
+                  onPress={() => handleSwitchSegment('arabic')}
+                  disabled={switchingSegment}
+                  style={[
+                    styles.langSegmentBtn,
+                    activeSegment === 'arabic' && [
+                      styles.langSegmentBtnActive,
+                      { backgroundColor: colors.accent, borderColor: colors.accent },
+                    ],
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Switch to Arabic recitation"
+                  accessibilityState={{ selected: activeSegment === 'arabic' }}
+                >
+                  <View style={styles.langSegmentHeader}>
+                    <Text
+                      style={[
+                        styles.langSegmentTitle,
+                        { color: activeSegment === 'arabic' ? '#121110' : colors.textPrimary },
+                      ]}
+                    >
+                      العربية
+                    </Text>
+                    <View
+                      style={[
+                        styles.langSegmentMiniBadge,
+                        {
+                          backgroundColor:
+                            activeSegment === 'arabic' ? 'rgba(0,0,0,0.14)' : colors.bgSurface,
+                          borderColor:
+                            activeSegment === 'arabic' ? 'rgba(0,0,0,0.2)' : colors.borderSubtle,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.langSegmentMiniBadgeText,
+                          { color: activeSegment === 'arabic' ? '#121110' : colors.accent },
+                        ]}
+                      >
+                        AR
+                      </Text>
+                    </View>
+                  </View>
+                  <Text
+                    style={[
+                      styles.langSegmentSub,
+                      {
+                        color:
+                          activeSegment === 'arabic' ? 'rgba(18,17,16,0.85)' : colors.textMuted,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {playback?.arabicReciterName || playback?.reciterName || 'Alafasy'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Translation Segment */}
+                <TouchableOpacity
+                  onPress={() => handleSwitchSegment('translation')}
+                  disabled={switchingSegment || !transAudio}
+                  style={[
+                    styles.langSegmentBtn,
+                    activeSegment === 'translation' && [
+                      styles.langSegmentBtnActive,
+                      { backgroundColor: colors.accent, borderColor: colors.accent },
+                    ],
+                    !transAudio && { opacity: 0.5 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    transAudio
+                      ? `Switch to ${transAudio.langName} translation audio`
+                      : `Translation audio unavailable for ${edition.language}`
+                  }
+                  accessibilityState={{ selected: activeSegment === 'translation' }}
+                >
+                  <View style={styles.langSegmentHeader}>
+                    <Text
+                      style={[
+                        styles.langSegmentTitle,
+                        { color: activeSegment === 'translation' ? '#121110' : colors.textPrimary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {flag} {edition.language || language.toUpperCase()}
+                    </Text>
+                    <View
+                      style={[
+                        styles.langSegmentMiniBadge,
+                        {
+                          backgroundColor:
+                            activeSegment === 'translation' ? 'rgba(0,0,0,0.14)' : colors.bgSurface,
+                          borderColor:
+                            activeSegment === 'translation' ? 'rgba(0,0,0,0.2)' : colors.borderSubtle,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.langSegmentMiniBadgeText,
+                          { color: activeSegment === 'translation' ? '#121110' : colors.textSecondary },
+                        ]}
+                      >
+                        {language.toUpperCase()}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text
+                    style={[
+                      styles.langSegmentSub,
+                      {
+                        color:
+                          activeSegment === 'translation' ? 'rgba(18,17,16,0.85)' : colors.textMuted,
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {transAudio ? transAudio.name : 'No audio'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Translation Edition & Quick Switch Action */}
+              <View style={styles.langSwitchBar}>
+                <View style={styles.langSwitchLeft}>
+                  <Ionicons
+                    name={transAudio ? 'volume-medium-outline' : 'alert-circle-outline'}
+                    size={13}
+                    color={transAudio ? colors.accent : '#E5A93C'}
+                  />
+                  <Text
+                    style={[
+                      styles.langSwitchNotice,
+                      { color: transAudio ? colors.textMuted : '#E5A93C' },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {transAudio
+                      ? `Voice: ${transAudio.name}`
+                      : `${edition.language} audio unavailable`}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setLangPickerOpen(true)}
+                  style={[
+                    styles.changeLangPill,
+                    {
+                      backgroundColor: colors.bgBase,
+                      borderColor: colors.borderSubtle,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Change translation language"
+                >
+                  <Text style={[styles.changeLangPillText, { color: colors.accent }]}>
+                    Change Lang
+                  </Text>
+                  <Ionicons name="chevron-forward" size={10} color={colors.accent} />
+                </TouchableOpacity>
               </View>
 
               {/* Progress & Seeker */}
@@ -539,6 +745,91 @@ export function AudioPlayerModal({
             <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
+
+        {/* Quick Translation Language Picker Modal */}
+        <Modal
+          visible={langPickerOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLangPickerOpen(false)}
+        >
+          <View style={styles.pickerOverlay}>
+            <TouchableWithoutFeedback onPress={() => setLangPickerOpen(false)}>
+              <View style={styles.pickerBackdrop} />
+            </TouchableWithoutFeedback>
+
+            <View
+              style={[
+                styles.pickerContainer,
+                {
+                  backgroundColor: colors.bgSurface,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <View style={[styles.pickerHeader, { borderBottomColor: colors.borderSubtle }]}>
+                <View>
+                  <Text style={[styles.pickerTitle, { color: colors.textPrimary }]}>
+                    Translation Audio Language
+                  </Text>
+                  <Text style={[styles.pickerSubtitle, { color: colors.textMuted }]}>
+                    Supported non-Arabic editions for verse recitation
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => setLangPickerOpen(false)}
+                  style={[styles.pickerCloseBtn, { borderColor: colors.borderSubtle }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close language picker"
+                >
+                  <Ionicons name="close" size={16} color={colors.textPrimary} />
+                </TouchableOpacity>
+              </View>
+
+              <ScrollView style={styles.pickerList} contentContainerStyle={styles.pickerListContent}>
+                {Object.entries(LANGUAGE_AUDIO_EDITIONS).map(([langKey, ed]) => {
+                  const isSelected = language === langKey;
+                  const flagEmoji = getLanguageFlag(langKey);
+                  return (
+                    <TouchableOpacity
+                      key={langKey}
+                      onPress={() => handleSelectLanguage(langKey)}
+                      style={[
+                        styles.pickerOption,
+                        {
+                          backgroundColor: isSelected ? colors.accentDim : colors.bgBase,
+                          borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Select ${ed.langName}`}
+                    >
+                      <View style={styles.pickerOptionLeft}>
+                        <Text style={styles.pickerFlag}>{flagEmoji}</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[
+                              styles.pickerOptionTitle,
+                              { color: isSelected ? colors.accent : colors.textPrimary },
+                            ]}
+                          >
+                            {ed.langName} ({langKey.toUpperCase()})
+                          </Text>
+                          <Text style={[styles.pickerOptionSub, { color: colors.textMuted }]} numberOfLines={1}>
+                            {ed.name}
+                          </Text>
+                        </View>
+                      </View>
+                      {isSelected && (
+                        <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
       </View>
     </Modal>
   );
@@ -826,5 +1117,171 @@ const styles = StyleSheet.create({
     fontSize: 12,
     flex: 1,
     marginHorizontal: 8,
+  },
+  langSegmentContainer: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 3,
+    gap: 6,
+    marginBottom: 8,
+  },
+  langSegmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langSegmentBtnActive: {
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+  },
+  langSegmentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  langSegmentTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 13,
+  },
+  langSegmentMiniBadge: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 0.5,
+  },
+  langSegmentMiniBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 8,
+    letterSpacing: 0.4,
+  },
+  langSegmentSub: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 10.5,
+    maxWidth: '96%',
+  },
+  langSwitchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    marginBottom: 14,
+    gap: 8,
+  },
+  langSwitchLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    flex: 1,
+  },
+  langSwitchNotice: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11,
+    flex: 1,
+  },
+  changeLangPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  changeLangPillText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10,
+  },
+  pickerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  pickerBackdrop: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  pickerContainer: {
+    width: '100%',
+    maxWidth: 420,
+    maxHeight: '75%',
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    elevation: 25,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    marginBottom: 12,
+  },
+  pickerTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 15,
+  },
+  pickerSubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  pickerCloseBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pickerList: {
+    maxHeight: 340,
+  },
+  pickerListContent: {
+    gap: 8,
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  pickerOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    marginRight: 8,
+  },
+  pickerFlag: {
+    fontSize: 18,
+  },
+  pickerOptionTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+  },
+  pickerOptionSub: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+    marginTop: 1,
   },
 });

@@ -174,7 +174,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
               accessibilityLabel="Back to Library"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={[styles.backText, { color: colors.accent }]}>← Library</Text>
+              <Text style={[styles.backText, { color: colors.accent, fontSize: isNarrow ? 13 : 14 }]}>← Library</Text>
             </TouchableOpacity>
           )}
           <SectionHeader

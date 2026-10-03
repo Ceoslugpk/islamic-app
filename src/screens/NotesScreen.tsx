@@ -6,6 +6,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -25,6 +26,9 @@ export default function NotesScreen({
   onOpenVerse,
 }: NotesScreenProps) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
   const [input, setInput] = useState<string>('');
   const [refInput, setRefInput] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
@@ -112,27 +116,29 @@ export default function NotesScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <View style={styles.header}>
-        {onBack && (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={`Back to ${backLabel}`}
-            onPress={onBack}
-            style={styles.backBtn}
-          >
-            <Text style={[styles.backText, { color: colors.accent }]}>
-              ← {backLabel}
-            </Text>
-          </TouchableOpacity>
-        )}
-        <SectionHeader eyebrow="Personal Study" title="Notes & Reflections" />
-      </View>
+      <View style={styles.contentWrap}>
+        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
+          {onBack && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={`Back to ${backLabel}`}
+              onPress={onBack}
+              style={styles.backBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>
+                ← {backLabel}
+              </Text>
+            </TouchableOpacity>
+          )}
+          <SectionHeader eyebrow="Personal Study" title="Notes & Reflections" />
+        </View>
 
-      <FlatList
-        data={notes}
-        keyExtractor={(item) => item.id}
-        renderItem={renderNote}
-        contentContainerStyle={styles.listContent}
+        <FlatList
+          data={notes}
+          keyExtractor={(item) => item.id}
+          renderItem={renderNote}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: paddingH }]}
         ListHeaderComponent={
           <View
             style={[
@@ -201,6 +207,7 @@ export default function NotesScreen({
           />
         }
       />
+      </View>
     </View>
   );
 }
@@ -209,13 +216,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  contentWrap: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+  },
   header: {
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
   },
   backBtn: {
-    marginBottom: 8,
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

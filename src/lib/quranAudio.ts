@@ -11,6 +11,25 @@ import {
 } from './db';
 export type { PlaylistItem } from './db';
 import { getQuranTranslationLanguage } from './quranLanguageState';
+import {
+  clearAudioPreloadCache,
+  enqueuePreloadUrls,
+  getAudioPreloadStats,
+  hasPreloadedSound,
+  pauseAudioPreloading,
+  resumeAudioPreloading,
+  stopAudioPreloading,
+  takePreloadedSound,
+} from './audioPreloader';
+export {
+  clearAudioPreloadCache,
+  getAudioPreloadStats,
+  hasPreloadedSound,
+  pauseAudioPreloading,
+  resumeAudioPreloading,
+  stopAudioPreloading,
+  takePreloadedSound,
+};
 
 export interface PlaybackStatus {
   isPlaying: boolean;
@@ -216,7 +235,7 @@ export const VERIFIED_NON_ARABIC_EDITIONS: Reciter[] = [
   },
 ];
 
-/** Offline fallback reciters including prominent Arabic reciters and all 13 verified non-Arabic reciters. */
+/** Offline fallback reciters (strictly Arabic recitations). Non-Arabic editions are maintained separately in VERIFIED_NON_ARABIC_EDITIONS. */
 export const DEFAULT_RECITERS: Reciter[] = [
   { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Mishari Rashid al-Afasy', language: 'ar' },
   { identifier: 'ar.abdulbasitmurattal', name: 'عبد الباسط عبد الصمد', englishName: 'Abdul Basit (Murattal)', language: 'ar' },
@@ -227,8 +246,12 @@ export const DEFAULT_RECITERS: Reciter[] = [
   { identifier: 'ar.husary', name: 'محمود خليل الحصري', englishName: 'Mahmoud Khalil Al-Husary', language: 'ar' },
   { identifier: 'ar.minshawi', name: 'محمد صديق المنشاوي', englishName: 'Mohamed Siddiq Al-Minshawi', language: 'ar' },
   { identifier: 'ar.hudhaify', name: 'علي الحذيفي', englishName: 'Ali Al-Hudhaify', language: 'ar' },
-  ...VERIFIED_NON_ARABIC_EDITIONS,
 ];
+
+/** Get list of verified non-Arabic translation audio editions (kept strictly separate from Arabic reciters). */
+export function getTranslationAudioEditions(): Reciter[] {
+  return VERIFIED_NON_ARABIC_EDITIONS;
+}
 
 /** Specific non-128kbps editions hosted on AlQuran Cloud CDN or EveryAyah. */
 const KNOWN_BITRATES: Record<string, string> = {
@@ -287,19 +310,22 @@ export function isVerseByVerseEdition(identifier: string): boolean {
   );
 }
 
+const ARABIC_RECITERS_CACHE_KEY = 'arabic-reciters-cache-v3';
+
 /**
- * Fetch reciters from AlQuran Cloud audio editions endpoint and merge with verified non-Arabic editions.
- * Arabic editions are prioritized first (default alafasy at index 0), followed by verified non-Arabic editions.
- * Results are cached in AsyncStorage under 'reciters-cache'.
+ * Fetch reciters from AlQuran Cloud audio editions endpoint (strictly Arabic recitations).
+ * Default reciter ar.alafasy is placed at index 0.
+ * Non-Arabic editions are maintained separately and never mixed into this list.
+ * Results are cached in AsyncStorage under 'arabic-reciters-cache-v3'.
  */
 export async function fetchReciters(): Promise<Reciter[]> {
   let cachedReciters: Reciter[] | null = null;
   try {
-    const rawCache = await AsyncStorage.getItem(RECITERS_CACHE_KEY);
+    const rawCache = await AsyncStorage.getItem(ARABIC_RECITERS_CACHE_KEY);
     if (rawCache) {
       const parsed = JSON.parse(rawCache);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        cachedReciters = parsed;
+        cachedReciters = parsed.filter((r: any) => r && r.language === 'ar');
       }
     }
   } catch {
@@ -325,7 +351,7 @@ export async function fetchReciters(): Promise<Reciter[]> {
         language: String(item.language ?? ''),
       }));
 
-    // Split Arabic reciters
+    // Strictly Arabic reciters only (language === 'ar')
     const arabicReciters = recitersFromApi.filter((r) => r.language === 'ar');
     // Ensure default reciter ar.alafasy is at index 0
     const alafasyIdx = arabicReciters.findIndex((r) => r.identifier === 'ar.alafasy');
@@ -334,25 +360,13 @@ export async function fetchReciters(): Promise<Reciter[]> {
       arabicReciters.unshift(alafasy);
     }
 
-    // Merge non-Arabic: all verified non-Arabic editions
-    const verifiedIds = new Set(VERIFIED_NON_ARABIC_EDITIONS.map((e) => e.identifier));
-    const otherNonArabicFromApi = recitersFromApi.filter(
-      (r) => r.language !== 'ar' && !verifiedIds.has(r.identifier)
-    );
-
-    const mergedReciters: Reciter[] = [
-      ...arabicReciters,
-      ...VERIFIED_NON_ARABIC_EDITIONS,
-      ...otherNonArabicFromApi,
-    ];
-
     try {
-      await AsyncStorage.setItem(RECITERS_CACHE_KEY, JSON.stringify(mergedReciters));
+      await AsyncStorage.setItem(ARABIC_RECITERS_CACHE_KEY, JSON.stringify(arabicReciters));
     } catch {
       // Non-fatal write failure
     }
 
-    return mergedReciters;
+    return arabicReciters.length > 0 ? arabicReciters : DEFAULT_RECITERS;
   } catch (err) {
     if (cachedReciters && cachedReciters.length > 0) {
       return cachedReciters;
@@ -585,6 +599,93 @@ function notifyQueueListeners(): void {
       // ignore
     }
   });
+}
+
+export interface PrimeUpcomingAyahsParams {
+  surah: number;
+  ayah?: number;
+  segmentType?: PlaybackSegmentType;
+  arabicReciter?: string;
+  translationEnabled?: boolean;
+  transEditionId?: string;
+  isSurahMode?: boolean;
+}
+
+/**
+ * Preload upcoming audio chunks (next 3-5 ayahs, Arabic + translation segment if enabled).
+ * Feeds URLs into the audio preloader queue with a concurrency limit of 2 and LRU cap of 6.
+ */
+export function primeUpcomingAyahs(params: PrimeUpcomingAyahsParams): void {
+  const surah = params.surah || 1;
+  const ayah = params.ayah || 1;
+  const segmentType = params.segmentType || 'arabic';
+  const arabicReciter = params.arabicReciter || getActiveArabicReciter();
+  const transEnabled = params.translationEnabled ?? translationAudioEnabled;
+
+  const langCode = getQuranTranslationLanguage();
+  const transAudio = params.transEditionId
+    ? { identifier: params.transEditionId }
+    : getAudioEditionForLanguage(langCode);
+
+  const upcomingUrls: string[] = [];
+
+  // If full-surah audio file (single MP3 progressive streaming, translation disabled)
+  if (!transEnabled && !params.isSurahMode && !isVerseByVerseEdition(arabicReciter) && params.ayah === undefined) {
+    if (surah < 114) {
+      upcomingUrls.push(getSurahAudioUrl(arabicReciter, surah + 1));
+    }
+    // Also prime first ayah of current surah in case fallback is triggered
+    upcomingUrls.push(getAyahAudioUrl(arabicReciter, surah, 1));
+    enqueuePreloadUrls(upcomingUrls);
+    return;
+  }
+
+  // Verse-by-verse chunk sequencing
+  // 1. If currently playing Arabic segment and translation is enabled:
+  // Next immediate chunk is the Translation segment of the current ayah!
+  if (transEnabled && transAudio && segmentType === 'arabic') {
+    upcomingUrls.push(getAyahAudioUrl(transAudio.identifier, surah, ayah));
+  }
+
+  // 2. Prefetch subsequent ayahs (Arabic + Translation)
+  let curS = surah;
+  let curA = ayah;
+
+  for (let i = 0; i < 4; i++) {
+    const maxA = SURAH_AYAH_COUNTS[curS - 1] || 7;
+    if (curA < maxA) {
+      curA += 1;
+    } else if (curS < 114) {
+      curS += 1;
+      curA = 1;
+    } else {
+      break;
+    }
+
+    // Add Arabic recitation for next ayah
+    upcomingUrls.push(getAyahAudioUrl(arabicReciter, curS, curA));
+
+    // Add Translation audio if enabled
+    if (transEnabled && transAudio) {
+      upcomingUrls.push(getAyahAudioUrl(transAudio.identifier, curS, curA));
+    }
+
+    if (upcomingUrls.length >= 6) {
+      break;
+    }
+  }
+
+  // Also if in a queue, prime the next queue item's URL
+  if (currentQueue.length > 0 && currentQueueIndex >= 0 && currentQueueIndex + 1 < currentQueue.length) {
+    const nextItem = currentQueue[currentQueueIndex + 1];
+    if (nextItem.ayah !== undefined && nextItem.ayah !== null) {
+      upcomingUrls.push(getAyahAudioUrl(arabicReciter, nextItem.surah, nextItem.ayah));
+    } else {
+      upcomingUrls.push(getSurahAudioUrl(arabicReciter, nextItem.surah));
+    }
+  }
+
+  enqueuePreloadUrls(upcomingUrls.slice(0, 6));
 }
 
 const KNOWN_RECITER_NAMES: Record<string, string> = {
@@ -860,6 +961,16 @@ async function playTranslationSegment(
     durationMillis: 0,
   });
 
+  primeUpcomingAyahs({
+    surah,
+    ayah,
+    segmentType: 'translation',
+    arabicReciter,
+    translationEnabled: true,
+    transEditionId: transAudio.identifier,
+    isSurahMode,
+  });
+
   try {
     await playAudioUrl(transUrl);
   } catch (err) {
@@ -900,6 +1011,41 @@ async function advanceAfterAyah(
   }
 }
 
+/**
+ * Immediately switch the current playback between Arabic recitation and the selected translation audio.
+ * Stops current audio and plays the same ayah/surah in the target language segment.
+ */
+export async function switchToLanguageSegment(target: PlaybackSegmentType): Promise<boolean> {
+  if (!currentPlayback) return false;
+  if (currentPlayback.segmentType === target && currentStatus.isPlaying) {
+    return true;
+  }
+
+  const surah = currentPlayback.surah || 1;
+  const ayah = currentPlayback.ayah || 1;
+  const isSurahMode = currentPlayback.isSurahMode ?? (currentPlayback.type === 'surah');
+  const arabicReciter = currentPlayback.arabicReciter || getActiveArabicReciter(currentPlayback.identifier);
+  const arabicReciterName = currentPlayback.arabicReciterName || resolveReciterName(arabicReciter);
+
+  if (target === 'translation') {
+    const langCode = getQuranTranslationLanguage();
+    const transAudio = getAudioEditionForLanguage(langCode);
+    if (!transAudio) {
+      return false;
+    }
+    await playTranslationSegment(surah, ayah, transAudio, isSurahMode, arabicReciter, arabicReciterName);
+    return true;
+  } else {
+    // target === 'arabic'
+    if (currentPlayback.type === 'surah' && !isSurahMode) {
+      await playSurah(arabicReciter, undefined, undefined, arabicReciterName, surah);
+    } else {
+      await playAyah(arabicReciter, undefined, undefined, arabicReciterName, surah, ayah, isSurahMode);
+    }
+    return true;
+  }
+}
+
 async function playAudioUrl(url: string): Promise<void> {
   await Audio.setAudioModeAsync({
     playsInSilentModeIOS: true,
@@ -927,6 +1073,29 @@ async function playAudioUrl(url: string): Promise<void> {
     await currentSound.unloadAsync().catch(() => {});
     currentSound = null;
     currentPlaybackUrl = null;
+  }
+
+  // Attempt instant buffer-free playback from preloaded sound cache
+  const preloaded = await takePreloadedSound(url);
+  if (preloaded) {
+    try {
+      currentSound = preloaded;
+      currentPlaybackUrl = url;
+      preloaded.setOnPlaybackStatusUpdate(handlePlaybackStatusUpdate);
+      await preloaded.playAsync();
+      if (currentPlayback) currentPlayback.isPlaying = true;
+      notifyStatusListeners({
+        ...currentStatus,
+        isPlaying: true,
+        isLoaded: true,
+        isBuffering: false,
+      });
+      return;
+    } catch {
+      await preloaded.unloadAsync().catch(() => {});
+      currentSound = null;
+      currentPlaybackUrl = null;
+    }
   }
 
   // Notify buffering state while loading
@@ -1072,6 +1241,16 @@ export async function playAyah(
       });
     } catch {}
 
+    primeUpcomingAyahs({
+      surah: resolvedSurah,
+      ayah: resolvedAyah,
+      segmentType: 'arabic',
+      arabicReciter,
+      translationEnabled: true,
+      transEditionId: transAudio?.identifier,
+      isSurahMode,
+    });
+
     await playAudioUrl(playbackUrl);
     return;
   }
@@ -1115,6 +1294,15 @@ export async function playAyah(
       title: resolvedTitle,
     });
   } catch {}
+
+  primeUpcomingAyahs({
+    surah: resolvedSurah,
+    ayah: resolvedAyah,
+    segmentType: 'arabic',
+    arabicReciter: resolvedId,
+    translationEnabled: false,
+    isSurahMode,
+  });
 
   await playAudioUrl(playbackUrl);
 }
@@ -1176,6 +1364,13 @@ export async function playSurah(
     });
   } catch {}
 
+  primeUpcomingAyahs({
+    surah: targetSurah,
+    arabicReciter: resolvedId,
+    translationEnabled: false,
+    isSurahMode: false,
+  });
+
   try {
     await playAudioUrl(playbackUrl);
   } catch (err) {
@@ -1191,6 +1386,7 @@ export async function playSurah(
  * cleared from the session if the URL fails to load (offline).
  */
 export async function playNameAudio(url: string, title: string, reciterName = 'Asma ul-Husna'): Promise<void> {
+  await stopAudioPreloading();
   currentPlayback = {
     identifier: 'names99',
     reciterName,

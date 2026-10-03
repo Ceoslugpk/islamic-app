@@ -1,8 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  useWindowDimensions,
+} from 'react-native';
+import type { GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { useSettings } from '../lib/settings';
+import {
+  useSettings,
+  QURAN_FONT_SIZE_MIN,
+  QURAN_FONT_SIZE_MAX,
+  QURAN_FONT_SIZE_STEP,
+  QURAN_LINE_HEIGHT_MIN,
+  QURAN_LINE_HEIGHT_MAX,
+  QURAN_LINE_HEIGHT_STEP,
+} from '../lib/settings';
+import type { QuranArabicFont } from '../lib/settings';
+import { QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { useHaptics } from '../lib/haptics';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
@@ -17,7 +37,14 @@ import {
   getNotificationHealth,
   NotificationHealth,
 } from '../lib/notifications';
-import { playAdhan, configureAudio } from '../lib/audio';
+import {
+  playAdhan,
+  stopAdhan,
+  getAdhanReciter,
+  addAdhanPlaybackListener,
+  configureAudio,
+} from '../lib/audio';
+import { AdhanReciterModal } from '../components/AdhanReciterModal';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { accentThemes, ACCENT_KEYS } from '../lib/accents';
@@ -34,16 +61,142 @@ const ABOUT_ROWS: { title: string; subtitle: string }[] = [
   { title: 'Qibla', subtitle: 'Great-circle calculation' },
 ];
 
+const QURAN_FONT_OPTIONS: { key: QuranArabicFont; label: string; desc: string }[] = [
+  { key: 'amiri', label: 'Amiri', desc: 'Classic Naskh — the Quran reader default' },
+  { key: 'notonaskh', label: 'Noto Naskh Arabic', desc: 'Google’s clean, highly legible Naskh' },
+];
+
+interface AdjustRowProps {
+  label: string;
+  valueLabel: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  onChange: (next: number) => void;
+  decreaseLabel?: string;
+  increaseLabel?: string;
+}
+
+/**
+ * Slider-style control: label + value on top, [−] / tappable track / [+] below.
+ * Deliberately dependency-free (no @react-native-community/slider).
+ */
+function AdjustRow({
+  label,
+  valueLabel,
+  min,
+  max,
+  step,
+  value,
+  onChange,
+  decreaseLabel = 'A−',
+  increaseLabel = 'A+',
+}: AdjustRowProps) {
+  const { colors } = useTheme();
+  const [trackWidth, setTrackWidth] = useState(0);
+  const clamped = Math.max(min, Math.min(max, value));
+  const pct = ((clamped - min) / (max - min)) * 100;
+
+  const apply = (raw: number) => {
+    const stepped = Math.round(raw / step) * step;
+    onChange(Math.max(min, Math.min(max, Math.round(stepped * 100) / 100)));
+  };
+
+  const handleTrackPress = (e: GestureResponderEvent) => {
+    if (trackWidth <= 0) return;
+    const ratio = Math.max(0, Math.min(1, e.nativeEvent.locationX / trackWidth));
+    apply(min + ratio * (max - min));
+  };
+
+  return (
+    <View style={styles.adjustRow}>
+      <View style={styles.adjustHeader}>
+        <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{label}</Text>
+        <Text style={[styles.adjustValue, { color: colors.accent }]}>{valueLabel}</Text>
+      </View>
+      <View style={styles.adjustControls}>
+        <TouchableOpacity
+          style={[
+            styles.adjustBtn,
+            { borderColor: colors.borderSubtle, opacity: clamped <= min ? 0.4 : 1 },
+          ]}
+          onPress={() => apply(clamped - step)}
+          disabled={clamped <= min}
+          accessibilityRole="button"
+          accessibilityLabel={`Decrease ${label}`}
+          accessibilityState={{ disabled: clamped <= min }}
+        >
+          <Text style={[styles.adjustBtnText, { color: colors.textPrimary }]}>{decreaseLabel}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.adjustTrackArea}
+          onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+          onPress={handleTrackPress}
+          accessibilityRole="button"
+          accessibilityLabel={`${label} ${valueLabel}. Tap the track to set.`}
+        >
+          <View style={[styles.adjustTrack, { backgroundColor: colors.borderSubtle }]}>
+            <View style={[styles.adjustFill, { width: `${pct}%`, backgroundColor: colors.accent }]} />
+            <View
+              style={[styles.adjustKnob, { left: `${pct}%`, backgroundColor: colors.accent }]}
+            />
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.adjustBtn,
+            { borderColor: colors.borderSubtle, opacity: clamped >= max ? 0.4 : 1 },
+          ]}
+          onPress={() => apply(clamped + step)}
+          disabled={clamped >= max}
+          accessibilityRole="button"
+          accessibilityLabel={`Increase ${label}`}
+          accessibilityState={{ disabled: clamped >= max }}
+        >
+          <Text style={[styles.adjustBtnText, { color: colors.textPrimary }]}>{increaseLabel}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const { colors, mode, accentKey, setAccent } = useTheme();
-  const { settings, setMethod, setTimeFormat, setReminders, setReminderOffsetMinutes, setQuranReminderEnabled, setThemeMode, setWomenWorship, setWomenPinHash, setWomenLockEnabled, setHapticsEnabled } = useSettings();
+  const {
+    settings,
+    setMethod,
+    setTimeFormat,
+    setReminders,
+    setReminderOffsetMinutes,
+    setQuranReminderEnabled,
+    setThemeMode,
+    setWomenWorship,
+    setWomenPinHash,
+    setWomenLockEnabled,
+    setHapticsEnabled,
+    setAdhanReciterId,
+    setQuranArabicFont,
+    setQuranFontSize,
+    setQuranLineHeight,
+    setQuranShowTranslation,
+  } = useSettings();
   const { haptic } = useHaptics();
   const { edition, flag } = useQuranLanguage();
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
+  const [adhanModalOpen, setAdhanModalOpen] = useState(false);
+  const [isPlayingAdhan, setIsPlayingAdhan] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'set' | 'change' | null>(null);
   const [health, setHealth] = useState<NotificationHealth | null>(null);
   const [isLoadingHealth, setIsLoadingHealth] = useState(true);
+
+  useEffect(() => {
+    const unsub = addAdhanPlaybackListener((id) => {
+      setIsPlayingAdhan(id !== null);
+    });
+    return () => unsub();
+  }, []);
 
   const methodId = settings.methodId;
   const timeFormat = settings.timeFormat;
@@ -55,6 +208,10 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const womenPinHash = settings.womenPinHash;
   const womenLockEnabled = settings.womenLockEnabled;
   const hapticsEnabled = settings.hapticsEnabled;
+  const quranArabicFont = settings.quranArabicFont;
+  const quranFontSize = settings.quranFontSize;
+  const quranLineHeight = settings.quranLineHeight;
+  const quranShowTranslation = settings.quranShowTranslation;
 
   useEffect(() => {
     async function loadHealth() {
@@ -131,8 +288,12 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   }
 
   async function onTestAdhan() {
-    await configureAudio();
-    await playAdhan();
+    haptic('light');
+    if (isPlayingAdhan) {
+      await stopAdhan();
+    } else {
+      await playAdhan(settings.adhanReciterId);
+    }
   }
 
   function handleThemeModeChange(nextMode: 'system' | 'ink' | 'paper') {
@@ -146,19 +307,28 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
     paper: 'Light',
   } as const;
 
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   return (
-    <ScrollView style={{ backgroundColor: colors.bgBase }} contentContainerStyle={styles.content}>
-      {onClose && (
-        <TouchableOpacity
-          style={styles.closeBtn}
-          onPress={onClose}
-          accessibilityRole="button"
-          accessibilityLabel="Close settings"
-        >
-          <Text style={[styles.closeText, { color: colors.accent }]}>← Done</Text>
-        </TouchableOpacity>
-      )}
-      <SectionHeader eyebrow="Preferences" title="Settings" />
+    <ScrollView
+      style={{ backgroundColor: colors.bgBase }}
+      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
+    >
+      <View style={styles.contentWrap}>
+        {onClose && (
+          <TouchableOpacity
+            style={styles.closeBtn}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close settings"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.closeText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Done</Text>
+          </TouchableOpacity>
+        )}
+        <SectionHeader eyebrow="Preferences" title="Settings" />
 
       {/* Theme Mode */}
       <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Appearance</Text>
@@ -272,6 +442,133 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
         </TouchableOpacity>
       </View>
 
+      {/* Quran Display — Arabic font controls for the Quran reader */}
+      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Quran Display</Text>
+      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
+        <View style={styles.row}>
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Arabic Font</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              Typeface used for Quran ayahs in the reader
+            </Text>
+          </View>
+        </View>
+        <Hairline />
+        {QURAN_FONT_OPTIONS.map((option) => {
+          const selected = quranArabicFont === option.key;
+          return (
+            <View key={option.key}>
+              <TouchableOpacity
+                style={styles.row}
+                onPress={() => { setQuranArabicFont(option.key); haptic('light'); }}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`Arabic font: ${option.label}${selected ? ', selected' : ''}`}
+              >
+                <View style={styles.rowFlex}>
+                  <Text
+                    style={[
+                      styles.rowTitle,
+                      {
+                        color: selected ? colors.accent : colors.textPrimary,
+                        fontFamily: QURAN_FONT_FAMILIES[option.key].regular,
+                        fontSize: 15,
+                      },
+                    ]}
+                  >
+                    {option.label}
+                  </Text>
+                  <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>{option.desc}</Text>
+                </View>
+                <View
+                  style={[
+                    styles.radio,
+                    { borderColor: colors.borderStrong },
+                    selected && { borderColor: colors.accent, backgroundColor: colors.accentDim },
+                  ]}
+                >
+                  {selected && <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />}
+                </View>
+              </TouchableOpacity>
+              <Hairline />
+            </View>
+          );
+        })}
+        {/* KFGQPC: desktop-only King Fahd Quran Complex font, no free mobile file */}
+        <TouchableOpacity
+          style={[styles.row, { opacity: 0.5 }]}
+          disabled
+          activeOpacity={1}
+          accessibilityRole="radio"
+          accessibilityState={{ disabled: true, selected: false }}
+          accessibilityLabel="Arabic font: KFGQPC, coming soon"
+        >
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>KFGQPC</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              Coming soon · no bundleable mobile font file yet
+            </Text>
+          </View>
+          <View style={[styles.radio, { borderColor: colors.borderStrong }]} />
+        </TouchableOpacity>
+
+        <Hairline />
+        <AdjustRow
+          label="Font Size"
+          valueLabel={`${quranFontSize}pt`}
+          min={QURAN_FONT_SIZE_MIN}
+          max={QURAN_FONT_SIZE_MAX}
+          step={QURAN_FONT_SIZE_STEP}
+          value={quranFontSize}
+          onChange={setQuranFontSize}
+        />
+
+        <Hairline />
+        <AdjustRow
+          label="Line Height"
+          valueLabel={`${quranLineHeight.toFixed(1)}×`}
+          min={QURAN_LINE_HEIGHT_MIN}
+          max={QURAN_LINE_HEIGHT_MAX}
+          step={QURAN_LINE_HEIGHT_STEP}
+          value={quranLineHeight}
+          onChange={setQuranLineHeight}
+          decreaseLabel="−"
+          increaseLabel="+"
+        />
+
+        <Hairline />
+        <View style={styles.row}>
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Translation</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              Show the translation beneath each ayah
+            </Text>
+          </View>
+          <Text
+            style={[
+              styles.stateLabel,
+              { color: quranShowTranslation ? colors.accent : colors.textMuted },
+            ]}
+          >
+            {quranShowTranslation ? 'ON' : 'OFF'}
+          </Text>
+          <TouchableOpacity
+            style={[styles.toggle, { borderColor: colors.accent }]}
+            onPress={() => { setQuranShowTranslation(!quranShowTranslation); haptic('light'); }}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: quranShowTranslation }}
+            accessibilityLabel="Show translation in the Quran reader"
+          >
+            <View
+              style={[
+                styles.toggleKnob,
+                { backgroundColor: colors.accent, alignSelf: quranShowTranslation ? 'flex-end' : 'flex-start' },
+              ]}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Calculation method */}
       <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Prayer Times</Text>
       <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
@@ -327,6 +624,37 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
       {/* Prayer reminders */}
       <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Reminders</Text>
       <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
+        {health?.status === 'permission-needed' && (
+          <TouchableOpacity
+            style={[styles.permissionBanner, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
+            onPress={async () => {
+              const granted = await requestNotificationPermission();
+              if (granted) {
+                await configureNotifications();
+                const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
+                await cancelPrayerNotifications();
+                await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
+                const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, true);
+                setHealth(h);
+                setReminders(true);
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Notification permission needed. Tap to allow notifications."
+          >
+            <Ionicons name="notifications-outline" size={18} color={colors.accent} />
+            <View style={styles.rowFlex}>
+              <Text style={[styles.permissionBannerTitle, { color: colors.textPrimary }]}>
+                Notification permission needed
+              </Text>
+              <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
+                Tap to allow notifications so prayer reminders can sound.
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+          </TouchableOpacity>
+        )}
+
         <View style={styles.row}>
           <View style={styles.rowFlex}>
             <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Prayer reminders</Text>
@@ -384,6 +712,67 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
             ))}
           </View>
         </View>
+
+        {/* Adhan Reciter Choice */}
+        <Hairline />
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => { setAdhanModalOpen(true); haptic('light'); }}
+          accessibilityRole="button"
+          accessibilityLabel={`Adhan reciter: ${getAdhanReciter(settings.adhanReciterId).name}. Tap to change.`}
+        >
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Adhan Reciter</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              {getAdhanReciter(settings.adhanReciterId).name} · {getAdhanReciter(settings.adhanReciterId).location}
+            </Text>
+          </View>
+          <View style={styles.reciterPickerRight}>
+            <Text style={[styles.reciterBadgeArabic, { color: colors.accent }]}>
+              {getAdhanReciter(settings.adhanReciterId).arabicName}
+            </Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Test Adhan sound */}
+        <Hairline />
+        <TouchableOpacity
+          style={styles.row}
+          onPress={onTestAdhan}
+          accessibilityRole="button"
+          accessibilityLabel={isPlayingAdhan ? 'Stop adhan sound' : 'Test adhan sound'}
+        >
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Test adhan sound</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              {isPlayingAdhan ? 'Playing preview… tap to stop' : `Preview ${getAdhanReciter(settings.adhanReciterId).name}`}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.playBtnContainer,
+              {
+                backgroundColor: isPlayingAdhan ? colors.accent : colors.accentDim,
+                borderColor: colors.accent,
+              },
+            ]}
+          >
+            <Ionicons
+              name={isPlayingAdhan ? 'stop' : 'volume-high'}
+              size={15}
+              color={isPlayingAdhan ? colors.bgBase : colors.accent}
+            />
+            <Text
+              style={[
+                styles.testBtn,
+                { color: isPlayingAdhan ? colors.bgBase : colors.accent },
+              ]}
+            >
+              {isPlayingAdhan ? 'Stop' : 'Play'}
+            </Text>
+          </View>
+        </TouchableOpacity>
 
         {/* Quran reminder toggle */}
         <Hairline />
@@ -464,16 +853,6 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
             <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Unable to load health</Text>
           )}
         </View>
-        <Hairline />
-        <TouchableOpacity style={styles.row} onPress={onTestAdhan}>
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Test adhan sound</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Preview the prayer call
-            </Text>
-          </View>
-          <Text style={[styles.testBtn, { color: colors.accent }]}>Play</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Women's Worship */}
@@ -691,14 +1070,32 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
         visible={quranLangModalOpen}
         onClose={() => setQuranLangModalOpen(false)}
       />
+
+      <AdhanReciterModal
+        visible={adhanModalOpen}
+        onClose={() => setAdhanModalOpen(false)}
+        selectedReciterId={settings.adhanReciterId}
+        onSelectReciter={(id) => {
+          setAdhanReciterId(id);
+          haptic('selection');
+        }}
+      />
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingBottom: 40 },
+  content: { paddingVertical: 20, paddingBottom: 40 },
+  contentWrap: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+  },
   closeBtn: {
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 6,
     paddingRight: 12,
     marginBottom: 4,
@@ -744,6 +1141,64 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   radioDot: { width: 10, height: 10, borderRadius: 5 },
+  stateLabel: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 11,
+    letterSpacing: 1,
+  },
+  adjustRow: {
+    padding: 16,
+    gap: 12,
+  },
+  adjustHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  adjustValue: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 13,
+  },
+  adjustControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  adjustBtn: {
+    width: 38,
+    height: 32,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  adjustBtnText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 14,
+  },
+  adjustTrackArea: {
+    flex: 1,
+    height: 32,
+    justifyContent: 'center',
+  },
+  adjustTrack: {
+    height: 6,
+    borderRadius: 3,
+    justifyContent: 'center',
+  },
+  adjustFill: {
+    height: 6,
+    borderRadius: 3,
+  },
+  adjustKnob: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    top: -5,
+    marginLeft: -8,
+  },
   segRow: { flexDirection: 'row', gap: 8, padding: 12, flexWrap: 'wrap' },
   seg: {
     flex: 1,
@@ -942,5 +1397,43 @@ const styles = StyleSheet.create({
   healthCompactText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
+  },
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    margin: 12,
+    marginBottom: 4,
+  },
+  permissionBannerTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+  },
+  permissionBannerSub: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11.5,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  reciterPickerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  reciterBadgeArabic: {
+    fontFamily: 'NotoNaskhArabic_700Bold',
+    fontSize: 13,
+  },
+  playBtnContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
   },
 });

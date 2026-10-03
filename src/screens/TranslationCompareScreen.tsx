@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -42,6 +43,9 @@ export default function TranslationCompareScreen({
   onOpenReader,
 }: TranslationCompareScreenProps) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [currentSurah, setCurrentSurah] = useState<number>(initialSurah);
   const [currentAyah, setCurrentAyah] = useState<number>(initialAyah);
@@ -135,15 +139,16 @@ export default function TranslationCompareScreen({
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
           {onBack && (
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Back to Quran"
               onPress={onBack}
               style={styles.backBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={[styles.backText, { color: colors.accent }]}>
+              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>
                 ← Quran
               </Text>
             </TouchableOpacity>
@@ -577,7 +582,12 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   backBtn: {
-    marginBottom: 8,
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

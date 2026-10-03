@@ -50,6 +50,12 @@ import WomenCycleScreen from './src/screens/WomenCycleScreen';
 import WomenPurityScreen from './src/screens/WomenPurityScreen';
 import WomenGuidanceScreen from './src/screens/WomenGuidanceScreen';
 import WomenQadaScreen from './src/screens/WomenQadaScreen';
+import UmrahGuideScreen from './src/screens/UmrahGuideScreen';
+import UmrahResourcesScreen from './src/screens/UmrahResourcesScreen';
+import HajjJourneyScreen from './src/screens/HajjJourneyScreen';
+import MakkahLiveScreen from './src/screens/MakkahLiveScreen';
+import MadinahLiveScreen from './src/screens/MadinahLiveScreen';
+import HajjLiveScreen from './src/screens/HajjLiveScreen';
 import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
@@ -58,6 +64,7 @@ import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback } from
 import { rescheduleIfNeeded, setupNotificationResponseHandler, scheduleQuranReminder, cancelQuranReminder } from './src/lib/notifications';
 import { fetchPrayerTimes } from './src/lib/prayerTimes';
 import { useSettings } from './src/lib/settings';
+import { startQuranPreload } from './src/lib/quranPreloader';
 import { useEffect } from 'react';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
@@ -201,7 +208,13 @@ type ToolsView =
   | { screen: 'women-cycle' }
   | { screen: 'women-purity' }
   | { screen: 'women-guidance' }
-  | { screen: 'women-qada' };
+  | { screen: 'women-qada' }
+  | { screen: 'umrah-guide' }
+  | { screen: 'umrah-resources' }
+  | { screen: 'hajj-journey' }
+  | { screen: 'makkah-live' }
+  | { screen: 'madinah-live' }
+  | { screen: 'hajj-live' };
 
 function Root() {
   const { colors, mode } = useTheme();
@@ -238,6 +251,21 @@ function Root() {
   useEffect(() => {
     setupNotificationResponseHandler();
   }, []);
+
+  // Background Quran Preloader: start with low priority after app startup
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      startQuranPreload();
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Resume or ensure preloader is active when navigating to Quran tab
+  useEffect(() => {
+    if (tab === 'quran') {
+      startQuranPreload();
+    }
+  }, [tab]);
 
   // Now Playing Notification integration
   useEffect(() => {
@@ -337,6 +365,7 @@ function Root() {
     if (next !== 'library') setLibrary({ screen: 'hub' });
     if (next !== 'quran') setQuran({ screen: 'home' });
     if (next !== 'tools') setTools({ screen: 'hub' });
+    if (next === 'quran') startQuranPreload();
     setTab(next);
   }
 
@@ -354,6 +383,12 @@ function Root() {
     else if (key === 'women-purity') setTools({ screen: 'women-purity' });
     else if (key === 'women-guidance') setTools({ screen: 'women-guidance' });
     else if (key === 'women-qada') setTools({ screen: 'women-qada' });
+    else if (key === 'umrah-guide') setTools({ screen: 'umrah-guide' });
+    else if (key === 'umrah-resources') setTools({ screen: 'umrah-resources' });
+    else if (key === 'hajj-journey') setTools({ screen: 'hajj-journey' });
+    else if (key === 'makkah-live') setTools({ screen: 'makkah-live' });
+    else if (key === 'madinah-live') setTools({ screen: 'madinah-live' });
+    else if (key === 'hajj-live') setTools({ screen: 'hajj-live' });
   }
 
   function openLibraryItem(key: LibraryItemKey) {
@@ -535,6 +570,47 @@ function Root() {
         )}
         {tab === 'tools' && tools.screen === 'women-qada' && (
           <WomenQadaScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+
+        {/* Hajj & Umrah Views */}
+        {tab === 'tools' && tools.screen === 'umrah-guide' && (
+          <UmrahGuideScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenDuas={() => {
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'duas' });
+              setTab('library');
+            }}
+          />
+        )}
+        {tab === 'tools' && tools.screen === 'umrah-resources' && (
+          <UmrahResourcesScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenDuas={() => {
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'duas' });
+              setTab('library');
+            }}
+          />
+        )}
+        {tab === 'tools' && tools.screen === 'hajj-journey' && (
+          <HajjJourneyScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenDuas={() => {
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'duas' });
+              setTab('library');
+            }}
+          />
+        )}
+        {tab === 'tools' && tools.screen === 'makkah-live' && (
+          <MakkahLiveScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'madinah-live' && (
+          <MadinahLiveScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'hajj-live' && (
+          <HajjLiveScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
       </View>
       {showMiniPlayer && playback && (

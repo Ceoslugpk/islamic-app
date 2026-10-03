@@ -40,6 +40,7 @@ import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { AyahCard } from '../components/AyahCard';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity } from '../lib/useConnectivity';
+import { LocationPermissionNote } from '../components/LocationPermissionNote';
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -73,7 +74,7 @@ export default function HomeScreen({
   const { colors } = useTheme();
   const { settings } = useSettings();
   const { haptic } = useHaptics();
-  const { location: gpsLocation } = useLocation(true);
+  const { location: gpsLocation, status: locStatus, request: requestLocation, loading: locLoading } = useLocation(true);
   const { refreshKey } = useConnectivity();
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -289,6 +290,10 @@ export default function HomeScreen({
 
   const hijriLabel = `${data.hijri.day} ${data.hijri.monthEn} ${data.hijri.year}`;
   const locLabel = effectiveLocation.label;
+  const isFallback = settings.locationMode === 'auto' && !gpsLocation;
+  const locDisplay = isFallback
+    ? `Using manual location (${settings.manualLocation.label || 'Dubai, UAE'})`
+    : locLabel;
   const fmt = settings.timeFormat;
   const hour = now.getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -304,9 +309,12 @@ export default function HomeScreen({
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => {
+            onRefresh={async () => {
               setRefreshing(true);
-              load(false, true);
+              if (settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'pending')) {
+                await requestLocation(true);
+              }
+              await load(false, true);
             }}
             tintColor={colors.accent}
           />
@@ -318,9 +326,21 @@ export default function HomeScreen({
         <SectionHeader
           eyebrow="Today"
           title={greeting}
-          subtitle={`${locLabel} · ${hijriLabel} (${data.readable || data.gregorian})`}
+          subtitle={`${locDisplay} · ${hijriLabel} (${data.readable || data.gregorian})`}
           style={styles.sectionHeader}
         />
+
+        {/* Location Permission Note if auto mode enabled but permission denied/unavailable */}
+        {settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'unavailable') && (
+          <LocationPermissionNote
+            status={locStatus}
+            onEnable={async () => {
+              await requestLocation(true);
+            }}
+            loading={locLoading}
+            fallbackCity={settings.manualLocation.label || 'Dubai, UAE'}
+          />
+        )}
 
         {/* 1. Prayer Hero (Next prayer, time, remaining countdown, elapsed progress bar) */}
         <Card style={styles.countdownCard}>

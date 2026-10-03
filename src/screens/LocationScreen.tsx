@@ -8,6 +8,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -16,6 +17,7 @@ import { useLocation } from '../lib/useLocation';
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
+import { LocationPermissionNote } from '../components/LocationPermissionNote';
 
 export default function LocationScreen({
   onBack,
@@ -26,7 +28,12 @@ export default function LocationScreen({
 }) {
   const { colors } = useTheme();
   const { settings, setLocationMode, setManualLocation } = useSettings();
-  const { location: gpsLocation, status: locStatus, request: requestGps } = useLocation(true);
+  const {
+    location: gpsLocation,
+    status: locStatus,
+    loading: locLoading,
+    request: requestGps,
+  } = useLocation(true);
 
   const [latInput, setLatInput] = useState(String(settings.manualLocation.latitude));
   const [lngInput, setLngInput] = useState(String(settings.manualLocation.longitude));
@@ -39,7 +46,7 @@ export default function LocationScreen({
   function handleModeChange(mode: LocationMode) {
     setLocationMode(mode);
     if (mode === 'auto' && locStatus !== 'granted') {
-      requestGps();
+      requestGps(true);
     }
   }
 
@@ -72,11 +79,15 @@ export default function LocationScreen({
 
   // Active display info
   const activeLabel = isAuto
-    ? gpsLocation?.label || (locStatus === 'granted' ? 'Current GPS Location' : locStatus === 'denied' ? 'Permission Denied (Manual fallback)' : 'Detecting GPS location...')
+    ? gpsLocation?.label || (locStatus === 'granted' ? 'Current GPS Location' : `Using manual location (${settings.manualLocation.label || 'Dubai, UAE'})`)
     : settings.manualLocation.label || 'Manual Coordinates';
 
   const activeLat = isAuto ? (gpsLocation?.latitude ?? settings.manualLocation.latitude) : settings.manualLocation.latitude;
   const activeLng = isAuto ? (gpsLocation?.longitude ?? settings.manualLocation.longitude) : settings.manualLocation.longitude;
+
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
 
   return (
     <KeyboardAvoidingView
@@ -85,25 +96,27 @@ export default function LocationScreen({
     >
       <ScrollView
         style={{ backgroundColor: colors.bgBase }}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
         keyboardShouldPersistTaps="handled"
       >
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Tools"
-          >
-            <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
-          </TouchableOpacity>
-        )}
+        <View style={styles.contentWrap}>
+          {onBack && (
+            <TouchableOpacity
+              style={styles.backBtn}
+              onPress={onBack}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Tools"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
+            </TouchableOpacity>
+          )}
 
-        <SectionHeader
-          eyebrow="Preferences"
-          title="Location"
-          subtitle="Configure automatic GPS detection or enter custom coordinates"
-        />
+          <SectionHeader
+            eyebrow="Preferences"
+            title="Location"
+            subtitle="Configure automatic GPS detection or enter custom coordinates"
+          />
 
         {/* Location Mode Selector */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>LOCATION DETECTION</Text>
@@ -166,6 +179,9 @@ export default function LocationScreen({
             {isAuto && locStatus === 'denied' && (
               <Text style={[styles.statusWarn, { color: colors.accent }]}>Permission Denied</Text>
             )}
+            {isAuto && locStatus === 'unavailable' && (
+              <Text style={[styles.statusWarn, { color: colors.accent }]}>GPS Unavailable</Text>
+            )}
           </View>
 
           <Text style={[styles.activeCity, { color: colors.textPrimary }]}>
@@ -176,6 +192,18 @@ export default function LocationScreen({
             {activeLat.toFixed(4)}°, {activeLng.toFixed(4)}°
           </Text>
         </Card>
+
+        {/* Location Permission Note when auto mode is selected and permission denied/unavailable */}
+        {isAuto && (locStatus === 'denied' || locStatus === 'unavailable') && (
+          <LocationPermissionNote
+            status={locStatus}
+            onEnable={async () => {
+              await requestGps(true);
+            }}
+            loading={locLoading}
+            fallbackCity={settings.manualLocation.label || 'Dubai, UAE'}
+          />
+        )}
 
         {/* City picker shortcut */}
         {onOpenCities && (
@@ -252,6 +280,7 @@ export default function LocationScreen({
             <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>Save Coordinates</Text>
           </TouchableOpacity>
         </View>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -259,8 +288,15 @@ export default function LocationScreen({
 
 const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
+  contentWrap: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+  },
   backBtn: {
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 6,
     paddingRight: 12,
     marginBottom: 4,

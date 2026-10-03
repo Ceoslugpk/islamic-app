@@ -6,7 +6,6 @@ import { markSalahCompleted } from './db';
 import { buildDeepLink } from './deeplinks';
 
 const FINGERPRINT_KEY = 'notification-fingerprint';
-const LAST_SCHEDULE_KEY = 'last-notification-schedule';
 
 export interface NotificationFingerprint {
   location: Location;
@@ -23,7 +22,7 @@ export interface NotificationHealth {
   fingerprint: NotificationFingerprint | null;
 }
 
-// Configure notification presentation (Android channel)
+// Configure notification presentation and Android channel
 export async function configureNotifications() {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -37,10 +36,12 @@ export async function configureNotifications() {
   if (Platform.OS === 'android') {
     await Notifications.setNotificationChannelAsync('prayer-times', {
       name: 'Prayer times',
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: Notifications.AndroidImportance.MAX,
       sound: 'adhan_chime.wav',
       vibrationPattern: [0, 250, 250, 250],
       lightColor: '#D97706',
+      enableVibrate: true,
+      showBadge: true,
     });
   }
 
@@ -54,7 +55,13 @@ export async function configureNotifications() {
   ]);
 }
 
-function computeFingerprint(location: Location, methodId: number, remindersEnabled: boolean, reminderOffsetMinutes: number, quranReminderEnabled: boolean): NotificationFingerprint {
+function computeFingerprint(
+  location: Location,
+  methodId: number,
+  remindersEnabled: boolean,
+  reminderOffsetMinutes: number,
+  quranReminderEnabled: boolean
+): NotificationFingerprint {
   return {
     location: { latitude: location.latitude, longitude: location.longitude, label: location.label },
     methodId,
@@ -96,6 +103,7 @@ export async function getScheduledNotificationsHealth(): Promise<{ today: number
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const now = new Date();
+    const nowTotalMin = now.getHours() * 60 + now.getMinutes();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const tomorrowStart = new Date(todayStart.getTime() + 86400000);
     const dayAfterTomorrow = new Date(tomorrowStart.getTime() + 86400000);
@@ -112,6 +120,17 @@ export async function getScheduledNotificationsHealth(): Promise<{ today: number
         } else if (triggerDate >= tomorrowStart && triggerDate < dayAfterTomorrow) {
           tomorrow++;
         }
+      } else if (trigger?.hour !== undefined && trigger?.minute !== undefined) {
+        // Daily repeating trigger: fires tomorrow for sure
+        tomorrow++;
+        const trigMin = trigger.hour * 60 + trigger.minute;
+        // Fires today if its trigger time hasn't passed yet
+        if (trigMin > nowTotalMin) {
+          today++;
+        }
+      } else {
+        today++;
+        tomorrow++;
       }
     }
 
@@ -150,8 +169,21 @@ export function getNextPrayerFromTimings(timings: DayTimings): { name: string; t
 }
 
 export async function checkNotificationPermission(): Promise<'granted' | 'denied' | 'undetermined'> {
-  const { status } = await Notifications.getPermissionsAsync();
-  return status;
+  try {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        const perm = Notification.permission;
+        if (perm === 'granted') return 'granted';
+        if (perm === 'denied') return 'denied';
+        return 'undetermined';
+      }
+      return 'undetermined';
+    }
+    const { status } = await Notifications.getPermissionsAsync();
+    return status;
+  } catch {
+    return 'undetermined';
+  }
 }
 
 /**
@@ -178,8 +210,8 @@ export async function rescheduleIfNeeded(
 
   if (currentFpStr === storedFpStr) {
     // Fingerprint matches, check if we actually have notifications scheduled
-    const { today } = await getScheduledNotificationsHealth();
-    if (today > 0) {
+    const { today, tomorrow } = await getScheduledNotificationsHealth();
+    if (today > 0 || tomorrow > 0) {
       return false; // Already scheduled and up to date
     }
     // No notifications scheduled despite matching fingerprint - reschedule
@@ -211,10 +243,11 @@ export async function rescheduleIfNeeded(
 }
 
 /**
- * Schedule TWO notifications per prayer:
- * - Before prayer (at offset minutes before): countdown style "🕌 Maghrib in 15 minutes" / "Dubai · 18:21"
+ * Schedule TWO notifications per prayer as daily repeat triggers:
+ * - Before prayer (at offset minutes before): "🕌 Maghrib in 15 minutes" / "Dubai · 18:21"
  * - At prayer time: "🕌 Maghrib" / "It's time for Maghrib."
- * Returns the notification IDs so callers can cancel/reschedule.
+ * Uses the high-priority Android channel with sound and bundled adhan chime.
+ * Handles midnight rollover safely for early Fajr reminders.
  */
 export async function schedulePrayerNotifications(
   timings: DayTimings,
@@ -222,7 +255,6 @@ export async function schedulePrayerNotifications(
   locationLabel?: string
 ): Promise<string[]> {
   const ids: string[] = [];
-  const now = Date.now();
 
   const prayers: { name: string; time: string }[] = [
     { name: 'Fajr', time: timings.timings.Fajr },
@@ -232,64 +264,61 @@ export async function schedulePrayerNotifications(
     { name: 'Isha', time: timings.timings.Isha },
   ];
 
-  const prayerDate = new Date();
-  const dateStr = prayerDate.toISOString().slice(0, 10);
-  const label = locationLabel || 'Unknown';
+  const label = locationLabel || 'Your Location';
 
   for (const p of prayers) {
     if (!p.time || !p.time.includes(':')) continue;
     const [h, m] = p.time.split(':').map(Number);
-    
-    // Before prayer notification (at offset minutes before)
-    const beforeTriggerDate = new Date();
-    beforeTriggerDate.setHours(h, m - reminderOffsetMinutes, 0, 0);
-    
-    if (beforeTriggerDate.getTime() > now) {
-      try {
-        const id = await Notifications.scheduleNotificationAsync({
-          content: {
-            title: `🕌 ${p.name} in ${reminderOffsetMinutes} minutes`,
-            body: `${label} · ${p.time}`,
-            sound: 'default',
-            data: { prayer: p.name, date: dateStr, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
-            categoryIdentifier: 'prayer',
-          },
-          trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
-            date: beforeTriggerDate,
-            channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
-          },
-        });
-        ids.push(id);
-      } catch (e) {
-        // notification scheduling failed; skip this prayer
-      }
+    if (isNaN(h) || isNaN(m)) continue;
+
+    // 1. Before prayer notification (daily repeating trigger at offset minutes before)
+    let beforeTotalMin = h * 60 + m - reminderOffsetMinutes;
+    while (beforeTotalMin < 0) beforeTotalMin += 1440;
+    beforeTotalMin = beforeTotalMin % 1440;
+    const beforeHour = Math.floor(beforeTotalMin / 60);
+    const beforeMinute = beforeTotalMin % 60;
+
+    try {
+      const beforeId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `🕌 ${p.name} in ${reminderOffsetMinutes} minutes`,
+          body: `${label} · ${p.time}`,
+          sound: 'adhan_chime.wav',
+          data: { prayer: p.name, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
+          categoryIdentifier: 'prayer',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: beforeHour,
+          minute: beforeMinute,
+          channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
+        },
+      });
+      ids.push(beforeId);
+    } catch (e) {
+      // skip on scheduling failure
     }
 
-    // At prayer time notification
-    const atTriggerDate = new Date();
-    atTriggerDate.setHours(h, m, 0, 0);
-    
-    if (atTriggerDate.getTime() > now) {
-      try {
-        const id = await Notifications.scheduleNotificationAsync({
-          content: {
-            title: `🕌 ${p.name}`,
-            body: `It's time for ${p.name}.`,
-            sound: 'default',
-            data: { prayer: p.name, date: dateStr, type: 'prayer-at', url: buildDeepLink({ type: 'tracker' }) },
-            categoryIdentifier: 'prayer',
-          },
-          trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
-            date: atTriggerDate,
-            channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
-          },
-        });
-        ids.push(id);
-      } catch (e) {
-        // notification scheduling failed; skip this prayer
-      }
+    // 2. At prayer time notification (daily repeating trigger at prayer time)
+    try {
+      const atId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `🕌 ${p.name}`,
+          body: `It's time for ${p.name}.`,
+          sound: 'adhan_chime.wav',
+          data: { prayer: p.name, type: 'prayer-at', url: buildDeepLink({ type: 'tracker' }) },
+          categoryIdentifier: 'prayer',
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: h,
+          minute: m,
+          channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
+        },
+      });
+      ids.push(atId);
+    } catch (e) {
+      // skip on scheduling failure
     }
   }
 
@@ -298,7 +327,11 @@ export async function schedulePrayerNotifications(
 
 /** Cancel all previously scheduled prayer notifications. */
 export async function cancelPrayerNotifications() {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  try {
+    await Notifications.cancelAllScheduledNotificationsAsync();
+  } catch {
+    // ignore
+  }
 }
 
 /** Schedule daily Quran reminder notification at 20:00. */
@@ -306,23 +339,13 @@ export async function scheduleQuranReminder(): Promise<string | null> {
   try {
     const { getReadingPosition } = await import('./continuing');
     const { SURAHS_114 } = await import('./surahs114');
-    
+
     const position = await getReadingPosition();
     if (!position) return null;
-    
-    const surah = SURAHS_114.find(s => s.number === position.surah);
+
+    const surah = SURAHS_114.find((s) => s.number === position.surah);
     const surahName = surah?.englishName || `Surah ${position.surah}`;
-    
-    const now = new Date();
-    const triggerDate = new Date();
-    triggerDate.setHours(20, 0, 0, 0); // 8:00 PM daily
-    
-    // If 20:00 has already passed today, schedule for tomorrow
-    if (triggerDate.getTime() <= now.getTime()) {
-      triggerDate.setDate(triggerDate.getDate() + 1);
-    }
-    
-    // Use a repeating trigger for daily reminder
+
     const id = await Notifications.scheduleNotificationAsync({
       content: {
         title: '📖 Continue your Quran',
@@ -345,9 +368,7 @@ export async function scheduleQuranReminder(): Promise<string | null> {
 
 /** Cancel Quran reminder notification. */
 export async function cancelQuranReminder() {
-  // We can't easily cancel just the quran reminder without knowing its ID,
-  // so we cancel all and reschedule prayers if needed. 
-  // The rescheduleIfNeeded handles this by canceling all and re-scheduling.
+  // Canceling and rescheduling is handled in rescheduleIfNeeded
 }
 
 /** Notification response listener setup - call once at app startup. */
@@ -355,19 +376,18 @@ export function setupNotificationResponseHandler() {
   Notifications.addNotificationResponseReceivedListener((response) => {
     const { actionIdentifier, notification } = response;
     const data = notification.request.content.data as { url?: string } | undefined;
-    
+
     // Handle deep link from notification tap (when user taps notification body, not action button)
     if (actionIdentifier === 'default' && data?.url) {
-      // The URL will be handled by the Linking event listener in App.tsx
-      // We just need to ensure the app opens; Expo handles opening the URL
       return;
     }
-    
+
     if (actionIdentifier === 'mark-complete') {
       const prayerData = notification.request.content.data as { prayer?: string; date?: string } | undefined;
-      if (prayerData?.prayer && prayerData?.date) {
-        markSalahCompleted(prayerData.date, prayerData.prayer, true);
-        // Haptic feedback
+      if (prayerData?.prayer) {
+        const currentDate = new Date();
+        const dateStr = prayerData.date || `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+        markSalahCompleted(dateStr, prayerData.prayer, true);
         try {
           const { Haptics } = require('expo-haptics');
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -379,10 +399,27 @@ export function setupNotificationResponseHandler() {
   });
 }
 
-/** Request notification permission. */
+/** Request notification permission with platform options. */
 export async function requestNotificationPermission(): Promise<boolean> {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
+  try {
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        const perm = await Notification.requestPermission();
+        return perm === 'granted';
+      }
+      return false;
+    }
+    const { status } = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      },
+    });
+    return status === 'granted';
+  } catch {
+    return false;
+  }
 }
 
 /** Get comprehensive notification health status for UI. */

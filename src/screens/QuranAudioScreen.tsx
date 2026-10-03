@@ -15,12 +15,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
-import { NowPlayingHeroCard } from '../components/NowPlayingHeroCard';
+import { AudioPlayerModal } from '../components/AudioPlayerModal';
 import {
   addPlaybackStatusListener,
   addQueueListener,
-  canPlayNext,
-  canPlayPrevious,
   clearAudioQueue,
   CurrentPlayback,
   fetchReciters,
@@ -35,21 +33,19 @@ import {
   pause,
   playAyah,
   PlaybackStatus,
-  playNext,
-  playPrevious,
   playQueueItem,
   playSurah,
   Reciter,
   removeQueueItem,
   resume,
-  seekTo,
   setAudioQueue,
   setAudioTranslationEnabled,
-  stop,
   updateAudioSettings,
+  VERIFIED_NON_ARABIC_EDITIONS,
 } from '../lib/quranAudio';
 import { useSettings } from '../lib/settings';
-import { useQuranLanguage } from '../lib/quranLanguageState';
+import { useQuranLanguage, setQuranTranslationLanguage } from '../lib/quranLanguageState';
+import { getLanguageFlag } from '../lib/quranLanguages';
 import {
   AudioSettings,
   deletePlaylist,
@@ -65,18 +61,13 @@ import {
 import { fetchSurahList, SurahMeta } from '../lib/quran';
 import { PRESET_PLAYLISTS, PresetPlaylist } from '../lib/audioPlaylists';
 
-type AudioTab = 'reciters' | 'recent' | 'playlists' | 'queue' | 'settings';
-type LanguageFilter =
-  | 'all'
-  | 'ar'
-  | 'en'
-  | 'ur'
-  | 'zh'
-  | 'fr'
-  | 'ru'
-  | 'tr'
-  | 'fa'
-  | 'other';
+type AudioTab =
+  | 'reciters'
+  | 'translations'
+  | 'recent'
+  | 'playlists'
+  | 'queue'
+  | 'settings';
 
 interface QuranAudioScreenProps {
   onBack?: () => void;
@@ -90,13 +81,15 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
   const [activeTab, setActiveTab] = useState<AudioTab>('reciters');
 
-  // Reciters
+  // Reciters (strictly Arabic reciters list)
   const [reciters, setReciters] = useState<Reciter[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [reciterSearch, setReciterSearch] = useState<string>('');
-  const [selectedLang, setSelectedLang] = useState<LanguageFilter>('all');
   const [selectedIdentifier, setSelectedIdentifier] = useState<string>('ar.alafasy');
+
+  // Advanced popup player modal visibility
+  const [audioModalOpen, setAudioModalOpen] = useState<boolean>(false);
 
   // Live Audio Playback (Single Source of Truth)
   const [playback, setPlayback] = useState<CurrentPlayback | null>(getCurrentPlayback());
@@ -213,30 +206,6 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
     } else {
       resume();
     }
-  };
-
-  const handleStop = async () => {
-    await stop(true);
-  };
-
-  const handleSeek = (positionMillis: number) => {
-    seekTo(positionMillis);
-  };
-
-  const handleNext = async () => {
-    await playNext();
-  };
-
-  const handlePrevious = async () => {
-    await playPrevious();
-  };
-
-  const handleCycleRepeat = () => {
-    const modes: Array<'none' | 'all' | 'one'> = ['none', 'all', 'one'];
-    const curIdx = modes.indexOf(settings.repeatMode);
-    const nextMode = modes[(curIdx + 1) % modes.length];
-    const updated = updateAudioSettings({ repeatMode: nextMode });
-    setSettings(updated);
   };
 
   const handlePlayRecent = async (item: RecentlyPlayedItem) => {
@@ -421,30 +390,24 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
     setSettings(updated);
   };
 
-  // Filter Reciters with memo
+  // Filter Reciters with memo - strictly Arabic
   const filteredReciters = useMemo(() => {
     const query = reciterSearch.trim().toLowerCase();
     return reciters.filter((r) => {
-      const langMatch =
-        selectedLang === 'all' ||
-        (selectedLang === 'other'
-          ? !['ar', 'en', 'ur', 'zh', 'fr', 'ru', 'tr', 'fa'].includes(r.language)
-          : r.language === selectedLang);
-
-      if (!langMatch) return false;
+      if (r.language !== 'ar') return false;
       if (!query) return true;
 
       return (
         r.englishName.toLowerCase().includes(query) ||
-        r.name.includes(query) ||
-        r.identifier.toLowerCase().includes(query) ||
-        r.language.toLowerCase().includes(query)
+        r.name.toLowerCase().includes(query) ||
+        r.identifier.toLowerCase().includes(query)
       );
     });
-  }, [reciters, selectedLang, reciterSearch]);
+  }, [reciters, reciterSearch]);
 
   const tabsConfig = [
     { key: 'reciters', label: 'Reciters', icon: 'people-outline' },
+    { key: 'translations', label: 'Translation Audio', icon: 'language-outline' },
     { key: 'recent', label: 'Recent', icon: 'time-outline' },
     { key: 'playlists', label: 'Playlists', icon: 'list-outline' },
     {
@@ -456,42 +419,27 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
     { key: 'settings', label: 'Settings', icon: 'settings-outline' },
   ] as const;
 
+  const paddingH = isNarrow ? 16 : 20;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
           {onBack && (
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Back to Quran"
               onPress={onBack}
               style={styles.backBtn}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={[styles.backText, { color: colors.accent }]}>← Quran</Text>
+              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Quran</Text>
             </TouchableOpacity>
           )}
           <SectionHeader eyebrow="Audio Center" title="Quran Audio" />
         </View>
 
-        {/* Hero Now Playing Card (Single Source of Truth) */}
-        <NowPlayingHeroCard
-          playback={playback}
-          status={playbackStatus}
-          onPlayPause={handlePlayPause}
-          onStop={handleStop}
-          onSeek={handleSeek}
-          onNext={handleNext}
-          onPrevious={handlePrevious}
-          canNext={canPlayNext()}
-          canPrevious={canPlayPrevious()}
-          repeatMode={settings.repeatMode}
-          onCycleRepeat={handleCycleRepeat}
-          queueCount={queue.length}
-          currentQueueIndex={queueIndex}
-          onResumeRecent={handleResumeRecent}
-          recentTitle={recentList[0]?.title}
-        />
 
         {/* Sub-navigation Tabs */}
         <View style={[styles.tabBar, { borderBottomColor: colors.borderSubtle }]}>
@@ -599,51 +547,15 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               )}
             </View>
 
-            {/* Language Filter Chips */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterChipScroll}
-            >
-              {(
-                [
-                  { key: 'all', label: 'All Reciters' },
-                  { key: 'ar', label: 'Arabic (العربية)' },
-                  { key: 'en', label: 'English' },
-                  { key: 'ur', label: 'Urdu (اردو)' },
-                  { key: 'zh', label: 'Chinese (中文)' },
-                  { key: 'fr', label: 'French (Français)' },
-                  { key: 'ru', label: 'Russian (Русский)' },
-                  { key: 'tr', label: 'Turkish (Türkçe)' },
-                  { key: 'fa', label: 'Persian (فارسی)' },
-                  { key: 'other', label: 'More (kk, uz, az, bs)' },
-                ] as const
-              ).map((chip) => {
-                const isSelected = selectedLang === chip.key;
-                return (
-                  <TouchableOpacity
-                    key={chip.key}
-                    onPress={() => setSelectedLang(chip.key)}
-                    style={[
-                      styles.filterChip,
-                      {
-                        backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                        borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.filterChipText,
-                        { color: isSelected ? '#121110' : colors.textSecondary },
-                      ]}
-                    >
-                      {chip.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
+            {/* Arabic Reciters Header Info */}
+            <View style={styles.reciterHeaderRow}>
+              <Text style={[styles.reciterHeaderTitle, { color: colors.textSecondary }]}>
+                Arabic Reciters ({filteredReciters.length})
+              </Text>
+              <Text style={[styles.reciterHeaderSub, { color: colors.textMuted }]}>
+                Select default reciter or tap Sample
+              </Text>
+            </View>
 
             <FlatList
               data={filteredReciters}
@@ -701,18 +613,18 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               style={[
                                 styles.langTag,
                                 {
-                                  backgroundColor: item.language === 'ar' ? colors.bgBase : colors.accentDim,
-                                  borderColor: item.language === 'ar' ? colors.borderSubtle : colors.accent,
+                                  backgroundColor: colors.accentDim,
+                                  borderColor: colors.accent,
                                 },
                               ]}
                             >
                               <Text
                                 style={[
                                   styles.langTagText,
-                                  { color: item.language === 'ar' ? colors.textMuted : colors.accent },
+                                  { color: colors.accent },
                                 ]}
                               >
-                                {item.language.toUpperCase()}
+                                ARABIC
                               </Text>
                             </View>
                           </View>
@@ -762,6 +674,187 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               }}
             />
           </View>
+        ) : activeTab === 'translations' ? (
+          /* Translation Audio Tab (Non-Arabic editions - strictly separate) */
+          <ScrollView contentContainerStyle={styles.translationTabScroll}>
+            {/* Active Translation Status Card */}
+            <View
+              style={[
+                styles.translationStatusCard,
+                {
+                  backgroundColor: colors.bgSurface,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <View style={styles.translationStatusHeader}>
+                <View style={[styles.translationStatusFlagWrap, { backgroundColor: colors.accentDim }]}>
+                  <Text style={{ fontSize: 24 }}>{currentFlag}</Text>
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={[styles.translationStatusLabel, { color: colors.textMuted }]}>
+                    ACTIVE TRANSLATION
+                  </Text>
+                  <Text style={[styles.translationStatusName, { color: colors.textPrimary }]}>
+                    {currentEdition.language} ({currentEdition.name})
+                  </Text>
+                  {getAudioEditionForLanguage(currentLang) ? (
+                    <Text style={[styles.translationStatusVoice, { color: colors.accent }]}>
+                      Voice: {getAudioEditionForLanguage(currentLang)?.name}
+                    </Text>
+                  ) : (
+                    <Text style={[styles.translationStatusVoice, { color: '#E5A93C' }]}>
+                      Audio unavailable for this language (Arabic will play)
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={[styles.translationToggleRow, { borderTopColor: colors.borderSubtle }]}>
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
+                    Play translation after Arabic
+                  </Text>
+                  <Text style={[styles.settingSub, { color: colors.textMuted }]}>
+                    Sequentially play translated audio after each Arabic ayah
+                  </Text>
+                </View>
+                <Switch
+                  value={transAudioEnabled}
+                  onValueChange={handleToggleTranslationAudio}
+                  trackColor={{ false: colors.borderSubtle, true: colors.accent }}
+                  thumbColor="#FFFFFF"
+                  accessibilityLabel="Toggle play translation audio after Arabic"
+                />
+              </View>
+            </View>
+
+            {/* Translation Audio Editions Directory */}
+            <View style={styles.translationDirectoryHeader}>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+                Verified Non-Arabic Recitations
+              </Text>
+              <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
+                13 verse-by-verse translation editions across 11 languages
+              </Text>
+            </View>
+
+            <View style={styles.translationListWrap}>
+              {VERIFIED_NON_ARABIC_EDITIONS.map((item) => {
+                const isSelectedLanguage = currentLang === item.language;
+                const flagEmoji = getLanguageFlag(item.language);
+                const isSamplingThis =
+                  playback?.identifier === item.identifier &&
+                  playback?.type === 'ayah' &&
+                  playback?.surah === 1 &&
+                  playback?.ayah === 1 &&
+                  playbackStatus.isPlaying;
+
+                return (
+                  <View
+                    key={item.identifier}
+                    style={[
+                      styles.reciterCard,
+                      {
+                        backgroundColor: colors.bgSurface,
+                        borderColor: isSelectedLanguage ? colors.accent : colors.borderSubtle,
+                      },
+                    ]}
+                  >
+                    <View style={styles.reciterMain}>
+                      <TouchableOpacity
+                        onPress={() => setQuranTranslationLanguage(item.language)}
+                        style={styles.reciterSelectArea}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Select ${item.englishName} for Quran translation`}
+                      >
+                        <View
+                          style={[
+                            styles.radioCircle,
+                            {
+                              borderColor: isSelectedLanguage ? colors.accent : colors.borderSubtle,
+                            },
+                          ]}
+                        >
+                          {isSelectedLanguage && (
+                            <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />
+                          )}
+                        </View>
+                        <View style={styles.reciterNameCol}>
+                          <View style={styles.reciterTitleRow}>
+                            <Text style={{ fontSize: 16, marginRight: 4 }}>{flagEmoji}</Text>
+                            <Text
+                              style={[styles.reciterName, { color: colors.textPrimary }]}
+                              numberOfLines={1}
+                              ellipsizeMode="tail"
+                            >
+                              {item.englishName}
+                            </Text>
+                            <View
+                              style={[
+                                styles.langTag,
+                                {
+                                  backgroundColor: isSelectedLanguage ? colors.accent : colors.accentDim,
+                                  borderColor: colors.accent,
+                                },
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.langTagText,
+                                  { color: isSelectedLanguage ? '#121110' : colors.accent },
+                                ]}
+                              >
+                                {item.language.toUpperCase()}
+                              </Text>
+                            </View>
+                          </View>
+                          {item.name ? (
+                            <Text
+                              style={[styles.reciterArabic, { color: colors.textMuted }]}
+                              numberOfLines={1}
+                            >
+                              {item.name}
+                            </Text>
+                          ) : null}
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={() => handlePlayReciterSample(item)}
+                        style={[
+                          styles.sampleBtn,
+                          {
+                            backgroundColor: isSamplingThis ? colors.accent : colors.accentDim,
+                          },
+                        ]}
+                        accessibilityRole="button"
+                        accessibilityLabel={
+                          isSamplingThis
+                            ? `Pause sample of ${item.englishName}`
+                            : `Listen to sample of ${item.englishName}`
+                        }
+                      >
+                        <Ionicons
+                          name={isSamplingThis ? 'pause' : 'volume-medium'}
+                          size={14}
+                          color={isSamplingThis ? '#121110' : colors.accent}
+                        />
+                        <Text
+                          style={[
+                            styles.sampleBtnText,
+                            { color: isSamplingThis ? '#121110' : colors.accent },
+                          ]}
+                        >
+                          {isSamplingThis ? 'Playing' : 'Sample'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </ScrollView>
         ) : activeTab === 'recent' ? (
           /* Recently Played Tab */
           <View style={styles.tabContent}>
@@ -1425,6 +1518,16 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     Audio unavailable for this language; Arabic will play.
                   </Text>
                 )}
+                <TouchableOpacity
+                  onPress={() => setActiveTab('translations')}
+                  style={[styles.settingsBrowseBtn, { backgroundColor: colors.accentDim, marginTop: 10 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Browse non-Arabic translation audio editions"
+                >
+                  <Text style={[styles.settingsBrowseBtnText, { color: colors.accent }]}>
+                    Browse Translation Editions ({VERIFIED_NON_ARABIC_EDITIONS.length}) →
+                  </Text>
+                </TouchableOpacity>
               </View>
               <Switch
                 value={transAudioEnabled}
@@ -1489,6 +1592,74 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             </View>
           </ScrollView>
         )}
+
+        {/* Floating Mini Player when audio is active (tapping expands full popup player) */}
+        {playback && (
+          <TouchableOpacity
+            style={[
+              styles.floatingMiniBar,
+              {
+                backgroundColor: colors.bgSurface,
+                borderColor: colors.borderSubtle,
+              },
+            ]}
+            onPress={() => setAudioModalOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Open audio player"
+          >
+            <View style={[styles.floatingMiniIconWrap, { backgroundColor: colors.accentDim }]}>
+              <Ionicons
+                name={playbackStatus.isPlaying ? 'volume-medium' : 'volume-mute'}
+                size={16}
+                color={colors.accent}
+              />
+            </View>
+            <View style={styles.floatingMiniInfo}>
+              <View style={styles.floatingMiniTitleRow}>
+                <Text style={[styles.floatingMiniTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                  {playback.title}
+                </Text>
+                {playback.segmentType && (
+                  <View
+                    style={[
+                      styles.floatingMiniBadge,
+                      {
+                        backgroundColor:
+                          playback.segmentType === 'arabic' ? colors.accentDim : colors.bgBase,
+                        borderColor:
+                          playback.segmentType === 'arabic' ? colors.accent : colors.borderSubtle,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.floatingMiniBadgeText,
+                        {
+                          color:
+                            playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {playback.segmentType === 'arabic' ? 'AR' : 'TR'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text style={[styles.floatingMiniReciter, { color: colors.textMuted }]} numberOfLines={1}>
+                {playback.reciterName}
+              </Text>
+            </View>
+            <View style={[styles.floatingMiniOpenBtn, { backgroundColor: colors.accent }]}>
+              <Ionicons name="chevron-up" size={16} color="#121110" />
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Advanced Audio Player Popup Modal */}
+        <AudioPlayerModal
+          visible={audioModalOpen}
+          onClose={() => setAudioModalOpen(false)}
+        />
       </View>
     </View>
   );
@@ -1510,7 +1681,12 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
   backBtn: {
-    marginBottom: 8,
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2183,5 +2359,144 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
     color: '#121110',
+  },
+  reciterHeaderRow: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 6,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  reciterHeaderTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 13,
+  },
+  reciterHeaderSub: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+  },
+  translationTabScroll: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 60,
+    gap: 14,
+  },
+  translationStatusCard: {
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  translationStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  translationStatusFlagWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  translationStatusLabel: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 9.5,
+    letterSpacing: 0.6,
+    marginBottom: 2,
+  },
+  translationStatusName: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 15,
+    marginBottom: 2,
+  },
+  translationStatusVoice: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+  },
+  translationToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  translationDirectoryHeader: {
+    marginTop: 4,
+  },
+  translationListWrap: {
+    gap: 8,
+  },
+  settingsBrowseBtn: {
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  settingsBrowseBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+  },
+  floatingMiniBar: {
+    position: 'absolute',
+    bottom: 12,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+  },
+  floatingMiniIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  floatingMiniInfo: {
+    flex: 1,
+    marginRight: 8,
+  },
+  floatingMiniTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  floatingMiniTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+    flexShrink: 1,
+  },
+  floatingMiniBadge: {
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 0.5,
+  },
+  floatingMiniBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 8,
+    letterSpacing: 0.4,
+  },
+  floatingMiniReciter: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+  },
+  floatingMiniOpenBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

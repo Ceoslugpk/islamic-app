@@ -131,11 +131,13 @@ export default function LibraryScreen({
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
 
   return (
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={[styles.scroll, { paddingHorizontal: paddingH }]}
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.container, { maxWidth: maxW }]}>

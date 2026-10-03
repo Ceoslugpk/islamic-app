@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Share,
   RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -424,17 +425,22 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
     return Object.values(readCounts).reduce((acc, v) => acc + v, 0);
   }, [readCounts]);
 
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       {/* Top Header Row with Back Button */}
-      <View style={[styles.headerRow, { borderBottomColor: colors.borderSubtle }]}>
+      <View style={[styles.headerRow, { borderBottomColor: colors.borderSubtle, paddingHorizontal: paddingH }]}>
         <TouchableOpacity
           onPress={handleBack}
           style={styles.backBtn}
           accessibilityRole="button"
           accessibilityLabel={`Back to ${backLabel}`}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Text style={[styles.backText, { color: colors.accent }]}>← {backLabel}</Text>
+          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← {backLabel}</Text>
         </TouchableOpacity>
       </View>
 
@@ -1278,6 +1284,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 48,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   listHeaderWrap: {
     marginBottom: 8,
@@ -1288,17 +1297,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderBottomWidth: 1,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   backBtn: {
-    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
     paddingRight: 12,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   tabsWrap: {
     borderBottomWidth: 1,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   tabsScroll: {
     flexDirection: 'row',

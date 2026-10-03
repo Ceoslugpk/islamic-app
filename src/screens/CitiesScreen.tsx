@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -143,6 +144,10 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
     );
   };
 
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       {showSuccess && successCity && (
@@ -173,15 +178,16 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
         </Animated.View>
       )}
 
-      <View style={styles.headerArea}>
+      <View style={[styles.headerArea, { paddingHorizontal: paddingH }]}>
         {onBack && (
           <TouchableOpacity
             style={styles.backBtn}
             onPress={onBack}
             accessibilityRole="button"
             accessibilityLabel="Back to Tools"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
+            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
           </TouchableOpacity>
         )}
 
@@ -203,7 +209,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
         >
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
-            style={[styles.searchInput, { color: colors.textPrimary }]}
+            style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 13 : 14 }]}
             placeholder="Search by city or country..."
             placeholderTextColor={colors.textMuted}
             value={query}
@@ -224,7 +230,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
         data={filtered}
         keyExtractor={(item) => `${item.name}-${item.country}`}
         renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingHorizontal: paddingH }]}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
@@ -246,9 +252,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   backBtn: {
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 6,
     paddingRight: 12,
     marginBottom: 4,
@@ -281,6 +292,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 20,
     paddingBottom: 40,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
   },
   row: {
     flexDirection: 'row',

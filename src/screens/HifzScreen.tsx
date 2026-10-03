@@ -6,6 +6,7 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +29,10 @@ const NEXT_STATUS: Record<HifzStatus, HifzStatus> = {
 
 export default function HifzScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   const [statuses, setStatuses] = useState<Record<number, HifzStatus>>({});
   const [activeFilter, setActiveFilter] = useState<FilterTab>('All');
   const [searchQuery, setSearchQuery] = useState('');
@@ -192,19 +197,21 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Library"
-        >
-          <Text style={[styles.backText, { color: colors.accent }]}>← Library</Text>
-        </TouchableOpacity>
-      )}
+    <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
+      <View style={styles.contentWrap}>
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Library"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Library</Text>
+          </TouchableOpacity>
+        )}
 
-      <SectionHeader eyebrow="Memorization" title="Hifz Tracker" />
+        <SectionHeader eyebrow="Memorization" title="Hifz Tracker" />
 
       {/* Summary Scorecard */}
       <View
@@ -323,6 +330,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           </View>
         }
       />
+      </View>
     </View>
   );
 }
@@ -330,14 +338,22 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    paddingVertical: 20,
     paddingBottom: 0,
+  },
+  contentWrap: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
     paddingVertical: 6,
     paddingRight: 12,
-    marginBottom: 8,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',

@@ -21,6 +21,7 @@ import { getReadingPosition, ReadingPosition } from '../lib/continuing';
 import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
+import { useQuranPreload } from '../lib/quranPreloader';
 
 interface QuranHomeScreenProps {
   onOpenSurah: (surahNumber: number, initialAyah?: number) => void;
@@ -62,6 +63,7 @@ export default function QuranHomeScreen({
   const { language, setLanguage, edition, flag } = useQuranLanguage();
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [translatedNames, setTranslatedNames] = useState<Record<number, string> | null>(null);
+  const { progress: preloadProgress, startPreload, pausePreload } = useQuranPreload();
 
   const [surahs, setSurahs] = useState<SurahMeta[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -220,6 +222,106 @@ export default function QuranHomeScreen({
             <Text style={[styles.langChangeBtnText, { color: colors.accent }]}>Change</Text>
             <Ionicons name="chevron-forward" size={12} color={colors.accent} />
           </TouchableOpacity>
+        </View>
+
+        {/* Quran Offline Preload Status & Trigger */}
+        <View
+          style={[
+            styles.preloadBar,
+            { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+          ]}
+        >
+          <View style={styles.preloadLeft}>
+            <View
+              style={[
+                styles.preloadIconWrap,
+                {
+                  backgroundColor: preloadProgress.isComplete
+                    ? colors.accentDim
+                    : preloadProgress.isRunning
+                    ? colors.accentDim
+                    : colors.bgRaised,
+                },
+              ]}
+            >
+              <Ionicons
+                name={
+                  preloadProgress.isComplete
+                    ? 'checkmark-circle'
+                    : preloadProgress.isRunning
+                    ? 'cloud-download'
+                    : 'cloud-outline'
+                }
+                size={16}
+                color={
+                  preloadProgress.isComplete
+                    ? colors.accent
+                    : preloadProgress.isRunning
+                    ? colors.accent
+                    : colors.textSecondary
+                }
+              />
+            </View>
+            <View style={styles.preloadTextCol}>
+              <Text style={[styles.preloadTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                {preloadProgress.isComplete
+                  ? 'Offline Ready · 114 Surahs Cached'
+                  : preloadProgress.isRunning
+                  ? `Preloading Quran… ${preloadProgress.cached}/114`
+                  : preloadProgress.cached > 0
+                  ? `${preloadProgress.cached}/114 Surahs Cached Offline`
+                  : 'Preload Quran for Offline Reading'}
+              </Text>
+              {preloadProgress.isRunning ? (
+                <View style={[styles.preloadTrack, { backgroundColor: colors.bgBase }]}>
+                  <View
+                    style={[
+                      styles.preloadFill,
+                      {
+                        backgroundColor: colors.accent,
+                        width: `${Math.max(2, Math.round((preloadProgress.cached / 114) * 100))}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              ) : (
+                <Text style={[styles.preloadSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
+                  {preloadProgress.isComplete
+                    ? 'All 114 surahs and translations cached for instant access'
+                    : 'Instant opening with Arabic & translations cached'}
+                </Text>
+              )}
+            </View>
+          </View>
+          {!preloadProgress.isComplete && (
+            <TouchableOpacity
+              style={[
+                styles.preloadActionBtn,
+                {
+                  backgroundColor: preloadProgress.isRunning ? colors.bgRaised : colors.accentDim,
+                  borderColor: preloadProgress.isRunning ? colors.borderSubtle : colors.accent,
+                },
+              ]}
+              onPress={() => {
+                if (preloadProgress.isRunning) {
+                  pausePreload();
+                } else {
+                  startPreload(false);
+                }
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={preloadProgress.isRunning ? 'Pause preloading' : 'Preload all surahs'}
+            >
+              <Text
+                style={[
+                  styles.preloadActionText,
+                  { color: preloadProgress.isRunning ? colors.textSecondary : colors.accent },
+                ]}
+              >
+                {preloadProgress.isRunning ? 'Pause' : 'Preload All'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Continue Reading Card */}
@@ -826,6 +928,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   listContent: {
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 40,
@@ -870,6 +975,64 @@ const styles = StyleSheet.create({
   langChangeBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+  },
+  preloadBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  preloadLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  preloadIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  preloadTextCol: {
+    flex: 1,
+  },
+  preloadTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+  },
+  preloadSubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 10.5,
+    marginTop: 1,
+  },
+  preloadTrack: {
+    height: 3,
+    borderRadius: 1.5,
+    overflow: 'hidden',
+    marginTop: 4,
+    width: '95%',
+  },
+  preloadFill: {
+    height: '100%',
+    borderRadius: 1.5,
+  },
+  preloadActionBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  preloadActionText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
   },
   continueCard: {
     flexDirection: 'row',

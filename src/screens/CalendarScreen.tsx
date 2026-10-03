@@ -1,5 +1,14 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  useWindowDimensions,
+} from 'react-native';
 import { useTheme } from '../lib/theme';
 import { fetchHijriMonth, HijriMonthData } from '../lib/hijri';
 import { SectionHeader } from '../components/SectionHeader';
@@ -9,6 +18,10 @@ const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 16 : 20;
+
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -57,7 +70,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
   return (
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -66,18 +79,20 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
         />
       }
     >
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Tools"
-        >
-          <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
-        </TouchableOpacity>
-      )}
+      <View style={styles.contentWrap}>
+        {onBack && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Tools"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
+          </TouchableOpacity>
+        )}
 
-      <SectionHeader eyebrow="Hijri Calendar" title="Islamic Dates" />
+        <SectionHeader eyebrow="Hijri Calendar" title="Islamic Dates" />
 
       {/* Month navigation */}
       <View style={[styles.navRow, { borderColor: colors.borderSubtle }]}>
@@ -162,6 +177,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
           </Text>
         </>
       )}
+      </View>
     </ScrollView>
   );
 }
@@ -171,10 +187,19 @@ function monthName(m: number): string {
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingBottom: 40 },
+  content: { paddingVertical: 20, paddingBottom: 40 },
+  contentWrap: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+  },
   backButton: {
-    paddingVertical: 8,
-    marginBottom: 8,
+    alignSelf: 'flex-start',
+    minHeight: 36,
+    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingRight: 12,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
