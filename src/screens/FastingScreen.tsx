@@ -228,9 +228,9 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
             style={styles.backButton}
             onPress={onBack}
             accessibilityRole="button"
-            accessibilityLabel="Back to Library"
+            accessibilityLabel="Back to Tools"
           >
-            <Text style={[styles.backText, { color: colors.accent }]}>← Library</Text>
+            <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
           </TouchableOpacity>
         )}
 

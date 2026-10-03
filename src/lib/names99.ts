@@ -1,8 +1,24 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export type NamesLanguage = 'en' | 'fr' | 'tr';
+
+export interface NameVerseRef {
+  surah: number;
+  ayah: number;
+}
+
 export interface Name99 {
   number: number;
   arabic: string;
   transliteration: string;
   meaning: string;
+  /** Localized name title (e.g. "Le Tout-Miséricordieux") when available. */
+  name?: string;
+  slug?: string;
+  /** Absolute recitation URL (https://esmaulhusna.org/audio/{slug}.mp3). */
+  audioUrl?: string;
+  /** Up to two Quran references for this name, e.g. Quran 55:1. */
+  verses?: NameVerseRef[];
 }
 
 export const NAMES_99: Name99[] = [
@@ -106,3 +122,167 @@ export const NAMES_99: Name99[] = [
   { number: 98, arabic: 'الرَّشِيدُ', transliteration: 'Ar-Rashid', meaning: 'The Infallible Teacher' },
   { number: 99, arabic: 'الصَّبُورُ', transliteration: 'As-Sabur', meaning: 'The Timeless Patient' },
 ];
+
+/* ─── EsmaulHusna.org fetch layer (keyless) ───────────────────── */
+
+export const NAMES_API_BASE = 'https://esmaulhusna.org';
+export const NAMES_API_URL = `${NAMES_API_BASE}/esmas/`;
+
+export const NAMES_LANGUAGES: { code: NamesLanguage; label: string }[] = [
+  { code: 'en', label: 'English' },
+  { code: 'fr', label: 'Français' },
+  { code: 'tr', label: 'Türkçe' },
+];
+
+const CACHE_PREFIX = 'names99:cache:';
+const FETCH_TIMEOUT_MS = 12000;
+const MIN_EXPECTED_NAMES = 90;
+
+interface EsmaRecord {
+  id?: number;
+  slug?: string;
+  ar?: string;
+  'ar-enhanced'?: string;
+  audio?: string;
+  transliteration?: { iso?: string; popular?: Partial<Record<NamesLanguage, string>> };
+  name?: Partial<Record<NamesLanguage, string>>;
+  explanation?: { short?: Partial<Record<NamesLanguage, string>> };
+  verse?: Record<string, number[]>;
+}
+
+const STATIC_BY_NUMBER = new Map<number, Name99>(NAMES_99.map((item) => [item.number, item]));
+
+function nonEmpty(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+/** Map the API `verse` object ({ "55": [1, 2], "1": [2] }) into up to two sorted references. */
+function mapVerseRefs(verse: Record<string, number[]> | undefined): NameVerseRef[] {
+  if (!verse || typeof verse !== 'object') return [];
+  const refs: NameVerseRef[] = [];
+  const surahs = Object.keys(verse)
+    .map((key) => Number.parseInt(key, 10))
+    .filter((surah) => Number.isFinite(surah) && surah >= 1 && surah <= 114)
+    .sort((a, b) => a - b);
+
+  for (const surah of surahs) {
+    const ayahs = verse[String(surah)];
+    const ayah = Array.isArray(ayahs) ? ayahs.find((value) => Number.isFinite(value) && value > 0) : undefined;
+    if (ayah !== undefined) refs.push({ surah, ayah });
+    if (refs.length >= 2) break;
+  }
+  return refs;
+}
+
+/** Map one API record onto the app's Name99 shape, falling back to the static entry per field. */
+function mapEsmaItem(item: EsmaRecord, language: NamesLanguage): Name99 | null {
+  const number = Number(item?.id);
+  if (!Number.isFinite(number)) return null;
+  const fallback = STATIC_BY_NUMBER.get(number);
+  if (!fallback) return null;
+
+  const arabic = nonEmpty(item['ar-enhanced']) || nonEmpty(item.ar) || fallback.arabic;
+  const transliteration =
+    nonEmpty(item.transliteration?.popular?.[language]) ||
+    nonEmpty(item.transliteration?.iso) ||
+    fallback.transliteration;
+  const meaning =
+    nonEmpty(item.explanation?.short?.[language]) ||
+    nonEmpty(item.explanation?.short?.['en']) ||
+    fallback.meaning;
+
+  const localized = nonEmpty(item.name?.[language]);
+  const slug = nonEmpty(item.slug);
+  const audioPath = nonEmpty(item.audio);
+  const verses = mapVerseRefs(item.verse);
+
+  const mapped: Name99 = { number, arabic, transliteration, meaning };
+  if (localized && localized !== meaning) mapped.name = localized;
+  if (slug) mapped.slug = slug;
+  if (audioPath) mapped.audioUrl = `${NAMES_API_BASE}${audioPath}`;
+  if (verses.length > 0) mapped.verses = verses;
+  return mapped;
+}
+
+function isValidCachedName(item: unknown): item is Name99 {
+  if (!item || typeof item !== 'object') return false;
+  const candidate = item as Partial<Name99>;
+  return (
+    typeof candidate.number === 'number' &&
+    typeof candidate.arabic === 'string' &&
+    typeof candidate.transliteration === 'string' &&
+    typeof candidate.meaning === 'string'
+  );
+}
+
+/** Read previously cached names for a language (instant offline render). */
+export async function loadCachedNames(language: NamesLanguage): Promise<Name99[] | null> {
+  try {
+    const raw = await AsyncStorage.getItem(`${CACHE_PREFIX}${language}`);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      const items = parsed.filter(isValidCachedName);
+      if (items.length >= MIN_EXPECTED_NAMES) return items;
+    }
+  } catch {
+    // Cache read failed; caller decides the fallback
+  }
+  return null;
+}
+
+async function fetchJsonWithTimeout(url: string): Promise<unknown> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return (await res.json()) as unknown;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function extractList(json: unknown): unknown[] | null {
+  if (Array.isArray(json)) return json;
+  if (json && typeof json === 'object') {
+    const data = (json as { data?: unknown }).data;
+    if (Array.isArray(data)) return data;
+  }
+  return null;
+}
+
+/**
+ * Fetch the 99 names for a language from EsmaulHusna.org (keyless), map them to the app
+ * shape, and cache them in AsyncStorage. Falls back to the cached list, then to the static
+ * English NAMES_99 array when offline (audio/verse fields are then absent).
+ */
+export async function fetchNames(language: NamesLanguage): Promise<Name99[]> {
+  try {
+    const json = await fetchJsonWithTimeout(NAMES_API_URL);
+    const list = extractList(json);
+    if (!list) throw new Error('Invalid EsmaulHusna response');
+
+    const items: Name99[] = [];
+    for (const entry of list) {
+      const mapped = mapEsmaItem(entry as EsmaRecord, language);
+      if (mapped) items.push(mapped);
+    }
+    if (items.length < MIN_EXPECTED_NAMES) throw new Error('Incomplete EsmaulHusna payload');
+    items.sort((a, b) => a.number - b.number);
+
+    try {
+      await AsyncStorage.setItem(`${CACHE_PREFIX}${language}`, JSON.stringify(items));
+    } catch {
+      // Non-fatal cache write failure
+    }
+    return items;
+  } catch {
+    const cached = await loadCachedNames(language);
+    if (cached) return cached;
+    return NAMES_99;
+  }
+}

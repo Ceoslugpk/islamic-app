@@ -18,17 +18,26 @@ export function qiblaBearing(latitude: number, longitude: number): number {
   return (bearing + 360) % 360;
 }
 
-export function distanceToKaabaKm(latitude: number, longitude: number): number {
+export function distanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
   const R = 6371;
-  const phi1 = (latitude * Math.PI) / 180;
-  const phi2 = (KAABA_LAT * Math.PI) / 180;
-  const dPhi = ((KAABA_LAT - latitude) * Math.PI) / 180;
-  const dLambda = ((KAABA_LNG - longitude) * Math.PI) / 180;
+  const phi1 = (lat1 * Math.PI) / 180;
+  const phi2 = (lat2 * Math.PI) / 180;
+  const dPhi = ((lat2 - lat1) * Math.PI) / 180;
+  const dLambda = ((lon2 - lon1) * Math.PI) / 180;
 
   const a =
     Math.sin(dPhi / 2) ** 2 +
     Math.cos(phi1) * Math.cos(phi2) * Math.sin(dLambda / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export function distanceToKaabaKm(latitude: number, longitude: number): number {
+  return distanceKm(latitude, longitude, KAABA_LAT, KAABA_LNG);
 }
 
 /** Smooth the compass heading with an exponential moving average to reduce jitter. */

@@ -14,12 +14,9 @@ import { Hairline } from '../components/Hairline';
 
 export type LibraryItemKey =
   | 'hadith'
-  | 'fasting'
-  | 'zakat'
   | 'duas'
   | 'tasbih'
-  | 'names'
-  | 'calendar';
+  | 'names';
 
 /* ─── Item model ──────────────────────────────────────────────── */
 
@@ -31,9 +28,6 @@ interface LibraryItem {
 
 const ICONS: Record<LibraryItemKey, keyof typeof Ionicons.glyphMap> = {
   hadith: 'library',
-  fasting: 'moon',
-  zakat: 'wallet',
-  calendar: 'calendar',
   duas: 'hand-left',
   tasbih: 'repeat',
   names: 'sparkles',
@@ -54,24 +48,11 @@ const GROUPS: LibraryGroup[] = [
     ],
   },
   {
-    label: 'Worship',
-    items: [
-      { key: 'fasting', title: 'Fasting', subtitle: 'Tracker · Ramadan · voluntary & missed fasts' },
-      { key: 'zakat', title: 'Zakat', subtitle: 'Calculator · gold/silver, cash, investments' },
-    ],
-  },
-  {
     label: 'Dhikr',
     items: [
       { key: 'duas', title: 'Duas & Adhkar', subtitle: 'Daily supplications' },
       { key: 'tasbih', title: 'Tasbih', subtitle: 'Digital dhikr counter' },
       { key: 'names', title: '99 Names of Allah', subtitle: 'Asma ul-Husna with meanings' },
-    ],
-  },
-  {
-    label: 'Calendar',
-    items: [
-      { key: 'calendar', title: 'Hijri Calendar', subtitle: 'Islamic dates · month grid' },
     ],
   },
 ];

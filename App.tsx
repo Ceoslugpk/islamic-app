@@ -40,6 +40,7 @@ import SalahTrackerScreen from './src/screens/SalahTrackerScreen';
 import LocationScreen from './src/screens/LocationScreen';
 import CitiesScreen from './src/screens/CitiesScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
+import MosqueFinderScreen from './src/screens/MosqueFinderScreen';
 import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
@@ -154,13 +155,10 @@ function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
 
 type LibraryView =
   | { screen: 'hub' }
-  | { screen: 'calendar' }
   | { screen: 'tasbih' }
   | { screen: 'names' }
   | { screen: 'duas' }
-  | { screen: 'hadith' }
-  | { screen: 'fasting' }
-  | { screen: 'zakat' };
+  | { screen: 'hadith' };
 
 type QuranView =
   | { screen: 'home' }
@@ -180,7 +178,11 @@ type ToolsView =
   | { screen: 'tracker' }
   | { screen: 'location' }
   | { screen: 'cities' }
-  | { screen: 'notifications' };
+  | { screen: 'notifications' }
+  | { screen: 'fasting' }
+  | { screen: 'zakat' }
+  | { screen: 'calendar' }
+  | { screen: 'mosque' };
 
 function Root() {
   const { colors, mode } = useTheme();
@@ -217,16 +219,17 @@ function Root() {
     else if (key === 'location') setTools({ screen: 'location' });
     else if (key === 'cities') setTools({ screen: 'cities' });
     else if (key === 'notifications') setTools({ screen: 'notifications' });
+    else if (key === 'fasting') setTools({ screen: 'fasting' });
+    else if (key === 'zakat') setTools({ screen: 'zakat' });
+    else if (key === 'calendar') setTools({ screen: 'calendar' });
+    else if (key === 'mosque') setTools({ screen: 'mosque' });
   }
 
   function openLibraryItem(key: LibraryItemKey) {
-    if (key === 'calendar') setLibrary({ screen: 'calendar' });
-    else if (key === 'tasbih') setLibrary({ screen: 'tasbih' });
+    if (key === 'tasbih') setLibrary({ screen: 'tasbih' });
     else if (key === 'names') setLibrary({ screen: 'names' });
     else if (key === 'duas') setLibrary({ screen: 'duas' });
     else if (key === 'hadith') setLibrary({ screen: 'hadith' });
-    else if (key === 'fasting') setLibrary({ screen: 'fasting' });
-    else if (key === 'zakat') setLibrary({ screen: 'zakat' });
   }
 
   return (
@@ -339,9 +342,6 @@ function Root() {
         {tab === 'library' && library.screen === 'hub' && (
           <LibraryScreen onOpen={openLibraryItem} />
         )}
-        {tab === 'library' && library.screen === 'calendar' && (
-          <CalendarScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
         {tab === 'library' && library.screen === 'tasbih' && (
           <TasbihScreen onBack={() => setLibrary({ screen: 'hub' })} />
         )}
@@ -353,12 +353,6 @@ function Root() {
         )}
         {tab === 'library' && library.screen === 'hadith' && (
           <HadithLibraryScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'fasting' && (
-          <FastingScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'zakat' && (
-          <ZakatScreen onBack={() => setLibrary({ screen: 'hub' })} />
         )}
 
         {/* Tools Tab Views */}
@@ -382,6 +376,18 @@ function Root() {
         )}
         {tab === 'tools' && tools.screen === 'notifications' && (
           <NotificationsScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'fasting' && (
+          <FastingScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'zakat' && (
+          <ZakatScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'calendar' && (
+          <CalendarScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'mosque' && (
+          <MosqueFinderScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
       </View>
       {showMiniPlayer && playback && (

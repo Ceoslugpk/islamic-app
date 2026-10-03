@@ -43,6 +43,17 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
 
   return (
     <ScrollView style={{ backgroundColor: colors.bgBase }} contentContainerStyle={styles.content}>
+      {onBack && (
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="Back to Tools"
+        >
+          <Text style={[styles.backText, { color: colors.accent }]}>← Tools</Text>
+        </TouchableOpacity>
+      )}
+
       <SectionHeader eyebrow="Hijri Calendar" title="Islamic Dates" />
 
       {/* Month navigation */}
@@ -138,6 +149,14 @@ function monthName(m: number): string {
 
 const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
+  backButton: {
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  backText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 14,
+  },
   center: { paddingVertical: 60, alignItems: 'center' },
   navRow: {
     flexDirection: 'row',

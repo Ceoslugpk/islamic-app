@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Location } from './prayerTimes';
 import { AccentKey } from './accents';
+import { NamesLanguage } from './names99';
 import { setAudioTranslationEnabled } from './quranAudio';
 
 export type TimeFormat = '12h' | '24h';
@@ -18,6 +19,7 @@ export interface AppSettings {
   themeMode: ThemeMode;
   accentKey: AccentKey;
   translationAudioEnabled: boolean;
+  namesLanguage: NamesLanguage;
 }
 
 interface SettingsContextValue {
@@ -31,6 +33,7 @@ interface SettingsContextValue {
   setThemeMode: (m: ThemeMode) => void;
   setAccentKey: (key: AccentKey) => void;
   setTranslationAudioEnabled: (enabled: boolean) => void;
+  setNamesLanguage: (lang: NamesLanguage) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -45,6 +48,7 @@ const DEFAULTS: AppSettings = {
   themeMode: 'system',
   accentKey: 'amber',
   translationAudioEnabled: true,
+  namesLanguage: 'en',
 };
 
 const STORAGE_KEY = 'islamic-settings';
@@ -93,6 +97,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setAudioTranslationEnabled(translationAudioEnabled);
       setSettings((prev) => persist({ ...prev, translationAudioEnabled }));
     },
+    setNamesLanguage: (namesLanguage) => setSettings((prev) => persist({ ...prev, namesLanguage })),
   };
 
   if (!ready) return null;

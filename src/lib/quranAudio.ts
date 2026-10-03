@@ -747,6 +747,14 @@ function handlePlaybackStatusUpdate(status: AVPlaybackStatus): void {
   };
 
   if (status.didJustFinish) {
+    // Short non-Quran clips (99 Names) always stop at their end — never chain into
+    // translation segments, autoplay queues, or the Quran ayah sequence.
+    if (currentPlayback?.identifier === 'names99') {
+      if (currentPlayback) currentPlayback.isPlaying = false;
+      notifyStatusListeners(newStatus);
+      return;
+    }
+
     // If translation audio is enabled, and we just finished an Arabic segment of an Ayah:
     if (
       translationAudioEnabled &&
@@ -1174,6 +1182,48 @@ export async function playSurah(
     // If full-surah audio fails, fallback to verse-by-verse starting at ayah 1
     const fallbackAyahUrl = getAyahAudioUrl(resolvedId, targetSurah, 1);
     await playAyah(resolvedId, fallbackAyahUrl, resolvedTitle, resolvedReciter, targetSurah, 1, true);
+  }
+}
+
+/**
+ * Play a short non-Quran clip (e.g. a 99 Names recitation) through the global audio
+ * singleton so the mini player picks it up. The clip stops cleanly when it ends and is
+ * cleared from the session if the URL fails to load (offline).
+ */
+export async function playNameAudio(url: string, title: string, reciterName = 'Asma ul-Husna'): Promise<void> {
+  currentPlayback = {
+    identifier: 'names99',
+    reciterName,
+    title,
+    url,
+    isPlaying: true,
+    type: 'ayah',
+  };
+
+  notifyStatusListeners({
+    isPlaying: false,
+    positionMillis: 0,
+    durationMillis: 0,
+    isLoaded: false,
+    isBuffering: true,
+    didJustFinish: false,
+  });
+
+  try {
+    await playAudioUrl(url);
+  } catch (err) {
+    if (currentPlayback?.url === url) {
+      currentPlayback = null;
+      notifyStatusListeners({
+        isPlaying: false,
+        positionMillis: 0,
+        durationMillis: 0,
+        isLoaded: false,
+        isBuffering: false,
+        didJustFinish: false,
+      });
+    }
+    throw err;
   }
 }
 
