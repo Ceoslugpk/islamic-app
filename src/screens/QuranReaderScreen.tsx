@@ -10,6 +10,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import type { ViewabilityConfig, ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -79,6 +80,8 @@ export default function QuranReaderScreen({
 }: QuranReaderScreenProps) {
   const { colors } = useTheme();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
   const [surah, setSurah] = useState<SurahDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -399,6 +402,9 @@ export default function QuranReaderScreen({
 
   const renderSurahHeader = () => {
     if (!surah) return null;
+    const titleFontSize = isCompact ? 24 : 28;
+    const translationFontSize = isCompact ? 12 : 13;
+    const arabicSize = isCompact ? 34 : 40;
     return (
       <View style={styles.surahHeader}>
         <View style={styles.surahEyebrowRow}>
@@ -411,15 +417,23 @@ export default function QuranReaderScreen({
         </View>
 
         <View style={styles.titleRow}>
-          <View style={styles.titleInfo}>
-            <Text style={[styles.englishTitle, { color: colors.textPrimary }]}>
+          <View style={[styles.titleInfo, { minWidth: 0, flex: 1 }]}>
+            <Text
+              style={[styles.englishTitle, { color: colors.textPrimary, fontSize: titleFontSize }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {surah.englishName}
             </Text>
-            <Text style={[styles.englishTranslation, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.englishTranslation, { color: colors.textSecondary, fontSize: translationFontSize }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
               {surah.englishNameTranslation}
             </Text>
           </View>
-          <ArabicText size={40} style={styles.arabicSurahName}>
+          <ArabicText size={arabicSize} style={styles.arabicSurahName}>
             {surah.name}
           </ArabicText>
         </View>
@@ -708,53 +722,87 @@ export default function QuranReaderScreen({
     );
   }
 
+  const navBarPaddingH = isCompact ? 12 : 16;
+  const navBarPaddingV = isCompact ? 8 : 10;
+  const backTextSize = isCompact ? 13 : 14;
+  const backIconSize = isCompact ? 18 : 20;
+  const surahNavGap = isCompact ? 6 : 8;
+  const surahNavBtnSize = isCompact ? 32 : 36;
+  const surahNavIconSize = isCompact ? 20 : 22;
+  const surahNavLabelSize = isCompact ? 12 : 13;
+  const toolbarGap = isCompact ? 4 : 6;
+  const toolBtnPaddingH = isCompact ? 8 : 10;
+  const toolBtnPaddingV = isCompact ? 5 : 6;
+  const toolBtnMinWidth = isCompact ? 30 : 34;
+  const toolBtnTextSize = isCompact ? 11 : 12;
+  const langToolPaddingH = isCompact ? 6 : 8;
+  const langToolTextSize = isCompact ? 10 : 11;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       {/* Top Navigation Bar */}
-      <View style={[styles.navBar, { borderBottomColor: colors.borderSubtle }]}>
+      <View
+        style={[
+          styles.navBar,
+          { borderBottomColor: colors.borderSubtle },
+          { paddingHorizontal: navBarPaddingH, paddingVertical: navBarPaddingV },
+          isCompact ? styles.navBarCompact : styles.navBarTablet,
+        ]}
+      >
         <TouchableOpacity
-          style={styles.backButton}
+          style={[
+            styles.backButton,
+            { gap: isCompact ? 4 : 6, paddingVertical: isCompact ? 3 : 4 },
+          ]}
           onPress={onBack}
           accessibilityRole="button"
           accessibilityLabel="Back to Quran"
         >
-          <Ionicons name="arrow-back" size={20} color={colors.accent} />
-          <Text style={[styles.backText, { color: colors.accent }]}>Quran</Text>
+          <Ionicons name="arrow-back" size={backIconSize} color={colors.accent} />
+          <Text style={[styles.backText, { color: colors.accent, fontSize: backTextSize }]}>Quran</Text>
         </TouchableOpacity>
 
         {/* Surah Navigation: Prev / Next + Surah indicator */}
-        <View style={styles.surahNav}>
+        <View style={[styles.surahNav, { gap: surahNavGap }]}>
           <TouchableOpacity
             style={[
               styles.surahNavBtn,
               { opacity: surahNumber <= 1 ? 0.4 : 1 },
+              { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
             ]}
             onPress={() => handleNavigateSurah(surahNumber - 1)}
             disabled={surahNumber <= 1}
             accessibilityRole="button"
             accessibilityLabel="Previous Surah"
           >
-            <Ionicons name="chevron-back" size={22} color={colors.accent} />
+            <Ionicons name="chevron-back" size={surahNavIconSize} color={colors.accent} />
           </TouchableOpacity>
-          <Text style={[styles.surahNavLabel, { color: colors.textSecondary }]}>
+          <Text
+            style={[
+              styles.surahNavLabel,
+              { color: colors.textSecondary, fontSize: surahNavLabelSize },
+            ]}
+            numberOfLines={1}
+          >
             {surahNumber} / 114
           </Text>
           <TouchableOpacity
             style={[
               styles.surahNavBtn,
               { opacity: surahNumber >= 114 ? 0.4 : 1 },
+              { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
             ]}
             onPress={() => handleNavigateSurah(surahNumber + 1)}
             disabled={surahNumber >= 114}
             accessibilityRole="button"
             accessibilityLabel="Next Surah"
           >
-            <Ionicons name="chevron-forward" size={22} color={colors.accent} />
+            <Ionicons name="chevron-forward" size={surahNavIconSize} color={colors.accent} />
           </TouchableOpacity>
         </View>
 
         {/* Toolbar: Mode Toggle, Translation, Font adjustments */}
-        <View style={styles.toolbar}>
+        <View style={[styles.toolbar, { gap: toolbarGap }]}>
           {/* Reading Mode Switcher */}
           <TouchableOpacity
             style={[
@@ -762,6 +810,9 @@ export default function QuranReaderScreen({
               {
                 backgroundColor: readingMode === 'mushaf' ? colors.accentDim : 'transparent',
                 borderColor: readingMode === 'mushaf' ? colors.accent : colors.borderSubtle,
+                paddingHorizontal: toolBtnPaddingH,
+                paddingVertical: toolBtnPaddingV,
+                minWidth: toolBtnMinWidth,
               },
             ]}
             onPress={handleToggleReadingMode}
@@ -770,7 +821,7 @@ export default function QuranReaderScreen({
           >
             <Ionicons
               name={readingMode === 'mushaf' ? 'book' : 'list'}
-              size={17}
+              size={isCompact ? 15 : 17}
               color={readingMode === 'mushaf' ? colors.accent : colors.textSecondary}
             />
           </TouchableOpacity>
@@ -782,13 +833,15 @@ export default function QuranReaderScreen({
               {
                 backgroundColor: colors.bgSurface,
                 borderColor: colors.borderSubtle,
+                paddingHorizontal: langToolPaddingH,
+                paddingVertical: toolBtnPaddingV,
               },
             ]}
             onPress={() => setLangPickerOpen(true)}
             accessibilityRole="button"
             accessibilityLabel={`Change translation language. Current: ${edition.language} ${flag}`}
           >
-            <Text style={[styles.langToolText, { color: colors.accent }]}>
+            <Text style={[styles.langToolText, { color: colors.accent, fontSize: langToolTextSize }]}>
               {language.toUpperCase()} {flag}
             </Text>
           </TouchableOpacity>
@@ -800,6 +853,9 @@ export default function QuranReaderScreen({
               {
                 backgroundColor: showTranslation ? colors.accentDim : 'transparent',
                 borderColor: showTranslation ? colors.accent : colors.borderSubtle,
+                paddingHorizontal: toolBtnPaddingH,
+                paddingVertical: toolBtnPaddingV,
+                minWidth: toolBtnMinWidth,
               },
             ]}
             onPress={handleToggleTranslation}
@@ -808,29 +864,35 @@ export default function QuranReaderScreen({
           >
             <Ionicons
               name={showTranslation ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'}
-              size={15}
+              size={isCompact ? 14 : 15}
               color={showTranslation ? colors.accent : colors.textMuted}
             />
           </TouchableOpacity>
 
           {/* Font size down */}
           <TouchableOpacity
-            style={[styles.toolBtn, { borderColor: colors.borderSubtle }]}
+            style={[
+              styles.toolBtn,
+              { borderColor: colors.borderSubtle, paddingHorizontal: toolBtnPaddingH, paddingVertical: toolBtnPaddingV, minWidth: toolBtnMinWidth },
+            ]}
             onPress={() => handleAdjustFontSize(-FONT_SIZE_STEP)}
             accessibilityRole="button"
             accessibilityLabel="Decrease font size"
           >
-            <Text style={[styles.toolBtnText, { color: colors.textPrimary }]}>A−</Text>
+            <Text style={[styles.toolBtnText, { color: colors.textPrimary, fontSize: toolBtnTextSize }]}>A−</Text>
           </TouchableOpacity>
 
           {/* Font size up */}
           <TouchableOpacity
-            style={[styles.toolBtn, { borderColor: colors.borderSubtle }]}
+            style={[
+              styles.toolBtn,
+              { borderColor: colors.borderSubtle, paddingHorizontal: toolBtnPaddingH, paddingVertical: toolBtnPaddingV, minWidth: toolBtnMinWidth },
+            ]}
             onPress={() => handleAdjustFontSize(FONT_SIZE_STEP)}
             accessibilityRole="button"
             accessibilityLabel="Increase font size"
           >
-            <Text style={[styles.toolBtnText, { color: colors.textPrimary }]}>A+</Text>
+            <Text style={[styles.toolBtnText, { color: colors.textPrimary, fontSize: toolBtnTextSize }]}>A+</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1054,6 +1116,14 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
+  navBarCompact: {
+    minHeight: 44,
+  },
+  navBarTablet: {
+    maxWidth: 680,
+    alignSelf: 'center',
+    width: '100%',
+  },
   backButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1152,6 +1222,7 @@ const styles = StyleSheet.create({
   },
   titleInfo: {
     flex: 1,
+    minWidth: 0,
   },
   englishTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
