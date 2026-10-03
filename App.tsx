@@ -41,6 +41,7 @@ import LocationScreen from './src/screens/LocationScreen';
 import CitiesScreen from './src/screens/CitiesScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
+import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
@@ -185,6 +186,7 @@ function Root() {
   const { colors, mode } = useTheme();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [audioModalOpen, setAudioModalOpen] = useState(false);
   const [library, setLibrary] = useState<LibraryView>({ screen: 'hub' });
   const [quran, setQuran] = useState<QuranView>({ screen: 'home' });
   const [tools, setTools] = useState<ToolsView>({ screen: 'hub' });
@@ -388,11 +390,18 @@ function Root() {
           status={status}
           onPlayPause={onPlayPause}
           onStop={onStop}
-          onOpenAudio={handleOpenAudio}
+          onOpenAudio={() => setAudioModalOpen(true)}
           onSeek={onSeek}
         />
       )}
       <TabBar active={tab} onChange={switchTab} />
+
+      {/* Audio Player Popup Modal */}
+      <AudioPlayerModal
+        visible={audioModalOpen}
+        onClose={() => setAudioModalOpen(false)}
+        onOpenAudioCenter={handleOpenAudio}
+      />
 
 
       {/* Settings modal */}

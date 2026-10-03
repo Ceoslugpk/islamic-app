@@ -9,6 +9,7 @@ import {
   saveAudioSettings,
   saveRecentlyPlayed,
 } from './db';
+export type { PlaylistItem } from './db';
 import { getQuranTranslationLanguage } from './quranLanguageState';
 
 export interface PlaybackStatus {
@@ -1350,6 +1351,9 @@ export async function playPrevious(): Promise<boolean> {
   await seekTo(0);
   return true;
 }
+
+export const nextItem = playNext;
+export const previousItem = playPrevious;
 
 export function canPlayNext(): boolean {
   if (translationAudioEnabled && currentPlayback?.segmentType === 'arabic') {
