@@ -52,7 +52,7 @@ import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
 import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayingNotification, cleanupNowPlayingNotification } from './src/lib/nowPlayingNotification';
 import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback } from './src/lib/quranAudio';
-import { rescheduleIfNeeded } from './src/lib/notifications';
+import { rescheduleIfNeeded, setupNotificationResponseHandler } from './src/lib/notifications';
 import { fetchPrayerTimes } from './src/lib/prayerTimes';
 import { useSettings } from './src/lib/settings';
 import { useEffect } from 'react';
@@ -225,6 +225,11 @@ function Root() {
     checkAndReschedule();
     return () => { isMounted = false; };
   }, [settings.manualLocation, settings.methodId, settings.remindersEnabled]);
+
+  // Setup notification action handler (Mark Complete)
+  useEffect(() => {
+    setupNotificationResponseHandler();
+  }, []);
 
   // Now Playing Notification integration
   useEffect(() => {

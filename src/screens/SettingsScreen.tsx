@@ -97,7 +97,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
       try {
         const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
         await cancelPrayerNotifications();
-        await schedulePrayerNotifications(data);
+        await schedulePrayerNotifications(data, 10, settings.manualLocation.label);
       } catch {
         // scheduling failed; still enable the toggle, user can retry
       }

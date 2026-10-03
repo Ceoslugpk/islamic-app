@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DayTimings, Location } from './prayerTimes';
+import { markSalahCompleted } from './db';
 
 const FINGERPRINT_KEY = 'notification-fingerprint';
 const LAST_SCHEDULE_KEY = 'last-notification-schedule';
@@ -39,6 +40,15 @@ export async function configureNotifications() {
       lightColor: '#D97706',
     });
   }
+
+  // Define notification category with "Mark Complete" action
+  await Notifications.setNotificationCategoryAsync('prayer', [
+    {
+      identifier: 'mark-complete',
+      buttonTitle: 'Mark Complete',
+      options: { opensAppToForeground: false },
+    },
+  ]);
 }
 
 function computeFingerprint(location: Location, methodId: number, remindersEnabled: boolean): NotificationFingerprint {
@@ -179,7 +189,7 @@ export async function rescheduleIfNeeded(
     const { fetchPrayerTimes } = await import('./prayerTimes');
     const data = await fetchPrayerTimes(location, methodId);
     await cancelPrayerNotifications();
-    await schedulePrayerNotifications(data, hourBeforeMinutes);
+    await schedulePrayerNotifications(data, hourBeforeMinutes, location.label);
     await storeFingerprint(currentFp);
     return true;
   } catch {
@@ -193,7 +203,8 @@ export async function rescheduleIfNeeded(
  */
 export async function schedulePrayerNotifications(
   timings: DayTimings,
-  hourBeforeMinutes = 10
+  hourBeforeMinutes = 10,
+  locationLabel?: string
 ): Promise<string[]> {
   const ids: string[] = [];
   const now = Date.now();
@@ -206,25 +217,31 @@ export async function schedulePrayerNotifications(
     { name: 'Isha', time: timings.timings.Isha },
   ];
 
+  // Date for the prayer (ISO string YYYY-MM-DD)
+  const prayerDate = new Date();
+  const dateStr = prayerDate.toISOString().slice(0, 10);
+  const label = locationLabel || 'Unknown';
+
   for (const p of prayers) {
     if (!p.time || !p.time.includes(':')) continue;
     const [h, m] = p.time.split(':').map(Number);
-    const prayerDate = new Date();
-    prayerDate.setHours(h, m - hourBeforeMinutes, 0, 0);
+    const triggerDate = new Date();
+    triggerDate.setHours(h, m - hourBeforeMinutes, 0, 0);
 
-    if (prayerDate.getTime() <= now) continue; // already passed
+    if (triggerDate.getTime() <= now) continue; // already passed
 
     try {
       const id = await Notifications.scheduleNotificationAsync({
         content: {
-          title: `${p.name} prayer in ${hourBeforeMinutes} minutes`,
-          body: `${p.name} at ${p.time}. ${timings.hijri.day} ${timings.hijri.monthEn} ${timings.hijri.year} AH`,
+          title: `🕌 ${p.name}`,
+          body: `${p.time} · ${label}`,
           sound: 'default',
-          data: { prayer: p.name },
+          data: { prayer: p.name, date: dateStr },
+          categoryIdentifier: 'prayer',
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: prayerDate,
+          date: triggerDate,
           channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
         },
       });
@@ -240,6 +257,26 @@ export async function schedulePrayerNotifications(
 /** Cancel all previously scheduled prayer notifications. */
 export async function cancelPrayerNotifications() {
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+/** Notification response listener setup - call once at app startup. */
+export function setupNotificationResponseHandler() {
+  Notifications.addNotificationResponseReceivedListener((response) => {
+    const { actionIdentifier, notification } = response;
+    if (actionIdentifier === 'mark-complete') {
+      const data = notification.request.content.data as { prayer?: string; date?: string } | undefined;
+      if (data?.prayer && data?.date) {
+        markSalahCompleted(data.date, data.prayer, true);
+        // Haptic feedback
+        try {
+          const { Haptics } = require('expo-haptics');
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+          // haptics not available
+        }
+      }
+    }
+  });
 }
 
 /** Request notification permission. */

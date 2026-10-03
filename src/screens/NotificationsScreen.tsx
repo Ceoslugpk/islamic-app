@@ -71,7 +71,7 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
       try {
         const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
         await cancelPrayerNotifications();
-        await schedulePrayerNotifications(data, mins);
+        await schedulePrayerNotifications(data, mins, settings.manualLocation.label);
         await refreshHealth();
       } catch {
         // ignore
@@ -92,7 +92,7 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
       try {
         const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
         await cancelPrayerNotifications();
-        await schedulePrayerNotifications(data, selectedMinutes);
+        await schedulePrayerNotifications(data, selectedMinutes, settings.manualLocation.label);
       } catch {
         // scheduling failed; still toggle
       }
