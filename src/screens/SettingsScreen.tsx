@@ -35,7 +35,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const { edition, flag } = useQuranLanguage();
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
-  const [pinModalMode, setPinModalMode] = useState<'verify' | 'set' | 'change' | null>(null);
+  const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'set' | 'change' | null>(null);
   const methodId = settings.methodId;
   const timeFormat = settings.timeFormat;
   const remindersEnabled = settings.remindersEnabled;
@@ -49,8 +49,13 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
       // Turning OFF: hide features (keeps data)
       setWomenWorship(false);
     } else {
-      // Turning ON: show consent first
-      setConsentOpen(true);
+      // Turning ON: if a PIN is set, verify it first (protects the enable action),
+      // otherwise show the consent sheet.
+      if (womenPinHash) {
+        setPinModalMode('verifyEnable');
+      } else {
+        setConsentOpen(true);
+      }
     }
   }
 
@@ -456,12 +461,20 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
         </View>
       </Modal>
 
-      {/* PIN modal for set/change */}
+      {/* PIN modal: set / change / verify-to-enable */}
       <WomenPinModal
         visible={pinModalMode !== null}
-        mode={pinModalMode === 'change' ? 'change' : 'set'}
+        mode={pinModalMode === 'set' ? 'set' : pinModalMode === 'change' ? 'change' : 'verify'}
         currentHash={womenPinHash}
-        onSuccess={() => setPinModalMode(null)}
+        onSuccess={() => {
+          if (pinModalMode === 'verifyEnable') {
+            // PIN verified → show consent, then enable
+            setPinModalMode(null);
+            setConsentOpen(true);
+          } else {
+            setPinModalMode(null);
+          }
+        }}
         onCancel={() => setPinModalMode(null)}
         onSetPin={(newHash) => setWomenPinHash(newHash)}
       />

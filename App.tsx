@@ -11,7 +11,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/lib/theme';
-import { SettingsProvider, useSettings } from './src/lib/settings';
+import { SettingsProvider } from './src/lib/settings';
 import { useEditorialFonts } from './src/lib/fonts';
 
 import HomeScreen from './src/screens/HomeScreen';
@@ -42,7 +42,6 @@ import CitiesScreen from './src/screens/CitiesScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import MosqueFinderScreen from './src/screens/MosqueFinderScreen';
 import WomenCycleScreen from './src/screens/WomenCycleScreen';
-import { WomenPinModal } from './src/components/WomenPinModal';
 import WomenPurityScreen from './src/screens/WomenPurityScreen';
 import WomenGuidanceScreen from './src/screens/WomenGuidanceScreen';
 import WomenQadaScreen from './src/screens/WomenQadaScreen';
@@ -201,10 +200,6 @@ function Root() {
   const [library, setLibrary] = useState<LibraryView>({ screen: 'hub' });
   const [quran, setQuran] = useState<QuranView>({ screen: 'home' });
   const [tools, setTools] = useState<ToolsView>({ screen: 'hub' });
-  const [womenUnlocked, setWomenUnlocked] = useState(false);
-  const { settings } = useSettings();
-  const isWomenLocked =
-    settings.womenLockEnabled && !womenUnlocked && tools.screen.startsWith('women');
 
   // Global Audio Mini Player state
   const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
@@ -223,7 +218,6 @@ function Root() {
     if (next !== 'library') setLibrary({ screen: 'hub' });
     if (next !== 'quran') setQuran({ screen: 'home' });
     if (next !== 'tools') setTools({ screen: 'hub' });
-    if (next !== 'tools') setWomenUnlocked(false); // re-lock women's screens on leaving Tools
     setTab(next);
   }
 
@@ -408,38 +402,17 @@ function Root() {
           <MosqueFinderScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
 
-        {/* Women's Worship Views (Protected by optional PIN lock) */}
-        {tab === 'tools' && isWomenLocked && (
-          <View style={[styles.lockedScreen, { backgroundColor: colors.bgBase }]}>
-            <View style={[styles.lockedCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-              <View style={[styles.lockedIconWrap, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
-                <Ionicons name="lock-closed" size={32} color={colors.accent} />
-              </View>
-              <Text style={[styles.lockedTitle, { color: colors.textPrimary }]}>Women's Worship Locked</Text>
-              <Text style={[styles.lockedSub, { color: colors.textSecondary }]}>
-                Protected by your 4-digit PIN for sensitive cycle and purity privacy.
-              </Text>
-              <TouchableOpacity
-                style={styles.cancelLockBtn}
-                onPress={() => setTools({ screen: 'hub' })}
-                accessibilityRole="button"
-                accessibilityLabel="Back to Tools"
-              >
-                <Text style={[styles.cancelLockText, { color: colors.accent }]}>← Back to Tools</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-        {tab === 'tools' && !isWomenLocked && tools.screen === 'women-cycle' && (
+        {/* Women's Worship Views */}
+        {tab === 'tools' && tools.screen === 'women-cycle' && (
           <WomenCycleScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
-        {tab === 'tools' && !isWomenLocked && tools.screen === 'women-purity' && (
+        {tab === 'tools' && tools.screen === 'women-purity' && (
           <WomenPurityScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
-        {tab === 'tools' && !isWomenLocked && tools.screen === 'women-guidance' && (
+        {tab === 'tools' && tools.screen === 'women-guidance' && (
           <WomenGuidanceScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
-        {tab === 'tools' && !isWomenLocked && tools.screen === 'women-qada' && (
+        {tab === 'tools' && tools.screen === 'women-qada' && (
           <WomenQadaScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
       </View>
@@ -454,15 +427,6 @@ function Root() {
         />
       )}
       <TabBar active={tab} onChange={switchTab} />
-
-      {/* Women's PIN Verification Modal */}
-      <WomenPinModal
-        visible={isWomenLocked}
-        mode="verify"
-        currentHash={settings.womenPinHash}
-        onSuccess={() => setWomenUnlocked(true)}
-        onCancel={() => setTools({ screen: 'hub' })}
-      />
 
       {/* Audio Player Popup Modal */}
       <AudioPlayerModal
@@ -546,51 +510,5 @@ const styles = StyleSheet.create({
     width: 24,
     height: 2,
     borderRadius: 1,
-  },
-  lockedScreen: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  lockedCard: {
-    width: '100%',
-    maxWidth: 380,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 24,
-    alignItems: 'center',
-  },
-  lockedIconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  lockedTitle: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 18,
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  lockedSub: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    lineHeight: 18,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  cancelLockBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelLockText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
   },
 });
