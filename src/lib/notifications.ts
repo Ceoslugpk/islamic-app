@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DayTimings, Location } from './prayerTimes';
 import { markSalahCompleted } from './db';
+import { buildDeepLink } from './deeplinks';
 
 const FINGERPRINT_KEY = 'notification-fingerprint';
 const LAST_SCHEDULE_KEY = 'last-notification-schedule';
@@ -250,7 +251,7 @@ export async function schedulePrayerNotifications(
             title: `🕌 ${p.name} in ${reminderOffsetMinutes} minutes`,
             body: `${label} · ${p.time}`,
             sound: 'default',
-            data: { prayer: p.name, date: dateStr, type: 'prayer-before' },
+            data: { prayer: p.name, date: dateStr, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
             categoryIdentifier: 'prayer',
           },
           trigger: {
@@ -276,7 +277,7 @@ export async function schedulePrayerNotifications(
             title: `🕌 ${p.name}`,
             body: `It's time for ${p.name}.`,
             sound: 'default',
-            data: { prayer: p.name, date: dateStr, type: 'prayer-at' },
+            data: { prayer: p.name, date: dateStr, type: 'prayer-at', url: buildDeepLink({ type: 'tracker' }) },
             categoryIdentifier: 'prayer',
           },
           trigger: {
@@ -327,7 +328,7 @@ export async function scheduleQuranReminder(): Promise<string | null> {
         title: '📖 Continue your Quran',
         body: `You stopped at ${surahName} ${position.surah}:${position.ayah}.`,
         sound: 'default',
-        data: { type: 'quran-reminder' },
+        data: { type: 'quran-reminder', url: buildDeepLink({ type: 'quran', surah: position.surah, ayah: position.ayah }) },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -353,10 +354,19 @@ export async function cancelQuranReminder() {
 export function setupNotificationResponseHandler() {
   Notifications.addNotificationResponseReceivedListener((response) => {
     const { actionIdentifier, notification } = response;
+    const data = notification.request.content.data as { url?: string } | undefined;
+    
+    // Handle deep link from notification tap (when user taps notification body, not action button)
+    if (actionIdentifier === 'default' && data?.url) {
+      // The URL will be handled by the Linking event listener in App.tsx
+      // We just need to ensure the app opens; Expo handles opening the URL
+      return;
+    }
+    
     if (actionIdentifier === 'mark-complete') {
-      const data = notification.request.content.data as { prayer?: string; date?: string } | undefined;
-      if (data?.prayer && data?.date) {
-        markSalahCompleted(data.date, data.prayer, true);
+      const prayerData = notification.request.content.data as { prayer?: string; date?: string } | undefined;
+      if (prayerData?.prayer && prayerData?.date) {
+        markSalahCompleted(prayerData.date, prayerData.prayer, true);
         // Haptic feedback
         try {
           const { Haptics } = require('expo-haptics');

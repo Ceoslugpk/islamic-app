@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Modal,
   useWindowDimensions,
+  Linking,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +16,8 @@ import { SettingsProvider } from './src/lib/settings';
 import { useEditorialFonts } from './src/lib/fonts';
 import { useConnectivity } from './src/lib/useConnectivity';
 import { OfflineBanner } from './src/components/OfflineBanner';
+import { parseDeepLink, DeepLinkTarget } from './src/lib/deeplinks';
+import { handleDeepLink, NavigationSetters } from './src/lib/deeplinkRouter';
 
 import HomeScreen from './src/screens/HomeScreen';
 import QiblaScreen from './src/screens/QiblaScreen';
@@ -269,6 +272,56 @@ function Root() {
       cleanupNowPlayingNotification();
     };
   }, []);
+
+  // Deep link handling - initial URL (cold start)
+  useEffect(() => {
+    let isMounted = true;
+    const checkInitialUrl = async () => {
+      if (!isMounted) return;
+      try {
+        const initialUrl = await Linking.getInitialURL();
+        if (initialUrl) {
+          const target = parseDeepLink(initialUrl);
+          if (target) {
+            const setters: NavigationSetters = {
+              setTab,
+              setQuran,
+              setLibrary,
+              setTools,
+              setSettingsOpen,
+            };
+            handleDeepLink(target, setters);
+          }
+        }
+      } catch {
+        // Ignore linking errors
+      }
+    };
+    checkInitialUrl();
+    return () => { isMounted = false; };
+  }, [setTab, setQuran, setLibrary, setTools, setSettingsOpen]);
+
+  // Deep link handling - event listener (app already running)
+  useEffect(() => {
+    const handleUrl = ({ url }: { url: string }) => {
+      const target = parseDeepLink(url);
+      if (target) {
+        const setters: NavigationSetters = {
+          setTab,
+          setQuran,
+          setLibrary,
+          setTools,
+          setSettingsOpen,
+        };
+        handleDeepLink(target, setters);
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleUrl);
+    return () => {
+      subscription.remove();
+    };
+  }, [setTab, setQuran, setLibrary, setTools, setSettingsOpen]);
   const isAudioCenter = tab === 'quran' && quran.screen === 'audio';
   const showMiniPlayer = visible && playback !== null && !isAudioCenter;
 

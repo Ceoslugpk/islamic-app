@@ -3,6 +3,7 @@
     "name": "Islamic",
     "slug": "islamic",
     "version": "1.0.0",
+    "scheme": "salah",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
