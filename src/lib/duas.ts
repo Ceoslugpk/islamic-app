@@ -491,3 +491,11 @@ export const DUA_CATEGORIES = [
 ] as const;
 
 export type DuaCategory = typeof DUA_CATEGORIES[number];
+
+export const DUA_COUNTS: Record<DuaCategory, number> = (() => {
+  const counts = {} as Record<DuaCategory, number>;
+  for (const cat of DUA_CATEGORIES) counts[cat] = 0;
+  for (const dua of DUAS_DATA) counts[dua.category] += 1;
+  counts.All = DUAS_DATA.length;
+  return counts;
+})();

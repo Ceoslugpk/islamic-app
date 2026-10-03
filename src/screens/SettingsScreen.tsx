@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Modal, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
@@ -315,6 +315,36 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
           </TouchableOpacity>
         </View>
 
+        {/* Inline consent (cross-platform; avoids nested-Modal stacking issues on web) */}
+        {consentOpen && !womenWorshipEnabled && (
+          <View style={[styles.inlineConsent, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <View style={[styles.consentIconWrapSmall, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
+              <Ionicons name="shield-checkmark" size={20} color={colors.accent} />
+            </View>
+            <Text style={[styles.consentTitleSmall, { color: colors.textPrimary }]}>Private & On-Device</Text>
+            <Text style={[styles.consentBodySmall, { color: colors.textSecondary }]}>
+              Cycle & purity information is sensitive. Your data:{'\n'}• Stays on this device by default{'\n'}• Needs no
+              account or sign-in{'\n'}• Is never uploaded or included in analytics or logs{'\n'}• Can be deleted anytime
+            </Text>
+            <View style={styles.consentBtnsInline}>
+              <TouchableOpacity
+                style={[styles.consentBtn, { borderColor: colors.borderSubtle }]}
+                onPress={() => setConsentOpen(false)}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.consentBtnText, { color: colors.textSecondary }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.consentBtn, styles.consentBtnPrimary, { backgroundColor: colors.accent }]}
+                onPress={confirmWomenEnable}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.consentBtnTextPrimary, { color: colors.bgBase }]}>I Understand</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {womenWorshipEnabled && (
           <>
             <Hairline />
@@ -429,37 +459,6 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
           </>
         )}
       </View>
-
-      {/* Consent modal — shown on first enable */}
-      <Modal visible={consentOpen} transparent animationType="fade" onRequestClose={() => setConsentOpen(false)}>
-        <View style={styles.consentBackdrop}>
-          <View style={[styles.consentCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={[styles.consentIconWrap, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
-              <Ionicons name="shield-checkmark" size={26} color={colors.accent} />
-            </View>
-            <Text style={[styles.consentTitle, { color: colors.textPrimary }]}>Private & On-Device</Text>
-            <Text style={[styles.consentBody, { color: colors.textSecondary }]}>
-              Cycle & purity information is sensitive. Your data:{'\n'}• Stays on this device by default{'\n'}• Needs no account or sign-in{'\n'}• Is never uploaded or included in analytics or logs{'\n'}• Can be deleted anytime
-            </Text>
-            <View style={styles.consentBtns}>
-              <TouchableOpacity
-                style={[styles.consentBtn, { borderColor: colors.borderSubtle }]}
-                onPress={() => setConsentOpen(false)}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.consentBtnText, { color: colors.textSecondary }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.consentBtn, styles.consentBtnPrimary, { backgroundColor: colors.accent }]}
-                onPress={confirmWomenEnable}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.consentBtnTextPrimary, { color: colors.bgBase }]}>I Understand</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* PIN modal: set / change / verify-to-enable */}
       <WomenPinModal
@@ -698,5 +697,40 @@ const styles = StyleSheet.create({
   consentBtnTextPrimary: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 14,
+  },
+  inlineConsent: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    marginHorizontal: 12,
+    marginVertical: 8,
+    alignItems: 'center',
+  },
+  consentIconWrapSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  consentTitleSmall: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 18,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  consentBodySmall: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12.5,
+    lineHeight: 19,
+    marginBottom: 12,
+    alignSelf: 'stretch',
+  },
+  consentBtnsInline: {
+    flexDirection: 'row',
+    gap: 10,
+    alignSelf: 'stretch',
   },
 });
