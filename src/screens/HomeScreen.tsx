@@ -14,7 +14,7 @@ import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { fetchPrayerTimes, DayTimings, getNextPrayer } from '../lib/prayerTimes';
-import { formatTime } from '../lib/timeFormat';
+import { formatTime, formatCountdown } from '../lib/timeFormat';
 import { usePrayerWatcher } from '../lib/usePrayerWatcher';
 import { configureAudio } from '../lib/audio';
 import {
@@ -156,20 +156,16 @@ export default function HomeScreen({
 
   const next = useMemo(() => (data ? getNextPrayer(data.timings, now) : null), [data, now]);
 
-  // Countdown text (e.g., "in 1h 24m")
+  // Countdown text (e.g., "4h 24m") — after Isha wraps to tomorrow's Fajr
   const countdownRemaining = useMemo(() => {
-    if (!next) return '';
+    const hm = next ? next.time : data?.timings.Fajr;
+    if (!hm) return '';
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    let targetMin = parseHm(next.time);
-    if (targetMin < nowMin) {
-      targetMin += 1440;
-    }
-    const diff = targetMin - nowMin;
-    const hours = Math.floor(diff / 60);
-    const mins = diff % 60;
-    if (hours > 0) return `in ${hours}h ${mins}m`;
-    return `in ${mins}m`;
-  }, [next, now]);
+    let targetMin = parseHm(hm);
+    if (targetMin <= nowMin) targetMin += 1440;
+    const diffMs = (targetMin - nowMin) * 60000 - now.getSeconds() * 1000;
+    return formatCountdown(diffMs);
+  }, [next, now, data]);
 
   // Calculate elapsed fraction of the current prayer window
   const progress = useMemo(() => {
@@ -315,24 +311,20 @@ export default function HomeScreen({
 
         {/* 1. Prayer Hero (Next prayer, time, remaining countdown, elapsed progress bar) */}
         <Card style={styles.countdownCard}>
-          <View style={styles.heroTopRow}>
-            <Text style={[styles.countdownEyebrow, { color: colors.accent }]}>
-              {next ? 'Next Prayer' : 'Next Prayer · Tomorrow'}
-            </Text>
-            {countdownRemaining ? (
-              <View style={[styles.countdownBadge, { backgroundColor: colors.accentDim }]}>
-                <Text style={[styles.countdownBadgeText, { color: colors.accent }]}>
-                  {countdownRemaining}
-                </Text>
-              </View>
-            ) : null}
-          </View>
+          <Text style={[styles.countdownEyebrow, { color: colors.accent }]}>
+            {next ? 'Next Prayer' : 'Next Prayer · Tomorrow'}
+          </Text>
           <Text style={[styles.countdownName, { color: colors.textPrimary }]}>
             {next ? next.name : 'Fajr'}
           </Text>
           <Text style={[styles.countdownTime, { color: colors.textPrimary }]}>
             {formatTime(next ? next.time : data.timings.Fajr, fmt)}
           </Text>
+          {countdownRemaining ? (
+            <Text style={[styles.countdownRemaining, { color: colors.textMuted }]}>
+              {countdownRemaining === 'Now' ? 'Now' : `in ${countdownRemaining}`}
+            </Text>
+          ) : null}
 
           <View style={styles.progressWrap}>
             <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
@@ -677,25 +669,11 @@ const styles = StyleSheet.create({
   patternTop: { top: -40, right: -60 },
   sectionHeader: { marginBottom: 20 },
   countdownCard: { marginBottom: 20 },
-  heroTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
   countdownEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 2,
     textTransform: 'uppercase',
-  },
-  countdownBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  countdownBadgeText: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 11,
   },
   countdownName: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -708,6 +686,13 @@ const styles = StyleSheet.create({
     fontSize: 26,
     lineHeight: 32,
     marginTop: 2,
+  },
+  countdownRemaining: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+    letterSpacing: 0.2,
   },
   progressWrap: {
     marginTop: 16,

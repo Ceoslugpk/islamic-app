@@ -3,17 +3,21 @@ import {
   StyleSheet,
   Text,
   View,
+  TextInput,
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
   RefreshControl,
   Linking,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
+import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
+import { Location as Loc } from '../lib/prayerTimes';
 import { distanceKm } from '../lib/qibla';
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
@@ -33,23 +37,70 @@ const RADIUS_OPTIONS = [5, 10, 20]; // in km
 export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
   const { settings } = useSettings();
-  const { location: gpsLocation, request: requestLocation } = useLocation(true);
+  const { location: hookGpsLocation, status: locStatus, request: requestLocation } = useLocation(true);
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
 
+  // Fresh GPS state on explicit "USE MY LOCATION" tap
+  const [freshGps, setFreshGps] = useState<Loc | null>(null);
+  const [gpsTimestamp, setGpsTimestamp] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState<boolean>(false);
+
+  // Area search state
+  const [areaInput, setAreaInput] = useState<string>('');
+  const [searchingArea, setSearchingArea] = useState<boolean>(false);
+  const [areaSearchCenter, setAreaSearchCenter] = useState<{
+    latitude: number;
+    longitude: number;
+    label: string;
+    query: string;
+  } | null>(null);
+  const [areaNotFound, setAreaNotFound] = useState<boolean>(false);
+  const [searchedQuery, setSearchedQuery] = useState<string>('');
+
+  // Radius & Results
   const [radiusKm, setRadiusKm] = useState<number>(10);
   const [mosques, setMosques] = useState<MosqueItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const effectiveLocation = useMemo(() => {
-    if (settings.locationMode === 'auto' && gpsLocation) return gpsLocation;
+  // Determine user's local location (GPS or manual fallback)
+  const myLocation = useMemo<Loc>(() => {
+    if (freshGps) return freshGps;
+    if (settings.locationMode === 'auto' && hookGpsLocation) return hookGpsLocation;
     return settings.manualLocation;
-  }, [settings.locationMode, gpsLocation, settings.manualLocation]);
+  }, [freshGps, settings.locationMode, hookGpsLocation, settings.manualLocation]);
 
-  const fetchMosques = useCallback(
-    async (isManualRefresh = false) => {
+  const isUsingGps = useMemo(() => {
+    if (areaSearchCenter) return false;
+    return Boolean(freshGps) || (settings.locationMode === 'auto' && Boolean(hookGpsLocation));
+  }, [areaSearchCenter, freshGps, settings.locationMode, hookGpsLocation]);
+
+  // Set initial GPS timestamp when hook gives location
+  useEffect(() => {
+    if (hookGpsLocation && !gpsTimestamp) {
+      const now = new Date();
+      const h = now.getHours().toString().padStart(2, '0');
+      const m = now.getMinutes().toString().padStart(2, '0');
+      setGpsTimestamp(`${h}:${m}`);
+    }
+  }, [hookGpsLocation, gpsTimestamp]);
+
+  // Active search center: area center if searching area, otherwise user's location
+  const effectiveCenter = useMemo(() => {
+    if (areaSearchCenter) {
+      return {
+        latitude: areaSearchCenter.latitude,
+        longitude: areaSearchCenter.longitude,
+        label: areaSearchCenter.label,
+      };
+    }
+    return myLocation;
+  }, [areaSearchCenter, myLocation]);
+
+  const fetchMosquesForCenter = useCallback(
+    async (lat: number, lon: number, radius: number, isManualRefresh = false) => {
       if (isManualRefresh) {
         setRefreshing(true);
       } else {
@@ -58,19 +109,16 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
       setError(null);
 
       try {
-        const userLat = effectiveLocation.latitude;
-        const userLon = effectiveLocation.longitude;
-
         // Calculate bounding box based on radius
         // 1 degree latitude ~ 111 km
-        const dLat = radiusKm / 111;
-        const cosLat = Math.cos((userLat * Math.PI) / 180);
-        const dLon = radiusKm / (111 * (Math.abs(cosLat) > 0.05 ? Math.abs(cosLat) : 1));
+        const dLat = radius / 111;
+        const cosLat = Math.cos((lat * Math.PI) / 180);
+        const dLon = radius / (111 * (Math.abs(cosLat) > 0.05 ? Math.abs(cosLat) : 1));
 
-        const minLon = userLon - dLon;
-        const maxLon = userLon + dLon;
-        const minLat = userLat - dLat;
-        const maxLat = userLat + dLat;
+        const minLon = lon - dLon;
+        const maxLon = lon + dLon;
+        const minLat = lat - dLat;
+        const maxLat = lat + dLat;
 
         // Nominatim viewbox format: <left>,<top>,<right>,<bottom>
         // where left=minLon, top=maxLat, right=maxLon, bottom=minLat
@@ -99,12 +147,12 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
         const seen = new Set<string>();
 
         for (const place of data) {
-          const lat = parseFloat(place.lat);
-          const lon = parseFloat(place.lon);
-          if (isNaN(lat) || isNaN(lon)) continue;
+          const mLat = parseFloat(place.lat);
+          const mLon = parseFloat(place.lon);
+          if (isNaN(mLat) || isNaN(mLon)) continue;
 
           // Unique key by coordinates or ID
-          const coordKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
+          const coordKey = `${mLat.toFixed(4)},${mLon.toFixed(4)}`;
           if (seen.has(coordKey)) continue;
           seen.add(coordKey);
 
@@ -130,19 +178,19 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
             }
           }
 
-          const dist = distanceKm(userLat, userLon, lat, lon);
+          const dist = distanceKm(lat, lon, mLat, mLon);
 
           items.push({
             id: String(place.place_id || place.osm_id || coordKey),
             name,
             address,
-            latitude: lat,
-            longitude: lon,
+            latitude: mLat,
+            longitude: mLon,
             distanceKm: dist,
           });
         }
 
-        // Sort ascending by distance from user
+        // Sort ascending by distance from current search center
         items.sort((a, b) => a.distanceKm - b.distanceKm);
 
         setMosques(items);
@@ -153,12 +201,158 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
         setRefreshing(false);
       }
     },
-    [effectiveLocation.latitude, effectiveLocation.longitude, radiusKm]
+    []
   );
 
+  // Trigger search whenever search center or radius changes (unless area not found)
   useEffect(() => {
-    fetchMosques();
-  }, [fetchMosques]);
+    if (!areaNotFound) {
+      fetchMosquesForCenter(effectiveCenter.latitude, effectiveCenter.longitude, radiusKm);
+    }
+  }, [fetchMosquesForCenter, effectiveCenter.latitude, effectiveCenter.longitude, radiusKm, areaNotFound]);
+
+  // Explicit USE MY LOCATION handler
+  const handleUseMyLocation = async () => {
+    setIsLocating(true);
+    setError(null);
+    setAreaSearchCenter(null);
+    setAreaInput('');
+    setAreaNotFound(false);
+    setSearchedQuery('');
+
+    try {
+      await requestLocation();
+
+      if (Platform.OS !== 'web') {
+        try {
+          const { status: perm } = await Location.getForegroundPermissionsAsync();
+          if (perm === 'granted') {
+            const pos = await Location.getCurrentPositionAsync({
+              accuracy: Location.Accuracy.Balanced,
+            });
+            let label = `${pos.coords.latitude.toFixed(2)}°, ${pos.coords.longitude.toFixed(2)}°`;
+            try {
+              const geo = await Location.reverseGeocodeAsync({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              });
+              if (geo && geo.length > 0) {
+                const g = geo[0];
+                const parts = [g.city || g.subregion, g.region, g.country].filter(Boolean);
+                if (parts.length > 0) label = parts.join(', ');
+              }
+            } catch {
+              // Coordinates fallback
+            }
+
+            const fresh: Loc = {
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+              label,
+            };
+            setFreshGps(fresh);
+            const now = new Date();
+            const h = now.getHours().toString().padStart(2, '0');
+            const m = now.getMinutes().toString().padStart(2, '0');
+            setGpsTimestamp(`${h}:${m}`);
+            await fetchMosquesForCenter(fresh.latitude, fresh.longitude, radiusKm);
+            return;
+          }
+        } catch {
+          // Fall back to hook location or manual location
+        }
+      }
+
+      if (hookGpsLocation) {
+        const now = new Date();
+        const h = now.getHours().toString().padStart(2, '0');
+        const m = now.getMinutes().toString().padStart(2, '0');
+        setGpsTimestamp(`${h}:${m}`);
+        await fetchMosquesForCenter(hookGpsLocation.latitude, hookGpsLocation.longitude, radiusKm);
+      } else {
+        await fetchMosquesForCenter(settings.manualLocation.latitude, settings.manualLocation.longitude, radiusKm);
+      }
+    } catch {
+      await fetchMosquesForCenter(settings.manualLocation.latitude, settings.manualLocation.longitude, radiusKm);
+    } finally {
+      setIsLocating(false);
+    }
+  };
+
+  // Area search submission
+  const handleSearchArea = async (queryText: string) => {
+    const q = queryText.trim();
+    if (!q) return;
+
+    setSearchingArea(true);
+    setLoading(true);
+    setError(null);
+    setAreaNotFound(false);
+    setSearchedQuery(q);
+    setMosques([]);
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+        q
+      )}&format=json&limit=1`;
+
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'IslamicAppMobile/1.0 (https://islamic.app)',
+          Accept: 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Area lookup failed (${res.status})`);
+      }
+
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) {
+        setAreaNotFound(true);
+        setAreaSearchCenter(null);
+        setLoading(false);
+        return;
+      }
+
+      const first = data[0];
+      const lat = parseFloat(first.lat);
+      const lon = parseFloat(first.lon);
+
+      if (isNaN(lat) || isNaN(lon)) {
+        setAreaNotFound(true);
+        setAreaSearchCenter(null);
+        setLoading(false);
+        return;
+      }
+
+      const rawLabel = first.display_name || q;
+      const labelParts = rawLabel.split(',').map((s: string) => s.trim()).filter(Boolean);
+      const shortLabel = labelParts.slice(0, 3).join(', ') || rawLabel;
+
+      const newCenter = {
+        latitude: lat,
+        longitude: lon,
+        label: shortLabel,
+        query: q,
+      };
+
+      setAreaSearchCenter(newCenter);
+      await fetchMosquesForCenter(lat, lon, radiusKm);
+    } catch (err: any) {
+      setError(err.message || 'Failed to search area. Please try again.');
+    } finally {
+      setSearchingArea(false);
+      setLoading(false);
+    }
+  };
+
+  const handleClearAreaSearch = () => {
+    setAreaSearchCenter(null);
+    setAreaInput('');
+    setAreaNotFound(false);
+    setSearchedQuery('');
+  };
 
   const openInMaps = (mosque: MosqueItem) => {
     const query = `${mosque.latitude},${mosque.longitude}`;
@@ -177,17 +371,35 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
     return `${km.toFixed(1)} km`;
   };
 
+  // Label for current center
+  const centerTypeBadge = areaSearchCenter
+    ? 'AREA SEARCH'
+    : isUsingGps
+    ? 'GPS AUTO'
+    : `MANUAL (${settings.manualLocation.label || 'Dubai, UAE'})`;
+
   return (
     <View style={[styles.screen, { backgroundColor: colors.bgBase }]}>
       <FlatList
         data={mosques}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.content, { maxWidth: maxW, alignSelf: 'center', width: '100%' }]}
+        contentContainerStyle={[
+          styles.content,
+          { maxWidth: maxW, alignSelf: 'center', width: '100%' },
+        ]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => fetchMosques(true)}
+            onRefresh={() =>
+              fetchMosquesForCenter(
+                effectiveCenter.latitude,
+                effectiveCenter.longitude,
+                radiusKm,
+                true
+              )
+            }
             tintColor={colors.accent}
             colors={[colors.accent]}
           />
@@ -211,32 +423,264 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
               subtitle="Find nearby mosques and prayer spaces with directions"
             />
 
+            {/* Area Search Input Bar */}
+            <View
+              style={[
+                styles.searchWrap,
+                {
+                  backgroundColor: colors.bgSurface,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <Ionicons
+                name="search"
+                size={17}
+                color={colors.textMuted}
+                style={styles.searchIcon}
+              />
+              <TextInput
+                style={[styles.searchInput, { color: colors.textPrimary }]}
+                placeholder="Search area or city, e.g. 'Dubai Marina' or 'Lahore'..."
+                placeholderTextColor={colors.textMuted}
+                value={areaInput}
+                onChangeText={setAreaInput}
+                autoCorrect={false}
+                returnKeyType="search"
+                onSubmitEditing={() => handleSearchArea(areaInput)}
+              />
+              {areaInput.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setAreaInput('')}
+                  style={styles.clearBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear search input"
+                >
+                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[
+                  styles.searchSubmitBtn,
+                  { backgroundColor: colors.accent },
+                  (!areaInput.trim() || searchingArea) && styles.searchSubmitBtnDisabled,
+                ]}
+                onPress={() => handleSearchArea(areaInput)}
+                disabled={searchingArea || !areaInput.trim()}
+                accessibilityRole="button"
+                accessibilityLabel="Search area"
+              >
+                {searchingArea ? (
+                  <ActivityIndicator size="small" color={colors.bgBase} />
+                ) : (
+                  <Text style={[styles.searchSubmitText, { color: colors.bgBase }]}>
+                    Search
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
             {/* Location & Radius Control Card */}
             <Card style={styles.controlCard} padded>
-              <View style={styles.locationRow}>
+              <View style={styles.locationHeaderRow}>
                 <View
                   style={[
                     styles.locationIconBox,
-                    { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle },
+                    {
+                      backgroundColor: colors.accentDim,
+                      borderColor: colors.borderSubtle,
+                    },
                   ]}
                 >
-                  <Ionicons name="navigate" size={16} color={colors.accent} />
+                  <Ionicons
+                    name={areaSearchCenter ? 'map-outline' : 'navigate'}
+                    size={16}
+                    color={colors.accent}
+                  />
                 </View>
+
                 <View style={styles.locationInfo}>
                   <Text style={[styles.locationLabel, { color: colors.textMuted }]}>
-                    SEARCH CENTER (
-                    {settings.locationMode === 'auto' ? 'GPS AUTO' : 'MANUAL'}
-                    )
+                    SEARCH CENTER · {centerTypeBadge}
                   </Text>
                   <Text
                     style={[styles.locationValue, { color: colors.textPrimary }]}
                     numberOfLines={1}
                   >
-                    {effectiveLocation.label ||
-                      `${effectiveLocation.latitude.toFixed(2)}°, ${effectiveLocation.longitude.toFixed(2)}°`}
+                    {effectiveCenter.label ||
+                      `${effectiveCenter.latitude.toFixed(2)}°, ${effectiveCenter.longitude.toFixed(2)}°`}
                   </Text>
+
+                  {isUsingGps && (
+                    <View style={styles.gpsConfidenceRow}>
+                      <View style={[styles.gpsDot, { backgroundColor: colors.accent }]} />
+                      <Text
+                        style={[styles.gpsConfidenceText, { color: colors.textMuted }]}
+                        numberOfLines={1}
+                      >
+                        Using GPS location ({effectiveCenter.latitude.toFixed(2)}°,{' '}
+                        {effectiveCenter.longitude.toFixed(2)}°) ·{' '}
+                        {gpsTimestamp ? `last updated ${gpsTimestamp}` : 'active'}
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
+
+              {/* Prominent USE MY LOCATION Button */}
+              <TouchableOpacity
+                style={[
+                  styles.useLocationBtn,
+                  {
+                    backgroundColor: colors.accentDim,
+                    borderColor: colors.borderSubtle,
+                  },
+                ]}
+                onPress={handleUseMyLocation}
+                disabled={isLocating}
+                accessibilityRole="button"
+                accessibilityLabel="Use my GPS location"
+              >
+                {isLocating ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                  <Ionicons name="locate" size={15} color={colors.accent} />
+                )}
+                <Text style={[styles.useLocationBtnText, { color: colors.accent }]}>
+                  {isLocating ? 'Acquiring GPS...' : 'USE MY LOCATION'}
+                </Text>
+              </TouchableOpacity>
+
+              {/* Permission Denied Notice */}
+              {!areaSearchCenter && locStatus === 'denied' && (
+                <View
+                  style={[
+                    styles.statusNotice,
+                    {
+                      backgroundColor: colors.accentDim,
+                      borderColor: colors.borderSubtle,
+                    },
+                  ]}
+                >
+                  <Ionicons name="alert-circle-outline" size={16} color={colors.accent} />
+                  <View style={styles.statusNoticeTextWrap}>
+                    <Text style={[styles.statusNoticeTitle, { color: colors.accent }]}>
+                      Location Permission Denied
+                    </Text>
+                    <Text
+                      style={[styles.statusNoticeDesc, { color: colors.textSecondary }]}
+                    >
+                      Enable location in your device settings to search near you. Currently
+                      searching near your manual location (
+                      {settings.manualLocation.label || 'Dubai, UAE'}).
+                    </Text>
+                    {onBack && (
+                      <TouchableOpacity
+                        style={styles.statusNoticeLink}
+                        onPress={onBack}
+                        accessibilityRole="button"
+                        accessibilityLabel="Set city in Tools"
+                      >
+                        <Text
+                          style={[styles.statusNoticeLinkText, { color: colors.accent }]}
+                        >
+                          Change city in Tools → Location / Cities →
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              )}
+
+              {/* Web Browser Notice */}
+              {!areaSearchCenter &&
+                (Platform.OS === 'web' || locStatus === 'unavailable') && (
+                  <View
+                    style={[
+                      styles.statusNotice,
+                      {
+                        backgroundColor: colors.accentDim,
+                        borderColor: colors.borderSubtle,
+                      },
+                    ]}
+                  >
+                    <Ionicons name="globe-outline" size={16} color={colors.accent} />
+                    <View style={styles.statusNoticeTextWrap}>
+                      <Text style={[styles.statusNoticeTitle, { color: colors.accent }]}>
+                        Web Browser · Manual Location Active
+                      </Text>
+                      <Text
+                        style={[styles.statusNoticeDesc, { color: colors.textSecondary }]}
+                      >
+                        GPS is not available on this browser. Searching near your manual
+                        location ({settings.manualLocation.label || 'Dubai, UAE'}), or use
+                        the area search bar above.
+                      </Text>
+                      {onBack && (
+                        <TouchableOpacity
+                          style={styles.statusNoticeLink}
+                          onPress={onBack}
+                          accessibilityRole="button"
+                          accessibilityLabel="Configure manual city in Tools"
+                        >
+                          <Text
+                            style={[
+                              styles.statusNoticeLinkText,
+                              { color: colors.accent },
+                            ]}
+                          >
+                            Change manual city in Tools → Location / Cities →
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                )}
+
+              {/* Area Search Active Banner */}
+              {areaSearchCenter && (
+                <View
+                  style={[
+                    styles.areaBanner,
+                    {
+                      backgroundColor: colors.accentDim,
+                      borderColor: colors.borderSubtle,
+                    },
+                  ]}
+                >
+                  <View style={styles.areaBannerLeft}>
+                    <Ionicons name="location" size={16} color={colors.accent} />
+                    <View style={styles.areaBannerTextWrap}>
+                      <Text style={[styles.areaBannerTitle, { color: colors.accent }]}>
+                        Showing mosques near '{areaSearchCenter.query}'
+                      </Text>
+                      <Text
+                        style={[styles.areaBannerSubtitle, { color: colors.textSecondary }]}
+                        numberOfLines={1}
+                      >
+                        {areaSearchCenter.label}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.areaBannerCloseBtn,
+                      {
+                        borderColor: colors.borderSubtle,
+                        backgroundColor: colors.bgBase,
+                      },
+                    ]}
+                    onPress={handleClearAreaSearch}
+                    accessibilityRole="button"
+                    accessibilityLabel="Return to my location"
+                  >
+                    <Ionicons name="close" size={14} color={colors.accent} />
+                    <Text style={[styles.areaBannerCloseText, { color: colors.accent }]}>
+                      My Location
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <Hairline style={styles.controlDivider} />
 
@@ -279,12 +723,14 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
             </Card>
 
             {/* Results status banner */}
-            {!loading && !error && (
+            {!loading && !error && !areaNotFound && (
               <View style={styles.resultsBanner}>
                 <Text style={[styles.resultsCount, { color: colors.textMuted }]}>
                   {mosques.length === 0
-                    ? 'No mosques found'
-                    : `Found ${mosques.length} mosque${mosques.length === 1 ? '' : 's'} within ${radiusKm} km`}
+                    ? `No mosques found within ${radiusKm} km`
+                    : `Found ${mosques.length} mosque${
+                        mosques.length === 1 ? '' : 's'
+                      } within ${radiusKm} km`}
                 </Text>
               </View>
             )}
@@ -296,14 +742,20 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
             <Card style={styles.mosqueCard} padded>
               <View style={styles.cardHeader}>
                 <View style={styles.cardTitleWrap}>
-                  <Text style={[styles.mosqueName, { color: colors.textPrimary }]} numberOfLines={2}>
+                  <Text
+                    style={[styles.mosqueName, { color: colors.textPrimary }]}
+                    numberOfLines={2}
+                  >
                     {item.name}
                   </Text>
                 </View>
                 <View
                   style={[
                     styles.distanceBadge,
-                    { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle },
+                    {
+                      backgroundColor: colors.accentDim,
+                      borderColor: colors.borderSubtle,
+                    },
                   ]}
                 >
                   <Ionicons name="location-outline" size={13} color={colors.accent} />
@@ -313,7 +765,10 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
                 </View>
               </View>
 
-              <Text style={[styles.mosqueAddress, { color: colors.textMuted }]} numberOfLines={2}>
+              <Text
+                style={[styles.mosqueAddress, { color: colors.textMuted }]}
+                numberOfLines={2}
+              >
                 {item.address}
               </Text>
 
@@ -340,9 +795,33 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
             <View style={styles.centerBox}>
               <ActivityIndicator color={colors.accent} size="large" />
               <Text style={[styles.stateText, { color: colors.textMuted }]}>
-                Searching for nearby mosques...
+                {searchingArea
+                  ? `Searching for area '${searchedQuery}'...`
+                  : 'Searching for nearby mosques...'}
               </Text>
             </View>
+          ) : areaNotFound ? (
+            <Card style={styles.emptyCard} padded>
+              <Ionicons name="search-outline" size={36} color={colors.accent} />
+              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+                Area Not Found
+              </Text>
+              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+                No geographic location found for "{searchedQuery}". Try another city,
+                district, or landmark name (e.g. "Dubai Marina", "Lahore", or
+                "Istanbul").
+              </Text>
+              <TouchableOpacity
+                style={[styles.retryButton, { backgroundColor: colors.accent }]}
+                onPress={handleClearAreaSearch}
+                accessibilityRole="button"
+                accessibilityLabel="Return to my location"
+              >
+                <Text style={[styles.retryText, { color: colors.bgBase }]}>
+                  Return to My Location
+                </Text>
+              </TouchableOpacity>
+            </Card>
           ) : error ? (
             <Card style={styles.errorCard} padded>
               <Ionicons name="alert-circle-outline" size={32} color={colors.accent} />
@@ -352,9 +831,19 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
               <Text style={[styles.errorSubtitle, { color: colors.textMuted }]}>{error}</Text>
               <TouchableOpacity
                 style={[styles.retryButton, { backgroundColor: colors.accent }]}
-                onPress={() => fetchMosques()}
+                onPress={() =>
+                  fetchMosquesForCenter(
+                    effectiveCenter.latitude,
+                    effectiveCenter.longitude,
+                    radiusKm
+                  )
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Retry search"
               >
-                <Text style={[styles.retryText, { color: colors.bgBase }]}>Retry Search</Text>
+                <Text style={[styles.retryText, { color: colors.bgBase }]}>
+                  Retry Search
+                </Text>
               </TouchableOpacity>
             </Card>
           ) : (
@@ -364,9 +853,22 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
                 No Mosques Found
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                No places of worship found within {radiusKm} km. Try expanding the search radius
-                above or checking your location settings.
+                No places of worship found within {radiusKm} km of{' '}
+                {effectiveCenter.label || 'this location'}. Try expanding the search radius
+                above or searching another area.
               </Text>
+              {areaSearchCenter && (
+                <TouchableOpacity
+                  style={[styles.retryButton, { backgroundColor: colors.accent }]}
+                  onPress={handleClearAreaSearch}
+                  accessibilityRole="button"
+                  accessibilityLabel="Return to my location"
+                >
+                  <Text style={[styles.retryText, { color: colors.bgBase }]}>
+                    Return to My Location
+                  </Text>
+                </TouchableOpacity>
+              )}
             </Card>
           )
         }
@@ -404,14 +906,50 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
-  controlCard: {
-    marginTop: 4,
-    marginBottom: 14,
-    borderRadius: 12,
-  },
-  locationRow: {
+  searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 44,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 13,
+    height: '100%',
+  },
+  clearBtn: {
+    padding: 4,
+    marginRight: 6,
+  },
+  searchSubmitBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 7,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  searchSubmitBtnDisabled: {
+    opacity: 0.5,
+  },
+  searchSubmitText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+  },
+  controlCard: {
+    marginBottom: 12,
+    borderRadius: 12,
+  },
+  locationHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: 12,
   },
   locationIconBox: {
@@ -421,6 +959,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 2,
   },
   locationInfo: {
     flex: 1,
@@ -428,12 +967,113 @@ const styles = StyleSheet.create({
   locationLabel: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
-    letterSpacing: 1.5,
+    letterSpacing: 1.2,
   },
   locationValue: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     marginTop: 2,
+  },
+  gpsConfidenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+  },
+  gpsDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  gpsConfidenceText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11,
+  },
+  useLocationBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 12,
+  },
+  useLocationBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.5,
+  },
+  statusNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 10,
+  },
+  statusNoticeTextWrap: {
+    flex: 1,
+  },
+  statusNoticeTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+  },
+  statusNoticeDesc: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  statusNoticeLink: {
+    marginTop: 5,
+  },
+  statusNoticeLinkText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+  },
+  areaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 10,
+    gap: 8,
+  },
+  areaBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  areaBannerTextWrap: {
+    flex: 1,
+  },
+  areaBannerTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+  },
+  areaBannerSubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+    marginTop: 1,
+  },
+  areaBannerCloseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  areaBannerCloseText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
   },
   controlDivider: {
     marginVertical: 12,
@@ -462,7 +1102,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   resultsBanner: {
-    marginVertical: 6,
+    marginVertical: 4,
     paddingHorizontal: 4,
   },
   resultsCount: {

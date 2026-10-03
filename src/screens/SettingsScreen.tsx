@@ -17,6 +17,16 @@ import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { accentThemes, ACCENT_KEYS } from '../lib/accents';
 
+const ABOUT_ROWS: { title: string; subtitle: string }[] = [
+  { title: 'Islamic · v1.0.0', subtitle: 'Version 1.0.0' },
+  { title: 'Prayer times', subtitle: 'AlAdhan + islamic.app' },
+  { title: 'Quran text', subtitle: 'AlQuran Cloud' },
+  { title: 'Quran audio', subtitle: 'islamic.network CDN' },
+  { title: 'Hadith', subtitle: 'islamic.app Hadith API' },
+  { title: '99 Names', subtitle: 'EsmaulHusna.org' },
+  { title: 'Qibla', subtitle: 'Great-circle calculation' },
+];
+
 export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const { colors, mode, accentKey, setAccent } = useTheme();
   const { settings, setMethod, setTimeFormat, setReminders, setThemeMode } = useSettings();
@@ -253,6 +263,25 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
         </TouchableOpacity>
       </View>
 
+      {/* About */}
+      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>About</Text>
+      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
+        {ABOUT_ROWS.map((item, i) => (
+          <View key={item.title}>
+            {i > 0 && <Hairline />}
+            <View style={styles.row}>
+              <View style={styles.rowFlex}>
+                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{item.title}</Text>
+                <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>{item.subtitle}</Text>
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
+      <Text style={[styles.aboutNote, { color: colors.textMuted }]}>
+        All data sources are free public APIs used with attribution.
+      </Text>
+
       <Text style={[styles.footer, { color: colors.textMuted }]}>
         Prayer times by Aladhan API · Islamic v1.0
       </Text>
@@ -329,6 +358,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 24,
+    textAlign: 'center',
+  },
+  aboutNote: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
+    marginTop: 10,
     textAlign: 'center',
   },
   accentGrid: {
