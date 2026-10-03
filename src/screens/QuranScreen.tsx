@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -45,21 +46,23 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
 
   const [surahs, setSurahs] = useState<SurahMeta[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
   const listRef = useRef<FlatList<SurahMeta>>(null);
 
-  const loadSurahs = useCallback(async () => {
-    setLoading(true);
+  const loadSurahs = useCallback(async (force = false) => {
+    if (!force) setLoading(true);
     setError(null);
     try {
-      const data = await fetchSurahList();
+      const data = await fetchSurahList(force);
       setSurahs(data);
     } catch {
       setError('Could not load the Quran. Check your connection.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -135,7 +138,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 styles.retryBtn,
                 { borderColor: colors.accent, backgroundColor: colors.bgSurface },
               ]}
-              onPress={loadSurahs}
+              onPress={() => loadSurahs()}
               accessibilityRole="button"
               accessibilityLabel="Retry loading surahs"
             >
@@ -294,6 +297,16 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
           maxToRenderPerBatch={15}
           windowSize={11}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                loadSurahs(true);
+              }}
+              tintColor={colors.accent}
+            />
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[

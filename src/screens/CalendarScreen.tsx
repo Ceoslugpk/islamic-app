@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { fetchHijriMonth, HijriMonthData } from '../lib/hijri';
 import { SectionHeader } from '../components/SectionHeader';
@@ -14,6 +14,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [data, setData] = useState<HijriMonthData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,6 +30,18 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
     };
   }, [year, month]);
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      const d = await fetchHijriMonth(year, month, true);
+      setData(d);
+    } catch {
+      // keep existing data on error
+    } finally {
+      setRefreshing(false);
+    }
+  }, [year, month]);
+
   function shift(delta: number) {
     let m = month + delta;
     let y = year;
@@ -42,7 +55,17 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
     d === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear();
 
   return (
-    <ScrollView style={{ backgroundColor: colors.bgBase }} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={{ backgroundColor: colors.bgBase }}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          tintColor={colors.accent}
+        />
+      }
+    >
       {onBack && (
         <TouchableOpacity
           style={styles.backButton}

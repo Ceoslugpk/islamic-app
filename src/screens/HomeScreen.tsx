@@ -141,11 +141,11 @@ export default function HomeScreen({
     configureAudio();
   }, []);
 
-  async function load(showSpinner = false) {
+  async function load(showSpinner = false, force = false) {
     if (showSpinner) setLoading(true);
     setError(null);
     try {
-      const result = await fetchPrayerTimes(effectiveLocation, settings.methodId);
+      const result = await fetchPrayerTimes(effectiveLocation, settings.methodId, new Date(), force);
       setData(result);
     } catch {
       setError('Could not load prayer times. Check your connection.');
@@ -287,7 +287,7 @@ export default function HomeScreen({
             refreshing={refreshing}
             onRefresh={() => {
               setRefreshing(true);
-              load(false);
+              load(false, true);
             }}
             tintColor={colors.accent}
           />

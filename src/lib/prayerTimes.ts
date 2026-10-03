@@ -61,18 +61,21 @@ function todayDdmmyyyy(d = new Date()): string {
 export async function fetchPrayerTimes(
   loc: Location = DEFAULT_LOCATION,
   method: number = 8,
-  date: Date = new Date()
+  date: Date = new Date(),
+  force = false
 ): Promise<DayTimings> {
   const dateStr = todayDdmmyyyy(date);
   const cacheKey = `${dateStr}_${loc.latitude.toFixed(2)}_${loc.longitude.toFixed(2)}_${method}`;
 
-  // 1. Try cache first (offline / fast path)
-  const cached = loadPrayerCache(dateStr, `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`, method);
-  if (cached) {
-    try {
-      return normalizePayload(JSON.parse(cached.payload), 'Cache');
-    } catch {
-      // corrupted cache; fall through
+  // 1. Try cache first (offline / fast path) — unless forced
+  if (!force) {
+    const cached = loadPrayerCache(dateStr, `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`, method);
+    if (cached) {
+      try {
+        return normalizePayload(JSON.parse(cached.payload), 'Cache');
+      } catch {
+        // corrupted cache; fall through
+      }
     }
   }
 

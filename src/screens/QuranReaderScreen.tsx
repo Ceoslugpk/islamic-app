@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   FlatList,
   Modal,
+  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -88,6 +89,7 @@ export default function QuranReaderScreen({
   const [toolsMenuOpen, setToolsMenuOpen] = useState<boolean>(false);
   const [surah, setSurah] = useState<SurahDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [showTranslation, setShowTranslation] = useState<boolean>(true);
@@ -188,11 +190,11 @@ export default function QuranReaderScreen({
   }, [surahNumber]);
 
   // Fetch Surah data
-  const loadSurah = useCallback(async () => {
-    setLoading(true);
+  const loadSurah = useCallback(async (force = false) => {
+    if (!force) setLoading(true);
     setError(null);
     try {
-      const data = await fetchSurah(surahNumber, true, edition.editionIdentifier);
+      const data = await fetchSurah(surahNumber, true, edition.editionIdentifier, force);
       setSurah(data);
 
       // Save last read position
@@ -209,6 +211,7 @@ export default function QuranReaderScreen({
       setError('Could not load Surah. Please check your connection.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, [surahNumber, initialAyah, edition.editionIdentifier]);
 
@@ -645,7 +648,19 @@ export default function QuranReaderScreen({
   const renderMushafMode = () => {
     if (!surah) return null;
     return (
-      <ScrollView contentContainerStyle={styles.mushafScrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.mushafScrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              loadSurah(true);
+            }}
+            tintColor={colors.accent}
+          />
+        }
+      >
         {renderSurahHeader()}
 
         <View
@@ -717,7 +732,7 @@ export default function QuranReaderScreen({
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
         <TouchableOpacity
           style={[styles.retryBtn, { borderColor: colors.accent }]}
-          onPress={loadSurah}
+          onPress={() => loadSurah()}
           accessibilityRole="button"
           accessibilityLabel="Retry loading surah"
         >
@@ -940,6 +955,16 @@ export default function QuranReaderScreen({
           onScrollToIndexFailed={() => {}}
           viewabilityConfig={VIEWABILITY_CONFIG}
           onViewableItemsChanged={handleViewableItemsChanged}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => {
+                setRefreshing(true);
+                loadSurah(true);
+              }}
+              tintColor={colors.accent}
+            />
+          }
         />
       )}
 

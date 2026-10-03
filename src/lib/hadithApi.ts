@@ -319,8 +319,20 @@ export function getHadithGrade(item: HadithItem): string | undefined {
   return undefined;
 }
 
-export async function fetchHadithCollections(): Promise<HadithCollection[]> {
+export async function fetchHadithCollections(force = false): Promise<HadithCollection[]> {
   const cacheKey = 'hadith:cache:collections';
+  if (!force) {
+    try {
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   try {
     const response = await fetch(`${API_BASE}/collections`);
     if (response.ok) {
@@ -347,8 +359,20 @@ export async function fetchHadithCollections(): Promise<HadithCollection[]> {
   return FALLBACK_COLLECTIONS;
 }
 
-export async function fetchHadithBooks(collectionSlug: string): Promise<HadithBook[]> {
+export async function fetchHadithBooks(collectionSlug: string, force = false): Promise<HadithBook[]> {
   const cacheKey = `hadith:cache:books:${collectionSlug}`;
+  if (!force) {
+    try {
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   try {
     const response = await fetch(`${API_BASE}/collections/${collectionSlug}/books`);
     if (response.ok) {
@@ -379,9 +403,22 @@ export async function fetchHadithsInBook(
   collectionSlug: string,
   bookNumber: string,
   limit = 20,
-  offset = 0
+  offset = 0,
+  force = false
 ): Promise<HadithListResponse> {
   const cacheKey = `hadith:cache:list:${collectionSlug}:${bookNumber}:${offset}`;
+  if (!force && offset === 0) {
+    try {
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.hadiths)) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   try {
     const response = await fetch(
       `${API_BASE}/collections/${collectionSlug}/books/${bookNumber}/hadiths?limit=${limit}&offset=${offset}`
@@ -399,7 +436,7 @@ export async function fetchHadithsInBook(
     // API failed, try cache
   }
 
-  if (offset === 0) {
+  if (!force && offset === 0) {
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) {

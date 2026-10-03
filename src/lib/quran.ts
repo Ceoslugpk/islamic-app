@@ -38,9 +38,11 @@ const BASE = 'https://api.alquran.cloud/v1';
 // Saheeh International translation edition
 const TRANSLATION = 'en.sahih';
 
-export async function fetchSurahList(): Promise<SurahMeta[]> {
-  const cached = loadQuranCache<SurahMeta[]>('surah-list');
-  if (cached) return cached;
+export async function fetchSurahList(force = false): Promise<SurahMeta[]> {
+  if (!force) {
+    const cached = loadQuranCache<SurahMeta[]>('surah-list');
+    if (cached) return cached;
+  }
 
   const res = await fetch(`${BASE}/surah`);
   if (!res.ok) throw new Error('Quran list failed');
@@ -63,13 +65,16 @@ export async function fetchSurahList(): Promise<SurahMeta[]> {
 import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
 
 export async function fetchSurahListForLanguage(
-  languageCode: string
+  languageCode: string,
+  force = false
 ): Promise<Record<number, string> | null> {
   if (languageCode === 'en') return null;
 
   const cacheKey = `surah-names-lang:${languageCode}`;
-  const cached = loadQuranCache<Record<number, string>>(cacheKey);
-  if (cached) return cached;
+  if (!force) {
+    const cached = loadQuranCache<Record<number, string>>(cacheKey);
+    if (cached) return cached;
+  }
 
   // Try API: https://api.alquran.cloud/v1/surah/{lang}
   try {
@@ -106,11 +111,14 @@ export async function fetchSurahListForLanguage(
 export async function fetchSurah(
   number: number,
   withTranslation = true,
-  translationEdition = 'en.sahih'
+  translationEdition = 'en.sahih',
+  force = false
 ): Promise<SurahDetail> {
   const key = `surah:${number}:${withTranslation ? translationEdition : 'ar'}`;
-  const cached = loadQuranCache<SurahDetail>(key);
-  if (cached) return cached;
+  if (!force) {
+    const cached = loadQuranCache<SurahDetail>(key);
+    if (cached) return cached;
+  }
 
   const edition = withTranslation
     ? `quran-uthmani,${translationEdition}`

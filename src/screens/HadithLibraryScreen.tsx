@@ -9,6 +9,7 @@ import {
   TextInput,
   ActivityIndicator,
   Share,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -69,18 +70,21 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
   // Collections state
   const [collections, setCollections] = useState<HadithCollection[]>(FALLBACK_COLLECTIONS);
   const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collectionsRefreshing, setCollectionsRefreshing] = useState(false);
   const [collectionsError, setCollectionsError] = useState<string | null>(null);
   const [collectionFilter, setCollectionFilter] = useState('');
 
   // Books state
   const [books, setBooks] = useState<HadithBook[]>([]);
   const [booksLoading, setBooksLoading] = useState(false);
+  const [booksRefreshing, setBooksRefreshing] = useState(false);
   const [booksError, setBooksError] = useState<string | null>(null);
   const [bookFilter, setBookFilter] = useState('');
 
   // Hadiths list state
   const [hadiths, setHadiths] = useState<HadithItem[]>([]);
   const [hadithsLoading, setHadithsLoading] = useState(false);
+  const [hadithsRefreshing, setHadithsRefreshing] = useState(false);
   const [hadithsLoadingMore, setHadithsLoadingMore] = useState(false);
   const [hadithsError, setHadithsError] = useState<string | null>(null);
   const [hadithsOffset, setHadithsOffset] = useState(0);
@@ -95,16 +99,17 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
   const [isCurrentSaved, setIsCurrentSaved] = useState(false);
 
   // Load collections on mount
-  const loadCollections = useCallback(async () => {
-    setCollectionsLoading(true);
+  const loadCollections = useCallback(async (force = false) => {
+    if (!force) setCollectionsLoading(true);
     setCollectionsError(null);
     try {
-      const data = await fetchHadithCollections();
+      const data = await fetchHadithCollections(force);
       setCollections(data);
     } catch {
       setCollectionsError('Unable to refresh collections. Showing offline list.');
     } finally {
       setCollectionsLoading(false);
+      setCollectionsRefreshing(false);
     }
   }, []);
 
@@ -154,35 +159,37 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
   }, [view, reloadStorageData]);
 
   // Handle opening a collection -> load books
-  const openCollection = useCallback(async (col: HadithCollection) => {
+  const openCollection = useCallback(async (col: HadithCollection, force = false) => {
     setView({ type: 'books', collection: col });
     setBookFilter('');
     setBooksLoading(true);
     setBooksError(null);
     try {
-      const data = await fetchHadithBooks(col.slug);
+      const data = await fetchHadithBooks(col.slug, force);
       setBooks(data);
     } catch {
       setBooksError('Failed to load books. Please check your connection and retry.');
     } finally {
       setBooksLoading(false);
+      setBooksRefreshing(false);
     }
   }, []);
 
   // Handle opening a book -> load hadiths
-  const openBook = useCallback(async (col: HadithCollection, b: HadithBook) => {
+  const openBook = useCallback(async (col: HadithCollection, b: HadithBook, force = false) => {
     setView({ type: 'hadiths', collection: col, book: b });
     setHadithsLoading(true);
     setHadithsError(null);
     setHadithsOffset(0);
     try {
-      const data = await fetchHadithsInBook(col.slug, b.bookNumber, 20, 0);
+      const data = await fetchHadithsInBook(col.slug, b.bookNumber, 20, 0, force);
       setHadiths(data.hadiths);
       setHadithsTotal(data.total);
     } catch {
       setHadithsError('Failed to load hadiths. Please check your connection and retry.');
     } finally {
       setHadithsLoading(false);
+      setHadithsRefreshing(false);
     }
   }, []);
 
@@ -198,7 +205,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         view.collection.slug,
         view.book.bookNumber,
         20,
-        nextOffset
+        nextOffset,
+        false
       );
       setHadiths((prev) => [...prev, ...data.hadiths]);
       setHadithsOffset(nextOffset);
@@ -718,7 +726,19 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
         {/* TAB: COLLECTIONS BROWSING FLOW */}
         {activeTab === 'collections' && view.type === 'collections' && (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={collectionsRefreshing}
+                onRefresh={() => {
+                  setCollectionsRefreshing(true);
+                  loadCollections(true);
+                }}
+                tintColor={colors.accent}
+              />
+            }
+          >
             <SectionHeader
               eyebrow="Library"
               title="Hadith Library"
@@ -834,7 +854,19 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
         {/* SUBVIEW: BOOKS IN COLLECTION */}
         {activeTab === 'collections' && view.type === 'books' && (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={booksRefreshing}
+                onRefresh={() => {
+                  setBooksRefreshing(true);
+                  openCollection(view.collection, true);
+                }}
+                tintColor={colors.accent}
+              />
+            }
+          >
             <SectionHeader
               eyebrow={view.collection.name.en}
               title="Books"
@@ -953,6 +985,16 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             data={hadiths}
             keyExtractor={(item) => `${item.collection}:${item.bookNumber}:${item.hadithNumber}`}
             contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={hadithsRefreshing}
+                onRefresh={() => {
+                  setHadithsRefreshing(true);
+                  openBook(view.collection, view.book, true);
+                }}
+                tintColor={colors.accent}
+              />
+            }
             ListHeaderComponent={
               <View style={styles.listHeaderWrap}>
                 <SectionHeader

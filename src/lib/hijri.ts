@@ -32,7 +32,8 @@ const HIJRI_MONTHS = [
 /** Fetch Hijri month grid from Aladhan, fall back to local tabular calc. */
 export async function fetchHijriMonth(
   gregorianYear: number,
-  gregorianMonth: number
+  gregorianMonth: number,
+  force = false
 ): Promise<HijriMonthData> {
   try {
     const res = await fetch(
