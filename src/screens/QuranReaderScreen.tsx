@@ -85,6 +85,7 @@ export default function QuranReaderScreen({
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
+  const [toolsMenuOpen, setToolsMenuOpen] = useState<boolean>(false);
   const [surah, setSurah] = useState<SurahDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -730,21 +731,15 @@ export default function QuranReaderScreen({
   const navBarPaddingV = isCompact ? 8 : 10;
   const backTextSize = isCompact ? 13 : 14;
   const backIconSize = isCompact ? 18 : 20;
-  const surahNavGap = isCompact ? 6 : 8;
   const surahNavBtnSize = isCompact ? 32 : 36;
   const surahNavIconSize = isCompact ? 20 : 22;
-  const surahNavLabelSize = isCompact ? 12 : 13;
-  const toolbarGap = isCompact ? 4 : 6;
-  const toolBtnPaddingH = isCompact ? 8 : 10;
-  const toolBtnPaddingV = isCompact ? 5 : 6;
-  const toolBtnMinWidth = isCompact ? 30 : 34;
-  const toolBtnTextSize = isCompact ? 11 : 12;
-  const langToolPaddingH = isCompact ? 6 : 8;
-  const langToolTextSize = isCompact ? 10 : 11;
+  const dotsBtnSize = isCompact ? 36 : 40;
+  const dotsIconSize = isCompact ? 20 : 22;
+  const titleFontSizeNav = isCompact ? 16 : 18;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      {/* Top Navigation Bar */}
+      {/* Top Navigation Bar - Clean single row */}
       <View
         style={[
           styles.navBar,
@@ -753,6 +748,7 @@ export default function QuranReaderScreen({
           isCompact ? styles.navBarCompact : styles.navBarTablet,
         ]}
       >
+        {/* Back button - fixed left */}
         <TouchableOpacity
           style={[
             styles.backButton,
@@ -766,140 +762,166 @@ export default function QuranReaderScreen({
           <Text style={[styles.backText, { color: colors.accent, fontSize: backTextSize }]}>Quran</Text>
         </TouchableOpacity>
 
-        {/* Surah Navigation: Prev / Next + Surah indicator */}
-        <View style={[styles.surahNav, { gap: surahNavGap }]}>
-          <TouchableOpacity
-            style={[
-              styles.surahNavBtn,
-              { opacity: surahNumber <= 1 ? 0.4 : 1 },
-              { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
-            ]}
-            onPress={() => handleNavigateSurah(surahNumber - 1)}
-            disabled={surahNumber <= 1}
-            accessibilityRole="button"
-            accessibilityLabel="Previous Surah"
-          >
-            <Ionicons name="chevron-back" size={surahNavIconSize} color={colors.accent} />
-          </TouchableOpacity>
-          <Text
-            style={[
-              styles.surahNavLabel,
-              { color: colors.textSecondary, fontSize: surahNavLabelSize },
-            ]}
-            numberOfLines={1}
-          >
-            {surahNumber} / 114
-          </Text>
-          <TouchableOpacity
-            style={[
-              styles.surahNavBtn,
-              { opacity: surahNumber >= 114 ? 0.4 : 1 },
-              { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
-            ]}
-            onPress={() => handleNavigateSurah(surahNumber + 1)}
-            disabled={surahNumber >= 114}
-            accessibilityRole="button"
-            accessibilityLabel="Next Surah"
-          >
-            <Ionicons name="chevron-forward" size={surahNavIconSize} color={colors.accent} />
-          </TouchableOpacity>
+        {/* Center: Surah name as centerpiece with prev/next inline */}
+        <View style={styles.navCenter}>
+          <View style={styles.surahNavInline}>
+            <TouchableOpacity
+              style={[
+                styles.surahNavBtn,
+                { opacity: surahNumber <= 1 ? 0.4 : 1 },
+                { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
+              ]}
+              onPress={() => handleNavigateSurah(surahNumber - 1)}
+              disabled={surahNumber <= 1}
+              accessibilityRole="button"
+              accessibilityLabel="Previous Surah"
+            >
+              <Ionicons name="chevron-back" size={surahNavIconSize} color={colors.accent} />
+            </TouchableOpacity>
+            {surah && (
+              <Text
+                style={[
+                  styles.navSurahTitle,
+                  { color: colors.textPrimary, fontSize: titleFontSizeNav },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {surah.englishName}
+              </Text>
+            )}
+            <TouchableOpacity
+              style={[
+                styles.surahNavBtn,
+                { opacity: surahNumber >= 114 ? 0.4 : 1 },
+                { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
+              ]}
+              onPress={() => handleNavigateSurah(surahNumber + 1)}
+              disabled={surahNumber >= 114}
+              accessibilityRole="button"
+              accessibilityLabel="Next Surah"
+            >
+              <Ionicons name="chevron-forward" size={surahNavIconSize} color={colors.accent} />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Toolbar: Mode Toggle, Translation, Font adjustments */}
-        <View style={[styles.toolbar, { gap: toolbarGap }]}>
-          {/* Reading Mode Switcher */}
-          <TouchableOpacity
-            style={[
-              styles.toolBtn,
-              {
-                backgroundColor: readingMode === 'mushaf' ? colors.accentDim : 'transparent',
-                borderColor: readingMode === 'mushaf' ? colors.accent : colors.borderSubtle,
-                paddingHorizontal: toolBtnPaddingH,
-                paddingVertical: toolBtnPaddingV,
-                minWidth: toolBtnMinWidth,
-              },
-            ]}
-            onPress={handleToggleReadingMode}
-            accessibilityRole="button"
-            accessibilityLabel={`Toggle mode. Current: ${readingMode}`}
-          >
-            <Ionicons
-              name={readingMode === 'mushaf' ? 'book' : 'list'}
-              size={isCompact ? 15 : 17}
-              color={readingMode === 'mushaf' ? colors.accent : colors.textSecondary}
-            />
-          </TouchableOpacity>
-
-          {/* Language Picker Button: opens modal */}
-          <TouchableOpacity
-            style={[
-              styles.langToolBtn,
-              {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
-                paddingHorizontal: langToolPaddingH,
-                paddingVertical: toolBtnPaddingV,
-              },
-            ]}
-            onPress={() => setLangPickerOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel={`Change translation language. Current: ${edition.language} ${flag}`}
-          >
-            <Text style={[styles.langToolText, { color: colors.accent, fontSize: langToolTextSize }]}>
-              {language.toUpperCase()} {flag}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Translation Toggle */}
-          <TouchableOpacity
-            style={[
-              styles.toolBtn,
-              {
-                backgroundColor: showTranslation ? colors.accentDim : 'transparent',
-                borderColor: showTranslation ? colors.accent : colors.borderSubtle,
-                paddingHorizontal: toolBtnPaddingH,
-                paddingVertical: toolBtnPaddingV,
-                minWidth: toolBtnMinWidth,
-              },
-            ]}
-            onPress={handleToggleTranslation}
-            accessibilityRole="button"
-            accessibilityLabel={showTranslation ? 'Hide Translation' : 'Show Translation'}
-          >
-            <Ionicons
-              name={showTranslation ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'}
-              size={isCompact ? 14 : 15}
-              color={showTranslation ? colors.accent : colors.textMuted}
-            />
-          </TouchableOpacity>
-
-          {/* Font size down */}
-          <TouchableOpacity
-            style={[
-              styles.toolBtn,
-              { borderColor: colors.borderSubtle, paddingHorizontal: toolBtnPaddingH, paddingVertical: toolBtnPaddingV, minWidth: toolBtnMinWidth },
-            ]}
-            onPress={() => handleAdjustFontSize(-FONT_SIZE_STEP)}
-            accessibilityRole="button"
-            accessibilityLabel="Decrease font size"
-          >
-            <Text style={[styles.toolBtnText, { color: colors.textPrimary, fontSize: toolBtnTextSize }]}>A−</Text>
-          </TouchableOpacity>
-
-          {/* Font size up */}
-          <TouchableOpacity
-            style={[
-              styles.toolBtn,
-              { borderColor: colors.borderSubtle, paddingHorizontal: toolBtnPaddingH, paddingVertical: toolBtnPaddingV, minWidth: toolBtnMinWidth },
-            ]}
-            onPress={() => handleAdjustFontSize(FONT_SIZE_STEP)}
-            accessibilityRole="button"
-            accessibilityLabel="Increase font size"
-          >
-            <Text style={[styles.toolBtnText, { color: colors.textPrimary, fontSize: toolBtnTextSize }]}>A+</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Dots menu button - fixed right */}
+        <TouchableOpacity
+          style={[
+            styles.dotsButton,
+            { width: dotsBtnSize, height: dotsBtnSize },
+          ]}
+          onPress={() => setToolsMenuOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Reading tools"
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="ellipsis-horizontal" size={dotsIconSize} color={colors.textSecondary} />
+        </TouchableOpacity>
       </View>
+
+      {/* Dots Menu Modal */}
+      <Modal
+        visible={toolsMenuOpen}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setToolsMenuOpen(false)}
+      >
+        <View style={styles.toolsMenuOverlay} onStartShouldSetResponder={() => true} onResponderGrant={() => setToolsMenuOpen(false)}>
+          <View style={[styles.toolsMenuPanel, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            {/* Reading Mode */}
+            <TouchableOpacity
+              style={styles.toolsMenuItem}
+              onPress={() => { handleToggleReadingMode(); setToolsMenuOpen(false); }}
+              accessibilityRole="button"
+              accessibilityLabel={`Reading mode: ${readingMode}. Tap to toggle.`}
+            >
+              <View style={[styles.toolsMenuIcon, { backgroundColor: readingMode === 'mushaf' ? colors.accentDim : 'transparent' }]}>
+                <Ionicons name={readingMode === 'mushaf' ? 'book' : 'list'} size={20} color={readingMode === 'mushaf' ? colors.accent : colors.textSecondary} />
+              </View>
+              <View style={styles.toolsMenuTextGroup}>
+                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Reading Mode</Text>
+                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>{readingMode === 'mushaf' ? 'Mushaf (continuous)' : 'Cards (per ayah)'}</Text>
+              </View>
+              <View style={[styles.toolsMenuIndicator, { backgroundColor: readingMode === 'mushaf' ? colors.accent : 'transparent' }]} />
+            </TouchableOpacity>
+
+            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
+            {/* Translation Language */}
+            <TouchableOpacity
+              style={styles.toolsMenuItem}
+              onPress={() => { setLangPickerOpen(true); setToolsMenuOpen(false); }}
+              accessibilityRole="button"
+              accessibilityLabel={`Translation language: ${language} ${flag}. Tap to change.`}
+            >
+              <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
+                <Ionicons name="globe-outline" size={20} color={colors.accent} />
+              </View>
+              <View style={styles.toolsMenuTextGroup}>
+                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Translation Language</Text>
+                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>{flag} {language.toUpperCase()} — {edition.name}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+
+            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
+            {/* Show/Hide Translation */}
+            <TouchableOpacity
+              style={styles.toolsMenuItem}
+              onPress={() => { handleToggleTranslation(); setToolsMenuOpen(false); }}
+              accessibilityRole="button"
+              accessibilityLabel={showTranslation ? 'Hide translation' : 'Show translation'}
+            >
+              <View style={[styles.toolsMenuIcon, { backgroundColor: showTranslation ? colors.accentDim : 'transparent' }]}>
+                <Ionicons name={showTranslation ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} size={20} color={showTranslation ? colors.accent : colors.textSecondary} />
+              </View>
+              <View style={styles.toolsMenuTextGroup}>
+                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Translation</Text>
+                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>{showTranslation ? 'Shown' : 'Hidden'}</Text>
+              </View>
+              <View style={[styles.toolsMenuIndicator, { backgroundColor: showTranslation ? colors.accent : 'transparent' }]} />
+            </TouchableOpacity>
+
+            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
+            {/* Font Size */}
+            <View style={styles.toolsMenuFontRow}>
+              <View style={styles.toolsMenuFontLabel}>
+                <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
+                  <Ionicons name="text-outline" size={20} color={colors.accent} />
+                </View>
+                <View style={styles.toolsMenuTextGroup}>
+                  <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Font Size</Text>
+                  <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>{fontSize}pt</Text>
+                </View>
+              </View>
+              <View style={styles.toolsMenuFontControls}>
+                <TouchableOpacity
+                  style={[styles.toolsMenuFontBtn, { borderColor: colors.borderSubtle }]}
+                  onPress={() => handleAdjustFontSize(-FONT_SIZE_STEP)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease font size"
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>A−</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.toolsMenuFontBtn, { borderColor: colors.borderSubtle }]}
+                  onPress={() => handleAdjustFontSize(FONT_SIZE_STEP)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase font size"
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                >
+                  <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>A+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Main View: Cards vs Mushaf */}
       {readingMode === 'mushaf' ? (
@@ -1138,7 +1160,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
-  surahNav: {
+  navCenter: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+  },
+  surahNavInline: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -1154,6 +1181,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     minWidth: 60,
     textAlign: 'center',
+  },
+  navSurahTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    flex: 1,
+    minWidth: 0,
+    textAlign: 'center',
+  },
+  dotsButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
   },
   toolbar: {
     flexDirection: 'row',
@@ -1185,6 +1223,98 @@ const styles = StyleSheet.create({
   langToolText: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 11,
+  },
+
+  /* Tools Menu (dots) */
+  toolsMenuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+    padding: 16,
+    paddingBottom: 32,
+  },
+  toolsMenuPanel: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    maxWidth: 380,
+    alignSelf: 'center',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  toolsMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+    minHeight: 56,
+  },
+  toolsMenuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolsMenuTextGroup: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  toolsMenuItemTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 15,
+  },
+  toolsMenuItemSubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
+  },
+  toolsMenuIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  toolsMenuDivider: {
+    height: 1,
+    marginHorizontal: 16,
+  },
+  toolsMenuFontRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    minHeight: 56,
+  },
+  toolsMenuFontLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+    minWidth: 0,
+  },
+  toolsMenuFontControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  toolsMenuFontBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolsMenuFontBtnText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 14,
   },
   translationWrap: {
     marginTop: 8,
