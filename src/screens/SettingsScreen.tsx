@@ -11,7 +11,9 @@ import {
   configureNotifications,
   requestNotificationPermission,
   schedulePrayerNotifications,
+  scheduleQuranReminder,
   cancelPrayerNotifications,
+  cancelQuranReminder,
   getNotificationHealth,
   NotificationHealth,
 } from '../lib/notifications';
@@ -34,7 +36,7 @@ const ABOUT_ROWS: { title: string; subtitle: string }[] = [
 
 export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const { colors, mode, accentKey, setAccent } = useTheme();
-  const { settings, setMethod, setTimeFormat, setReminders, setThemeMode, setWomenWorship, setWomenPinHash, setWomenLockEnabled, setHapticsEnabled } = useSettings();
+  const { settings, setMethod, setTimeFormat, setReminders, setReminderOffsetMinutes, setQuranReminderEnabled, setThemeMode, setWomenWorship, setWomenPinHash, setWomenLockEnabled, setHapticsEnabled } = useSettings();
   const { haptic } = useHaptics();
   const { edition, flag } = useQuranLanguage();
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
@@ -46,6 +48,8 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const methodId = settings.methodId;
   const timeFormat = settings.timeFormat;
   const remindersEnabled = settings.remindersEnabled;
+  const reminderOffsetMinutes = settings.reminderOffsetMinutes;
+  const quranReminderEnabled = settings.quranReminderEnabled;
   const themeMode = settings.themeMode;
   const womenWorshipEnabled = settings.womenWorshipEnabled;
   const womenPinHash = settings.womenPinHash;
@@ -97,7 +101,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
       try {
         const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
         await cancelPrayerNotifications();
-        await schedulePrayerNotifications(data, 10, settings.manualLocation.label);
+        await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
       } catch {
         // scheduling failed; still enable the toggle, user can retry
       }
@@ -105,6 +109,24 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
       await cancelPrayerNotifications();
     }
     setReminders(next);
+    haptic('light');
+  }
+
+  async function onToggleQuranReminder() {
+    const next = !quranReminderEnabled;
+    if (next) {
+      const granted = await requestNotificationPermission();
+      if (!granted) return;
+      await configureNotifications();
+      try {
+        await scheduleQuranReminder();
+      } catch {
+        // scheduling failed; still enable the toggle, user can retry
+      }
+    } else {
+      await cancelQuranReminder();
+    }
+    setQuranReminderEnabled(next);
     haptic('light');
   }
 
@@ -309,7 +331,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
           <View style={styles.rowFlex}>
             <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Prayer reminders</Text>
             <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Notification 10 minutes before each prayer
+              Notification {reminderOffsetMinutes} minutes before each prayer
             </Text>
           </View>
           <TouchableOpacity
@@ -326,6 +348,67 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
             />
           </TouchableOpacity>
         </View>
+
+        {/* Reminder offset picker */}
+        <Hairline />
+        <View style={styles.row}>
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Remind before prayer</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              Minutes before each prayer time
+            </Text>
+          </View>
+          <View style={styles.segRow}>
+            {[5, 10, 15, 20, 30].map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[
+                  styles.seg,
+                  { borderColor: colors.borderSubtle },
+                  reminderOffsetMinutes === m && { backgroundColor: colors.accentDim, borderColor: colors.accent },
+                ]}
+                onPress={() => { setReminderOffsetMinutes(m); haptic('light'); }}
+                disabled={!remindersEnabled}
+                accessibilityRole="button"
+                accessibilityState={{ selected: reminderOffsetMinutes === m }}
+              >
+                <Text
+                  style={[
+                    styles.segLabel,
+                    { color: reminderOffsetMinutes === m ? colors.accent : !remindersEnabled ? colors.textMuted : colors.textSecondary },
+                  ]}
+                >
+                  {m} min
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Quran reminder toggle */}
+        <Hairline />
+        <View style={styles.row}>
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Quran reminder</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              Daily reminder to continue reading at 8:00 PM
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.toggle, { borderColor: colors.accent }]}
+            onPress={onToggleQuranReminder}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: quranReminderEnabled }}
+          >
+            <View
+              style={[
+                styles.toggleKnob,
+                { backgroundColor: colors.accent, alignSelf: quranReminderEnabled ? 'flex-end' : 'flex-start' },
+              ]}
+            />
+          </TouchableOpacity>
+        </View>
+
         {/* Compact Notification Health */}
         <Hairline />
         <View style={styles.healthCompact}>

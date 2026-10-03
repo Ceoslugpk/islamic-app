@@ -16,6 +16,8 @@ export interface AppSettings {
   manualLocation: Location;
   autoLocation: Location | null;
   remindersEnabled: boolean;
+  reminderOffsetMinutes: number;
+  quranReminderEnabled: boolean;
   themeMode: ThemeMode;
   accentKey: AccentKey;
   translationAudioEnabled: boolean;
@@ -34,6 +36,8 @@ interface SettingsContextValue {
   setManualLocation: (loc: Location) => void;
   setAutoLocation: (loc: Location) => void;
   setReminders: (enabled: boolean) => void;
+  setReminderOffsetMinutes: (minutes: number) => void;
+  setQuranReminderEnabled: (enabled: boolean) => void;
   setThemeMode: (m: ThemeMode) => void;
   setAccentKey: (key: AccentKey) => void;
   setTranslationAudioEnabled: (enabled: boolean) => void;
@@ -53,6 +57,8 @@ const DEFAULTS: AppSettings = {
   manualLocation: { latitude: 25.2048, longitude: 55.2708, label: 'Dubai, UAE' },
   autoLocation: null,
   remindersEnabled: false,
+  reminderOffsetMinutes: 15,
+  quranReminderEnabled: false,
   themeMode: 'system',
   accentKey: 'amber',
   translationAudioEnabled: true,
@@ -103,6 +109,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setManualLocation: (manualLocation) => setSettings((prev) => persist({ ...prev, manualLocation })),
     setAutoLocation: (autoLocation) => setSettings((prev) => persist({ ...prev, autoLocation })),
     setReminders: (remindersEnabled) => setSettings((prev) => persist({ ...prev, remindersEnabled })),
+    setReminderOffsetMinutes: (reminderOffsetMinutes) => setSettings((prev) => persist({ ...prev, reminderOffsetMinutes })),
+    setQuranReminderEnabled: (quranReminderEnabled) => setSettings((prev) => persist({ ...prev, quranReminderEnabled })),
     setThemeMode: (themeMode) => setSettings((prev) => persist({ ...prev, themeMode })),
     setAccentKey: (accentKey) => setSettings((prev) => persist({ ...prev, accentKey })),
     setTranslationAudioEnabled: (translationAudioEnabled) => {

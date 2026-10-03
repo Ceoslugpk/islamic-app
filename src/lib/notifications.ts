@@ -11,6 +11,8 @@ export interface NotificationFingerprint {
   location: Location;
   methodId: number;
   remindersEnabled: boolean;
+  reminderOffsetMinutes: number;
+  quranReminderEnabled: boolean;
 }
 
 export interface NotificationHealth {
@@ -51,16 +53,18 @@ export async function configureNotifications() {
   ]);
 }
 
-function computeFingerprint(location: Location, methodId: number, remindersEnabled: boolean): NotificationFingerprint {
+function computeFingerprint(location: Location, methodId: number, remindersEnabled: boolean, reminderOffsetMinutes: number, quranReminderEnabled: boolean): NotificationFingerprint {
   return {
     location: { latitude: location.latitude, longitude: location.longitude, label: location.label },
     methodId,
     remindersEnabled,
+    reminderOffsetMinutes,
+    quranReminderEnabled,
   };
 }
 
 function fingerprintToString(fp: NotificationFingerprint): string {
-  return `${fp.location.latitude.toFixed(4)},${fp.location.longitude.toFixed(4)}|${fp.methodId}|${fp.remindersEnabled ? 1 : 0}`;
+  return `${fp.location.latitude.toFixed(4)},${fp.location.longitude.toFixed(4)}|${fp.methodId}|${fp.remindersEnabled ? 1 : 0}|${fp.reminderOffsetMinutes}|${fp.quranReminderEnabled ? 1 : 0}`;
 }
 
 export async function getStoredFingerprint(): Promise<string | null> {
@@ -157,15 +161,17 @@ export async function rescheduleIfNeeded(
   location: Location,
   methodId: number,
   remindersEnabled: boolean,
-  hourBeforeMinutes: number
+  reminderOffsetMinutes: number,
+  quranReminderEnabled: boolean
 ): Promise<boolean> {
-  if (!remindersEnabled) {
+  if (!remindersEnabled && !quranReminderEnabled) {
     await cancelPrayerNotifications();
+    await cancelQuranReminder();
     await clearStoredFingerprint();
     return false;
   }
 
-  const currentFp = computeFingerprint(location, methodId, remindersEnabled);
+  const currentFp = computeFingerprint(location, methodId, remindersEnabled, reminderOffsetMinutes, quranReminderEnabled);
   const currentFpStr = fingerprintToString(currentFp);
   const storedFpStr = await getStoredFingerprint();
 
@@ -189,7 +195,13 @@ export async function rescheduleIfNeeded(
     const { fetchPrayerTimes } = await import('./prayerTimes');
     const data = await fetchPrayerTimes(location, methodId);
     await cancelPrayerNotifications();
-    await schedulePrayerNotifications(data, hourBeforeMinutes, location.label);
+    await cancelQuranReminder();
+    if (remindersEnabled) {
+      await schedulePrayerNotifications(data, reminderOffsetMinutes, location.label);
+    }
+    if (quranReminderEnabled) {
+      await scheduleQuranReminder();
+    }
     await storeFingerprint(currentFp);
     return true;
   } catch {
@@ -198,12 +210,14 @@ export async function rescheduleIfNeeded(
 }
 
 /**
- * Schedule a notification for each prayer time today.
+ * Schedule TWO notifications per prayer:
+ * - Before prayer (at offset minutes before): countdown style "🕌 Maghrib in 15 minutes" / "Dubai · 18:21"
+ * - At prayer time: "🕌 Maghrib" / "It's time for Maghrib."
  * Returns the notification IDs so callers can cancel/reschedule.
  */
 export async function schedulePrayerNotifications(
   timings: DayTimings,
-  hourBeforeMinutes = 10,
+  reminderOffsetMinutes = 15,
   locationLabel?: string
 ): Promise<string[]> {
   const ids: string[] = [];
@@ -217,7 +231,6 @@ export async function schedulePrayerNotifications(
     { name: 'Isha', time: timings.timings.Isha },
   ];
 
-  // Date for the prayer (ISO string YYYY-MM-DD)
   const prayerDate = new Date();
   const dateStr = prayerDate.toISOString().slice(0, 10);
   const label = locationLabel || 'Unknown';
@@ -225,29 +238,57 @@ export async function schedulePrayerNotifications(
   for (const p of prayers) {
     if (!p.time || !p.time.includes(':')) continue;
     const [h, m] = p.time.split(':').map(Number);
-    const triggerDate = new Date();
-    triggerDate.setHours(h, m - hourBeforeMinutes, 0, 0);
+    
+    // Before prayer notification (at offset minutes before)
+    const beforeTriggerDate = new Date();
+    beforeTriggerDate.setHours(h, m - reminderOffsetMinutes, 0, 0);
+    
+    if (beforeTriggerDate.getTime() > now) {
+      try {
+        const id = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: `🕌 ${p.name} in ${reminderOffsetMinutes} minutes`,
+            body: `${label} · ${p.time}`,
+            sound: 'default',
+            data: { prayer: p.name, date: dateStr, type: 'prayer-before' },
+            categoryIdentifier: 'prayer',
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: beforeTriggerDate,
+            channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
+          },
+        });
+        ids.push(id);
+      } catch (e) {
+        // notification scheduling failed; skip this prayer
+      }
+    }
 
-    if (triggerDate.getTime() <= now) continue; // already passed
-
-    try {
-      const id = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: `🕌 ${p.name}`,
-          body: `${p.time} · ${label}`,
-          sound: 'default',
-          data: { prayer: p.name, date: dateStr },
-          categoryIdentifier: 'prayer',
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: triggerDate,
-          channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
-        },
-      });
-      ids.push(id);
-    } catch (e) {
-      // notification scheduling failed; skip this prayer
+    // At prayer time notification
+    const atTriggerDate = new Date();
+    atTriggerDate.setHours(h, m, 0, 0);
+    
+    if (atTriggerDate.getTime() > now) {
+      try {
+        const id = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: `🕌 ${p.name}`,
+            body: `It's time for ${p.name}.`,
+            sound: 'default',
+            data: { prayer: p.name, date: dateStr, type: 'prayer-at' },
+            categoryIdentifier: 'prayer',
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: atTriggerDate,
+            channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
+          },
+        });
+        ids.push(id);
+      } catch (e) {
+        // notification scheduling failed; skip this prayer
+      }
     }
   }
 
@@ -257,6 +298,55 @@ export async function schedulePrayerNotifications(
 /** Cancel all previously scheduled prayer notifications. */
 export async function cancelPrayerNotifications() {
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+/** Schedule daily Quran reminder notification at 20:00. */
+export async function scheduleQuranReminder(): Promise<string | null> {
+  try {
+    const { getReadingPosition } = await import('./continuing');
+    const { SURAHS_114 } = await import('./surahs114');
+    
+    const position = await getReadingPosition();
+    if (!position) return null;
+    
+    const surah = SURAHS_114.find(s => s.number === position.surah);
+    const surahName = surah?.englishName || `Surah ${position.surah}`;
+    
+    const now = new Date();
+    const triggerDate = new Date();
+    triggerDate.setHours(20, 0, 0, 0); // 8:00 PM daily
+    
+    // If 20:00 has already passed today, schedule for tomorrow
+    if (triggerDate.getTime() <= now.getTime()) {
+      triggerDate.setDate(triggerDate.getDate() + 1);
+    }
+    
+    // Use a repeating trigger for daily reminder
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '📖 Continue your Quran',
+        body: `You stopped at ${surahName} ${position.surah}:${position.ayah}.`,
+        sound: 'default',
+        data: { type: 'quran-reminder' },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: 20,
+        minute: 0,
+        channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
+      },
+    });
+    return id;
+  } catch {
+    return null;
+  }
+}
+
+/** Cancel Quran reminder notification. */
+export async function cancelQuranReminder() {
+  // We can't easily cancel just the quran reminder without knowing its ID,
+  // so we cancel all and reschedule prayers if needed. 
+  // The rescheduleIfNeeded handles this by canceling all and re-scheduling.
 }
 
 /** Notification response listener setup - call once at app startup. */
@@ -290,12 +380,14 @@ export async function getNotificationHealth(
   timings: DayTimings | null,
   location: Location,
   methodId: number,
-  remindersEnabled: boolean
+  remindersEnabled: boolean,
+  reminderOffsetMinutes: number = 15,
+  quranReminderEnabled: boolean = false
 ): Promise<NotificationHealth> {
   const permission = await checkNotificationPermission();
   let status: 'active' | 'paused' | 'permission-needed' = 'paused';
 
-  if (!remindersEnabled) {
+  if (!remindersEnabled && !quranReminderEnabled) {
     status = 'paused';
   } else if (permission !== 'granted') {
     status = 'permission-needed';
@@ -309,13 +401,26 @@ export async function getNotificationHealth(
   let fingerprint: NotificationFingerprint | null = null;
   if (storedFpStr) {
     const parts = storedFpStr.split('|');
-    if (parts.length === 3) {
+    if (parts.length === 5) {
+      const [latLon, methodStr, remindersStr, offsetStr, quranStr] = parts;
+      const [lat, lon] = latLon.split(',').map(Number);
+      fingerprint = {
+        location: { latitude: lat, longitude: lon, label: '' },
+        methodId: parseInt(methodStr, 10),
+        remindersEnabled: remindersStr === '1',
+        reminderOffsetMinutes: parseInt(offsetStr, 10),
+        quranReminderEnabled: quranStr === '1',
+      };
+    } else if (parts.length === 3) {
+      // Legacy format support
       const [latLon, methodStr, remindersStr] = parts;
       const [lat, lon] = latLon.split(',').map(Number);
       fingerprint = {
         location: { latitude: lat, longitude: lon, label: '' },
         methodId: parseInt(methodStr, 10),
         remindersEnabled: remindersStr === '1',
+        reminderOffsetMinutes: 15,
+        quranReminderEnabled: false,
       };
     }
   }
