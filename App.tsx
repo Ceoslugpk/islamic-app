@@ -1,0 +1,450 @@
+import React, { useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  SafeAreaView,
+  Modal,
+  useWindowDimensions,
+} from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { Ionicons } from '@expo/vector-icons';
+import { ThemeProvider, useTheme } from './src/lib/theme';
+import { SettingsProvider } from './src/lib/settings';
+import { useEditorialFonts } from './src/lib/fonts';
+
+import HomeScreen from './src/screens/HomeScreen';
+import QiblaScreen from './src/screens/QiblaScreen';
+import QuranHomeScreen from './src/screens/QuranHomeScreen';
+import QuranReaderScreen from './src/screens/QuranReaderScreen';
+import QuranAudioScreen from './src/screens/QuranAudioScreen';
+import TafsirScreen from './src/screens/TafsirScreen';
+import QuranTopicsScreen from './src/screens/QuranTopicsScreen';
+import TranslationCompareScreen from './src/screens/TranslationCompareScreen';
+import BookmarksScreen from './src/screens/BookmarksScreen';
+import NotesScreen from './src/screens/NotesScreen';
+import CalendarScreen from './src/screens/CalendarScreen';
+import LibraryScreen, { LibraryItemKey } from './src/screens/LibraryScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+import TasbihScreen from './src/screens/TasbihScreen';
+import NamesScreen from './src/screens/NamesScreen';
+import DuasScreen from './src/screens/DuasScreen';
+import ReadingPlansScreen from './src/screens/ReadingPlansScreen';
+import HifzScreen from './src/screens/HifzScreen';
+import HadithLibraryScreen from './src/screens/HadithLibraryScreen';
+import FastingScreen from './src/screens/FastingScreen';
+import ZakatScreen from './src/screens/ZakatScreen';
+import ToolsScreen, { ToolsItemKey } from './src/screens/ToolsScreen';
+import SalahTrackerScreen from './src/screens/SalahTrackerScreen';
+import LocationScreen from './src/screens/LocationScreen';
+import CitiesScreen from './src/screens/CitiesScreen';
+import NotificationsScreen from './src/screens/NotificationsScreen';
+
+
+type TabKey = 'home' | 'quran' | 'library' | 'tools';
+
+interface TabItemConfig {
+  key: TabKey;
+  label: string;
+  iconActive: keyof typeof Ionicons.glyphMap;
+  iconInactive: keyof typeof Ionicons.glyphMap;
+}
+
+const TABS: TabItemConfig[] = [
+  { key: 'home', label: 'Home', iconActive: 'home', iconInactive: 'home-outline' },
+  { key: 'quran', label: 'Quran', iconActive: 'book', iconInactive: 'book-outline' },
+  { key: 'library', label: 'Library', iconActive: 'albums', iconInactive: 'albums-outline' },
+  { key: 'tools', label: 'Tools', iconActive: 'construct', iconInactive: 'construct-outline' },
+];
+
+function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
+  const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const isTiny = width <= 340;
+
+  const iconSize = isTiny ? 17 : isCompact ? 18 : 20;
+  const fontSize = isTiny ? 10 : isCompact ? 11 : 12;
+  const indicatorWidth = isCompact ? 18 : 24;
+
+  return (
+    <View
+      style={[
+        styles.tabBar,
+        {
+          backgroundColor: colors.bgSurface,
+          borderTopColor: colors.borderSubtle,
+          paddingBottom: isCompact ? 4 : 6,
+          paddingTop: isCompact ? 2 : 4,
+        },
+      ]}
+    >
+      {TABS.map((tab) => {
+        const isActive = tab.key === active;
+        const iconName = isActive ? tab.iconActive : tab.iconInactive;
+        const iconColor = isActive ? colors.accent : colors.textMuted;
+        return (
+          <TouchableOpacity
+            key={tab.key}
+            style={[
+              styles.tabItem,
+              {
+                paddingVertical: isCompact ? 6 : 8,
+                gap: isCompact ? 2 : 4,
+              },
+            ]}
+            onPress={() => onChange(tab.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            accessibilityLabel={tab.label}
+          >
+            <Ionicons name={iconName} size={iconSize} color={iconColor} />
+            <Text
+              style={[
+                styles.tabLabel,
+                {
+                  color: iconColor,
+                  fontSize,
+                  letterSpacing: isCompact ? 0 : 0.3,
+                },
+              ]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {tab.label}
+            </Text>
+            <View
+              style={[
+                styles.tabIndicator,
+                {
+                  width: indicatorWidth,
+                  backgroundColor: isActive ? colors.accent : 'transparent',
+                },
+              ]}
+            />
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Top app header: brand + settings gear. */
+function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
+  const { colors } = useTheme();
+  return (
+    <View style={[styles.appHeader, { borderBottomColor: colors.borderSubtle }]}>
+      <Text style={[styles.headerBrand, { color: colors.textPrimary }]}>
+        Islamic
+      </Text>
+      <TouchableOpacity
+        onPress={onOpenSettings}
+        accessibilityRole="button"
+        accessibilityLabel="Open settings"
+        style={styles.gearBtn}
+      >
+        <Text style={[styles.gear, { color: colors.textSecondary }]}>⚙︎</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+type LibraryView =
+  | { screen: 'hub' }
+  | { screen: 'calendar' }
+  | { screen: 'tasbih' }
+  | { screen: 'names' }
+  | { screen: 'duas' }
+  | { screen: 'hadith' }
+  | { screen: 'fasting' }
+  | { screen: 'zakat' };
+
+type QuranView =
+  | { screen: 'home' }
+  | { screen: 'reader'; surah: number; initialAyah?: number }
+  | { screen: 'audio' }
+  | { screen: 'tafsir'; surah?: number }
+  | { screen: 'topics' }
+  | { screen: 'compare'; surah?: number; ayah?: number }
+  | { screen: 'bookmarks' }
+  | { screen: 'notes' }
+  | { screen: 'plans' }
+  | { screen: 'hifz' };
+
+type ToolsView =
+  | { screen: 'hub' }
+  | { screen: 'qibla' }
+  | { screen: 'tracker' }
+  | { screen: 'location' }
+  | { screen: 'cities' }
+  | { screen: 'notifications' };
+
+function Root() {
+  const { colors, mode } = useTheme();
+  const [tab, setTab] = useState<TabKey>('home');
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [library, setLibrary] = useState<LibraryView>({ screen: 'hub' });
+  const [quran, setQuran] = useState<QuranView>({ screen: 'home' });
+  const [tools, setTools] = useState<ToolsView>({ screen: 'hub' });
+
+  function switchTab(next: TabKey) {
+    // Reset sub-views when switching away
+    if (next !== 'library') setLibrary({ screen: 'hub' });
+    if (next !== 'quran') setQuran({ screen: 'home' });
+    if (next !== 'tools') setTools({ screen: 'hub' });
+    setTab(next);
+  }
+
+  function openToolsItem(key: ToolsItemKey) {
+    if (key === 'qibla') setTools({ screen: 'qibla' });
+    else if (key === 'tracker') setTools({ screen: 'tracker' });
+    else if (key === 'location') setTools({ screen: 'location' });
+    else if (key === 'cities') setTools({ screen: 'cities' });
+    else if (key === 'notifications') setTools({ screen: 'notifications' });
+  }
+
+  function openLibraryItem(key: LibraryItemKey) {
+    if (key === 'calendar') setLibrary({ screen: 'calendar' });
+    else if (key === 'tasbih') setLibrary({ screen: 'tasbih' });
+    else if (key === 'names') setLibrary({ screen: 'names' });
+    else if (key === 'duas') setLibrary({ screen: 'duas' });
+    else if (key === 'hadith') setLibrary({ screen: 'hadith' });
+    else if (key === 'fasting') setLibrary({ screen: 'fasting' });
+    else if (key === 'zakat') setLibrary({ screen: 'zakat' });
+  }
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bgBase }]}>
+      <StatusBar style={mode === 'ink' ? 'light' : 'dark'} />
+      <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
+      <View style={styles.screenWrap}>
+        {tab === 'home' && (
+          <HomeScreen
+            onOpenQibla={() => {
+              setLibrary({ screen: 'hub' });
+              setQuran({ screen: 'home' });
+              setTools({ screen: 'qibla' });
+              setTab('tools');
+            }}
+            onOpenAudio={() => {
+              setLibrary({ screen: 'hub' });
+              setTools({ screen: 'hub' });
+              setQuran({ screen: 'audio' });
+              setTab('quran');
+            }}
+            onOpenTasbih={() => {
+              setQuran({ screen: 'home' });
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'tasbih' });
+              setTab('library');
+            }}
+            onOpenNames={() => {
+              setQuran({ screen: 'home' });
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'names' });
+              setTab('library');
+            }}
+            onOpenDuas={() => {
+              setQuran({ screen: 'home' });
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'duas' });
+              setTab('library');
+            }}
+          />
+        )}
+
+        {/* Quran Tab Views */}
+        {tab === 'quran' && quran.screen === 'home' && (
+          <QuranHomeScreen
+            onOpenSurah={(n, a) => setQuran({ screen: 'reader', surah: n, initialAyah: a })}
+            onOpenAudio={() => setQuran({ screen: 'audio' })}
+            onOpenTafsir={() => setQuran({ screen: 'tafsir' })}
+            onOpenTopics={() => setQuran({ screen: 'topics' })}
+            onOpenCompare={() => setQuran({ screen: 'compare' })}
+            onOpenBookmarks={() => setQuran({ screen: 'bookmarks' })}
+            onOpenNotes={() => setQuran({ screen: 'notes' })}
+            onOpenPlans={() => setQuran({ screen: 'plans' })}
+            onOpenHifz={() => setQuran({ screen: 'hifz' })}
+          />
+        )}
+        {tab === 'quran' && quran.screen === 'reader' && (
+          <QuranReaderScreen
+            surahNumber={quran.surah}
+            initialAyah={quran.initialAyah}
+            onBack={() => setQuran({ screen: 'home' })}
+          />
+        )}
+        {tab === 'quran' && quran.screen === 'audio' && (
+          <QuranAudioScreen onBack={() => setQuran({ screen: 'home' })} />
+        )}
+        {tab === 'quran' && quran.screen === 'tafsir' && (
+          <TafsirScreen
+            surahNumber={quran.surah}
+            onBack={() => setQuran({ screen: 'home' })}
+            onOpenReader={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
+          />
+        )}
+        {tab === 'quran' && quran.screen === 'topics' && (
+          <QuranTopicsScreen
+            onBack={() => setQuran({ screen: 'home' })}
+            onOpenSurah={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
+          />
+        )}
+        {tab === 'quran' && quran.screen === 'compare' && (
+          <TranslationCompareScreen
+            initialSurah={quran.surah}
+            initialAyah={quran.ayah}
+            onBack={() => setQuran({ screen: 'home' })}
+            onOpenReader={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
+          />
+        )}
+        {tab === 'quran' && quran.screen === 'bookmarks' && (
+          <BookmarksScreen
+            backLabel="Quran"
+            onBack={() => setQuran({ screen: 'home' })}
+            onOpenVerse={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
+          />
+        )}
+        {tab === 'quran' && quran.screen === 'notes' && (
+          <NotesScreen
+            backLabel="Quran"
+            onBack={() => setQuran({ screen: 'home' })}
+            onOpenVerse={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
+          />
+        )}
+        {tab === 'quran' && quran.screen === 'plans' && (
+          <ReadingPlansScreen onBack={() => setQuran({ screen: 'home' })} />
+        )}
+        {tab === 'quran' && quran.screen === 'hifz' && (
+          <HifzScreen onBack={() => setQuran({ screen: 'home' })} />
+        )}
+
+        {/* Library Tab Views */}
+        {tab === 'library' && library.screen === 'hub' && (
+          <LibraryScreen onOpen={openLibraryItem} />
+        )}
+        {tab === 'library' && library.screen === 'calendar' && (
+          <CalendarScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'tasbih' && (
+          <TasbihScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'names' && (
+          <NamesScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'duas' && (
+          <DuasScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'hadith' && (
+          <HadithLibraryScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'fasting' && (
+          <FastingScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'zakat' && (
+          <ZakatScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+
+        {/* Tools Tab Views */}
+        {tab === 'tools' && tools.screen === 'hub' && (
+          <ToolsScreen onOpen={openToolsItem} />
+        )}
+        {tab === 'tools' && tools.screen === 'qibla' && (
+          <QiblaScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'tracker' && (
+          <SalahTrackerScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'location' && (
+          <LocationScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenCities={() => setTools({ screen: 'cities' })}
+          />
+        )}
+        {tab === 'tools' && tools.screen === 'cities' && (
+          <CitiesScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'notifications' && (
+          <NotificationsScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+      </View>
+      <TabBar active={tab} onChange={switchTab} />
+
+
+      {/* Settings modal */}
+      <Modal
+        visible={settingsOpen}
+        animationType="slide"
+        onRequestClose={() => setSettingsOpen(false)}
+      >
+        <SafeAreaView style={[styles.safe, { backgroundColor: colors.bgBase }]}>
+          <SettingsScreen onClose={() => setSettingsOpen(false)} />
+        </SafeAreaView>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+export default function App() {
+  const [fontsLoaded, fontError] = useEditorialFonts();
+
+  if (!fontsLoaded && !fontError) {
+    return <View style={styles.loading} />;
+  }
+
+  return (
+    <SettingsProvider>
+      <ThemeProvider>
+        <Root />
+      </ThemeProvider>
+    </SettingsProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  screenWrap: { flex: 1 },
+  loading: { flex: 1, backgroundColor: '#121110' },
+  appHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  headerBrand: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 22,
+  },
+  gearBtn: {
+    padding: 8,
+  },
+  gear: {
+    fontSize: 20,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    paddingBottom: 6,
+    paddingTop: 4,
+  },
+  tabItem: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+  },
+  tabLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.3,
+  },
+  tabIndicator: {
+    width: 24,
+    height: 2,
+    borderRadius: 1,
+  },
+});
