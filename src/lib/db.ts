@@ -503,5 +503,66 @@ export function deleteZakatCalculation(id: string): void {
   webKV.delete(`zakat:history:${id}`);
 }
 
+/* ─── Women's Worship Storage ───────────────────────────────── */
+
+export type PurityStatus = 'menstruating' | 'spotting' | 'pure';
+
+export interface PeriodEntry {
+  id: string;
+  startDate: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+  notes?: string;
+  purityDays?: Record<string, PurityStatus>;
+  createdAt: number;
+}
+
+export interface NifasEntry {
+  id: string;
+  startDate: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+  notes?: string;
+  createdAt: number;
+}
+
+export function savePeriodEntry(entry: PeriodEntry): void {
+  webKV.set(`women:period:${entry.id}`, JSON.stringify(entry));
+}
+
+export function deletePeriodEntry(id: string): void {
+  webKV.delete(`women:period:${id}`);
+}
+
+export function loadPeriodEntries(): PeriodEntry[] {
+  const rows = webKV.getAll('women:period:');
+  const items: PeriodEntry[] = [];
+  for (const { value } of rows) {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && parsed.id) items.push(parsed);
+    } catch { /* ignore */ }
+  }
+  return items.sort((a, b) => b.startDate.localeCompare(a.startDate));
+}
+
+export function saveNifasEntry(entry: NifasEntry): void {
+  webKV.set(`women:nifas:${entry.id}`, JSON.stringify(entry));
+}
+
+export function deleteNifasEntry(id: string): void {
+  webKV.delete(`women:nifas:${id}`);
+}
+
+export function loadNifasEntries(): NifasEntry[] {
+  const rows = webKV.getAll('women:nifas:');
+  const items: NifasEntry[] = [];
+  for (const { value } of rows) {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && parsed.id) items.push(parsed);
+    } catch { /* ignore */ }
+  }
+  return items.sort((a, b) => b.startDate.localeCompare(a.startDate));
+}
+
 
 

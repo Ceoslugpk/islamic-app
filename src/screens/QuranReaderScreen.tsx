@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import type { ViewabilityConfig, ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -19,6 +20,8 @@ import { ArabicText, AyahText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
+import { saveReadingPosition } from '../lib/continuing';
+import { recordSurahVisit } from '../lib/recentSurahs';
 import {
   addBookmark,
   getBookmarks,

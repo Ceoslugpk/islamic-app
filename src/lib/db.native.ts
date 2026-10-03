@@ -108,6 +108,21 @@ function migrate(database: SQLite.SQLiteDatabase) {
       breakdown TEXT NOT NULL,
       created_at INTEGER
     );
+    CREATE TABLE IF NOT EXISTS period_entries (
+      id TEXT PRIMARY KEY,
+      start_date TEXT NOT NULL,
+      end_date TEXT,
+      notes TEXT,
+      purity_days TEXT,
+      created_at INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS nifas_entries (
+      id TEXT PRIMARY KEY,
+      start_date TEXT NOT NULL,
+      end_date TEXT,
+      notes TEXT,
+      created_at INTEGER
+    );
   `);
 }
 
@@ -798,6 +813,133 @@ export function deleteZakatCalculation(id: string): void {
   try {
     getDb().runSync('DELETE FROM zakat_history WHERE id = ?', id);
   } catch { /* non-fatal */ }
+}
+
+/* ─── Women's Worship Storage (Native SQLite) ────────────────── */
+
+export type PurityStatus = 'menstruating' | 'spotting' | 'pure';
+
+export interface PeriodEntry {
+  id: string;
+  startDate: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+  notes?: string;
+  purityDays?: Record<string, PurityStatus>;
+  createdAt: number;
+}
+
+export interface NifasEntry {
+  id: string;
+  startDate: string; // YYYY-MM-DD
+  endDate?: string;   // YYYY-MM-DD
+  notes?: string;
+  createdAt: number;
+}
+
+interface PeriodEntryRow {
+  id: string;
+  start_date: string;
+  end_date: string | null;
+  notes: string | null;
+  purity_days: string | null;
+  created_at: number;
+}
+
+interface NifasEntryRow {
+  id: string;
+  start_date: string;
+  end_date: string | null;
+  notes: string | null;
+  created_at: number;
+}
+
+export function savePeriodEntry(entry: PeriodEntry): void {
+  try {
+    getDb().runSync(
+      `INSERT INTO period_entries (id, start_date, end_date, notes, purity_days, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         start_date = excluded.start_date,
+         end_date = excluded.end_date,
+         notes = excluded.notes,
+         purity_days = excluded.purity_days`,
+      entry.id,
+      entry.startDate,
+      entry.endDate || null,
+      entry.notes || null,
+      entry.purityDays ? JSON.stringify(entry.purityDays) : null,
+      entry.createdAt || Date.now()
+    );
+  } catch { /* non-fatal */ }
+}
+
+export function deletePeriodEntry(id: string): void {
+  try {
+    getDb().runSync('DELETE FROM period_entries WHERE id = ?', id);
+  } catch { /* non-fatal */ }
+}
+
+export function loadPeriodEntries(): PeriodEntry[] {
+  try {
+    const rows = getDb().getAllSync<PeriodEntryRow>('SELECT * FROM period_entries ORDER BY start_date DESC');
+    return rows.map((r) => {
+      let purityDays: Record<string, PurityStatus> | undefined;
+      if (r.purity_days) {
+        try {
+          purityDays = JSON.parse(r.purity_days);
+        } catch { /* ignore */ }
+      }
+      return {
+        id: r.id,
+        startDate: r.start_date,
+        endDate: r.end_date || undefined,
+        notes: r.notes || undefined,
+        purityDays,
+        createdAt: r.created_at,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export function saveNifasEntry(entry: NifasEntry): void {
+  try {
+    getDb().runSync(
+      `INSERT INTO nifas_entries (id, start_date, end_date, notes, created_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         start_date = excluded.start_date,
+         end_date = excluded.end_date,
+         notes = excluded.notes`,
+      entry.id,
+      entry.startDate,
+      entry.endDate || null,
+      entry.notes || null,
+      entry.createdAt || Date.now()
+    );
+  } catch { /* non-fatal */ }
+}
+
+export function deleteNifasEntry(id: string): void {
+  try {
+    getDb().runSync('DELETE FROM nifas_entries WHERE id = ?', id);
+  } catch { /* non-fatal */ }
+}
+
+export function loadNifasEntries(): NifasEntry[] {
+  try {
+    const rows = getDb().getAllSync<NifasEntryRow>('SELECT * FROM nifas_entries ORDER BY start_date DESC');
+    return rows.map((r) => ({
+      id: r.id,
+      startDate: r.start_date,
+      endDate: r.end_date || undefined,
+      notes: r.notes || undefined,
+      createdAt: r.created_at,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 

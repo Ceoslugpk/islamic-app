@@ -29,13 +29,14 @@ const ABOUT_ROWS: { title: string; subtitle: string }[] = [
 
 export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const { colors, mode, accentKey, setAccent } = useTheme();
-  const { settings, setMethod, setTimeFormat, setReminders, setThemeMode } = useSettings();
+  const { settings, setMethod, setTimeFormat, setReminders, setThemeMode, setWomenWorship } = useSettings();
   const { edition, flag } = useQuranLanguage();
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
   const methodId = settings.methodId;
   const timeFormat = settings.timeFormat;
   const remindersEnabled = settings.remindersEnabled;
   const themeMode = settings.themeMode;
+  const womenWorshipEnabled = settings.womenWorshipEnabled;
 
   async function onToggleReminders() {
     const next = !remindersEnabled;
@@ -261,6 +262,32 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
           </View>
           <Text style={[styles.testBtn, { color: colors.accent }]}>Play</Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Women's Worship */}
+      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Women's Worship</Text>
+      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
+        <View style={styles.row}>
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Women's Worship</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              Show women's worship tools (period tracking, purity, fiqh)
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.toggle, { borderColor: colors.accent }]}
+            onPress={() => setWomenWorship(!womenWorshipEnabled)}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: womenWorshipEnabled }}
+          >
+            <View
+              style={[
+                styles.toggleKnob,
+                { backgroundColor: colors.accent, alignSelf: womenWorshipEnabled ? 'flex-end' : 'flex-start' },
+              ]}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* About */}

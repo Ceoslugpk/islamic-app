@@ -41,6 +41,7 @@ import LocationScreen from './src/screens/LocationScreen';
 import CitiesScreen from './src/screens/CitiesScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
 import MosqueFinderScreen from './src/screens/MosqueFinderScreen';
+import WomenWorshipScreen from './src/screens/WomenWorshipScreen';
 import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
@@ -182,7 +183,8 @@ type ToolsView =
   | { screen: 'fasting' }
   | { screen: 'zakat' }
   | { screen: 'calendar' }
-  | { screen: 'mosque' };
+  | { screen: 'mosque' }
+  | { screen: 'women' };
 
 function Root() {
   const { colors, mode } = useTheme();
@@ -223,6 +225,7 @@ function Root() {
     else if (key === 'zakat') setTools({ screen: 'zakat' });
     else if (key === 'calendar') setTools({ screen: 'calendar' });
     else if (key === 'mosque') setTools({ screen: 'mosque' });
+    else if (key === 'women') setTools({ screen: 'women' });
   }
 
   function openLibraryItem(key: LibraryItemKey) {
@@ -388,6 +391,9 @@ function Root() {
         )}
         {tab === 'tools' && tools.screen === 'mosque' && (
           <MosqueFinderScreen onBack={() => setTools({ screen: 'hub' })} />
+        )}
+        {tab === 'tools' && tools.screen === 'women' && (
+          <WomenWorshipScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
       </View>
       {showMiniPlayer && playback && (

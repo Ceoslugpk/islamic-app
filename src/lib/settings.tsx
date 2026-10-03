@@ -20,6 +20,7 @@ export interface AppSettings {
   accentKey: AccentKey;
   translationAudioEnabled: boolean;
   namesLanguage: NamesLanguage;
+  womenWorshipEnabled: boolean;
 }
 
 interface SettingsContextValue {
@@ -34,6 +35,7 @@ interface SettingsContextValue {
   setAccentKey: (key: AccentKey) => void;
   setTranslationAudioEnabled: (enabled: boolean) => void;
   setNamesLanguage: (lang: NamesLanguage) => void;
+  setWomenWorship: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -49,6 +51,7 @@ const DEFAULTS: AppSettings = {
   accentKey: 'amber',
   translationAudioEnabled: true,
   namesLanguage: 'en',
+  womenWorshipEnabled: false,
 };
 
 const STORAGE_KEY = 'islamic-settings';
@@ -98,6 +101,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSettings((prev) => persist({ ...prev, translationAudioEnabled }));
     },
     setNamesLanguage: (namesLanguage) => setSettings((prev) => persist({ ...prev, namesLanguage })),
+    setWomenWorship: (womenWorshipEnabled) => setSettings((prev) => persist({ ...prev, womenWorshipEnabled })),
   };
 
   if (!ready) return null;

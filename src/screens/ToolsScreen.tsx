@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useSettings } from '../lib/settings';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 
@@ -14,7 +15,8 @@ export type ToolsItemKey =
   | 'fasting'
   | 'zakat'
   | 'calendar'
-  | 'mosque';
+  | 'mosque'
+  | 'women';
 
 interface ToolsItem {
   key: ToolsItemKey;
@@ -28,7 +30,7 @@ interface ToolsGroup {
   items: ToolsItem[];
 }
 
-const GROUPS: ToolsGroup[] = [
+const BASE_GROUPS: ToolsGroup[] = [
   {
     label: 'Prayer & Location',
     items: [
@@ -101,6 +103,28 @@ export default function ToolsScreen({
   onOpen: (key: ToolsItemKey) => void;
 }) {
   const { colors } = useTheme();
+  const { settings } = useSettings();
+
+  const groups: ToolsGroup[] = useMemo(() => {
+    if (!settings.womenWorshipEnabled) {
+      return BASE_GROUPS;
+    }
+    return [
+      BASE_GROUPS[0],
+      {
+        label: 'Worship & Calculations',
+        items: [
+          ...BASE_GROUPS[1].items,
+          {
+            key: 'women',
+            title: "Women's Worship",
+            subtitle: 'Cycle, purity & fiqh guidance',
+            icon: 'flower',
+          },
+        ],
+      },
+    ];
+  }, [settings.womenWorshipEnabled]);
 
   return (
     <ScrollView style={{ backgroundColor: colors.bgBase }} contentContainerStyle={styles.content}>
@@ -110,7 +134,7 @@ export default function ToolsScreen({
         subtitle="Essential calculators, compass, daily trackers & mosque finder"
       />
 
-      {GROUPS.map((group, gi) => (
+      {groups.map((group, gi) => (
         <View key={group.label} style={gi > 0 ? styles.groupGap : undefined}>
           <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{group.label}</Text>
           <View style={styles.list}>
