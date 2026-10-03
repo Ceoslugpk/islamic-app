@@ -1,3 +1,9 @@
+// ============================================================================
+// PRIVACY & EXPLICIT-RECORDING RULE:
+// Missed fasts are only created when explicitly logged by the user.
+// The app never auto-logs missed fasts or changes fasting states from predictions.
+// ============================================================================
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ScrollView,
@@ -102,6 +108,14 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
         <Ionicons name="shield-checkmark" size={14} color={colors.accent} />
         <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
           Private & synchronized · Stored in your central fasting tracker
+        </Text>
+      </View>
+
+      {/* Explicit Recording Reassurance */}
+      <View style={[styles.explicitBadge, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
+        <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
+        <Text style={[styles.explicitText, { color: colors.textMuted }]}>
+          Explicit recording only: Fasts are only tracked when you manually log them here. Predictions never auto-create missed fasts.
         </Text>
       </View>
 
@@ -279,6 +293,21 @@ const styles = StyleSheet.create({
   privacyText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11.5,
+  },
+  explicitBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+  },
+  explicitText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+    flex: 1,
   },
   qadaStatsRow: {
     flexDirection: 'row',

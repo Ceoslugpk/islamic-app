@@ -381,7 +381,7 @@ export default function QuranReaderScreen({
 
   // Share
   const handleShareAyah = (item: Ayah) => {
-    const textToShare = `${item.text}\n\n"${item.translation || ''}"\n\n— Surah ${surah?.englishName || ''} [${surahNumber}:${item.numberInSurah}]`;
+    const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
     Share.share({ message: textToShare }).catch(() => {});
   };
 
@@ -553,6 +553,7 @@ export default function QuranReaderScreen({
             <TouchableOpacity
               onPress={() => handleShareAyah(item)}
               style={styles.actionBtn}
+              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
               accessibilityRole="button"
               accessibilityLabel={`Share Ayah ${item.numberInSurah}`}
             >

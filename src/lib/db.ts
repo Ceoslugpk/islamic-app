@@ -564,5 +564,26 @@ export function loadNifasEntries(): NifasEntry[] {
   return items.sort((a, b) => b.startDate.localeCompare(a.startDate));
 }
 
+/* ─── Women's Data Privacy (clear/delete) ────────────────────── */
+
+/** Delete ALL women-scoped data: cycle/period, purity, nifas, and qada
+ *  missed-fasts recorded as "Menstruation / Post-natal". On-device only. */
+export function clearWomenData(): void {
+  for (const { key } of webKV.getAll('women:period:')) webKV.delete(key);
+  for (const { key } of webKV.getAll('women:nifas:')) webKV.delete(key);
+  const missed = loadMissedFasts();
+  for (const item of missed) {
+    const reason = (item.reason || '').toLowerCase();
+    if (reason.includes('menstru') || reason.includes('post-natal') || reason.includes('postnatal')) {
+      deleteMissedFast(item.id);
+    }
+  }
+}
+
+/** Delete ONLY cycle/period history (keeps purity/ghusl/nifas/qada). */
+export function clearCycleHistory(): void {
+  for (const { key } of webKV.getAll('women:period:')) webKV.delete(key);
+}
+
 
 

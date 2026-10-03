@@ -1,3 +1,12 @@
+// ============================================================================
+// PRIVACY & EXPLICIT-RECORDING RULE:
+// Cycle predictions, average intervals, and fertile windows are strictly
+// informational estimates computed locally from past dates.
+// The app NEVER auto-alters prayer times, NEVER auto-silences notifications,
+// and NEVER auto-creates qada fasts based on predictions.
+// All worship exemptions and qada logs depend strictly on EXPLICIT user recording.
+// ============================================================================
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   ScrollView,
@@ -39,6 +48,8 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
   const [newEndDate, setNewEndDate] = useState('');
   const [newNotes, setNewNotes] = useState('');
 
+  const todayStr = useMemo(() => formatYMD(new Date()), []);
+
   const refreshData = useCallback(() => {
     setPeriodEntries(loadPeriodEntries());
   }, []);
@@ -76,6 +87,11 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
     if (!latestStart) return 1;
     return getCycleDay(latestStart);
   }, [latestStart]);
+
+  const todayRecordedStatus = useMemo(() => {
+    if (!activePeriod) return undefined;
+    return activePeriod.purityDays?.[todayStr] || (activePeriod.startDate === todayStr ? 'menstruating' : undefined);
+  }, [activePeriod, todayStr]);
 
   // Handlers
   const handleSavePeriod = () => {
@@ -208,6 +224,25 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
             <Text style={[styles.heroDesc, { color: colors.textSecondary }]}>
               Started on {activePeriod.startDate}. Prayer and fasting are exempt out of divine mercy.
             </Text>
+
+            {/* Explicit-recording driven status reminder */}
+            {todayRecordedStatus === 'menstruating' && (
+              <View style={[styles.recordedReminderChip, { backgroundColor: '#EF444415', borderColor: '#EF444450' }]}>
+                <Ionicons name="information-circle" size={15} color="#EF4444" />
+                <Text style={[styles.recordedReminderText, { color: colors.textPrimary }]}>
+                  Recorded as Flow today: <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>Remember: no fasting today, mark qada later.</Text>
+                </Text>
+              </View>
+            )}
+            {todayRecordedStatus === 'pure' && (
+              <View style={[styles.recordedReminderChip, { backgroundColor: '#10B98115', borderColor: '#10B98150' }]}>
+                <Ionicons name="sparkles" size={15} color="#10B981" />
+                <Text style={[styles.recordedReminderText, { color: colors.textPrimary }]}>
+                  Recorded as Pure today: <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>Perform Ghusl before resuming Salah & fasting.</Text>
+                </Text>
+              </View>
+            )}
+
             <TouchableOpacity
               style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
               onPress={() => handleEndPeriod(activePeriod)}
@@ -245,6 +280,13 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
             <Text style={[styles.disclaimerText, { color: colors.textMuted }]}>
               Predictions are calculated from past averages for personal tracking only. Not for medical diagnosis or contraception.
             </Text>
+
+            <View style={[styles.explicitRuleBox, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+              <Ionicons name="shield-checkmark-outline" size={14} color={colors.accent} />
+              <Text style={[styles.explicitRuleText, { color: colors.textMuted }]}>
+                Explicit recording only: Predictions never auto-change prayer schedules, reminders, or fasting records.
+              </Text>
+            </View>
 
             <TouchableOpacity
               style={[styles.secondaryBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
@@ -705,5 +747,37 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     textAlign: 'center',
     marginTop: 4,
+  },
+  recordedReminderChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginVertical: 10,
+  },
+  recordedReminderText: {
+    flex: 1,
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  explicitRuleBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginVertical: 10,
+  },
+  explicitRuleText: {
+    flex: 1,
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11,
+    lineHeight: 15,
   },
 });

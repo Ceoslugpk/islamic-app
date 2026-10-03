@@ -21,6 +21,8 @@ export interface AppSettings {
   translationAudioEnabled: boolean;
   namesLanguage: NamesLanguage;
   womenWorshipEnabled: boolean;
+  womenPinHash: string | null;
+  womenLockEnabled: boolean;
 }
 
 interface SettingsContextValue {
@@ -36,6 +38,8 @@ interface SettingsContextValue {
   setTranslationAudioEnabled: (enabled: boolean) => void;
   setNamesLanguage: (lang: NamesLanguage) => void;
   setWomenWorship: (enabled: boolean) => void;
+  setWomenPinHash: (hash: string | null) => void;
+  setWomenLockEnabled: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -52,6 +56,8 @@ const DEFAULTS: AppSettings = {
   translationAudioEnabled: true,
   namesLanguage: 'en',
   womenWorshipEnabled: false,
+  womenPinHash: null,
+  womenLockEnabled: false,
 };
 
 const STORAGE_KEY = 'islamic-settings';
@@ -102,6 +108,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     },
     setNamesLanguage: (namesLanguage) => setSettings((prev) => persist({ ...prev, namesLanguage })),
     setWomenWorship: (womenWorshipEnabled) => setSettings((prev) => persist({ ...prev, womenWorshipEnabled })),
+    setWomenPinHash: (womenPinHash) => setSettings((prev) => persist({ ...prev, womenPinHash })),
+    setWomenLockEnabled: (womenLockEnabled) => setSettings((prev) => persist({ ...prev, womenLockEnabled })),
   };
 
   if (!ready) return null;
