@@ -10,9 +10,9 @@ import {
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Magnetometer } from 'expo-sensors';
-import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useHaptics } from '../lib/haptics';
 import {
   qiblaBearing,
   distanceToKaabaKm,
@@ -49,6 +49,7 @@ function mapAccuracy(acc: number): CompassAccuracy {
 
 export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
   const { colors } = useTheme();
+  const { haptic } = useHaptics();
 
   // Heading & Bearing state
   const [heading, setHeading] = useState<number | null>(null);
@@ -85,13 +86,11 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
   useEffect(() => {
     if (isAligned && !wasAlignedRef.current) {
       wasAlignedRef.current = true;
-      if (Platform.OS !== 'web') {
-        Haptics.selectionAsync().catch(() => {});
-      }
+      haptic('selection');
     } else if (!isAligned && wasAlignedRef.current) {
       wasAlignedRef.current = false;
     }
-  }, [isAligned]);
+  }, [isAligned, haptic]);
 
   const cleanupSubscriptions = useCallback(() => {
     if (locationSubRef.current) {
@@ -231,10 +230,17 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
     return cleanupSubscriptions;
   }, [startCompass, cleanupSubscriptions]);
 
-  const handleRecalibrate = async () => {
-    if (Platform.OS !== 'web') {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  // Haptic when calibration completes (transition from calibrating -> ready)
+  const wasCalibratingRef = useRef(true);
+  useEffect(() => {
+    if (wasCalibratingRef.current && !calibrating) {
+      haptic('success');
     }
+    wasCalibratingRef.current = calibrating;
+  }, [calibrating, haptic]);
+
+  const handleRecalibrate = async () => {
+    haptic('light');
     setRecalibrating(true);
     smoothHeadingRef.current = 0;
     await startCompass();

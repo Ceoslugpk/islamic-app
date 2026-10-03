@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Alert } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
+import { useHaptics } from '../lib/haptics';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { CALC_METHODS, fetchPrayerTimes } from '../lib/prayerTimes';
@@ -31,7 +32,8 @@ const ABOUT_ROWS: { title: string; subtitle: string }[] = [
 
 export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const { colors, mode, accentKey, setAccent } = useTheme();
-  const { settings, setMethod, setTimeFormat, setReminders, setThemeMode, setWomenWorship, setWomenPinHash, setWomenLockEnabled } = useSettings();
+  const { settings, setMethod, setTimeFormat, setReminders, setThemeMode, setWomenWorship, setWomenPinHash, setWomenLockEnabled, setHapticsEnabled } = useSettings();
+  const { haptic } = useHaptics();
   const { edition, flag } = useQuranLanguage();
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
@@ -43,6 +45,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const womenWorshipEnabled = settings.womenWorshipEnabled;
   const womenPinHash = settings.womenPinHash;
   const womenLockEnabled = settings.womenLockEnabled;
+  const hapticsEnabled = settings.hapticsEnabled;
 
   function onToggleWomenWorship() {
     if (womenWorshipEnabled) {
@@ -57,6 +60,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
         setConsentOpen(true);
       }
     }
+    haptic('light');
   }
 
   function confirmWomenEnable() {
@@ -81,6 +85,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
       await cancelPrayerNotifications();
     }
     setReminders(next);
+    haptic('light');
   }
 
   async function onTestAdhan() {
@@ -90,6 +95,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
 
   function handleThemeModeChange(nextMode: 'system' | 'ink' | 'paper') {
     setThemeMode(nextMode);
+    haptic('light');
   }
 
   const themeModeLabels = {
@@ -146,6 +152,28 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
             </TouchableOpacity>
           ))}
         </View>
+        <Hairline />
+        <View style={styles.row}>
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Haptics</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              Subtle vibration feedback for meaningful actions
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.toggle, { borderColor: colors.accent }]}
+            onPress={() => setHapticsEnabled(!hapticsEnabled)}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: hapticsEnabled }}
+          >
+            <View
+              style={[
+                styles.toggleKnob,
+                { backgroundColor: colors.accent, alignSelf: hapticsEnabled ? 'flex-end' : 'flex-start' },
+              ]}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Accent Color */}
@@ -160,7 +188,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
               <TouchableOpacity
                 key={key}
                 style={styles.accentSwatch}
-                onPress={() => setAccent(key)}
+                onPress={() => { setAccent(key); haptic('selection'); }}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
                 accessibilityLabel={`${accent.name} accent color${isSelected ? ', selected' : ''}`}
@@ -188,7 +216,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
       <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
         <TouchableOpacity
           style={styles.row}
-          onPress={() => setQuranLangModalOpen(true)}
+          onPress={() => { setQuranLangModalOpen(true); haptic('light'); }}
           accessibilityRole="button"
           accessibilityLabel={`Change translation language. Current: ${edition.language} ${flag}`}
         >
@@ -208,7 +236,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
         {CALC_METHODS.map((m, i) => (
           <View key={m.id}>
             {i > 0 && <Hairline />}
-            <TouchableOpacity style={styles.row} onPress={() => setMethod(m.id)}>
+            <TouchableOpacity style={styles.row} onPress={() => { setMethod(m.id); haptic('light'); }}>
               <View style={styles.rowFlex}>
                 <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{m.name}</Text>
                 <Text style={[styles.rowDesc, { color: colors.textMuted }]}>{m.region}</Text>
@@ -239,7 +267,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
                 { borderColor: colors.borderSubtle },
                 timeFormat === f && { backgroundColor: colors.accentDim, borderColor: colors.accent },
               ]}
-              onPress={() => setTimeFormat(f)}
+              onPress={() => { setTimeFormat(f); haptic('light'); }}
             >
               <Text
                 style={[

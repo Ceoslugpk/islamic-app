@@ -23,6 +23,7 @@ export interface AppSettings {
   womenWorshipEnabled: boolean;
   womenPinHash: string | null;
   womenLockEnabled: boolean;
+  hapticsEnabled: boolean;
 }
 
 interface SettingsContextValue {
@@ -40,6 +41,7 @@ interface SettingsContextValue {
   setWomenWorship: (enabled: boolean) => void;
   setWomenPinHash: (hash: string | null) => void;
   setWomenLockEnabled: (enabled: boolean) => void;
+  setHapticsEnabled: (enabled: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -58,6 +60,7 @@ const DEFAULTS: AppSettings = {
   womenWorshipEnabled: false,
   womenPinHash: null,
   womenLockEnabled: false,
+  hapticsEnabled: true,
 };
 
 const STORAGE_KEY = 'islamic-settings';
@@ -110,6 +113,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setWomenWorship: (womenWorshipEnabled) => setSettings((prev) => persist({ ...prev, womenWorshipEnabled })),
     setWomenPinHash: (womenPinHash) => setSettings((prev) => persist({ ...prev, womenPinHash })),
     setWomenLockEnabled: (womenLockEnabled) => setSettings((prev) => persist({ ...prev, womenLockEnabled })),
+    setHapticsEnabled: (hapticsEnabled) => setSettings((prev) => persist({ ...prev, hapticsEnabled })),
   };
 
   if (!ready) return null;

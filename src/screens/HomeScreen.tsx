@@ -8,10 +8,10 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
+import { useHaptics } from '../lib/haptics';
 import { useLocation } from '../lib/useLocation';
 import { fetchPrayerTimes, DayTimings, getNextPrayer } from '../lib/prayerTimes';
 import { formatTime, formatCountdown } from '../lib/timeFormat';
@@ -71,6 +71,7 @@ export default function HomeScreen({
 }: HomeScreenProps) {
   const { colors } = useTheme();
   const { settings } = useSettings();
+  const { haptic } = useHaptics();
   const { location: gpsLocation } = useLocation(true);
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,6 +114,11 @@ export default function HomeScreen({
     setCompleted((prev) => ({ ...prev, [prayer]: nextVal }));
     const history = getSalahHistory(30);
     setStreak(computeStreak(history));
+    if (nextVal) {
+      haptic('success');
+    } else {
+      haptic('light');
+    }
   }
 
   // Tick every 30s for countdown & clock updates
@@ -227,34 +233,22 @@ export default function HomeScreen({
   const currentDhikr = DHIKR_PRESETS[selectedTasbihIdx];
   const currentTasbihCount = tasbihCounts[currentDhikr.id] || 0;
 
-  const handleTasbihIncrement = useCallback(async () => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {
-      // ignore
-    }
+  const handleTasbihIncrement = useCallback(() => {
+    haptic('light');
     const nextCount = currentTasbihCount + 1;
     setTasbihCounts((prev) => ({ ...prev, [currentDhikr.id]: nextCount }));
     saveTasbihCount(currentDhikr.id, nextCount);
 
     if (nextCount > 0 && nextCount % 33 === 0) {
-      try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch {
-        // ignore
-      }
+      haptic('success');
     }
-  }, [currentTasbihCount, currentDhikr.id]);
+  }, [currentTasbihCount, currentDhikr.id, haptic]);
 
-  const handleTasbihReset = useCallback(async () => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    } catch {
-      // ignore
-    }
+  const handleTasbihReset = useCallback(() => {
+    haptic('warning');
     setTasbihCounts((prev) => ({ ...prev, [currentDhikr.id]: 0 }));
     saveTasbihCount(currentDhikr.id, 0);
-  }, [currentDhikr.id]);
+  }, [currentDhikr.id, haptic]);
 
   if (loading) {
     return (

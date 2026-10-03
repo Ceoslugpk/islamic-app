@@ -16,6 +16,7 @@ import type { ViewabilityConfig, ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useHaptics } from '../lib/haptics';
 import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
 import { ArabicText, AyahText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -79,6 +80,7 @@ export default function QuranReaderScreen({
   onNavigateSurah,
 }: QuranReaderScreenProps) {
   const { colors } = useTheme();
+  const { haptic } = useHaptics();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -256,6 +258,7 @@ export default function QuranReaderScreen({
     const bookmarked = isBookmarked(surahNumber, ayahItem.numberInSurah);
     if (bookmarked) {
       removeBookmark(surahNumber, ayahItem.numberInSurah);
+      haptic('light');
     } else {
       addBookmark({
         surah: surahNumber,
@@ -264,6 +267,7 @@ export default function QuranReaderScreen({
         text: (ayahItem.text || '').slice(0, 100),
         translation: (ayahItem.translation || '').slice(0, 120),
       });
+      haptic('success');
     }
     setBookmarks(getBookmarks());
   };

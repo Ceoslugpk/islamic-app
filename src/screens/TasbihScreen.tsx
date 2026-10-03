@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useHaptics } from '../lib/haptics';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
@@ -58,6 +58,7 @@ const TARGET_OPTIONS = [33, 99];
 
 export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
+  const { haptic } = useHaptics();
   const [selectedDhikr, setSelectedDhikr] = useState<DhikrItem>(DHIKR_PRESETS[0]);
   const [target, setTarget] = useState<number>(33);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -69,12 +70,8 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
 
   const currentCount = counts[selectedDhikr.id] || 0;
 
-  const handleTap = useCallback(async () => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch {
-      // Haptics unavailable on web/unsupported
-    }
+  const handleTap = useCallback(() => {
+    haptic('light');
 
     const nextCount = currentCount + 1;
     setCounts((prev) => ({
@@ -83,28 +80,20 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
     }));
     saveTasbihCount(selectedDhikr.id, nextCount);
 
-    // Give an extra medium impact if target reached
+    // Give an extra success impact if target reached
     if (nextCount > 0 && nextCount % target === 0) {
-      try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch {
-        // ignore
-      }
+      haptic('success');
     }
-  }, [currentCount, selectedDhikr.id, target]);
+  }, [currentCount, selectedDhikr.id, target, haptic]);
 
-  const handleReset = useCallback(async () => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    } catch {
-      // ignore
-    }
+  const handleReset = useCallback(() => {
+    haptic('warning');
     setCounts((prev) => ({
       ...prev,
       [selectedDhikr.id]: 0,
     }));
     saveTasbihCount(selectedDhikr.id, 0);
-  }, [selectedDhikr.id]);
+  }, [selectedDhikr.id, haptic]);
 
   const rounds = Math.floor(currentCount / target);
   const progressInRound = currentCount % target;
