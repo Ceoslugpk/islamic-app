@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, StyleSheet, Text, View, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
@@ -12,6 +12,8 @@ import {
   requestNotificationPermission,
   schedulePrayerNotifications,
   cancelPrayerNotifications,
+  getNotificationHealth,
+  NotificationHealth,
 } from '../lib/notifications';
 import { playAdhan, configureAudio } from '../lib/audio';
 import { useQuranLanguage } from '../lib/quranLanguageState';
@@ -38,6 +40,9 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'set' | 'change' | null>(null);
+  const [health, setHealth] = useState<NotificationHealth | null>(null);
+  const [isLoadingHealth, setIsLoadingHealth] = useState(true);
+
   const methodId = settings.methodId;
   const timeFormat = settings.timeFormat;
   const remindersEnabled = settings.remindersEnabled;
@@ -46,6 +51,21 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const womenPinHash = settings.womenPinHash;
   const womenLockEnabled = settings.womenLockEnabled;
   const hapticsEnabled = settings.hapticsEnabled;
+
+  useEffect(() => {
+    async function loadHealth() {
+      try {
+        const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
+        const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, remindersEnabled);
+        setHealth(h);
+      } catch {
+        // ignore
+      } finally {
+        setIsLoadingHealth(false);
+      }
+    }
+    loadHealth();
+  }, [settings.manualLocation, settings.methodId, remindersEnabled]);
 
   function onToggleWomenWorship() {
     if (womenWorshipEnabled) {
@@ -305,6 +325,61 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
               ]}
             />
           </TouchableOpacity>
+        </View>
+        {/* Compact Notification Health */}
+        <Hairline />
+        <View style={styles.healthCompact}>
+          {isLoadingHealth ? (
+            <View style={styles.healthCompactLoading}>
+              <ActivityIndicator size="small" color={colors.accent} />
+              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Checking…</Text>
+            </View>
+          ) : health ? (
+            <View style={styles.healthCompactRow}>
+              <View
+                style={[
+                  styles.healthCompactDot,
+                  {
+                    backgroundColor:
+                      health.status === 'active'
+                        ? '#10B981'
+                        : health.status === 'permission-needed'
+                        ? '#F59E0B'
+                        : colors.textMuted,
+                  },
+                ]}
+              />
+              <Text
+                style={[
+                  styles.healthCompactText,
+                  {
+                    color:
+                      health.status === 'active'
+                        ? '#10B981'
+                        : health.status === 'permission-needed'
+                        ? '#F59E0B'
+                        : colors.textSecondary,
+                  },
+                ]}
+              >
+                {health.status === 'active'
+                  ? '● Active'
+                  : health.status === 'permission-needed'
+                  ? '! Permission needed'
+                  : '○ Paused'}
+              </Text>
+              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>·</Text>
+              <Text style={[styles.healthCompactText, { color: colors.textPrimary }]}>
+                Next: {health.nextPrayer ? `${health.nextPrayer.name} ${health.nextPrayer.time}` : '—'}
+              </Text>
+              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>·</Text>
+              <Text style={[styles.healthCompactText, { color: colors.textSecondary }]}>
+                Scheduled: {health.scheduledCounts.today} today, {health.scheduledCounts.tomorrow} tomorrow
+              </Text>
+            </View>
+          ) : (
+            <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Unable to load health</Text>
+          )}
         </View>
         <Hairline />
         <TouchableOpacity style={styles.row} onPress={onTestAdhan}>
@@ -760,5 +835,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     alignSelf: 'stretch',
+  },
+  healthCompact: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  healthCompactLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  healthCompactRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 6,
+  },
+  healthCompactDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  healthCompactText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
   },
 });

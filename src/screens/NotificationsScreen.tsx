@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -19,6 +19,8 @@ import {
   requestNotificationPermission,
   schedulePrayerNotifications,
   cancelPrayerNotifications,
+  getNotificationHealth,
+  NotificationHealth,
 } from '../lib/notifications';
 import { playAdhan, configureAudio } from '../lib/audio';
 
@@ -32,6 +34,36 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
   const [selectedMinutes, setSelectedMinutes] = useState(10);
   const [isPlayingAdhan, setIsPlayingAdhan] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
+  const [health, setHealth] = useState<NotificationHealth | null>(null);
+  const [isLoadingHealth, setIsLoadingHealth] = useState(true);
+
+  useEffect(() => {
+    async function loadHealth() {
+      try {
+        const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
+        const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, remindersEnabled);
+        setHealth(h);
+      } catch {
+        // ignore
+      } finally {
+        setIsLoadingHealth(false);
+      }
+    }
+    loadHealth();
+  }, [settings.manualLocation, settings.methodId, remindersEnabled]);
+
+  async function refreshHealth() {
+    setIsLoadingHealth(true);
+    try {
+      const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
+      const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, remindersEnabled);
+      setHealth(h);
+    } catch {
+      // ignore
+    } finally {
+      setIsLoadingHealth(false);
+    }
+  }
 
   async function rescheduleWithMinutes(mins: number) {
     setSelectedMinutes(mins);
@@ -40,6 +72,7 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
         const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
         await cancelPrayerNotifications();
         await schedulePrayerNotifications(data, mins);
+        await refreshHealth();
       } catch {
         // ignore
       }
@@ -130,6 +163,86 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
           <View style={styles.errorBox}>
             <Text style={[styles.errorText, { color: colors.destructive }]}>{permissionError}</Text>
           </View>
+        )}
+      </View>
+
+      {/* Notification Health Panel */}
+      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>NOTIFICATION HEALTH</Text>
+      <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+        {isLoadingHealth ? (
+          <View style={styles.healthLoading}>
+            <ActivityIndicator size="small" color={colors.accent} />
+            <Text style={[styles.healthLoadingText, { color: colors.textMuted }]}>Checking notification status…</Text>
+          </View>
+        ) : health ? (
+          <>
+            <View style={styles.healthRow}>
+              <View style={styles.healthItem}>
+                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>Status</Text>
+                <View style={styles.healthStatusRow}>
+                  <View
+                    style={[
+                      styles.statusDot,
+                      {
+                        backgroundColor:
+                          health.status === 'active'
+                            ? '#10B981'
+                            : health.status === 'permission-needed'
+                            ? '#F59E0B'
+                            : colors.textMuted,
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.healthValue,
+                      {
+                        color:
+                          health.status === 'active'
+                            ? '#10B981'
+                            : health.status === 'permission-needed'
+                            ? '#F59E0B'
+                            : colors.textSecondary,
+                      },
+                    ]}
+                  >
+                    {health.status === 'active'
+                      ? '● Active'
+                      : health.status === 'permission-needed'
+                      ? '! Permission needed'
+                      : '○ Paused'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.healthItem}>
+                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>Next Prayer</Text>
+                <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
+                  {health.nextPrayer ? `${health.nextPrayer.name} — ${health.nextPrayer.time}` : '—'}
+                </Text>
+              </View>
+              <View style={styles.healthItem}>
+                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>Scheduled</Text>
+                <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
+                  Today {health.scheduledCounts.today} · Tomorrow {health.scheduledCounts.tomorrow}
+                </Text>
+              </View>
+            </View>
+            <Hairline />
+            <TouchableOpacity
+              style={[
+                styles.rescheduleBtn,
+                { borderColor: colors.accent, backgroundColor: colors.accentDim },
+              ]}
+              onPress={refreshHealth}
+              accessibilityRole="button"
+              accessibilityLabel="Re-schedule notifications now"
+            >
+              <Ionicons name="refresh" size={16} color={colors.accent} />
+              <Text style={[styles.rescheduleBtnText, { color: colors.accent }]}>Re-schedule now</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <Text style={[styles.healthValue, { color: colors.textMuted }]}>Unable to load health status</Text>
         )}
       </View>
 
@@ -299,5 +412,62 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     lineHeight: 18,
+  },
+  healthLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 16,
+  },
+  healthLoadingText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 13,
+  },
+  healthRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    padding: 16,
+  },
+  healthItem: {
+    flex: 1,
+    minWidth: 100,
+  },
+  healthLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  healthValue: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 13,
+  },
+  healthStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  rescheduleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  rescheduleBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
   },
 });

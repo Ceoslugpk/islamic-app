@@ -52,6 +52,9 @@ import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
 import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayingNotification, cleanupNowPlayingNotification } from './src/lib/nowPlayingNotification';
 import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback } from './src/lib/quranAudio';
+import { rescheduleIfNeeded } from './src/lib/notifications';
+import { fetchPrayerTimes } from './src/lib/prayerTimes';
+import { useSettings } from './src/lib/settings';
 import { useEffect } from 'react';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
@@ -200,6 +203,7 @@ type ToolsView =
 function Root() {
   const { colors, mode } = useTheme();
   const { isOnline } = useConnectivity();
+  const { settings } = useSettings();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [audioModalOpen, setAudioModalOpen] = useState(false);
@@ -209,6 +213,18 @@ function Root() {
 
   // Global Audio Mini Player state
   const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
+
+  // Notification health: reschedule on app start if fingerprint changed
+  useEffect(() => {
+    let isMounted = true;
+    async function checkAndReschedule() {
+      if (!isMounted) return;
+      // Default reminder minutes is 10 (matching NotificationsScreen default)
+      await rescheduleIfNeeded(settings.manualLocation, settings.methodId, settings.remindersEnabled, 10);
+    }
+    checkAndReschedule();
+    return () => { isMounted = false; };
+  }, [settings.manualLocation, settings.methodId, settings.remindersEnabled]);
 
   // Now Playing Notification integration
   useEffect(() => {
