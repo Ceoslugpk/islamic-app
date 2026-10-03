@@ -16,13 +16,17 @@ export type ToolsItemKey =
   | 'zakat'
   | 'calendar'
   | 'mosque'
-  | 'women';
+  | 'women-cycle'
+  | 'women-purity'
+  | 'women-guidance'
+  | 'women-qada';
 
 interface ToolsItem {
   key: ToolsItemKey;
   title: string;
   subtitle: string;
   icon: keyof typeof Ionicons.glyphMap;
+  sectionHeader?: string;
 }
 
 interface ToolsGroup {
@@ -116,10 +120,29 @@ export default function ToolsScreen({
         items: [
           ...BASE_GROUPS[1].items,
           {
-            key: 'women',
-            title: "Women's Worship",
-            subtitle: 'Cycle, purity & fiqh guidance',
+            key: 'women-cycle',
+            title: 'Cycle Tracker',
+            subtitle: 'Period logging, cycle duration & predictions',
             icon: 'flower',
+            sectionHeader: "Women's Worship",
+          },
+          {
+            key: 'women-purity',
+            title: 'Purity & Ghusl',
+            subtitle: 'Step-by-step ghusl, signs of tuhr & nifas',
+            icon: 'water',
+          },
+          {
+            key: 'women-guidance',
+            title: 'Worship Guidance',
+            subtitle: 'Exemptions, istihadha rulings & fiqh references',
+            icon: 'book',
+          },
+          {
+            key: 'women-qada',
+            title: 'Qada Fasts',
+            subtitle: 'Missed fasts tracker & makeup scorecard',
+            icon: 'checkbox',
           },
         ],
       },
@@ -140,7 +163,15 @@ export default function ToolsScreen({
           <View style={styles.list}>
             {group.items.map((item, i) => (
               <View key={item.key}>
-                {i > 0 && <Hairline />}
+                {item.sectionHeader ? (
+                  <View style={[styles.subHeaderWrap, { borderTopColor: colors.borderSubtle }]}>
+                    <Text style={[styles.subHeaderLabel, { color: colors.accent }]}>
+                      {item.sectionHeader}
+                    </Text>
+                  </View>
+                ) : (
+                  i > 0 && <Hairline />
+                )}
                 <TouchableOpacity
                   style={styles.row}
                   onPress={() => onOpen(item.key)}
@@ -182,6 +213,19 @@ const styles = StyleSheet.create({
   },
   groupGap: {
     marginTop: 24,
+  },
+  subHeaderWrap: {
+    paddingTop: 16,
+    paddingBottom: 6,
+    marginTop: 6,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  subHeaderLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10.5,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginLeft: 4,
   },
   list: { borderWidth: 1, borderColor: 'transparent' },
   row: {

@@ -65,6 +65,11 @@ const MIN_FONT_SIZE = 18;
 const MAX_FONT_SIZE = 40;
 const FONT_SIZE_STEP = 2;
 
+const VIEWABILITY_CONFIG: ViewabilityConfig = {
+  itemVisiblePercentThreshold: 1,
+  minimumViewTime: 500,
+};
+
 export default function QuranReaderScreen({
   surahNumber,
   initialAyah,
@@ -98,6 +103,23 @@ export default function QuranReaderScreen({
   const [tafsirEdition, setTafsirEdition] = useState<string | null>(null);
 
   const listRef = useRef<FlatList<Ayah>>(null);
+
+  // Continue Reading tracking refs (handler must stay stable across renders)
+  const surahNumberRef = useRef<number>(surahNumber);
+  const lastSavedAyahRef = useRef<number>(initialAyah || 1);
+  const trackingReadyRef = useRef<boolean>(!initialAyah || initialAyah <= 1);
+  const handleViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken<Ayah>[]; changed: ViewToken<Ayah>[] }) => {
+      if (!trackingReadyRef.current) return;
+      const first = viewableItems[0];
+      if (!first || !first.item) return;
+      const ayahNumber = first.item.numberInSurah;
+      if (typeof ayahNumber !== 'number' || ayahNumber === lastSavedAyahRef.current) return;
+      lastSavedAyahRef.current = ayahNumber;
+      saveReadingPosition(surahNumberRef.current, ayahNumber);
+    },
+    []
+  );
 
   // Load preferences and reciters
   useEffect(() => {
@@ -166,7 +188,15 @@ export default function QuranReaderScreen({
       setSurah(data);
 
       // Save last read position
-      saveLastReadPosition(surahNumber, initialAyah || 1, data.englishName);
+      const startAyah = initialAyah && initialAyah > 1 ? initialAyah : 1;
+      saveLastReadPosition(surahNumber, startAyah, data.englishName);
+
+      // Continue Reading position + Recently Read entry
+      surahNumberRef.current = surahNumber;
+      lastSavedAyahRef.current = startAyah;
+      trackingReadyRef.current = startAyah <= 1;
+      saveReadingPosition(surahNumber, startAyah);
+      recordSurahVisit(surahNumber, data.englishName, data.name);
     } catch {
       setError('Could not load Surah. Please check your connection.');
     } finally {
@@ -188,6 +218,7 @@ export default function QuranReaderScreen({
         } catch {
           // ignore measurement miss
         }
+        trackingReadyRef.current = true;
       }, 300);
     }
   }, [surah, initialAyah]);
@@ -775,6 +806,8 @@ export default function QuranReaderScreen({
           maxToRenderPerBatch={15}
           windowSize={7}
           onScrollToIndexFailed={() => {}}
+          viewabilityConfig={VIEWABILITY_CONFIG}
+          onViewableItemsChanged={handleViewableItemsChanged}
         />
       )}
 

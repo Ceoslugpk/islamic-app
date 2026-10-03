@@ -17,6 +17,8 @@ import { ArabicText } from '../components/ArabicText';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { LastReadPosition, loadLastReadPosition } from '../lib/db';
+import { getReadingPosition, ReadingPosition } from '../lib/continuing';
+import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 
@@ -67,6 +69,8 @@ export default function QuranHomeScreen({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
   const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
+  const [readingPosition, setReadingPosition] = useState<ReadingPosition | null>(null);
+  const [recentSurahs, setRecentSurahs] = useState<RecentSurah[]>([]);
 
   const listRef = useRef<FlatList<SurahMeta>>(null);
 
@@ -113,6 +117,24 @@ export default function QuranHomeScreen({
     setLastRead(loadLastReadPosition());
   }, []);
 
+  // Refresh continue-reading position + recently read surahs on mount
+  useEffect(() => {
+    let mounted = true;
+    getReadingPosition()
+      .then((pos) => {
+        if (mounted) setReadingPosition(pos);
+      })
+      .catch(() => {});
+    getRecentSurahs()
+      .then((list) => {
+        if (mounted) setRecentSurahs(list);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const filteredSurahs = useMemo(() => {
     if (!surahs) return [];
     const query = searchQuery.trim().toLowerCase();
@@ -144,9 +166,28 @@ export default function QuranHomeScreen({
     }
   };
 
-  const handleResumeReading = () => {
+  const resumeTarget = useMemo(() => {
+    if (readingPosition) {
+      const meta = surahs?.find((s) => s.number === readingPosition.surah);
+      return {
+        surah: readingPosition.surah,
+        ayah: readingPosition.ayah,
+        name: meta?.englishName || `Surah ${readingPosition.surah}`,
+      };
+    }
     if (lastRead) {
-      onOpenSurah(lastRead.surah, lastRead.ayah);
+      return {
+        surah: lastRead.surah,
+        ayah: lastRead.ayah,
+        name: lastRead.surahName || `Surah ${lastRead.surah}`,
+      };
+    }
+    return null;
+  }, [readingPosition, lastRead, surahs]);
+
+  const handleResumeReading = () => {
+    if (resumeTarget) {
+      onOpenSurah(resumeTarget.surah, resumeTarget.ayah);
     } else {
       onOpenSurah(1, 1);
     }
@@ -197,7 +238,7 @@ export default function QuranHomeScreen({
           <View style={styles.continueLeft}>
             <View style={[styles.continueBadge, { backgroundColor: colors.accentDim }]}>
               <Text style={[styles.continueBadgeText, { color: colors.accent }]}>
-                {lastRead ? 'CONTINUE READING' : 'START READING'}
+                {resumeTarget ? 'CONTINUE READING' : 'START READING'}
               </Text>
             </View>
             <Text
@@ -207,7 +248,7 @@ export default function QuranHomeScreen({
               ]}
               numberOfLines={1}
             >
-              {lastRead?.surahName || (lastRead ? `Surah ${lastRead.surah}` : 'Al-Faatiha')}
+              {resumeTarget?.name || 'Al-Faatiha'}
             </Text>
             <Text
               style={[
@@ -216,7 +257,9 @@ export default function QuranHomeScreen({
               ]}
               numberOfLines={1}
             >
-              {lastRead ? `Resuming at Ayah ${lastRead.ayah}` : 'The Opening · Ayah 1'}
+              {resumeTarget
+                ? `Surah ${resumeTarget.surah}:${resumeTarget.ayah} · Continue`
+                : 'The Opening · Ayah 1'}
             </Text>
           </View>
           <View
@@ -233,6 +276,58 @@ export default function QuranHomeScreen({
             <Ionicons name="arrow-forward" size={isNarrow ? 16 : 18} color={colors.onAccent} />
           </View>
         </TouchableOpacity>
+
+        {/* Recently Read */}
+        {recentSurahs.length > 0 && (
+          <View style={styles.recentSection}>
+            <Text style={[styles.recentHeading, { color: colors.textMuted }]}>RECENTLY READ</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.recentScroll, { gap: isNarrow ? 8 : 10 }]}
+            >
+              {recentSurahs.map((recent) => (
+                <TouchableOpacity
+                  key={recent.surah}
+                  activeOpacity={0.7}
+                  onPress={() => onOpenSurah(recent.surah)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open Surah ${recent.name}`}
+                  style={[
+                    styles.recentChip,
+                    {
+                      backgroundColor: colors.bgSurface,
+                      borderColor: colors.borderSubtle,
+                      paddingVertical: isCompact ? 8 : 10,
+                      paddingHorizontal: isCompact ? 10 : 12,
+                    },
+                  ]}
+                >
+                  <View style={styles.recentChipTop}>
+                    <View style={[styles.recentNumBadge, { backgroundColor: colors.accentDim }]}>
+                      <Text style={[styles.recentNumText, { color: colors.accent }]}>
+                        {recent.surah}
+                      </Text>
+                    </View>
+                    <Text
+                      style={[
+                        styles.recentChipName,
+                        { color: colors.textPrimary, fontSize: isCompact ? 12 : 13 },
+                      ]}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      {recent.name}
+                    </Text>
+                  </View>
+                  <ArabicText size={isCompact ? 14 : 16} numberOfLines={1} style={styles.recentChipArabic}>
+                    {recent.arabicName}
+                  </ArabicText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Quick Hub Navigation Cards */}
         <View style={[styles.hubGrid, { gap: isNarrow ? 8 : 10 }]}>
@@ -817,6 +912,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,
+  },
+  recentSection: {
+    marginBottom: 14,
+  },
+  recentHeading: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  recentScroll: {},
+  recentChip: {
+    borderRadius: 10,
+    borderWidth: 1,
+    minWidth: 116,
+    maxWidth: 170,
+  },
+  recentChipTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  recentNumBadge: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  recentNumText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 9,
+  },
+  recentChipName: {
+    fontFamily: 'Manrope_600SemiBold',
+    flexShrink: 1,
+  },
+  recentChipArabic: {
+    marginTop: 4,
+    textAlign: 'right',
   },
   hubGrid: {
     flexDirection: 'row',
