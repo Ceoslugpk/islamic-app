@@ -48,6 +48,9 @@ import WomenQadaScreen from './src/screens/WomenQadaScreen';
 import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
+import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayingNotification, cleanupNowPlayingNotification } from './src/lib/nowPlayingNotification';
+import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback } from './src/lib/quranAudio';
+import { useEffect } from 'react';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
 
@@ -203,6 +206,40 @@ function Root() {
 
   // Global Audio Mini Player state
   const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
+
+  // Now Playing Notification integration
+  useEffect(() => {
+    let isMounted = true;
+
+    const handleStatusChange = async (newStatus: { isPlaying: boolean }) => {
+      if (!isMounted) return;
+
+      const currentPlayback = getCurrentPlayback();
+      const fullStatus = getPlaybackStatus();
+
+      if (currentPlayback && (newStatus.isPlaying || fullStatus.isLoaded)) {
+        await updateNowPlayingNotification();
+      } else if (!currentPlayback || !newStatus.isPlaying) {
+        await stopNowPlayingNotification();
+      }
+    };
+
+    const unsub = addPlaybackStatusListener(handleStatusChange);
+
+    // Initial check
+    const initialPlayback = getCurrentPlayback();
+    const initialStatus = getPlaybackStatus();
+    if (initialPlayback && initialStatus.isLoaded) {
+      startNowPlayingNotification();
+    }
+
+    return () => {
+      isMounted = false;
+      unsub();
+      stopNowPlayingNotification();
+      cleanupNowPlayingNotification();
+    };
+  }, []);
   const isAudioCenter = tab === 'quran' && quran.screen === 'audio';
   const showMiniPlayer = visible && playback !== null && !isAudioCenter;
 
