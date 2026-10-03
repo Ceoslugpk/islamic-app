@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/lib/theme';
 import { SettingsProvider } from './src/lib/settings';
 import { useEditorialFonts } from './src/lib/fonts';
+import { useConnectivity } from './src/lib/useConnectivity';
+import { OfflineBanner } from './src/components/OfflineBanner';
 
 import HomeScreen from './src/screens/HomeScreen';
 import QiblaScreen from './src/screens/QiblaScreen';
@@ -197,6 +199,7 @@ type ToolsView =
 
 function Root() {
   const { colors, mode } = useTheme();
+  const { isOnline } = useConnectivity();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [audioModalOpen, setAudioModalOpen] = useState(false);
@@ -282,10 +285,11 @@ function Root() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bgBase }]}>
-      <StatusBar style={mode === 'ink' ? 'light' : 'dark'} />
-      <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
-      <View style={styles.screenWrap}>
+<SafeAreaView style={[styles.safe, { backgroundColor: colors.bgBase }]}>
+        <StatusBar style={mode === 'ink' ? 'light' : 'dark'} />
+        <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
+        {!isOnline && <OfflineBanner />}
+        <View style={styles.screenWrap}>
         {tab === 'home' && (
           <HomeScreen
             onOpenQibla={() => {

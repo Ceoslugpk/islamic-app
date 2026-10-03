@@ -39,6 +39,7 @@ import { HadithCard } from '../components/HadithCard';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { AyahCard } from '../components/AyahCard';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
+import { useConnectivity } from '../lib/useConnectivity';
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -73,6 +74,7 @@ export default function HomeScreen({
   const { settings } = useSettings();
   const { haptic } = useHaptics();
   const { location: gpsLocation } = useLocation(true);
+  const { refreshKey } = useConnectivity();
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -133,6 +135,13 @@ export default function HomeScreen({
     return settings.manualLocation;
   }, [settings.locationMode, gpsLocation, settings.manualLocation]);
 
+  // Auto-refresh when connectivity returns
+  useEffect(() => {
+    if (refreshKey > 0) {
+      load(false, true);
+    }
+  }, [refreshKey, effectiveLocation.latitude, effectiveLocation.longitude, settings.methodId]);
+
   // Adhan playback when a prayer time arrives (only if reminders enabled)
   usePrayerWatcher(data, settings.remindersEnabled);
 
@@ -148,7 +157,9 @@ export default function HomeScreen({
       const result = await fetchPrayerTimes(effectiveLocation, settings.methodId, new Date(), force);
       setData(result);
     } catch {
-      setError('Could not load prayer times. Check your connection.');
+      if (!data) {
+        setError('Could not load prayer times. Check your connection.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -264,6 +275,14 @@ export default function HomeScreen({
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>
           {error || 'No data available.'}
         </Text>
+      </View>
+    );
+  }
+
+  if (error && data) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
+        <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
       </View>
     );
   }

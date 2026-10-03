@@ -19,6 +19,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
+import { useConnectivity } from '../lib/useConnectivity';
 
 interface QuranScreenProps {
   onOpenSurah: (n: number) => void;
@@ -40,6 +41,8 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
   const isNarrow = width < 380;
   const horizontalPadding = isCompact ? 12 : isNarrow ? 16 : 20;
 
+  const { refreshKey } = useConnectivity();
+
   const { language, setLanguage, edition, flag } = useQuranLanguage();
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [translatedNames, setTranslatedNames] = useState<Record<number, string> | null>(null);
@@ -59,16 +62,25 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
       const data = await fetchSurahList(force);
       setSurahs(data);
     } catch {
-      setError('Could not load the Quran. Check your connection.');
+      if (!surahs) {
+        setError('Could not load the Quran. Check your connection.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [surahs]);
 
   useEffect(() => {
     loadSurahs();
   }, [loadSurahs]);
+
+  // Auto-refresh when connectivity returns
+  useEffect(() => {
+    if (refreshKey > 0 && surahs) {
+      loadSurahs(true);
+    }
+  }, [refreshKey, surahs, loadSurahs]);
 
   // Load per-language surah names when selected language changes
   useEffect(() => {

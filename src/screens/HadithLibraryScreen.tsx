@@ -41,6 +41,7 @@ import {
   recordHadithRead,
   loadHadithReadCounts,
 } from '../lib/db';
+import { useConnectivity } from '../lib/useConnectivity';
 
 type MainTab = 'collections' | 'saved' | 'recent' | 'progress';
 
@@ -62,6 +63,7 @@ interface HadithLibraryScreenProps {
 
 export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps) {
   const { colors } = useTheme();
+  const { refreshKey } = useConnectivity();
 
   // Navigation state
   const [activeTab, setActiveTab] = useState<MainTab>('collections');
@@ -106,16 +108,25 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
       const data = await fetchHadithCollections(force);
       setCollections(data);
     } catch {
-      setCollectionsError('Unable to refresh collections. Showing offline list.');
+      if (collections.length === 0) {
+        setCollectionsError('Unable to refresh collections. Showing offline list.');
+      }
     } finally {
       setCollectionsLoading(false);
       setCollectionsRefreshing(false);
     }
-  }, []);
+  }, [collections.length]);
 
   useEffect(() => {
     loadCollections();
   }, [loadCollections]);
+
+  // Auto-refresh collections when connectivity returns and we're on the collections view
+  useEffect(() => {
+    if (refreshKey > 0 && activeTab === 'collections' && view.type === 'collections' && collections.length > 0) {
+      loadCollections(true);
+    }
+  }, [refreshKey, activeTab, view, collections.length, loadCollections]);
 
   // Load saved / recent / progress whenever tab or view changes
   const reloadStorageData = useCallback(() => {
@@ -168,12 +179,14 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
       const data = await fetchHadithBooks(col.slug, force);
       setBooks(data);
     } catch {
-      setBooksError('Failed to load books. Please check your connection and retry.');
+      if (books.length === 0) {
+        setBooksError('Failed to load books. Please check your connection and retry.');
+      }
     } finally {
       setBooksLoading(false);
       setBooksRefreshing(false);
     }
-  }, []);
+  }, [books.length]);
 
   // Handle opening a book -> load hadiths
   const openBook = useCallback(async (col: HadithCollection, b: HadithBook, force = false) => {
@@ -186,12 +199,28 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
       setHadiths(data.hadiths);
       setHadithsTotal(data.total);
     } catch {
-      setHadithsError('Failed to load hadiths. Please check your connection and retry.');
+      if (hadiths.length === 0) {
+        setHadithsError('Failed to load hadiths. Please check your connection and retry.');
+      }
     } finally {
       setHadithsLoading(false);
       setHadithsRefreshing(false);
     }
-  }, []);
+  }, [hadiths.length]);
+
+  // Auto-refresh books when connectivity returns and we're on the books view
+  useEffect(() => {
+    if (refreshKey > 0 && activeTab === 'collections' && view.type === 'books' && books.length > 0) {
+      openCollection(view.collection, true);
+    }
+  }, [refreshKey, activeTab, view, books.length, openCollection]);
+
+  // Auto-refresh hadiths when connectivity returns and we're on the hadiths view
+  useEffect(() => {
+    if (refreshKey > 0 && activeTab === 'collections' && view.type === 'hadiths' && hadiths.length > 0) {
+      openBook(view.collection, view.book, true);
+    }
+  }, [refreshKey, activeTab, view, hadiths.length, openBook]);
 
   // Load more hadiths pagination
   const loadMoreHadiths = useCallback(async () => {
