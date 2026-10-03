@@ -13,6 +13,7 @@ import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
+import { EmptyState } from '../components/EmptyState';
 import {
   fetchNames,
   loadCachedNames,
@@ -301,11 +302,13 @@ export default function NamesScreen({ onBack }: { onBack?: () => void }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              No names matching "{searchQuery}"
-            </Text>
-          </View>
+          <EmptyState
+            icon="search-outline"
+            title="No names found"
+            subtitle={`No names match "${searchQuery}"`}
+            actionLabel="Clear search"
+            onAction={() => setSearchQuery('')}
+          />
         }
       />
     </View>
@@ -446,13 +449,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
   },
 });

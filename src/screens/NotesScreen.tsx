@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { getNotes, addNote, deleteNote, Note } from '../lib/study';
 import { SectionHeader } from '../components/SectionHeader';
+import { EmptyState } from '../components/EmptyState';
 
 interface NotesScreenProps {
   onBack?: () => void;
@@ -193,15 +194,11 @@ export default function NotesScreen({
           </View>
         }
         ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <Ionicons name="create-outline" size={40} color={colors.textMuted} />
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-              No reflections yet
-            </Text>
-            <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
-              Add thoughts and reflections on verses as you read the Quran.
-            </Text>
-          </View>
+          <EmptyState
+            icon="create-outline"
+            title="No reflections yet"
+            subtitle="Add thoughts and reflections on verses as you read the Quran."
+          />
         }
       />
     </View>
@@ -313,23 +310,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
     marginTop: 6,
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 30,
-  },
-  emptyTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 16,
-    marginTop: 12,
-  },
-  emptyDesc: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 20,
   },
 });

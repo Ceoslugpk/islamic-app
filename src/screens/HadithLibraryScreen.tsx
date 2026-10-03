@@ -16,6 +16,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
 import {
   HadithCollection,
   HadithBook,
@@ -465,16 +466,11 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             />
 
             {savedList.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Ionicons name="bookmark-outline" size={36} color={colors.textMuted} />
-                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  No saved hadiths yet
-                </Text>
-                <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-                  While reading any hadith, tap the "Save" bookmark button to keep it here for quick
-                  access.
-                </Text>
-              </View>
+              <EmptyState
+                icon="bookmark-outline"
+                title="No saved hadiths yet"
+                subtitle='While reading any hadith, tap the "Save" bookmark button to keep it here for quick access.'
+              />
             ) : (
               <View style={styles.gap12}>
                 {savedList.map((item) => (
@@ -565,16 +561,11 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             />
 
             {recentList.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Ionicons name="time-outline" size={36} color={colors.textMuted} />
-                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  No reading history yet
-                </Text>
-                <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-                  As you browse collections and read hadith details, they will automatically appear
-                  here.
-                </Text>
-              </View>
+              <EmptyState
+                icon="time-outline"
+                title="No reading history yet"
+                subtitle="As you browse collections and read hadith details, they will automatically appear here."
+              />
             ) : (
               <View style={styles.gap12}>
                 {recentList.map((item) => (
@@ -767,14 +758,13 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             )}
 
             {collectionsError && (
-              <View style={[styles.errorCard, { borderColor: colors.borderSubtle }]}>
-                <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-                  {collectionsError}
-                </Text>
-                <TouchableOpacity onPress={loadCollections} style={styles.retryBtn}>
-                  <Text style={[styles.retryText, { color: colors.accent }]}>Retry</Text>
-                </TouchableOpacity>
-              </View>
+              <EmptyState
+                icon="cloud-offline-outline"
+                title="You're offline"
+                subtitle={collectionsError}
+                actionLabel="Retry"
+                onAction={loadCollections}
+              />
             )}
 
             {/* Collections List */}
@@ -829,6 +819,16 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 );
               })}
             </View>
+
+            {collectionFilter.trim().length > 0 && filteredCollections.length === 0 && (
+              <EmptyState
+                icon="search-outline"
+                title="No matches"
+                subtitle={`No collections match "${collectionFilter}"`}
+                actionLabel="Clear search"
+                onAction={() => setCollectionFilter('')}
+              />
+            )}
           </ScrollView>
         )}
 
@@ -878,17 +878,13 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             )}
 
             {booksError && (
-              <View style={[styles.errorCard, { borderColor: colors.borderSubtle }]}>
-                <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-                  {booksError}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => openCollection(view.collection)}
-                  style={styles.retryBtn}
-                >
-                  <Text style={[styles.retryText, { color: colors.accent }]}>Retry</Text>
-                </TouchableOpacity>
-              </View>
+              <EmptyState
+                icon="cloud-offline-outline"
+                title="Couldn't load books"
+                subtitle={booksError}
+                actionLabel="Retry"
+                onAction={() => openCollection(view.collection)}
+              />
             )}
 
             {/* Books List */}
@@ -938,6 +934,16 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 </Card>
               ))}
             </View>
+
+            {bookFilter.trim().length > 0 && filteredBooks.length === 0 && (
+              <EmptyState
+                icon="search-outline"
+                title="No matches"
+                subtitle={`No books match "${bookFilter}"`}
+                actionLabel="Clear search"
+                onAction={() => setBookFilter('')}
+              />
+            )}
           </ScrollView>
         )}
 
@@ -967,17 +973,13 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                   </View>
                 )}
                 {hadithsError && (
-                  <View style={[styles.errorCard, { borderColor: colors.borderSubtle }]}>
-                    <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-                      {hadithsError}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => openBook(view.collection, view.book)}
-                      style={styles.retryBtn}
-                    >
-                      <Text style={[styles.retryText, { color: colors.accent }]}>Retry</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <EmptyState
+                    icon="cloud-offline-outline"
+                    title="Couldn't load hadiths"
+                    subtitle={hadithsError}
+                    actionLabel="Retry"
+                    onAction={() => openBook(view.collection, view.book)}
+                  />
                 )}
               </View>
             }
@@ -1276,27 +1278,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
   },
-  errorCard: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 16,
-    alignItems: 'center',
-    gap: 8,
-  },
-  errorText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    textAlign: 'center',
-  },
-  retryBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
-  retryText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
-  },
   gap12: {
     gap: 12,
   },
@@ -1556,25 +1537,6 @@ const styles = StyleSheet.create({
   },
   unsaveBtn: {
     padding: 6,
-  },
-  emptyCard: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-    gap: 10,
-  },
-  emptyTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 22,
-    marginTop: 4,
-  },
-  emptySub: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    textAlign: 'center',
-    lineHeight: 19,
-    maxWidth: 300,
   },
   scoreRow: {
     flexDirection: 'row',

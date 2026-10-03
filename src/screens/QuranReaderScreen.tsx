@@ -52,6 +52,7 @@ interface QuranReaderScreenProps {
   surahNumber: number;
   initialAyah?: number;
   onBack: () => void;
+  onNavigateSurah?: (surah: number) => void;
 }
 
 type ReadingMode = 'cards' | 'mushaf';
@@ -74,6 +75,7 @@ export default function QuranReaderScreen({
   surahNumber,
   initialAyah,
   onBack,
+  onNavigateSurah,
 }: QuranReaderScreenProps) {
   const { colors } = useTheme();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
@@ -384,6 +386,16 @@ export default function QuranReaderScreen({
     const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
     Share.share({ message: textToShare }).catch(() => {});
   };
+
+  const handleNavigateSurah = useCallback(
+    (targetSurah: number) => {
+      if (targetSurah < 1 || targetSurah > 114) return;
+      if (!onNavigateSurah) return;
+      saveReadingPosition(surahNumberRef.current, lastSavedAyahRef.current);
+      onNavigateSurah(targetSurah);
+    },
+    [onNavigateSurah]
+  );
 
   const renderSurahHeader = () => {
     if (!surah) return null;
@@ -710,6 +722,37 @@ export default function QuranReaderScreen({
           <Text style={[styles.backText, { color: colors.accent }]}>Quran</Text>
         </TouchableOpacity>
 
+        {/* Surah Navigation: Prev / Next + Surah indicator */}
+        <View style={styles.surahNav}>
+          <TouchableOpacity
+            style={[
+              styles.surahNavBtn,
+              { opacity: surahNumber <= 1 ? 0.4 : 1 },
+            ]}
+            onPress={() => handleNavigateSurah(surahNumber - 1)}
+            disabled={surahNumber <= 1}
+            accessibilityRole="button"
+            accessibilityLabel="Previous Surah"
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.accent} />
+          </TouchableOpacity>
+          <Text style={[styles.surahNavLabel, { color: colors.textSecondary }]}>
+            {surahNumber} / 114
+          </Text>
+          <TouchableOpacity
+            style={[
+              styles.surahNavBtn,
+              { opacity: surahNumber >= 114 ? 0.4 : 1 },
+            ]}
+            onPress={() => handleNavigateSurah(surahNumber + 1)}
+            disabled={surahNumber >= 114}
+            accessibilityRole="button"
+            accessibilityLabel="Next Surah"
+          >
+            <Ionicons name="chevron-forward" size={22} color={colors.accent} />
+          </TouchableOpacity>
+        </View>
+
         {/* Toolbar: Mode Toggle, Translation, Font adjustments */}
         <View style={styles.toolbar}>
           {/* Reading Mode Switcher */}
@@ -1020,6 +1063,23 @@ const styles = StyleSheet.create({
   backText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
+  },
+  surahNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  surahNavBtn: {
+    padding: 6,
+    minWidth: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  surahNavLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+    minWidth: 60,
+    textAlign: 'center',
   },
   toolbar: {
     flexDirection: 'row',

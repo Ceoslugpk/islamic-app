@@ -12,6 +12,7 @@ import { getBookmarks, removeBookmark, VerseRef } from '../lib/study';
 import { SectionHeader } from '../components/SectionHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { EmptyState } from '../components/EmptyState';
 
 interface BookmarksScreenProps {
   onBack?: () => void;
@@ -109,15 +110,11 @@ export default function BookmarksScreen({
         renderItem={renderBookmark}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <Ionicons name="bookmark-outline" size={40} color={colors.textMuted} />
-            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-              No bookmarks yet
-            </Text>
-            <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
-              Tap the bookmark icon on any ayah in the Quran reader to save it here for quick access.
-            </Text>
-          </View>
+          <EmptyState
+            icon="bookmark-outline"
+            title="No bookmarks yet"
+            subtitle="Tap the bookmark icon on any ayah in the Quran reader to save it here for quick access."
+          />
         }
       />
     </View>
@@ -187,23 +184,5 @@ const styles = StyleSheet.create({
   readHint: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    paddingHorizontal: 30,
-  },
-  emptyTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 16,
-    marginTop: 12,
-  },
-  emptyDesc: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 20,
   },
 });

@@ -16,6 +16,7 @@ import { useSettings } from '../lib/settings';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
 import { ArabicText } from '../components/ArabicText';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
 import { formatTime } from '../lib/timeFormat';
@@ -638,15 +639,11 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
             </Text>
 
             {missedList.length === 0 ? (
-              <Card style={styles.emptyCard}>
-                <Ionicons name="checkmark-done-circle-outline" size={32} color={colors.accent} />
-                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  All caught up!
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                  No missed fasts recorded in your ledger.
-                </Text>
-              </Card>
+              <EmptyState
+                icon="checkmark-done-circle-outline"
+                title="All caught up!"
+                subtitle="No missed fasts recorded in your ledger."
+              />
             ) : (
               missedList.map((item) => (
                 <Card key={item.id} style={styles.missedItemCard}>
@@ -722,15 +719,13 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
             </Text>
 
             {history.length === 0 ? (
-              <Card style={styles.emptyCard}>
-                <Ionicons name="calendar-outline" size={32} color={colors.textMuted} />
-                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  No fasting records yet
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                  Mark your fasts on the Today tab to start building your streak.
-                </Text>
-              </Card>
+              <EmptyState
+                icon="calendar-outline"
+                title="No fasting records yet"
+                subtitle="Mark your fasts on the Today tab to start building your streak."
+                actionLabel="Go to Today"
+                onAction={() => setActiveTab('tracker')}
+              />
             ) : (
               history.map((entry) => {
                 const typeBadgeColors: Record<FastingType, { bg: string; text: string }> = {
@@ -1260,23 +1255,6 @@ const styles = StyleSheet.create({
   typeBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
-  },
-
-  /* Empty state */
-  emptyCard: {
-    padding: 24,
-    alignItems: 'center',
-    gap: 6,
-  },
-  emptyTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 15,
-    marginTop: 4,
-  },
-  emptySubtitle: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    textAlign: 'center',
   },
 
   bottomSpacer: {

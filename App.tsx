@@ -303,6 +303,7 @@ function Root() {
             surahNumber={quran.surah}
             initialAyah={quran.initialAyah}
             onBack={() => setQuran({ screen: 'home' })}
+            onNavigateSurah={(s) => setQuran({ screen: 'reader', surah: s })}
           />
         )}
         {tab === 'quran' && quran.screen === 'audio' && (

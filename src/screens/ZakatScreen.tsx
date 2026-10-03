@@ -16,6 +16,7 @@ import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
 import {
   SUPPORTED_CURRENCIES,
   CurrencyConfig,
@@ -617,15 +618,13 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
             </Text>
 
             {history.length === 0 ? (
-              <Card style={styles.emptyCard}>
-                <Ionicons name="archive-outline" size={32} color={colors.textMuted} />
-                <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                  No saved calculations yet
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                  Calculate your Zakat and tap "Save Calculation" to record it here.
-                </Text>
-              </Card>
+              <EmptyState
+                icon="wallet-outline"
+                title="No saved calculations yet"
+                subtitle='Calculate your Zakat and tap "Save Calculation" to record it here.'
+                actionLabel="Open calculator"
+                onAction={() => setActiveTab('calculator')}
+              />
             ) : (
               history.map((item) => {
                 const itemCfg = getCurrencyConfig(item.currency);
@@ -1093,23 +1092,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12.5,
     lineHeight: 18,
-  },
-
-  /* Empty state */
-  emptyCard: {
-    padding: 24,
-    alignItems: 'center',
-    gap: 6,
-  },
-  emptyTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 15,
-    marginTop: 4,
-  },
-  emptySubtitle: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    textAlign: 'center',
   },
 
   /* Modal */
