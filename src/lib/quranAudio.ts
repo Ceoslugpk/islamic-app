@@ -1642,6 +1642,7 @@ export function canPlayPrevious(): boolean {
 
 /** Pause currently playing sound. */
 export async function pause(): Promise<void> {
+  pauseAudioPreloading();
   try {
     if (currentSound) {
       await currentSound.pauseAsync();
@@ -1658,6 +1659,7 @@ export async function pause(): Promise<void> {
 
 /** Resume playback or replay current URL. */
 export async function resume(): Promise<void> {
+  resumeAudioPreloading();
   try {
     if (currentSound) {
       await currentSound.playAsync();
@@ -1681,6 +1683,7 @@ export function getCurrentPlaybackUrl(): string | null {
 
 /** Stop playback and release the sound. */
 export async function stop(clearSession = false): Promise<void> {
+  await stopAudioPreloading();
   try {
     if (currentSound) {
       await currentSound.stopAsync();
@@ -1711,6 +1714,7 @@ export async function stop(clearSession = false): Promise<void> {
 
 /** Unload current sound if cached. */
 export async function unload(): Promise<void> {
+  await stopAudioPreloading();
   try {
     if (currentSound) {
       await currentSound.unloadAsync();
