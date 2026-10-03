@@ -28,8 +28,10 @@ import {
 } from '../lib/study';
 import {
   addPlaybackListener,
+  addPlaybackStatusListener,
   fetchReciters,
   getAyahAudioUrl,
+  getCurrentPlayback,
   getSurahAudioUrl,
   playAyah,
   playSurah,
@@ -132,20 +134,25 @@ export default function QuranReaderScreen({
     })();
   }, []);
 
-  // Listen to audio status
+  // Listen to audio status and synchronize with active ayah / surah playback
   useEffect(() => {
-    const unsub = addPlaybackListener((playing) => {
-      setIsPlayingAudio(playing);
-      if (!playing) {
+    const unsub = addPlaybackStatusListener((status) => {
+      setIsPlayingAudio(status.isPlaying);
+      const playback = getCurrentPlayback();
+      if (playback && status.isPlaying && playback.surah === surahNumber) {
+        if (playback.ayah) {
+          setPlayingAyahNumber(playback.ayah);
+        }
+        setIsPlayingSurah(playback.type === 'surah' || playback.isSurahMode === true);
+      } else if (!status.isPlaying && !status.isBuffering) {
         setPlayingAyahNumber(null);
         setIsPlayingSurah(false);
       }
     });
     return () => {
       unsub();
-      stop();
     };
-  }, []);
+  }, [surahNumber]);
 
   // Fetch Surah data
   const loadSurah = useCallback(async () => {
@@ -266,7 +273,7 @@ export default function QuranReaderScreen({
       const url = getSurahAudioUrl(selectedReciter, surahNumber);
       setIsPlayingSurah(true);
       setPlayingAyahNumber(null);
-      await playSurah(selectedReciter, url);
+      await playSurah(selectedReciter, url, undefined, reciterLabel, surahNumber);
       if (surah) {
         saveRecentlyPlayed({
           type: 'surah',
@@ -291,7 +298,7 @@ export default function QuranReaderScreen({
       const url = getAyahAudioUrl(selectedReciter, surahNumber, ayahNumber);
       setPlayingAyahNumber(ayahNumber);
       setIsPlayingSurah(false);
-      await playAyah(selectedReciter, url);
+      await playAyah(selectedReciter, url, undefined, reciterLabel, surahNumber, ayahNumber);
       if (surah) {
         saveRecentlyPlayed({
           type: 'ayah',

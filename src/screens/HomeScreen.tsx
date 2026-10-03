@@ -30,16 +30,6 @@ import { NAMES_99 } from '../lib/names99';
 import { DUAS_DATA } from '../lib/duas';
 import { ADHKAR } from '../lib/adhkar';
 import { DHIKR_PRESETS } from './TasbihScreen';
-import {
-  addPlaybackStatusListener,
-  getCurrentPlayback,
-  pause,
-  resume,
-  stop,
-  CurrentPlayback,
-  PlaybackStatus,
-} from '../lib/quranAudio';
-import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { SectionHeader } from '../components/SectionHeader';
@@ -49,7 +39,6 @@ import { HadithCard } from '../components/HadithCard';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { AyahCard } from '../components/AyahCard';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
-import { AudioMiniPlayer } from '../components/AudioMiniPlayer';
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -94,9 +83,6 @@ export default function HomeScreen({
   // Tasbih Quick Counter state
   const [selectedTasbihIdx, setSelectedTasbihIdx] = useState(0);
   const [tasbihCounts, setTasbihCounts] = useState<Record<string, number>>({});
-
-  // Audio Mini Player hook
-  const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
 
   // Ayah and Hadith of the Day
   const { ayah, loading: ayahLoading, refresh: refreshAyah } = useAyahOfDay();
@@ -304,7 +290,7 @@ export default function HomeScreen({
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: visible ? 100 : 40 },
+          { paddingBottom: 40 },
         ]}
         refreshControl={
           <RefreshControl
@@ -678,18 +664,6 @@ export default function HomeScreen({
           {data.method} · {data.timezone}
         </Text>
       </ScrollView>
-
-      {/* Global Audio Mini Player */}
-      {visible && playback && (
-        <AudioMiniPlayer
-          playback={playback}
-          status={status}
-          onPlayPause={onPlayPause}
-          onStop={onStop}
-          onOpenAudio={onOpenAudio}
-          onSeek={onSeek}
-        />
-      )}
     </View>
   );
 }

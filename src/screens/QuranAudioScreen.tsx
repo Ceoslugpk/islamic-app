@@ -30,6 +30,8 @@ import {
   getQueueIndex,
   getAyahAudioUrl,
   getSurahAudioUrl,
+  getAudioEditionForLanguage,
+  isAudioTranslationEnabled,
   pause,
   playAyah,
   PlaybackStatus,
@@ -42,9 +44,12 @@ import {
   resume,
   seekTo,
   setAudioQueue,
+  setAudioTranslationEnabled,
   stop,
   updateAudioSettings,
 } from '../lib/quranAudio';
+import { useSettings } from '../lib/settings';
+import { useQuranLanguage } from '../lib/quranLanguageState';
 import {
   AudioSettings,
   deletePlaylist,
@@ -121,6 +126,21 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
     autoplayNext: true,
     repeatMode: 'none',
   });
+
+  // Translation audio preferences
+  const { settings: appSettings, setTranslationAudioEnabled: setGlobalTranslationAudio } = useSettings();
+  const { language: currentLang, edition: currentEdition, flag: currentFlag } = useQuranLanguage();
+  const [transAudioEnabled, setTransAudioEnabled] = useState<boolean>(isAudioTranslationEnabled());
+
+  useEffect(() => {
+    setTransAudioEnabled(appSettings.translationAudioEnabled);
+  }, [appSettings.translationAudioEnabled]);
+
+  const handleToggleTranslationAudio = (val: boolean) => {
+    setTransAudioEnabled(val);
+    setAudioTranslationEnabled(val);
+    setGlobalTranslationAudio(val);
+  };
 
   const loadAllData = useCallback(async () => {
     setLoading(true);
@@ -1370,6 +1390,48 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 trackColor={{ false: colors.borderSubtle, true: colors.accent }}
                 thumbColor="#FFFFFF"
                 accessibilityLabel="Toggle autoplay next track"
+              />
+            </View>
+
+            {/* Play Translation After Arabic Toggle */}
+            <View
+              style={[
+                styles.settingRowCard,
+                {
+                  backgroundColor: colors.bgSurface,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
+                  Play translation after Arabic
+                </Text>
+                <Text style={[styles.settingSub, { color: colors.textMuted }]}>
+                  Plays the same ayah in the selected translation language after the Arabic recitation
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 }}>
+                  <Text style={{ fontSize: 13 }}>{currentFlag}</Text>
+                  <Text style={[styles.settingSub, { color: colors.accent, fontFamily: 'Manrope_600SemiBold' }]}>
+                    {currentEdition.language} ({currentEdition.name})
+                  </Text>
+                </View>
+                {getAudioEditionForLanguage(currentLang) ? (
+                  <Text style={[styles.settingSub, { color: colors.textSecondary, marginTop: 2, fontSize: 11 }]}>
+                    Audio edition: {getAudioEditionForLanguage(currentLang)?.name}
+                  </Text>
+                ) : (
+                  <Text style={[styles.settingSub, { color: '#E5A93C', marginTop: 2, fontSize: 11 }]}>
+                    Audio unavailable for this language; Arabic will play.
+                  </Text>
+                )}
+              </View>
+              <Switch
+                value={transAudioEnabled}
+                onValueChange={handleToggleTranslationAudio}
+                trackColor={{ false: colors.borderSubtle, true: colors.accent }}
+                thumbColor="#FFFFFF"
+                accessibilityLabel="Toggle play translation audio after Arabic"
               />
             </View>
 

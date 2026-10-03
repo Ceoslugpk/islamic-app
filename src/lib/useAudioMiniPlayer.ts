@@ -20,11 +20,8 @@ export function useAudioMiniPlayer(): UseAudioMiniPlayerReturn {
 
     const unsub = addPlaybackStatusListener((newStatus) => {
       setStatus(newStatus);
-      // Also update playback if it changed (e.g., new track started)
       const current = getCurrentPlayback();
-      if (current !== playback) {
-        setPlayback(current);
-      }
+      setPlayback(current ? { ...current } : null);
     });
 
     return () => {

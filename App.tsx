@@ -40,7 +40,8 @@ import SalahTrackerScreen from './src/screens/SalahTrackerScreen';
 import LocationScreen from './src/screens/LocationScreen';
 import CitiesScreen from './src/screens/CitiesScreen';
 import NotificationsScreen from './src/screens/NotificationsScreen';
-
+import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
+import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
 
@@ -187,6 +188,18 @@ function Root() {
   const [library, setLibrary] = useState<LibraryView>({ screen: 'hub' });
   const [quran, setQuran] = useState<QuranView>({ screen: 'home' });
   const [tools, setTools] = useState<ToolsView>({ screen: 'hub' });
+
+  // Global Audio Mini Player state
+  const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
+  const isAudioCenter = tab === 'quran' && quran.screen === 'audio';
+  const showMiniPlayer = visible && playback !== null && !isAudioCenter;
+
+  const handleOpenAudio = () => {
+    setLibrary({ screen: 'hub' });
+    setTools({ screen: 'hub' });
+    setQuran({ screen: 'audio' });
+    setTab('quran');
+  };
 
   function switchTab(next: TabKey) {
     // Reset sub-views when switching away
@@ -369,6 +382,16 @@ function Root() {
           <NotificationsScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
       </View>
+      {showMiniPlayer && playback && (
+        <AudioMiniPlayer
+          playback={playback}
+          status={status}
+          onPlayPause={onPlayPause}
+          onStop={onStop}
+          onOpenAudio={handleOpenAudio}
+          onSeek={onSeek}
+        />
+      )}
       <TabBar active={tab} onChange={switchTab} />
 
 

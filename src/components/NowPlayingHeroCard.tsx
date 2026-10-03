@@ -165,40 +165,74 @@ export function NowPlayingHeroCard({
     >
       {/* Top Meta Bar */}
       <View style={styles.topMetaRow}>
-        <View
-          style={[
-            styles.statusBadge,
-            {
-              backgroundColor: status.isBuffering
-                ? colors.accentDim
-                : status.isPlaying
-                ? colors.accentDim
-                : colors.bgBase,
-            },
-          ]}
-        >
-          {status.isBuffering ? (
-            <ActivityIndicator size={10} color={colors.accent} style={{ marginRight: 4 }} />
-          ) : (
-            <View
-              style={[
-                styles.liveDot,
-                {
-                  backgroundColor: status.isPlaying ? colors.accent : colors.textMuted,
-                },
-              ]}
-            />
-          )}
-          <Text
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <View
             style={[
-              styles.statusBadgeText,
+              styles.statusBadge,
               {
-                color: status.isPlaying || status.isBuffering ? colors.accent : colors.textMuted,
+                backgroundColor: status.isBuffering
+                  ? colors.accentDim
+                  : status.isPlaying
+                  ? colors.accentDim
+                  : colors.bgBase,
               },
             ]}
           >
-            {status.isBuffering ? 'BUFFERING...' : status.isPlaying ? 'NOW PLAYING' : 'PAUSED'}
-          </Text>
+            {status.isBuffering ? (
+              <ActivityIndicator size={10} color={colors.accent} style={{ marginRight: 4 }} />
+            ) : (
+              <View
+                style={[
+                  styles.liveDot,
+                  {
+                    backgroundColor: status.isPlaying ? colors.accent : colors.textMuted,
+                  },
+                ]}
+              />
+            )}
+            <Text
+              style={[
+                styles.statusBadgeText,
+                {
+                  color: status.isPlaying || status.isBuffering ? colors.accent : colors.textMuted,
+                },
+              ]}
+            >
+              {status.isBuffering ? 'BUFFERING...' : status.isPlaying ? 'NOW PLAYING' : 'PAUSED'}
+            </Text>
+          </View>
+
+          {playback.segmentType && (
+            <View
+              style={[
+                styles.segmentBadge,
+                {
+                  backgroundColor:
+                    playback.segmentType === 'arabic' ? colors.accentDim : colors.bgBase,
+                  borderColor:
+                    playback.segmentType === 'arabic' ? colors.accent : colors.borderSubtle,
+                },
+              ]}
+            >
+              <Ionicons
+                name={playback.segmentType === 'arabic' ? 'volume-medium' : 'language'}
+                size={11}
+                color={playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.segmentBadgeText,
+                  {
+                    color: playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary,
+                  },
+                ]}
+              >
+                {playback.segmentType === 'arabic'
+                  ? 'ARABIC'
+                  : `TRANSLATION${playback.translationLang ? ` (${playback.translationLang.toUpperCase()})` : ''}`}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.topMetaRight}>
@@ -397,6 +431,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 0.6,
+  },
+  segmentBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    gap: 4,
+  },
+  segmentBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 9,
+    letterSpacing: 0.5,
   },
   topMetaRight: {
     flexDirection: 'row',

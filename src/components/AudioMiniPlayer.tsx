@@ -1,5 +1,13 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, PanResponder, Animated } from 'react-native';
+import {
+  ActivityIndicator,
+  Animated,
+  PanResponder,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
@@ -91,6 +99,26 @@ export function AudioMiniPlayer({
         },
       ]}
     >
+      {/* Top interactive progress bar */}
+      <View
+        {...panResponder.panHandlers}
+        style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}
+        onLayout={(e) => {
+          progressWidth.current = e.nativeEvent.layout.width;
+        }}
+        onTouchEnd={handleProgressPress}
+      >
+        <Animated.View
+          style={[
+            styles.progressFill,
+            {
+              backgroundColor: colors.accent,
+              width: `${Math.round(progressRatio * 100)}%`,
+            },
+          ]}
+        />
+      </View>
+
       <TouchableOpacity
         style={styles.infoArea}
         onPress={onOpenAudio}
@@ -109,53 +137,51 @@ export function AudioMiniPlayer({
             />
           )}
         </View>
+
         <View style={styles.textWrap}>
-          <Text
-            style={[styles.title, { color: colors.textPrimary }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {playback.title}
-          </Text>
+          <View style={styles.titleRow}>
+            {playback.segmentType && (
+              <View
+                style={[
+                  styles.segmentBadge,
+                  {
+                    backgroundColor:
+                      playback.segmentType === 'arabic' ? colors.accentDim : colors.bgBase,
+                    borderColor:
+                      playback.segmentType === 'arabic' ? colors.accent : colors.borderSubtle,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.segmentBadgeText,
+                    {
+                      color:
+                        playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {playback.segmentType === 'arabic' ? 'AR' : 'TR'}
+                </Text>
+              </View>
+            )}
+            <Text
+              style={[styles.title, { color: colors.textPrimary }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {playback.title}
+            </Text>
+          </View>
           <Text
             style={[styles.subtitle, { color: colors.textMuted }]}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
-            {playback.reciterName}
+            {playback.reciterName} · {formatProgress(status.positionMillis / 1000, status.durationMillis / 1000)}
           </Text>
         </View>
       </TouchableOpacity>
-
-      <View style={styles.progressSection}>
-        <View
-          {...panResponder.panHandlers}
-          style={[
-            styles.progressTrack,
-            { backgroundColor: colors.borderSubtle },
-            { height: 4, borderRadius: 2 },
-          ]}
-          onLayout={(e) => {
-            progressWidth.current = e.nativeEvent.layout.width;
-          }}
-        >
-          <Animated.View
-            style={[
-              styles.progressFill,
-              { backgroundColor: colors.accent, borderRadius: 2, height: '100%' },
-              {
-                width: progressAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0%', '100%'],
-                }),
-              },
-            ]}
-          />
-        </View>
-        <Text style={[styles.progressTime, { color: colors.textMuted }]}>
-          {formatProgress(status.positionMillis / 1000, status.durationMillis / 1000)}
-        </Text>
-      </View>
 
       <View style={styles.controls}>
         <TouchableOpacity
@@ -192,14 +218,10 @@ export function AudioMiniPlayer({
   );
 }
 
-import { ActivityIndicator } from 'react-native';
-
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    position: 'relative',
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -212,12 +234,26 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 4,
   },
+  progressTrack: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+  },
   infoArea: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     marginRight: 12,
-    gap: 12,
+    gap: 10,
   },
   iconWrap: {
     width: 36,
@@ -229,37 +265,33 @@ const styles = StyleSheet.create({
   textWrap: {
     flex: 1,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  segmentBadge: {
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  segmentBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 9,
+    letterSpacing: 0.5,
+  },
   title: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 17,
+    flex: 1,
   },
   subtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    lineHeight: 16,
-    marginTop: 1,
-  },
-  progressSection: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 56,
-    gap: 4,
-  },
-  progressTrack: {
-    overflow: 'hidden',
-  },
-  progressFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-  },
-  progressTime: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 10,
-    textAlign: 'right',
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: 2,
   },
   controls: {
     flexDirection: 'row',
