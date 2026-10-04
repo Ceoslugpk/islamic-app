@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Easing,
   Modal,
   PanResponder,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -196,6 +198,20 @@ export function AudioPlayerModal({
     }
   };
 
+  const [sheetAnim] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    if (visible) {
+      sheetAnim.setValue(0);
+      Animated.timing(sheetAnim, {
+        toValue: 1,
+        duration: 320,
+        useNativeDriver: Platform.OS !== 'web',
+        easing: Easing.out(Easing.cubic),
+      }).start();
+    }
+  }, [visible, sheetAnim]);
+
   return (
     <Modal
       visible={visible}
@@ -208,13 +224,22 @@ export function AudioPlayerModal({
           <View style={styles.backdrop} />
         </TouchableWithoutFeedback>
 
-        <View
+        <Animated.View
           style={[
             styles.sheetContainer,
             isTablet && styles.sheetContainerTablet,
             {
               backgroundColor: colors.bgSurface,
               borderColor: colors.borderSubtle,
+              opacity: sheetAnim,
+              transform: [
+                {
+                  translateY: sheetAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [80, 0],
+                  }),
+                },
+              ],
             },
           ]}
         >
@@ -744,7 +769,7 @@ export function AudioPlayerModal({
             </Text>
             <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* Quick Translation Language Picker Modal */}
         <Modal
