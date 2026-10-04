@@ -99,7 +99,7 @@ const DEFAULTS: AppSettings = {
   remindersEnabled: false,
   reminderOffsetMinutes: 15,
   quranReminderEnabled: false,
-  adhanReciterId: 'default',
+  adhanReciterId: 'alafasy',
   themeMode: 'system',
   accentKey: 'amber',
   translationAudioEnabled: true,
@@ -159,7 +159,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
         setSettings(next);
         setAudioTranslationEnabled(next.translationAudioEnabled);
-        setActiveAdhanReciterId(next.adhanReciterId || 'default');
+        setActiveAdhanReciterId(next.adhanReciterId || 'alafasy');
         if (migrated) {
           AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
         }

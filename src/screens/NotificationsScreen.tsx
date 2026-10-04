@@ -457,8 +457,8 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
         </Text>
         <Text style={[styles.infoText, { color: colors.textMuted }]}>
           • <Text style={{ color: colors.textPrimary }}>Daily Repeat:</Text> Notifications are scheduled locally as repeating daily alarms for all 5 prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) plus countdown alerts {reminderOffsetMinutes} min before.{'\n\n'}
-          • <Text style={{ color: colors.textPrimary }}>Android Notification Channel:</Text> Uses the high-priority &apos;prayer-times&apos; channel with bundled sound and vibration so reminders reliably break through.{'\n\n'}
-          • <Text style={{ color: colors.textPrimary }}>Adhan Reciters:</Text> In-app adhan playback plays your chosen reciter (e.g. Mishary Alafasy, Abdul Basit, Makkah, Madinah, Al-Aqsa, or the classic chime) when prayer time arrives.
+          • <Text style={{ color: colors.textPrimary }}>Android Notification Channel:</Text> Uses the high-priority &apos;prayer-times-adhan&apos; channel with bundled sound and vibration so reminders reliably break through.{'\n\n'}
+          • <Text style={{ color: colors.textPrimary }}>Adhan Reciters:</Text> In-app adhan playback plays your chosen reciter (e.g. Mishary Alafasy, Abdul Basit, Makkah, Madinah, Al-Aqsa) when prayer time arrives.
         </Text>
       </Card>
 

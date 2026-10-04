@@ -56,10 +56,10 @@ export async function configureNotifications() {
 
   if (Platform.OS === 'android') {
     try {
-      await Notifications.setNotificationChannelAsync('prayer-times', {
+      await Notifications.setNotificationChannelAsync('prayer-times-adhan', {
         name: 'Prayer times',
         importance: Notifications.AndroidImportance.MAX,
-        sound: 'adhan_chime.wav',
+        sound: 'default',
         vibrationPattern: [0, 250, 250, 250],
         lightColor: '#D97706',
         enableVibrate: true,
@@ -319,7 +319,6 @@ export async function schedulePrayerNotifications(
         content: {
           title: `🕌 ${p.name} in ${reminderOffsetMinutes} minutes`,
           body: `${label} · ${p.time}`,
-          sound: 'adhan_chime.wav',
           data: { prayer: p.name, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
           categoryIdentifier: 'prayer',
         },
@@ -327,7 +326,7 @@ export async function schedulePrayerNotifications(
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour: beforeHour,
           minute: beforeMinute,
-          channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
+          channelId: Platform.OS === 'android' ? 'prayer-times-adhan' : undefined,
         },
       });
       ids.push(beforeId);
@@ -341,7 +340,6 @@ export async function schedulePrayerNotifications(
         content: {
           title: `🕌 ${p.name}`,
           body: `It's time for ${p.name}.`,
-          sound: 'adhan_chime.wav',
           data: { prayer: p.name, type: 'prayer-at', url: buildDeepLink({ type: 'tracker' }) },
           categoryIdentifier: 'prayer',
         },
@@ -349,7 +347,7 @@ export async function schedulePrayerNotifications(
           type: Notifications.SchedulableTriggerInputTypes.DAILY,
           hour: h,
           minute: m,
-          channelId: Platform.OS === 'android' ? 'prayer-times' : undefined,
+          channelId: Platform.OS === 'android' ? 'prayer-times-adhan' : undefined,
         },
       });
       ids.push(atId);

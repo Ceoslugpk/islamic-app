@@ -13,14 +13,6 @@ export interface AdhanReciter {
 
 export const ADHAN_RECITERS: AdhanReciter[] = [
   {
-    id: 'default',
-    name: 'Classic App Chime',
-    arabicName: 'نغمة الأذان',
-    location: 'Bundled Asset',
-    description: 'Crisp melodic chime, works 100% offline',
-    isBundled: true,
-  },
-  {
     id: 'alafasy',
     name: 'Mishary Rashid Alafasy',
     arabicName: 'مشاري راشد العفاسي',
@@ -65,7 +57,7 @@ export const ADHAN_RECITERS: AdhanReciter[] = [
 let sound: AudioPlayer | null = null;
 let statusSubscription: { remove: () => void } | null = null;
 let currentPlayingReciterId: string | null = null;
-let activeReciterId = 'default';
+let activeReciterId = 'alafasy';
 
 type AdhanStatusListener = (playingReciterId: string | null) => void;
 const statusListeners = new Set<AdhanStatusListener>();
@@ -159,8 +151,8 @@ export async function playAdhan(reciterId?: string): Promise<void> {
 
   let targetId = reciterId || activeReciterId;
 
-  // If no reciterId was passed and in-memory is default, attempt reading stored settings
-  if (!reciterId && activeReciterId === 'default') {
+  // If no reciterId was passed and in-memory is the default, attempt reading stored settings
+  if (!reciterId && activeReciterId === 'alafasy') {
     try {
       const raw = await AsyncStorage.getItem('islamic-settings');
       if (raw) {
@@ -207,29 +199,22 @@ export async function playAdhan(reciterId?: string): Promise<void> {
   };
 
   try {
-    if (reciter.id === 'default' || !reciter.url) {
-      // Bundled chime
+    // All reciters are remote adhan URLs now (the bundled "Classic App Chime"
+    // was removed as a reciter option).
+    try {
+      const s = createAudioPlayer({ uri: reciter.url });
+      s.volume = 1.0;
+      statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
+      s.play();
+      sound = s;
+    } catch {
+      // Last-resort offline fallback: bundled chime so the call still sounds
+      // when the network is unavailable (not selectable as a reciter).
       const s = createAudioPlayer(require('../../assets/sounds/adhan_chime.wav'));
       s.volume = 1.0;
       statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
       s.play();
       sound = s;
-    } else {
-      // Remote verified MP3 URL with offline fallback
-      try {
-        const s = createAudioPlayer({ uri: reciter.url });
-        s.volume = 1.0;
-        statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
-        s.play();
-        sound = s;
-      } catch {
-        // Fallback to bundled chime if remote network fails
-        const s = createAudioPlayer(require('../../assets/sounds/adhan_chime.wav'));
-        s.volume = 1.0;
-        statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
-        s.play();
-        sound = s;
-      }
     }
   } catch {
     currentPlayingReciterId = null;

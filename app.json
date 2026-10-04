@@ -8,9 +8,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash-icon-ink.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0E1214",
+      "backgroundColor": "#F8FAF9",
       "dark": {
         "image": "./assets/splash-icon.png",
         "backgroundColor": "#0E1214"

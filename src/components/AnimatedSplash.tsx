@@ -16,7 +16,7 @@ const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 const BG_DARK = '#0E1214';
-const BG_LIGHT = '#F4EEE1';
+const BG_LIGHT = '#F8FAF9';
 const IVORY = '#F4EEE1';
 const INK = '#0E1214';
 const GOLD = '#B8975A';
