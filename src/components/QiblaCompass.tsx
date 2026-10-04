@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -26,9 +26,9 @@ export function QiblaCompass({
   const { colors } = useTheme();
 
   // Continuous angle tracker to prevent 360-degree wrap spins
-  const targetRotation = isStaticMode ? (bearing ?? 0) : rotation;
+  const targetRotation = isStaticMode || heading === null ? (bearing ?? 0) : rotation;
   const currentAngleRef = useRef(targetRotation);
-  const animRotation = useRef(new Animated.Value(targetRotation)).current;
+  const [animRotation] = useState(() => new Animated.Value(targetRotation));
 
   useEffect(() => {
     const delta = shortestAngleDelta(targetRotation, currentAngleRef.current);
@@ -248,10 +248,18 @@ export function QiblaCompass({
       </View>
 
       {/* Aligned Badge */}
-      {isAligned && !isStaticMode && (
+      {isAligned && !isStaticMode && heading !== null && (
         <View style={[styles.alignedBadge, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
           <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
           <Text style={[styles.alignedBadgeText, { color: colors.accent }]}>Facing Qibla</Text>
+        </View>
+      )}
+
+      {/* Calibration hint badge when live heading is not yet available */}
+      {heading === null && !isStaticMode && (
+        <View style={[styles.alignedBadge, { backgroundColor: colors.bgRaised, borderColor: colors.borderSubtle }]}>
+          <Ionicons name="compass-outline" size={14} color={colors.accent} />
+          <Text style={[styles.alignedBadgeText, { color: colors.textSecondary }]}>Rotate device to calibrate</Text>
         </View>
       )}
     </View>

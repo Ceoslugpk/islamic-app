@@ -21,6 +21,7 @@ import {
   headingFromMagnetometer,
   resolveLocationHeading,
   isFacingQibla,
+  shortestAngleDelta,
 } from '../lib/qibla';
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
@@ -79,8 +80,13 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
 
   // Refs for subscriptions & smoothing
   const smoothHeadingRef = useRef<number>(0);
+  const lastEmittedHeadingRef = useRef<number | null>(null);
+  const lastUpdateTimestampRef = useRef<number>(0);
+  const isFirstHeadingRef = useRef<boolean>(true);
   const locationSubRef = useRef<Location.LocationSubscription | null>(null);
   const magSubRef = useRef<{ remove: () => void } | null>(null);
+  const watchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const wasAlignedRef = useRef<boolean>(false);
   const latRef = useRef<number | null>(null);
   const lngRef = useRef<number | null>(null);
@@ -131,6 +137,14 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
   }, [isAligned, haptic]);
 
   const cleanupSubscriptions = useCallback(() => {
+    if (watchdogTimerRef.current) {
+      clearTimeout(watchdogTimerRef.current);
+      watchdogTimerRef.current = null;
+    }
+    if (pollingTimerRef.current) {
+      clearInterval(pollingTimerRef.current);
+      pollingTimerRef.current = null;
+    }
     if (locationSubRef.current) {
       locationSubRef.current.remove();
       locationSubRef.current = null;
@@ -141,78 +155,200 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
     }
   }, []);
 
+  const handleHeadingSample = useCallback((
+    rawTrueHeading: number,
+    src: CompassSource,
+    acc: CompassAccuracy
+  ) => {
+    if (typeof rawTrueHeading !== 'number' || isNaN(rawTrueHeading)) return;
+
+    if (isFirstHeadingRef.current) {
+      isFirstHeadingRef.current = false;
+      smoothHeadingRef.current = rawTrueHeading;
+      lastEmittedHeadingRef.current = rawTrueHeading;
+      lastUpdateTimestampRef.current = Date.now();
+      setHeading(rawTrueHeading);
+      setSource(src);
+      setAccuracy(acc);
+      setCalibrating(false);
+      return;
+    }
+
+    const smoothed = smoothHeading(rawTrueHeading, smoothHeadingRef.current, 0.25);
+    smoothHeadingRef.current = smoothed;
+
+    const now = Date.now();
+    const timeDelta = now - lastUpdateTimestampRef.current;
+    const angleDelta = Math.abs(shortestAngleDelta(smoothed, lastEmittedHeadingRef.current ?? 0));
+
+    // Degree filter ~1°: update state when heading changes by >= 1°
+    // Throttle: don't re-render React faster than 50ms (20fps, spring animation smoothly handles 60fps)
+    // Heartbeat: after 250ms of quiet, flush final settled angle
+    if (timeDelta >= 50 && (angleDelta >= 1.0 || timeDelta >= 250)) {
+      lastEmittedHeadingRef.current = smoothed;
+      lastUpdateTimestampRef.current = now;
+      setHeading(smoothed);
+      setSource(src);
+      setAccuracy(acc);
+      setCalibrating(false);
+    }
+  }, []);
+
+  const startMagnetometerFallback = useCallback(async (): Promise<boolean> => {
+    try {
+      const isMagAvail = await Magnetometer.isAvailableAsync().catch(() => false);
+      if (isMagAvail) {
+        Magnetometer.setUpdateInterval(100);
+        const magSub = Magnetometer.addListener(({ x, y }) => {
+          const magHeading = headingFromMagnetometer(x, y, Platform.OS as 'ios' | 'android');
+          const decl =
+            latRef.current !== null && lngRef.current !== null
+              ? magneticDeclination(latRef.current, lngRef.current)
+              : 0;
+          const trueHead = (magHeading + decl + 360) % 360;
+          handleHeadingSample(trueHead, 'magnetometer', 'medium');
+        });
+        magSubRef.current = magSub;
+        setSource('magnetometer');
+        return true;
+      }
+    } catch {
+      // Magnetometer sensor unavailable
+    }
+    return false;
+  }, [handleHeadingSample]);
+
+  const startPollingFallback = useCallback(async () => {
+    try {
+      const initial = await Location.getHeadingAsync();
+      const trueHeading = resolveLocationHeading(initial, latRef.current, lngRef.current);
+      handleHeadingSample(trueHeading, 'expo-location', mapAccuracy(initial.accuracy));
+    } catch {
+      // ignore
+    }
+
+    pollingTimerRef.current = setInterval(async () => {
+      try {
+        const data = await Location.getHeadingAsync();
+        const trueHeading = resolveLocationHeading(data, latRef.current, lngRef.current);
+        handleHeadingSample(trueHeading, 'expo-location', mapAccuracy(data.accuracy));
+      } catch {
+        // ignore
+      }
+    }, 250);
+  }, [handleHeadingSample]);
+
   const startCompass = useCallback(async () => {
     cleanupSubscriptions();
     setError(null);
     setCalibrating(true);
+    isFirstHeadingRef.current = true;
 
+    // 1. Web Platform: graceful static mode
+    if (Platform.OS === 'web') {
+      setSource('static');
+      setAccuracy('unknown');
+      setCalibrating(false);
+      return;
+    }
+
+    let receivedFirstEvent = false;
+
+    // Check location permission on Android:
+    // On Android, Location.watchHeadingAsync silently returns without listening
+    // if neither fine nor coarse location permission is granted.
+    let hasLocationPermission = false;
     try {
-      // 1. Web Platform: graceful static mode
-      if (Platform.OS === 'web') {
+      const perm = await Location.getForegroundPermissionsAsync();
+      hasLocationPermission = perm.granted;
+    } catch {
+      hasLocationPermission = false;
+    }
+
+    // On Android without location permissions: expo-location heading cannot start,
+    // so immediately run Magnetometer fallback (which doesn't require location permissions).
+    if (Platform.OS === 'android' && !hasLocationPermission) {
+      const magStarted = await startMagnetometerFallback();
+      if (!magStarted) {
         setSource('static');
         setAccuracy('unknown');
         setCalibrating(false);
-        return;
       }
+      return;
+    }
 
-      // 2. Primary Heading: Location.watchHeadingAsync (OS-level sensor fusion)
-      let headingStarted = false;
-      try {
-        const sub = await Location.watchHeadingAsync((headingData) => {
+    // 2. Primary Heading: Location.watchHeadingAsync (OS-level sensor fusion)
+    let watchStarted = false;
+    try {
+      const sub = await Location.watchHeadingAsync(
+        (headingData) => {
+          receivedFirstEvent = true;
+          if (watchdogTimerRef.current) {
+            clearTimeout(watchdogTimerRef.current);
+            watchdogTimerRef.current = null;
+          }
           const trueHeading = resolveLocationHeading(headingData, latRef.current, lngRef.current);
-          const smoothed = smoothHeading(trueHeading, smoothHeadingRef.current, 0.25);
-          smoothHeadingRef.current = smoothed;
+          handleHeadingSample(trueHeading, 'expo-location', mapAccuracy(headingData.accuracy));
+        },
+        (_err) => {
+          if (!receivedFirstEvent) {
+            startMagnetometerFallback();
+          }
+        }
+      );
+      locationSubRef.current = sub;
+      watchStarted = true;
+    } catch {
+      watchStarted = false;
+    }
 
-          setHeading(smoothed);
-          setSource('expo-location');
-          setAccuracy(mapAccuracy(headingData.accuracy));
-          setCalibrating(false);
-        });
-
-        locationSubRef.current = sub;
-        headingStarted = true;
-      } catch {
-        // Location heading API not available on this device/emulator
-        headingStarted = false;
-      }
-
-      // 3. Fallback Heading: Raw Magnetometer
-      if (!headingStarted) {
-        const isMagAvail = await Magnetometer.isAvailableAsync().catch(() => false);
-        if (isMagAvail) {
-          Magnetometer.setUpdateInterval(100);
-          const magSub = Magnetometer.addListener(({ x, y }) => {
-            const magHeading = headingFromMagnetometer(x, y, Platform.OS as 'ios' | 'android');
-            const decl = latRef.current !== null && lngRef.current !== null
-              ? magneticDeclination(latRef.current, lngRef.current)
-              : 0;
-            const trueHead = (magHeading + decl + 360) % 360;
-            const smoothed = smoothHeading(trueHead, smoothHeadingRef.current, 0.2);
-            smoothHeadingRef.current = smoothed;
-
-            setHeading(smoothed);
-            setSource('magnetometer');
-            setAccuracy('medium');
-            setCalibrating(false);
-          });
-          magSubRef.current = magSub;
-        } else {
-          // No compass sensor on device
+    // If watchHeadingAsync failed to start, immediately try Magnetometer
+    if (!watchStarted) {
+      const magStarted = await startMagnetometerFallback();
+      if (!magStarted) {
+        try {
+          await startPollingFallback();
+        } catch {
           setSource('static');
           setAccuracy('unknown');
           setCalibrating(false);
         }
       }
-    } catch {
-      setError('Could not initialize compass sensor.');
-      setCalibrating(false);
+      return;
     }
-  }, [cleanupSubscriptions]);
+
+    // Watchdog timer: If watchHeadingAsync started but produces no events within 1200ms
+    // (common on Android devices without fused heading or where SensorManager doesn't emit):
+    watchdogTimerRef.current = setTimeout(async () => {
+      if (!receivedFirstEvent) {
+        if (locationSubRef.current) {
+          locationSubRef.current.remove();
+          locationSubRef.current = null;
+        }
+        const magStarted = await startMagnetometerFallback();
+        if (!magStarted) {
+          try {
+            await startPollingFallback();
+          } catch {
+            setSource('static');
+            setAccuracy('unknown');
+            setCalibrating(false);
+          }
+        }
+      }
+    }, 1200);
+  }, [cleanupSubscriptions, handleHeadingSample, startMagnetometerFallback, startPollingFallback]);
 
   useEffect(() => {
     startCompass();
     return cleanupSubscriptions;
   }, [startCompass, cleanupSubscriptions]);
+
+  useEffect(() => {
+    if (locStatus === 'granted') {
+      startCompass();
+    }
+  }, [locStatus, startCompass]);
 
   // Haptic when calibration completes (transition from calibrating -> ready)
   const wasCalibratingRef = useRef(true);
@@ -227,12 +363,14 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
     haptic('light');
     setRecalibrating(true);
     smoothHeadingRef.current = 0;
+    isFirstHeadingRef.current = true;
+    lastEmittedHeadingRef.current = null;
     await refreshLocation();
     await startCompass();
     setRecalibrating(false);
   };
 
-  const isStaticMode = Platform.OS === 'web' || source === 'static' || heading === null;
+  const isStaticMode = Platform.OS === 'web' || source === 'static';
   const showFigure8Prompt = !isStaticMode && (accuracy === 'uncalibrated' || accuracy === 'low');
 
   return (
@@ -306,25 +444,27 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
               style={[
                 styles.statusDot,
                 {
-                  backgroundColor: calibrating
+                  backgroundColor: calibrating && heading === null
                     ? colors.textMuted
                     : isAligned
                     ? colors.accent
-                    : source === 'static'
-                    ? colors.textSecondary
-                    : '#10B981', // green for active tracking
+                    : heading !== null
+                    ? '#10B981' // green for active tracking
+                    : colors.textSecondary,
                 },
               ]}
             />
             <Text style={[styles.statusText, { color: colors.textSecondary }]}>
-              {calibrating
+              {calibrating && heading === null
                 ? 'Calibrating compass…'
                 : isAligned
                 ? 'Aligned with Qibla'
+                : heading === null
+                ? 'Rotate device to calibrate'
                 : source === 'expo-location'
-                ? `OS Compass Active (${accuracy})`
+                ? `Live Compass (${accuracy})`
                 : source === 'magnetometer'
-                ? 'Magnetometer Active'
+                ? 'Live Compass (Magnetometer)'
                 : 'Static Direction Mode'}
             </Text>
           </View>
@@ -452,9 +592,7 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
             <Text style={[styles.telemetryValue, { color: colors.textPrimary }]}>
               {heading !== null
                 ? `${Math.round(heading)}° (${getCardinalDirection(heading)})`
-                : isStaticMode
-                ? 'Fixed orientation'
-                : 'Detecting…'}
+                : 'Unavailable (rotate device)'}
             </Text>
           </View>
 

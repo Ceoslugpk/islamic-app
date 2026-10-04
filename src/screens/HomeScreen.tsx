@@ -231,9 +231,7 @@ export default function HomeScreen({
         ),
       ]);
       setData(result);
-      console.log('[TODAY_REFRESH] query_complete', { success: true, method: result.method });
     } catch (err: any) {
-      console.warn('[TODAY_REFRESH] query_complete', { success: false, error: err?.message || String(err) });
       if (!data) {
         setError('Could not load prayer times. Check your connection.');
       }
@@ -579,7 +577,10 @@ export default function HomeScreen({
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           {
-            useNativeDriver: USE_NATIVE_DRIVER,
+            // ponytail: JS driver for the scroll event — native-driven
+            // Animated.event on a Fabric ScrollView can fail to commit content
+            // below the initial viewport (blank cards, container visible).
+            useNativeDriver: false,
             listener: handleScroll,
           }
         )}
@@ -587,7 +588,6 @@ export default function HomeScreen({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={async () => {
-              console.log('[TODAY_REFRESH] start', { refreshing: true, locStatus, locationMode: settings.locationMode });
               setRefreshing(true);
               try {
                 if (settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'pending')) {
@@ -604,7 +604,6 @@ export default function HomeScreen({
                 ]);
               } finally {
                 setRefreshing(false);
-                console.log('[TODAY_REFRESH] refresh_complete', { refreshing: false });
               }
             }}
             tintColor="transparent"

@@ -42,6 +42,8 @@ export function distanceToKaabaKm(latitude: number, longitude: number): number {
 
 /** Smooth the compass heading with an exponential moving average to reduce jitter. */
 export function smoothHeading(raw: number, prev: number, alpha = 0.2): number {
+  if (typeof raw !== 'number' || isNaN(raw)) return prev;
+  if (typeof prev !== 'number' || isNaN(prev)) return raw;
   // Handle 360/0 wrap
   let diff = (raw - prev + 540) % 360 - 180;
   return (prev + alpha * diff + 360) % 360;
@@ -96,24 +98,13 @@ export function magneticDeclination(latitude: number, longitude: number): number
  * This function returns heading where 0° = magnetic north, increasing clockwise.
  * Caller should add magneticDeclination(lat, lng) to get true heading.
  */
-export function headingFromMagnetometer(x: number, y: number, platform: 'ios' | 'android'): number {
-  // Standard atan2(y, x) gives angle from +x axis (device right).
-  // Magnetic north relative to device: when device top points to magnetic north,
-  // the field vector points along +y (top), so atan2(y, x) = atan2(+B, 0) = 90°.
-  // But we want heading = 0° when device top points north.
-  // So: heading = 90° - atan2(y, x)  (in degrees)
-  // Or equivalently: heading = atan2(x, -y)
-  let raw: number;
-  if (platform === 'android') {
-    // Many Android devices report y flipped; use atan2(-y, x) as fallback
-    // Test both and pick the one that gives consistent results.
-    // Common working formula for Android: atan2(x, -y)
-    raw = (Math.atan2(x, -y) * 180) / Math.PI;
-  } else {
-    // iOS: atan2(y, x) with 90° offset
-    raw = 90 - (Math.atan2(y, x) * 180) / Math.PI;
-  }
-  return (raw + 360) % 360;
+export function headingFromMagnetometer(x: number, y: number, _platform?: 'ios' | 'android'): number {
+  // Device Cartesian plane: +X is right, +Y is top.
+  // When device top (+Y) points to Magnetic North, ambient field vector points along +Y.
+  // When device rotates clockwise by theta, North vector in device coords is (-sin(theta), cos(theta)).
+  // Therefore theta = atan2(-x, y). Works uniformly across iOS and Android portrait orientation.
+  const deg = (Math.atan2(-x, y) * 180) / Math.PI;
+  return (deg + 360) % 360;
 }
 
 /**
@@ -122,18 +113,26 @@ export function headingFromMagnetometer(x: number, y: number, platform: 'ios' | 
  * magHeading + estimated magnetic declination.
  */
 export function resolveLocationHeading(
-  headingObj: { trueHeading: number; magHeading: number },
+  headingObj: { trueHeading?: number; magHeading?: number },
   latitude?: number | null,
   longitude?: number | null
 ): number {
-  if (headingObj.trueHeading >= 0) {
+  if (
+    typeof headingObj?.trueHeading === 'number' &&
+    !isNaN(headingObj.trueHeading) &&
+    headingObj.trueHeading >= 0
+  ) {
     return (headingObj.trueHeading + 360) % 360;
   }
+  const mag =
+    typeof headingObj?.magHeading === 'number' && !isNaN(headingObj.magHeading)
+      ? headingObj.magHeading
+      : 0;
   const decl =
-    latitude != null && longitude != null
+    latitude != null && longitude != null && !isNaN(latitude) && !isNaN(longitude)
       ? magneticDeclination(latitude, longitude)
       : 0;
-  return (headingObj.magHeading + decl + 360) % 360;
+  return ((mag + decl) % 360 + 360) % 360;
 }
 
 /**

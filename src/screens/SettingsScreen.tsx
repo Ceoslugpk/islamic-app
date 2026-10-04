@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import WidgetPreviewScreen from './WidgetPreviewScreen';
 import {
@@ -435,6 +436,7 @@ export interface SettingsScreenProps {
 }
 
 export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScreenProps) {
+  const insets = useSafeAreaInsets();
   const { colors, mode, accentKey, setAccent } = useTheme();
   const {
     settings,
@@ -614,7 +616,14 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
   return (
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { paddingHorizontal: layout.screenPad }]}
+      contentContainerStyle={[
+        styles.content,
+        {
+          paddingHorizontal: layout.screenPad,
+          paddingTop: insets.top + 10,
+          paddingBottom: Math.max(40, insets.bottom + 20),
+        },
+      ]}
     >
       <View style={[styles.contentWrap, { maxWidth: layout.maxW }]}>
         {onClose && (
