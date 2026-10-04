@@ -800,8 +800,8 @@ export async function configureAudioMode(): Promise<void> {
   }).catch(() => {});
 }
 
-// Ensure audio mode is set on bootstrap
-configureAudioMode().catch(() => {});
+// Audio mode is configured lazily when playback starts (e.g. in playAudioUrl)
+// to prevent native module access during initial bundle evaluation on Android.
 
 export function getActiveArabicReciter(preferredId?: string): string {
   if (preferredId && preferredId.startsWith('ar.')) {

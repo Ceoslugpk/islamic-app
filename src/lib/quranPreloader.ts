@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { fetchSurah, fetchSurahList, fetchSurahMultiEditions, SurahDetail, SurahMeta } from './quran';
 import { fetchSurahTranslations } from './quranMultiLang';
 import { loadQuranCache, saveQuranCache, loadLastReadPosition } from './db';
-import { getQuranTranslationLanguage, subscribeQuranLanguage } from './quranLanguageState';
+import { DEFAULT_QURAN_LANGUAGE, getQuranTranslationLanguage, subscribeQuranLanguage } from './quranLanguageState';
 import { getEditionForLanguage, QURAN_LANGUAGE_EDITIONS } from './quranLanguages';
 
 export interface QuranPreloadProgress {
@@ -106,20 +106,18 @@ export function getCachedSurahsCount(editionIdentifier: string): number {
   return count;
 }
 
-let currentProgress: QuranPreloadProgress = (() => {
-  const { languageCode, editionIdentifier } = getActiveEdition();
-  const cached = getCachedSurahsCount(editionIdentifier);
-  return {
-    total: TOTAL_SURAHS,
-    cached,
-    currentSurah: null,
-    isRunning: false,
-    isComplete: cached >= TOTAL_SURAHS,
-    languageCode,
-    editionIdentifier,
-    error: null,
-  };
-})();
+let currentProgress: QuranPreloadProgress = {
+  total: TOTAL_SURAHS,
+  cached: 0,
+  currentSurah: null,
+  isRunning: false,
+  isComplete: false,
+  languageCode: DEFAULT_QURAN_LANGUAGE,
+  editionIdentifier: 'en.sahih',
+  error: null,
+};
+
+let hasInitializedCachedCount = false;
 
 function emitProgress(update: Partial<QuranPreloadProgress>) {
   currentProgress = { ...currentProgress, ...update };
@@ -135,17 +133,23 @@ function emitProgress(update: Partial<QuranPreloadProgress>) {
 export function getQuranPreloadProgress(): QuranPreloadProgress {
   const { languageCode, editionIdentifier } = getActiveEdition();
   if (
+    !hasInitializedCachedCount ||
     currentProgress.languageCode !== languageCode ||
     currentProgress.editionIdentifier !== editionIdentifier
   ) {
-    const cached = getCachedSurahsCount(editionIdentifier);
-    currentProgress = {
-      ...currentProgress,
-      languageCode,
-      editionIdentifier,
-      cached,
-      isComplete: cached >= TOTAL_SURAHS,
-    };
+    try {
+      const cached = getCachedSurahsCount(editionIdentifier);
+      hasInitializedCachedCount = true;
+      currentProgress = {
+        ...currentProgress,
+        languageCode,
+        editionIdentifier,
+        cached,
+        isComplete: cached >= TOTAL_SURAHS,
+      };
+    } catch {
+      // non-fatal if database is not yet initialized
+    }
   }
   return currentProgress;
 }

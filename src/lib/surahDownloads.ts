@@ -228,7 +228,7 @@ export async function downloadSurah(
           remoteUrl,
           localPath,
           {},
-          (data) => {
+          (data: FileSystem.DownloadProgressData) => {
             const total = data.totalBytesExpectedToWrite;
             const written = data.totalBytesWritten;
             const percent = total > 0 ? Math.min(100, Math.round((written / total) * 100)) : 0;

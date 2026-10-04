@@ -71,29 +71,35 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
     }
 
     const timings: Array<[number, () => void]> = [];
-    // 0-200ms: slit appears (thin vertical light at the logo's opening, x≈51-52)
+    // Safety fallback: if anything prevents animation sequence from completing, ensure app reveals within 1200ms
+    const safetyTimer = setTimeout(() => {
+      onDone();
+    }, 1200);
+    timings.push([1, () => clearTimeout(safetyTimer)]);
+
+    // 0-200ms: slit appears (animates height and opacity; height requires useNativeDriver: false)
     const slitAnim = Animated.timing(slit, {
       toValue: 1,
       duration: 200,
-      useNativeDriver: USE_NATIVE_DRIVER,
+      useNativeDriver: false,
       easing: Easing.out(Easing.quad),
     });
-    // 200-500ms: grow outward from the slit (mask expands from center slit)
+    // 200-500ms: grow outward from the slit (animates SVG x & width; requires useNativeDriver: false)
     const growAnim = Animated.timing(grow, {
       toValue: 1,
       duration: 300,
-      useNativeDriver: USE_NATIVE_DRIVER,
+      useNativeDriver: false,
       easing: Easing.out(Easing.cubic),
     });
     // 500-750ms: hold + wordmark "ISLAMIC" appears
-    // 750-900ms: light sweep across the logo once
+    // 750-900ms: light sweep across the logo once (animates left property; requires useNativeDriver: false)
     const sweepAnim = Animated.timing(sweep, {
       toValue: 1,
       duration: 150,
-      useNativeDriver: USE_NATIVE_DRIVER,
+      useNativeDriver: false,
       easing: Easing.inOut(Easing.sin),
     });
-    // 900-1000ms: fade into Today
+    // 900-1000ms: fade into Today (animates View opacity; native driver supported)
     const fadeAnim = Animated.timing(fadeOut, {
       toValue: 0,
       duration: 120,
@@ -106,7 +112,10 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
         const hold = setTimeout(() => {
           sweepAnim.start(() => {
             const hold2 = setTimeout(() => {
-              fadeAnim.start(onDone);
+              fadeAnim.start(() => {
+                clearTimeout(safetyTimer);
+                onDone();
+              });
             }, 120);
             timings.push([1, () => clearTimeout(hold2)]);
           });
