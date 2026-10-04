@@ -224,9 +224,16 @@ export default function HomeScreen({
     if (showSpinner) setLoading(true);
     setError(null);
     try {
-      const result = await fetchPrayerTimes(effectiveLocation, settings.methodId, new Date(), force);
+      const result = await Promise.race([
+        fetchPrayerTimes(effectiveLocation, settings.methodId, new Date(), force),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Prayer times load timed out')), 15000)
+        ),
+      ]);
       setData(result);
-    } catch {
+      console.log('[TODAY_REFRESH] query_complete', { success: true, method: result.method });
+    } catch (err: any) {
+      console.warn('[TODAY_REFRESH] query_complete', { success: false, error: err?.message || String(err) });
       if (!data) {
         setError('Could not load prayer times. Check your connection.');
       }
@@ -580,11 +587,25 @@ export default function HomeScreen({
           <RefreshControl
             refreshing={refreshing}
             onRefresh={async () => {
+              console.log('[TODAY_REFRESH] start', { refreshing: true, locStatus, locationMode: settings.locationMode });
               setRefreshing(true);
-              if (settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'pending')) {
-                await requestLocation(true);
+              try {
+                if (settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'pending')) {
+                  try {
+                    await requestLocation(true);
+                  } catch {
+                    // Location failure must never block data refresh
+                  }
+                }
+                await Promise.allSettled([
+                  load(false, true),
+                  refreshAyah ? refreshAyah() : Promise.resolve(),
+                  refreshHadith ? refreshHadith() : Promise.resolve(),
+                ]);
+              } finally {
+                setRefreshing(false);
+                console.log('[TODAY_REFRESH] refresh_complete', { refreshing: false });
               }
-              await load(false, true);
             }}
             tintColor="transparent"
             colors={['transparent']}

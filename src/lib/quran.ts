@@ -38,28 +38,61 @@ const BASE = 'https://api.alquran.cloud/v1';
 // Saheeh International translation edition
 const TRANSLATION = 'en.sahih';
 
+import { SURAHS_114 } from './surahs114';
+
 export async function fetchSurahList(force = false): Promise<SurahMeta[]> {
   if (!force) {
     const cached = loadQuranCache<SurahMeta[]>('surah-list');
-    if (cached) return cached;
+    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
   }
 
-  const res = await fetch(`${BASE}/surah`);
-  if (!res.ok) throw new Error('Quran list failed');
-  const json = await res.json();
-  if (json.code !== 200) throw new Error('Quran list non-200');
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
 
-  const list: SurahMeta[] = json.data.map((s: any) => ({
-    number: s.number,
-    name: s.name,
-    englishName: s.englishName,
-    englishNameTranslation: s.englishNameTranslation,
-    numberOfAyahs: s.numberOfAyahs,
-    revelationType: s.revelationType,
-  }));
+  try {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        try { controller.abort(); } catch {}
+        reject(new Error('fetchSurahList timed out'));
+      }, 5000);
+    });
 
-  saveQuranCache('surah-list', list);
-  return list;
+    const fetchPromise = fetch(`${BASE}/surah`, { signal: controller.signal });
+    const res = await Promise.race([fetchPromise, timeoutPromise]);
+
+    if (!res.ok) throw new Error('Quran list failed');
+    const json = await res.json();
+    if (json.code !== 200 || !Array.isArray(json.data)) throw new Error('Quran list non-200');
+
+    const list: SurahMeta[] = json.data.map((s: any) => ({
+      number: s.number,
+      name: s.name,
+      englishName: s.englishName,
+      englishNameTranslation: s.englishNameTranslation,
+      numberOfAyahs: s.numberOfAyahs,
+      revelationType: s.revelationType,
+    }));
+
+    saveQuranCache('surah-list', list);
+    return list;
+  } catch {
+    // If network fails/times out, use cached data if present, or bundled SURAHS_114
+    const cached = loadQuranCache<SurahMeta[]>('surah-list');
+    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+
+    const fallbackList: SurahMeta[] = SURAHS_114.map((s) => ({
+      number: s.number,
+      name: s.name,
+      englishName: s.englishName,
+      englishNameTranslation: s.englishName,
+      numberOfAyahs: s.numberOfAyahs,
+      revelationType: s.revelationType,
+    }));
+    saveQuranCache('surah-list', fallbackList);
+    return fallbackList;
+  } finally {
+    clearTimeout(timer!);
+  }
 }
 
 import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';

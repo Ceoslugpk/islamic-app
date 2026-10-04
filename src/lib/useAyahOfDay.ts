@@ -102,8 +102,8 @@ function getFallbackAyah(dayOfYear: number): AyahOfDay {
 }
 
 export function useAyahOfDay() {
-  const [ayah, setAyah] = useState<AyahOfDay | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [ayah, setAyah] = useState<AyahOfDay>(() => getFallbackAyah(getDayOfYear()));
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -127,10 +127,23 @@ export function useAyahOfDay() {
       // Ignore cache read failures
     }
 
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+
     try {
-      const response = await fetch(
-        `https://api.alquran.cloud/v1/ayah/${verseIndex}/editions/quran-uthmani,en.sahih`
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          try { controller.abort(); } catch {}
+          reject(new Error('Ayah fetch timed out'));
+        }, 5000);
+      });
+
+      const fetchPromise = fetch(
+        `https://api.alquran.cloud/v1/ayah/${verseIndex}/editions/quran-uthmani,en.sahih`,
+        { signal: controller.signal }
       );
+
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const json = await response.json();
@@ -157,11 +170,12 @@ export function useAyahOfDay() {
       }
 
       throw new Error('Malformed API payload');
-    } catch (err) {
+    } catch {
       const fallback = getFallbackAyah(dayOfYear);
-      setAyah(fallback);
+      setAyah((prev) => prev || fallback);
       setError('Using offline ayah');
     } finally {
+      clearTimeout(timer!);
       setLoading(false);
     }
   }, []);

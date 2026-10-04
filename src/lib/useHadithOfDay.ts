@@ -38,8 +38,8 @@ function normalizeApiResponse(data: ApiHadithResponse['data']): Hadith {
 }
 
 export function useHadithOfDay() {
-  const [hadith, setHadith] = useState<Hadith | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [hadith, setHadith] = useState<Hadith>(() => getFallbackHadith());
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -61,25 +61,43 @@ export function useHadithOfDay() {
         }
       }
 
-      const response = await fetch('https://api.islamic.app/v1/hadith/today');
-      if (!response.ok) throw new Error('API request failed');
+      const controller = new AbortController();
+      let timer: ReturnType<typeof setTimeout>;
 
-      const json = (await response.json()) as ApiHadithResponse;
+      try {
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timer = setTimeout(() => {
+            try { controller.abort(); } catch {}
+            reject(new Error('Hadith fetch timed out'));
+          }, 5000);
+        });
 
-      if (json.code === 200 && json.data) {
-        const normalized = normalizeApiResponse(json.data);
-        if (normalized.arabic || normalized.translation) {
-          setHadith(normalized);
-          await AsyncStorage.setItem(cacheKey, JSON.stringify(normalized)).catch(() => {});
-          setLoading(false);
-          return;
+        const fetchPromise = fetch('https://api.islamic.app/v1/hadith/today', {
+          signal: controller.signal,
+        });
+
+        const response = await Promise.race([fetchPromise, timeoutPromise]);
+        if (!response.ok) throw new Error('API request failed');
+
+        const json = (await response.json()) as ApiHadithResponse;
+
+        if (json.code === 200 && json.data) {
+          const normalized = normalizeApiResponse(json.data);
+          if (normalized.arabic || normalized.translation) {
+            setHadith(normalized);
+            await AsyncStorage.setItem(cacheKey, JSON.stringify(normalized)).catch(() => {});
+            setLoading(false);
+            return;
+          }
         }
-      }
 
-      throw new Error('Invalid API response');
+        throw new Error('Invalid API response');
+      } finally {
+        clearTimeout(timer!);
+      }
     } catch {
       const fallback = getFallbackHadith();
-      setHadith(fallback);
+      setHadith((prev) => prev || fallback);
       setError('Using offline hadith');
     } finally {
       setLoading(false);
@@ -90,8 +108,22 @@ export function useHadithOfDay() {
     setLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+
     try {
-      const response = await fetch('https://api.islamic.app/v1/hadith/random');
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          try { controller.abort(); } catch {}
+          reject(new Error('Hadith refresh timed out'));
+        }, 5000);
+      });
+
+      const fetchPromise = fetch('https://api.islamic.app/v1/hadith/random', {
+        signal: controller.signal,
+      });
+
+      const response = await Promise.race([fetchPromise, timeoutPromise]);
       if (!response.ok) throw new Error('API request failed');
 
       const json = (await response.json()) as ApiHadithResponse;
@@ -110,9 +142,10 @@ export function useHadithOfDay() {
       throw new Error('Invalid API response');
     } catch {
       const fallback = getFallbackHadith();
-      setHadith(fallback);
+      setHadith((prev) => prev || fallback);
       setError('Using offline hadith');
     } finally {
+      clearTimeout(timer!);
       setLoading(false);
     }
   }, []);

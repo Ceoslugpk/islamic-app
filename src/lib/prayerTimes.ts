@@ -58,6 +58,26 @@ function todayDdmmyyyy(d = new Date()): string {
   return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 5000): Promise<Response> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      try { controller.abort(); } catch {}
+      reject(new Error(`Timeout of ${timeoutMs}ms exceeded for ${url}`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([
+      fetch(url, { ...options, signal: controller.signal }),
+      timeoutPromise,
+    ]);
+  } finally {
+    clearTimeout(timer!);
+  }
+}
+
 export async function fetchPrayerTimes(
   loc: Location = DEFAULT_LOCATION,
   method: number = 8,
@@ -65,109 +85,144 @@ export async function fetchPrayerTimes(
   force = false
 ): Promise<DayTimings> {
   const dateStr = todayDdmmyyyy(date);
-  const cacheKey = `${dateStr}_${loc.latitude.toFixed(2)}_${loc.longitude.toFixed(2)}_${method}`;
+  const locKey = `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`;
 
   // 1. Try cache first (offline / fast path) — unless forced
   if (!force) {
-    const cached = loadPrayerCache(dateStr, `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`, method);
+    const cached = loadPrayerCache(dateStr, locKey, method);
     if (cached) {
       try {
-        return normalizePayload(JSON.parse(cached.payload), 'Cache');
+        const parsed = JSON.parse(cached.payload);
+        const normalized = normalizePayload(parsed, 'Cache');
+        if (normalized && normalized.timings?.Fajr) {
+          return normalized;
+        }
       } catch {
         // corrupted cache; fall through
       }
     }
   }
 
-  // 2. Primary: islamic.app (spec: /v1/timings/today, method 2 ISNA default)
+  // 2. Primary: islamic.app
   try {
-    const islamicUrl =
-      `https://api.islamic.app/v1/timings/today` +
-      `?latitude=${loc.latitude}&longitude=${loc.longitude}&timezone=Asia/Dubai&method=${method}`;
-    const res = await fetch(islamicUrl);
+    const rawCity = loc.label ? loc.label.split(',')[0].trim() : '';
+    const isCoordinateLabel = rawCity.includes('°') || !rawCity;
+    const islamicUrl = !isCoordinateLabel
+      ? `https://api.islamic.app/v1/timings/today?city=${encodeURIComponent(rawCity)}&method=${method}`
+      : `https://api.islamic.app/v1/timings/today?latitude=${loc.latitude}&longitude=${loc.longitude}&method=${method}`;
+
+    const res = await fetchWithTimeout(islamicUrl, {}, 5000);
     if (res.ok) {
       const json = await res.json();
       if (json.code === 200 && json.data?.timings) {
         const normalized = normalizePayload(json.data, json.data.meta?.method?.name || 'islamic.app');
-        savePrayerCache(dateStr, `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`, method, json.data);
+        savePrayerCache(dateStr, locKey, method, normalized);
         return normalized;
       }
     }
-  } catch {
-    // fall through to Aladhan
+  } catch (err: any) {
+    // fall through to AlAdhan
   }
 
-  // 3. Fallback: Aladhan
+  // 3. Fallback: AlAdhan
   try {
     const url =
       `https://api.aladhan.com/v1/timings/${dateStr}` +
       `?latitude=${loc.latitude}&longitude=${loc.longitude}&method=${method}`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, 5000);
     if (!res.ok) throw new Error(`Aladhan HTTP ${res.status}`);
     const json = await res.json();
-    if (json.code !== 200) throw new Error('Aladhan non-200 code');
+    if (json.code !== 200 || !json.data) throw new Error('Aladhan non-200 code');
 
-    const data = json.data;
-    const timings: PrayerTimes = {
-      Fajr: data.timings.Fajr,
-      Sunrise: data.timings.Sunrise,
-      Dhuhr: data.timings.Dhuhr,
-      Asr: data.timings.Asr,
-      Maghrib: data.timings.Maghrib,
-      Isha: data.timings.Isha,
-      Imsak: data.timings.Imsak,
-      Midnight: data.timings.Midnight,
-    };
-
-    const hijri: HijriDate = {
-      day: data.date.hijri.day,
-      month: data.date.hijri.month.number,
-      monthEn: data.date.hijri.month.en,
-      year: data.date.hijri.year,
-    };
-
-    const result: DayTimings = {
-      timings,
-      hijri,
-      gregorian: data.date.gregorian.date,
-      readable: data.date.readable,
-      method: data.meta.method.name,
-      timezone: data.meta.timezone,
-    };
-    savePrayerCache(dateStr, `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`, method, result);
-    return result;
-  } catch (e) {
-    // 4. Final: local astronomical calculation
-    return localFallback(loc, method, date);
+    const normalized = normalizePayload(json.data, json.data.meta?.method?.name || 'AlAdhan');
+    savePrayerCache(dateStr, locKey, method, normalized);
+    return normalized;
+  } catch (err: any) {
+    // fall through to cache / localFallback
   }
+
+  // 4. Offline cache fallback (stale cache is better than math fallback when offline)
+  try {
+    const cached = loadPrayerCache(dateStr, locKey, method);
+    if (cached) {
+      const parsed = JSON.parse(cached.payload);
+      const normalized = normalizePayload(parsed, 'Cache');
+      if (normalized && normalized.timings?.Fajr) {
+        return normalized;
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  // 5. Final: local astronomical calculation
+  const fallback = localFallback(loc, method, date);
+  return fallback;
 }
 
-/** Normalize islamic.app payload (timings + hijri) into DayTimings. */
+/** Normalize islamic.app payload, AlAdhan payload, or cached DayTimings into DayTimings. */
 function normalizePayload(data: any, methodName: string): DayTimings {
+  if (!data) {
+    return localFallback(DEFAULT_LOCATION, 8, new Date());
+  }
+
+  // 1. If data is already a normalized DayTimings object (e.g. loaded from cache)
+  if (data.timings && data.hijri && (data.hijri.day !== undefined || data.hijri.monthEn !== undefined)) {
+    return {
+      timings: {
+        Fajr: data.timings.Fajr || '05:00',
+        Sunrise: data.timings.Sunrise || '06:15',
+        Dhuhr: data.timings.Dhuhr || '12:15',
+        Asr: data.timings.Asr || '15:30',
+        Maghrib: data.timings.Maghrib || '18:15',
+        Isha: data.timings.Isha || '19:30',
+        Imsak: data.timings.Imsak,
+        Midnight: data.timings.Midnight,
+      },
+      hijri: {
+        day: String(data.hijri.day ?? ''),
+        month: String(data.hijri.month?.number ?? data.hijri.month ?? ''),
+        monthEn: String(data.hijri.month?.en ?? data.hijri.monthEn ?? ''),
+        year: String(data.hijri.year ?? ''),
+      },
+      gregorian: data.gregorian || data.readable || '',
+      readable: data.readable || data.gregorian || '',
+      method: data.method || methodName,
+      timezone: data.timezone || 'UTC',
+    };
+  }
+
+  // 2. Raw API payload (islamic.app or AlAdhan format)
   const t = data.timings || {};
   const h = data.date?.hijri || {};
   const timings: PrayerTimes = {
-    Fajr: t.Fajr,
-    Sunrise: t.Sunrise,
-    Dhuhr: t.Dhuhr,
-    Asr: t.Asr,
-    Maghrib: t.Maghrib,
-    Isha: t.Isha,
+    Fajr: t.Fajr || '05:00',
+    Sunrise: t.Sunrise || '06:15',
+    Dhuhr: t.Dhuhr || '12:15',
+    Asr: t.Asr || '15:30',
+    Maghrib: t.Maghrib || '18:15',
+    Isha: t.Isha || '19:30',
     Imsak: t.Imsak,
     Midnight: t.Midnight,
   };
+
+  const dayVal = h.day ? String(h.day) : '';
+  const monthNum = h.month ? String(h.month.number ?? h.month) : '';
+  const monthEn = h.month?.en ? String(h.month.en) : typeof h.month === 'string' ? h.month : '';
+  const yearVal = h.year ? String(h.year) : '';
+
   return {
     timings,
     hijri: {
-      day: String(h.day ?? ''),
-      month: String(h.month?.number ?? h.month ?? ''),
-      monthEn: h.month?.en || h.month || '',
-      year: String(h.year ?? ''),
+      day: dayVal,
+      month: monthNum,
+      monthEn: monthEn,
+      year: yearVal,
     },
-    gregorian: data.date?.gregorian?.date || data.date?.readable || '',
-    readable: data.date?.readable || '',
+    gregorian: data.date?.gregorian?.date || data.date?.readable || data.gregorian || '',
+    readable: data.date?.readable || data.gregorian || '',
     method: methodName,
-    timezone: data.meta?.timezone || 'UTC',
+    timezone: data.meta?.timezone || data.timezone || 'UTC',
   };
 }
 

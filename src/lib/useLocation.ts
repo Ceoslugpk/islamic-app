@@ -22,7 +22,11 @@ let inFlightRequest: Promise<Loc | null> | null = null;
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
-    const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+    const geoPromise = Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Geocode timed out')), 3500)
+    );
+    const geo = await Promise.race([geoPromise, timeoutPromise]);
     if (geo && geo.length > 0) {
       const g = geo[0];
       const city = g.city || g.subregion || g.district;
@@ -135,9 +139,13 @@ export function useLocation(askOnMount = false): UseLocationResult {
           return null;
         }
 
-        const pos = await Location.getCurrentPositionAsync({
+        const posPromise = Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Location request timed out')), 5000)
+        );
+        const pos = await Promise.race([posPromise, timeoutPromise]);
 
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;

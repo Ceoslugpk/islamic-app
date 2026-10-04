@@ -21,15 +21,25 @@ export function useConnectivity(): { isOnline: boolean; isChecking: boolean; ref
     const controller = new AbortController();
     abortRef.current = controller;
 
+    let timer: ReturnType<typeof setTimeout>;
     try {
-      const res = await fetch(REACHABILITY_URL, {
+      const timeoutPromise = new Promise<boolean>((resolve) => {
+        timer = setTimeout(() => {
+          try { controller.abort(); } catch {}
+          resolve(false);
+        }, PROBE_TIMEOUT);
+      });
+      const fetchPromise = fetch(REACHABILITY_URL, {
         method: 'HEAD',
         signal: controller.signal,
         cache: 'no-store',
-      });
-      return res.ok;
-    } catch {
-      return false;
+      })
+        .then((res) => res.ok)
+        .catch(() => false);
+
+      return await Promise.race([fetchPromise, timeoutPromise]);
+    } finally {
+      clearTimeout(timer!);
     }
   }, []);
 
