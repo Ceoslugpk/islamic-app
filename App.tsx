@@ -5,12 +5,12 @@ import {
   View,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   Modal,
   useWindowDimensions,
   Linking,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/lib/theme';
 import { SettingsProvider } from './src/lib/settings';
@@ -74,6 +74,7 @@ import { runFirstLaunchWarmup } from './src/lib/warmup';
 import { runFirstLaunchPermissions } from './src/lib/firstLaunchPermissions';
 import { useLocation } from './src/lib/useLocation';
 import { useEffect } from 'react';
+import { BackHandler } from 'react-native';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
 
@@ -94,6 +95,7 @@ const TABS: TabItemConfig[] = [
 function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isCompact = width < 380;
   const isTiny = width <= 340;
 
@@ -108,7 +110,7 @@ function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) =>
         {
           backgroundColor: colors.bgSurface,
           borderTopColor: colors.borderSubtle,
-          paddingBottom: isCompact ? 4 : 6,
+          paddingBottom: insets.bottom + (isCompact ? 4 : 6),
           paddingTop: isCompact ? 2 : 4,
         },
       ]}
@@ -166,8 +168,17 @@ function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) =>
 /** Top app header: brand + settings gear. */
 function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { colors, mode } = useTheme();
+  const insets = useSafeAreaInsets();
   return (
-    <View style={[styles.appHeader, { borderBottomColor: colors.borderSubtle }]}>
+    <View
+      style={[
+        styles.appHeader,
+        {
+          borderBottomColor: colors.borderSubtle,
+          paddingTop: insets.top + 10,
+        },
+      ]}
+    >
       <Image
         source={
           mode === 'paper'
@@ -414,6 +425,35 @@ function Root({ splashDone }: { splashDone: boolean }) {
       subscription.remove();
     };
   }, [setTab, setQuran, setLibrary, setTools, setSettingsOpen]);
+  // Android hardware back: go back through screens instead of exiting.
+  // Priority: settings modal → sub-screen → tab hub → default (exit).
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (settingsOpen) {
+        setSettingsOpen(false);
+        return true;
+      }
+      if (library.screen !== 'hub') {
+        setLibrary({ screen: 'hub' });
+        return true;
+      }
+      if (quran.screen !== 'home') {
+        setQuran({ screen: 'home' });
+        return true;
+      }
+      if (tools.screen !== 'hub') {
+        setTools({ screen: 'hub' });
+        return true;
+      }
+      if (tab !== 'home') {
+        setTab('home');
+        return true;
+      }
+      return false; // let default back behavior exit the app
+    });
+    return () => sub.remove();
+  }, [settingsOpen, library, quran, tools, tab]);
+
   const isAudioCenter = tab === 'quran' && quran.screen === 'audio';
   const showMiniPlayer = visible && playback !== null && !isAudioCenter;
 
@@ -467,7 +507,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
   }
 
   return (
-<SafeAreaView style={[styles.safe, { backgroundColor: colors.bgBase }]}>
+    <View style={[styles.safe, { backgroundColor: colors.bgBase }]}>
         <StatusBar style={mode === 'ink' ? 'light' : 'dark'} />
         <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
         {!isOnline && <OfflineBanner />}
@@ -742,11 +782,11 @@ function Root({ splashDone }: { splashDone: boolean }) {
         animationType="slide"
         onRequestClose={() => setSettingsOpen(false)}
       >
-        <SafeAreaView style={[styles.safe, { backgroundColor: colors.bgBase }]}>
+        <View style={[styles.safe, { backgroundColor: colors.bgBase }]}>
           <SettingsScreen onClose={() => setSettingsOpen(false)} />
-        </SafeAreaView>
+        </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -761,8 +801,10 @@ export default function App() {
   return (
     <SettingsProvider>
       <ThemeProvider>
-        <Root splashDone={splashDone} />
-        {!splashDone && <AnimatedSplash onDone={() => setSplashDone(true)} />}
+        <SafeAreaProvider>
+          <Root splashDone={splashDone} />
+          {!splashDone && <AnimatedSplash onDone={() => setSplashDone(true)} />}
+        </SafeAreaProvider>
       </ThemeProvider>
     </SettingsProvider>
   );

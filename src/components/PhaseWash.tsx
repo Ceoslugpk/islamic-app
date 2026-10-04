@@ -72,6 +72,7 @@ export function PhaseWash({ segment, intensity = 0.5, style }: PhaseWashProps) {
 
   const prevCfg = PRAYER_ATMOSPHERE_CONFIG[prev];
   const currCfg = PRAYER_ATMOSPHERE_CONFIG[displayed];
+  const currOpacity = currCfg.opacity * intensity;
 
   return (
     <View pointerEvents="none" style={[styles.wash, style]}>
@@ -89,7 +90,12 @@ export function PhaseWash({ segment, intensity = 0.5, style }: PhaseWashProps) {
           styles.layer,
           {
             backgroundColor: currCfg.color,
-            opacity: Animated.multiply(fade, currCfg.opacity * intensity),
+            // ponytail: interpolate instead of Animated.multiply — multiply nodes
+            // in style opacity abort rendering on Fabric/native driver (SDK 57).
+            opacity: fade.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, currOpacity],
+            }),
           },
         ]}
       />
