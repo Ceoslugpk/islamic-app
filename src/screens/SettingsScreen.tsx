@@ -11,7 +11,7 @@ import {
   Modal,
   SafeAreaView,
 } from 'react-native';
-import type { GestureResponderEvent } from 'react-native';
+import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import WidgetPreviewScreen from './WidgetPreviewScreen';
@@ -29,6 +29,7 @@ import { QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { useHaptics } from '../lib/haptics';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
+import { Card } from '../components/Card';
 import { CALC_METHODS, fetchPrayerTimes } from '../lib/prayerTimes';
 import {
   configureNotifications,
@@ -45,7 +46,6 @@ import {
   stopAdhan,
   getAdhanReciter,
   addAdhanPlaybackListener,
-  configureAudio,
 } from '../lib/audio';
 import { AdhanReciterModal } from '../components/AdhanReciterModal';
 import { useQuranLanguage } from '../lib/quranLanguageState';
@@ -68,6 +68,252 @@ const QURAN_FONT_OPTIONS: { key: QuranArabicFont; label: string; desc: string }[
   { key: 'amiri', label: 'Amiri', desc: 'Classic Naskh — the Quran reader default' },
   { key: 'notonaskh', label: 'Noto Naskh Arabic', desc: 'Google’s clean, highly legible Naskh' },
 ];
+
+const DANGER = '#EF4444';
+
+interface SettingsLayout {
+  width: number;
+  isCompact: boolean;
+  screenPad: number;
+  cardPad: number;
+  rowPad: number;
+  titleSize: number;
+  descSize: number;
+  labelSize: number;
+  sectionGap: number;
+  segMinW: number;
+  segPadV: number;
+  maxW: number;
+}
+
+/**
+ * Mobile-first metrics. width < 380 → compact (smaller type, tighter padding,
+ * touch targets stay ≥ 40px). The content column is capped at maxW and centred
+ * so tablets/web stay readable.
+ */
+function useSettingsLayout(): SettingsLayout {
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  return {
+    width,
+    isCompact,
+    screenPad: isCompact ? 16 : 20,
+    cardPad: isCompact ? 12 : 16,
+    rowPad: isCompact ? 12 : 16,
+    titleSize: isCompact ? 14 : 15,
+    descSize: isCompact ? 12 : 13,
+    labelSize: isCompact ? 10 : 11,
+    sectionGap: isCompact ? 14 : 20,
+    segMinW: isCompact ? 52 : 56,
+    segPadV: isCompact ? 10 : 12,
+    maxW: 640,
+  };
+}
+
+interface SectionProps {
+  label: string;
+  children: React.ReactNode;
+}
+
+/** Uppercase section label ABOVE a surface card; hairlines separate rows inside. */
+function Section({ label, children }: SectionProps) {
+  const { colors } = useTheme();
+  const layout = useSettingsLayout();
+  return (
+    <View style={{ marginTop: layout.sectionGap }}>
+      <Text style={[styles.groupLabel, { color: colors.textMuted, fontSize: layout.labelSize }]}>
+        {label}
+      </Text>
+      <Card padded={false}>{children}</Card>
+    </View>
+  );
+}
+
+interface RowProps {
+  title: string;
+  desc?: string;
+  right?: React.ReactNode;
+  children?: React.ReactNode;
+  onPress?: () => void;
+  disabled?: boolean;
+  muted?: boolean;
+  danger?: boolean;
+  titleFont?: string;
+  titleFontSize?: number;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityLabel?: string;
+  accessibilityState?: AccessibilityState;
+}
+
+/** One settings row: comfortable touch target, title + optional description. */
+function Row({
+  title,
+  desc,
+  right,
+  children,
+  onPress,
+  disabled = false,
+  muted = false,
+  danger = false,
+  titleFont,
+  titleFontSize,
+  accessibilityRole,
+  accessibilityLabel,
+  accessibilityState,
+}: RowProps) {
+  const { colors } = useTheme();
+  const layout = useSettingsLayout();
+
+  const titleColor = danger ? DANGER : muted ? colors.textSecondary : colors.textPrimary;
+  const descColor = muted ? colors.textMuted : colors.textSecondary;
+
+  const rowStyle = [
+    styles.row,
+    {
+      paddingVertical: layout.rowPad,
+      paddingHorizontal: layout.cardPad,
+      minHeight: 44,
+      opacity: disabled ? 0.5 : 1,
+    },
+  ];
+
+  const body = (
+    <View style={styles.rowFlex}>
+      <Text
+        style={[
+          styles.rowTitle,
+          { color: titleColor, fontSize: titleFontSize ?? layout.titleSize },
+          titleFont ? { fontFamily: titleFont } : null,
+        ]}
+      >
+        {title}
+      </Text>
+      {desc ? (
+        <Text style={[styles.rowDesc, { color: descColor, fontSize: layout.descSize }]}>{desc}</Text>
+      ) : null}
+      {children}
+    </View>
+  );
+
+  if (onPress && !disabled) {
+    return (
+      <TouchableOpacity
+        style={rowStyle}
+        onPress={onPress}
+        activeOpacity={0.7}
+        accessibilityRole={accessibilityRole ?? 'button'}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={accessibilityState}
+      >
+        {body}
+        {right}
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <View
+      style={rowStyle}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={accessibilityState}
+    >
+      {body}
+      {right}
+    </View>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label?: string;
+}) {
+  const { colors } = useTheme();
+  return (
+    <TouchableOpacity
+      style={[styles.toggle, { borderColor: colors.accent }]}
+      onPress={onChange}
+      hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
+      accessibilityRole="switch"
+      accessibilityState={{ checked }}
+      accessibilityLabel={label}
+    >
+      <View
+        style={[
+          styles.toggleKnob,
+          { backgroundColor: colors.accent, alignSelf: checked ? 'flex-end' : 'flex-start' },
+        ]}
+      />
+    </TouchableOpacity>
+  );
+}
+
+interface SegOption<T> {
+  value: T;
+  label: string;
+}
+
+interface SegmentedProps<T> {
+  options: SegOption<T>[];
+  value: T;
+  onChange: (next: T) => void;
+  disabled?: boolean;
+  label: string;
+}
+
+/** Wrapping pill segmented control — never clips, touch target stays ≥ 40px. */
+function Segmented<T extends string | number>({
+  options,
+  value,
+  onChange,
+  disabled = false,
+  label,
+}: SegmentedProps<T>) {
+  const { colors } = useTheme();
+  const layout = useSettingsLayout();
+  return (
+    <View style={[styles.segRow, { paddingHorizontal: layout.cardPad, paddingVertical: layout.segPadV }]}>
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <TouchableOpacity
+            key={String(option.value)}
+            style={[
+              styles.seg,
+              { borderColor: colors.borderSubtle, minWidth: layout.segMinW },
+              selected && { backgroundColor: colors.accentDim, borderColor: colors.accent },
+            ]}
+            onPress={() => onChange(option.value)}
+            disabled={disabled}
+            accessibilityRole="radio"
+            accessibilityLabel={`${label}: ${option.label}`}
+            accessibilityState={{ selected, disabled }}
+          >
+            <Text
+              style={[
+                styles.segLabel,
+                {
+                  color: selected
+                    ? colors.accent
+                    : disabled
+                    ? colors.textMuted
+                    : colors.textSecondary,
+                },
+              ]}
+            >
+              {option.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
 
 interface AdjustRowProps {
   label: string;
@@ -97,6 +343,7 @@ function AdjustRow({
   increaseLabel = 'A+',
 }: AdjustRowProps) {
   const { colors } = useTheme();
+  const layout = useSettingsLayout();
   const [trackWidth, setTrackWidth] = useState(0);
   const clamped = Math.max(min, Math.min(max, value));
   const pct = ((clamped - min) / (max - min)) * 100;
@@ -113,9 +360,20 @@ function AdjustRow({
   };
 
   return (
-    <View style={styles.adjustRow}>
+    <View
+      style={[
+        styles.adjustRow,
+        {
+          paddingHorizontal: layout.cardPad,
+          paddingVertical: layout.rowPad,
+          gap: layout.isCompact ? 10 : 12,
+        },
+      ]}
+    >
       <View style={styles.adjustHeader}>
-        <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{label}</Text>
+        <Text style={[styles.rowTitle, { color: colors.textPrimary, fontSize: layout.titleSize }]}>
+          {label}
+        </Text>
         <Text style={[styles.adjustValue, { color: colors.accent }]}>{valueLabel}</Text>
       </View>
       <View style={styles.adjustControls}>
@@ -316,16 +574,27 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
     paper: 'Light',
   } as const;
 
-  const { width } = useWindowDimensions();
-  const isCompact = width < 380;
-  const paddingH = isCompact ? 16 : 20;
+  const layout = useSettingsLayout();
+  const themeOptions: SegOption<'system' | 'ink' | 'paper'>[] = ([
+    'system',
+    'ink',
+    'paper',
+  ] as const).map((m) => ({ value: m, label: themeModeLabels[m] }));
+  const timeOptions: SegOption<'12h' | '24h'>[] = [
+    { value: '12h', label: '12-hour' },
+    { value: '24h', label: '24-hour' },
+  ];
+  const offsetOptions: SegOption<number>[] = [5, 10, 15, 20, 30].map((m) => ({
+    value: m,
+    label: `${m} min`,
+  }));
 
   return (
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
+      contentContainerStyle={[styles.content, { paddingHorizontal: layout.screenPad }]}
     >
-      <View style={styles.contentWrap}>
+      <View style={[styles.contentWrap, { maxWidth: layout.maxW }]}>
         {onClose && (
           <TouchableOpacity
             style={styles.closeBtn}
@@ -334,797 +603,675 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
             accessibilityLabel="Close settings"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.closeText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Done</Text>
+            <Text style={[styles.closeText, { color: colors.accent, fontSize: layout.isCompact ? 13 : 14 }]}>
+              ← Done
+            </Text>
           </TouchableOpacity>
         )}
         <SectionHeader eyebrow="Preferences" title="Settings" />
 
-      {/* Theme Mode */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Appearance</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        <View style={styles.row}>
-          <View>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Theme</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              {themeMode === 'system' ? 'Follow system' : themeMode === 'ink' ? 'Dark (Ink)' : 'Light (Paper)'}
-            </Text>
-          </View>
-        </View>
-        <Hairline />
-        <View style={styles.segRow}>
-          {(['system', 'ink', 'paper'] as const).map((m) => (
-            <TouchableOpacity
-              key={m}
-              style={[
-                styles.seg,
-                { borderColor: colors.borderSubtle },
-                themeMode === m && { backgroundColor: colors.accentDim, borderColor: colors.accent },
-              ]}
-              onPress={() => handleThemeModeChange(m)}
-            >
-              <Text
-                style={[
-                  styles.segLabel,
-                  { color: themeMode === m ? colors.accent : colors.textSecondary },
-                ]}
-              >
-                {themeModeLabels[m]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <Hairline />
-        <View style={styles.row}>
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Haptics</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Subtle vibration feedback for meaningful actions
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.toggle, { borderColor: colors.accent }]}
-            onPress={() => setHapticsEnabled(!hapticsEnabled)}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: hapticsEnabled }}
-          >
-            <View
-              style={[
-                styles.toggleKnob,
-                { backgroundColor: colors.accent, alignSelf: hapticsEnabled ? 'flex-end' : 'flex-start' },
-              ]}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Accent Color */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Accent Color</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        <View style={styles.accentGrid}>
-          {ACCENT_KEYS.map((key) => {
-            const accent = accentThemes[key];
-            const isSelected = accentKey === key;
-            const accentColor = mode === 'ink' ? accent.darkAccent : accent.lightAccent;
-            return (
-              <TouchableOpacity
-                key={key}
-                style={styles.accentSwatch}
-                onPress={() => { setAccent(key); haptic('selection'); }}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
-                accessibilityLabel={`${accent.name} accent color${isSelected ? ', selected' : ''}`}
-              >
-                <View
-                  style={[
-                    styles.accentCircle,
-                    { backgroundColor: accentColor },
-                    isSelected && { borderColor: accentColor, borderWidth: 2 },
-                  ]}
-                >
-                  {isSelected && (
-                    <Ionicons name="checkmark" size={18} color={colors.onAccent} />
-                  )}
-                </View>
-                <Text style={[styles.accentLabel, { color: isSelected ? accentColor : colors.textSecondary }]}>{accent.name}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {/* Home Screen Widgets */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Home Screen</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() => {
-            haptic('light');
-            if (onOpenWidgets) {
-              onOpenWidgets();
-            } else {
-              setWidgetsModalOpen(true);
-            }
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Home Screen Widgets preview and setup"
-        >
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Home Screen Widgets</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Preview Next Prayer, Salah Progress, Quran, and Hijri widgets
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.accent} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Quran Translation */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Holy Quran</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() => { setQuranLangModalOpen(true); haptic('light'); }}
-          accessibilityRole="button"
-          accessibilityLabel={`Change translation language. Current: ${edition.language} ${flag}`}
-        >
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Translation Language</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              {flag} {edition.language} ({edition.name})
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.accent} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Quran Display — Arabic font controls for the Quran reader */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Quran Display</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        <View style={styles.row}>
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Arabic Font</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Typeface used for Quran ayahs in the reader
-            </Text>
-          </View>
-        </View>
-        <Hairline />
-        {QURAN_FONT_OPTIONS.map((option) => {
-          const selected = quranArabicFont === option.key;
-          return (
-            <View key={option.key}>
-              <TouchableOpacity
-                style={styles.row}
-                onPress={() => { setQuranArabicFont(option.key); haptic('light'); }}
-                accessibilityRole="radio"
-                accessibilityState={{ selected }}
-                accessibilityLabel={`Arabic font: ${option.label}${selected ? ', selected' : ''}`}
-              >
-                <View style={styles.rowFlex}>
-                  <Text
-                    style={[
-                      styles.rowTitle,
-                      {
-                        color: selected ? colors.accent : colors.textPrimary,
-                        fontFamily: QURAN_FONT_FAMILIES[option.key].regular,
-                        fontSize: 15,
-                      },
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                  <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>{option.desc}</Text>
-                </View>
-                <View
-                  style={[
-                    styles.radio,
-                    { borderColor: colors.borderStrong },
-                    selected && { borderColor: colors.accent, backgroundColor: colors.accentDim },
-                  ]}
-                >
-                  {selected && <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />}
-                </View>
-              </TouchableOpacity>
-              <Hairline />
-            </View>
-          );
-        })}
-        {/* KFGQPC: desktop-only King Fahd Quran Complex font, no free mobile file */}
-        <TouchableOpacity
-          style={[styles.row, { opacity: 0.5 }]}
-          disabled
-          activeOpacity={1}
-          accessibilityRole="radio"
-          accessibilityState={{ disabled: true, selected: false }}
-          accessibilityLabel="Arabic font: KFGQPC, coming soon"
-        >
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>KFGQPC</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Coming soon · no bundleable mobile font file yet
-            </Text>
-          </View>
-          <View style={[styles.radio, { borderColor: colors.borderStrong }]} />
-        </TouchableOpacity>
-
-        <Hairline />
-        <AdjustRow
-          label="Font Size"
-          valueLabel={`${quranFontSize}pt`}
-          min={QURAN_FONT_SIZE_MIN}
-          max={QURAN_FONT_SIZE_MAX}
-          step={QURAN_FONT_SIZE_STEP}
-          value={quranFontSize}
-          onChange={setQuranFontSize}
-        />
-
-        <Hairline />
-        <AdjustRow
-          label="Line Height"
-          valueLabel={`${quranLineHeight.toFixed(1)}×`}
-          min={QURAN_LINE_HEIGHT_MIN}
-          max={QURAN_LINE_HEIGHT_MAX}
-          step={QURAN_LINE_HEIGHT_STEP}
-          value={quranLineHeight}
-          onChange={setQuranLineHeight}
-          decreaseLabel="−"
-          increaseLabel="+"
-        />
-
-        <Hairline />
-        <View style={styles.row}>
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Translation</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Show the translation beneath each ayah
-            </Text>
-          </View>
-          <Text
-            style={[
-              styles.stateLabel,
-              { color: quranShowTranslation ? colors.accent : colors.textMuted },
-            ]}
-          >
-            {quranShowTranslation ? 'ON' : 'OFF'}
-          </Text>
-          <TouchableOpacity
-            style={[styles.toggle, { borderColor: colors.accent }]}
-            onPress={() => { setQuranShowTranslation(!quranShowTranslation); haptic('light'); }}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: quranShowTranslation }}
-            accessibilityLabel="Show translation in the Quran reader"
-          >
-            <View
-              style={[
-                styles.toggleKnob,
-                { backgroundColor: colors.accent, alignSelf: quranShowTranslation ? 'flex-end' : 'flex-start' },
-              ]}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Calculation method */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Prayer Times</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        {CALC_METHODS.map((m, i) => (
-          <View key={m.id}>
-            {i > 0 && <Hairline />}
-            <TouchableOpacity style={styles.row} onPress={() => { setMethod(m.id); haptic('light'); }}>
-              <View style={styles.rowFlex}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{m.name}</Text>
-                <Text style={[styles.rowDesc, { color: colors.textMuted }]}>{m.region}</Text>
-              </View>
-              <View
-                style={[
-                  styles.radio,
-                  { borderColor: colors.borderStrong },
-                  methodId === m.id && { borderColor: colors.accent, backgroundColor: colors.accentDim },
-                ]}
-              >
-                {methodId === m.id && <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />}
-              </View>
-            </TouchableOpacity>
-          </View>
-        ))}
-      </View>
-
-      {/* Time format */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Time Display</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        <View style={styles.segRow}>
-          {(['12h', '24h'] as const).map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[
-                styles.seg,
-                { borderColor: colors.borderSubtle },
-                timeFormat === f && { backgroundColor: colors.accentDim, borderColor: colors.accent },
-              ]}
-              onPress={() => { setTimeFormat(f); haptic('light'); }}
-            >
-              <Text
-                style={[
-                  styles.segLabel,
-                  { color: timeFormat === f ? colors.accent : colors.textSecondary },
-                ]}
-              >
-                {f === '12h' ? '12-hour' : '24-hour'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Prayer reminders */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Reminders</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        {health?.status === 'permission-needed' && (
-          <TouchableOpacity
-            style={[styles.permissionBanner, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
-            onPress={async () => {
-              const granted = await requestNotificationPermission();
-              if (granted) {
-                await configureNotifications();
-                const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
-                await cancelPrayerNotifications();
-                await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
-                const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, true);
-                setHealth(h);
-                setReminders(true);
-              }
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Notification permission needed. Tap to allow notifications."
-          >
-            <Ionicons name="notifications-outline" size={18} color={colors.accent} />
-            <View style={styles.rowFlex}>
-              <Text style={[styles.permissionBannerTitle, { color: colors.textPrimary }]}>
-                Notification permission needed
-              </Text>
-              <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
-                Tap to allow notifications so prayer reminders can sound.
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.accent} />
-          </TouchableOpacity>
-        )}
-
-        <View style={styles.row}>
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Prayer reminders</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Notification {reminderOffsetMinutes} minutes before each prayer
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.toggle, { borderColor: colors.accent }]}
-            onPress={() => onToggleReminders()}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: remindersEnabled }}
-          >
-            <View
-              style={[
-                styles.toggleKnob,
-                { backgroundColor: colors.accent, alignSelf: remindersEnabled ? 'flex-end' : 'flex-start' },
-              ]}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Reminder offset picker */}
-        <Hairline />
-        <View style={styles.row}>
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Remind before prayer</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Minutes before each prayer time
-            </Text>
-          </View>
-          <View style={styles.segRow}>
-            {[5, 10, 15, 20, 30].map((m) => (
-              <TouchableOpacity
-                key={m}
-                style={[
-                  styles.seg,
-                  { borderColor: colors.borderSubtle },
-                  reminderOffsetMinutes === m && { backgroundColor: colors.accentDim, borderColor: colors.accent },
-                ]}
-                onPress={() => { setReminderOffsetMinutes(m); haptic('light'); }}
-                disabled={!remindersEnabled}
-                accessibilityRole="button"
-                accessibilityState={{ selected: reminderOffsetMinutes === m }}
-              >
-                <Text
-                  style={[
-                    styles.segLabel,
-                    { color: reminderOffsetMinutes === m ? colors.accent : !remindersEnabled ? colors.textMuted : colors.textSecondary },
-                  ]}
-                >
-                  {m} min
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Adhan Reciter Choice */}
-        <Hairline />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={() => { setAdhanModalOpen(true); haptic('light'); }}
-          accessibilityRole="button"
-          accessibilityLabel={`Adhan reciter: ${getAdhanReciter(settings.adhanReciterId).name}. Tap to change.`}
-        >
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Adhan Reciter</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              {getAdhanReciter(settings.adhanReciterId).name} · {getAdhanReciter(settings.adhanReciterId).location}
-            </Text>
-          </View>
-          <View style={styles.reciterPickerRight}>
-            <Text style={[styles.reciterBadgeArabic, { color: colors.accent }]}>
-              {getAdhanReciter(settings.adhanReciterId).arabicName}
-            </Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.accent} />
-          </View>
-        </TouchableOpacity>
-
-        {/* Test Adhan sound */}
-        <Hairline />
-        <TouchableOpacity
-          style={styles.row}
-          onPress={onTestAdhan}
-          accessibilityRole="button"
-          accessibilityLabel={isPlayingAdhan ? 'Stop adhan sound' : 'Test adhan sound'}
-        >
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Test adhan sound</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              {isPlayingAdhan ? 'Playing preview… tap to stop' : `Preview ${getAdhanReciter(settings.adhanReciterId).name}`}
-            </Text>
-          </View>
+        {/* Appearance — theme, accent, haptics */}
+        <Section label="Appearance">
+          <Row
+            title="Theme"
+            desc={themeMode === 'system' ? 'Follow system' : themeMode === 'ink' ? 'Dark (Ink)' : 'Light (Paper)'}
+            accessibilityRole="text"
+          />
+          <Segmented<'system' | 'ink' | 'paper'>
+            label="Theme"
+            options={themeOptions}
+            value={themeMode}
+            onChange={handleThemeModeChange}
+          />
+          <Hairline />
+          <Row title="Accent color" desc="Highlight colour for toggles, links and selected states" />
           <View
             style={[
-              styles.playBtnContainer,
+              styles.accentGrid,
               {
-                backgroundColor: isPlayingAdhan ? colors.accent : colors.accentDim,
-                borderColor: colors.accent,
+                paddingHorizontal: layout.cardPad,
+                paddingVertical: layout.rowPad,
+                gap: layout.isCompact ? 10 : 12,
               },
             ]}
           >
-            <Ionicons
-              name={isPlayingAdhan ? 'stop' : 'volume-high'}
-              size={15}
-              color={isPlayingAdhan ? colors.bgBase : colors.accent}
-            />
-            <Text
-              style={[
-                styles.testBtn,
-                { color: isPlayingAdhan ? colors.bgBase : colors.accent },
-              ]}
-            >
-              {isPlayingAdhan ? 'Stop' : 'Play'}
-            </Text>
+            {ACCENT_KEYS.map((key) => {
+              const accent = accentThemes[key];
+              const isSelected = accentKey === key;
+              const accentColor = mode === 'ink' ? accent.darkAccent : accent.lightAccent;
+              return (
+                <TouchableOpacity
+                  key={key}
+                  style={styles.accentSwatch}
+                  onPress={() => { setAccent(key); haptic('selection'); }}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
+                  accessibilityLabel={`${accent.name} accent color${isSelected ? ', selected' : ''}`}
+                >
+                  <View
+                    style={[
+                      styles.accentCircle,
+                      { backgroundColor: accentColor },
+                      isSelected && { borderColor: accentColor, borderWidth: 2 },
+                    ]}
+                  >
+                    {isSelected && (
+                      <Ionicons name="checkmark" size={18} color={colors.onAccent} />
+                    )}
+                  </View>
+                  <Text
+                    style={[
+                      styles.accentLabel,
+                      { color: isSelected ? accentColor : colors.textSecondary },
+                    ]}
+                  >
+                    {accent.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        </TouchableOpacity>
+          <Hairline />
+          <Row
+            title="Haptics"
+            desc="Subtle vibration feedback for meaningful actions"
+            right={
+              <Toggle
+                checked={hapticsEnabled}
+                onChange={() => setHapticsEnabled(!hapticsEnabled)}
+                label="Haptics"
+              />
+            }
+          />
+        </Section>
 
-        {/* Quran reminder toggle */}
-        <Hairline />
-        <View style={styles.row}>
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Quran reminder</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Daily reminder to continue reading at 8:00 PM
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.toggle, { borderColor: colors.accent }]}
-            onPress={onToggleQuranReminder}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: quranReminderEnabled }}
+        {/* Home Screen Widgets */}
+        <Section label="Home Screen">
+          <Row
+            title="Home Screen Widgets"
+            desc="Preview Next Prayer, Salah Progress, Quran, and Hijri widgets"
+            onPress={() => {
+              haptic('light');
+              if (onOpenWidgets) {
+                onOpenWidgets();
+              } else {
+                setWidgetsModalOpen(true);
+              }
+            }}
+            accessibilityLabel="Home Screen Widgets preview and setup"
+            right={<Ionicons name="chevron-forward" size={18} color={colors.accent} />}
+          />
+        </Section>
+
+        {/* Quran Translation */}
+        <Section label="Holy Quran">
+          <Row
+            title="Translation Language"
+            desc={`${flag} ${edition.language} (${edition.name})`}
+            onPress={() => { setQuranLangModalOpen(true); haptic('light'); }}
+            accessibilityLabel={`Change translation language. Current: ${edition.language} ${flag}`}
+            right={<Ionicons name="chevron-forward" size={18} color={colors.accent} />}
+          />
+        </Section>
+
+        {/* Quran Display — Arabic font controls for the Quran reader */}
+        <Section label="Quran Display">
+          <Row
+            title="Arabic Font"
+            desc="Typeface used for Quran ayahs in the reader"
+            accessibilityRole="text"
+          />
+          <Hairline />
+          {QURAN_FONT_OPTIONS.map((option) => {
+            const selected = quranArabicFont === option.key;
+            return (
+              <View key={option.key}>
+                <Row
+                  title={option.label}
+                  desc={option.desc}
+                  titleFont={QURAN_FONT_FAMILIES[option.key].regular}
+                  onPress={() => { setQuranArabicFont(option.key); haptic('light'); }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`Arabic font: ${option.label}${selected ? ', selected' : ''}`}
+                  right={
+                    <View
+                      style={[
+                        styles.radio,
+                        { borderColor: colors.borderStrong },
+                        selected && { borderColor: colors.accent, backgroundColor: colors.accentDim },
+                      ]}
+                    >
+                      {selected && <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />}
+                    </View>
+                  }
+                />
+                <Hairline />
+              </View>
+            );
+          })}
+          {/* KFGQPC: desktop-only King Fahd Quran Complex font, no free mobile file */}
+          <Row
+            title="KFGQPC"
+            desc="Coming soon · no bundleable mobile font file yet"
+            disabled
+            accessibilityRole="radio"
+            accessibilityState={{ disabled: true, selected: false }}
+            accessibilityLabel="Arabic font: KFGQPC, coming soon"
+            right={<View style={[styles.radio, { borderColor: colors.borderStrong }]} />}
+          />
+
+          <Hairline />
+          <AdjustRow
+            label="Font Size"
+            valueLabel={`${quranFontSize}pt`}
+            min={QURAN_FONT_SIZE_MIN}
+            max={QURAN_FONT_SIZE_MAX}
+            step={QURAN_FONT_SIZE_STEP}
+            value={quranFontSize}
+            onChange={setQuranFontSize}
+          />
+
+          <Hairline />
+          <AdjustRow
+            label="Line Height"
+            valueLabel={`${quranLineHeight.toFixed(1)}×`}
+            min={QURAN_LINE_HEIGHT_MIN}
+            max={QURAN_LINE_HEIGHT_MAX}
+            step={QURAN_LINE_HEIGHT_STEP}
+            value={quranLineHeight}
+            onChange={setQuranLineHeight}
+            decreaseLabel="−"
+            increaseLabel="+"
+          />
+
+          <Hairline />
+          <Row
+            title="Translation"
+            desc="Show the translation beneath each ayah"
+            right={
+              <View style={styles.rightCluster}>
+                <Text
+                  style={[
+                    styles.stateLabel,
+                    { color: quranShowTranslation ? colors.accent : colors.textMuted },
+                  ]}
+                >
+                  {quranShowTranslation ? 'ON' : 'OFF'}
+                </Text>
+                <Toggle
+                  checked={quranShowTranslation}
+                  onChange={() => { setQuranShowTranslation(!quranShowTranslation); haptic('light'); }}
+                  label="Show translation in the Quran reader"
+                />
+              </View>
+            }
+          />
+        </Section>
+
+        {/* Calculation method */}
+        <Section label="Prayer Times">
+          <Row
+            title="Calculation method"
+            desc="Determines how prayer times are computed"
+            accessibilityRole="text"
+          />
+          <View
+            style={[
+              styles.pillWrap,
+              { paddingHorizontal: layout.cardPad, paddingBottom: layout.rowPad },
+            ]}
           >
-            <View
-              style={[
-                styles.toggleKnob,
-                { backgroundColor: colors.accent, alignSelf: quranReminderEnabled ? 'flex-end' : 'flex-start' },
-              ]}
-            />
-          </TouchableOpacity>
-        </View>
+            {CALC_METHODS.map((m) => {
+              const selected = methodId === m.id;
+              return (
+                <TouchableOpacity
+                  key={m.id}
+                  style={[
+                    styles.pill,
+                    {
+                      borderColor: selected ? colors.accent : colors.borderSubtle,
+                      backgroundColor: selected ? colors.accentDim : 'transparent',
+                    },
+                  ]}
+                  onPress={() => { setMethod(m.id); haptic('light'); }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${m.name}. ${m.region}${selected ? ', selected' : ''}`}
+                >
+                  <View style={styles.pillHead}>
+                    <Text
+                      style={[
+                        styles.pillName,
+                        { color: selected ? colors.accent : colors.textPrimary, fontSize: layout.titleSize },
+                      ]}
+                    >
+                      {m.name}
+                    </Text>
+                    {selected && <Ionicons name="checkmark-circle" size={16} color={colors.accent} />}
+                  </View>
+                  <Text
+                    style={[
+                      styles.pillRegion,
+                      { color: colors.textMuted, fontSize: Math.max(11, layout.descSize - 1) },
+                    ]}
+                  >
+                    {m.region}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Section>
 
-        {/* Compact Notification Health */}
-        <Hairline />
-        <View style={styles.healthCompact}>
-          {isLoadingHealth ? (
-            <View style={styles.healthCompactLoading}>
-              <ActivityIndicator size="small" color={colors.accent} />
-              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Checking…</Text>
-            </View>
-          ) : health ? (
-            <View style={styles.healthCompactRow}>
+        {/* Time format */}
+        <Section label="Time Display">
+          <Row title="Time format" desc="How prayer times are shown across the app" accessibilityRole="text" />
+          <Segmented<'12h' | '24h'>
+            label="Time format"
+            options={timeOptions}
+            value={timeFormat}
+            onChange={(f) => { setTimeFormat(f); haptic('light'); }}
+          />
+        </Section>
+
+        {/* Prayer reminders */}
+        <Section label="Reminders">
+          {health?.status === 'permission-needed' && (
+            <TouchableOpacity
+              style={[
+                styles.permissionBanner,
+                {
+                  backgroundColor: colors.accentDim,
+                  borderColor: colors.accent,
+                  marginHorizontal: layout.cardPad,
+                  marginTop: layout.rowPad,
+                },
+              ]}
+              onPress={async () => {
+                const granted = await requestNotificationPermission();
+                if (granted) {
+                  await configureNotifications();
+                  const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
+                  await cancelPrayerNotifications();
+                  await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
+                  const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, true);
+                  setHealth(h);
+                  setReminders(true);
+                }
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Notification permission needed. Tap to allow notifications."
+            >
+              <Ionicons name="notifications-outline" size={18} color={colors.accent} />
+              <View style={styles.rowFlex}>
+                <Text style={[styles.permissionBannerTitle, { color: colors.textPrimary }]}>
+                  Notification permission needed
+                </Text>
+                <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
+                  Tap to allow notifications so prayer reminders can sound.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+            </TouchableOpacity>
+          )}
+
+          <Row
+            title="Prayer reminders"
+            desc={`Notification ${reminderOffsetMinutes} minutes before each prayer`}
+            right={
+              <Toggle
+                checked={remindersEnabled}
+                onChange={() => { onToggleReminders(); }}
+                label="Prayer reminders"
+              />
+            }
+          />
+
+          {/* Reminder offset picker */}
+          <Hairline />
+          <Row
+            title="Remind before prayer"
+            desc="Minutes before each prayer time"
+            accessibilityRole="text"
+          />
+          <Segmented<number>
+            label="Remind before prayer"
+            options={offsetOptions}
+            value={reminderOffsetMinutes}
+            onChange={(m) => { setReminderOffsetMinutes(m); haptic('light'); }}
+            disabled={!remindersEnabled}
+          />
+
+          {/* Adhan Reciter Choice */}
+          <Hairline />
+          <Row
+            title="Adhan Reciter"
+            desc={`${getAdhanReciter(settings.adhanReciterId).name} · ${getAdhanReciter(settings.adhanReciterId).location}`}
+            onPress={() => { setAdhanModalOpen(true); haptic('light'); }}
+            accessibilityLabel={`Adhan reciter: ${getAdhanReciter(settings.adhanReciterId).name}. Tap to change.`}
+            right={
+              <View style={styles.rightCluster}>
+                <Text style={[styles.reciterBadgeArabic, { color: colors.accent }]}>
+                  {getAdhanReciter(settings.adhanReciterId).arabicName}
+                </Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+              </View>
+            }
+          />
+
+          {/* Test Adhan sound */}
+          <Hairline />
+          <Row
+            title="Test adhan sound"
+            desc={isPlayingAdhan ? 'Playing preview… tap to stop' : `Preview ${getAdhanReciter(settings.adhanReciterId).name}`}
+            onPress={onTestAdhan}
+            accessibilityLabel={isPlayingAdhan ? 'Stop adhan sound' : 'Test adhan sound'}
+            right={
               <View
                 style={[
-                  styles.healthCompactDot,
+                  styles.playBtnContainer,
                   {
-                    backgroundColor:
-                      health.status === 'active'
-                        ? '#10B981'
-                        : health.status === 'permission-needed'
-                        ? '#F59E0B'
-                        : colors.textMuted,
-                  },
-                ]}
-              />
-              <Text
-                style={[
-                  styles.healthCompactText,
-                  {
-                    color:
-                      health.status === 'active'
-                        ? '#10B981'
-                        : health.status === 'permission-needed'
-                        ? '#F59E0B'
-                        : colors.textSecondary,
+                    backgroundColor: isPlayingAdhan ? colors.accent : colors.accentDim,
+                    borderColor: colors.accent,
                   },
                 ]}
               >
-                {health.status === 'active'
-                  ? '● Active'
-                  : health.status === 'permission-needed'
-                  ? '! Permission needed'
-                  : '○ Paused'}
-              </Text>
-              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>·</Text>
-              <Text style={[styles.healthCompactText, { color: colors.textPrimary }]}>
-                Next: {health.nextPrayer ? `${health.nextPrayer.name} ${health.nextPrayer.time}` : '—'}
-              </Text>
-              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>·</Text>
-              <Text style={[styles.healthCompactText, { color: colors.textSecondary }]}>
-                Scheduled: {health.scheduledCounts.today} today, {health.scheduledCounts.tomorrow} tomorrow
-              </Text>
-            </View>
-          ) : (
-            <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Unable to load health</Text>
-          )}
-        </View>
-      </View>
+                <Ionicons
+                  name={isPlayingAdhan ? 'stop' : 'volume-high'}
+                  size={15}
+                  color={isPlayingAdhan ? colors.bgBase : colors.accent}
+                />
+                <Text
+                  style={[
+                    styles.testBtn,
+                    { color: isPlayingAdhan ? colors.bgBase : colors.accent },
+                  ]}
+                >
+                  {isPlayingAdhan ? 'Stop' : 'Play'}
+                </Text>
+              </View>
+            }
+          />
 
-      {/* Women's Worship */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Women's Worship</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        <View style={styles.row}>
-          <View style={styles.rowFlex}>
-            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Women's Worship</Text>
-            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-              Show women's worship tools (period tracking, purity, fiqh)
-            </Text>
+          {/* Quran reminder toggle */}
+          <Hairline />
+          <Row
+            title="Quran reminder"
+            desc="Daily reminder to continue reading at 8:00 PM"
+            right={
+              <Toggle
+                checked={quranReminderEnabled}
+                onChange={onToggleQuranReminder}
+                label="Quran reminder"
+              />
+            }
+          />
+
+          {/* Compact Notification Health */}
+          <Hairline />
+          <View style={[styles.healthCompact, { paddingHorizontal: layout.cardPad }]}>
+            {isLoadingHealth ? (
+              <View style={styles.healthCompactLoading}>
+                <ActivityIndicator size="small" color={colors.accent} />
+                <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Checking…</Text>
+              </View>
+            ) : health ? (
+              <View style={styles.healthCompactRow}>
+                <View
+                  style={[
+                    styles.healthCompactDot,
+                    {
+                      backgroundColor:
+                        health.status === 'active'
+                          ? '#10B981'
+                          : health.status === 'permission-needed'
+                          ? '#F59E0B'
+                          : colors.textMuted,
+                    },
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.healthCompactText,
+                    {
+                      color:
+                        health.status === 'active'
+                          ? '#10B981'
+                          : health.status === 'permission-needed'
+                          ? '#F59E0B'
+                          : colors.textSecondary,
+                    },
+                  ]}
+                >
+                  {health.status === 'active'
+                    ? '● Active'
+                    : health.status === 'permission-needed'
+                    ? '! Permission needed'
+                    : '○ Paused'}
+                </Text>
+                <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>·</Text>
+                <Text style={[styles.healthCompactText, { color: colors.textPrimary }]}>
+                  Next: {health.nextPrayer ? `${health.nextPrayer.name} ${health.nextPrayer.time}` : '—'}
+                </Text>
+                <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>·</Text>
+                <Text style={[styles.healthCompactText, { color: colors.textSecondary }]}>
+                  Scheduled: {health.scheduledCounts.today} today, {health.scheduledCounts.tomorrow} tomorrow
+                </Text>
+              </View>
+            ) : (
+              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Unable to load health</Text>
+            )}
           </View>
-          <TouchableOpacity
-            style={[styles.toggle, { borderColor: colors.accent }]}
-            onPress={onToggleWomenWorship}
-            accessibilityRole="switch"
-            accessibilityState={{ checked: womenWorshipEnabled }}
-          >
+        </Section>
+
+        {/* Women's Worship */}
+        <Section label="Women's Worship">
+          <Row
+            title="Women's Worship"
+            desc="Show women's worship tools (period tracking, purity, fiqh)"
+            right={
+              <Toggle
+                checked={womenWorshipEnabled}
+                onChange={onToggleWomenWorship}
+                label="Women's Worship"
+              />
+            }
+          />
+
+          {/* Inline consent (cross-platform; avoids nested-Modal stacking issues on web) */}
+          {consentOpen && !womenWorshipEnabled && (
             <View
               style={[
-                styles.toggleKnob,
-                { backgroundColor: colors.accent, alignSelf: womenWorshipEnabled ? 'flex-end' : 'flex-start' },
+                styles.inlineConsent,
+                {
+                  backgroundColor: colors.bgRaised,
+                  borderColor: colors.borderSubtle,
+                  marginHorizontal: layout.cardPad,
+                  marginVertical: layout.rowPad,
+                },
               ]}
-            />
-          </TouchableOpacity>
-        </View>
-
-        {/* Inline consent (cross-platform; avoids nested-Modal stacking issues on web) */}
-        {consentOpen && !womenWorshipEnabled && (
-          <View style={[styles.inlineConsent, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={[styles.consentIconWrapSmall, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
-              <Ionicons name="shield-checkmark" size={20} color={colors.accent} />
-            </View>
-            <Text style={[styles.consentTitleSmall, { color: colors.textPrimary }]}>Private & On-Device</Text>
-            <Text style={[styles.consentBodySmall, { color: colors.textSecondary }]}>
-              Cycle & purity information is sensitive. Your data:{'\n'}• Stays on this device by default{'\n'}• Needs no
-              account or sign-in{'\n'}• Is never uploaded or included in analytics or logs{'\n'}• Can be deleted anytime
-            </Text>
-            <View style={styles.consentBtnsInline}>
-              <TouchableOpacity
-                style={[styles.consentBtn, { borderColor: colors.borderSubtle }]}
-                onPress={() => setConsentOpen(false)}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.consentBtnText, { color: colors.textSecondary }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.consentBtn, styles.consentBtnPrimary, { backgroundColor: colors.accent }]}
-                onPress={confirmWomenEnable}
-                accessibilityRole="button"
-              >
-                <Text style={[styles.consentBtnTextPrimary, { color: colors.bgBase }]}>I Understand</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {womenWorshipEnabled && (
-          <>
-            <Hairline />
-            {/* On-device privacy guarantee */}
-            <View style={[styles.privacyNote, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-              <Ionicons name="shield-checkmark" size={16} color={colors.accent} />
-              <Text style={[styles.privacyNoteText, { color: colors.textSecondary }]}>
-                Your cycle & purity data stays on this device by default. No account required — it is never uploaded
-                or included in analytics or logs.
+            >
+              <View style={[styles.consentIconWrapSmall, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
+                <Ionicons name="shield-checkmark" size={20} color={colors.accent} />
+              </View>
+              <Text style={[styles.consentTitleSmall, { color: colors.textPrimary }]}>Private & On-Device</Text>
+              <Text style={[styles.consentBodySmall, { color: colors.textSecondary }]}>
+                Cycle & purity information is sensitive. Your data:{'\n'}• Stays on this device by default{'\n'}• Needs no
+                account or sign-in{'\n'}• Is never uploaded or included in analytics or logs{'\n'}• Can be deleted anytime
               </Text>
+              <View style={styles.consentBtnsInline}>
+                <TouchableOpacity
+                  style={[styles.consentBtn, { borderColor: colors.borderSubtle }]}
+                  onPress={() => setConsentOpen(false)}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.consentBtnText, { color: colors.textSecondary }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.consentBtn, styles.consentBtnPrimary, { backgroundColor: colors.accent }]}
+                  onPress={confirmWomenEnable}
+                  accessibilityRole="button"
+                >
+                  <Text style={[styles.consentBtnTextPrimary, { color: colors.bgBase }]}>I Understand</Text>
+                </TouchableOpacity>
+              </View>
             </View>
+          )}
 
-            {/* App lock */}
-            <Hairline />
-            <View style={styles.row}>
-              <View style={styles.rowFlex}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>App lock (PIN)</Text>
-                <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-                  {womenPinHash
+          {womenWorshipEnabled && (
+            <>
+              <Hairline />
+              {/* On-device privacy guarantee */}
+              <View
+                style={[
+                  styles.privacyNote,
+                  {
+                    backgroundColor: colors.bgBase,
+                    borderColor: colors.borderSubtle,
+                    marginHorizontal: layout.cardPad,
+                    marginVertical: layout.rowPad,
+                  },
+                ]}
+              >
+                <Ionicons name="shield-checkmark" size={16} color={colors.accent} />
+                <Text style={[styles.privacyNoteText, { color: colors.textSecondary }]}>
+                  Your cycle & purity data stays on this device by default. No account required — it is never uploaded
+                  or included in analytics or logs.
+                </Text>
+              </View>
+
+              {/* App lock */}
+              <Hairline />
+              <Row
+                title="App lock (PIN)"
+                desc={
+                  womenPinHash
                     ? womenLockEnabled
                       ? "Locked — PIN required to open women's features"
                       : 'PIN set but not enabled — tap to enable'
-                    : "Protect women's screens with a 4-digit PIN"}
-                </Text>
-              </View>
-              {womenPinHash ? (
-                <TouchableOpacity
-                  style={[styles.privacyActionBtn, { borderColor: colors.accent }]}
-                  onPress={() => setWomenLockEnabled(!womenLockEnabled)}
-                  accessibilityRole="button"
-                >
-                  <Text style={[styles.privacyActionText, { color: colors.accent }]}>
-                    {womenLockEnabled ? 'Disable' : 'Enable'}
-                  </Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  style={[styles.privacyActionBtn, { borderColor: colors.accent }]}
-                  onPress={() => setPinModalMode('set')}
-                  accessibilityRole="button"
-                >
-                  <Text style={[styles.privacyActionText, { color: colors.accent }]}>Set PIN</Text>
-                </TouchableOpacity>
+                    : "Protect women's screens with a 4-digit PIN"
+                }
+                right={
+                  <TouchableOpacity
+                    style={[styles.privacyActionBtn, { borderColor: colors.accent }]}
+                    onPress={() => setWomenLockEnabled(!womenLockEnabled)}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.privacyActionText, { color: colors.accent }]}>
+                      {womenLockEnabled ? 'Disable' : 'Enable'}
+                    </Text>
+                  </TouchableOpacity>
+                }
+              />
+              {womenPinHash && (
+                <Row
+                  title="Change PIN"
+                  onPress={() => setPinModalMode('change')}
+                  right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>Change</Text>}
+                />
               )}
+
+              {/* Clear cycle history */}
+              <Hairline />
+              <Row
+                title="Clear cycle history"
+                desc="Remove all period entries"
+                onPress={() =>
+                  Alert.alert("Clear Cycle History?", "This deletes all period/cycle entries. Other women's data is kept.", [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Clear', style: 'destructive', onPress: () => clearCycleHistory() },
+                  ])
+                }
+                right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>Clear</Text>}
+              />
+
+              {/* Delete all women's data */}
+              <Hairline />
+              <Row
+                title="Delete women's data"
+                desc="Erase everything, on this device"
+                danger
+                onPress={() =>
+                  Alert.alert("Delete Women's Data?", "This permanently deletes all cycle, purity, nifas and women's qada data from this device. This cannot be undone.", [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Delete', style: 'destructive', onPress: () => { clearWomenData(); setWomenWorship(false); } },
+                  ])
+                }
+                right={<Ionicons name="trash-outline" size={18} color={DANGER} />}
+              />
+
+              {/* Hide features (keeps data) */}
+              <Hairline />
+              <Row
+                title="Hide women's features"
+                desc="Hide the tools now (your data is kept)"
+                onPress={() => setWomenWorship(false)}
+                right={<Ionicons name="eye-off-outline" size={18} color={colors.textSecondary} />}
+              />
+            </>
+          )}
+        </Section>
+
+        {/* PIN modal: set / change / verify-to-enable */}
+        <WomenPinModal
+          visible={pinModalMode !== null}
+          mode={pinModalMode === 'set' ? 'set' : pinModalMode === 'change' ? 'change' : 'verify'}
+          currentHash={womenPinHash}
+          onSuccess={() => {
+            if (pinModalMode === 'verifyEnable') {
+              // PIN verified → show consent, then enable
+              setPinModalMode(null);
+              setConsentOpen(true);
+            } else {
+              setPinModalMode(null);
+            }
+          }}
+          onCancel={() => setPinModalMode(null)}
+          onSetPin={(newHash) => setWomenPinHash(newHash)}
+        />
+
+        {/* About — muted, at the bottom */}
+        <Section label="About">
+          {ABOUT_ROWS.map((item, i) => (
+            <View key={item.title}>
+              {i > 0 && <Hairline />}
+              <Row title={item.title} desc={item.subtitle} muted />
             </View>
-            {womenPinHash && (
-              <TouchableOpacity style={styles.row} onPress={() => setPinModalMode('change')}>
-                <View style={styles.rowFlex}>
-                  <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>Change PIN</Text>
-                </View>
-                <Text style={[styles.privacyActionText, { color: colors.accent }]}>Change</Text>
-              </TouchableOpacity>
-            )}
+          ))}
+        </Section>
+        <Text style={[styles.aboutNote, { color: colors.textMuted }]}>
+          All data sources are free public APIs used with attribution.
+        </Text>
 
-            {/* Clear cycle history */}
-            <Hairline />
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() =>
-                Alert.alert("Clear Cycle History?", "This deletes all period/cycle entries. Other women's data is kept.", [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Clear', style: 'destructive', onPress: () => clearCycleHistory() },
-                ])
-              }
-              accessibilityRole="button"
-            >
-              <View style={styles.rowFlex}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Clear cycle history</Text>
-                <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-                  Remove all period entries
-                </Text>
-              </View>
-              <Text style={[styles.privacyActionText, { color: colors.accent }]}>Clear</Text>
-            </TouchableOpacity>
+        <Text style={[styles.footer, { color: colors.textMuted }]}>
+          Prayer times by Aladhan API · Islamic v1.0
+        </Text>
 
-            {/* Delete all women's data */}
-            <Hairline />
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() =>
-                Alert.alert("Delete Women's Data?", "This permanently deletes all cycle, purity, nifas and women's qada data from this device. This cannot be undone.", [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Delete', style: 'destructive', onPress: () => { clearWomenData(); setWomenWorship(false); } },
-                ])
-              }
-              accessibilityRole="button"
-            >
-              <View style={styles.rowFlex}>
-                <Text style={[styles.dangerText, { color: '#EF4444' }]}>Delete women's data</Text>
-                <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-                  Erase everything, on this device
-                </Text>
-              </View>
-              <Ionicons name="trash-outline" size={18} color="#EF4444" />
-            </TouchableOpacity>
+        <QuranLanguageModal
+          visible={quranLangModalOpen}
+          onClose={() => setQuranLangModalOpen(false)}
+        />
 
-            {/* Hide features (keeps data) */}
-            <Hairline />
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => setWomenWorship(false)}
-              accessibilityRole="button"
-            >
-              <View style={styles.rowFlex}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Hide women's features</Text>
-                <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-                  Hide the tools now (your data is kept)
-                </Text>
-              </View>
-              <Ionicons name="eye-off-outline" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+        <AdhanReciterModal
+          visible={adhanModalOpen}
+          onClose={() => setAdhanModalOpen(false)}
+          selectedReciterId={settings.adhanReciterId}
+          onSelectReciter={(id) => {
+            setAdhanReciterId(id);
+            haptic('selection');
+          }}
+        />
 
-      {/* PIN modal: set / change / verify-to-enable */}
-      <WomenPinModal
-        visible={pinModalMode !== null}
-        mode={pinModalMode === 'set' ? 'set' : pinModalMode === 'change' ? 'change' : 'verify'}
-        currentHash={womenPinHash}
-        onSuccess={() => {
-          if (pinModalMode === 'verifyEnable') {
-            // PIN verified → show consent, then enable
-            setPinModalMode(null);
-            setConsentOpen(true);
-          } else {
-            setPinModalMode(null);
-          }
-        }}
-        onCancel={() => setPinModalMode(null)}
-        onSetPin={(newHash) => setWomenPinHash(newHash)}
-      />
-
-      {/* About */}
-      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>About</Text>
-      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
-        {ABOUT_ROWS.map((item, i) => (
-          <View key={item.title}>
-            {i > 0 && <Hairline />}
-            <View style={styles.row}>
-              <View style={styles.rowFlex}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{item.title}</Text>
-                <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>{item.subtitle}</Text>
-              </View>
-            </View>
-          </View>
-        ))}
-      </View>
-      <Text style={[styles.aboutNote, { color: colors.textMuted }]}>
-        All data sources are free public APIs used with attribution.
-      </Text>
-
-      <Text style={[styles.footer, { color: colors.textMuted }]}>
-        Prayer times by Aladhan API · Islamic v1.0
-      </Text>
-
-      <QuranLanguageModal
-        visible={quranLangModalOpen}
-        onClose={() => setQuranLangModalOpen(false)}
-      />
-
-      <AdhanReciterModal
-        visible={adhanModalOpen}
-        onClose={() => setAdhanModalOpen(false)}
-        selectedReciterId={settings.adhanReciterId}
-        onSelectReciter={(id) => {
-          setAdhanReciterId(id);
-          haptic('selection');
-        }}
-      />
-
-      <Modal
-        visible={widgetsModalOpen}
-        animationType="slide"
-        onRequestClose={() => setWidgetsModalOpen(false)}
-      >
-        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgBase }}>
-          <WidgetPreviewScreen onClose={() => setWidgetsModalOpen(false)} />
-        </SafeAreaView>
-      </Modal>
+        <Modal
+          visible={widgetsModalOpen}
+          animationType="slide"
+          onRequestClose={() => setWidgetsModalOpen(false)}
+        >
+          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgBase }}>
+            <WidgetPreviewScreen onClose={() => setWidgetsModalOpen(false)} />
+          </SafeAreaView>
+        </Modal>
       </View>
     </ScrollView>
   );
@@ -1133,13 +1280,12 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
 const styles = StyleSheet.create({
   content: { paddingVertical: 20, paddingBottom: 40 },
   contentWrap: {
-    maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
   closeBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 40,
     justifyContent: 'center',
     paddingVertical: 6,
     paddingRight: 12,
@@ -1154,20 +1300,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
-    marginTop: 18,
     marginBottom: 8,
   },
-  group: { borderWidth: 1, borderRadius: 12, overflow: 'hidden' },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
     gap: 12,
   },
   rowFlex: { flex: 1 },
-  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
-  rowDesc: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
+  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 15 },
+  rowDesc: { fontFamily: 'Manrope_400Regular', fontSize: 13, marginTop: 2 },
+  rightCluster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   toggle: {
     width: 48,
     height: 28,
@@ -1192,7 +1340,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   adjustRow: {
-    padding: 16,
     gap: 12,
   },
   adjustHeader: {
@@ -1211,8 +1358,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   adjustBtn: {
-    width: 38,
-    height: 32,
+    width: 44,
+    height: 40,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
@@ -1220,11 +1367,11 @@ const styles = StyleSheet.create({
   },
   adjustBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 14,
+    fontSize: 15,
   },
   adjustTrackArea: {
     flex: 1,
-    height: 32,
+    height: 40,
     justifyContent: 'center',
   },
   adjustTrack: {
@@ -1244,16 +1391,22 @@ const styles = StyleSheet.create({
     top: -5,
     marginLeft: -8,
   },
-  segRow: { flexDirection: 'row', gap: 8, padding: 12, flexWrap: 'wrap' },
+  segRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   seg: {
     flex: 1,
-    minWidth: 80,
     borderWidth: 1,
     borderRadius: 8,
     paddingVertical: 10,
+    minHeight: 40,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   },
-  segLabel: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
+  segLabel: { fontFamily: 'Manrope_600SemiBold', fontSize: 13, textAlign: 'center' },
   testBtn: { fontFamily: 'Manrope_700Bold', fontSize: 13 },
   footer: {
     fontFamily: 'Manrope_400Regular',
@@ -1270,8 +1423,6 @@ const styles = StyleSheet.create({
   accentGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
-    padding: 16,
     justifyContent: 'flex-start',
   },
   accentSwatch: {
@@ -1285,12 +1436,39 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 0,
     borderColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   accentLabel: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 10,
     marginTop: 4,
     textAlign: 'center',
+  },
+  pillWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  pill: {
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    gap: 2,
+    maxWidth: '100%',
+  },
+  pillHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pillName: {
+    fontFamily: 'Manrope_600SemiBold',
+    flexShrink: 1,
+  },
+  pillRegion: {
+    fontFamily: 'Manrope_400Regular',
   },
   privacyNote: {
     flexDirection: 'row',
@@ -1300,8 +1478,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginHorizontal: 12,
-    marginBottom: 8,
   },
   privacyNoteText: {
     fontFamily: 'Manrope_400Regular',
@@ -1310,86 +1486,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   privacyActionBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    minHeight: 40,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     borderRadius: 8,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   privacyActionText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
-  dangerText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
-  },
-  consentBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  consentCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 24,
-    maxWidth: 400,
-    width: '100%',
-    alignItems: 'center',
-  },
-  consentIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
-  consentTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 22,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  consentBody: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    lineHeight: 21,
-    textAlign: 'left',
-    alignSelf: 'stretch',
-    marginBottom: 18,
-  },
-  consentBtns: {
-    flexDirection: 'row',
-    gap: 10,
-    alignSelf: 'stretch',
-  },
-  consentBtn: {
-    flex: 1,
-    paddingVertical: 11,
-    borderRadius: 10,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  consentBtnPrimary: {
-    borderWidth: 0,
-  },
-  consentBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
-  },
-  consentBtnTextPrimary: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 14,
-  },
   inlineConsent: {
     borderRadius: 12,
     borderWidth: 1,
     padding: 16,
-    marginHorizontal: 12,
-    marginVertical: 8,
     alignItems: 'center',
   },
   consentIconWrapSmall: {
@@ -1419,9 +1531,28 @@ const styles = StyleSheet.create({
     gap: 10,
     alignSelf: 'stretch',
   },
+  consentBtn: {
+    flex: 1,
+    minHeight: 44,
+    paddingVertical: 11,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  consentBtnPrimary: {
+    borderWidth: 0,
+  },
+  consentBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 14,
+  },
+  consentBtnTextPrimary: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 14,
+  },
   healthCompact: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   healthCompactLoading: {
     flexDirection: 'row',
@@ -1448,10 +1579,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     padding: 12,
+    marginBottom: 4,
     borderWidth: 1,
     borderRadius: 8,
-    margin: 12,
-    marginBottom: 4,
   },
   permissionBannerTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1463,11 +1593,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 16,
   },
-  reciterPickerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   reciterBadgeArabic: {
     fontFamily: 'NotoNaskhArabic_700Bold',
     fontSize: 13,
@@ -1476,6 +1601,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    minHeight: 40,
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
