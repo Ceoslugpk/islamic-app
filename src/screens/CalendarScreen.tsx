@@ -184,7 +184,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
           </TouchableOpacity>
         )}
 
-        <SectionHeader eyebrow="Hijri Calendar" title="Islamic Dates" />
+        <SectionHeader compact eyebrow="Hijri Calendar" title="Islamic Dates" />
 
         {/* NEW: Today Panel */}
         <Card style={styles.todayCard} padded>
@@ -445,7 +445,7 @@ function getHijriMonthLength(year: number, month: number): number {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 20, paddingBottom: 40 },
+  content: { paddingVertical: 12, paddingBottom: 40 },
   contentWrap: {
     maxWidth: 680,
     width: '100%',
@@ -453,20 +453,20 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   center: { paddingVertical: 60, alignItems: 'center' },
 
   // Today Panel
-  todayCard: { marginBottom: 16 },
+  todayCard: { marginBottom: 10 },
   todayRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -529,51 +529,52 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderWidth: 1,
     borderRadius: 10,
-    padding: 10,
-    marginBottom: 8,
+    padding: 6,
+    marginBottom: 6,
   },
-  navBtn: { padding: 8, minWidth: 44, alignItems: 'center' },
-  navArrow: { fontSize: 26, lineHeight: 28 },
+  navBtn: { padding: 6, minWidth: 38, alignItems: 'center' },
+  navArrow: { fontSize: 24, lineHeight: 26 },
   navTitle: { alignItems: 'center', flex: 1 },
-  monthName: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 22 },
-  monthMeta: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
+  monthName: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 20 },
+  monthMeta: { fontFamily: 'Manrope_400Regular', fontSize: 11.5, marginTop: 1 },
 
   // Today jump button
   todayJumpBtn: {
     alignSelf: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginBottom: 12,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    marginBottom: 8,
   },
   todayJumpText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 12,
     letterSpacing: 0.5,
   },
 
   // Month strip
-  monthStripContainer: { marginBottom: 16 },
+  monthStripContainer: { marginBottom: 10 },
   monthStripLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10,
-    letterSpacing: 1.5,
+    fontSize: 9.5,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 8,
+    marginBottom: 4,
     paddingHorizontal: 4,
   },
   monthStrip: {
     flexDirection: 'row',
     gap: 6,
     paddingHorizontal: 4,
-    paddingBottom: 4,
+    paddingBottom: 2,
   },
   monthChip: {
-    paddingVertical: 6,
+    height: 28,
     paddingHorizontal: 10,
-    borderRadius: 20,
+    borderRadius: 999,
     borderWidth: 1,
-    minWidth: 56,
+    minWidth: 48,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   monthChipActive: {
     backgroundColor: '#00000000', // handled by border

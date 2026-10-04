@@ -190,9 +190,9 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
         )}
 
         <SectionHeader
+          compact
           eyebrow="Worship & Charity"
           title="Zakat"
-          subtitle="Fulfill your third pillar with precision: multi-currency nisab thresholds, gold & silver rates, and asset breakdown."
         />
 
         {/* Tab Navigation */}
@@ -771,33 +771,33 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignSelf: 'center',
-    paddingTop: 16,
+    paddingTop: 8,
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
 
   /* Tabs */
   tabBar: {
     flexDirection: 'row',
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    padding: 4,
-    marginBottom: 16,
+    padding: 3,
+    marginBottom: 12,
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 7,
+    paddingVertical: 6,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: 'transparent',
     alignItems: 'center',
@@ -805,7 +805,7 @@ const styles = StyleSheet.create({
   },
   tabBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
+    fontSize: 12,
   },
   tabContent: {
     gap: 14,

@@ -500,6 +500,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         {activeTab === 'saved' && (
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
+              compact
               eyebrow="Library"
               title="Saved Hadith"
               subtitle={
@@ -599,6 +600,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         {activeTab === 'recent' && (
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
+              compact
               eyebrow="Library"
               title="Recently Read"
               subtitle="Prophetic traditions you recently viewed"
@@ -676,6 +678,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         {activeTab === 'progress' && (
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
+              compact
               eyebrow="Library"
               title="Reading Progress"
               subtitle="Track prophetic traditions completed per collection"
@@ -776,6 +779,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             }
           >
             <SectionHeader
+              compact
               eyebrow="Library"
               title="Hadith Library"
               subtitle="Browse 17 canonical collections, books & authentic narrations"
@@ -903,6 +907,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             }
           >
             <SectionHeader
+              compact
               eyebrow={view.collection.name.en}
               title="Books"
               subtitle={
@@ -1032,6 +1037,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             ListHeaderComponent={
               <View style={styles.listHeaderWrap}>
                 <SectionHeader
+                  compact
                   eyebrow={`${view.collection.name.en} · Book ${view.book.bookNumber}`}
                   title={view.book.name.en || `Book ${view.book.bookNumber}`}
                   subtitle={
@@ -1157,6 +1163,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
           <ScrollView contentContainerStyle={styles.scrollContent}>
             {/* Header info */}
             <SectionHeader
+              compact
               eyebrow={`${view.collection.nameEn || view.collection.slug} · Book ${view.book?.bookNumber || view.hadith.bookNumber || '1'}`}
               title={`Hadith #${view.hadith.hadithNumber}`}
               subtitle={view.book?.nameEn || undefined}
@@ -1280,20 +1287,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
+    padding: 16,
+    paddingTop: 10,
+    paddingBottom: 40,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
   listHeaderWrap: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
     borderBottomWidth: 1,
     maxWidth: 680,
     width: '100%',
@@ -1301,14 +1309,14 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
+    paddingVertical: 3,
+    paddingRight: 10,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   tabsWrap: {
     borderBottomWidth: 1,
@@ -1319,31 +1327,31 @@ const styles = StyleSheet.create({
   tabsScroll: {
     flexDirection: 'row',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
+    paddingVertical: 6,
+    gap: 6,
   },
   tabChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    gap: 5,
+    height: 28,
+    paddingHorizontal: 10,
+    borderRadius: 999,
     borderWidth: 1,
   },
   tabChipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 11.5,
   },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginBottom: 20,
-    gap: 8,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 10,
+    gap: 6,
   },
   searchIcon: {
     marginRight: 2,

@@ -132,7 +132,7 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
           </TouchableOpacity>
         )}
 
-        <SectionHeader eyebrow="Dhikr & Remembrance" title="Tasbih" />
+        <SectionHeader compact eyebrow="Dhikr & Remembrance" title="Tasbih" />
 
       {/* Dhikr Selector Tabs */}
       <ScrollView
@@ -328,7 +328,7 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
 
 const styles = StyleSheet.create({
   content: {
-    paddingVertical: 20,
+    paddingVertical: 12,
     paddingBottom: 40,
   },
   contentWrap: {
@@ -338,30 +338,32 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   dhikrList: {
-    paddingVertical: 8,
-    gap: 8,
-    marginBottom: 16,
+    paddingVertical: 4,
+    gap: 6,
+    marginBottom: 12,
   },
   dhikrChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    height: 28,
+    paddingHorizontal: 12,
+    borderRadius: 999,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dhikrChipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 12,
   },
   metaBar: {
     flexDirection: 'row',

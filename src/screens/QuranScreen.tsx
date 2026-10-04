@@ -35,6 +35,12 @@ const JUZ_START_SURAH: Record<number, number> = {
   21: 29, 22: 33, 23: 36, 24: 39, 25: 41, 26: 46, 27: 51, 28: 58, 29: 67, 30: 78,
 };
 
+const REVELATION_OPTIONS = [
+  { value: null, label: 'All' },
+  { value: 'Meccan' as const, label: 'Meccan' },
+  { value: 'Medinan' as const, label: 'Medinan' },
+] as const;
+
 export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
@@ -54,6 +60,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
+  const [selectedRevelation, setSelectedRevelation] = useState<'Meccan' | 'Medinan' | null>(null);
   const listRef = useRef<FlatList<SurahMeta>>(null);
 
   const loadSurahs = useCallback(async (force = false) => {
@@ -104,17 +111,33 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
 
   const filteredSurahs = useMemo(() => {
     if (!surahs) return [];
+    let result = surahs;
+
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return surahs;
-    return surahs.filter((s) => {
-      const tr = translatedNames?.[s.number]?.toLowerCase() || '';
-      return (
-        s.englishName.toLowerCase().includes(query) ||
-        s.englishNameTranslation.toLowerCase().includes(query) ||
-        tr.includes(query)
-      );
-    });
-  }, [surahs, searchQuery, translatedNames]);
+    if (query) {
+      result = result.filter((s) => {
+        const tr = translatedNames?.[s.number]?.toLowerCase() || '';
+        return (
+          s.englishName.toLowerCase().includes(query) ||
+          s.englishNameTranslation.toLowerCase().includes(query) ||
+          tr.includes(query)
+        );
+      });
+    }
+
+    if (selectedJuz !== null) {
+      const startSurah = JUZ_START_SURAH[selectedJuz];
+      const nextJuz = selectedJuz < 30 ? selectedJuz + 1 : null;
+      const endSurah = nextJuz ? JUZ_START_SURAH[nextJuz] - 1 : 114;
+      result = result.filter((s) => s.number >= startSurah && s.number <= endSurah);
+    }
+
+    if (selectedRevelation !== null) {
+      result = result.filter((s) => s.revelationType === selectedRevelation);
+    }
+
+    return result;
+  }, [surahs, searchQuery, translatedNames, selectedJuz, selectedRevelation]);
 
   const handleSelectJuz = (j: number) => {
     const nextJuz = selectedJuz === j ? null : j;
@@ -138,6 +161,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
         <View style={styles.contentWrap}>
           <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
             <SectionHeader
+              compact
               eyebrow="The Holy Quran"
               title="Surahs"
               style={styles.sectionHeader}
@@ -227,6 +251,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
             </TouchableOpacity>
           )}
           <SectionHeader
+            compact
             eyebrow="The Holy Quran"
             title="Surahs"
             style={styles.sectionHeader}
@@ -292,7 +317,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
             )}
           </View>
 
-          {/* Juz Section Header */}
+{/* Juz Section Header */}
           <View style={styles.juzSection}>
             <Text style={[styles.juzLabel, { color: colors.textMuted }]}>JUZ</Text>
             <ScrollView
@@ -339,6 +364,66 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 );
               })}
             </ScrollView>
+          </View>
+
+          {/* Revelation Type Filter Chips */}
+          <View style={styles.revelationSection}>
+            <Text style={[styles.revelationLabel, { color: colors.textMuted }]}>REVELATION</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={[styles.revelationScrollView, { marginHorizontal: -horizontalPadding }]}
+              contentContainerStyle={[
+                styles.revelationScroll,
+                { paddingHorizontal: horizontalPadding, gap: isCompact ? 4 : 6 },
+              ]}
+            >
+              {REVELATION_OPTIONS.map((opt) => {
+                const isSelected = selectedRevelation === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[
+                      styles.revelationChip,
+                      {
+                        backgroundColor: isSelected ? colors.accent : colors.bgSurface,
+                        borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                        paddingHorizontal: isCompact ? 10 : 12,
+                        height: isCompact ? 28 : 32,
+                        borderRadius: isCompact ? 14 : 16,
+                      },
+                    ]}
+                    onPress={() => setSelectedRevelation(opt.value)}
+                    accessibilityRole="button"
+                    accessibilityLabel={opt.label}
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <Text
+                      style={[
+                        styles.revelationChipText,
+                        {
+                          color: isSelected ? colors.onAccent : colors.textSecondary,
+                          fontSize: isCompact ? 10 : 11,
+                        },
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            {surahs && (
+              <Text
+                style={[
+                  styles.revelationCounts,
+                  { color: colors.textMuted, fontSize: isCompact ? 9 : 10 },
+                ]}
+              >
+                Meccan {surahs.filter((s) => s.revelationType === 'Meccan').length} · Medinan{' '}
+                {surahs.filter((s) => s.revelationType === 'Medinan').length} · {surahs.length}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -494,33 +579,33 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 10,
+    paddingBottom: 4,
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 3,
     paddingRight: 12,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   sectionHeader: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   langBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   langBarLeft: {
     flex: 1,
@@ -528,26 +613,26 @@ const styles = StyleSheet.create({
   },
   langBarLabel: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 9.5,
+    fontSize: 9,
     letterSpacing: 1,
-    marginBottom: 2,
+    marginBottom: 1,
   },
   langBarTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 12.5,
   },
   langChangeBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
   },
   langChangeBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 11.5,
   },
   searchBar: {
     flexDirection: 'row',
@@ -555,13 +640,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    height: 42,
-    marginBottom: 12,
+    height: 38,
+    marginBottom: 8,
   },
   searchInput: {
     flex: 1,
     fontFamily: 'Manrope_400Regular',
-    fontSize: 14,
+    fontSize: 13.5,
     height: '100%',
     padding: 0,
   },
@@ -576,27 +661,27 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   juzSection: {
-    marginTop: 4,
-    marginBottom: 8,
+    marginTop: 0,
+    marginBottom: 4,
   },
   juzLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 1.5,
+    fontSize: 10,
+    letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   juzScrollView: {
     marginHorizontal: -20,
   },
   juzScroll: {
     paddingHorizontal: 20,
-    gap: 8,
+    gap: 6,
   },
   juzPill: {
-    minWidth: 40,
-    height: 40,
-    borderRadius: 20,
+    minWidth: 34,
+    height: 32,
+    borderRadius: 16,
     paddingHorizontal: 6,
     borderWidth: 1,
     alignItems: 'center',
@@ -604,7 +689,7 @@ const styles = StyleSheet.create({
   },
   juzPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 12,
   },
   listContent: {
     paddingHorizontal: 20,
@@ -658,5 +743,39 @@ const styles = StyleSheet.create({
   emptyText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 14,
+  },
+  revelationSection: {
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  revelationLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  revelationScrollView: {
+    marginHorizontal: -20,
+  },
+  revelationScroll: {
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  revelationChip: {
+    paddingHorizontal: 12,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  revelationChipText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+  },
+  revelationCounts: {
+    marginTop: 6,
+    fontFamily: 'Manrope_400Regular',
   },
 });

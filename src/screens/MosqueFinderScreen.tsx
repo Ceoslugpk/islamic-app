@@ -409,9 +409,9 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
             )}
 
             <SectionHeader
+              compact
               eyebrow="Tools"
               title="Mosque Finder"
-              subtitle="Find nearby mosques and prayer spaces with directions"
             />
 
             {/* Area Search Input Bar */}
@@ -805,33 +805,33 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: 6,
     paddingBottom: 40,
   },
   headerWrap: {
-    marginBottom: 10,
+    marginBottom: 6,
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 44,
-    marginTop: 4,
-    marginBottom: 10,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 38,
+    marginTop: 2,
+    marginBottom: 8,
   },
   searchIcon: {
     marginRight: 8,
@@ -847,9 +847,9 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   searchSubmitBtn: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 7,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -858,11 +858,11 @@ const styles = StyleSheet.create({
   },
   searchSubmitText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 11.5,
   },
   controlCard: {
-    marginBottom: 12,
-    borderRadius: 12,
+    marginBottom: 8,
+    borderRadius: 10,
   },
   locationHeaderRow: {
     flexDirection: 'row',
@@ -911,15 +911,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
-    marginTop: 12,
+    marginTop: 8,
   },
   useLocationBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 11.5,
     letterSpacing: 0.5,
   },
   statusNotice: {
@@ -993,7 +993,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   controlDivider: {
-    marginVertical: 12,
+    marginVertical: 8,
   },
   radiusRow: {
     flexDirection: 'row',
@@ -1002,21 +1002,23 @@ const styles = StyleSheet.create({
   },
   radiusLabel: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 13,
+    fontSize: 12.5,
   },
   radiusPills: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   radiusPill: {
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+    height: 28,
+    paddingHorizontal: 10,
+    borderRadius: 999,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   radiusPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 11.5,
   },
   resultsBanner: {
     marginVertical: 4,

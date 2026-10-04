@@ -150,7 +150,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           </TouchableOpacity>
         )}
 
-        <SectionHeader eyebrow="Supplications" title="Duas & Adhkar" />
+        <SectionHeader compact eyebrow="Supplications" title="Duas & Adhkar" />
 
       {/* Category Filter Chips + Random Dua */}
       <View style={styles.filterRow}>
@@ -268,51 +268,53 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   categoryScroll: {
-    gap: 8,
+    gap: 6,
     alignItems: 'center',
   },
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   chipsWrap: {
     flex: 1,
-    height: 44,
+    height: 32,
   },
   randomBtn: {
-    marginLeft: 10,
-    paddingHorizontal: 12,
-    height: 34,
-    borderRadius: 17,
+    marginLeft: 8,
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   randomBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 11.5,
   },
   categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 18,
+    height: 28,
+    paddingHorizontal: 10,
+    borderRadius: 999,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   categoryChipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 11.5,
   },
   listContent: {
     paddingBottom: 30,

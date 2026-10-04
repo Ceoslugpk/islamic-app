@@ -198,7 +198,7 @@ export default function QuranHomeScreen({
   const renderHeader = () => {
     return (
       <View style={styles.headerArea}>
-        <SectionHeader eyebrow="The Holy Quran" title="Quran" />
+        <SectionHeader compact eyebrow="The Holy Quran" title="Quran" />
 
         {/* Translation Language Selector Banner */}
         <View
@@ -932,21 +932,21 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     alignSelf: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 10,
     paddingBottom: 40,
   },
   headerArea: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   langBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
     borderWidth: 1,
-    marginTop: 10,
+    marginTop: 4,
     marginBottom: 4,
   },
   langBarLeft: {

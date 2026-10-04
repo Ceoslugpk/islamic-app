@@ -107,7 +107,7 @@ export default function BookmarksScreen({
               </Text>
             </TouchableOpacity>
           )}
-          <SectionHeader eyebrow="Saved Verses" title="Bookmarks" />
+          <SectionHeader compact eyebrow="Saved Verses" title="Bookmarks" />
         </View>
 
         <FlatList
@@ -140,20 +140,20 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 10,
+    paddingBottom: 4,
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   listContent: {
     padding: 20,

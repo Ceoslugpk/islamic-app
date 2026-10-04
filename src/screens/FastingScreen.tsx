@@ -240,9 +240,9 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
         )}
 
         <SectionHeader
+          compact
           eyebrow="Worship & Tracker"
           title="Fasting"
-          subtitle="Daily fasting tracker, Ramadan suhoor & iftar, Sunnah days, and missed fast ledger."
         />
 
         {/* Tab Navigation */}
@@ -795,29 +795,29 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
 
   /* Tab Navigation */
   tabBar: {
     flexDirection: 'row',
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    padding: 4,
-    marginBottom: 20,
+    padding: 3,
+    marginBottom: 12,
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 7,
+    paddingVertical: 6,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: 'transparent',
     alignItems: 'center',
@@ -825,7 +825,7 @@ const styles = StyleSheet.create({
   },
   tabBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
+    fontSize: 12,
   },
   tabContent: {
     gap: 14,

@@ -43,6 +43,7 @@ export default function WomenGuidanceScreen({ onBack }: { onBack?: () => void })
       )}
 
       <SectionHeader
+        compact
         eyebrow="Women's Worship"
         title="Worship Guidance"
         subtitle="Authentic fiqh on exemptions, permitted worship, bleeding types & scholarly references."
@@ -152,30 +153,31 @@ export default function WomenGuidanceScreen({ onBack }: { onBack?: () => void })
 const styles = StyleSheet.create({
   content: {
     padding: 20,
+    paddingTop: 10,
     paddingBottom: 60,
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   privacyBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    marginTop: -8,
-    marginBottom: 16,
+    marginTop: -4,
+    marginBottom: 12,
   },
   privacyText: {
     fontFamily: 'Manrope_500Medium',

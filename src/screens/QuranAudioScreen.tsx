@@ -437,7 +437,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Quran</Text>
             </TouchableOpacity>
           )}
-          <SectionHeader eyebrow="Audio Center" title="Quran Audio" />
+          <SectionHeader compact eyebrow="Audio Center" title="Quran Audio" />
         </View>
 
 
@@ -1677,41 +1677,41 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 4,
+    paddingTop: 10,
+    paddingBottom: 2,
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 3,
     paddingRight: 12,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   tabBar: {
     borderBottomWidth: 1,
-    marginTop: 4,
+    marginTop: 2,
   },
   tabScroll: {
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 10,
   },
   tabItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 12,
+    gap: 5,
+    paddingVertical: 8,
     paddingHorizontal: 4,
     borderBottomWidth: 2,
     flexShrink: 0,
   },
   tabLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 12.5,
   },
   tabBadge: {
     paddingHorizontal: 6,
@@ -1731,11 +1731,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 6,
     paddingHorizontal: 12,
-    height: 42,
-    borderRadius: 10,
+    height: 38,
+    borderRadius: 8,
     borderWidth: 1,
   },
   searchInput: {
