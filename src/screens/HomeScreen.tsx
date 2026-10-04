@@ -54,6 +54,7 @@ import {
   PrayerHeroAtmosphere,
   PrayerSegment,
 } from '../components/PrayerHeroAtmosphere';
+import { PhaseWash } from '../components/PhaseWash';
 import { PrayerCountdown } from '../components/PrayerCountdown';
 import { PrayerTimeline } from '../components/PrayerTimeline';
 import { ContinueReadingCard } from '../components/ContinueReadingCard';
@@ -522,6 +523,9 @@ export default function HomeScreen({
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
+      {/* Part 10: full-screen time-of-day phase wash (subtle, gradual crossfade) */}
+      <PhaseWash segment={currentSegment} intensity={0.35} />
+
       {/* Pinned persistent compact prayer bar on scroll */}
       <Animated.View
         style={[
@@ -723,7 +727,36 @@ export default function HomeScreen({
           streak={streak}
         />
 
-        {/* 3. Dua After Prayer — compact, collapsible, contextual */}
+        {/* 3. One "Continue Reading" Primary Action Surface */}
+        <ContinueReadingCard
+          onOpenReader={handleOpenReader}
+          onOpenQuranTab={handleOpenQuranTab}
+          style={{ marginBottom: 20 }}
+        />
+
+        {/* 4. Quick Actions Control Strip */}
+        <QuickActionsStrip
+          onOpenQibla={onOpenQibla}
+          onOpenDuas={onOpenDuas}
+          onOpenAdhkar={onOpenAdhkar}
+          onOpenTasbih={onOpenTasbih}
+        />
+
+        {/* 5. Daily Content Rail (Ayah / Hadith / 99 Names horizontal swipe discovery rail) */}
+        <DailyContentRail
+          ayah={ayah}
+          hadith={hadith}
+          nameOfDay={nameOfDay}
+          ayahLoading={ayahLoading}
+          hadithLoading={hadithLoading}
+          onRefreshAyah={refreshAyah}
+          onRefreshHadith={refreshHadith}
+          onOpenAyah={handleOpenReader}
+          onOpenHadith={onOpenHadith}
+          onOpenNames={onOpenNames}
+        />
+
+        {/* 6. Dua After Prayer — compact, collapsible, contextual */}
         <Card style={styles.duaAfterPrayerCard}>
           <AnimatedPattern variant="rings" size={isCompact ? 240 : 300} />
           <TouchableOpacity
@@ -775,37 +808,6 @@ export default function HomeScreen({
           </View>
         </Card>
 
-
-
-        {/* 4. Quick Actions Control Strip */}
-        <QuickActionsStrip
-          onOpenQibla={onOpenQibla}
-          onOpenDuas={onOpenDuas}
-          onOpenAdhkar={onOpenAdhkar}
-          onOpenTasbih={onOpenTasbih}
-        />
-
-        {/* 5. One "Continue Reading" Primary Action Surface */}
-        <ContinueReadingCard
-          onOpenReader={handleOpenReader}
-          onOpenQuranTab={handleOpenQuranTab}
-          style={{ marginBottom: 20 }}
-        />
-
-        {/* 6. Daily Content Rail (Ayah / Hadith / 99 Names horizontal swipe discovery rail) */}
-        <DailyContentRail
-          ayah={ayah}
-          hadith={hadith}
-          nameOfDay={nameOfDay}
-          ayahLoading={ayahLoading}
-          hadithLoading={hadithLoading}
-          onRefreshAyah={refreshAyah}
-          onRefreshHadith={refreshHadith}
-          onOpenAyah={handleOpenReader}
-          onOpenHadith={onOpenHadith}
-          onOpenNames={onOpenNames}
-        />
-
         {/* Method + location note */}
         <Text style={[styles.methodNote, { color: colors.textMuted }]}>
           {data.method} · {data.timezone}
@@ -828,7 +830,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 14 },
-  content: { padding: 20 },
+  content: { padding: 24, gap: 24 },
   patternTop: { top: -40, right: -60 },
   sectionHeader: { marginBottom: 20 },
   prayerHeroCard: {
