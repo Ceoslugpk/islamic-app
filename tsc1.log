@@ -1,0 +1,2 @@
+src/lib/prayerGuide.ts(383,2): error TS1009: Trailing comma not allowed.
+src/lib/ramadanGuide.ts(393,2): error TS1009: Trailing comma not allowed.

@@ -56,6 +56,8 @@ import HajjJourneyScreen from './src/screens/HajjJourneyScreen';
 import MakkahLiveScreen from './src/screens/MakkahLiveScreen';
 import MadinahLiveScreen from './src/screens/MadinahLiveScreen';
 import HajjLiveScreen from './src/screens/HajjLiveScreen';
+import RamadanGuideScreen from './src/screens/RamadanGuideScreen';
+import PrayerGuideScreen from './src/screens/PrayerGuideScreen';
 import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
@@ -182,7 +184,9 @@ type LibraryView =
   | { screen: 'names' }
   | { screen: 'names-prophet' }
   | { screen: 'duas' }
-  | { screen: 'hadith' };
+  | { screen: 'hadith' }
+  | { screen: 'ramadan-guide' }
+  | { screen: 'prayer-guide' };
 
 type QuranView =
   | { screen: 'home' }
@@ -419,6 +423,8 @@ function Root() {
     else if (key === 'names-prophet') setLibrary({ screen: 'names-prophet' });
     else if (key === 'duas') setLibrary({ screen: 'duas' });
     else if (key === 'hadith') setLibrary({ screen: 'hadith' });
+    else if (key === 'ramadan-guide') setLibrary({ screen: 'ramadan-guide' });
+    else if (key === 'prayer-guide') setLibrary({ screen: 'prayer-guide' });
   }
 
   return (
@@ -433,6 +439,46 @@ function Root() {
               setQuran({ screen: 'home' });
               setTools({ screen: 'hub' });
               setLibrary({ screen: 'names' });
+              setTab('library');
+            }}
+            onOpenQuran={(surah, ayah) => {
+              setLibrary({ screen: 'hub' });
+              setTools({ screen: 'hub' });
+              if (surah) {
+                setQuran({ screen: 'reader', surah, initialAyah: ayah });
+              } else {
+                setQuran({ screen: 'home' });
+              }
+              setTab('quran');
+            }}
+            onOpenHadith={() => {
+              setQuran({ screen: 'home' });
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'hadith' });
+              setTab('library');
+            }}
+            onOpenQibla={() => {
+              setQuran({ screen: 'home' });
+              setLibrary({ screen: 'hub' });
+              setTools({ screen: 'qibla' });
+              setTab('tools');
+            }}
+            onOpenDuas={() => {
+              setQuran({ screen: 'home' });
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'duas' });
+              setTab('library');
+            }}
+            onOpenAdhkar={() => {
+              setQuran({ screen: 'home' });
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'duas' });
+              setTab('library');
+            }}
+            onOpenTasbih={() => {
+              setQuran({ screen: 'home' });
+              setTools({ screen: 'hub' });
+              setLibrary({ screen: 'tasbih' });
               setTab('library');
             }}
           />
@@ -523,6 +569,12 @@ function Root() {
         )}
         {tab === 'library' && library.screen === 'hadith' && (
           <HadithLibraryScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'ramadan-guide' && (
+          <RamadanGuideScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'prayer-guide' && (
+          <PrayerGuideScreen onBack={() => setLibrary({ screen: 'hub' })} />
         )}
 
         {/* Tools Tab Views */}

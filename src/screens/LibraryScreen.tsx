@@ -17,7 +17,9 @@ export type LibraryItemKey =
   | 'duas'
   | 'tasbih'
   | 'names'
-  | 'names-prophet';
+  | 'names-prophet'
+  | 'ramadan-guide'
+  | 'prayer-guide';
 
 /* ─── Item model ──────────────────────────────────────────────── */
 
@@ -33,6 +35,8 @@ const ICONS: Record<LibraryItemKey, keyof typeof Ionicons.glyphMap> = {
   tasbih: 'repeat',
   names: 'sparkles',
   'names-prophet': 'star',
+  'ramadan-guide': 'moon',
+  'prayer-guide': 'hand-left',
 };
 
 /* ─── Grouped layout ──────────────────────────────────────────── */
@@ -56,6 +60,13 @@ const GROUPS: LibraryGroup[] = [
       { key: 'tasbih', title: 'Tasbih', subtitle: 'Digital dhikr counter' },
       { key: 'names', title: '99 Names of Allah', subtitle: 'Asma ul-Husna with meanings' },
       { key: 'names-prophet', title: '99 Names of the Prophet ﷺ', subtitle: 'His ﷺ noble names & attributes' },
+    ],
+  },
+  {
+    label: 'Guides',
+    items: [
+      { key: 'ramadan-guide', title: 'Ramadan & Eid Guide', subtitle: 'Fasting, Laylatul Qadr, Zakat al-Fitr, Eid Salah' },
+      { key: 'prayer-guide', title: 'Prayer Guide (Fiqh)', subtitle: 'Wudu, Salah, Janazah, Eid, Istikhara, Taraweeh' },
     ],
   },
 ];
