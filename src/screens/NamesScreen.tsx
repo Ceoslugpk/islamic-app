@@ -23,6 +23,7 @@ import {
   Name99,
   NameVerseRef,
   NamesLanguage,
+  NamesProvider,
 } from '../lib/names99';
 import { PROPHET_NAMES_99 } from '../lib/prophetNames';
 import { useSettings } from '../lib/settings';
@@ -45,6 +46,8 @@ interface NamesFeed {
   language: NamesLanguage;
   names: Name99[];
   source: 'cache' | 'api' | 'static';
+  /** Which dataset produced the list (shown in the source label). */
+  provider: NamesProvider;
 }
 
 /** Unified row shape across both variants (Name99 | ProphetName). */
@@ -87,18 +90,26 @@ export default function NamesScreen({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
 
-  // Load cached names instantly, then refresh from the keyless API (static fallback on failure).
-  // The Prophet variant is bundled-only, so it skips the network entirely.
+  // Load cached names instantly, then refresh from the keyless APIs (islamic.app primary,
+  // UmmahAPI secondary, static fallback on failure). The Prophet variant is bundled-only,
+  // so it skips the network entirely.
   useEffect(() => {
     if (isProphet) return;
     let mounted = true;
     (async () => {
       const cached = await loadCachedNames(language);
-      if (mounted && cached) setFeed({ language, names: cached, source: 'cache' });
+      if (mounted && cached) {
+        setFeed({ language, names: cached.names, source: 'cache', provider: cached.provider });
+      }
 
       const fresh = await fetchNames(language);
       if (!mounted) return;
-      setFeed({ language, names: fresh, source: fresh === NAMES_99 ? 'static' : 'api' });
+      setFeed({
+        language,
+        names: fresh.names,
+        source: fresh.provider === 'Bundled' ? 'static' : 'api',
+        provider: fresh.provider,
+      });
     })();
     return () => {
       mounted = false;
@@ -376,7 +387,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
         <Text style={[styles.countText, { color: colors.textSecondary }]}>{countLabel}</Text>
         {!isProphet && loadState !== 'offline' ? (
           <Text style={[styles.sourceText, { color: colors.textMuted }]}>
-            Translations · EsmaulHusna.org
+            {`Translations · ${activeFeed ? activeFeed.provider : 'islamic.app'}`}
           </Text>
         ) : null}
       </View>

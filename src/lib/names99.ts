@@ -1,6 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type NamesLanguage = 'en' | 'fr' | 'tr';
+/**
+ * Languages the primary source (islamic.app) ships a meaning for on all 99 names:
+ * `en`/`es` at the top level, `bn de fr id ru tr ur` under `i18n`.
+ */
+export type NamesLanguage = 'en' | 'fr' | 'tr' | 'es' | 'de' | 'id' | 'bn' | 'ru' | 'ur';
 
 export interface NameVerseRef {
   surah: number;
@@ -12,9 +16,8 @@ export interface Name99 {
   arabic: string;
   transliteration: string;
   meaning: string;
-  /** Localized name title (e.g. "Le Tout-Miséricordieux") when available. */
+  /** Localized name title when the source provides one (the bundled list does not). */
   name?: string;
-  slug?: string;
   /** Absolute recitation URL (https://esmaulhusna.org/audio/{slug}.mp3). */
   audioUrl?: string;
   /** Up to two Quran references for this name, e.g. Quran 55:1. */
@@ -123,32 +126,111 @@ export const NAMES_99: Name99[] = [
   { number: 99, arabic: 'الصَّبُورُ', transliteration: 'As-Sabur', meaning: 'The Timeless Patient' },
 ];
 
-/* ─── EsmaulHusna.org fetch layer (keyless) ───────────────────── */
+/* ─── Keyless, CORS-enabled fetch layer ───────────────────────── */
 
-export const NAMES_API_BASE = 'https://esmaulhusna.org';
-export const NAMES_API_URL = `${NAMES_API_BASE}/esmas/`;
+/**
+ * Primary source — islamic.app's Asma al-Husna API. Keyless, sends
+ * `access-control-allow-origin: *` (plus a 204 CORS preflight), and every one of the
+ * 99 records carries `en`, `es` and `i18n.{bn,de,fr,id,ru,tr,ur}` meanings.
+ */
+export const NAMES_API_URL = 'https://api.islamic.app/v1/asma-al-husna';
+
+/**
+ * Secondary source — UmmahAPI. Keyless and CORS `*`, but English-only; used only when
+ * the primary request fails (its output is never cached, so a translation cache is never
+ * downgraded to English).
+ */
+export const NAMES_FALLBACK_API_URL = 'https://ummahapi.com/api/asma-ul-husna';
+
+/**
+ * Recitation clips: neither JSON API serves audio, so play URLs point at EsmaulHusna's
+ * static mp3 host. That host has no CORS headers, but playback goes through an
+ * `<audio>` element / native player (neither needs CORS) and `playNameAudio` already
+ * degrades gracefully if a clip ever fails to load.
+ */
+export const NAMES_AUDIO_BASE = 'https://esmaulhusna.org';
 
 export const NAMES_LANGUAGES: { code: NamesLanguage; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'fr', label: 'Français' },
   { code: 'tr', label: 'Türkçe' },
+  { code: 'es', label: 'Español' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'id', label: 'Indonesia' },
+  { code: 'bn', label: 'বাংলা' },
+  { code: 'ru', label: 'Русский' },
+  { code: 'ur', label: 'اردو' },
 ];
+
+/** Which dataset produced the list currently on screen (shown in the source label). */
+export type NamesProvider = 'islamic.app' | 'UmmahAPI' | 'EsmaulHusna.org' | 'Bundled';
+
+export interface NamesFeedData {
+  names: Name99[];
+  provider: NamesProvider;
+}
 
 const CACHE_PREFIX = 'names99:cache:';
 const FETCH_TIMEOUT_MS = 12000;
 const MIN_EXPECTED_NAMES = 90;
 
-interface EsmaRecord {
-  id?: number;
-  slug?: string;
-  ar?: string;
-  'ar-enhanced'?: string;
-  audio?: string;
-  transliteration?: { iso?: string; popular?: Partial<Record<NamesLanguage, string>> };
-  name?: Partial<Record<NamesLanguage, string>>;
-  explanation?: { short?: Partial<Record<NamesLanguage, string>> };
-  verse?: Record<string, number[]>;
+/** islamic.app /v1/asma-al-husna record. */
+type I18nLanguage = Exclude<NamesLanguage, 'en' | 'es'>;
+
+interface IslamicNameRecord {
+  number?: number;
+  name?: string;
+  transliteration?: string;
+  en?: { meaning?: string };
+  es?: { meaning?: string };
+  i18n?: Partial<Record<I18nLanguage, { meaning?: string }>>;
 }
+
+/** UmmahAPI /api/asma-ul-husna record. */
+interface UmmahNameRecord {
+  number?: number;
+  arabic?: string;
+  transliteration?: string;
+  english?: string;
+  meaning?: string;
+}
+
+/**
+ * 1-indexed recitation slugs for numbers 1-99 (`https://esmaulhusna.org/audio/{slug}.mp3`).
+ * Every URL in this table was HEAD-checked: 99/99 return 200 with `audio/mpeg`.
+ */
+const AUDIO_SLUGS =
+  'ar-rahman|ar-raheem|al-malik|al-quddus|as-salam|al-mumin|al-muhaymin|al-aziz|al-jabbar|' +
+  'al-mutakabbir|al-khaliq|al-bari|al-musawwir|al-ghaffar|al-qahhar|al-wahhab|ar-razzaq|' +
+  'al-fattah|al-alim|al-qabid|al-basit|al-khafid|ar-rafi|al-muizz|al-mudhill|as-sami|al-basir|' +
+  'al-hakam|al-adl|al-latif|al-khabir|al-halim|al-azeem|al-ghafur|ash-shakur|al-ali|al-kabir|' +
+  'al-hafiz|al-muqit|al-hasib|al-jalil|al-karim|ar-raqib|al-mujib|al-wasi|al-hakim|al-wadud|' +
+  'al-majeed|al-baith|ash-shahid|al-haqq|al-wakeel|al-qawi|al-matin|al-waliyy|al-hamid|al-muhsi|' +
+  'al-mubdi|al-muid|al-muhyi|al-mumit|al-hayy|al-qayyum|al-wajid|al-majid|al-wahid|al-ahad|' +
+  'as-samad|al-qadir|al-muqtadir|al-muqaddim|al-muakhkhir|al-awwal|al-akhir|az-zahir|al-batin|' +
+  'al-wali|al-muta-ali|al-barr|at-tawwab|al-muntaqim|al-afuw|ar-rauf|malikul-mulk|' +
+  'dhul-jalali-wal-ikram|al-muqsit|al-jami|al-ghaniyy|al-mughni|al-mani|ad-darr|an-nafi|an-nur|' +
+  'al-hadi|al-badi|al-baqi|al-warith|ar-rashid|as-sabur'.split('|');
+
+/**
+ * Quran references per name as `number=surah:ayah,surah:ayah` (up to two, ascending) —
+ * carried over from the previous source so the "Quran 55:1" meta chip keeps working.
+ */
+const VERSE_REFS_RAW =
+  '1=1:2,2:163|2=1:2,2:37|3=1:3,2:107|4=59:23,62:1|5=36:58,37:181|6=59:23|7=59:23|' +
+  '8=2:129,3:4|9=59:23|10=59:23|11=2:21,3:47|12=59:24|13=3:6,59:24|14=20:82,38:66|' +
+  '15=13:16,14:48|16=3:8,38:9|17=2:22,3:37|18=34:26|19=2:29,3:29|20=2:245|21=2:245|' +
+  '23=88:18|26=2:127,3:34|27=2:96,3:15|28=2:113,4:141|30=6:103,12:100|31=2:234,3:153|' +
+  '32=2:225,3:155|33=2:255,3:174|34=2:173,3:31|35=2:158,4:147|36=2:255,4:34|37=4:34,13:9|' +
+  '38=11:57,12:64|39=4:85|40=3:19,4:6|42=27:40,82:6|43=4:1,5:117|44=11:61|45=2:115,3:73|' +
+  '46=2:32,3:6|47=11:90,85:14|48=11:73,85:15|49=6:60,62:2|50=3:81,4:33|51=6:62,10:32|' +
+  '52=3:173,4:81|53=2:165,8:52|54=7:183,51:58|55=2:257,3:68|56=2:267,4:131|57=2:284,14:34|' +
+  '58=85:13|59=85:13|60=2:28,3:27|61=2:28,3:27|62=2:255,3:2|63=2:255,3:2|65=11:73|' +
+  '66=2:163,4:171|67=112:1|68=112:2|69=2:20,3:26|70=18:45,54:42|73=37:126,57:3|74=57:3|' +
+  '75=57:3|76=57:3|78=13:9,22:62|79=52:28|80=2:37,4:16|81=3:4,43:41|82=2:52,3:152|' +
+  '83=2:143,3:30|84=3:26,24:42|85=55:27|88=2:263,4:131|93=5:15,24:35|94=2:213,3:86|' +
+  '95=2:117,6:101|97=3:180,15:23|98=2:256,18:10';
+
 
 const STATIC_BY_NUMBER = new Map<number, Name99>(NAMES_99.map((item) => [item.number, item]));
 
@@ -156,58 +238,81 @@ function nonEmpty(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
 }
 
-/** Map the API `verse` object ({ "55": [1, 2], "1": [2] }) into up to two sorted references. */
-function mapVerseRefs(verse: Record<string, number[]> | undefined): NameVerseRef[] {
-  if (!verse || typeof verse !== 'object') return [];
-  const refs: NameVerseRef[] = [];
-  const surahs = Object.keys(verse)
-    .map((key) => Number.parseInt(key, 10))
-    .filter((surah) => Number.isFinite(surah) && surah >= 1 && surah <= 114)
-    .sort((a, b) => a - b);
-
-  for (const surah of surahs) {
-    const ayahs = verse[String(surah)];
-    const ayah = Array.isArray(ayahs) ? ayahs.find((value) => Number.isFinite(value) && value > 0) : undefined;
-    if (ayah !== undefined) refs.push({ surah, ayah });
-    if (refs.length >= 2) break;
+/** Parse the compact `number=surah:ayah,...` table into per-name references. */
+function buildVerseRefs(): Map<number, NameVerseRef[]> {
+  const map = new Map<number, NameVerseRef[]>();
+  for (const entry of VERSE_REFS_RAW.split('|')) {
+    const sep = entry.indexOf('=');
+    if (sep <= 0) continue;
+    const number = Number.parseInt(entry.slice(0, sep), 10);
+    if (!Number.isFinite(number) || number < 1 || number > 99) continue;
+    const refs: NameVerseRef[] = [];
+    for (const pair of entry.slice(sep + 1).split(',')) {
+      const [surahRaw, ayahRaw] = pair.split(':');
+      const surah = Number.parseInt(surahRaw, 10);
+      const ayah = Number.parseInt(ayahRaw, 10);
+      if (Number.isFinite(surah) && Number.isFinite(ayah) && surah >= 1 && surah <= 114 && ayah > 0) {
+        refs.push({ surah, ayah });
+      }
+      if (refs.length >= 2) break;
+    }
+    if (refs.length > 0) map.set(number, refs);
   }
-  return refs;
+  return map;
 }
 
-/** Map one API record onto the app's Name99 shape, falling back to the static entry per field. */
-function mapEsmaItem(item: EsmaRecord, language: NamesLanguage): Name99 | null {
-  const number = Number(item?.id);
+const VERSE_REFS = buildVerseRefs();
+
+/** Assemble one Name99, attaching the recitation clip and Quran refs for its number. */
+function assembleName(
+  number: number,
+  arabic: string,
+  transliteration: string,
+  meaning: string
+): Name99 {
+  const mapped: Name99 = { number, arabic, transliteration, meaning };
+  const slug = AUDIO_SLUGS[number - 1];
+  if (slug) mapped.audioUrl = `${NAMES_AUDIO_BASE}/audio/${slug}.mp3`;
+  const verses = VERSE_REFS.get(number);
+  if (verses && verses.length > 0) mapped.verses = verses;
+  return mapped;
+}
+
+/** Meaning in the requested language, falling back to English before the bundled list. */
+function islamicMeaning(item: IslamicNameRecord, language: NamesLanguage): string | undefined {
+  const localized =
+    language === 'en'
+      ? nonEmpty(item.en?.meaning)
+      : language === 'es'
+      ? nonEmpty(item.es?.meaning)
+      : nonEmpty(item.i18n?.[language]?.meaning);
+  return localized || nonEmpty(item.en?.meaning);
+}
+
+/** Map one islamic.app record onto the app's Name99 shape. */
+function mapIslamicItem(item: IslamicNameRecord, language: NamesLanguage): Name99 | null {
+  const number = Number(item?.number);
   if (!Number.isFinite(number)) return null;
   const fallback = STATIC_BY_NUMBER.get(number);
   if (!fallback) return null;
 
-  const arabic = nonEmpty(item['ar-enhanced']) || nonEmpty(item.ar) || fallback.arabic;
-  const transliteration =
-    nonEmpty(item.transliteration?.popular?.[language]) ||
-    nonEmpty(item.transliteration?.iso) ||
-    fallback.transliteration;
-  const meaning =
-    nonEmpty(item.explanation?.short?.[language]) ||
-    nonEmpty(item.explanation?.short?.['en']) ||
-    fallback.meaning;
+  const arabic = nonEmpty(item.name) || fallback.arabic;
+  const transliteration = nonEmpty(item.transliteration) || fallback.transliteration;
+  const meaning = islamicMeaning(item, language) || fallback.meaning;
+  return assembleName(number, arabic, transliteration, meaning);
+}
 
-  const localized = nonEmpty(item.name?.[language]);
-  const slug = nonEmpty(item.slug);
-  const audioPath = nonEmpty(item.audio);
-  const verses = mapVerseRefs(item.verse);
+/** Map one UmmahAPI record (English-only) onto the app's Name99 shape. */
+function mapUmmahItem(item: UmmahNameRecord): Name99 | null {
+  const number = Number(item?.number);
+  if (!Number.isFinite(number)) return null;
+  const fallback = STATIC_BY_NUMBER.get(number);
+  if (!fallback) return null;
 
-  const mapped: Name99 = { number, arabic, transliteration, meaning };
-  if (localized && localized !== meaning) mapped.name = localized;
-  if (slug) mapped.slug = slug;
-  if (audioPath) {
-    // Prefer the API's exact audio path (its slug differs from `slug` for a few names,
-    // e.g. 84/85) and tolerate absolute URLs so playback never points at a 404.
-    mapped.audioUrl = /^https?:\/\//i.test(audioPath)
-      ? audioPath
-      : `${NAMES_API_BASE}${audioPath.startsWith('/') ? audioPath : `/${audioPath}`}`;
-  }
-  if (verses.length > 0) mapped.verses = verses;
-  return mapped;
+  const arabic = nonEmpty(item.arabic) || fallback.arabic;
+  const transliteration = nonEmpty(item.transliteration) || fallback.transliteration;
+  const meaning = nonEmpty(item.english) || fallback.meaning;
+  return assembleName(number, arabic, transliteration, meaning);
 }
 
 function isValidCachedName(item: unknown): item is Name99 {
@@ -221,15 +326,52 @@ function isValidCachedName(item: unknown): item is Name99 {
   );
 }
 
-/** Read previously cached names for a language (instant offline render). */
-export async function loadCachedNames(language: NamesLanguage): Promise<Name99[] | null> {
+interface CachedNamesPayload {
+  provider: NamesProvider;
+  names: Name99[];
+}
+
+function cacheKey(language: NamesLanguage): string {
+  return `${CACHE_PREFIX}${language}`;
+}
+
+function isNamesProvider(value: unknown): value is NamesProvider {
+  return (
+    value === 'islamic.app' ||
+    value === 'UmmahAPI' ||
+    value === 'EsmaulHusna.org' ||
+    value === 'Bundled'
+  );
+}
+
+/**
+ * Read previously cached names for a language (instant offline render). New writes use a
+ * `{ provider, names }` envelope so the screen's source label stays accurate; a plain array
+ * is the legacy EsmaulHusna.org format, still accepted and labelled with its real source.
+ */
+export async function loadCachedNames(language: NamesLanguage): Promise<NamesFeedData | null> {
   try {
-    const raw = await AsyncStorage.getItem(`${CACHE_PREFIX}${language}`);
+    const raw = await AsyncStorage.getItem(cacheKey(language));
     if (!raw) return null;
     const parsed: unknown = JSON.parse(raw);
+
     if (Array.isArray(parsed)) {
       const items = parsed.filter(isValidCachedName);
-      if (items.length >= MIN_EXPECTED_NAMES) return items;
+      if (items.length >= MIN_EXPECTED_NAMES) return { names: items, provider: 'EsmaulHusna.org' };
+      return null;
+    }
+
+    if (parsed && typeof parsed === 'object') {
+      const payload = parsed as Partial<CachedNamesPayload>;
+      if (Array.isArray(payload.names)) {
+        const items = payload.names.filter(isValidCachedName);
+        if (items.length >= MIN_EXPECTED_NAMES) {
+          return {
+            names: items,
+            provider: isNamesProvider(payload.provider) ? payload.provider : 'islamic.app',
+          };
+        }
+      }
     }
   } catch {
     // Cache read failed; caller decides the fallback
@@ -252,6 +394,7 @@ async function fetchJsonWithTimeout(url: string): Promise<unknown> {
   }
 }
 
+/** islamic.app wraps the list in `{ code, status, data: [...] }`. */
 function extractList(json: unknown): unknown[] | null {
   if (Array.isArray(json)) return json;
   if (json && typeof json === 'object') {
@@ -261,34 +404,87 @@ function extractList(json: unknown): unknown[] | null {
   return null;
 }
 
-/**
- * Fetch the 99 names for a language from EsmaulHusna.org (keyless), map them to the app
- * shape, and cache them in AsyncStorage. Falls back to the cached list, then to the static
- * English NAMES_99 array when offline (audio/verse fields are then absent).
- */
-export async function fetchNames(language: NamesLanguage): Promise<Name99[]> {
+/** UmmahAPI nests its list in `{ data: { names: [...] } }`. */
+function extractUmmahList(json: unknown): unknown[] | null {
+  if (json && typeof json === 'object') {
+    const data = (json as { data?: unknown }).data;
+    if (data && typeof data === 'object') {
+      const names = (data as { names?: unknown }).names;
+      if (Array.isArray(names)) return names;
+    }
+  }
+  return null;
+}
+
+function sortNames(items: Name99[]): Name99[] {
+  items.sort((a, b) => a.number - b.number);
+  return items;
+}
+
+/** Primary source: islamic.app. A successful payload is cached per language. */
+async function fetchPrimaryNames(language: NamesLanguage): Promise<Name99[] | null> {
   try {
     const json = await fetchJsonWithTimeout(NAMES_API_URL);
     const list = extractList(json);
-    if (!list) throw new Error('Invalid EsmaulHusna response');
+    if (!list) return null;
 
     const items: Name99[] = [];
     for (const entry of list) {
-      const mapped = mapEsmaItem(entry as EsmaRecord, language);
+      const mapped = mapIslamicItem(entry as IslamicNameRecord, language);
       if (mapped) items.push(mapped);
     }
-    if (items.length < MIN_EXPECTED_NAMES) throw new Error('Incomplete EsmaulHusna payload');
-    items.sort((a, b) => a.number - b.number);
+    if (items.length < MIN_EXPECTED_NAMES) return null;
+    sortNames(items);
 
     try {
-      await AsyncStorage.setItem(`${CACHE_PREFIX}${language}`, JSON.stringify(items));
+      const payload: CachedNamesPayload = { provider: 'islamic.app', names: items };
+      await AsyncStorage.setItem(cacheKey(language), JSON.stringify(payload));
     } catch {
       // Non-fatal cache write failure
     }
     return items;
   } catch {
-    const cached = await loadCachedNames(language);
-    if (cached) return cached;
-    return NAMES_99;
+    return null;
   }
+}
+
+/**
+ * Secondary source: UmmahAPI (English-only). Never written to the cache so a temporary
+ * primary outage can't downgrade an already-cached translation to English.
+ */
+async function fetchFallbackNames(): Promise<Name99[] | null> {
+  try {
+    const json = await fetchJsonWithTimeout(NAMES_FALLBACK_API_URL);
+    const list = extractUmmahList(json);
+    if (!list) return null;
+
+    const items: Name99[] = [];
+    for (const entry of list) {
+      const mapped = mapUmmahItem(entry as UmmahNameRecord);
+      if (mapped) items.push(mapped);
+    }
+    if (items.length < MIN_EXPECTED_NAMES) return null;
+    return sortNames(items);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch the 99 names for a language: islamic.app first (keyless, CORS `*`, real
+ * translations for every supported language, cached per language), then UmmahAPI
+ * (English-only, CORS `*`), then the last cached list, and finally the bundled English
+ * NAMES_99 — so the screen always has something to render.
+ */
+export async function fetchNames(language: NamesLanguage): Promise<NamesFeedData> {
+  const primary = await fetchPrimaryNames(language);
+  if (primary) return { names: primary, provider: 'islamic.app' };
+
+  const fallback = await fetchFallbackNames();
+  if (fallback) return { names: fallback, provider: 'UmmahAPI' };
+
+  const cached = await loadCachedNames(language);
+  if (cached) return cached;
+
+  return { names: NAMES_99, provider: 'Bundled' };
 }
