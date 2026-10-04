@@ -88,6 +88,7 @@ function parseHm(hm: string): number {
 }
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
+const REFRESH_CONTROL_COLORS: string[] = ['transparent'];
 
 function checkReducedMotion(cb: (reduced: boolean) => void) {
   if (Platform.OS === 'web') {

@@ -476,7 +476,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    height: '100%',
+    // ponytail: alignSelf stretch, not height:'100%' — height:100% on a child of
+    // a row-flex parent creates a circular layout on Fabric (rail height depends
+    // on row height which depends on rail), collapsing the row content to 0.
+    alignSelf: 'stretch',
   },
   railLineTop: {
     position: 'absolute',
