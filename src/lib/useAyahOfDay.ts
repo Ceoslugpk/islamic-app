@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface AyahOfDay {
   arabic: string;
+  text: string;
   translation: string;
   reference: string;
   surahNumber: number;
@@ -14,6 +15,7 @@ const CACHE_PREFIX = 'ayah-of-the-day-';
 const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   {
     arabic: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ',
+    text: 'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ ۚ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ',
     translation: 'Allah - there is no deity except Him, the Ever-Living, the Sustainer of [all] existence. Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in the heavens and whatever is on the earth.',
     reference: 'Al-Baqarah 2:255',
     surahNumber: 2,
@@ -21,6 +23,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'الَّذِينَ آمَنُوا وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ اللَّهِ ۗ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
+    text: 'الَّذِينَ آمَنُوا وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ اللَّهِ ۗ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
     translation: 'Those who have believed and whose hearts are assured by the remembrance of Allah. Unquestionably, by the remembrance of Allah hearts are assured.',
     reference: 'Ar-Ra\'d 13:28',
     surahNumber: 13,
@@ -28,6 +31,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۝ إِنَّ مَعَ الْعُسْرِ يُسْرًا',
+    text: 'فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۝ إِنَّ مَعَ الْعُسْرِ يُسْرًا',
     translation: 'For indeed, with hardship [will be] ease. Indeed, with hardship [will be] ease.',
     reference: 'Ash-Sharh 94:5-6',
     surahNumber: 94,
@@ -35,6 +39,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ',
+    text: 'فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ',
     translation: 'So remember Me; I will remember you. And be grateful to Me and do not deny Me.',
     reference: 'Al-Baqarah 2:152',
     surahNumber: 2,
@@ -42,6 +47,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'وَلَا تَهِنُوا وَلَا تَحْزَنُوا وَأَنتُمُ الْأَعْلَوْنَ إِن كُنتُم مُّؤْمِنِينَ',
+    text: 'وَلَا تَهِنُوا وَلَا تَحْزَنُوا وَأَنتُمُ الْأَعْلَوْنَ إِن كُنتُم مُّؤْمِنِينَ',
     translation: 'So do not weaken and do not grieve, and you will be superior if you are [true] believers.',
     reference: 'Ali \'Imran 3:139',
     surahNumber: 3,
@@ -49,6 +55,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'وَيَرْزُقْهُ مِنْ حَيْثُ لَا يَحْتَسِبُ ۚ وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ',
+    text: 'وَيَرْزُقْهُ مِنْ حَيْثُ لَا يَحْتَسِبُ ۚ وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ',
     translation: 'And will provide for him from where he does not expect. And whoever relies upon Allah - then He is sufficient for him.',
     reference: 'At-Talaq 65:3',
     surahNumber: 65,
@@ -56,6 +63,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ ۖ أُجِيبُ دَعْوَةَ الدَّاعِ إِذَا دَعَانِ',
+    text: 'وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ ۖ أُجِيبُ دَعْوَةَ الدَّاعِ إِذَا دَعَانِ',
     translation: 'And when My servants ask you concerning Me, indeed I am near. I respond to the invocation of the supplicant when he calls upon Me.',
     reference: 'Al-Baqarah 2:186',
     surahNumber: 2,
@@ -63,6 +71,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ',
+    text: 'فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ',
     translation: 'So which of the favors of your Lord would you deny?',
     reference: 'Ar-Rahman 55:13',
     surahNumber: 55,
@@ -70,6 +79,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ',
+    text: 'وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ',
     translation: 'And your Lord is going to give you, and you will be satisfied.',
     reference: 'Ad-Duhaa 93:5',
     surahNumber: 93,
@@ -77,6 +87,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
   },
   {
     arabic: 'لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ ۖ وَلَئِن كَفَرْتُمْ إِنَّ عَذَابِي لَشَدِيدٌ',
+    text: 'لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ ۖ وَلَئِن كَفَرْتُمْ إِنَّ عَذَابِي لَشَدِيدٌ',
     translation: 'If you are grateful, I will surely increase you [in favor]; but if you deny, indeed, My punishment is severe.',
     reference: 'Ibrahim 14:7',
     surahNumber: 14,
@@ -116,9 +127,17 @@ export function useAyahOfDay() {
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) {
-        const parsed = JSON.parse(cached) as AyahOfDay;
-        if (parsed.arabic && parsed.translation) {
-          setAyah(parsed);
+        const parsed = JSON.parse(cached) as Partial<AyahOfDay>;
+        const arabicText = parsed.arabic || parsed.text || '';
+        if (arabicText && parsed.translation) {
+          setAyah({
+            arabic: arabicText,
+            text: arabicText,
+            translation: parsed.translation,
+            reference: parsed.reference || '',
+            surahNumber: parsed.surahNumber || 1,
+            ayahNumber: parsed.ayahNumber || 1,
+          });
           setLoading(false);
           return;
         }
@@ -156,17 +175,20 @@ export function useAyahOfDay() {
         const surahNumber = uthmani.surah?.number || 1;
         const ayahNumber = uthmani.numberInSurah || 1;
 
-        const resolvedAyah: AyahOfDay = {
-          arabic: cleanArabic,
-          translation: cleanTranslation,
-          reference: `${surahName} ${surahNumber}:${ayahNumber}`,
-          surahNumber,
-          ayahNumber,
-        };
+        if (cleanArabic && cleanTranslation) {
+          const resolvedAyah: AyahOfDay = {
+            arabic: cleanArabic,
+            text: cleanArabic,
+            translation: cleanTranslation,
+            reference: `${surahName} ${surahNumber}:${ayahNumber}`,
+            surahNumber,
+            ayahNumber,
+          };
 
-        setAyah(resolvedAyah);
-        await AsyncStorage.setItem(cacheKey, JSON.stringify(resolvedAyah)).catch(() => {});
-        return;
+          setAyah(resolvedAyah);
+          await AsyncStorage.setItem(cacheKey, JSON.stringify(resolvedAyah)).catch(() => {});
+          return;
+        }
       }
 
       throw new Error('Malformed API payload');

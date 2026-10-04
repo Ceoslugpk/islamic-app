@@ -258,14 +258,14 @@ export function PrayerTimeline({
 
   // Compute 5 Salah completed count
   const salahKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
-  const completedCount = salahKeys.filter((k) => !!completed[k]).length;
+  const completedCount = salahKeys.filter((k) => !!completed?.[k]).length;
 
   return (
     <Card style={styles.timelineCard} padded={false}>
       <View style={styles.rowsContainer}>
         {PRAYER_LIST.map((item, index) => {
-          const time = timings[item.key] || '--:--';
-          const isDone = item.isSalah ? !!completed[item.key] : false;
+          const time = timings?.[item.key] || '--:--';
+          const isDone = item.isSalah ? !!completed?.[item.key] : false;
           const isCurrent = currentPrayerSegment === item.key;
           const isFirst = index === 0;
           const isLast = index === PRAYER_LIST.length - 1;
@@ -426,8 +426,8 @@ export function PrayerTimeline({
                 style={[
                   styles.miniDot,
                   {
-                    backgroundColor: completed[k] ? colors.accent : 'transparent',
-                    borderColor: completed[k] ? colors.accent : colors.borderStrong,
+                    backgroundColor: completed?.[k] ? colors.accent : 'transparent',
+                    borderColor: completed?.[k] ? colors.accent : colors.borderStrong,
                   },
                 ]}
               />

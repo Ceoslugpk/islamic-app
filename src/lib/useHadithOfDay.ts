@@ -27,13 +27,21 @@ function getFallbackHadith(): Hadith {
 }
 
 function normalizeApiResponse(data: ApiHadithResponse['data']): Hadith {
-  const source = `${data.collection.charAt(0).toUpperCase() + data.collection.slice(1)} ${data.bookNumber}:${data.hadithNumber}`;
+  const collectionName = data?.collection
+    ? data.collection.charAt(0).toUpperCase() + data.collection.slice(1)
+    : 'Hadith';
+  const bookNumber = data?.bookNumber || '1';
+  const hadithNumber = data?.hadithNumber || '1';
+  const source = `${collectionName} ${bookNumber}:${hadithNumber}`;
+  const ar = data?.ar?.text?.replace(/<[^>]*>/g, '').trim() || '';
+  const en = data?.en?.text?.replace(/<[^>]*>/g, '').trim() || '';
   return {
     id: Date.now(),
-    arabic: data.ar?.text?.replace(/<[^>]*>/g, '').trim() || '',
+    arabic: ar,
     transliteration: '',
-    translation: data.en?.text?.replace(/<[^>]*>/g, '').trim() || '',
+    translation: en,
     source,
+    reference: source,
   };
 }
 
@@ -52,10 +60,20 @@ export function useHadithOfDay() {
 
       if (cached) {
         try {
-          const parsed = JSON.parse(cached) as Hadith;
-          setHadith(parsed);
-          setLoading(false);
-          return;
+          const parsed = JSON.parse(cached) as Partial<Hadith>;
+          if (parsed && parsed.arabic && parsed.translation) {
+            const src = parsed.source || parsed.reference || 'Hadith';
+            setHadith({
+              id: parsed.id ?? Date.now(),
+              arabic: parsed.arabic,
+              transliteration: parsed.transliteration || '',
+              translation: parsed.translation,
+              source: src,
+              reference: parsed.reference || src,
+            });
+            setLoading(false);
+            return;
+          }
         } catch {
           // Invalid cache, continue to fetch
         }
@@ -83,7 +101,7 @@ export function useHadithOfDay() {
 
         if (json.code === 200 && json.data) {
           const normalized = normalizeApiResponse(json.data);
-          if (normalized.arabic || normalized.translation) {
+          if (normalized.arabic && normalized.translation) {
             setHadith(normalized);
             await AsyncStorage.setItem(cacheKey, JSON.stringify(normalized)).catch(() => {});
             setLoading(false);
@@ -130,7 +148,7 @@ export function useHadithOfDay() {
 
       if (json.code === 200 && json.data) {
         const normalized = normalizeApiResponse(json.data);
-        if (normalized.arabic || normalized.translation) {
+        if (normalized.arabic && normalized.translation) {
           setHadith(normalized);
           const cacheKey = CACHE_PREFIX + getTodayKey();
           await AsyncStorage.setItem(cacheKey, JSON.stringify(normalized)).catch(() => {});

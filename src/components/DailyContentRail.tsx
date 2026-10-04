@@ -235,7 +235,7 @@ export function DailyContentRail({
                           numberOfLines={3}
                           style={styles.arabicText}
                         >
-                          {ayah.arabic}
+                          {ayah.arabic || ayah.text}
                         </ArabicText>
                         <Text
                           style={[styles.translationText, { color: colors.textSecondary }]}
@@ -302,7 +302,7 @@ export function DailyContentRail({
                         </Text>
                         <View style={styles.footerRow}>
                           <Text style={[styles.referenceText, { color: colors.textMuted }]}>
-                            {hadith.source}
+                            {hadith.reference || hadith.source}
                           </Text>
                         </View>
                       </>
@@ -428,6 +428,7 @@ const styles = StyleSheet.create({
     padding: 18,
     minHeight: 180,
     justifyContent: 'space-between',
+    zIndex: 1,
   },
   cardHeader: {
     flexDirection: 'row',

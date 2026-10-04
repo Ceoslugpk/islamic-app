@@ -1266,6 +1266,7 @@ const styles = StyleSheet.create({
   },
   duaAfterPrayerContent: {
     gap: 8,
+    zIndex: 1,
   },
   duaAfterPrayerArabic: {
     lineHeight: 36,

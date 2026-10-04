@@ -592,6 +592,11 @@ export function IslamicPullToRefreshIndicator({
 
 const styles = StyleSheet.create({
   wrap: {
+    // ponytail: absolute + zIndex:-1 — an absolute full-card wrapper with no
+    // zIndex paints ABOVE later in-flow siblings inside overflow:hidden cards,
+    // visually hiding the card content (reproduced: container visible, content
+    // missing). zIndex:-1 forces the decoration behind the content without
+    // taking layout space. Content wrappers get zIndex:1 (see callers).
     position: 'absolute',
     top: 0,
     left: 0,
@@ -600,6 +605,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    zIndex: -1,
   },
   layer: {
     position: 'absolute',

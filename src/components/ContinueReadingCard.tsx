@@ -116,11 +116,9 @@ export function ContinueReadingCard({
                 {eyebrowText}
               </Text>
             </View>
-            {surahMeta?.name && (
-              <ArabicText size={20} style={[styles.arabicName, { color: colors.textSecondary }]}>
-                {surahMeta.name}
-              </ArabicText>
-            )}
+            <ArabicText size={20} style={[styles.arabicName, { color: colors.textSecondary }]}>
+              {surahMeta?.name || 'الفَاتِحة'}
+            </ArabicText>
           </View>
 
           {/* Main Title Row: Surah Name + Arrow Chevron */}
