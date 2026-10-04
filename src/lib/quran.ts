@@ -259,7 +259,7 @@ export async function fetchSurahMultiEditions(
   for (const batch of batches) {
     if (batchIndex > 0) {
       // Brief polite delay between multi-edition batches
-      await new Promise((resolve) => setTimeout(resolve, 60));
+      await new Promise((resolve) => setTimeout(resolve, 20));
     }
     batchIndex++;
 

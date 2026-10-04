@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -44,6 +45,7 @@ import { ArabicText } from '../components/ArabicText';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity } from '../lib/useConnectivity';
+import { useQuranPreload } from '../lib/quranPreloader';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import {
   CountdownCardSkeleton,
@@ -149,6 +151,7 @@ export default function HomeScreen({
   const { location: gpsLocation, status: locStatus, request: requestLocation, loading: locLoading } = useLocation(true);
   const { refreshKey } = useConnectivity();
   const { width } = useWindowDimensions();
+  const { progress: preloadProgress } = useQuranPreload();
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -607,6 +610,29 @@ export default function HomeScreen({
           />
         </Animated.View>
 
+        {/* Quran preload progress banner — visible so it never looks stuck */}
+        {preloadProgress.isRunning && !preloadProgress.isComplete && (
+          <View style={[styles.preloadBanner, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <View style={styles.preloadBannerLeft}>
+              <ActivityIndicator size="small" color={colors.accent} />
+              <Text style={[styles.preloadBannerText, { color: colors.textSecondary }]}>
+                Preloading Quran translations… {preloadProgress.cached}/114
+              </Text>
+            </View>
+            <View style={[styles.preloadBannerTrack, { backgroundColor: colors.borderSubtle }]}>
+              <View
+                style={[
+                  styles.preloadBannerFill,
+                  {
+                    backgroundColor: colors.accent,
+                    width: `${Math.min(100, Math.round((preloadProgress.cached / 114) * 100))}%`,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+        )}
+
         {/* Location Permission Note if auto mode enabled but permission denied/unavailable */}
         {settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'unavailable') && (
           <LocationPermissionNote
@@ -964,6 +990,39 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 14 },
   content: { padding: 24, gap: 24 },
   patternTop: { top: -40, right: -60 },
+  preloadBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginBottom: 16,
+  },
+  preloadBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 1,
+  },
+  preloadBannerText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    flexShrink: 1,
+  },
+  preloadBannerTrack: {
+    width: 60,
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  preloadBannerFill: {
+    height: 4,
+    borderRadius: 2,
+  },
   sectionHeader: { marginBottom: 20 },
   prayerHeroCard: {
     marginBottom: 20,
