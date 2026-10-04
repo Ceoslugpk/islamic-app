@@ -300,14 +300,9 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
         </Text>
       ) : null}
 
-      {/* Count + translation source */}
+      {/* Count */}
       <View style={styles.countRow}>
         <Text style={[styles.countText, { color: colors.textSecondary }]}>{countLabel}</Text>
-        {!isProphet && loadState !== 'offline' ? (
-          <Text style={[styles.sourceText, { color: colors.textMuted }]}>
-            {`Translations · ${activeFeed ? activeFeed.provider : 'islamic.app'}`}
-          </Text>
-        ) : null}
       </View>
 
       {isLoading && (

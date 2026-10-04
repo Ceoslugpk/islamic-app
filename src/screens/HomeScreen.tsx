@@ -816,11 +816,6 @@ export default function HomeScreen({
             )}
           </View>
         </Card>
-
-        {/* Method + location note */}
-        <Text style={[styles.methodNote, { color: colors.textMuted }]}>
-          {data.method} · {data.timezone}
-        </Text>
       </Animated.ScrollView>
     </View>
   );

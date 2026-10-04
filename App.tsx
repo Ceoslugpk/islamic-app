@@ -161,17 +161,18 @@ function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) =>
 
 /** Top app header: brand + settings gear. */
 function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   return (
     <View style={[styles.appHeader, { borderBottomColor: colors.borderSubtle }]}>
       <Image
-        source={require('./assets/logo-small-ivory.png')}
+        source={
+          mode === 'paper'
+            ? require('./assets/logo-small-black.png')
+            : require('./assets/logo-small-ivory.png')
+        }
         style={styles.headerLogo}
         resizeMode="contain"
       />
-      <Text style={[styles.headerBrand, { color: colors.textPrimary }]}>
-        Islamic
-      </Text>
       <TouchableOpacity
         onPress={onOpenSettings}
         accessibilityRole="button"

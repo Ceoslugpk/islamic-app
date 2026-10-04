@@ -59,11 +59,13 @@ import { WomenPinModal } from '../components/WomenPinModal';
 const ABOUT_ROWS: { title: string; subtitle: string }[] = [
   { title: 'Islamic · v1.0.0', subtitle: 'Version 1.0.0' },
   { title: 'Prayer times', subtitle: 'AlAdhan + islamic.app' },
+  { title: 'Hijri calendar', subtitle: 'AlAdhan (Umm al-Qura)' },
   { title: 'Quran text', subtitle: 'AlQuran Cloud' },
-  { title: 'Quran audio', subtitle: 'islamic.network CDN' },
+  { title: 'Quran audio', subtitle: 'islamic.network CDN + EveryAyah' },
   { title: 'Hadith', subtitle: 'islamic.app Hadith API' },
-  { title: '99 Names', subtitle: 'EsmaulHusna.org' },
+  { title: '99 Names', subtitle: 'islamic.app + EsmaulHusna.org' },
   { title: 'Qibla', subtitle: 'Great-circle calculation' },
+  { title: 'Mosques', subtitle: 'OpenStreetMap Nominatim' },
 ];
 
 const QURAN_FONT_OPTIONS: { key: QuranArabicFont; label: string; desc: string }[] = [

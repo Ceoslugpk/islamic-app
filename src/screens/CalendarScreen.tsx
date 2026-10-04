@@ -360,7 +360,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
             </View>
 
             <Text style={[styles.legend, { color: colors.textMuted }]}>
-              {data.source === 'api' ? 'Umm al-Qura calendar' : 'Offline approximate calendar'} · Hijri day shown under each date
+              Hijri day shown under each date
               {'\n'}Amber = Today · Orange text = Friday · Amber dot + icon = Islamic event
             </Text>
 
