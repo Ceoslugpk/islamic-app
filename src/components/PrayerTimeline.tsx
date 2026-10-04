@@ -43,24 +43,45 @@ function TimelineDot({
   const popAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(0.4)).current;
   const prevCompleted = useRef(isCompleted);
+  const [popStep, setPopStep] = useState<'idle' | 'circle' | 'filled' | 'checked'>('idle');
 
-  // Completion pop animation
+  // Completion 3-step spring pop sequence: ○ → ◉ → ✓
   useEffect(() => {
+    let t1: any;
+    let t2: any;
     if (!prevCompleted.current && isCompleted && !reducedMotion) {
+      setPopStep('circle');
       Animated.sequence([
         Animated.timing(popAnim, {
-          toValue: 1.35,
-          duration: 150,
+          toValue: 0.85,
+          duration: 70,
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
-        Animated.timing(popAnim, {
+        Animated.spring(popAnim, {
+          toValue: 1.35,
+          friction: 5,
+          tension: 180,
+          useNativeDriver: USE_NATIVE_DRIVER,
+        }),
+        Animated.spring(popAnim, {
           toValue: 1,
-          duration: 150,
+          friction: 6,
+          tension: 130,
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]).start();
+
+      t1 = setTimeout(() => setPopStep('filled'), 70);
+      t2 = setTimeout(() => setPopStep('checked'), 200);
+    } else if (!isCompleted) {
+      setPopStep('idle');
+      popAnim.setValue(1);
     }
     prevCompleted.current = isCompleted;
+    return () => {
+      if (t1) clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+    };
   }, [isCompleted, popAnim, reducedMotion]);
 
   // Current prayer glowing/pulsing ring loop
@@ -116,13 +137,45 @@ function TimelineDot({
         <Animated.View
           style={[
             styles.completedDot,
-            {
-              backgroundColor: colors.accent,
-              transform: [{ scale: popAnim }],
-            },
+            popStep === 'circle'
+              ? {
+                  backgroundColor: colors.bgSurface,
+                  borderColor: colors.accent,
+                  borderWidth: 2,
+                  transform: [{ scale: popAnim }],
+                }
+              : popStep === 'filled'
+              ? {
+                  backgroundColor: colors.accent,
+                  transform: [{ scale: popAnim }],
+                }
+              : {
+                  backgroundColor: colors.accent,
+                  transform: [{ scale: popAnim }],
+                },
           ]}
         >
-          <Ionicons name="checkmark" size={11} color="#121110" />
+          {popStep === 'circle' ? (
+            <View
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: 'transparent',
+              }}
+            />
+          ) : popStep === 'filled' ? (
+            <View
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: 3.5,
+                backgroundColor: '#121110',
+              }}
+            />
+          ) : (
+            <Ionicons name="checkmark" size={11} color="#121110" />
+          )}
         </Animated.View>
       </View>
     );

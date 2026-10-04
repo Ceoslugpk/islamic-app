@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Clipboard,
   FlatList,
   Modal,
+  Platform,
   RefreshControl,
   ScrollView,
   Share,
@@ -70,6 +72,63 @@ const VIEWABILITY_CONFIG: ViewabilityConfig = {
   itemVisiblePercentThreshold: 1,
   minimumViewTime: 500,
 };
+
+interface AyahBookmarkButtonProps {
+  isBookmarked: boolean;
+  onPress: () => void;
+  accentColor: string;
+  inactiveColor: string;
+  ayahNumber: number;
+}
+
+function AyahBookmarkButton({
+  isBookmarked,
+  onPress,
+  accentColor,
+  inactiveColor,
+  ayahNumber,
+}: AyahBookmarkButtonProps) {
+  const bounceAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.timing(bounceAnim, {
+        toValue: 1.35,
+        duration: 110,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+      Animated.spring(bounceAnim, {
+        toValue: 1,
+        friction: 4,
+        tension: 160,
+        useNativeDriver: Platform.OS !== 'web',
+      }),
+    ]).start();
+    onPress();
+  };
+
+  return (
+    <TouchableOpacity
+      onPress={handlePress}
+      style={{
+        padding: 6,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={`Bookmark Ayah ${ayahNumber}`}
+    >
+      <Animated.View style={{ transform: [{ scale: bounceAnim }] }}>
+        <Ionicons
+          name={isBookmarked ? 'heart' : 'heart-outline'}
+          size={19}
+          color={isBookmarked ? accentColor : inactiveColor}
+        />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
 
 export default function QuranReaderScreen({
   surahNumber,
@@ -600,19 +659,14 @@ export default function QuranReaderScreen({
               />
             </TouchableOpacity>
 
-            {/* Bookmark */}
-            <TouchableOpacity
+            {/* Bookmark with heart icon and scale bounce micro-interaction */}
+            <AyahBookmarkButton
+              isBookmarked={isBookmarked}
               onPress={() => handleToggleBookmark(item)}
-              style={styles.actionBtn}
-              accessibilityRole="button"
-              accessibilityLabel={`Bookmark Ayah ${item.numberInSurah}`}
-            >
-              <Ionicons
-                name={isBookmarked ? 'bookmark' : 'bookmark-outline'}
-                size={19}
-                color={isBookmarked ? colors.accent : colors.textSecondary}
-              />
-            </TouchableOpacity>
+              accentColor={colors.accent}
+              inactiveColor={colors.textSecondary}
+              ayahNumber={item.numberInSurah}
+            />
 
             {/* Share */}
             <TouchableOpacity

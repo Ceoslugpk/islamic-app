@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -34,11 +34,9 @@ import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { SectionHeader } from '../components/SectionHeader';
 import { GeometricPattern } from '../components/GeometricPattern';
-import { AnimatedPattern } from '../components/AnimatedPattern';
+import { AnimatedPattern, IslamicPullToRefreshIndicator } from '../components/AnimatedPattern';
 import { ArabicText } from '../components/ArabicText';
-import { HadithCard } from '../components/HadithCard';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
-import { AyahCard } from '../components/AyahCard';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity } from '../lib/useConnectivity';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
@@ -53,6 +51,9 @@ import {
 } from '../components/PrayerHeroAtmosphere';
 import { PrayerCountdown } from '../components/PrayerCountdown';
 import { PrayerTimeline } from '../components/PrayerTimeline';
+import { ContinueReadingCard } from '../components/ContinueReadingCard';
+import { DailyContentRail } from '../components/DailyContentRail';
+import { QuickActionsStrip } from '../components/QuickActionsStrip';
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -79,14 +80,49 @@ function parseHm(hm: string): number {
 
 export interface HomeScreenProps {
   onOpenNames?: () => void;
+  onOpenQuran?: (surah?: number, ayah?: number) => void;
+  onOpenReader?: (surah: number, ayah: number) => void;
+  onOpenQuranTab?: () => void;
+  onOpenHadith?: () => void;
+  onOpenQibla?: () => void;
+  onOpenDuas?: () => void;
+  onOpenAdhkar?: () => void;
+  onOpenTasbih?: () => void;
 }
 
 export default function HomeScreen({
   onOpenNames,
+  onOpenQuran,
+  onOpenReader,
+  onOpenQuranTab,
+  onOpenHadith,
+  onOpenQibla,
+  onOpenDuas,
+  onOpenAdhkar,
+  onOpenTasbih,
 }: HomeScreenProps) {
   const { colors } = useTheme();
   const { settings } = useSettings();
   const { haptic } = useHaptics();
+
+  const handleOpenReader = useCallback(
+    (surah: number, ayah?: number) => {
+      if (onOpenReader) {
+        onOpenReader(surah, ayah ?? 1);
+      } else if (onOpenQuran) {
+        onOpenQuran(surah, ayah);
+      }
+    },
+    [onOpenReader, onOpenQuran]
+  );
+
+  const handleOpenQuranTab = useCallback(() => {
+    if (onOpenQuranTab) {
+      onOpenQuranTab();
+    } else if (onOpenQuran) {
+      onOpenQuran();
+    }
+  }, [onOpenQuranTab, onOpenQuran]);
   const { location: gpsLocation, status: locStatus, request: requestLocation, loading: locLoading } = useLocation(true);
   const { refreshKey } = useConnectivity();
   const { width } = useWindowDimensions();
@@ -356,11 +392,14 @@ export default function HomeScreen({
               }
               await load(false, true);
             }}
-            tintColor={colors.accent}
+            tintColor="transparent"
+            colors={['transparent']}
+            progressBackgroundColor="transparent"
           />
         }
       >
         <GeometricPattern size={260} opacity={0.04} style={styles.patternTop} />
+        <IslamicPullToRefreshIndicator refreshing={refreshing} />
 
         {/* Section Header: Eyebrow Today + Greeting */}
         <SectionHeader
@@ -512,52 +551,34 @@ export default function HomeScreen({
 
 
 
-        {/* 5. Ayah of the Day */}
-        {ayah && (
-          <View style={styles.cardWithPattern}>
-            <AyahCard ayah={ayah} onRefresh={refreshAyah} loading={ayahLoading} />
-            <AnimatedPattern variant="bloom" size={isCompact ? 280 : 340} />
-          </View>
-        )}
+        {/* 4. Quick Actions Control Strip */}
+        <QuickActionsStrip
+          onOpenQibla={onOpenQibla}
+          onOpenDuas={onOpenDuas}
+          onOpenAdhkar={onOpenAdhkar}
+          onOpenTasbih={onOpenTasbih}
+        />
 
-        {/* 6. Hadith of the Day */}
-        {hadith && (
-          <View style={styles.cardWithPattern}>
-            <HadithCard hadith={hadith} onRefresh={refreshHadith} loading={hadithLoading} />
-            <AnimatedPattern variant="rings" size={isCompact ? 260 : 320} />
-          </View>
-        )}
+        {/* 5. One "Continue Reading" Primary Action Surface */}
+        <ContinueReadingCard
+          onOpenReader={handleOpenReader}
+          onOpenQuranTab={handleOpenQuranTab}
+          style={{ marginBottom: 20 }}
+        />
 
-        {/* 7. 99 Names of Allah (Name of the Day) */}
-        <Card style={styles.cardSection}>
-          <AnimatedPattern variant="star-small" size={isCompact ? 220 : 280} />
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>
-              Name of the Day · #{nameOfDay.number}
-            </Text>
-            {onOpenNames && (
-              <TouchableOpacity onPress={onOpenNames} style={styles.headerActionBtn}>
-                <Text style={[styles.headerActionText, { color: colors.accent }]}>
-                  All 99 →
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <Hairline style={styles.cardDivider} />
-          <View style={styles.nameRow}>
-            <View style={styles.nameLeft}>
-              <Text style={[styles.nameTranslit, { color: colors.textPrimary }]}>
-                {nameOfDay.transliteration}
-              </Text>
-              <Text style={[styles.nameMeaning, { color: colors.textSecondary }]}>
-                {nameOfDay.meaning}
-              </Text>
-            </View>
-            <ArabicText size={32} bold align="right">
-              {nameOfDay.arabic}
-            </ArabicText>
-          </View>
-        </Card>
+        {/* 6. Daily Content Rail (Ayah / Hadith / 99 Names horizontal swipe discovery rail) */}
+        <DailyContentRail
+          ayah={ayah}
+          hadith={hadith}
+          nameOfDay={nameOfDay}
+          ayahLoading={ayahLoading}
+          hadithLoading={hadithLoading}
+          onRefreshAyah={refreshAyah}
+          onRefreshHadith={refreshHadith}
+          onOpenAyah={handleOpenReader}
+          onOpenHadith={onOpenHadith}
+          onOpenNames={onOpenNames}
+        />
 
         {/* Method + location note */}
         <Text style={[styles.methodNote, { color: colors.textMuted }]}>

@@ -1,8 +1,10 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Animated,
   PanResponder,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -20,6 +22,119 @@ interface AudioMiniPlayerProps {
   onStop: () => void;
   onOpenAudio?: () => void;
   onSeek: (positionMillis: number) => void;
+}
+
+const USE_NATIVE_DRIVER = Platform.OS !== 'web';
+
+function EqualizerBars({ color, isPlaying }: { color: string; isPlaying: boolean }) {
+  const anim1 = useRef(new Animated.Value(0.4)).current;
+  const anim2 = useRef(new Animated.Value(0.85)).current;
+  const anim3 = useRef(new Animated.Value(0.5)).current;
+
+  useEffect(() => {
+    if (!isPlaying) {
+      anim1.setValue(0.4);
+      anim2.setValue(0.85);
+      anim3.setValue(0.5);
+      return;
+    }
+
+    let isCancelled = false;
+    let loop1: Animated.CompositeAnimation | null = null;
+    let loop2: Animated.CompositeAnimation | null = null;
+    let loop3: Animated.CompositeAnimation | null = null;
+
+    const startBars = () => {
+      if (isCancelled) return;
+      loop1 = Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim1, { toValue: 1.0, duration: 320, useNativeDriver: USE_NATIVE_DRIVER }),
+          Animated.timing(anim1, { toValue: 0.3, duration: 380, useNativeDriver: USE_NATIVE_DRIVER }),
+        ])
+      );
+      loop2 = Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim2, { toValue: 0.25, duration: 270, useNativeDriver: USE_NATIVE_DRIVER }),
+          Animated.timing(anim2, { toValue: 1.0, duration: 340, useNativeDriver: USE_NATIVE_DRIVER }),
+        ])
+      );
+      loop3 = Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim3, { toValue: 0.95, duration: 360, useNativeDriver: USE_NATIVE_DRIVER }),
+          Animated.timing(anim3, { toValue: 0.35, duration: 290, useNativeDriver: USE_NATIVE_DRIVER }),
+        ])
+      );
+      loop1.start();
+      loop2.start();
+      loop3.start();
+    };
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+          anim1.setValue(0.7);
+          anim2.setValue(0.9);
+          anim3.setValue(0.6);
+          return;
+        }
+      }
+      startBars();
+    } else {
+      AccessibilityInfo.isReduceMotionEnabled()
+        .then((reduced) => {
+          if (reduced) {
+            anim1.setValue(0.7);
+            anim2.setValue(0.9);
+            anim3.setValue(0.6);
+          } else {
+            startBars();
+          }
+        })
+        .catch(() => startBars());
+    }
+
+    return () => {
+      isCancelled = true;
+      if (loop1) loop1.stop();
+      if (loop2) loop2.stop();
+      if (loop3) loop3.stop();
+    };
+  }, [isPlaying, anim1, anim2, anim3]);
+
+  return (
+    <View style={styles.equalizerContainer}>
+      <Animated.View
+        style={[
+          styles.equalizerBar,
+          {
+            backgroundColor: color,
+            transform: [{ scaleY: anim1 }],
+            opacity: anim1.interpolate({ inputRange: [0.3, 1], outputRange: [0.75, 1] }),
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.equalizerBar,
+          {
+            backgroundColor: color,
+            transform: [{ scaleY: anim2 }],
+            opacity: anim2.interpolate({ inputRange: [0.25, 1], outputRange: [0.75, 1] }),
+          },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.equalizerBar,
+          {
+            backgroundColor: color,
+            transform: [{ scaleY: anim3 }],
+            opacity: anim3.interpolate({ inputRange: [0.35, 1], outputRange: [0.75, 1] }),
+          },
+        ]}
+      />
+    </View>
+  );
 }
 
 export function AudioMiniPlayer({
@@ -196,11 +311,13 @@ export function AudioMiniPlayer({
         >
           {status.isBuffering ? (
             <ActivityIndicator size="small" color="#121110" />
+          ) : status.isPlaying ? (
+            <EqualizerBars color={colors.accent} isPlaying={status.isPlaying} />
           ) : (
             <Ionicons
-              name={status.isPlaying ? 'pause' : 'play'}
+              name="play"
               size={18}
-              color={status.isPlaying ? colors.accent : '#121110'}
+              color="#121110"
             />
           )}
         </TouchableOpacity>
@@ -312,5 +429,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  equalizerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2.5,
+    width: 18,
+    height: 18,
+  },
+  equalizerBar: {
+    width: 2.8,
+    height: 14,
+    borderRadius: 1.5,
   },
 });

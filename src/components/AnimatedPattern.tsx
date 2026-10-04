@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../lib/theme';
 
-type Variant = 'star' | 'rings' | 'arch' | 'bloom' | 'star-small';
+type Variant = 'star' | 'rings' | 'arch' | 'bloom' | 'star-small' | 'loading-star';
 
 interface AnimatedPatternProps {
   variant?: Variant;
@@ -547,12 +547,167 @@ export function AnimatedPattern({
         />,
       ],
     },
+    'loading-star': {
+      layers: [
+        <StarLayer
+          key="star-loading"
+          size={size * 2}
+          color={colors.accent}
+          opacity={0.8}
+          rotationSpeed={2400}
+        />,
+      ],
+    },
   };
 
   return (
     <View style={[styles.wrap, style]} pointerEvents="none">
       {config[variant].layers}
     </View>
+  );
+}
+
+/**
+ * A tiny rotating 8-point geometric Islamic star for pull-to-refresh & subtle loading states.
+ */
+export function GeometricLoadingStar({
+  size = 28,
+  color,
+  style,
+}: {
+  size?: number;
+  color?: string;
+  style?: ViewStyle;
+}) {
+  const { colors } = useTheme();
+  const starColor = color || colors.accent;
+  const rotation = useMemo(() => new Animated.Value(0), []);
+
+  useEffect(() => {
+    return startLoopIfMotionAllowed(
+      () =>
+        Animated.timing(rotation, {
+          toValue: 1,
+          duration: 2200,
+          useNativeDriver: USE_NATIVE_DRIVER,
+        }),
+      () => rotation.setValue(0)
+    );
+  }, [rotation]);
+
+  const rotate = rotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const starSize = size;
+  const squareSize = starSize * 0.68;
+
+  return (
+    <View
+      style={[
+        {
+          width: starSize,
+          height: starSize,
+          alignItems: 'center',
+          justifyContent: 'center',
+        },
+        style,
+      ]}
+      accessibilityRole="progressbar"
+      accessibilityLabel="Loading..."
+    >
+      <Animated.View
+        style={{
+          width: starSize,
+          height: starSize,
+          alignItems: 'center',
+          justifyContent: 'center',
+          transform: [{ rotate }],
+        }}
+      >
+        <View
+          style={[
+            styles.square,
+            {
+              width: squareSize,
+              height: squareSize,
+              borderColor: starColor,
+              borderWidth: 1.5,
+              borderRadius: 2,
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.square,
+            styles.rotated,
+            {
+              width: squareSize,
+              height: squareSize,
+              borderColor: starColor,
+              borderWidth: 1.5,
+              borderRadius: 2,
+            },
+          ]}
+        />
+        <View
+          style={[
+            styles.square,
+            {
+              width: squareSize * 0.4,
+              height: squareSize * 0.4,
+              borderColor: starColor,
+              backgroundColor: starColor,
+              borderWidth: 1,
+              borderRadius: 1,
+              opacity: 0.9,
+            },
+          ]}
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+export const IslamicLoadingMark = GeometricLoadingStar;
+
+export function IslamicPullToRefreshIndicator({
+  refreshing,
+  style,
+}: {
+  refreshing: boolean;
+  style?: ViewStyle;
+}) {
+  const { colors } = useTheme();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: refreshing ? 1 : 0,
+      duration: 180,
+      useNativeDriver: USE_NATIVE_DRIVER,
+    }).start();
+  }, [refreshing, fadeAnim]);
+
+  if (!refreshing) return null;
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingVertical: 8,
+          opacity: fadeAnim,
+        },
+        style,
+      ]}
+      pointerEvents="none"
+    >
+      <GeometricLoadingStar size={24} color={colors.accent} />
+    </Animated.View>
   );
 }
 
