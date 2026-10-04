@@ -192,6 +192,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
         )}
 
         <SectionHeader
+          compact
           eyebrow="Directory"
           title="Cities"
           subtitle="Choose from 68 world cities to set your manual location"
@@ -250,32 +251,32 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingTop: 10,
+    paddingBottom: 4,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 44,
-    marginBottom: 8,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 6,
   },
   searchIcon: {
     marginRight: 8,

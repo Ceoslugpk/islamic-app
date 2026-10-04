@@ -285,7 +285,7 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
           </TouchableOpacity>
         )}
 
-        <SectionHeader eyebrow="Khatmah" title="Reading Plans" />
+        <SectionHeader compact eyebrow="Khatmah" title="Reading Plans" />
 
       <Text style={[styles.introText, { color: colors.textSecondary }]}>
         Choose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   content: {
-    paddingVertical: 20,
+    paddingVertical: 10,
     paddingBottom: 40,
   },
   contentWrap: {
@@ -382,21 +382,21 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   introText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    lineHeight: 20,
-    marginBottom: 20,
+    fontSize: 12.5,
+    lineHeight: 18,
+    marginBottom: 12,
   },
   planCards: {
     gap: 16,

@@ -319,6 +319,7 @@ export default function HajjJourneyScreen({
       )}
 
       <SectionHeader
+        compact
         eyebrow="Hajj & Umrah"
         title="Hajj Journey"
         subtitle="The day-by-day pilgrimage chronicle: from Yawm al-Tarwiyah to the Farewell Tawaf."
@@ -548,29 +549,29 @@ export default function HajjJourneyScreen({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 20, paddingBottom: 40 },
+  content: { paddingVertical: 10, paddingBottom: 40 },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
-  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
+  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   chipsScroll: {
     flexDirection: 'row',
-    gap: 8,
-    paddingBottom: 14,
+    gap: 6,
+    paddingBottom: 10,
   },
   dayChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
+    height: 28,
+    paddingHorizontal: 10,
+    borderRadius: 999,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 5,
   },
   dayChipNum: {
     fontFamily: 'Manrope_600SemiBold',

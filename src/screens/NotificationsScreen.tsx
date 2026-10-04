@@ -185,6 +185,7 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
         )}
 
         <SectionHeader
+          compact
           eyebrow="Alerts"
           title="Notifications"
           subtitle="Manage daily prayer reminders and sound alerts"
@@ -473,7 +474,7 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingTop: 10, paddingBottom: 40 },
   contentWrap: {
     maxWidth: 680,
     width: '100%',
@@ -481,15 +482,15 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   groupLabel: {
     fontFamily: 'Manrope_600SemiBold',

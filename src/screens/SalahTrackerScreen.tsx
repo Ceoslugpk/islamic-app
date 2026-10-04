@@ -132,6 +132,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
         )}
 
         <SectionHeader
+          compact
           eyebrow="Daily Obligations"
           title="Salah Tracker"
           subtitle="Track your daily 5 prayers and build a consistent habit"
@@ -275,7 +276,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingBottom: 40 },
+  content: { padding: 20, paddingTop: 10, paddingBottom: 40 },
   contentWrap: {
     maxWidth: 680,
     width: '100%',
@@ -283,20 +284,20 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
+    gap: 10,
+    marginBottom: 16,
   },
   statCard: {
     flex: 1,

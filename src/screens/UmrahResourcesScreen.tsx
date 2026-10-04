@@ -191,6 +191,7 @@ export default function UmrahResourcesScreen({
       )}
 
       <SectionHeader
+        compact
         eyebrow="Hajj & Umrah"
         title="Umrah Resources"
         subtitle="Essential packing checklist, etiquette, common errors, tips & scholarly references."
@@ -485,26 +486,28 @@ export default function UmrahResourcesScreen({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 20, paddingBottom: 40 },
+  content: { paddingVertical: 10, paddingBottom: 40 },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
-  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
+  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   tabScroll: {
     flexDirection: 'row',
-    gap: 8,
-    paddingBottom: 14,
+    gap: 6,
+    paddingBottom: 10,
   },
   tabPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
+    height: 28,
+    paddingHorizontal: 12,
+    borderRadius: 999,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabPillText: {
     fontFamily: 'Manrope_600SemiBold',

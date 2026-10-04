@@ -223,6 +223,7 @@ export default function UmrahGuideScreen({
       )}
 
       <SectionHeader
+        compact
         eyebrow="Hajj & Umrah"
         title="Umrah Guide"
         subtitle="Step-by-step rituals of the sacred pilgrimage: Ihram, Tawaf, Sa'i, and Halq."
@@ -453,30 +454,30 @@ export default function UmrahGuideScreen({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 20, paddingBottom: 40 },
+  content: { paddingVertical: 10, paddingBottom: 40 },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
-  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
+  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   pillsContainer: {
     flexDirection: 'row',
-    gap: 8,
-    paddingBottom: 14,
+    gap: 6,
+    paddingBottom: 10,
     marginBottom: 4,
   },
   stepPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: 999,
     borderWidth: 1,
-    gap: 6,
+    gap: 5,
   },
   stepPillNum: {
     fontFamily: 'Manrope_600SemiBold',

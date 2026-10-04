@@ -144,7 +144,7 @@ export default function LibraryScreen({
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.container, { maxWidth: maxW }]}>
-        <SectionHeader eyebrow="Library" title="Explore" />
+        <SectionHeader compact eyebrow="Library" title="Explore" />
 
         {/* Grouped items */}
         {GROUPS.map((group, gi) => (
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignSelf: 'center',
-    paddingTop: 20,
+    paddingTop: 10,
   },
 
   /* Group headers */

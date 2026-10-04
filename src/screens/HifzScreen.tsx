@@ -211,7 +211,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           </TouchableOpacity>
         )}
 
-        <SectionHeader eyebrow="Memorization" title="Hifz Tracker" />
+        <SectionHeader compact eyebrow="Memorization" title="Hifz Tracker" />
 
       {/* Summary Scorecard */}
       <View
@@ -338,7 +338,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 20,
+    paddingVertical: 10,
     paddingBottom: 0,
   },
   contentWrap: {
@@ -349,23 +349,23 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginBottom: 16,
+    borderRadius: 10,
+    paddingVertical: 10,
+    marginBottom: 10,
   },
   statCol: {
     flex: 1,
@@ -373,12 +373,12 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 26,
-    lineHeight: 28,
+    fontSize: 24,
+    lineHeight: 26,
   },
   statLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10,
+    fontSize: 9.5,
     letterSpacing: 0.6,
     marginTop: 2,
   },
@@ -390,10 +390,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 42,
-    marginBottom: 12,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 8,
   },
   searchIcon: {
     marginRight: 8,

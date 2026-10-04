@@ -168,7 +168,7 @@ export default function TafsirScreen({
               </Text>
             </TouchableOpacity>
           )}
-          <SectionHeader eyebrow="Exegesis & Commentary" title={currentTafsirSource.name} />
+          <SectionHeader compact eyebrow="Exegesis & Commentary" title={currentTafsirSource.name} />
 
           {/* Surah Selector Trigger */}
           <TouchableOpacity
@@ -468,29 +468,30 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 10,
+    paddingBottom: 4,
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   selectorBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    marginTop: 10,
+    marginTop: 4,
     gap: 10,
   },
   selectorBtnMain: {

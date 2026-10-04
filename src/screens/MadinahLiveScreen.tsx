@@ -60,6 +60,7 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
       )}
 
       <SectionHeader
+        compact
         eyebrow="Hajj & Umrah"
         title="Madinah Live"
         subtitle="24/7 Official High-Definition Live Broadcast from Al-Masjid an-Nabawi."
@@ -228,21 +229,21 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 20, paddingBottom: 40 },
+  content: { paddingVertical: 10, paddingBottom: 40 },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
-  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
+  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   liveIndicator: {
     flexDirection: 'row',

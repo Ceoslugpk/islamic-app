@@ -76,6 +76,7 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
       )}
 
       <SectionHeader
+        compact
         eyebrow="Hajj & Umrah"
         title="Hajj Live"
         subtitle="Official broadcasts from the Holy Sites of Mina, Arafat, Muzdalifah & Jamarat."
@@ -318,19 +319,19 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 20, paddingBottom: 40 },
+  content: { paddingVertical: 10, paddingBottom: 40 },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
-  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
+  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   seasonBanner: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   statusBadge: {
     flexDirection: 'row',

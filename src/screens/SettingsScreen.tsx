@@ -627,7 +627,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
             </Text>
           </TouchableOpacity>
         )}
-        <SectionHeader eyebrow="Preferences" title="Settings" />
+        <SectionHeader compact eyebrow="Preferences" title="Settings" />
 
         {/* Appearance — theme, accent, haptics */}
         <Section label="Appearance">
@@ -1333,22 +1333,22 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 20, paddingBottom: 40 },
+  content: { paddingVertical: 10, paddingBottom: 40 },
   contentWrap: {
     width: '100%',
     alignSelf: 'center',
   },
   closeBtn: {
     alignSelf: 'flex-start',
-    minHeight: 40,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
-    paddingRight: 12,
-    marginBottom: 4,
+    paddingVertical: 3,
+    paddingRight: 10,
+    marginBottom: 2,
   },
   closeText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 13,
   },
   groupLabel: {
     fontFamily: 'Manrope_600SemiBold',

@@ -208,6 +208,7 @@ export default function ToolsScreen({
     >
       <View style={styles.contentWrap}>
         <SectionHeader
+          compact
           eyebrow="Tools"
           title="Utilities"
           subtitle="Essential calculators, compass, daily trackers & mosque finder"
@@ -263,7 +264,7 @@ export default function ToolsScreen({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 20, paddingBottom: 40 },
+  content: { paddingVertical: 12, paddingBottom: 40 },
   contentWrap: {
     maxWidth: 680,
     width: '100%',
