@@ -3,6 +3,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
   TouchableOpacity,
   SafeAreaView,
   Modal,
@@ -163,6 +164,11 @@ function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.appHeader, { borderBottomColor: colors.borderSubtle }]}>
+      <Image
+        source={require('./assets/logo-small-ivory.png')}
+        style={styles.headerLogo}
+        resizeMode="contain"
+      />
       <Text style={[styles.headerBrand, { color: colors.textPrimary }]}>
         Islamic
       </Text>
@@ -729,9 +735,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
+  headerLogo: {
+    width: 22,
+    height: 22,
+    marginRight: 8,
+  },
   headerBrand: {
-    fontFamily: 'InstrumentSerif_400Regular',
+    fontFamily: 'SourceSans3_500Medium',
     fontSize: 22,
+    letterSpacing: 0.4,
   },
   gearBtn: {
     padding: 8,

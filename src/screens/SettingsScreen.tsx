@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
@@ -1288,6 +1289,15 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
 
         {/* About — muted, at the bottom */}
         <Section label="About">
+          <Image
+            source={
+              themeMode === 'paper' || themeMode === 'system'
+                ? require('../../assets/logo-master-black.png')
+                : require('../../assets/logo-master-white.png')
+            }
+            style={styles.aboutLogo}
+            resizeMode="contain"
+          />
           {ABOUT_ROWS.map((item, i) => (
             <View key={item.title}>
               {i > 0 && <Hairline />}
@@ -1472,8 +1482,15 @@ const styles = StyleSheet.create({
   aboutNote: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
-    marginTop: 10,
+    color: undefined,
     textAlign: 'center',
+    marginTop: 12,
+  },
+  aboutLogo: {
+    width: 72,
+    height: 72,
+    alignSelf: 'center',
+    marginBottom: 14,
   },
   accentGrid: {
     flexDirection: 'row',
