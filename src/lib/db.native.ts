@@ -42,6 +42,11 @@ function migrate(database: SQLite.SQLiteDatabase) {
       count INTEGER DEFAULT 0,
       updated_at INTEGER
     );
+    CREATE TABLE IF NOT EXISTS tasbih_daily (
+      date TEXT PRIMARY KEY,
+      total INTEGER DEFAULT 0,
+      updated_at INTEGER
+    );
     CREATE TABLE IF NOT EXISTS plan_entries (
       plan_id TEXT NOT NULL,
       day INTEGER NOT NULL,
@@ -321,6 +326,7 @@ export function loadAudioSettings(): AudioSettings {
 interface TasbihRow { id: string; count: number }
 interface PlanRow { day: number; completed: number }
 interface HifzRow { surah: number; status: string }
+interface TasbihDailyRow { date: string; total: number }
 
 export function saveTasbihCount(dhikrId: string, count: number): void {
   try {
@@ -340,6 +346,25 @@ export function loadTasbihCounts(): Record<string, number> {
     for (const r of rows) out[r.id] = r.count;
   } catch { /* ignore */ }
   return out;
+}
+
+export function saveTasbihDayTotal(date: string, delta: number): void {
+  try {
+    getDb().runSync(
+      `INSERT INTO tasbih_daily (date, total, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(date) DO UPDATE SET total = total + excluded.total, updated_at = excluded.updated_at`,
+      date, delta, Date.now()
+    );
+  } catch { /* non-fatal */ }
+}
+
+export function loadTasbihDayTotal(date: string): number {
+  try {
+    const row = getDb().getFirstSync<TasbihDailyRow>('SELECT total FROM tasbih_daily WHERE date = ?', date);
+    return row?.total || 0;
+  } catch { /* ignore */ }
+  return 0;
 }
 
 export function savePlanDay(planId: string, day: number, completed: boolean): void {

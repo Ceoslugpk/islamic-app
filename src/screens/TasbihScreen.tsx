@@ -13,7 +13,7 @@ import { useHaptics } from '../lib/haptics';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
-import { saveTasbihCount, loadTasbihCounts } from '../lib/db';
+import { saveTasbihCount, loadTasbihCounts, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
 
 export interface DhikrItem {
   id: string;
@@ -63,11 +63,16 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
   const [selectedDhikr, setSelectedDhikr] = useState<DhikrItem>(DHIKR_PRESETS[0]);
   const [target, setTarget] = useState<number>(33);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [todayTotal, setTodayTotal] = useState<number>(0);
+
+  const todayKey = new Date().toISOString().slice(0, 10);
 
   useEffect(() => {
     const loaded = loadTasbihCounts();
     setCounts(loaded);
-  }, []);
+    const daily = loadTasbihDayTotal(todayKey);
+    setTodayTotal(daily);
+  }, [todayKey]);
 
   const currentCount = counts[selectedDhikr.id] || 0;
 
@@ -81,11 +86,16 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
     }));
     saveTasbihCount(selectedDhikr.id, nextCount);
 
+    // Increment daily total
+    const nextDaily = todayTotal + 1;
+    setTodayTotal(nextDaily);
+    saveTasbihDayTotal(todayKey, 1);
+
     // Give an extra success impact if target reached
     if (nextCount > 0 && nextCount % target === 0) {
       haptic('success');
     }
-  }, [currentCount, selectedDhikr.id, target, haptic]);
+  }, [currentCount, selectedDhikr.id, target, haptic, todayTotal, todayKey]);
 
   const handleReset = useCallback(() => {
     haptic('warning');
@@ -98,6 +108,7 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
 
   const rounds = Math.floor(currentCount / target);
   const progressInRound = currentCount % target;
+  const progressFraction = target > 0 ? progressInRound / target : 0;
 
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -201,6 +212,21 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
         </View>
       </View>
 
+      {/* Today Summary */}
+      <View
+        style={[
+          styles.summaryCard,
+          {
+            backgroundColor: colors.bgSurface,
+            borderColor: colors.borderSubtle,
+          },
+        ]}
+      >
+        <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Today</Text>
+        <Text style={[styles.summaryValue, { color: colors.accent }]}>{todayTotal}</Text>
+        <Text style={[styles.summaryUnit, { color: colors.textMuted }]}>counts</Text>
+      </View>
+
       {/* Current Dhikr Phrase Card */}
       <View
         style={[
@@ -218,7 +244,7 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
           {selectedDhikr.transliteration}
         </Text>
         <Text style={[styles.meaning, { color: colors.textMuted }]}>
-          "{selectedDhikr.meaning}"
+          &ldquo;{selectedDhikr.meaning}&rdquo;
         </Text>
       </View>
 
@@ -244,6 +270,29 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
             TAP TO COUNT
           </Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Progress Indicator */}
+      <View style={styles.progressWrap}>
+        <View style={styles.progressMeta}>
+          <Text style={[styles.progressText, { color: colors.textSecondary }]}>
+            {progressInRound} / {target}
+          </Text>
+          <Text style={[styles.progressPercent, { color: colors.textMuted }]}>
+            {Math.round(progressFraction * 100)}%
+          </Text>
+        </View>
+        <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                backgroundColor: colors.accent,
+                width: `${Math.round(progressFraction * 100)}%`,
+              },
+            ]}
+          />
+        </View>
       </View>
 
       {/* Bottom Action Controls */}
@@ -421,5 +470,62 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  summaryCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  summaryLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  summaryValue: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  summaryUnit: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 13,
+    marginTop: 2,
+  },
+  progressWrap: {
+    width: '100%',
+    maxWidth: 320,
+    alignSelf: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+    gap: 6,
+  },
+  progressMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  progressText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+  },
+  progressPercent: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
   },
 });

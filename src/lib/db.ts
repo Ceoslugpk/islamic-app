@@ -237,6 +237,29 @@ export function loadTasbihCounts(): Record<string, number> {
   return out;
 }
 
+export function saveTasbihDayTotal(date: string, delta: number): void {
+  const key = `tasbih:daily:${date}`;
+  const raw = webKV.get(key);
+  let current = 0;
+  if (raw) {
+    try {
+      current = JSON.parse(raw).total || 0;
+    } catch { /* ignore */ }
+  }
+  const next = Math.max(0, current + delta);
+  webKV.set(key, JSON.stringify({ total: next, updated_at: Date.now() }));
+}
+
+export function loadTasbihDayTotal(date: string): number {
+  const raw = webKV.get(`tasbih:daily:${date}`);
+  if (!raw) return 0;
+  try {
+    return JSON.parse(raw).total || 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function savePlanDay(planId: string, day: number, completed: boolean): void {
   webKV.set(`plan:${planId}:${day}`, JSON.stringify({ completed, completed_at: completed ? Date.now() : null }));
 }
