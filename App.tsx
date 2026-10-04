@@ -70,6 +70,8 @@ import { fetchPrayerTimes } from './src/lib/prayerTimes';
 import { useSettings } from './src/lib/settings';
 import { startQuranPreload } from './src/lib/quranPreloader';
 import { runFirstLaunchWarmup } from './src/lib/warmup';
+import { runFirstLaunchPermissions } from './src/lib/firstLaunchPermissions';
+import { useLocation } from './src/lib/useLocation';
 import { useEffect } from 'react';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
@@ -230,10 +232,11 @@ type ToolsView =
   | { screen: 'madinah-live' }
   | { screen: 'hajj-live' };
 
-function Root() {
+function Root({ splashDone }: { splashDone: boolean }) {
   const { colors, mode } = useTheme();
   const { isOnline } = useConnectivity();
-  const { settings } = useSettings();
+  const { settings, setAutoLocation } = useSettings();
+  const { request: requestLocation } = useLocation();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [audioModalOpen, setAudioModalOpen] = useState(false);
@@ -243,6 +246,31 @@ function Root() {
 
   // Global Audio Mini Player state
   const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
+
+  // First-launch permissions onboarding (runs once after splash: notifications -> location)
+  useEffect(() => {
+    if (!splashDone) return;
+    let isMounted = true;
+    const timer = setTimeout(async () => {
+      if (!isMounted) return;
+      try {
+        await runFirstLaunchPermissions({
+          requestLocation,
+          onLocationGranted: (loc) => {
+            if (loc) {
+              setAutoLocation(loc);
+            }
+          },
+        });
+      } catch {
+        // Non-fatal: permission errors must not block the app
+      }
+    }, 1200);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [splashDone, requestLocation, setAutoLocation]);
 
   // Notification health: reschedule on app start if fingerprint changed
   useEffect(() => {
@@ -720,7 +748,7 @@ export default function App() {
   return (
     <SettingsProvider>
       <ThemeProvider>
-        <Root />
+        <Root splashDone={splashDone} />
         {!splashDone && <AnimatedSplash onDone={() => setSplashDone(true)} />}
       </ThemeProvider>
     </SettingsProvider>
