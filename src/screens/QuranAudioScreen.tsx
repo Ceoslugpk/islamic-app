@@ -31,7 +31,9 @@ import {
   getReciterCountry,
   getSurahAudioUrl,
   getAudioEditionForLanguage,
+  getAudioTranslationLangName,
   isAudioTranslationEnabled,
+  NON_ARABIC_AUDIO_EDITIONS,
   pause,
   playAyah,
   PlaybackStatus,
@@ -43,10 +45,10 @@ import {
   setAudioQueue,
   setAudioTranslationEnabled,
   updateAudioSettings,
+  useAudioTranslation,
   VERIFIED_NON_ARABIC_EDITIONS,
 } from '../lib/quranAudio';
 import { useSettings } from '../lib/settings';
-import { useQuranLanguage, setQuranTranslationLanguage } from '../lib/quranLanguageState';
 import { getLanguageFlag } from '../lib/quranLanguages';
 import {
   AudioSettings,
@@ -125,7 +127,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
   // Translation audio preferences
   const { settings: appSettings, setTranslationAudioEnabled: setGlobalTranslationAudio } = useSettings();
-  const { language: currentLang, edition: currentEdition, flag: currentFlag } = useQuranLanguage();
+  const { audioEdition, audioLanguage, audioLangName, setAudioTranslation } = useAudioTranslation();
   const [transAudioEnabled, setTransAudioEnabled] = useState<boolean>(isAudioTranslationEnabled());
 
   useEffect(() => {
@@ -679,24 +681,18 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             >
               <View style={styles.translationStatusHeader}>
                 <View style={[styles.translationStatusFlagWrap, { backgroundColor: colors.accentDim }]}>
-                  <Text style={{ fontSize: 24 }}>{currentFlag}</Text>
+                  <Text style={{ fontSize: 24 }}>{getLanguageFlag(audioLanguage)}</Text>
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={[styles.translationStatusLabel, { color: colors.textMuted }]}>
-                    ACTIVE TRANSLATION
+                    ACTIVE TRANSLATION AUDIO
                   </Text>
                   <Text style={[styles.translationStatusName, { color: colors.textPrimary }]}>
-                    {currentEdition.language} ({currentEdition.name})
+                    {audioLangName} ({audioLanguage.toUpperCase()})
                   </Text>
-                  {getAudioEditionForLanguage(currentLang) ? (
-                    <Text style={[styles.translationStatusVoice, { color: colors.accent }]}>
-                      Voice: {getAudioEditionForLanguage(currentLang)?.name}
-                    </Text>
-                  ) : (
-                    <Text style={[styles.translationStatusVoice, { color: '#E5A93C' }]}>
-                      Audio unavailable for this language (Arabic will play)
-                    </Text>
-                  )}
+                  <Text style={[styles.translationStatusVoice, { color: colors.accent }]}>
+                    Voice: {audioEdition.englishName || audioEdition.name}
+                  </Text>
                 </View>
               </View>
 
@@ -730,8 +726,8 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             </View>
 
             <View style={styles.translationListWrap}>
-              {VERIFIED_NON_ARABIC_EDITIONS.map((item) => {
-                const isSelectedLanguage = currentLang === item.language;
+              {NON_ARABIC_AUDIO_EDITIONS.map((item) => {
+                const isSelectedEdition = audioEdition.identifier === item.identifier;
                 const flagEmoji = getLanguageFlag(item.language);
                 const isSamplingThis =
                   playback?.identifier === item.identifier &&
@@ -747,26 +743,26 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       styles.reciterCard,
                       {
                         backgroundColor: colors.bgSurface,
-                        borderColor: isSelectedLanguage ? colors.accent : colors.borderSubtle,
+                        borderColor: isSelectedEdition ? colors.accent : colors.borderSubtle,
                       },
                     ]}
                   >
                     <View style={styles.reciterMain}>
                       <TouchableOpacity
-                        onPress={() => setQuranTranslationLanguage(item.language)}
+                        onPress={() => setAudioTranslation(item.identifier)}
                         style={styles.reciterSelectArea}
                         accessibilityRole="button"
-                        accessibilityLabel={`Select ${item.englishName} for Quran translation`}
+                        accessibilityLabel={`Select ${item.englishName} for Quran translation audio`}
                       >
                         <View
                           style={[
                             styles.radioCircle,
                             {
-                              borderColor: isSelectedLanguage ? colors.accent : colors.borderSubtle,
+                              borderColor: isSelectedEdition ? colors.accent : colors.borderSubtle,
                             },
                           ]}
                         >
-                          {isSelectedLanguage && (
+                          {isSelectedEdition && (
                             <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />
                           )}
                         </View>
@@ -784,7 +780,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               style={[
                                 styles.langTag,
                                 {
-                                  backgroundColor: isSelectedLanguage ? colors.accent : colors.accentDim,
+                                  backgroundColor: isSelectedEdition ? colors.accent : colors.accentDim,
                                   borderColor: colors.accent,
                                 },
                               ]}
@@ -792,7 +788,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               <Text
                                 style={[
                                   styles.langTagText,
-                                  { color: isSelectedLanguage ? '#121110' : colors.accent },
+                                  { color: isSelectedEdition ? '#121110' : colors.accent },
                                 ]}
                               >
                                 {item.language.toUpperCase()}
@@ -1494,20 +1490,14 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   Plays the same ayah in the selected translation language after the Arabic recitation
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 }}>
-                  <Text style={{ fontSize: 13 }}>{currentFlag}</Text>
+                  <Text style={{ fontSize: 13 }}>{getLanguageFlag(audioEdition.language)}</Text>
                   <Text style={[styles.settingSub, { color: colors.accent, fontFamily: 'Manrope_600SemiBold' }]}>
-                    {currentEdition.language} ({currentEdition.name})
+                    {audioLangName} · {audioEdition.englishName}
                   </Text>
                 </View>
-                {getAudioEditionForLanguage(currentLang) ? (
-                  <Text style={[styles.settingSub, { color: colors.textSecondary, marginTop: 2, fontSize: 11 }]}>
-                    Audio edition: {getAudioEditionForLanguage(currentLang)?.name}
-                  </Text>
-                ) : (
-                  <Text style={[styles.settingSub, { color: '#E5A93C', marginTop: 2, fontSize: 11 }]}>
-                    Audio unavailable for this language; Arabic will play.
-                  </Text>
-                )}
+                <Text style={[styles.settingSub, { color: colors.textSecondary, marginTop: 2, fontSize: 11 }]}>
+                  Audio edition: {audioEdition.englishName} ({audioEdition.language.toUpperCase()})
+                </Text>
                 <TouchableOpacity
                   onPress={() => setActiveTab('translations')}
                   style={[styles.settingsBrowseBtn, { backgroundColor: colors.accentDim, marginTop: 10 }]}
@@ -1515,7 +1505,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   accessibilityLabel="Browse non-Arabic translation audio editions"
                 >
                   <Text style={[styles.settingsBrowseBtnText, { color: colors.accent }]}>
-                    Browse Translation Editions ({VERIFIED_NON_ARABIC_EDITIONS.length}) →
+                    Browse Translation Editions ({NON_ARABIC_AUDIO_EDITIONS.length}) →
                   </Text>
                 </TouchableOpacity>
               </View>

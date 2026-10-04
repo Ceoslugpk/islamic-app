@@ -154,7 +154,195 @@ export async function fetchSurah(
   };
 
   saveQuranCache(key, detail);
+
+  // Also cache Arabic-only key so Arabic reader / Tafsir screens work completely offline
+  const arKey = `surah:${number}:ar`;
+  if (!loadQuranCache(arKey)) {
+    const arDetail: SurahDetail = {
+      ...detail,
+      ayahs: detail.ayahs.map((a) => ({
+        ...a,
+        translation: undefined,
+      })),
+    };
+    saveQuranCache(arKey, arDetail);
+  }
+
   return detail;
+}
+
+export interface MultiEditionsResult {
+  arabic: SurahDetail;
+  editions: Record<string, SurahDetail>;
+}
+
+export const QURAN_MULTI_EDITION_BATCH_SIZE = 15;
+
+export async function fetchSurahMultiEditions(
+  number: number,
+  editionIdentifiers: string[],
+  force = false
+): Promise<MultiEditionsResult> {
+  const uniqueEditions = Array.from(
+    new Set(editionIdentifiers.filter((e) => e && e !== 'quran-uthmani'))
+  );
+
+  const arKey = `surah:${number}:ar`;
+  let arDetail = !force ? loadQuranCache<SurahDetail>(arKey) : null;
+  const editionsMap: Record<string, SurahDetail> = {};
+  const uncachedEditions: string[] = [];
+
+  for (const id of uniqueEditions) {
+    if (!force) {
+      const edKey = `surah:${number}:${id}`;
+      const cached = loadQuranCache<SurahDetail>(edKey);
+      if (cached && cached.ayahs && cached.ayahs.length > 0) {
+        editionsMap[id] = cached;
+        continue;
+      }
+    }
+    uncachedEditions.push(id);
+  }
+
+  // If Arabic and all requested editions are already present in cache, return immediately
+  if (
+    arDetail &&
+    arDetail.ayahs &&
+    arDetail.ayahs.length > 0 &&
+    uncachedEditions.length === 0
+  ) {
+    return { arabic: arDetail, editions: editionsMap };
+  }
+
+  // If all requested translation editions are cached but Arabic is missing, fetch Arabic-only
+  if (uncachedEditions.length === 0 && (!arDetail || !arDetail.ayahs || arDetail.ayahs.length === 0)) {
+    try {
+      const res = await fetch(`${BASE}/surah/${number}/editions/quran-uthmani`);
+      if (res.ok) {
+        const json = await res.json();
+        const arabicData = json.data?.[0];
+        if (arabicData && Array.isArray(arabicData.ayahs)) {
+          arDetail = {
+            number: arabicData.number || number,
+            name: arabicData.name || '',
+            englishName: arabicData.englishName || '',
+            englishNameTranslation: arabicData.englishNameTranslation || '',
+            numberOfAyahs: arabicData.numberOfAyahs || arabicData.ayahs.length,
+            ayahs: arabicData.ayahs.map((a: any) => ({
+              number: a.number,
+              numberInSurah: a.numberInSurah,
+              text: a.text,
+              surah: {
+                number: arabicData.number || number,
+                name: arabicData.name || '',
+                englishName: arabicData.englishName || '',
+              },
+              translation: undefined,
+            })),
+          };
+          saveQuranCache(arKey, arDetail);
+          return { arabic: arDetail, editions: editionsMap };
+        }
+      }
+    } catch {
+      // non-fatal, will throw or fallback below
+    }
+  }
+
+  // Chunk uncached editions into batches of ~15 to avoid excessive URL length and payload sizes
+  const batches: string[][] = [];
+  for (let i = 0; i < uncachedEditions.length; i += QURAN_MULTI_EDITION_BATCH_SIZE) {
+    batches.push(uncachedEditions.slice(i, i + QURAN_MULTI_EDITION_BATCH_SIZE));
+  }
+
+  let batchIndex = 0;
+  for (const batch of batches) {
+    if (batchIndex > 0) {
+      // Brief polite delay between multi-edition batches
+      await new Promise((resolve) => setTimeout(resolve, 60));
+    }
+    batchIndex++;
+
+    try {
+      const editionsParam = `quran-uthmani,${batch.join(',')}`;
+      const res = await fetch(`${BASE}/surah/${number}/editions/${editionsParam}`);
+      if (!res.ok) {
+        continue;
+      }
+      const json = await res.json();
+      if (json.code !== 200 || !Array.isArray(json.data) || json.data.length === 0) {
+        continue;
+      }
+
+      const arabicData =
+        json.data.find(
+          (d: any) => d.edition?.identifier === 'quran-uthmani' || d.edition?.type === 'quran'
+        ) || json.data[0];
+
+      if (!arabicData || !Array.isArray(arabicData.ayahs)) {
+        continue;
+      }
+
+      const arabicAyahsBase = arabicData.ayahs.map((a: any) => ({
+        number: a.number,
+        numberInSurah: a.numberInSurah,
+        text: a.text,
+        surah: {
+          number: arabicData.number || number,
+          name: arabicData.name || '',
+          englishName: arabicData.englishName || '',
+        },
+      }));
+
+      if (!arDetail || !arDetail.ayahs || arDetail.ayahs.length === 0) {
+        arDetail = {
+          number: arabicData.number || number,
+          name: arabicData.name || '',
+          englishName: arabicData.englishName || '',
+          englishNameTranslation: arabicData.englishNameTranslation || '',
+          numberOfAyahs: arabicData.numberOfAyahs || arabicAyahsBase.length,
+          ayahs: arabicAyahsBase.map((a: any) => ({
+            ...a,
+            translation: undefined,
+          })),
+        };
+        saveQuranCache(arKey, arDetail);
+      }
+
+      for (const item of json.data) {
+        const identifier = item.edition?.identifier;
+        if (!identifier || identifier === 'quran-uthmani') {
+          continue;
+        }
+
+        const editionDetail: SurahDetail = {
+          number: arabicData.number || number,
+          name: arabicData.name || '',
+          englishName: arabicData.englishName || '',
+          englishNameTranslation: arabicData.englishNameTranslation || '',
+          numberOfAyahs: arabicData.numberOfAyahs || arabicAyahsBase.length,
+          ayahs: arabicAyahsBase.map((a: any, i: number) => ({
+            ...a,
+            translation: item.ayahs && item.ayahs[i] ? item.ayahs[i].text : undefined,
+          })),
+        };
+
+        saveQuranCache(`surah:${number}:${identifier}`, editionDetail);
+        editionsMap[identifier] = editionDetail;
+      }
+    } catch {
+      // Partial batch failure, continue to other batches
+    }
+  }
+
+  if (arDetail && arDetail.ayahs && arDetail.ayahs.length > 0) {
+    return {
+      arabic: arDetail,
+      editions: editionsMap,
+    };
+  }
+
+  throw new Error(`Multi-edition fetch failed for Surah ${number}`);
 }
 
 export async function fetchAyah(

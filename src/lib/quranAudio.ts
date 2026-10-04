@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio, AVPlaybackStatus } from 'expo-av';
 import {
@@ -10,7 +11,6 @@ import {
   saveRecentlyPlayed,
 } from './db';
 export type { PlaylistItem } from './db';
-import { getQuranTranslationLanguage } from './quranLanguageState';
 import {
   clearAudioPreloadCache,
   enqueuePreloadUrls,
@@ -246,6 +246,108 @@ export const VERIFIED_NON_ARABIC_EDITIONS: Reciter[] = [
     language: 'bs',
   },
 ];
+
+/** Alias for VERIFIED_NON_ARABIC_EDITIONS representing dedicated non-Arabic audio translation reciters */
+export const NON_ARABIC_AUDIO_EDITIONS: Reciter[] = VERIFIED_NON_ARABIC_EDITIONS;
+
+export const AUDIO_TRANSLATION_EDITION_KEY = 'quran-audio-translation-edition';
+export const AUDIO_TRANSLATION_LANG_KEY = 'quran-audio-translation-lang';
+export const DEFAULT_AUDIO_TRANSLATION_EDITION_ID = 'en.everyayah-walk';
+
+export function getAudioTranslationLangName(langCode: string): string {
+  return LANGUAGE_AUDIO_EDITIONS[langCode]?.langName || langCode.toUpperCase();
+}
+
+let currentAudioTranslationEditionId = DEFAULT_AUDIO_TRANSLATION_EDITION_ID;
+const audioTranslationListeners = new Set<(edition: Reciter) => void>();
+
+// Initialize audio translation edition from storage on bootstrap
+AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY)
+  .then((saved) => {
+    if (saved) {
+      const match = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.identifier === saved);
+      if (match) {
+        currentAudioTranslationEditionId = match.identifier;
+        audioTranslationListeners.forEach((fn) => fn(match));
+        return;
+      }
+      const matchLang = LANGUAGE_AUDIO_EDITIONS[saved];
+      if (matchLang) {
+        currentAudioTranslationEditionId = matchLang.identifier;
+        const ed = getAudioTranslationEdition();
+        audioTranslationListeners.forEach((fn) => fn(ed));
+      }
+    }
+  })
+  .catch(() => {});
+
+export function getAudioTranslationEditionId(): string {
+  return currentAudioTranslationEditionId;
+}
+
+export function getAudioTranslationLanguage(): string {
+  return getAudioTranslationEdition().language;
+}
+
+export function getAudioTranslationEdition(): Reciter {
+  const found = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.identifier === currentAudioTranslationEditionId);
+  if (found) return found;
+  return VERIFIED_NON_ARABIC_EDITIONS[0];
+}
+
+export async function setAudioTranslationEdition(identifierOrLangCode: string): Promise<void> {
+  let targetId = identifierOrLangCode;
+  const matchById = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.identifier === identifierOrLangCode);
+  if (matchById) {
+    targetId = matchById.identifier;
+  } else if (LANGUAGE_AUDIO_EDITIONS[identifierOrLangCode]) {
+    targetId = LANGUAGE_AUDIO_EDITIONS[identifierOrLangCode].identifier;
+  } else {
+    const matchByLang = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.language === identifierOrLangCode);
+    if (matchByLang) {
+      targetId = matchByLang.identifier;
+    }
+  }
+
+  currentAudioTranslationEditionId = targetId;
+  const ed = getAudioTranslationEdition();
+  audioTranslationListeners.forEach((fn) => fn(ed));
+
+  try {
+    await AsyncStorage.setItem(AUDIO_TRANSLATION_EDITION_KEY, targetId);
+    await AsyncStorage.setItem(AUDIO_TRANSLATION_LANG_KEY, ed.language);
+  } catch {
+    // ignore
+  }
+}
+
+export const setAudioTranslationLanguage = setAudioTranslationEdition;
+
+export function subscribeAudioTranslation(listener: (edition: Reciter) => void): () => void {
+  audioTranslationListeners.add(listener);
+  return () => {
+    audioTranslationListeners.delete(listener);
+  };
+}
+
+export function useAudioTranslation() {
+  const [edition, setEdition] = useState<Reciter>(getAudioTranslationEdition());
+
+  useEffect(() => {
+    setEdition(getAudioTranslationEdition());
+    return subscribeAudioTranslation((next) => {
+      setEdition(next);
+    });
+  }, []);
+
+  return {
+    audioEdition: edition,
+    audioLanguage: edition.language,
+    audioLangName: getAudioTranslationLangName(edition.language),
+    setAudioTranslation: setAudioTranslationEdition,
+    setAudioLanguage: setAudioTranslationEdition,
+  };
+}
 
 /** Offline fallback reciters (strictly Arabic recitations). Non-Arabic editions are maintained separately in VERIFIED_NON_ARABIC_EDITIONS. */
 /** Country lookup map for Arabic reciters */
@@ -873,10 +975,9 @@ export function primeUpcomingAyahs(params: PrimeUpcomingAyahsParams): void {
   const arabicReciter = params.arabicReciter || getActiveArabicReciter();
   const transEnabled = params.translationEnabled ?? translationAudioEnabled;
 
-  const langCode = getQuranTranslationLanguage();
   const transAudio = params.transEditionId
     ? { identifier: params.transEditionId }
-    : getAudioEditionForLanguage(langCode);
+    : getAudioTranslationEdition();
 
   const upcomingUrls: string[] = [];
 
@@ -1120,8 +1221,7 @@ function handlePlaybackStatusUpdate(status: AVPlaybackStatus): void {
       const arabicReciter = currentPlayback.arabicReciter || currentPlayback.identifier;
       const arabicReciterName = currentPlayback.arabicReciterName || currentPlayback.reciterName;
 
-      const langCode = getQuranTranslationLanguage();
-      const transAudio = getAudioEditionForLanguage(langCode);
+      const transAudio = getAudioTranslationEdition();
 
       if (transAudio) {
         // Play Translation Segment
@@ -1180,13 +1280,14 @@ function handlePlaybackStatusUpdate(status: AVPlaybackStatus): void {
 async function playTranslationSegment(
   surah: number,
   ayah: number,
-  transAudio: { identifier: string; name: string; langName: string },
+  transAudio: { identifier: string; name: string; langName?: string; englishName?: string; language?: string },
   isSurahMode: boolean,
   arabicReciter: string,
   arabicReciterName: string
 ): Promise<void> {
   const transUrl = getAyahAudioUrl(transAudio.identifier, surah, ayah);
-  const resolvedTitle = `Translation (${transAudio.langName}) · Surah ${surah}:${ayah}`;
+  const langDisplay = transAudio.langName || (transAudio.language ? getAudioTranslationLangName(transAudio.language) : '') || 'Translation';
+  const resolvedTitle = `Translation (${langDisplay}) · Surah ${surah}:${ayah}`;
 
   currentPlayback = {
     identifier: transAudio.identifier,
@@ -1200,7 +1301,7 @@ async function playTranslationSegment(
     segmentType: 'translation',
     arabicReciter,
     arabicReciterName,
-    translationLang: transAudio.langName,
+    translationLang: langDisplay,
     isSurahMode,
   };
 
@@ -1284,8 +1385,7 @@ export async function switchToLanguageSegment(target: PlaybackSegmentType): Prom
   const arabicReciterName = currentPlayback.arabicReciterName || resolveReciterName(arabicReciter);
 
   if (target === 'translation') {
-    const langCode = getQuranTranslationLanguage();
-    const transAudio = getAudioEditionForLanguage(langCode);
+    const transAudio = getAudioTranslationEdition();
     if (!transAudio) {
       return false;
     }
@@ -1475,10 +1575,8 @@ export async function playAyah(
         ? url
         : getAyahAudioUrl(arabicReciter, resolvedSurah, resolvedAyah);
 
-    const langCode = getQuranTranslationLanguage();
-    const transAudio = getAudioEditionForLanguage(langCode);
-    const transNotice = transAudio ? '' : ` (${langCode.toUpperCase()} audio unavailable)`;
-    const resolvedTitle = title || `Arabic · Surah ${resolvedSurah}:${resolvedAyah}${transNotice}`;
+    const transAudio = getAudioTranslationEdition();
+    const resolvedTitle = title || `Arabic · Surah ${resolvedSurah}:${resolvedAyah}`;
 
     currentPlayback = {
       identifier: arabicReciter,
@@ -1492,7 +1590,7 @@ export async function playAyah(
       segmentType: 'arabic',
       arabicReciter,
       arabicReciterName: resolvedReciter,
-      translationLang: transAudio?.langName,
+      translationLang: transAudio ? getAudioTranslationLangName(transAudio.language) : undefined,
       isSurahMode,
     };
 
@@ -1794,8 +1892,7 @@ export async function playNext(): Promise<boolean> {
     currentPlayback.surah &&
     currentPlayback.ayah
   ) {
-    const langCode = getQuranTranslationLanguage();
-    const transAudio = getAudioEditionForLanguage(langCode);
+    const transAudio = getAudioTranslationEdition();
     if (transAudio) {
       const curSurah = currentPlayback.surah;
       const curAyah = currentPlayback.ayah;
@@ -1932,8 +2029,7 @@ export const previousItem = playPrevious;
 
 export function canPlayNext(): boolean {
   if (translationAudioEnabled && currentPlayback?.segmentType === 'arabic') {
-    const langCode = getQuranTranslationLanguage();
-    if (getAudioEditionForLanguage(langCode)) return true;
+    if (getAudioTranslationEdition()) return true;
   }
   const queue = getAudioQueue();
   const settings = safeLoadSettings();

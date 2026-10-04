@@ -31,6 +31,7 @@ import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { saveReadingPosition } from '../lib/continuing';
 import { recordSurahVisit } from '../lib/recentSurahs';
+import { preloadRemainingSurahsForEdition } from '../lib/quranPreloader';
 import {
   addBookmark,
   getBookmarks,
@@ -293,7 +294,8 @@ export default function QuranReaderScreen({
   const loadSurah = useCallback(async (force = false) => {
     const key = `surah:${surahNumber}:${edition.editionIdentifier}`;
     const cached = !force ? loadQuranCache<SurahDetail>(key) : null;
-    if (cached) {
+    const isCached = Boolean(cached && cached.ayahs && cached.ayahs.length > 0);
+    if (isCached && cached) {
       setSurah(cached);
       setLoading(false);
     } else if (!force) {
@@ -314,8 +316,20 @@ export default function QuranReaderScreen({
       trackingReadyRef.current = startAyah <= 1;
       saveReadingPosition(surahNumber, startAyah);
       recordSurahVisit(surahNumber, data.englishName, data.name);
+
+      // Auto-fetch on open: if this translation edition was NOT cached,
+      // trigger background preload of the remaining surahs for this edition
+      if (!isCached) {
+        preloadRemainingSurahsForEdition(surahNumber, edition.editionIdentifier);
+      }
     } catch {
-      if (!cached) {
+      if (!isCached) {
+        // Fallback: if Arabic text is available offline, display it so the user never sees "no data"
+        const arCached = loadQuranCache<SurahDetail>(`surah:${surahNumber}:ar`);
+        if (arCached && arCached.ayahs && arCached.ayahs.length > 0) {
+          setSurah(arCached);
+          return;
+        }
         setError('Could not load Surah. Please check your connection.');
       }
     } finally {

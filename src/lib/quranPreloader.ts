@@ -4,7 +4,7 @@
  * sequentially into local storage/cache so opening any Surah is instant and offline-ready.
  */
 import { useEffect, useState } from 'react';
-import { fetchSurah, fetchSurahList, SurahDetail, SurahMeta } from './quran';
+import { fetchSurah, fetchSurahList, fetchSurahMultiEditions, SurahDetail, SurahMeta } from './quran';
 import { fetchSurahTranslations } from './quranMultiLang';
 import { loadQuranCache, saveQuranCache, loadLastReadPosition } from './db';
 import { getQuranTranslationLanguage, subscribeQuranLanguage } from './quranLanguageState';
@@ -42,12 +42,64 @@ function getActiveEdition(): { languageCode: string; editionIdentifier: string }
   };
 }
 
+export function getAllQuranEditionIdentifiers(): string[] {
+  return Array.from(
+    new Set(
+      QURAN_LANGUAGE_EDITIONS.map((e) => e.editionIdentifier).filter(
+        (id): id is string => Boolean(id) && id !== 'quran-uthmani'
+      )
+    )
+  );
+}
+
+export function isSurahCached(surahNumber: number, activeEdition: string): boolean {
+  const activeKey = `surah:${surahNumber}:${activeEdition}`;
+  const activeCached = loadQuranCache<SurahDetail>(activeKey);
+  if (activeCached && activeCached.ayahs && activeCached.ayahs.length > 0) {
+    return true;
+  }
+  const arCached = loadQuranCache<SurahDetail>(`surah:${surahNumber}:ar`);
+  if (arCached && arCached.ayahs && arCached.ayahs.length > 0) {
+    for (const ed of QURAN_LANGUAGE_EDITIONS) {
+      const edCached = loadQuranCache<SurahDetail>(`surah:${surahNumber}:${ed.editionIdentifier}`);
+      if (edCached && edCached.ayahs && edCached.ayahs.length > 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+export function areAllEditionsCached(
+  surahNumber: number,
+  editionIdentifiers: string[]
+): boolean {
+  const arCached = loadQuranCache<SurahDetail>(`surah:${surahNumber}:ar`);
+  if (!arCached || !arCached.ayahs || arCached.ayahs.length === 0) {
+    return false;
+  }
+  for (const ed of editionIdentifiers) {
+    const cached = loadQuranCache<SurahDetail>(`surah:${surahNumber}:${ed}`);
+    if (!cached || !cached.ayahs || cached.ayahs.length === 0) {
+      return false;
+    }
+  }
+  return true;
+}
+
+export function areAllSurahsFullyCached(editionIdentifiers: string[]): boolean {
+  for (let i = 1; i <= TOTAL_SURAHS; i++) {
+    if (!areAllEditionsCached(i, editionIdentifiers)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export function getCachedSurahsCount(editionIdentifier: string): number {
   let count = 0;
   for (let i = 1; i <= TOTAL_SURAHS; i++) {
-    const key = `surah:${i}:${editionIdentifier}`;
-    const cached = loadQuranCache<SurahDetail>(key);
-    if (cached && cached.ayahs && cached.ayahs.length > 0) {
+    if (isSurahCached(i, editionIdentifier)) {
       count++;
     }
   }
@@ -156,21 +208,41 @@ async function fetchSurahFromQuranCom(surahNumber: number): Promise<SurahDetail 
   };
 }
 
-async function preloadSingleSurah(
+export async function preloadSingleSurah(
   surahNumber: number,
-  editionIdentifier: string,
+  editionIdentifier?: string,
   force = false
 ): Promise<boolean> {
-  const cacheKey = `surah:${surahNumber}:${editionIdentifier}`;
-  if (!force) {
-    const existing = loadQuranCache<SurahDetail>(cacheKey);
-    if (existing && existing.ayahs && existing.ayahs.length > 0) {
-      return true;
-    }
+  const active = getActiveEdition();
+  const targetEdition = editionIdentifier || active.editionIdentifier;
+  const allEditions = getAllQuranEditionIdentifiers();
+  if (targetEdition && !allEditions.includes(targetEdition)) {
+    allEditions.push(targetEdition);
   }
 
+  // Ensure target edition is first so it is processed in Batch 1 of multi-edition requests
+  const prioritizedEditions = targetEdition
+    ? [targetEdition, ...allEditions.filter((e) => e !== targetEdition)]
+    : allEditions;
+
+  if (!force && areAllEditionsCached(surahNumber, prioritizedEditions)) {
+    return true;
+  }
+
+  // 1. Primary: multi-edition fetch of Arabic (quran-uthmani) + ALL translations in batched calls (~15 per batch)
   try {
-    const detail = await fetchSurah(surahNumber, true, editionIdentifier, force);
+    const result = await fetchSurahMultiEditions(surahNumber, prioritizedEditions, force);
+    if (result && result.arabic && result.arabic.ayahs && result.arabic.ayahs.length > 0) {
+      return true;
+    }
+  } catch {
+    // Multi-edition fetch failed: fall back to single-edition behavior
+  }
+
+  // 2. Single-edition fallback: active edition + Arabic
+  const cacheKey = `surah:${surahNumber}:${targetEdition}`;
+  try {
+    const detail = await fetchSurah(surahNumber, true, targetEdition, force);
     if (detail && detail.ayahs && detail.ayahs.length > 0) {
       // Also cache Arabic-only key so Arabic reader / Tafsir screens work completely offline
       const arKey = `surah:${surahNumber}:ar`;
@@ -189,10 +261,10 @@ async function preloadSingleSurah(
   } catch {
     // If standard multi-edition fetch failed, attempt fallback via fetchSurahTranslations
     try {
-      const transResult = await fetchSurahTranslations(surahNumber, [editionIdentifier]);
+      const transResult = await fetchSurahTranslations(surahNumber, [targetEdition]);
       const arDetail = await fetchSurah(surahNumber, false, 'ar', force);
-      if (arDetail && transResult.translations[editionIdentifier]) {
-        const transAyahs = transResult.translations[editionIdentifier];
+      if (arDetail && transResult.translations[targetEdition]) {
+        const transAyahs = transResult.translations[targetEdition];
         const combined: SurahDetail = {
           ...arDetail,
           ayahs: arDetail.ayahs.map((a, i) => ({
@@ -224,18 +296,33 @@ async function preloadSingleSurah(
   return false;
 }
 
+export interface QuranPreloadOptions {
+  force?: boolean;
+  initialSurah?: number;
+  targetEdition?: string;
+}
+
 /**
  * Start or resume Quran preloader in background.
+ * Preloads all 114 Surahs in Arabic + all ~48 translation editions using multi-edition batches.
  * Fetches current/continue-reading surah first, then remaining 1..114 sequentially.
  * Pauses DELAY_BETWEEN_FETCHES_MS between network requests to avoid throttling.
  */
-export async function startQuranPreload(options?: {
-  force?: boolean;
-  initialSurah?: number;
-}): Promise<void> {
-  const { languageCode, editionIdentifier } = getActiveEdition();
+export async function startQuranPreload(options?: QuranPreloadOptions): Promise<void> {
+  const active = getActiveEdition();
+  const editionIdentifier = options?.targetEdition || active.editionIdentifier;
+  const languageCode = active.languageCode;
+  const allEditions = getAllQuranEditionIdentifiers();
+  if (editionIdentifier && !allEditions.includes(editionIdentifier)) {
+    allEditions.push(editionIdentifier);
+  }
 
-  if (isPreloaderRunning && !options?.force) {
+  const prioritizedEditions = [
+    editionIdentifier,
+    ...allEditions.filter((e) => e !== editionIdentifier),
+  ];
+
+  if (isPreloaderRunning && !options?.force && !options?.initialSurah && !options?.targetEdition) {
     return;
   }
 
@@ -254,7 +341,9 @@ export async function startQuranPreload(options?: {
   }
 
   let cachedCount = getCachedSurahsCount(editionIdentifier);
-  if (cachedCount >= TOTAL_SURAHS && !options?.force) {
+  const allFullyCached = areAllSurahsFullyCached(prioritizedEditions);
+
+  if (cachedCount >= TOTAL_SURAHS && allFullyCached && !options?.force) {
     isPreloaderRunning = false;
     emitProgress({
       isRunning: false,
@@ -290,16 +379,17 @@ export async function startQuranPreload(options?: {
     }
   }
 
+  const failedSurahs = new Set<number>();
+
   for (const surahNum of order) {
     if (shouldStopPreloader || runId !== activeRunId) {
       break;
     }
 
-    const cacheKey = `surah:${surahNum}:${editionIdentifier}`;
-    const alreadyCached = loadQuranCache<SurahDetail>(cacheKey);
+    const alreadyFullyCached = areAllEditionsCached(surahNum, prioritizedEditions);
 
-    if (alreadyCached && alreadyCached.ayahs && alreadyCached.ayahs.length > 0 && !options?.force) {
-      // Already cached, yield tiny slice without network delay
+    if (alreadyFullyCached && !options?.force) {
+      // Already fully cached in all editions, yield tiny slice without network delay
       cachedCount = getCachedSurahsCount(editionIdentifier);
       emitProgress({
         cached: cachedCount,
@@ -321,10 +411,51 @@ export async function startQuranPreload(options?: {
         cached: cachedCount,
         isComplete: cachedCount >= TOTAL_SURAHS,
       });
+    } else {
+      failedSurahs.add(surahNum);
     }
 
     // Politeness pause between API calls
     await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_FETCHES_MS));
+  }
+
+  // Retry up to 3 passes for any failed surahs
+  for (let retryPass = 1; retryPass <= 3 && failedSurahs.size > 0; retryPass++) {
+    if (shouldStopPreloader || runId !== activeRunId) break;
+    await new Promise((resolve) => setTimeout(resolve, 500 * retryPass));
+
+    for (const surahNum of Array.from(failedSurahs)) {
+      if (shouldStopPreloader || runId !== activeRunId) break;
+      emitProgress({ currentSurah: surahNum });
+      const success = await preloadSingleSurah(surahNum, editionIdentifier, options?.force);
+      if (success) {
+        failedSurahs.delete(surahNum);
+        cachedCount = getCachedSurahsCount(editionIdentifier);
+        emitProgress({
+          cached: cachedCount,
+          isComplete: cachedCount >= TOTAL_SURAHS,
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_FETCHES_MS));
+    }
+  }
+
+  // Final pass: check for any remaining uncached surahs across 1..114
+  if (!shouldStopPreloader && runId === activeRunId && failedSurahs.size > 0) {
+    for (const surahNum of Array.from(failedSurahs)) {
+      if (shouldStopPreloader || runId !== activeRunId) break;
+      emitProgress({ currentSurah: surahNum });
+      const success = await preloadSingleSurah(surahNum, editionIdentifier, options?.force);
+      if (success) {
+        failedSurahs.delete(surahNum);
+        cachedCount = getCachedSurahsCount(editionIdentifier);
+        emitProgress({
+          cached: cachedCount,
+          isComplete: cachedCount >= TOTAL_SURAHS,
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_FETCHES_MS));
+    }
   }
 
   if (runId === activeRunId) {
@@ -337,6 +468,22 @@ export async function startQuranPreload(options?: {
       cached: finalCached,
     });
   }
+}
+
+/**
+ * Trigger background preload of remaining surahs for a translation edition
+ * when a user opens an uncached surah.
+ */
+export function preloadRemainingSurahsForEdition(
+  surahNumber: number,
+  editionIdentifier: string
+): void {
+  setTimeout(() => {
+    startQuranPreload({
+      initialSurah: surahNumber,
+      targetEdition: editionIdentifier,
+    }).catch(() => {});
+  }, 100);
 }
 
 export function pauseQuranPreload(): void {

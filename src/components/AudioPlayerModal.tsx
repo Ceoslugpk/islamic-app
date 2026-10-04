@@ -21,10 +21,10 @@ import {
   addQueueListener,
   canPlayNext,
   canPlayPrevious,
-  getAudioEditionForLanguage,
   getAudioQueue,
+  getAudioTranslationLangName,
   getQueueIndex,
-  LANGUAGE_AUDIO_EDITIONS,
+  NON_ARABIC_AUDIO_EDITIONS,
   PlaybackSegmentType,
   playNext,
   playPrevious,
@@ -33,9 +33,9 @@ import {
   safeLoadSettings,
   switchToLanguageSegment,
   updateAudioSettings,
+  useAudioTranslation,
 } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
-import { useQuranLanguage } from '../lib/quranLanguageState';
 import { getLanguageFlag } from '../lib/quranLanguages';
 
 export interface AudioPlayerModalProps {
@@ -54,8 +54,7 @@ export function AudioPlayerModal({
   const isTablet = width >= 640;
 
   const { playback, status, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
-  const { language, edition, flag, setLanguage } = useQuranLanguage();
-  const transAudio = getAudioEditionForLanguage(language);
+  const { audioEdition, audioLanguage, audioLangName, setAudioTranslation } = useAudioTranslation();
   const activeSegment: PlaybackSegmentType = playback?.segmentType || 'arabic';
 
   const [switchingSegment, setSwitchingSegment] = useState(false);
@@ -73,7 +72,7 @@ export function AudioPlayerModal({
 
   const handleSwitchSegment = async (target: PlaybackSegmentType) => {
     if (switchingSegment) return;
-    if (target === 'translation' && !transAudio) return;
+    if (target === 'translation' && !audioEdition) return;
     setSwitchingSegment(true);
     try {
       await switchToLanguageSegment(target);
@@ -82,12 +81,18 @@ export function AudioPlayerModal({
     }
   };
 
-  const handleSelectLanguage = async (newLang: string) => {
-    await setLanguage(newLang);
+  const handleSelectAudioEdition = async (editionIdentifier: string) => {
+    await setAudioTranslation(editionIdentifier);
     setLangPickerOpen(false);
-    const targetEdition = getAudioEditionForLanguage(newLang);
-    if (targetEdition && playback && activeSegment === 'translation') {
+    if (playback && activeSegment !== 'translation') {
       await switchToLanguageSegment('translation');
+    }
+  };
+
+  const handleSelectArabicSegment = async () => {
+    setLangPickerOpen(false);
+    if (playback && activeSegment !== 'arabic') {
+      await handleSwitchSegment('arabic');
     }
   };
 
@@ -426,20 +431,20 @@ export function AudioPlayerModal({
                 {/* Translation Segment */}
                 <TouchableOpacity
                   onPress={() => handleSwitchSegment('translation')}
-                  disabled={switchingSegment || !transAudio}
+                  disabled={switchingSegment || !audioEdition}
                   style={[
                     styles.langSegmentBtn,
                     activeSegment === 'translation' && [
                       styles.langSegmentBtnActive,
                       { backgroundColor: colors.accent, borderColor: colors.accent },
                     ],
-                    !transAudio && { opacity: 0.5 },
+                    !audioEdition && { opacity: 0.5 },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={
-                    transAudio
-                      ? `Switch to ${transAudio.langName} translation audio`
-                      : `Translation audio unavailable for ${edition.language}`
+                    audioEdition
+                      ? `Switch to ${audioLangName} translation audio`
+                      : 'Translation audio unavailable'
                   }
                   accessibilityState={{ selected: activeSegment === 'translation' }}
                 >
@@ -451,7 +456,7 @@ export function AudioPlayerModal({
                       ]}
                       numberOfLines={1}
                     >
-                      {flag} {edition.language || language.toUpperCase()}
+                      {getLanguageFlag(audioLanguage)} {audioLangName}
                     </Text>
                     <View
                       style={[
@@ -470,7 +475,7 @@ export function AudioPlayerModal({
                           { color: activeSegment === 'translation' ? '#121110' : colors.textSecondary },
                         ]}
                       >
-                        {language.toUpperCase()}
+                        {audioLanguage.toUpperCase()}
                       </Text>
                     </View>
                   </View>
@@ -484,7 +489,7 @@ export function AudioPlayerModal({
                     ]}
                     numberOfLines={1}
                   >
-                    {transAudio ? transAudio.name : 'No audio'}
+                    {audioEdition ? (audioEdition.englishName || audioEdition.name) : 'No audio'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -493,20 +498,20 @@ export function AudioPlayerModal({
               <View style={styles.langSwitchBar}>
                 <View style={styles.langSwitchLeft}>
                   <Ionicons
-                    name={transAudio ? 'volume-medium-outline' : 'alert-circle-outline'}
+                    name={audioEdition ? 'volume-medium-outline' : 'alert-circle-outline'}
                     size={13}
-                    color={transAudio ? colors.accent : '#E5A93C'}
+                    color={audioEdition ? colors.accent : '#E5A93C'}
                   />
                   <Text
                     style={[
                       styles.langSwitchNotice,
-                      { color: transAudio ? colors.textMuted : '#E5A93C' },
+                      { color: audioEdition ? colors.textMuted : '#E5A93C' },
                     ]}
                     numberOfLines={1}
                   >
-                    {transAudio
-                      ? `Voice: ${transAudio.name}`
-                      : `${edition.language} audio unavailable`}
+                    {audioEdition
+                      ? `Voice: ${audioEdition.englishName || audioEdition.name}`
+                      : 'Audio translation unavailable'}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -519,7 +524,7 @@ export function AudioPlayerModal({
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Change translation language"
+                  accessibilityLabel="Change translation audio language"
                 >
                   <Text style={[styles.changeLangPillText, { color: colors.accent }]}>
                     Change Lang
@@ -793,17 +798,18 @@ export function AudioPlayerModal({
               ]}
             >
               <View style={[styles.pickerHeader, { borderBottomColor: colors.borderSubtle }]}>
-                <View>
+                <View style={{ flex: 1, marginRight: 8 }}>
                   <Text style={[styles.pickerTitle, { color: colors.textPrimary }]}>
-                    Translation Audio Language
+                    Audio Language & Reciter
                   </Text>
                   <Text style={[styles.pickerSubtitle, { color: colors.textMuted }]}>
-                    Supported non-Arabic editions for verse recitation
+                    Arabic recitation + 11 translation languages ({NON_ARABIC_AUDIO_EDITIONS.length + 1} options)
                   </Text>
                 </View>
                 <TouchableOpacity
                   onPress={() => setLangPickerOpen(false)}
                   style={[styles.pickerCloseBtn, { borderColor: colors.borderSubtle }]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityRole="button"
                   accessibilityLabel="Close language picker"
                 >
@@ -811,14 +817,62 @@ export function AudioPlayerModal({
                 </TouchableOpacity>
               </View>
 
-              <ScrollView style={styles.pickerList} contentContainerStyle={styles.pickerListContent}>
-                {Object.entries(LANGUAGE_AUDIO_EDITIONS).map(([langKey, ed]) => {
-                  const isSelected = language === langKey;
-                  const flagEmoji = getLanguageFlag(langKey);
+              <ScrollView
+                style={styles.pickerList}
+                contentContainerStyle={styles.pickerListContent}
+                nestedScrollEnabled
+              >
+                {/* Arabic Recitation Option */}
+                <TouchableOpacity
+                  onPress={handleSelectArabicSegment}
+                  style={[
+                    styles.pickerOption,
+                    {
+                      backgroundColor: activeSegment === 'arabic' ? colors.accentDim : colors.bgBase,
+                      borderColor: activeSegment === 'arabic' ? colors.accent : colors.borderSubtle,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Select Arabic recitation"
+                >
+                  <View style={styles.pickerOptionLeft}>
+                    <Text style={styles.pickerFlag}>🇸🇦</Text>
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[
+                          styles.pickerOptionTitle,
+                          { color: activeSegment === 'arabic' ? colors.accent : colors.textPrimary },
+                        ]}
+                      >
+                        العربية · Arabic (Original)
+                      </Text>
+                      <Text style={[styles.pickerOptionSub, { color: colors.textMuted }]} numberOfLines={1}>
+                        Reciter: {playback?.arabicReciterName || playback?.reciterName || 'Alafasy'}
+                      </Text>
+                    </View>
+                  </View>
+                  {activeSegment === 'arabic' && (
+                    <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+                  )}
+                </TouchableOpacity>
+
+                {/* Section Header */}
+                <View style={styles.pickerSectionDivider}>
+                  <Text style={[styles.pickerSectionLabel, { color: colors.accent }]}>
+                    TRANSLATION VOICES (11 LANGUAGES)
+                  </Text>
+                </View>
+
+                {/* Non-Arabic Translation Editions */}
+                {NON_ARABIC_AUDIO_EDITIONS.map((ed) => {
+                  const isSelected =
+                    activeSegment === 'translation' && audioEdition.identifier === ed.identifier;
+                  const flagEmoji = getLanguageFlag(ed.language);
+                  const langTitle = getAudioTranslationLangName(ed.language);
                   return (
                     <TouchableOpacity
-                      key={langKey}
-                      onPress={() => handleSelectLanguage(langKey)}
+                      key={ed.identifier}
+                      onPress={() => handleSelectAudioEdition(ed.identifier)}
                       style={[
                         styles.pickerOption,
                         {
@@ -827,7 +881,7 @@ export function AudioPlayerModal({
                         },
                       ]}
                       accessibilityRole="button"
-                      accessibilityLabel={`Select ${ed.langName}`}
+                      accessibilityLabel={`Select ${langTitle} - ${ed.englishName}`}
                     >
                       <View style={styles.pickerOptionLeft}>
                         <Text style={styles.pickerFlag}>{flagEmoji}</Text>
@@ -838,11 +892,16 @@ export function AudioPlayerModal({
                               { color: isSelected ? colors.accent : colors.textPrimary },
                             ]}
                           >
-                            {ed.langName} ({langKey.toUpperCase()})
+                            {langTitle} ({ed.language.toUpperCase()})
                           </Text>
                           <Text style={[styles.pickerOptionSub, { color: colors.textMuted }]} numberOfLines={1}>
-                            {ed.name}
+                            {ed.englishName}
                           </Text>
+                          {ed.name ? (
+                            <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }} numberOfLines={1}>
+                              {ed.name}
+                            </Text>
+                          ) : null}
                         </View>
                       </View>
                       {isSelected && (
@@ -1243,8 +1302,8 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     width: '100%',
-    maxWidth: 420,
-    maxHeight: '75%',
+    maxWidth: 480,
+    maxHeight: '80%',
     borderRadius: 20,
     borderWidth: 1,
     padding: 16,
@@ -1268,23 +1327,35 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   pickerCloseBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pickerList: {
-    maxHeight: 340,
+    maxHeight: 380,
   },
   pickerListContent: {
     gap: 8,
+    paddingBottom: 8,
+  },
+  pickerSectionDivider: {
+    paddingTop: 8,
+    paddingBottom: 2,
+    paddingHorizontal: 4,
+  },
+  pickerSectionLabel: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
+    letterSpacing: 0.8,
   },
   pickerOption: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 52,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 10,
@@ -1298,7 +1369,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   pickerFlag: {
-    fontSize: 18,
+    fontSize: 20,
   },
   pickerOptionTitle: {
     fontFamily: 'Manrope_600SemiBold',
