@@ -74,6 +74,36 @@ const VIEWABILITY_CONFIG: ViewabilityConfig = {
   minimumViewTime: 500,
 };
 
+/**
+ * Strips leading Bismillah from ayah text if present.
+ * AlQuran Cloud's `quran-uthmani` text embeds the Bismillah at the beginning of Ayah 1
+ * for surahs 2-114 (except Surah 9).
+ */
+const LEADING_BISMILLAH_REGEX =
+  /^[\s\uFEFF]*ب[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*س[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*م[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*\s+[ٱا][\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ل[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ل[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ه[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*\s+[ٱا][\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ل[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ر[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ح[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*م[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ن[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*\s+[ٱا][\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ل[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ر[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ح[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*ي[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*م[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E8\u06EA-\u06ED]*\s*/u;
+
+export function stripBismillah(text: string): string {
+  if (!text) return text;
+  return text.replace(LEADING_BISMILLAH_REGEX, '');
+}
+
+/**
+ * Returns the displayed Arabic text for an ayah card or mushaf view.
+ * Strips the leading Bismillah from Ayah 1 of surahs 2-8 and 10-114
+ * because the dedicated surah header already renders the Bismillah.
+ * Surah 1 (where Bismillah IS Ayah 1) and Surah 9 (no Bismillah) are preserved.
+ */
+export function getDisplayedAyahText(
+  surahNumber: number,
+  numberInSurah: number,
+  text: string
+): string {
+  if (surahNumber === 1 || surahNumber === 9 || numberInSurah !== 1) {
+    return text;
+  }
+  return stripBismillah(text);
+}
+
 interface AyahBookmarkButtonProps {
   isBookmarked: boolean;
   onPress: () => void;
@@ -687,7 +717,7 @@ export default function QuranReaderScreen({
 
         {/* Arabic Text */}
         <AyahText
-          text={item.text}
+          text={getDisplayedAyahText(surahNumber, item.numberInSurah, item.text)}
           numberInSurah={item.numberInSurah}
           size={fontSize}
           fontFamily={arabicFamilies.regular}
@@ -775,7 +805,7 @@ export default function QuranReaderScreen({
                     writingDirection: 'rtl',
                   }}
                 >
-                  {a.text}{' '}
+                  {getDisplayedAyahText(surah.number, a.numberInSurah, a.text)}{' '}
                 </Text>
                 <Text
                   style={{
