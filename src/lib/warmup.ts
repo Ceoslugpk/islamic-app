@@ -597,7 +597,7 @@ export async function runFirstLaunchWarmup(options?: {
     // Step 1: Prayer Times
     updateProgress(0, steps[0].label);
     try {
-      const loc = options?.location || { latitude: 25.2048, longitude: 55.2708, label: 'Dubai, UAE' };
+      const loc = options?.location || { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' };
       const method = options?.methodId || 8;
       await fetchPrayerTimes(loc, method, new Date(), false);
       completed.push(steps[0].key);

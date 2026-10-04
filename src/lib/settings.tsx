@@ -94,7 +94,7 @@ const DEFAULTS: AppSettings = {
   methodId: 8,
   timeFormat: '12h',
   locationMode: 'auto',
-  manualLocation: { latitude: 25.2048, longitude: 55.2708, label: 'Dubai, UAE' },
+  manualLocation: { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' },
   autoLocation: null,
   remindersEnabled: false,
   reminderOffsetMinutes: 15,

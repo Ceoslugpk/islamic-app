@@ -79,7 +79,7 @@ export default function LocationScreen({
 
   // Active display info
   const activeLabel = isAuto
-    ? gpsLocation?.label || (locStatus === 'granted' ? 'Current GPS Location' : `Using manual location (${settings.manualLocation.label || 'Dubai, UAE'})`)
+    ? gpsLocation?.label || (locStatus === 'granted' ? 'Current GPS Location' : `Using manual location (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`)
     : settings.manualLocation.label || 'Manual Coordinates';
 
   const activeLat = isAuto ? (gpsLocation?.latitude ?? settings.manualLocation.latitude) : settings.manualLocation.latitude;
@@ -202,7 +202,7 @@ export default function LocationScreen({
               await requestGps(true);
             }}
             loading={locLoading}
-            fallbackCity={settings.manualLocation.label || 'Dubai, UAE'}
+            fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
           />
         )}
 

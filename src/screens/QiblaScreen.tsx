@@ -116,7 +116,7 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
     if (gpsLocation) {
       setLocLabel(gpsLocation.label);
     } else {
-      setLocLabel(`Using manual location (${settings.manualLocation.label || 'Dubai, UAE'})`);
+      setLocLabel(`Using manual location (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`);
     }
   }, [effectiveLocation, gpsLocation, settings.manualLocation.label]);
 
@@ -285,7 +285,7 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
               await requestLocation(true);
             }}
             loading={locLoading}
-            fallbackCity={settings.manualLocation.label || 'Dubai, UAE'}
+            fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
           />
         )}
 

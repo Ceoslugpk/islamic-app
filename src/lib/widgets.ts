@@ -155,9 +155,9 @@ export interface WidgetOptions extends WidgetPrayerOptions {
 /* -------------------------------------------------------------------------- */
 
 const DEFAULT_LOCATION: Location = {
-  latitude: 25.2048,
-  longitude: 55.2708,
-  label: 'Dubai, UAE',
+  latitude: 21.4225,
+  longitude: 39.8262,
+  label: 'Makkah, Saudi Arabia',
 };
 
 const DAILY_PRAYERS: ('Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha')[] = [
@@ -336,7 +336,7 @@ export async function getNextPrayerWidgetData(
     countdownText,
     isTomorrow,
     hasData: true,
-    locationLabel: loc.label || 'Dubai, UAE',
+    locationLabel: loc.label || 'Makkah, Saudi Arabia',
     progressFraction: Math.round(progressFraction * 100) / 100,
   };
 }

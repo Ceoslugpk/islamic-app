@@ -30,7 +30,7 @@ export function LocationPermissionNote({
   status,
   onEnable,
   loading = false,
-  fallbackCity = 'Dubai, UAE',
+  fallbackCity = 'Makkah, Saudi Arabia',
   compact = false,
   style,
   customMessage,

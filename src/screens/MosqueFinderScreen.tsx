@@ -363,7 +363,7 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
     ? 'AREA SEARCH'
     : isUsingGps
     ? 'GPS AUTO'
-    : `MANUAL (${settings.manualLocation.label || 'Dubai, UAE'})`;
+    : `MANUAL (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`;
 
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
@@ -548,7 +548,7 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
                   status={locStatus}
                   onEnable={handleUseMyLocation}
                   loading={isLocating || locLoading}
-                  fallbackCity={settings.manualLocation.label || 'Dubai, UAE'}
+                  fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
                   style={{ marginTop: 12 }}
                 />
               )}

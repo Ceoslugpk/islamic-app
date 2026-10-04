@@ -48,7 +48,7 @@ export const CALC_METHODS = [
   { id: 13, name: 'Diyanet (Turkey)', region: 'Turkey' },
 ] as const;
 
-const DEFAULT_LOCATION: Location = { latitude: 25.2048, longitude: 55.2708, label: 'Dubai, UAE' };
+const DEFAULT_LOCATION: Location = { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' };
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
