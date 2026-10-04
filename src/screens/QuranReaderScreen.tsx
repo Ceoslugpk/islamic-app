@@ -20,12 +20,8 @@ import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
 import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
 import { ArabicText, AyahText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
-import {
-  useSettings,
-  QURAN_FONT_SIZE_MIN,
-  QURAN_FONT_SIZE_MAX,
-  QURAN_FONT_SIZE_STEP,
-} from '../lib/settings';
+import { useSettings, QURAN_FONT_SIZE_MIN, QURAN_FONT_SIZE_MAX, QURAN_FONT_SIZE_STEP } from '../lib/settings';
+import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
@@ -83,11 +79,12 @@ export default function QuranReaderScreen({
   const { colors } = useTheme();
   const { haptic } = useHaptics();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
-  const { settings, setQuranFontSize, setQuranShowTranslation } = useSettings();
+  const { settings, setQuranFontSize, setQuranShowTranslation, setTafsirSourceId } = useSettings();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
   const [toolsMenuOpen, setToolsMenuOpen] = useState<boolean>(false);
+  const [tafsirSourcePickerOpen, setTafsirSourcePickerOpen] = useState<boolean>(false);
   const cacheKey = `surah:${surahNumber}:${edition.editionIdentifier}`;
   const [surah, setSurah] = useState<SurahDetail | null>(() => loadQuranCache<SurahDetail>(cacheKey));
   const [loading, setLoading] = useState<boolean>(() => !loadQuranCache<SurahDetail>(cacheKey));
@@ -95,6 +92,7 @@ export default function QuranReaderScreen({
   const [error, setError] = useState<string | null>(null);
   const fontSize = settings.quranFontSize;
   const showTranslation = settings.quranShowTranslation;
+  const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
   const arabicFamilies = QURAN_FONT_FAMILIES[settings.quranArabicFont];
   const ayahLineHeight = Math.round(fontSize * settings.quranLineHeight);
   const [readingMode, setReadingMode] = useState<ReadingMode>('cards');
@@ -385,7 +383,8 @@ export default function QuranReaderScreen({
     setTafsirText(null);
     setTafsirEdition(null);
     try {
-      const res = await fetchAyahTafsir(surahNumber, ayahNumber);
+      const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
+      const res = await fetchAyahTafsir(surahNumber, ayahNumber, currentTafsirSource.identifier);
       setTafsirText(res.text);
       setTafsirEdition(res.edition);
     } catch {
@@ -634,7 +633,7 @@ export default function QuranReaderScreen({
           >
             <View style={styles.tafsirHeader}>
               <Text style={[styles.tafsirTitle, { color: colors.accent }]}>
-                {tafsirEdition || 'Tafsir al-Jalalayn'}
+                {tafsirEdition || 'Tafsir'}
               </Text>
               <TouchableOpacity onPress={() => setActiveTafsirAyah(null)}>
                 <Ionicons name="close" size={16} color={colors.textMuted} />
@@ -643,9 +642,12 @@ export default function QuranReaderScreen({
             {tafsirLoading ? (
               <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 8 }} />
             ) : (
-              <ArabicText size={17} fontFamily={arabicFamilies.regular} style={styles.inlineTafsirText}>
+              <Text style={[
+                styles.inlineTafsirText,
+                { color: colors.textPrimary, fontFamily: 'Manrope_400Regular' }
+              ]}>
                 {tafsirText || ''}
-              </ArabicText>
+              </Text>
             )}
           </View>
         )}
@@ -911,6 +913,25 @@ export default function QuranReaderScreen({
 
             <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
 
+            {/* Tafsir Source */}
+            <TouchableOpacity
+              style={styles.toolsMenuItem}
+              onPress={() => { setTafsirSourcePickerOpen(true); setToolsMenuOpen(false); }}
+              accessibilityRole="button"
+              accessibilityLabel={`Tafsir source: ${currentTafsirSource.name}. Tap to change.`}
+            >
+              <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
+                <Ionicons name="book-outline" size={20} color={colors.accent} />
+              </View>
+              <View style={styles.toolsMenuTextGroup}>
+                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Tafsir Source</Text>
+                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>{currentTafsirSource.name} ({currentTafsirSource.language})</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+
+            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
             {/* Font Size */}
             <View style={styles.toolsMenuFontRow}>
               <View style={styles.toolsMenuFontLabel}>
@@ -1139,6 +1160,82 @@ export default function QuranReaderScreen({
         visible={langPickerOpen}
         onClose={() => setLangPickerOpen(false)}
       />
+
+      {/* Tafsir Source Chooser Modal */}
+      <Modal
+        visible={tafsirSourcePickerOpen}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setTafsirSourcePickerOpen(false)}
+      >
+        <View style={[styles.modalWrap, { backgroundColor: colors.bgBase }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+              Select Tafsir Source
+            </Text>
+            <TouchableOpacity
+              onPress={() => setTafsirSourcePickerOpen(false)}
+              style={styles.closeBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+            >
+              <Ionicons name="close" size={24} color={colors.textPrimary} />
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={TAFSIR_SOURCES}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const isSelected = item.id === settings.tafsirSourceId;
+              return (
+                <TouchableOpacity
+                  style={[
+                    styles.reciterRow,
+                    {
+                      borderBottomColor: colors.borderSubtle,
+                      backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                    },
+                  ]}
+                  onPress={() => { setTafsirSourceId(item.id as any); setTafsirSourcePickerOpen(false); }}
+                >
+                  <View style={styles.reciterInfo}>
+                    <View style={styles.reciterTitleRow}>
+                      <Text style={[styles.reciterEngName, { color: colors.textPrimary }]} numberOfLines={1}>
+                        {item.name}
+                      </Text>
+                      <View
+                        style={[
+                          styles.reciterLangBadge,
+                          {
+                            backgroundColor: item.languageCode === 'ar' ? colors.bgSurface : colors.accentDim,
+                            borderColor: item.languageCode === 'ar' ? colors.borderSubtle : colors.accent,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.reciterLangBadgeText,
+                            { color: item.languageCode === 'ar' ? colors.textMuted : colors.accent },
+                          ]}
+                        >
+                          {item.language.toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.reciterArabicName, { color: colors.textMuted }]}>
+                      {item.author}
+                    </Text>
+                  </View>
+                  {isSelected && (
+                    <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </View>
+      </Modal>
     </View>
   );
 }

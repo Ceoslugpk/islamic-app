@@ -184,18 +184,19 @@ export async function fetchAyah(
 
 export async function fetchAyahTafsir(
   surah: number,
-  ayah: number
+  ayah: number,
+  tafsirIdentifier = 'ar.jalalayn'
 ): Promise<{ text: string; edition: string }> {
-  const key = `tafsir:ayah:${surah}:${ayah}`;
+  const key = `tafsir:ayah:${surah}:${ayah}:${tafsirIdentifier}`;
   const cached = loadQuranCache<{ text: string; edition: string }>(key);
   if (cached) return cached;
 
   try {
-    const res = await fetch(`${BASE}/ayah/${surah}:${ayah}/quran-tafsir-tafsir-jalalayn`);
+    const res = await fetch(`${BASE}/ayah/${surah}:${ayah}/${tafsirIdentifier}`);
     if (res.ok) {
       const json = await res.json();
       if (json.code === 200 && json.data && json.data.edition?.type === 'tafsir') {
-        const result = { text: json.data.text, edition: json.data.edition?.name || 'تفسير الجلالين' };
+        const result = { text: json.data.text, edition: json.data.edition?.name || 'Tafsir' };
         saveQuranCache(key, result);
         return result;
       }
@@ -218,13 +219,14 @@ export async function fetchAyahTafsir(
 }
 
 export async function fetchSurahTafsir(
-  surah: number
+  surah: number,
+  tafsirIdentifier = 'ar.jalalayn'
 ): Promise<Array<{ ayahNumber: number; text: string }>> {
-  const key = `tafsir:surah:${surah}`;
+  const key = `tafsir:surah:${surah}:${tafsirIdentifier}`;
   const cached = loadQuranCache<Array<{ ayahNumber: number; text: string }>>(key);
   if (cached) return cached;
 
-  const res = await fetch(`${BASE}/surah/${surah}/ar.jalalayn`);
+  const res = await fetch(`${BASE}/surah/${surah}/${tafsirIdentifier}`);
   if (!res.ok) throw new Error('Surah tafsir fetch failed');
   const json = await res.json();
   if (json.code !== 200 || !json.data || !Array.isArray(json.data.ayahs)) {

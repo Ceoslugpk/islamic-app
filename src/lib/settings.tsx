@@ -10,6 +10,7 @@ export type TimeFormat = '12h' | '24h';
 export type LocationMode = 'auto' | 'manual';
 export type ThemeMode = 'system' | 'ink' | 'paper';
 export type QuranArabicFont = 'amiri' | 'notonaskh';
+export type TafsirSourceId = 'jalalayn' | 'qurtubi' | 'miqbas' | 'waseet' | 'baghawi' | 'muyassar';
 
 // Quran reader display ranges (shared by Settings UI + reader)
 export const QURAN_FONT_SIZE_MIN = 18;
@@ -58,6 +59,7 @@ export interface AppSettings {
   quranFontSize: number;
   quranLineHeight: number;
   quranShowTranslation: boolean;
+  tafsirSourceId: TafsirSourceId;
 }
 
 interface SettingsContextValue {
@@ -83,6 +85,7 @@ interface SettingsContextValue {
   setQuranFontSize: (size: number) => void;
   setQuranLineHeight: (multiplier: number) => void;
   setQuranShowTranslation: (enabled: boolean) => void;
+  setTafsirSourceId: (sourceId: TafsirSourceId) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -109,6 +112,7 @@ const DEFAULTS: AppSettings = {
   quranFontSize: QURAN_FONT_SIZE_DEFAULT,
   quranLineHeight: QURAN_LINE_HEIGHT_DEFAULT,
   quranShowTranslation: true,
+  tafsirSourceId: 'jalalayn',
 };
 
 const STORAGE_KEY = 'islamic-settings';
@@ -207,6 +211,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSettings((prev) => persist({ ...prev, quranLineHeight: clampQuranLineHeight(quranLineHeight) })),
     setQuranShowTranslation: (quranShowTranslation) =>
       setSettings((prev) => persist({ ...prev, quranShowTranslation })),
+    setTafsirSourceId: (tafsirSourceId) =>
+      setSettings((prev) => persist({ ...prev, tafsirSourceId })),
   };
 
   if (!ready) return null;
