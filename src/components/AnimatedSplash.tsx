@@ -10,11 +10,15 @@ import {
 } from 'react-native';
 import Svg, { Path, Defs, Mask, Rect } from 'react-native-svg';
 
+import { useTheme } from '../lib/theme';
+
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
-const BG = '#0E1214';
+const BG_DARK = '#0E1214';
+const BG_LIGHT = '#F4EEE1';
 const IVORY = '#F4EEE1';
+const INK = '#0E1214';
 const GOLD = '#B8975A';
 
 // Exact approved symbol geometry (viewBox 100x100, from the brand SVGs)
@@ -33,6 +37,12 @@ interface AnimatedSplashProps {
  * No crescent, no patterns, no spinner, no tagline. Just the identity.
  */
 export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
+  const { mode } = useTheme();
+  const isDark = mode !== 'paper';
+  const bg = isDark ? BG_DARK : BG_LIGHT;
+  const logoColor = isDark ? IVORY : INK;
+  const accentColor = isDark ? GOLD : INK;
+
   // Phase progress (0..1 drives the timeline, we step phases manually)
   const [phase, setPhase] = useState(0);
   const slit = useRef(new Animated.Value(0)).current;
@@ -61,32 +71,32 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
     }
 
     const timings: Array<[number, () => void]> = [];
-    // 0.00-0.20s: slit appears (thin vertical light at the logo's opening, x≈51-52)
+    // 0-200ms: slit appears (thin vertical light at the logo's opening, x≈51-52)
     const slitAnim = Animated.timing(slit, {
       toValue: 1,
       duration: 200,
       useNativeDriver: USE_NATIVE_DRIVER,
       easing: Easing.out(Easing.quad),
     });
-    // 0.20-0.75s: grow outward from the slit (mask expands from center slit)
+    // 200-500ms: grow outward from the slit (mask expands from center slit)
     const growAnim = Animated.timing(grow, {
       toValue: 1,
-      duration: 550,
+      duration: 300,
       useNativeDriver: USE_NATIVE_DRIVER,
       easing: Easing.out(Easing.cubic),
     });
-    // 0.75-1.0s: hold + wordmark "ISLAMIC" appears
-    // 1.0-1.6s: light sweep across the logo once
+    // 500-750ms: hold + wordmark "ISLAMIC" appears
+    // 750-900ms: light sweep across the logo once
     const sweepAnim = Animated.timing(sweep, {
       toValue: 1,
-      duration: 600,
+      duration: 150,
       useNativeDriver: USE_NATIVE_DRIVER,
       easing: Easing.inOut(Easing.sin),
     });
-    // 1.6s+: fade into Today
+    // 900-1000ms: fade into Today
     const fadeAnim = Animated.timing(fadeOut, {
       toValue: 0,
-      duration: 450,
+      duration: 120,
       useNativeDriver: USE_NATIVE_DRIVER,
     });
 
@@ -97,10 +107,10 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
           sweepAnim.start(() => {
             const hold2 = setTimeout(() => {
               fadeAnim.start(onDone);
-            }, 150);
+            }, 120);
             timings.push([1, () => clearTimeout(hold2)]);
           });
-        }, 350);
+        }, 250);
         timings.push([1, () => clearTimeout(hold)]);
       });
     });
@@ -124,7 +134,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
 
   return (
     <Animated.View
-      style={[styles.root, { backgroundColor: BG, opacity: fadeOut }]}
+      style={[styles.root, { backgroundColor: bg, opacity: fadeOut }]}
       accessibilityLabel="Islamic app splash"
     >
       <View style={styles.center}>
@@ -136,7 +146,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
                 <AnimatedRect x={maskX} y={0} width={maskWidth} height={100} fill="#fff" />
               </Mask>
             </Defs>
-            <Path d={LOGO_PATH} fill={IVORY} mask="url(#reveal)" />
+            <Path d={LOGO_PATH} fill={logoColor} mask="url(#reveal)" />
           </AnimatedSvg>
 
           {/* Slit light (the vertical opening that starts the reveal) */}
@@ -147,7 +157,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
               {
                 opacity: slitOpacity,
                 height: slitHeight,
-                backgroundColor: GOLD,
+                backgroundColor: accentColor,
               },
             ]}
           />
@@ -160,7 +170,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
               {
                 left: sweepX,
                 opacity: sweepOpacity,
-                backgroundColor: IVORY,
+                backgroundColor: logoColor,
               },
             ]}
           />
@@ -168,14 +178,14 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
 
         {/* Wordmark — appears after the symbol is fully revealed */}
         <Animated.Text
-          style={[styles.wordmark, { opacity: wordmarkOpacity, color: IVORY }]}
+          style={[styles.wordmark, { opacity: wordmarkOpacity, color: logoColor }]}
         >
           ISLAMIC
         </Animated.Text>
 
         {/* "Today" hint — appears at the very end (phase 2) */}
         <Animated.Text
-          style={[styles.todayHint, { color: GOLD, opacity: wordmarkOpacity }]}
+          style={[styles.todayHint, { color: accentColor, opacity: wordmarkOpacity }]}
         >
           ↓ Today
         </Animated.Text>

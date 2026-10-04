@@ -7,6 +7,15 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E1214",
+      "dark": {
+        "image": "./assets/splash-icon.png",
+        "backgroundColor": "#0E1214"
+      }
+    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -49,7 +58,8 @@
         {
           "locationWhenInUsePermission": "Location is used to calculate prayer times, Qibla direction, and find nearby mosques."
         }
-      ]
+      ],
+      "expo-splash-screen"
     ]
   }
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -10,7 +10,10 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
@@ -61,6 +64,17 @@ function formatVerses(verses?: NameVerseRef[]): string | null {
   return `Quran ${verses.map((verse) => `${verse.surah}:${verse.ayah}`).join(' · ')}`;
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  const clean = hex.replace('#', '');
+  if (clean.length === 6) {
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return hex;
+}
+
 export default function NamesScreen({
   onBack,
   variant = 'allah',
@@ -75,6 +89,29 @@ export default function NamesScreen({
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
   const isProphet = variant === 'prophet';
+
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollOffsetRef = useRef(0);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const handleScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+    scrollOffsetRef.current = contentOffset.x;
+    const isEnd = contentOffset.x + layoutMeasurement.width >= contentSize.width - 12;
+    setCanScrollRight(!isEnd);
+  };
+
+  const handleContentSizeChange = (contentWidth: number) => {
+    const availableWidth = width - (isCompact ? 32 : 40);
+    if (contentWidth <= availableWidth) {
+      setCanScrollRight(false);
+    }
+  };
+
+  const handleScrollRight = () => {
+    const nextOffset = scrollOffsetRef.current + 160;
+    scrollRef.current?.scrollTo({ x: nextOffset, animated: true });
+  };
 
   const [feed, setFeed] = useState<NamesFeed | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -294,51 +331,86 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
 
         {/* Language chips (Allah variant only) — single horizontally-scrollable row */}
         {!isProphet && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipRow}
-            contentContainerStyle={styles.chipRowContent}
-          >
-            {NAMES_LANGUAGES.map((lang) => {
-              const selected = lang.code === language;
-              return (
-                <TouchableOpacity
-                  key={lang.code}
-                  onPress={() => setNamesLanguage(lang.code)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: selected ? colors.accent : colors.bgSurface,
-                      borderColor: selected ? colors.accent : colors.borderSubtle,
-                      height: isCompact ? 30 : 32,
-                    },
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={`Show names in ${lang.label}`}
-                  hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
-                  pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
-                  delayPressIn={0}
-                >
-                  <Text
+          <View style={styles.chipRowWrap}>
+            <ScrollView
+              ref={scrollRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.chipRow}
+              contentContainerStyle={styles.chipRowContent}
+              onScroll={handleScroll}
+              onContentSizeChange={handleContentSizeChange}
+              scrollEventThrottle={16}
+            >
+              {NAMES_LANGUAGES.map((lang) => {
+                const selected = lang.code === language;
+                return (
+                  <TouchableOpacity
+                    key={lang.code}
+                    onPress={() => setNamesLanguage(lang.code)}
                     style={[
-                      styles.chipText,
+                      styles.chip,
                       {
-                        color: selected ? colors.onAccent : colors.textSecondary,
-                        fontSize: isCompact ? 11 : 11.5,
+                        backgroundColor: selected ? colors.accent : colors.bgSurface,
+                        borderColor: selected ? colors.accent : colors.borderSubtle,
+                        height: isCompact ? 32 : 34,
+                        paddingHorizontal: isCompact ? 14 : 16,
                       },
                     ]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`Show names in ${lang.label}`}
+                    hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                    pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                    delayPressIn={0}
                   >
-                    {lang.label}
-                  </Text>
+                    <Text
+                      style={[
+                        styles.chipText,
+                        {
+                          color: selected ? colors.onAccent : colors.textSecondary,
+                          fontSize: isCompact ? 11.5 : 12,
+                        },
+                      ]}
+                    >
+                      {lang.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              {loadState === 'loading' ? (
+                <ActivityIndicator size="small" color={colors.accent} style={styles.chipSpinner} />
+              ) : null}
+            </ScrollView>
+
+            {canScrollRight && (
+              <View style={styles.fadeContainer} pointerEvents="box-none">
+                <LinearGradient
+                  colors={[hexToRgba(colors.bgBase, 0), colors.bgBase]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0.75, y: 0 }}
+                  style={styles.fadeGradient}
+                  pointerEvents="none"
+                />
+                <TouchableOpacity
+                  style={[
+                    styles.scrollHint,
+                    {
+                      backgroundColor: colors.bgSurface,
+                      borderColor: colors.borderSubtle,
+                    },
+                  ]}
+                  onPress={handleScrollRight}
+                  accessibilityRole="button"
+                  accessibilityLabel="Scroll more languages"
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="chevron-forward" size={12} color={colors.accent} />
                 </TouchableOpacity>
-              );
-            })}
-            {loadState === 'loading' ? (
-              <ActivityIndicator size="small" color={colors.accent} style={styles.chipSpinner} />
-            ) : null}
-          </ScrollView>
+              </View>
+            )}
+          </View>
         )}
 
         {/* Search Input */}
@@ -443,27 +515,57 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
-  chipRow: {
+  chipRowWrap: {
+    position: 'relative',
     marginBottom: 10,
+    justifyContent: 'center',
   },
+  chipRow: {},
   chipRowContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingRight: 4,
+    gap: 8,
+    paddingRight: 36,
   },
   chip: {
-    paddingHorizontal: 12,
     borderRadius: 999,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   chipText: {
     fontFamily: 'Manrope_600SemiBold',
+    includeFontPadding: false,
   },
   chipSpinner: {
     marginLeft: 2,
+    flexShrink: 0,
+  },
+  fadeContainer: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  fadeGradient: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 48,
+  },
+  scrollHint: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 2,
   },
   searchBox: {
     flexDirection: 'row',
