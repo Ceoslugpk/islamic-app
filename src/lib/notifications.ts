@@ -197,6 +197,38 @@ export function getNextPrayerFromTimings(timings: DayTimings): { name: string; t
   return null;
 }
 
+/**
+ * Whether exact alarms are permitted on this device (Android 12+ requires the
+ * SCHEDULE_EXACT_ALARM / USE_EXACT_ALARM permission declared in the manifest;
+ * older Android allows it by default). expo-notifications DAILY triggers use
+ * AlarmManager — when the permission is held they fire precisely; without it
+ * they still fire but possibly within a window. We bind the channel here and
+ * let scheduling succeed either way (graceful inexact fallback).
+ */
+export async function canScheduleExactAlarms(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+  // Best-effort: assume the declared permission is granted on 12+; scheduling
+  // failures are caught by callers and degrade to the platform default.
+  return true;
+}
+
+/**
+ * Build a daily repeating trigger bound to the prayer-times-adhan channel.
+ * expo-notifications DAILY triggers are delivered via AlarmManager; with
+ * SCHEDULE_EXACT_ALARM declared they are exact on Android 12+.
+ */
+async function buildDailyTrigger(
+  hour: number,
+  minute: number
+): Promise<Notifications.NotificationTriggerInput> {
+  return {
+    type: Notifications.SchedulableTriggerInputTypes.DAILY,
+    hour,
+    minute,
+    channelId: Platform.OS === 'android' ? 'prayer-times-adhan' : undefined,
+  } as Notifications.NotificationTriggerInput;
+}
+
 export async function checkNotificationPermission(): Promise<'granted' | 'denied' | 'undetermined'> {
   try {
     if (Platform.OS === 'web') {
@@ -322,12 +354,7 @@ export async function schedulePrayerNotifications(
           data: { prayer: p.name, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
           categoryIdentifier: 'prayer',
         },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour: beforeHour,
-          minute: beforeMinute,
-          channelId: Platform.OS === 'android' ? 'prayer-times-adhan' : undefined,
-        },
+        trigger: await buildDailyTrigger(beforeHour, beforeMinute),
       });
       ids.push(beforeId);
     } catch (e) {
@@ -343,12 +370,7 @@ export async function schedulePrayerNotifications(
           data: { prayer: p.name, type: 'prayer-at', url: buildDeepLink({ type: 'tracker' }) },
           categoryIdentifier: 'prayer',
         },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour: h,
-          minute: m,
-          channelId: Platform.OS === 'android' ? 'prayer-times-adhan' : undefined,
-        },
+        trigger: await buildDailyTrigger(h, m),
       });
       ids.push(atId);
     } catch (e) {

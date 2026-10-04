@@ -17,6 +17,7 @@ import {
 } from './hadithApi';
 import { fetchSurahList, fetchSurahListForLanguage } from './quran';
 import { getQuranTranslationLanguage } from './quranLanguageState';
+import { loadQuranPreloadRequested } from './settings';
 
 const WARMUP_DONE_KEY = 'warmup-done-v1';
 const WARMUP_VERSION = 1;
@@ -550,11 +551,13 @@ export async function runFirstLaunchWarmup(options?: {
   onProgress?: (progress: WarmupProgress) => void;
 }): Promise<void> {
   const quickDone = await hasWarmupRun();
+  const preloadRequested = await loadQuranPreloadRequested();
 
   if (quickDone) {
     // Quick steps already done on an earlier launch.
-    // Ensure progressive background downloaders are resumed until fully cached.
-    if (!isQuranPreloadRunning() && !isQuranPreloadComplete()) {
+    // Ensure progressive background downloaders are resumed until fully cached
+    // (Quran text only when the user hasn't turned preloading off).
+    if (preloadRequested && !isQuranPreloadRunning() && !isQuranPreloadComplete()) {
       startQuranPreload();
     }
     const hadithDone = await isHadithWarmupComplete();
@@ -625,7 +628,7 @@ export async function runFirstLaunchWarmup(options?: {
         }
       }
 
-      if (!isQuranPreloadRunning()) {
+      if (preloadRequested && !isQuranPreloadRunning()) {
         startQuranPreload();
       }
       completed.push(steps[1].key);

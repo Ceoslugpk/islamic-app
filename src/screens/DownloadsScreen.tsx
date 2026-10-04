@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -28,6 +28,14 @@ import {
 } from '../lib/quranAudio';
 import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
 import { SURAHS_114 } from '../lib/surahs114';
+import {
+  useQuranPreload,
+  verifyQuranPreloadCache,
+  repairQuranPreloadCache,
+  QuranPreloadVerification,
+} from '../lib/quranPreloader';
+import { useQuranLanguage } from '../lib/quranLanguageState';
+import { useSettings } from '../lib/settings';
 
 
 interface DownloadsScreenProps {
@@ -44,6 +52,60 @@ export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreen
 
   const { downloadedSurahs, totalStorageUsed } = useSurahDownloads();
   const { playback, status } = useAudioMiniPlayer();
+  const { progress: preloadProgress, startPreload, pausePreload } = useQuranPreload();
+  const { edition, flag } = useQuranLanguage();
+  const { setQuranPreloadRequested } = useSettings();
+  const [textVerification, setTextVerification] = useState<QuranPreloadVerification | null>(null);
+  const [verifyingText, setVerifyingText] = useState(false);
+
+  // When everything claims to be cached, prove it by reading the local cache only.
+  const autoVerifyDone = useRef(false);
+  useEffect(() => {
+    if (!preloadProgress.isComplete || autoVerifyDone.current) return;
+    autoVerifyDone.current = true;
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      verifyQuranPreloadCache()
+        .then((report) => {
+          if (!cancelled) setTextVerification(report);
+        })
+        .catch(() => {});
+    }, 400);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [preloadProgress.isComplete]);
+
+  const handleQuranTextAction = () => {
+    if (preloadProgress.isRunning) {
+      pausePreload();
+      setQuranPreloadRequested(false);
+    } else {
+      setQuranPreloadRequested(true);
+      startPreload(false);
+    }
+  };
+
+  const handleVerifyText = async () => {
+    if (verifyingText) return;
+    setVerifyingText(true);
+    try {
+      const report = await verifyQuranPreloadCache();
+      setTextVerification(report);
+    } catch {
+      // verification only reads local storage; failures are non-fatal
+    } finally {
+      setVerifyingText(false);
+    }
+  };
+
+  const handleRepairText = () => {
+    if (!textVerification || textVerification.ok) return;
+    setTextVerification(null);
+    setQuranPreloadRequested(true);
+    repairQuranPreloadCache(textVerification).catch(() => {});
+  };
 
   const handleClearAll = () => {
     if (downloadedSurahs.length === 0) return;
@@ -119,10 +181,153 @@ export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreen
           </TouchableOpacity>
           <SectionHeader
             compact
-            eyebrow="Offline Audio"
+            eyebrow="Offline"
             title="Downloads"
             style={styles.sectionHeader}
           />
+        </View>
+
+        {/* Quran Text Preload — offline reading data (NOT audio) */}
+        <View
+          style={[
+            styles.textCard,
+            {
+              backgroundColor: colors.bgSurface,
+              borderColor: colors.borderSubtle,
+              marginHorizontal: paddingH,
+            },
+          ]}
+        >
+          <View style={styles.textCardHeader}>
+            <View
+              style={[
+                styles.textIconWrap,
+                {
+                  backgroundColor: preloadProgress.isRunning || preloadProgress.isComplete
+                    ? colors.accentDim
+                    : colors.bgRaised,
+                },
+              ]}
+            >
+              <Ionicons
+                name={
+                  preloadProgress.isComplete
+                    ? 'book'
+                    : preloadProgress.isRunning
+                    ? 'cloud-download'
+                    : 'book-outline'
+                }
+                size={16}
+                color={
+                  preloadProgress.isComplete || preloadProgress.isRunning
+                    ? colors.accent
+                    : colors.textSecondary
+                }
+              />
+            </View>
+            <View style={styles.textHeaderMain}>
+              <Text style={[styles.textTitle, { color: colors.textPrimary }]}>
+                Quran Text & Translation
+              </Text>
+              <Text style={[styles.textSubtitle, { color: colors.textMuted }]} numberOfLines={2}>
+                For offline reading (not audio) · {flag} {edition.name}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={[
+                styles.textActionBtn,
+                {
+                  backgroundColor: preloadProgress.isRunning ? colors.bgRaised : colors.accentDim,
+                  borderColor: preloadProgress.isRunning ? colors.borderSubtle : colors.accent,
+                },
+              ]}
+              onPress={handleQuranTextAction}
+              accessibilityRole="button"
+              accessibilityLabel={
+                preloadProgress.isRunning
+                  ? 'Pause Quran text download'
+                  : preloadProgress.cached > 0
+                  ? 'Resume Quran text download'
+                  : 'Preload Quran text for offline reading'
+              }
+            >
+              <Text
+                style={[
+                  styles.textActionText,
+                  { color: preloadProgress.isRunning ? colors.textSecondary : colors.accent },
+                ]}
+              >
+                {preloadProgress.isRunning
+                  ? 'Pause'
+                  : preloadProgress.cached > 0
+                  ? 'Resume'
+                  : 'Preload'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.textStatusRow}>
+            <Text style={[styles.textStatus, { color: colors.textSecondary }]}>
+              {preloadProgress.isRunning
+                ? `Downloading text… ${preloadProgress.cached}/114` +
+                  (preloadProgress.currentSurah
+                    ? ` · Surah ${preloadProgress.currentSurah}`
+                    : '')
+                : preloadProgress.isComplete
+                ? 'All 114 surahs available offline'
+                : `${preloadProgress.cached}/114 surahs cached`}
+            </Text>
+            {!preloadProgress.isRunning && (
+              <TouchableOpacity
+                onPress={handleVerifyText}
+                disabled={verifyingText}
+                accessibilityRole="button"
+                accessibilityLabel="Verify locally stored Quran text"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={[styles.textVerifyBtn, { color: colors.accent }]}>
+                  {verifyingText ? 'Checking…' : 'Verify'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {preloadProgress.isRunning && (
+            <View style={[styles.textTrack, { backgroundColor: colors.bgBase }]}>
+              <View
+                style={[
+                  styles.textFill,
+                  {
+                    backgroundColor: colors.accent,
+                    width: `${Math.max(2, Math.round((preloadProgress.cached / 114) * 100))}%`,
+                  },
+                ]}
+              />
+            </View>
+          )}
+
+          {textVerification && !textVerification.ok && (
+            <View style={[styles.verifyNote, { borderColor: colors.borderSubtle }]}>
+              <Text style={[styles.verifyNoteText, { color: colors.textMuted }]}>
+                {textVerification.valid + textVerification.invalidSurahs.length}/114 verified ·{' '}
+                {textVerification.missingSurahs.length} missing ·{' '}
+                {textVerification.invalidSurahs.length} incomplete
+              </Text>
+              <TouchableOpacity
+                style={[styles.repairBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
+                onPress={handleRepairText}
+                accessibilityRole="button"
+                accessibilityLabel="Re-download incomplete surahs"
+              >
+                <Text style={[styles.repairText, { color: colors.accent }]}>Repair</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+          {textVerification && textVerification.ok && (
+            <Text style={[styles.verifyOkText, { color: colors.accent }]}>
+              Verified offline · {textVerification.valid}/114 surahs valid
+            </Text>
+          )}
         </View>
 
         {/* Storage Summary Card */}
@@ -349,6 +554,105 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     marginBottom: 8,
+  },
+  textCard: {
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  textCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  textIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  textHeaderMain: {
+    flex: 1,
+    minWidth: 0,
+  },
+  textTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 13,
+  },
+  textSubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  textActionBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexShrink: 0,
+  },
+  textActionText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+  },
+  textStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginTop: 10,
+  },
+  textStatus: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+    flex: 1,
+  },
+  textVerifyBtn: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+  },
+  textTrack: {
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  textFill: {
+    height: 4,
+    borderRadius: 2,
+  },
+  verifyNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+  },
+  verifyNoteText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11,
+    flex: 1,
+  },
+  repairBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexShrink: 0,
+  },
+  repairText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+  },
+  verifyOkText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    marginTop: 8,
   },
   storageCard: {
     flexDirection: 'row',

@@ -458,7 +458,8 @@ export default function NotificationsScreen({ onBack }: { onBack?: () => void })
         <Text style={[styles.infoText, { color: colors.textMuted }]}>
           • <Text style={{ color: colors.textPrimary }}>Daily Repeat:</Text> Notifications are scheduled locally as repeating daily alarms for all 5 prayers (Fajr, Dhuhr, Asr, Maghrib, Isha) plus countdown alerts {reminderOffsetMinutes} min before.{'\n\n'}
           • <Text style={{ color: colors.textPrimary }}>Android Notification Channel:</Text> Uses the high-priority &apos;prayer-times-adhan&apos; channel with bundled sound and vibration so reminders reliably break through.{'\n\n'}
-          • <Text style={{ color: colors.textPrimary }}>Adhan Reciters:</Text> In-app adhan playback plays your chosen reciter (e.g. Mishary Alafasy, Abdul Basit, Makkah, Madinah, Al-Aqsa) when prayer time arrives.
+          • <Text style={{ color: colors.textPrimary }}>Adhan Reciters:</Text> In-app adhan playback plays your chosen reciter from 11 voices (e.g. Mishary Alafasy, Abdul Basit, Al-Hussary, Al-Banna, Maher, Kabbara, Makkah, Madinah, Al-Aqsa) when prayer time arrives.{'\n\n'}
+          • <Text style={{ color: colors.textPrimary }}>Reliability:</Text> Prayer alerts are scheduled as repeating daily alarms the OS delivers even when the app is closed. On Android 12+ exact timing uses the SCHEDULE_EXACT_ALARM permission. If alerts are delayed, allow the app through battery optimization (Settings → Apps → Islamic → Battery → Unrestricted) and keep notification permission enabled. Alarms are re-checked and rescheduled whenever the app opens, and after device reboot Android restores scheduled notifications automatically.
         </Text>
       </Card>
 

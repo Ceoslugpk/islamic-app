@@ -60,6 +60,8 @@ export interface AppSettings {
   quranLineHeight: number;
   quranShowTranslation: boolean;
   tafsirSourceId: TafsirSourceId;
+  /** User wants Quran text/translation preloaded in the background (offline reading). */
+  quranPreloadRequested: boolean;
 }
 
 interface SettingsContextValue {
@@ -86,6 +88,7 @@ interface SettingsContextValue {
   setQuranLineHeight: (multiplier: number) => void;
   setQuranShowTranslation: (enabled: boolean) => void;
   setTafsirSourceId: (sourceId: TafsirSourceId) => void;
+  setQuranPreloadRequested: (requested: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -113,9 +116,40 @@ const DEFAULTS: AppSettings = {
   quranLineHeight: QURAN_LINE_HEIGHT_DEFAULT,
   quranShowTranslation: true,
   tafsirSourceId: 'jalalayn',
+  quranPreloadRequested: true,
 };
 
 const STORAGE_KEY = 'islamic-settings';
+
+/**
+ * In-memory mirror of `quranPreloadRequested` so non-React callers (background
+ * preloader, warmup, app bootstrap) can honour the user's choice synchronously.
+ * `null` means "storage not read yet" and falls back to the default (enabled).
+ */
+let preloadRequestedMem: boolean | null = null;
+
+/** Synchronous read for background callers. Defaults to enabled before storage loads. */
+export function getQuranPreloadRequested(): boolean {
+  return preloadRequestedMem ?? DEFAULTS.quranPreloadRequested;
+}
+
+/** Async read straight from storage — for launch-time guards before the provider hydrates. */
+export async function loadQuranPreloadRequested(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed: Partial<AppSettings> = JSON.parse(raw);
+      if (typeof parsed.quranPreloadRequested === 'boolean') {
+        preloadRequestedMem = parsed.quranPreloadRequested;
+        return parsed.quranPreloadRequested;
+      }
+    }
+  } catch {
+    // fall through to default
+  }
+  preloadRequestedMem = DEFAULTS.quranPreloadRequested;
+  return DEFAULTS.quranPreloadRequested;
+}
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(DEFAULTS);
@@ -141,6 +175,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           typeof next.quranShowTranslation === 'boolean'
             ? next.quranShowTranslation
             : DEFAULTS.quranShowTranslation;
+        next.quranPreloadRequested =
+          typeof next.quranPreloadRequested === 'boolean'
+            ? next.quranPreloadRequested
+            : DEFAULTS.quranPreloadRequested;
+        preloadRequestedMem = next.quranPreloadRequested;
 
         // Adopt legacy QuranReaderScreen AsyncStorage values once, when settings
         // don't own them yet — settings become the source of truth from here on.
@@ -165,6 +204,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
       } catch {
         // fall back to defaults
+        preloadRequestedMem = DEFAULTS.quranPreloadRequested;
         setAudioTranslationEnabled(DEFAULTS.translationAudioEnabled);
         setActiveAdhanReciterId(DEFAULTS.adhanReciterId);
       } finally {
@@ -174,6 +214,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   function persist(next: AppSettings) {
+    preloadRequestedMem = next.quranPreloadRequested;
     setSettings(next);
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
     return next;
@@ -213,6 +254,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSettings((prev) => persist({ ...prev, quranShowTranslation })),
     setTafsirSourceId: (tafsirSourceId) =>
       setSettings((prev) => persist({ ...prev, tafsirSourceId })),
+    setQuranPreloadRequested: (quranPreloadRequested) =>
+      setSettings((prev) => persist({ ...prev, quranPreloadRequested })),
   };
 
   if (!ready) return null;

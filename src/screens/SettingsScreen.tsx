@@ -56,6 +56,12 @@ import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { accentThemes, ACCENT_KEYS } from '../lib/accents';
 import { clearWomenData, clearCycleHistory } from '../lib/db';
 import { WomenPinModal } from '../components/WomenPinModal';
+import {
+  useQuranPreload,
+  verifyQuranPreloadCache,
+  repairQuranPreloadCache,
+  QuranPreloadVerification,
+} from '../lib/quranPreloader';
 
 const ABOUT_ROWS: { title: string; subtitle: string }[] = [
   { title: 'Islamic · v1.0.0', subtitle: 'Version 1.0.0' },
@@ -455,9 +461,13 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
     setQuranFontSize,
     setQuranLineHeight,
     setQuranShowTranslation,
+    setQuranPreloadRequested,
   } = useSettings();
   const { haptic } = useHaptics();
   const { edition, flag } = useQuranLanguage();
+  const { progress: preloadProgress, startPreload, pausePreload } = useQuranPreload();
+  const [textVerification, setTextVerification] = useState<QuranPreloadVerification | null>(null);
+  const [verifyingText, setVerifyingText] = useState(false);
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
   const [adhanModalOpen, setAdhanModalOpen] = useState(false);
   const [widgetsModalOpen, setWidgetsModalOpen] = useState(false);
@@ -585,6 +595,38 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
     } else {
       await playAdhan(settings.adhanReciterId);
     }
+  }
+
+  function handleToggleQuranTextPreload(next: boolean) {
+    setQuranPreloadRequested(next);
+    if (next) {
+      startPreload(false);
+    } else {
+      pausePreload();
+    }
+    haptic('light');
+  }
+
+  async function handleVerifyQuranText() {
+    if (verifyingText) return;
+    setVerifyingText(true);
+    try {
+      const report = await verifyQuranPreloadCache();
+      setTextVerification(report);
+    } catch {
+      // local-only verification; failures are non-fatal
+    } finally {
+      setVerifyingText(false);
+    }
+    haptic('light');
+  }
+
+  function handleRepairQuranText() {
+    if (!textVerification || textVerification.ok) return;
+    setTextVerification(null);
+    setQuranPreloadRequested(true);
+    repairQuranPreloadCache(textVerification).catch(() => {});
+    haptic('light');
   }
 
   function handleThemeModeChange(nextMode: 'system' | 'ink' | 'paper') {
@@ -720,7 +762,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
         <Section label="Home Screen">
           <Row
             title="Home Screen Widgets"
-            desc="Preview Next Prayer, Salah Progress, Quran, and Hijri widgets"
+            desc="Add the real Next Prayer widget to your home screen (long-press home → Widgets → Islamic). Tap it to open the app."
             onPress={() => {
               haptic('light');
               if (onOpenWidgets) {
@@ -729,7 +771,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
                 setWidgetsModalOpen(true);
               }
             }}
-            accessibilityLabel="Home Screen Widgets preview and setup"
+            accessibilityLabel="Home Screen Widgets — add the Next Prayer widget to your home screen"
             right={<Ionicons name="chevron-forward" size={18} color={colors.accent} />}
           />
         </Section>
@@ -743,6 +785,74 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
             accessibilityLabel={`Change translation language. Current: ${edition.language} ${flag}`}
             right={<Ionicons name="chevron-forward" size={18} color={colors.accent} />}
           />
+        </Section>
+
+        {/* Downloads — Quran text/translation preload (separate from audio files) */}
+        <Section label="Downloads">
+          <Row
+            title="Preload Quran text"
+            desc={
+              preloadProgress.isComplete
+                ? `114/114 cached · ${flag} ${edition.name} ready offline`
+                : preloadProgress.isRunning
+                ? `Downloading text ${preloadProgress.cached}/114…` +
+                  (preloadProgress.currentSurah ? ` · Surah ${preloadProgress.currentSurah}` : '')
+                : `${preloadProgress.cached}/114 cached · ${flag} ${edition.name}`
+            }
+            right={
+              <View style={styles.rightCluster}>
+                <Text
+                  style={[
+                    styles.stateLabel,
+                    { color: settings.quranPreloadRequested ? colors.accent : colors.textMuted },
+                  ]}
+                >
+                  {settings.quranPreloadRequested ? 'ON' : 'OFF'}
+                </Text>
+                <Toggle
+                  checked={settings.quranPreloadRequested}
+                  onChange={() => handleToggleQuranTextPreload(!settings.quranPreloadRequested)}
+                  label="Preload Quran text for offline reading"
+                />
+              </View>
+            }
+          />
+          <Hairline />
+          <Row
+            title="Verify offline copy"
+            desc={
+              verifyingText
+                ? 'Reading local cache…'
+                : textVerification?.ok
+                ? `Verified · ${textVerification.valid}/114 surahs valid`
+                : textVerification
+                ? `${textVerification.valid} valid · ${textVerification.missingSurahs.length} missing · ${textVerification.invalidSurahs.length} incomplete`
+                : 'Check that all 114 surahs are stored and readable offline'
+            }
+            onPress={handleVerifyQuranText}
+            accessibilityLabel="Verify locally stored Quran text"
+            right={
+              verifyingText ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : textVerification?.ok ? (
+                <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+              ) : (
+                <Text style={[styles.verifyAction, { color: colors.accent }]}>Check</Text>
+              )
+            }
+          />
+          {textVerification && !textVerification.ok && (
+            <>
+              <Hairline />
+              <Row
+                title="Repair incomplete surahs"
+                desc={`Re-download only the ${textVerification.missingSurahs.length + textVerification.invalidSurahs.length} surahs that failed verification`}
+                onPress={handleRepairQuranText}
+                accessibilityLabel="Re-download incomplete surahs"
+                right={<Ionicons name="cloud-download-outline" size={18} color={colors.accent} />}
+              />
+            </>
+          )}
         </Section>
 
         {/* Quran Display — Arabic font controls for the Quran reader */}
@@ -1414,6 +1524,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
     fontSize: 11,
     letterSpacing: 1,
+  },
+  verifyAction: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
   },
   adjustRow: {
     gap: 12,

@@ -145,11 +145,14 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
 
         const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=mosque&limit=30&bounded=1&viewbox=${viewbox}`;
 
+        // ponytail: bounded timeout — a hanging Nominatim fetch would leave the
+        // screen stuck in loading forever (same class as the earlier global-stall).
         const res = await fetch(url, {
           headers: {
             'User-Agent': 'IslamicAppMobile/1.0 (https://islamic.app)',
             Accept: 'application/json',
           },
+          signal: AbortSignal.timeout(8000),
         });
 
         if (!res.ok) {
@@ -288,6 +291,7 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
           'User-Agent': 'IslamicAppMobile/1.0 (https://islamic.app)',
           Accept: 'application/json',
         },
+        signal: AbortSignal.timeout(8000),
       });
 
       if (!res.ok) {

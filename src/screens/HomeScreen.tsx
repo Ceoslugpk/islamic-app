@@ -351,105 +351,105 @@ export default function HomeScreen({
     [isScrolled]
   );
 
-  // 1. Greeting header (large Today + Good morning) fades & shifts up (0-80px)
+  // 1. Greeting header (large Today + Good morning) fades & shifts up (0-240px)
   const greetingOpacity = scrollY.interpolate({
-    inputRange: [0, 80],
+    inputRange: [0, 240],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
   const greetingTranslateY = scrollY.interpolate({
-    inputRange: [0, 80],
+    inputRange: [0, 240],
     outputRange: [0, reducedMotion ? 0 : -14],
     extrapolate: 'clamp',
   });
 
-  // 2. Prayer Hero card container subtle scale compression (0-140px)
+  // 2. Prayer Hero card container subtle scale compression (0-300px)
   const heroCardScale = scrollY.interpolate({
-    inputRange: [0, 140],
+    inputRange: [0, 300],
     outputRange: [1, reducedMotion ? 1 : 0.96],
     extrapolate: 'clamp',
   });
 
-  // 3. Hero Date eyebrow (Weekday · Hijri date): opacity 1→0 (0-60px)
+  // 3. Hero Date eyebrow (Weekday · Hijri date): opacity 1→0 (0-200px)
   const eyebrowOpacity = scrollY.interpolate({
-    inputRange: [0, 60],
+    inputRange: [0, 200],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
   const eyebrowTranslateY = scrollY.interpolate({
-    inputRange: [0, 60],
+    inputRange: [0, 200],
     outputRange: [0, reducedMotion ? 0 : -8],
     extrapolate: 'clamp',
   });
 
-  // 4. Arabic prayer name: opacity 1→0 (0-70px)
+  // 4. Arabic prayer name: opacity 1→0 (0-220px)
   const arabicOpacity = scrollY.interpolate({
-    inputRange: [0, 70],
+    inputRange: [0, 220],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
   const arabicTranslateY = scrollY.interpolate({
-    inputRange: [0, 70],
+    inputRange: [0, 220],
     outputRange: [0, reducedMotion ? 0 : -10],
     extrapolate: 'clamp',
   });
 
-  // 5. English prayer name: opacity 1→0 (0-85px)
+  // 5. English prayer name: opacity 1→0 (0-240px)
   const englishOpacity = scrollY.interpolate({
-    inputRange: [0, 85],
+    inputRange: [0, 240],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
   const englishTranslateY = scrollY.interpolate({
-    inputRange: [0, 85],
+    inputRange: [0, 240],
     outputRange: [0, reducedMotion ? 0 : -12],
     extrapolate: 'clamp',
   });
 
-  // 6. Big time: translateY 0→-30, scale 1→0.88, opacity 1→0 (0-120px)
+  // 6. Big time: translateY 0→-30, scale 1→0.88, opacity 1→0 (0-300px)
   const bigTimeOpacity = scrollY.interpolate({
-    inputRange: [0, 120],
+    inputRange: [0, 300],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
   const bigTimeTranslateY = scrollY.interpolate({
-    inputRange: [0, 120],
+    inputRange: [0, 300],
     outputRange: [0, reducedMotion ? 0 : -30],
     extrapolate: 'clamp',
   });
   const bigTimeScale = scrollY.interpolate({
-    inputRange: [0, 120],
+    inputRange: [0, 300],
     outputRange: [1, reducedMotion ? 1 : 0.88],
     extrapolate: 'clamp',
   });
 
-  // 7. Hero countdown (big): fade/translate up into compact bar (20-100px)
+  // 7. Hero countdown (big): fade/translate up into compact bar (40-280px)
   const countdownOpacity = scrollY.interpolate({
-    inputRange: [20, 100],
+    inputRange: [40, 280],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
   const countdownTranslateY = scrollY.interpolate({
-    inputRange: [20, 100],
+    inputRange: [40, 280],
     outputRange: [0, reducedMotion ? 0 : -20],
     extrapolate: 'clamp',
   });
 
-  // 8. Hero transition hint: opacity 1→0 (0-60px)
+  // 8. Hero transition hint: opacity 1→0 (0-200px)
   const transitionOpacity = scrollY.interpolate({
-    inputRange: [0, 60],
+    inputRange: [0, 200],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
-  // 9. Compact bar: cross-fades IN (opacity 0→1 over 80-150px), slight translateY (-8→0)
+  // 9. Compact bar: cross-fades IN (opacity 0→1 over 200-300px), slight translateY (-8→0)
   const compactBarOpacity = scrollY.interpolate({
-    inputRange: [80, 150],
+    inputRange: [200, 300],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
   const compactBarTranslateY = scrollY.interpolate({
-    inputRange: [80, 150],
+    inputRange: [200, 300],
     outputRange: [reducedMotion ? 0 : -8, 0],
     extrapolate: 'clamp',
   });

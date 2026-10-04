@@ -23,6 +23,7 @@ import { useQuranLanguage } from '../lib/quranLanguageState';
 import { getBookmarks, getNotes } from '../lib/study';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { useQuranPreload } from '../lib/quranPreloader';
+import { useSettings } from '../lib/settings';
 
 interface QuranHomeScreenProps {
   onOpenSurah: (surahNumber: number, initialAyah?: number) => void;
@@ -65,6 +66,7 @@ export default function QuranHomeScreen({
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [translatedNames, setTranslatedNames] = useState<Record<number, string> | null>(null);
   const { progress: preloadProgress, startPreload, pausePreload } = useQuranPreload();
+  const { setQuranPreloadRequested } = useSettings();
 
   const [surahs, setSurahs] = useState<SurahMeta[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -310,7 +312,9 @@ export default function QuranHomeScreen({
               onPress={() => {
                 if (preloadProgress.isRunning) {
                   pausePreload();
+                  setQuranPreloadRequested(false);
                 } else {
+                  setQuranPreloadRequested(true);
                   startPreload(false);
                 }
               }}
@@ -398,6 +402,7 @@ export default function QuranHomeScreen({
                   key={recent.surah}
                   activeOpacity={0.7}
                   onPress={() => onOpenSurah(recent.surah)}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
                   accessibilityRole="button"
                   accessibilityLabel={`Open Surah ${recent.name}`}
                   style={[
@@ -448,6 +453,7 @@ export default function QuranHomeScreen({
               },
             ]}
             onPress={onOpenAudio}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
           >
             <View
               style={[
@@ -493,6 +499,7 @@ export default function QuranHomeScreen({
               },
             ]}
             onPress={onOpenTafsir}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
           >
             <View
               style={[
@@ -538,6 +545,7 @@ export default function QuranHomeScreen({
               },
             ]}
             onPress={onOpenTopics}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
           >
             <View
               style={[
@@ -583,6 +591,7 @@ export default function QuranHomeScreen({
               },
             ]}
             onPress={onOpenCompare}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
           >
             <View
               style={[
@@ -637,6 +646,7 @@ export default function QuranHomeScreen({
                 },
               ]}
               onPress={onOpenBookmarks}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
             >
               <Ionicons name="bookmark-outline" size={isCompact ? 13 : 14} color={colors.accent} />
               <Text
@@ -665,6 +675,7 @@ export default function QuranHomeScreen({
                 },
               ]}
               onPress={onOpenNotes}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
             >
               <Ionicons name="create-outline" size={isCompact ? 13 : 14} color={colors.accent} />
               <Text
@@ -693,6 +704,7 @@ export default function QuranHomeScreen({
                 },
               ]}
               onPress={onOpenPlans}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
             >
               <Ionicons name="calendar-outline" size={isCompact ? 13 : 14} color={colors.accent} />
               <Text
@@ -716,6 +728,7 @@ export default function QuranHomeScreen({
                 },
               ]}
               onPress={onOpenHifz}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
             >
               <Ionicons name="school-outline" size={isCompact ? 13 : 14} color={colors.accent} />
               <Text
@@ -815,6 +828,7 @@ export default function QuranHomeScreen({
           },
         ]}
         onPress={() => onOpenSurah(item.number)}
+            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
         activeOpacity={0.7}
       >
         <View style={styles.surahLeft}>

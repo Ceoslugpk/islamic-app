@@ -9,6 +9,8 @@ import { fetchSurahTranslations } from './quranMultiLang';
 import { loadQuranCache, saveQuranCache, loadLastReadPosition } from './db';
 import { DEFAULT_QURAN_LANGUAGE, getQuranTranslationLanguage, subscribeQuranLanguage } from './quranLanguageState';
 import { getEditionForLanguage, QURAN_LANGUAGE_EDITIONS } from './quranLanguages';
+import { getQuranPreloadRequested } from './settings';
+import { SURAHS_114 } from './surahs114';
 
 export interface QuranPreloadProgress {
   total: number;
@@ -104,6 +106,115 @@ export function getCachedSurahsCount(editionIdentifier: string): number {
     }
   }
   return count;
+}
+
+/* ─── Offline cache verification ─────────────────────────────────────────── */
+
+export interface QuranPreloadVerification {
+  editionIdentifier: string;
+  total: number;
+  /** Surahs whose translation-edition entry is present AND structurally valid. */
+  valid: number;
+  /** Surahs whose Arabic (Uthmani) entry is present AND structurally valid. */
+  arabicValid: number;
+  /** Present but malformed / empty / missing translation text. */
+  invalidSurahs: number[];
+  /** No entry at all for the active edition. */
+  missingSurahs: number[];
+  ok: boolean;
+  checkedAt: number;
+}
+
+/**
+ * Shape check for a locally cached surah: non-empty ayah array, expected ayah
+ * count, non-empty Arabic text for every ayah and (for translation editions)
+ * a non-empty translation for every ayah.
+ */
+export function isValidCachedSurah(
+  detail: SurahDetail | null | undefined,
+  surahNumber: number,
+  requireTranslation: boolean
+): boolean {
+  if (!detail || !Array.isArray(detail.ayahs) || detail.ayahs.length === 0) return false;
+  const expected = SURAHS_114[surahNumber - 1]?.numberOfAyahs;
+  if (expected && detail.ayahs.length !== expected) return false;
+  if (detail.numberOfAyahs > 0 && detail.ayahs.length !== detail.numberOfAyahs) return false;
+
+  let translated = 0;
+  for (const ayah of detail.ayahs) {
+    if (!ayah || typeof ayah.text !== 'string' || ayah.text.trim().length === 0) return false;
+    if (typeof ayah.translation === 'string' && ayah.translation.trim().length > 0) translated++;
+  }
+  if (requireTranslation && translated < detail.ayahs.length) return false;
+  return true;
+}
+
+/**
+ * Verifies the local Quran text cache WITHOUT touching the network — the
+ * offline-readiness proof. Reads only `loadQuranCache`, yields to the event
+ * loop every 8 surahs so the UI thread stays free.
+ */
+export async function verifyQuranPreloadCache(options?: {
+  editionIdentifier?: string;
+  onProgress?: (checked: number, total: number) => void;
+}): Promise<QuranPreloadVerification> {
+  const editionIdentifier = options?.editionIdentifier || getActiveEdition().editionIdentifier;
+  const invalidSurahs: number[] = [];
+  const missingSurahs: number[] = [];
+  let valid = 0;
+  let arabicValid = 0;
+
+  for (let i = 1; i <= TOTAL_SURAHS; i++) {
+    const arDetail = loadQuranCache<SurahDetail>(`surah:${i}:ar`);
+    const arOk = isValidCachedSurah(arDetail, i, false);
+    if (arOk) arabicValid++;
+
+    const edDetail = loadQuranCache<SurahDetail>(`surah:${i}:${editionIdentifier}`);
+    if (!edDetail) {
+      missingSurahs.push(i);
+    } else if (!isValidCachedSurah(edDetail, i, true)) {
+      invalidSurahs.push(i);
+    } else {
+      valid++;
+    }
+
+    options?.onProgress?.(i, TOTAL_SURAHS);
+    if (i % 8 === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+  }
+
+  return {
+    editionIdentifier,
+    total: TOTAL_SURAHS,
+    valid,
+    arabicValid,
+    invalidSurahs,
+    missingSurahs,
+    ok: valid >= TOTAL_SURAHS && arabicValid >= TOTAL_SURAHS,
+    checkedAt: Date.now(),
+  };
+}
+
+/**
+ * Re-download only the surahs that failed verification (missing or malformed).
+ * Uses the normal preloader path with `force` limited to those surahs, so
+ * already-good data is never refetched.
+ */
+export function repairQuranPreloadCache(
+  verification: Pick<QuranPreloadVerification, 'invalidSurahs' | 'missingSurahs' | 'editionIdentifier'>
+): Promise<void> {
+  const surahs = Array.from(
+    new Set([...verification.missingSurahs, ...verification.invalidSurahs])
+  ).filter((n) => Number.isInteger(n) && n >= 1 && n <= TOTAL_SURAHS);
+
+  if (surahs.length === 0) return Promise.resolve();
+
+  return startQuranPreload({
+    force: true,
+    surahs,
+    targetEdition: verification.editionIdentifier,
+  }).catch(() => {});
 }
 
 let currentProgress: QuranPreloadProgress = {
@@ -304,6 +415,8 @@ export interface QuranPreloadOptions {
   force?: boolean;
   initialSurah?: number;
   targetEdition?: string;
+  /** Restrict the run to these surahs (repair/verification flow). Ignored when empty. */
+  surahs?: number[];
 }
 
 /**
@@ -326,7 +439,13 @@ export async function startQuranPreload(options?: QuranPreloadOptions): Promise<
     ...allEditions.filter((e) => e !== editionIdentifier),
   ];
 
-  if (isPreloaderRunning && !options?.force && !options?.initialSurah && !options?.targetEdition) {
+  if (
+    isPreloaderRunning &&
+    !options?.force &&
+    !options?.initialSurah &&
+    !options?.targetEdition &&
+    !options?.surahs?.length
+  ) {
     return;
   }
 
@@ -347,7 +466,16 @@ export async function startQuranPreload(options?: QuranPreloadOptions): Promise<
   let cachedCount = getCachedSurahsCount(editionIdentifier);
   const allFullyCached = areAllSurahsFullyCached(prioritizedEditions);
 
-  if (cachedCount >= TOTAL_SURAHS && allFullyCached && !options?.force) {
+  const explicitSurahs = (options?.surahs || []).filter(
+    (n) => Number.isInteger(n) && n >= 1 && n <= TOTAL_SURAHS
+  );
+
+  if (
+    cachedCount >= TOTAL_SURAHS &&
+    allFullyCached &&
+    !options?.force &&
+    explicitSurahs.length === 0
+  ) {
     isPreloaderRunning = false;
     emitProgress({
       isRunning: false,
@@ -369,17 +497,24 @@ export async function startQuranPreload(options?: QuranPreloadOptions): Promise<
     error: null,
   });
 
-  // Determine fetch order: last-read position first, then ascending 1..114
+  // Determine fetch order: explicit subset (repair), then last-read position
+  // first, then ascending 1..114
   const lastRead = loadLastReadPosition();
   const startSurah = options?.initialSurah ?? lastRead?.surah;
   const order: number[] = [];
 
-  if (startSurah && startSurah >= 1 && startSurah <= TOTAL_SURAHS) {
-    order.push(startSurah);
-  }
-  for (let i = 1; i <= TOTAL_SURAHS; i++) {
-    if (!order.includes(i)) {
-      order.push(i);
+  if (explicitSurahs.length > 0) {
+    for (const n of explicitSurahs) {
+      if (!order.includes(n)) order.push(n);
+    }
+  } else {
+    if (startSurah && startSurah >= 1 && startSurah <= TOTAL_SURAHS) {
+      order.push(startSurah);
+    }
+    for (let i = 1; i <= TOTAL_SURAHS; i++) {
+      if (!order.includes(i)) {
+        order.push(i);
+      }
     }
   }
 
@@ -476,12 +611,14 @@ export async function startQuranPreload(options?: QuranPreloadOptions): Promise<
 
 /**
  * Trigger background preload of remaining surahs for a translation edition
- * when a user opens an uncached surah.
+ * when a user opens an uncached surah. Respects the user's "Preload Quran"
+ * setting: when disabled, only the opened surah is fetched on demand.
  */
 export function preloadRemainingSurahsForEdition(
   surahNumber: number,
   editionIdentifier: string
 ): void {
+  if (!getQuranPreloadRequested()) return;
   setTimeout(() => {
     startQuranPreload({
       initialSurah: surahNumber,

@@ -68,11 +68,13 @@ import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayi
 import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback } from './src/lib/quranAudio';
 import { rescheduleIfNeeded, setupNotificationResponseHandler, scheduleQuranReminder, cancelQuranReminder } from './src/lib/notifications';
 import { fetchPrayerTimes } from './src/lib/prayerTimes';
-import { useSettings } from './src/lib/settings';
+import { useSettings, getQuranPreloadRequested, loadQuranPreloadRequested } from './src/lib/settings';
 import { startQuranPreload } from './src/lib/quranPreloader';
 import { runFirstLaunchWarmup } from './src/lib/warmup';
 import { runFirstLaunchPermissions } from './src/lib/firstLaunchPermissions';
 import { useLocation } from './src/lib/useLocation';
+import { updateWidgetSnapshot } from './src/lib/widgetBridge';
+import { AppState } from 'react-native';
 import { useEffect } from 'react';
 import { BackHandler } from 'react-native';
 
@@ -165,7 +167,7 @@ function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) =>
   );
 }
 
-/** Top app header: brand + settings gear. */
+/** Top app header: brand mark + ISLAMIC wordmark + settings gear. */
 function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
   const { colors, mode } = useTheme();
   const insets = useSafeAreaInsets();
@@ -179,15 +181,43 @@ function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
         },
       ]}
     >
-      <Image
-        source={
-          mode === 'paper'
-            ? require('./assets/logo-small-black.png')
-            : require('./assets/logo-small-ivory.png')
-        }
-        style={styles.headerLogo}
-        resizeMode="contain"
-      />
+      <View style={styles.headerBrand}>
+        <Image
+          source={
+            mode === 'paper'
+              ? require('./assets/logo-small-black.png')
+              : require('./assets/logo-small-ivory.png')
+          }
+          style={styles.headerLogo}
+          resizeMode="contain"
+        />
+        <View
+          style={styles.headerSeal}
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <View
+            style={[
+              styles.headerSealSquare,
+              { borderColor: colors.accent, opacity: 0.6 },
+            ]}
+          />
+          <View
+            style={[
+              styles.headerSealSquare,
+              styles.headerSealSquareRotated,
+              { borderColor: colors.accent, opacity: 0.6 },
+            ]}
+          />
+        </View>
+        <Text
+          style={[styles.headerWordmark, { color: colors.textPrimary }]}
+          numberOfLines={1}
+        >
+          ISLAMIC
+        </Text>
+      </View>
       <TouchableOpacity
         onPress={onOpenSettings}
         accessibilityRole="button"
@@ -307,12 +337,20 @@ function Root({ splashDone }: { splashDone: boolean }) {
     setupNotificationResponseHandler();
   }, []);
 
-  // Background Quran Preloader: start with low priority after app startup
+  // Background Quran Preloader: start with low priority after app startup.
+  // Honours the user's "Preload Quran text" setting (Settings → Downloads).
   useEffect(() => {
-    const timer = setTimeout(() => {
-      startQuranPreload();
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const requested = await loadQuranPreloadRequested();
+      if (!cancelled && requested) {
+        startQuranPreload();
+      }
     }, 2500);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   // First-launch cache warm-up (runs once, low priority)
@@ -337,7 +375,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
   // Resume or ensure preloader is active when navigating to Quran tab
   useEffect(() => {
-    if (tab === 'quran') {
+    if (tab === 'quran' && getQuranPreloadRequested()) {
       startQuranPreload();
     }
   }, [tab]);
@@ -425,6 +463,16 @@ function Root({ splashDone }: { splashDone: boolean }) {
       subscription.remove();
     };
   }, [setTab, setQuran, setLibrary, setTools, setSettingsOpen]);
+  // Sync the home-screen widget snapshot: on mount, when the app returns to
+  // foreground, and after prayer data loads (data changes → widget refresh).
+  useEffect(() => {
+    updateWidgetSnapshot();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') updateWidgetSnapshot();
+    });
+    return () => sub.remove();
+  }, []);
+
   // Android hardware back: go back through screens instead of exiting.
   // Priority: settings modal → sub-screen → tab hub → default (exit).
   useEffect(() => {
@@ -469,7 +517,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     if (next !== 'library') setLibrary({ screen: 'hub' });
     if (next !== 'quran') setQuran({ screen: 'home' });
     if (next !== 'tools') setTools({ screen: 'hub' });
-    if (next === 'quran') startQuranPreload();
+    if (next === 'quran' && getQuranPreloadRequested()) startQuranPreload();
     setTab(next);
   }
 
@@ -822,15 +870,39 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderBottomWidth: 1,
   },
+  headerBrand: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+  },
   headerLogo: {
     width: 22,
     height: 22,
     marginRight: 8,
   },
-  headerBrand: {
+  headerSeal: {
+    width: 11,
+    height: 11,
+    marginRight: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerSealSquare: {
+    position: 'absolute',
+    width: 9,
+    height: 9,
+    borderWidth: 1,
+    borderRadius: 2,
+  },
+  headerSealSquareRotated: {
+    transform: [{ rotate: '45deg' }],
+  },
+  headerWordmark: {
     fontFamily: 'SourceSans3_500Medium',
-    fontSize: 22,
-    letterSpacing: 0.4,
+    fontSize: 13,
+    lineHeight: 16,
+    letterSpacing: 4,
   },
   gearBtn: {
     padding: 8,
