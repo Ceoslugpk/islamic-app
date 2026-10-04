@@ -82,6 +82,7 @@ interface SettingsLayout {
   labelSize: number;
   sectionGap: number;
   segMinW: number;
+  segLabelSize: number;
   segPadV: number;
   maxW: number;
 }
@@ -104,7 +105,8 @@ function useSettingsLayout(): SettingsLayout {
     descSize: isCompact ? 12 : 13,
     labelSize: isCompact ? 10 : 11,
     sectionGap: isCompact ? 14 : 20,
-    segMinW: isCompact ? 52 : 56,
+    segMinW: 54,
+    segLabelSize: isCompact ? 12 : 13,
     segPadV: isCompact ? 10 : 12,
     maxW: 640,
   };
@@ -298,6 +300,7 @@ function Segmented<T extends string | number>({
               style={[
                 styles.segLabel,
                 {
+                  fontSize: layout.segLabelSize,
                   color: selected
                     ? colors.accent
                     : disabled
@@ -1394,17 +1397,17 @@ const styles = StyleSheet.create({
   segRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
   },
   seg: {
     flex: 1,
     borderWidth: 1,
     borderRadius: 8,
     paddingVertical: 10,
+    paddingHorizontal: 6,
     minHeight: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
   },
   segLabel: { fontFamily: 'Manrope_600SemiBold', fontSize: 13, textAlign: 'center' },
   testBtn: { fontFamily: 'Manrope_700Bold', fontSize: 13 },

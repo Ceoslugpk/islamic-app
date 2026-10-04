@@ -24,6 +24,7 @@ import {
   NameVerseRef,
   NamesLanguage,
 } from '../lib/names99';
+import { PROPHET_NAMES_99 } from '../lib/prophetNames';
 import { useSettings } from '../lib/settings';
 import {
   addPlaybackStatusListener,
@@ -36,10 +37,26 @@ import {
 
 type LoadState = 'loading' | 'online' | 'offline';
 
+/** Which dataset the screen renders: the Names of Allah or the Prophet's ﷺ names. */
+export type NamesVariant = 'allah' | 'prophet';
+
 interface NamesFeed {
   language: NamesLanguage;
   names: Name99[];
   source: 'cache' | 'api' | 'static';
+}
+
+/** Unified row shape across both variants (Name99 | ProphetName). */
+interface NameRow {
+  number: number;
+  arabic: string;
+  transliteration: string;
+  meaning: string;
+  name?: string;
+  verses?: NameVerseRef[];
+  audioUrl?: string;
+  /** Prophet variant only: one-line note about the name. */
+  note?: string;
 }
 
 function formatVerses(verses?: NameVerseRef[]): string | null {
@@ -47,21 +64,31 @@ function formatVerses(verses?: NameVerseRef[]): string | null {
   return `Quran ${verses.map((verse) => `${verse.surah}:${verse.ayah}`).join(' · ')}`;
 }
 
-export default function NamesScreen({ onBack }: { onBack?: () => void }) {
+export default function NamesScreen({
+  onBack,
+  variant = 'allah',
+}: {
+  onBack?: () => void;
+  variant?: NamesVariant;
+}) {
   const { colors } = useTheme();
   const { settings, setNamesLanguage } = useSettings();
   const language: NamesLanguage = settings.namesLanguage;
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
+  const isProphet = variant === 'prophet';
+  const supportsAudio = !isProphet;
 
   const [feed, setFeed] = useState<NamesFeed | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Load cached names instantly, then refresh from the keyless API (static fallback on failure)
+  // Load cached names instantly, then refresh from the keyless API (static fallback on failure).
+  // The Prophet variant is bundled-only, so it skips the network entirely.
   useEffect(() => {
+    if (isProphet) return;
     let mounted = true;
     (async () => {
       const cached = await loadCachedNames(language);
@@ -74,24 +101,31 @@ export default function NamesScreen({ onBack }: { onBack?: () => void }) {
     return () => {
       mounted = false;
     };
-  }, [language]);
+  }, [language, isProphet]);
 
   // Track which name clip the global audio singleton is playing
   useEffect(() => {
+    if (!supportsAudio) return;
     return addPlaybackStatusListener((status) => {
       const current = getCurrentPlayback();
       setPlayingUrl(current?.identifier === 'names99' ? current.url : null);
       setIsPlaying(status.isPlaying);
     });
-  }, []);
+  }, [supportsAudio]);
 
-  const activeFeed = feed && feed.language === language ? feed : null;
-  const names = activeFeed ? activeFeed.names : NAMES_99;
-  const loadState: LoadState = !activeFeed
-    ? 'loading'
-    : activeFeed.source === 'static'
-      ? 'offline'
-      : 'online';
+  const activeFeed = !isProphet && feed && feed.language === language ? feed : null;
+  const names: NameRow[] = isProphet
+    ? PROPHET_NAMES_99
+    : activeFeed
+      ? activeFeed.names
+      : NAMES_99;
+  const loadState: LoadState = isProphet
+    ? 'online'
+    : !activeFeed
+      ? 'loading'
+      : activeFeed.source === 'static'
+        ? 'offline'
+        : 'online';
 
   const filteredNames = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -101,11 +135,12 @@ export default function NamesScreen({ onBack }: { onBack?: () => void }) {
         item.transliteration.toLowerCase().includes(q) ||
         item.meaning.toLowerCase().includes(q) ||
         (item.name ? item.name.toLowerCase().includes(q) : false) ||
+        (item.note ? item.note.toLowerCase().includes(q) : false) ||
         item.number.toString() === q
     );
   }, [names, searchQuery]);
 
-  const handleToggleAudio = (item: Name99) => {
+  const handleToggleAudio = (item: NameRow) => {
     if (!item.audioUrl) return;
     const current = getCurrentPlayback();
     if (current?.identifier === 'names99' && current.url === item.audioUrl) {
@@ -127,10 +162,11 @@ export default function NamesScreen({ onBack }: { onBack?: () => void }) {
     playNameAudio(item.audioUrl, `${item.transliteration} · 99 Names`).catch(() => {});
   };
 
-  const renderItem = ({ item }: { item: Name99 }) => {
+  const renderItem = ({ item }: { item: NameRow }) => {
     const verseLabel = formatVerses(item.verses);
-    const isActive = !!item.audioUrl && playingUrl === item.audioUrl;
-    const showMeta = !!verseLabel || !!item.audioUrl;
+    const showAudio = supportsAudio && !!item.audioUrl;
+    const isActive = showAudio && playingUrl === item.audioUrl;
+    const showMeta = !!verseLabel || showAudio;
 
     return (
       <View style={styles.row}>
@@ -173,6 +209,12 @@ export default function NamesScreen({ onBack }: { onBack?: () => void }) {
             {item.meaning}
           </Text>
 
+          {item.note ? (
+            <Text style={[styles.note, { color: colors.textSecondary }]} numberOfLines={2}>
+              {item.note}
+            </Text>
+          ) : null}
+
           {showMeta ? (
             <View style={styles.metaLine}>
               {verseLabel ? (
@@ -181,7 +223,7 @@ export default function NamesScreen({ onBack }: { onBack?: () => void }) {
                 </Text>
               ) : null}
               <View style={styles.metaSpacer} />
-              {item.audioUrl ? (
+              {showAudio ? (
                 <TouchableOpacity
                   onPress={() => handleToggleAudio(item)}
                   style={[
@@ -228,9 +270,13 @@ export default function NamesScreen({ onBack }: { onBack?: () => void }) {
           </TouchableOpacity>
         )}
 
-        <SectionHeader eyebrow="Asma ul-Husna" title="99 Names" />
+        <SectionHeader
+          eyebrow={isProphet ? 'Asma un-Nabi' : 'Asma ul-Husna'}
+          title={isProphet ? '99 Names of the Prophet ﷺ' : '99 Names'}
+        />
 
-      {/* Language Chips */}
+      {/* Language Chips (Allah variant only — the Prophet's names are bundled in English) */}
+      {!isProphet && (
       <View style={styles.chipRow}>
         {NAMES_LANGUAGES.map((lang) => {
           const selected = lang.code === language;
@@ -264,6 +310,7 @@ export default function NamesScreen({ onBack }: { onBack?: () => void }) {
           <ActivityIndicator size="small" color={colors.accent} style={styles.chipSpinner} />
         ) : null}
       </View>
+      )}
 
       {/* Search Input */}
       <View
