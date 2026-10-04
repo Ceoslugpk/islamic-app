@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Clipboard,
   FlatList,
@@ -45,11 +46,20 @@ import {
   getCurrentPlayback,
   getReciterCountry,
   getSurahAudioUrl,
+  getSurahBitrate,
   playAyah,
   playSurah,
   Reciter,
   stop,
 } from '../lib/quranAudio';
+import {
+  downloadSurah,
+  removeSurahDownload,
+  isSurahDownloaded,
+  getDownloadProgress,
+  getDownloadedSurahs,
+  formatBytes,
+} from '../lib/surahDownloads';
 import {
   loadAudioSettings,
   loadQuranCache,
@@ -492,6 +502,68 @@ export default function QuranReaderScreen({
       setTafsirText('Could not load Tafsir for this ayah. Please check your connection.');
     } finally {
       setTafsirLoading(false);
+    }
+  };
+
+  // Surah Download (Save for Offline) — from the ⋯ menu
+  const [surahDownloaded, setSurahDownloaded] = useState(() =>
+    isSurahDownloaded(selectedReciter, surahNumber, getSurahBitrate(selectedReciter))
+  );
+  const [surahDownloading, setSurahDownloading] = useState(false);
+  const [surahDownloadProgress, setSurahDownloadProgress] = useState<number | null>(null);
+  const [surahDownloadSize, setSurahDownloadSize] = useState<string>('');
+
+  const refreshDownloadState = useCallback(() => {
+    const bitrate = getSurahBitrate(selectedReciter);
+    setSurahDownloaded(isSurahDownloaded(selectedReciter, surahNumber, bitrate));
+    const meta = getDownloadedSurahs().find(
+      (d) => d.edition === selectedReciter && d.surah === surahNumber && d.bitrate === bitrate
+    );
+    setSurahDownloadSize(meta?.size ? formatBytes(meta.size) : '');
+  }, [selectedReciter, surahNumber]);
+
+  useEffect(() => {
+    refreshDownloadState();
+  }, [refreshDownloadState, surahNumber, selectedReciter]);
+
+  const handleSaveOffline = async () => {
+    const bitrate = getSurahBitrate(selectedReciter);
+    if (surahDownloaded) {
+      Alert.alert(
+        'Remove Download',
+        `Remove offline audio for Surah ${surah?.englishName ?? surahNumber} (${surahDownloadSize || '—'})?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove',
+            style: 'destructive',
+            onPress: () => {
+              removeSurahDownload(selectedReciter, surahNumber, bitrate)
+                .then(refreshDownloadState)
+                .catch(() => {});
+            },
+          },
+        ]
+      );
+      return;
+    }
+    if (surahDownloading) return;
+    setSurahDownloading(true);
+    setSurahDownloadProgress(0);
+    try {
+      const meta = await downloadSurah(selectedReciter, surahNumber, bitrate, {
+        surahName: surah?.name,
+        surahEnglishName: surah?.englishName,
+      });
+      if (meta) {
+        setSurahDownloadSize(formatBytes(meta.size));
+      }
+      refreshDownloadState();
+    } catch {
+      Alert.alert('Download Error', 'Could not download surah audio. Please check your connection.');
+    } finally {
+      setSurahDownloading(false);
+      setSurahDownloadProgress(null);
     }
   };
 
@@ -1041,6 +1113,43 @@ export default function QuranReaderScreen({
                 <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>{currentTafsirSource.name} ({currentTafsirSource.language})</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+
+            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
+            {/* Save for Offline (Surah Download) */}
+            <TouchableOpacity
+              style={styles.toolsMenuItem}
+              onPress={handleSaveOffline}
+              accessibilityRole="button"
+              accessibilityLabel={surahDownloaded ? `Remove offline audio for Surah ${surah?.englishName ?? surahNumber}` : `Download Surah ${surah?.englishName ?? surahNumber} audio for offline`}
+            >
+              <View style={[styles.toolsMenuIcon, { backgroundColor: surahDownloaded ? colors.accentDim : 'transparent' }]}>
+                {surahDownloading ? (
+                  <ActivityIndicator size="small" color={colors.accent} />
+                ) : (
+                  <Ionicons
+                    name={surahDownloaded ? 'checkmark-circle' : 'cloud-download-outline'}
+                    size={20}
+                    color={surahDownloaded ? colors.accent : colors.textSecondary}
+                  />
+                )}
+              </View>
+              <View style={styles.toolsMenuTextGroup}>
+                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                  {surahDownloaded ? 'Available Offline' : 'Save for Offline'}
+                </Text>
+                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                  {surahDownloading
+                    ? `${surahDownloadProgress ?? 0}%`
+                    : surahDownloaded
+                    ? surahDownloadSize || 'Full Surah audio'
+                    : 'Download this surah'}
+                </Text>
+              </View>
+              {surahDownloaded ? (
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              ) : null}
             </TouchableOpacity>
 
             <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
