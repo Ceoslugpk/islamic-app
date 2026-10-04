@@ -441,6 +441,12 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     marginTop: 3,
   },
+  note: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 4,
+  },
   metaLine: {
     flexDirection: 'row',
     alignItems: 'center',

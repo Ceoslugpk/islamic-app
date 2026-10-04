@@ -16,7 +16,8 @@ export type LibraryItemKey =
   | 'hadith'
   | 'duas'
   | 'tasbih'
-  | 'names';
+  | 'names'
+  | 'names-prophet';
 
 /* ─── Item model ──────────────────────────────────────────────── */
 
@@ -31,6 +32,7 @@ const ICONS: Record<LibraryItemKey, keyof typeof Ionicons.glyphMap> = {
   duas: 'hand-left',
   tasbih: 'repeat',
   names: 'sparkles',
+  'names-prophet': 'star',
 };
 
 /* ─── Grouped layout ──────────────────────────────────────────── */
@@ -53,6 +55,7 @@ const GROUPS: LibraryGroup[] = [
       { key: 'duas', title: 'Duas & Adhkar', subtitle: 'Daily supplications' },
       { key: 'tasbih', title: 'Tasbih', subtitle: 'Digital dhikr counter' },
       { key: 'names', title: '99 Names of Allah', subtitle: 'Asma ul-Husna with meanings' },
+      { key: 'names-prophet', title: '99 Names of the Prophet ﷺ', subtitle: 'His ﷺ noble names & attributes' },
     ],
   },
 ];

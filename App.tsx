@@ -179,6 +179,7 @@ type LibraryView =
   | { screen: 'hub' }
   | { screen: 'tasbih' }
   | { screen: 'names' }
+  | { screen: 'names-prophet' }
   | { screen: 'duas' }
   | { screen: 'hadith' };
 
@@ -394,6 +395,7 @@ function Root() {
   function openLibraryItem(key: LibraryItemKey) {
     if (key === 'tasbih') setLibrary({ screen: 'tasbih' });
     else if (key === 'names') setLibrary({ screen: 'names' });
+    else if (key === 'names-prophet') setLibrary({ screen: 'names-prophet' });
     else if (key === 'duas') setLibrary({ screen: 'duas' });
     else if (key === 'hadith') setLibrary({ screen: 'hadith' });
   }
@@ -515,6 +517,9 @@ function Root() {
         )}
         {tab === 'library' && library.screen === 'names' && (
           <NamesScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+        {tab === 'library' && library.screen === 'names-prophet' && (
+          <NamesScreen variant="prophet" onBack={() => setLibrary({ screen: 'hub' })} />
         )}
         {tab === 'library' && library.screen === 'duas' && (
           <DuasScreen onBack={() => setLibrary({ screen: 'hub' })} />

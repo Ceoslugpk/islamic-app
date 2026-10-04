@@ -8,10 +8,13 @@ import {
   Alert,
   ActivityIndicator,
   useWindowDimensions,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
 import type { GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import WidgetPreviewScreen from './WidgetPreviewScreen';
 import {
   useSettings,
   QURAN_FONT_SIZE_MIN,
@@ -161,7 +164,12 @@ function AdjustRow({
   );
 }
 
-export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
+export interface SettingsScreenProps {
+  onClose?: () => void;
+  onOpenWidgets?: () => void;
+}
+
+export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScreenProps) {
   const { colors, mode, accentKey, setAccent } = useTheme();
   const {
     settings,
@@ -185,6 +193,7 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
   const { edition, flag } = useQuranLanguage();
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
   const [adhanModalOpen, setAdhanModalOpen] = useState(false);
+  const [widgetsModalOpen, setWidgetsModalOpen] = useState(false);
   const [isPlayingAdhan, setIsPlayingAdhan] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'set' | 'change' | null>(null);
@@ -421,6 +430,32 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
             );
           })}
         </View>
+      </View>
+
+      {/* Home Screen Widgets */}
+      <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Home Screen</Text>
+      <View style={[styles.group, { borderColor: colors.borderSubtle }]}>
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => {
+            haptic('light');
+            if (onOpenWidgets) {
+              onOpenWidgets();
+            } else {
+              setWidgetsModalOpen(true);
+            }
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Home Screen Widgets preview and setup"
+        >
+          <View style={styles.rowFlex}>
+            <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Home Screen Widgets</Text>
+            <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              Preview Next Prayer, Salah Progress, Quran, and Hijri widgets
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+        </TouchableOpacity>
       </View>
 
       {/* Quran Translation */}
@@ -1080,6 +1115,16 @@ export default function SettingsScreen({ onClose }: { onClose?: () => void }) {
           haptic('selection');
         }}
       />
+
+      <Modal
+        visible={widgetsModalOpen}
+        animationType="slide"
+        onRequestClose={() => setWidgetsModalOpen(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgBase }}>
+          <WidgetPreviewScreen onClose={() => setWidgetsModalOpen(false)} />
+        </SafeAreaView>
+      </Modal>
       </View>
     </ScrollView>
   );
