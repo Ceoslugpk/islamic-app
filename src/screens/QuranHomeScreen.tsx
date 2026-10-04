@@ -20,6 +20,7 @@ import { LastReadPosition, loadLastReadPosition } from '../lib/db';
 import { getReadingPosition, ReadingPosition } from '../lib/continuing';
 import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
 import { useQuranLanguage } from '../lib/quranLanguageState';
+import { getBookmarks, getNotes } from '../lib/study';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { useQuranPreload } from '../lib/quranPreloader';
 
@@ -67,6 +68,8 @@ export default function QuranHomeScreen({
 
   const [surahs, setSurahs] = useState<SurahMeta[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [noteCount, setNoteCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
@@ -93,6 +96,8 @@ export default function QuranHomeScreen({
 
   useEffect(() => {
     loadData();
+    setBookmarkCount(getBookmarks().length);
+    setNoteCount(getNotes().length);
   }, [loadData]);
 
   // Load per-language surah names when selected language changes
@@ -642,6 +647,11 @@ export default function QuranHomeScreen({
               >
                 Bookmarks
               </Text>
+              {bookmarkCount > 0 && (
+                <View style={[styles.hubChipBadge, { backgroundColor: colors.accentDim }]}>
+                  <Text style={[styles.hubChipBadgeText, { color: colors.accent }]}>{bookmarkCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -665,6 +675,11 @@ export default function QuranHomeScreen({
               >
                 Notes
               </Text>
+              {noteCount > 0 && (
+                <View style={[styles.hubChipBadge, { backgroundColor: colors.accentDim }]}>
+                  <Text style={[styles.hubChipBadgeText, { color: colors.accent }]}>{noteCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -1154,6 +1169,18 @@ const styles = StyleSheet.create({
   },
   hubChipText: {
     fontFamily: 'Manrope_600SemiBold',
+  },
+  hubChipBadge: {
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  hubChipBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
   },
   sectionDivider: {
     marginVertical: 12,
