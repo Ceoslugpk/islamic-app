@@ -245,6 +245,9 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
               accessibilityRole="button"
               accessibilityState={{ selected }}
               accessibilityLabel={`Show names in ${lang.label}`}
+              hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+              pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
+              delayPressIn={0}
             >
               <Text
                 style={[
@@ -375,8 +378,8 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   chip: {
-    height: 28,
-    paddingHorizontal: 10,
+    height: 34,
+    paddingHorizontal: 12,
     borderRadius: 999,
     borderWidth: 1,
     alignItems: 'center',
