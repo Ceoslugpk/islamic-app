@@ -429,34 +429,10 @@ function Root() {
         <View style={styles.screenWrap}>
         {tab === 'home' && (
           <HomeScreen
-            onOpenQibla={() => {
-              setLibrary({ screen: 'hub' });
-              setQuran({ screen: 'home' });
-              setTools({ screen: 'qibla' });
-              setTab('tools');
-            }}
-            onOpenAudio={() => {
-              setLibrary({ screen: 'hub' });
-              setTools({ screen: 'hub' });
-              setQuran({ screen: 'audio' });
-              setTab('quran');
-            }}
-            onOpenTasbih={() => {
-              setQuran({ screen: 'home' });
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'tasbih' });
-              setTab('library');
-            }}
             onOpenNames={() => {
               setQuran({ screen: 'home' });
               setTools({ screen: 'hub' });
               setLibrary({ screen: 'names' });
-              setTab('library');
-            }}
-            onOpenDuas={() => {
-              setQuran({ screen: 'home' });
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'duas' });
               setTab('library');
             }}
           />

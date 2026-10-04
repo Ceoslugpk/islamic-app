@@ -5,6 +5,7 @@ import {
   Text,
   View,
   FlatList,
+  ScrollView,
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
@@ -27,14 +28,6 @@ import {
 } from '../lib/names99';
 import { PROPHET_NAMES_99 } from '../lib/prophetNames';
 import { useSettings } from '../lib/settings';
-import {
-  addPlaybackStatusListener,
-  getCurrentPlayback,
-  getPlaybackStatus,
-  pause,
-  playNameAudio,
-  resume,
-} from '../lib/quranAudio';
 import { NameRowSkeleton } from '../components/Skeleton';
 
 type LoadState = 'loading' | 'online' | 'offline';
@@ -82,13 +75,9 @@ export default function NamesScreen({
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
   const isProphet = variant === 'prophet';
-  const supportsAudio = !isProphet;
 
   const [feed, setFeed] = useState<NamesFeed | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(false);
 
   // Load cached names instantly, then refresh from the keyless APIs (islamic.app primary,
   // UmmahAPI secondary, static fallback on failure). The Prophet variant is bundled-only,
@@ -115,17 +104,6 @@ export default function NamesScreen({
       mounted = false;
     };
   }, [language, isProphet]);
-
-  // Track which name clip the global audio singleton is playing
-  useEffect(() => {
-    if (!supportsAudio) return;
-    return addPlaybackStatusListener((status) => {
-      const current = getCurrentPlayback();
-      setPlayingUrl(current?.identifier === 'names99' ? current.url : null);
-      setIsPlaying(status.isPlaying);
-      setIsBuffering(status.isBuffering);
-    });
-  }, [supportsAudio]);
 
 const activeFeed = !isProphet && feed && feed.language === language ? feed : null;
   const names: NameRow[] = isProphet
@@ -160,33 +138,8 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
       ? `${names.length} Names`
       : `${filteredNames.length} of ${names.length} Names`;
 
-  const handleToggleAudio = (item: NameRow) => {
-    if (!item.audioUrl) return;
-    const current = getCurrentPlayback();
-    if (current?.identifier === 'names99' && current.url === item.audioUrl) {
-      const status = getPlaybackStatus();
-      if (status.isPlaying) {
-        pause().catch(() => {});
-      } else if (
-        status.isLoaded &&
-        status.durationMillis > 0 &&
-        status.positionMillis >= status.durationMillis - 300
-      ) {
-        // Clip already finished — start it over
-        playNameAudio(item.audioUrl, `${item.transliteration} · 99 Names`).catch(() => {});
-      } else {
-        resume().catch(() => {});
-      }
-      return;
-    }
-    playNameAudio(item.audioUrl, `${item.transliteration} · 99 Names`).catch(() => {});
-  };
-
   const renderItem = ({ item }: { item: NameRow }) => {
     const verseLabel = formatVerses(item.verses);
-    const showAudio = supportsAudio && !!item.audioUrl;
-    const isActive = showAudio && playingUrl === item.audioUrl;
-    const showMeta = !!verseLabel || showAudio;
 
     return (
       <View style={styles.row}>
@@ -235,43 +188,11 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             </Text>
           ) : null}
 
-          {showMeta ? (
+          {verseLabel ? (
             <View style={styles.metaLine}>
-              {verseLabel ? (
-                <Text style={[styles.verse, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {verseLabel}
-                </Text>
-              ) : null}
-              <View style={styles.metaSpacer} />
-              {showAudio ? (
-                <TouchableOpacity
-                  onPress={() => handleToggleAudio(item)}
-                  style={[
-                    styles.playBtn,
-                    {
-                      borderColor: isActive ? colors.accent : colors.borderSubtle,
-                      backgroundColor: isActive ? colors.accent : colors.accentDim,
-                    },
-                  ]}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    isActive && isPlaying
-                      ? `Pause ${item.transliteration}`
-                      : `Play ${item.transliteration}`
-                  }
-                >
-                  {isActive && isBuffering && !isPlaying ? (
-                    <ActivityIndicator size="small" color={isActive ? colors.onAccent : colors.accent} />
-                  ) : (
-                    <Ionicons
-                      name={isActive && isPlaying ? 'pause' : 'play'}
-                      size={13}
-                      color={isActive ? colors.onAccent : colors.accent}
-                    />
-                  )}
-                </TouchableOpacity>
-              ) : null}
+              <Text style={[styles.verse, { color: colors.textSecondary }]} numberOfLines={1}>
+                {verseLabel}
+              </Text>
             </View>
           ) : null}
         </View>
@@ -295,18 +216,19 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
         )}
 
         <SectionHeader
+          compact
           eyebrow={isProphet ? 'Asma un-Nabi' : 'Asma ul-Husna'}
           title={isProphet ? '99 Names of the Prophet ﷺ' : '99 Names'}
-          subtitle={
-            isProphet
-              ? 'The names and titles of the Prophet Muhammad ﷺ, drawn from the classical Shama\u2019il compilations.'
-              : 'The 99 Beautiful Names of Allah, with Arabic, transliteration, and translated meanings.'
-          }
         />
 
-      {/* Language Chips (Allah variant only — the Prophet's names are bundled in English) */}
+      {/* Language chips (Allah variant only) — single horizontally-scrollable row */}
       {!isProphet && (
-      <View style={styles.chipRow}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.chipRow}
+        contentContainerStyle={styles.chipRowContent}
+      >
         {NAMES_LANGUAGES.map((lang) => {
           const selected = lang.code === language;
           return (
@@ -338,7 +260,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
         {loadState === 'loading' ? (
           <ActivityIndicator size="small" color={colors.accent} style={styles.chipSpinner} />
         ) : null}
-      </View>
+      </ScrollView>
       )}
 
       {/* Search Input */}
@@ -371,14 +293,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
 
       {loadState === 'offline' ? (
         <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
-          Offline — showing the bundled list. Recitations are unavailable until you reconnect.
-        </Text>
-      ) : null}
-
-      {/* Prophet variant: honest, graceful notice — no keyless recitation source exists yet */}
-      {isProphet ? (
-        <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
-          {'Recitations coming soon — no public audio source is available for the Prophet\u2019s ﷺ names yet. Meanings are shown in English.'}
+          Offline — showing the bundled list.
         </Text>
       ) : null}
 
@@ -429,7 +344,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 20,
+    paddingTop: 14,
     paddingBottom: 0,
   },
   contentWrap: {
@@ -440,32 +355,36 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    minHeight: 36,
+    minHeight: 30,
     justifyContent: 'center',
-    paddingVertical: 6,
+    paddingVertical: 4,
     paddingRight: 12,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   chipRow: {
+    marginBottom: 10,
+  },
+  chipRowContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
-    flexWrap: 'wrap',
+    gap: 6,
+    paddingRight: 4,
   },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    height: 28,
+    paddingHorizontal: 10,
     borderRadius: 999,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   chipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 11,
   },
   chipSpinner: {
     marginLeft: 2,
@@ -475,12 +394,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 10,
-    paddingHorizontal: 12,
-    height: 42,
-    marginBottom: 14,
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 10,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 6,
   },
   searchInput: {
     flex: 1,
@@ -492,14 +411,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 11.5,
     lineHeight: 16,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   countRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   countText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -577,22 +496,11 @@ const styles = StyleSheet.create({
     marginTop: 8,
     gap: 8,
   },
-  metaSpacer: {
-    flex: 1,
-  },
   verse: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10.5,
     letterSpacing: 0.4,
     textTransform: 'uppercase',
     flexShrink: 1,
-  },
-  playBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

@@ -1,11 +1,10 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
   View,
   RefreshControl,
-  ActivityIndicator,
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
@@ -23,18 +22,15 @@ import {
   getSalahEntries,
   computeStreak,
   getSalahHistory,
-  saveTasbihCount,
-  loadTasbihCounts,
 } from '../lib/db';
-import { qiblaBearing } from '../lib/qibla';
+
 import { NAMES_99 } from '../lib/names99';
 import { DUAS_DATA } from '../lib/duas';
-import { ADHKAR } from '../lib/adhkar';
-import { DHIKR_PRESETS } from './TasbihScreen';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { SectionHeader } from '../components/SectionHeader';
 import { GeometricPattern } from '../components/GeometricPattern';
+import { AnimatedPattern } from '../components/AnimatedPattern';
 import { ArabicText } from '../components/ArabicText';
 import { HadithCard } from '../components/HadithCard';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
@@ -45,8 +41,6 @@ import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import {
   CountdownCardSkeleton,
   PrayerRowSkeleton,
-  DuaCardSkeleton,
-  NameRowSkeleton,
   Skeleton,
 } from '../components/Skeleton';
 
@@ -65,19 +59,11 @@ function parseHm(hm: string): number {
 }
 
 export interface HomeScreenProps {
-  onOpenQibla?: () => void;
-  onOpenAudio?: () => void;
-  onOpenTasbih?: () => void;
   onOpenNames?: () => void;
-  onOpenDuas?: () => void;
 }
 
 export default function HomeScreen({
-  onOpenQibla,
-  onOpenAudio,
-  onOpenTasbih,
   onOpenNames,
-  onOpenDuas,
 }: HomeScreenProps) {
   const { colors } = useTheme();
   const { settings } = useSettings();
@@ -92,16 +78,11 @@ export default function HomeScreen({
   const [now, setNow] = useState(new Date());
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
   const [streak, setStreak] = useState(0);
+  const [afterPrayerExpanded, setAfterPrayerExpanded] = useState(false);
 
-  // Tasbih Quick Counter state
-  const [selectedTasbihIdx, setSelectedTasbihIdx] = useState(0);
-  const [tasbihCounts, setTasbihCounts] = useState<Record<string, number>>({});
-
-  // Ayah and Hadith of the Day
   const { ayah, loading: ayahLoading, refresh: refreshAyah } = useAyahOfDay();
   const { hadith, loading: hadithLoading, refresh: refreshHadith } = useHadithOfDay();
 
-  // Load today's completion + streak
   useEffect(() => {
     if (data) {
       const currentDate = new Date();
@@ -112,11 +93,6 @@ export default function HomeScreen({
       setStreak(computeStreak(history));
     }
   }, [data]);
-
-  // Load Tasbih counts on mount
-  useEffect(() => {
-    setTasbihCounts(loadTasbihCounts());
-  }, []);
 
   function togglePrayer(prayer: string) {
     const currentDate = new Date();
@@ -133,29 +109,24 @@ export default function HomeScreen({
     }
   }
 
-  // Tick every 30s for countdown & clock updates
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 30000);
     return () => clearInterval(id);
   }, []);
 
-  // Effective location: auto uses GPS (falls back to manual), manual uses manualLocation
   const effectiveLocation = useMemo(() => {
     if (settings.locationMode === 'auto' && gpsLocation) return gpsLocation;
     return settings.manualLocation;
   }, [settings.locationMode, gpsLocation, settings.manualLocation]);
 
-  // Auto-refresh when connectivity returns
   useEffect(() => {
     if (refreshKey > 0) {
       load(false, true);
     }
   }, [refreshKey, effectiveLocation.latitude, effectiveLocation.longitude, settings.methodId]);
 
-  // Adhan playback when a prayer time arrives (only if reminders enabled)
   usePrayerWatcher(data, settings.remindersEnabled);
 
-  // Configure audio mode once on mount
   useEffect(() => {
     configureAudio();
   }, []);
@@ -176,14 +147,12 @@ export default function HomeScreen({
     }
   }
 
-  // Reload when location/method changes
   useEffect(() => {
     load(true);
   }, [effectiveLocation.latitude, effectiveLocation.longitude, settings.methodId]);
 
   const next = useMemo(() => (data ? getNextPrayer(data.timings, now) : null), [data, now]);
 
-  // Countdown text (e.g., "4h 24m") — after Isha wraps to tomorrow's Fajr
   const countdownRemaining = useMemo(() => {
     const hm = next ? next.time : data?.timings.Fajr;
     if (!hm) return '';
@@ -194,7 +163,6 @@ export default function HomeScreen({
     return formatCountdown(diffMs);
   }, [next, now, data]);
 
-  // Calculate elapsed fraction of the current prayer window
   const progress = useMemo(() => {
     if (!data) return 0;
     const nowMin = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
@@ -207,12 +175,10 @@ export default function HomeScreen({
         prevMin = parseHm(data.timings[prevKey] || '00:00');
         nextMin = parseHm(next.time);
       } else {
-        // Next is Fajr (index 0). Previous window started at yesterday's Isha.
         prevMin = parseHm(data.timings.Isha || '00:00') - 1440;
         nextMin = parseHm(next.time);
       }
     } else {
-      // After Isha: next is tomorrow's Fajr.
       prevMin = parseHm(data.timings.Isha || '00:00');
       nextMin = parseHm(data.timings.Fajr || '00:00') + 1440;
     }
@@ -223,53 +189,25 @@ export default function HomeScreen({
     return Math.min(1, Math.max(0, fraction));
   }, [data, next, now]);
 
-  // Qibla bearing calculation
-  const qiblaDeg = useMemo(() => {
-    return Math.round(qiblaBearing(effectiveLocation.latitude, effectiveLocation.longitude));
-  }, [effectiveLocation.latitude, effectiveLocation.longitude]);
-
-  // Day of year for deterministic daily selections
   const dayOfYear = useMemo(() => getDayOfYear(now), [now]);
 
-  // 99 Name of the day
   const nameOfDay = useMemo(() => {
     const idx = Math.abs(dayOfYear) % NAMES_99.length;
     return NAMES_99[idx];
   }, [dayOfYear]);
 
-  // Dua of the day
-  const duaOfDay = useMemo(() => {
-    const idx = Math.abs(dayOfYear) % DUAS_DATA.length;
-    return DUAS_DATA[idx];
-  }, [dayOfYear]);
+  const afterPrayerDua = useMemo(() => {
+    return DUAS_DATA.find((d) => d.category === 'After Prayer') || DUAS_DATA[0];
+  }, []);
 
-  // Adhkar for morning/evening
-  const isMorning = now.getHours() < 15;
-  const currentAdhkar = useMemo(() => {
-    const timeKey = isMorning ? 'morning' : 'evening';
-    return ADHKAR.filter((d) => d.time === timeKey).slice(0, 3);
-  }, [isMorning]);
-
-  // Current Tasbih preset and count
-  const currentDhikr = DHIKR_PRESETS[selectedTasbihIdx];
-  const currentTasbihCount = tasbihCounts[currentDhikr.id] || 0;
-
-  const handleTasbihIncrement = useCallback(() => {
-    haptic('light');
-    const nextCount = currentTasbihCount + 1;
-    setTasbihCounts((prev) => ({ ...prev, [currentDhikr.id]: nextCount }));
-    saveTasbihCount(currentDhikr.id, nextCount);
-
-    if (nextCount > 0 && nextCount % 33 === 0) {
-      haptic('success');
+  const completedCount = Object.values(completed).filter(Boolean).length;
+  const lastCompletedPrayer = useMemo(() => {
+    const prayerKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    for (let i = prayerKeys.length - 1; i >= 0; i--) {
+      if (completed[prayerKeys[i]]) return prayerKeys[i];
     }
-  }, [currentTasbihCount, currentDhikr.id, haptic]);
-
-  const handleTasbihReset = useCallback(() => {
-    haptic('warning');
-    setTasbihCounts((prev) => ({ ...prev, [currentDhikr.id]: 0 }));
-    saveTasbihCount(currentDhikr.id, 0);
-  }, [currentDhikr.id, haptic]);
+    return null;
+  }, [completed]);
 
   const isCompact = useMemo(() => width <= 380, [width]);
 
@@ -310,51 +248,26 @@ export default function HomeScreen({
               <Skeleton width="60" height={12} borderRadius={4} />
             </View>
           </View>
-          <DuaCardSkeleton />
-          <DuaCardSkeleton />
           <Card style={styles.cardSection}>
             <View style={styles.cardHeaderRow}>
               <Skeleton width="120" height={11} borderRadius={4} />
             </View>
             <Hairline style={styles.cardDivider} />
-            <NameRowSkeleton />
+            <Skeleton width="100%" height={80} borderRadius={12} />
           </Card>
           <Card style={styles.cardSection}>
             <View style={styles.cardHeaderRow}>
               <Skeleton width="120" height={11} borderRadius={4} />
             </View>
             <Hairline style={styles.cardDivider} />
-            <DuaCardSkeleton />
+            <Skeleton width="100%" height={80} borderRadius={12} />
           </Card>
-          <View style={styles.adhkarSection}>
-            <View style={styles.adhkarHeaderRow}>
-              <Skeleton width="140" height={11} borderRadius={4} />
-              <Skeleton width="80" height={12} borderRadius={4} />
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.adhkarScrollContent}>
-              {[1, 2, 3].map((i) => (
-                <DuaCardSkeleton key={i} compact={isCompact} />
-              ))}
-            </ScrollView>
-          </View>
           <Card style={styles.cardSection}>
             <View style={styles.cardHeaderRow}>
-              <Skeleton width="150" height={11} borderRadius={4} />
+              <Skeleton width="120" height={11} borderRadius={4} />
             </View>
             <Hairline style={styles.cardDivider} />
-            <View style={styles.presetScroll}>
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} width={80} height={32} borderRadius={16} />
-              ))}
-            </View>
-            <View style={styles.tasbihDhikrWrap}>
-              <Skeleton width="120" height={26} borderRadius={4} />
-              <Skeleton width="180" height={13} borderRadius={4} />
-            </View>
-            <View style={styles.tasbihCounterRow}>
-              <Skeleton width="100%" height={80} borderRadius={12} />
-              <Skeleton width={80} height={48} borderRadius={12} />
-            </View>
+            <Skeleton width="100%" height={70} borderRadius={12} />
           </Card>
         </ScrollView>
       </View>
@@ -434,96 +347,154 @@ export default function HomeScreen({
         )}
 
         {/* 1. Prayer Hero (Next prayer, time, remaining countdown, elapsed progress bar) */}
-        <Card style={styles.countdownCard}>
-          <Text style={[styles.countdownEyebrow, { color: colors.accent }]}>
-            {next ? 'Next Prayer' : 'Next Prayer · Tomorrow'}
-          </Text>
-          <Text style={[styles.countdownName, { color: colors.textPrimary }]}>
-            {next ? next.name : 'Fajr'}
-          </Text>
-          <Text style={[styles.countdownTime, { color: colors.textPrimary }]}>
-            {formatTime(next ? next.time : data.timings.Fajr, fmt)}
-          </Text>
-          {countdownRemaining ? (
-            <Text style={[styles.countdownRemaining, { color: colors.textMuted }]}>
-              {countdownRemaining === 'Now' ? 'Now' : `in ${countdownRemaining}`}
+        <View style={styles.cardWithPattern}>
+          <AnimatedPattern variant="star" size={isCompact ? 280 : 340} />
+          <Card style={styles.countdownCard}>
+            <Text style={[styles.countdownEyebrow, { color: colors.accent }]}>
+              {next ? 'Next Prayer' : 'Next Prayer · Tomorrow'}
             </Text>
-          ) : null}
-
-          <View style={styles.progressWrap}>
-            <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    backgroundColor: colors.accent,
-                    width: `${Math.round(progress * 100)}%`,
-                  },
-                ]}
-              />
-            </View>
-            <View style={styles.progressMeta}>
-              <Text style={[styles.progressText, { color: colors.textMuted }]}>
-                {Math.round(progress * 100)}% elapsed
+            <Text style={[styles.countdownName, { color: colors.textPrimary }]}>
+              {next ? next.name : 'Fajr'}
+            </Text>
+            <Text style={[styles.countdownTime, { color: colors.textPrimary }]}>
+              {formatTime(next ? next.time : data.timings.Fajr, fmt)}
+            </Text>
+            {countdownRemaining ? (
+              <Text style={[styles.countdownRemaining, { color: colors.textMuted }]}>
+                {countdownRemaining === 'Now' ? 'Now' : `in ${countdownRemaining}`}
               </Text>
-            </View>
-          </View>
-        </Card>
+            ) : null}
 
-        {/* 2. Prayer Times (5 prayers + sunrise list with completion toggles) */}
-        <Card style={styles.prayerListCard} padded={false}>
-          {PRAYER_ORDER.map((p, i) => {
-            const time = data.timings[p.key] || '--:--';
-            const isActive = next?.name === p.key;
-            const isDone = !!completed[p.key];
-            return (
-              <View key={p.key}>
-                {i > 0 && <Hairline />}
-                <TouchableOpacity
+            <View style={styles.progressWrap}>
+              <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
+                <View
                   style={[
-                    styles.row,
+                    styles.progressFill,
                     {
-                      backgroundColor: isActive ? colors.accentDim : 'transparent',
-                      borderLeftWidth: 4,
-                      borderLeftColor: isActive ? colors.accent : 'transparent',
+                      backgroundColor: colors.accent,
+                      width: `${Math.round(progress * 100)}%`,
                     },
                   ]}
-                  onPress={() => togglePrayer(p.key)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isDone }}
-                  accessibilityLabel={`${p.label} at ${time}, ${isDone ? 'completed' : 'not completed'}`}
-                >
-                  <View style={styles.rowLeft}>
-                    <View
-                      style={[
-                        styles.check,
-                        { borderColor: isDone ? colors.accent : colors.borderStrong },
-                        isDone && { backgroundColor: colors.accent },
-                      ]}
-                    >
-                      {isDone && <Text style={styles.checkMark}>✓</Text>}
-                    </View>
-                    <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{p.label}</Text>
-                    {isActive && (
-                      <Text style={[styles.rowBadge, { color: colors.accent }]}>Now</Text>
-                    )}
-                  </View>
-                  <Text style={[styles.rowTime, { color: colors.textPrimary }]}>
-                    {formatTime(time, fmt)}
-                  </Text>
-                </TouchableOpacity>
+                />
               </View>
-            );
-          })}
-        </Card>
+              <View style={styles.progressMeta}>
+                <Text style={[styles.progressText, { color: colors.textMuted }]}>
+                  {Math.round(progress * 100)}% elapsed
+                </Text>
+              </View>
+            </View>
+          </Card>
+        </View>
 
-        {/* 3. Salah Completion (today X/5 + streak) */}
+        {/* 2. Prayer Times (5 prayers + sunrise list with completion toggles) */}
+        <View style={styles.cardWithPattern}>
+          <AnimatedPattern variant="arch" size={isCompact ? 260 : 320} />
+          <Card style={styles.prayerListCard} padded={false}>
+            {PRAYER_ORDER.map((p, i) => {
+              const time = data.timings[p.key] || '--:--';
+              const isActive = next?.name === p.key;
+              const isDone = !!completed[p.key];
+              return (
+                <View key={p.key}>
+                  {i > 0 && <Hairline />}
+                  <TouchableOpacity
+                    style={[
+                      styles.row,
+                      {
+                        backgroundColor: isActive ? colors.accentDim : 'transparent',
+                        borderLeftWidth: 4,
+                        borderLeftColor: isActive ? colors.accent : 'transparent',
+                      },
+                    ]}
+                    onPress={() => togglePrayer(p.key)}
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isDone }}
+                    accessibilityLabel={`${p.label} at ${time}, ${isDone ? 'completed' : 'not completed'}`}
+                  >
+                    <View style={styles.rowLeft}>
+                      <View
+                        style={[
+                          styles.check,
+                          { borderColor: isDone ? colors.accent : colors.borderStrong },
+                          isDone && { backgroundColor: colors.accent },
+                        ]}
+                      >
+                        {isDone && <Text style={styles.checkMark}>✓</Text>}
+                      </View>
+                      <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{p.label}</Text>
+                      {isActive && (
+                        <Text style={[styles.rowBadge, { color: colors.accent }]}>Now</Text>
+                      )}
+                    </View>
+                    <Text style={[styles.rowTime, { color: colors.textPrimary }]}>
+                      {formatTime(time, fmt)}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </Card>
+        </View>
+
+        {/* 3. Dua After Prayer — compact, collapsible, contextual */}
+        <View style={styles.cardWithPattern}>
+          <AnimatedPattern variant="rings" size={isCompact ? 240 : 300} />
+          <Card style={styles.duaAfterPrayerCard}>
+            <TouchableOpacity
+              style={styles.duaAfterPrayerHeader}
+              onPress={() => {
+                haptic('light');
+                setAfterPrayerExpanded((prev) => !prev);
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: afterPrayerExpanded }}
+              accessibilityLabel={`Dua after prayer${lastCompletedPrayer ? ` for ${lastCompletedPrayer}` : ''}. Tap to expand.`}
+            >
+              <View style={styles.duaAfterPrayerHeaderLeft}>
+                <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent }]}>
+                  Dua After Prayer
+                </Text>
+                {lastCompletedPrayer && (
+                  <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted }]}>
+                    For {lastCompletedPrayer}
+                  </Text>
+                )}
+              </View>
+              <Ionicons
+                name={afterPrayerExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                size={20}
+                color={colors.textMuted}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.duaAfterPrayerContent}>
+              <ArabicText size={22} align="right" style={styles.duaAfterPrayerArabic} numberOfLines={afterPrayerExpanded ? 8 : 2}>
+                {afterPrayerDua.arabic}
+              </ArabicText>
+              {afterPrayerExpanded && (
+                <>
+                  <Text style={[styles.duaAfterPrayerTransliteration, { color: colors.textSecondary }]}>
+                    {afterPrayerDua.transliteration}
+                  </Text>
+                  <Text style={[styles.duaAfterPrayerTranslation, { color: colors.textSecondary }]}>
+                    {afterPrayerDua.translation}
+                  </Text>
+                  <Text style={[styles.duaAfterPrayerRef, { color: colors.textMuted }]}>
+                    {afterPrayerDua.reference}
+                  </Text>
+                </>
+              )}
+            </View>
+          </Card>
+        </View>
+
+        {/* 4. Salah Completion (today X/5 + streak) */}
         <View style={[styles.trackerRow, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           <View style={styles.trackerStat}>
             <Text style={[styles.trackerValue, { color: colors.textPrimary }]}>
-              {Object.values(completed).filter(Boolean).length}/5
+              {completedCount}/5
             </Text>
-            <Text style={[styles.trackerLabel, { color: colors.textMuted }]}>Today's Salah</Text>
+            <Text style={[styles.trackerLabel, { color: colors.textMuted }]}>Today&apos;s Salah</Text>
           </View>
           <View style={[styles.trackerDivider, { backgroundColor: colors.borderSubtle }]} />
           <View style={styles.trackerStat}>
@@ -532,248 +503,54 @@ export default function HomeScreen({
           </View>
         </View>
 
-        {/* 4. Ayah of the Day */}
+        {/* 5. Ayah of the Day */}
         {ayah && (
-          <AyahCard ayah={ayah} onRefresh={refreshAyah} loading={ayahLoading} />
+          <View style={styles.cardWithPattern}>
+            <AnimatedPattern variant="bloom" size={isCompact ? 280 : 340} />
+            <AyahCard ayah={ayah} onRefresh={refreshAyah} loading={ayahLoading} />
+          </View>
         )}
 
-        {/* 5. Hadith of the Day */}
+        {/* 6. Hadith of the Day */}
         {hadith && (
-          <HadithCard hadith={hadith} onRefresh={refreshHadith} loading={hadithLoading} />
+          <View style={styles.cardWithPattern}>
+            <AnimatedPattern variant="rings" size={isCompact ? 260 : 320} />
+            <HadithCard hadith={hadith} onRefresh={refreshHadith} loading={hadithLoading} />
+          </View>
         )}
 
-        {/* 6. 99 Names of Allah (Name of the Day) */}
-        <Card style={styles.cardSection}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>
-              Name of the Day · #{nameOfDay.number}
-            </Text>
-            {onOpenNames && (
-              <TouchableOpacity onPress={onOpenNames} style={styles.headerActionBtn}>
-                <Text style={[styles.headerActionText, { color: colors.accent }]}>
-                  All 99 →
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <Hairline style={styles.cardDivider} />
-          <View style={styles.nameRow}>
-            <View style={styles.nameLeft}>
-              <Text style={[styles.nameTranslit, { color: colors.textPrimary }]}>
-                {nameOfDay.transliteration}
-              </Text>
-              <Text style={[styles.nameMeaning, { color: colors.textSecondary }]}>
-                {nameOfDay.meaning}
-              </Text>
-            </View>
-            <ArabicText size={32} bold align="right">
-              {nameOfDay.arabic}
-            </ArabicText>
-          </View>
-        </Card>
-
-        {/* 7. Qibla Shortcut Card */}
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={onOpenQibla}
-          disabled={!onOpenQibla}
-          accessibilityRole="button"
-          accessibilityLabel="Open Qibla compass"
-        >
+        {/* 7. 99 Names of Allah (Name of the Day) */}
+        <View style={styles.cardWithPattern}>
+          <AnimatedPattern variant="star-small" size={isCompact ? 220 : 280} />
           <Card style={styles.cardSection}>
             <View style={styles.cardHeaderRow}>
               <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>
-                Qibla Direction
+                Name of the Day · #{nameOfDay.number}
               </Text>
-              {onOpenQibla && (
-                <View style={styles.headerActionBtn}>
+              {onOpenNames && (
+                <TouchableOpacity onPress={onOpenNames} style={styles.headerActionBtn}>
                   <Text style={[styles.headerActionText, { color: colors.accent }]}>
-                    Open Qibla →
+                    All 99 →
                   </Text>
-                </View>
+                </TouchableOpacity>
               )}
             </View>
             <Hairline style={styles.cardDivider} />
-            <View style={styles.qiblaRow}>
-              <View style={styles.qiblaLeft}>
-                <Text style={[styles.qiblaBearing, { color: colors.textPrimary }]}>
-                  {qiblaDeg}°
+            <View style={styles.nameRow}>
+              <View style={styles.nameLeft}>
+                <Text style={[styles.nameTranslit, { color: colors.textPrimary }]}>
+                  {nameOfDay.transliteration}
                 </Text>
-                <Text style={[styles.qiblaLabel, { color: colors.textSecondary }]}>
-                  Bearing towards the Kaaba
-                </Text>
-                <Text style={[styles.qiblaLocation, { color: colors.textMuted }]}>
-                  Calculated for {locLabel}
+                <Text style={[styles.nameMeaning, { color: colors.textSecondary }]}>
+                  {nameOfDay.meaning}
                 </Text>
               </View>
-              <View style={[styles.compassIconWrap, { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle }]}>
-                <Ionicons name="compass-outline" size={36} color={colors.accent} />
-              </View>
+              <ArabicText size={32} bold align="right">
+                {nameOfDay.arabic}
+              </ArabicText>
             </View>
           </Card>
-        </TouchableOpacity>
-
-        {/* 8. Duas (Dua of the Day) */}
-        <Card style={styles.cardSection}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>
-              Dua of the Day · {duaOfDay.category}
-            </Text>
-            {onOpenDuas && (
-              <TouchableOpacity onPress={onOpenDuas} style={styles.headerActionBtn}>
-                <Text style={[styles.headerActionText, { color: colors.accent }]}>
-                  All Duas →
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <Hairline style={styles.cardDivider} />
-          <Text style={[styles.duaTitle, { color: colors.textPrimary }]}>
-            {duaOfDay.title}
-          </Text>
-          <ArabicText size={20} align="right" style={styles.duaArabic} numberOfLines={6}>
-            {duaOfDay.arabic}
-          </ArabicText>
-          <Text style={[styles.duaTranslation, { color: colors.textSecondary }]}>
-            {duaOfDay.translation}
-          </Text>
-          <Text style={[styles.duaRef, { color: colors.textMuted }]}>
-            {duaOfDay.reference}
-          </Text>
-        </Card>
-
-        {/* 9. Adhkar Strip (Morning / Evening) */}
-        <View style={styles.adhkarSection}>
-          <View style={styles.adhkarHeaderRow}>
-            <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>
-              Daily Adhkar · {isMorning ? 'Morning' : 'Evening'}
-            </Text>
-            <Text style={[styles.adhkarSub, { color: colors.textMuted }]}>
-              {currentAdhkar.length} supplications
-            </Text>
-          </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.adhkarScrollContent}
-          >
-            {currentAdhkar.map((d) => (
-              <Card key={d.id} style={styles.adhkarCard}>
-                <View style={styles.adhkarCardHeader}>
-                  <Text style={[styles.adhkarSource, { color: colors.textMuted }]} numberOfLines={1}>
-                    {d.source}
-                  </Text>
-                  {d.count ? (
-                    <View style={[styles.adhkarCountBadge, { backgroundColor: colors.accentDim }]}>
-                      <Text style={[styles.adhkarCountText, { color: colors.accent }]}>
-                        {d.count}x
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-                <ArabicText size={18} align="right" style={styles.adhkarArabic} numberOfLines={3}>
-                  {d.arabic}
-                </ArabicText>
-                <Text style={[styles.adhkarTrans, { color: colors.textSecondary }]} numberOfLines={3}>
-                  {d.translation}
-                </Text>
-              </Card>
-            ))}
-          </ScrollView>
         </View>
-
-        {/* 10. Tasbih Quick Counter Card */}
-        <Card style={styles.cardSection}>
-          <View style={styles.cardHeaderRow}>
-            <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>
-              Tasbih · Quick Counter
-            </Text>
-            {onOpenTasbih && (
-              <TouchableOpacity onPress={onOpenTasbih} style={styles.headerActionBtn}>
-                <Text style={[styles.headerActionText, { color: colors.accent }]}>
-                  Full Tasbih →
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <Hairline style={styles.cardDivider} />
-
-          {/* Preset Selector */}
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.presetScroll}
-          >
-            {DHIKR_PRESETS.map((p, idx) => {
-              const isSelected = idx === selectedTasbihIdx;
-              return (
-                <TouchableOpacity
-                  key={p.id}
-                  style={[
-                    styles.presetChip,
-                    {
-                      backgroundColor: isSelected ? colors.accent : colors.bgBase,
-                      borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                    },
-                  ]}
-                  onPress={() => setSelectedTasbihIdx(idx)}
-                >
-                  <Text
-                    style={[
-                      styles.presetChipText,
-                      { color: isSelected ? '#121110' : colors.textSecondary },
-                    ]}
-                  >
-                    {p.transliteration}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* Dhikr Arabic & Meaning */}
-          <View style={styles.tasbihDhikrWrap}>
-            <ArabicText size={26} bold align="center" style={styles.tasbihArabic}>
-              {currentDhikr.arabic}
-            </ArabicText>
-            <Text style={[styles.tasbihMeaning, { color: colors.textSecondary }]}>
-              {currentDhikr.meaning}
-            </Text>
-          </View>
-
-          {/* Counter Display & Tap Button */}
-          <View style={styles.tasbihCounterRow}>
-            <TouchableOpacity
-              style={[
-                styles.tasbihTapBtn,
-                { backgroundColor: colors.accentDim, borderColor: colors.accent },
-              ]}
-              onPress={handleTasbihIncrement}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={`Count tasbih for ${currentDhikr.transliteration}. Current count ${currentTasbihCount}. Tap to count.`}
-            >
-              <Text style={[styles.tasbihCountNum, { color: colors.textPrimary }]}>
-                {currentTasbihCount}
-              </Text>
-              <Text style={[styles.tasbihTapLabel, { color: colors.accent }]}>
-                Tap to count
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleTasbihReset}
-              style={[styles.tasbihResetBtn, { borderColor: colors.borderSubtle }]}
-              accessibilityRole="button"
-              accessibilityLabel="Reset tasbih count"
-            >
-              <Ionicons name="refresh-outline" size={18} color={colors.textMuted} />
-              <Text style={[styles.tasbihResetText, { color: colors.textMuted }]}>
-                Reset
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
 
         {/* Method + location note */}
         <Text style={[styles.methodNote, { color: colors.textMuted }]}>
@@ -793,6 +570,12 @@ const styles = StyleSheet.create({
   patternTop: { top: -40, right: -60 },
   sectionHeader: { marginBottom: 20 },
   countdownCard: { marginBottom: 20 },
+  cardWithPattern: {
+    position: 'relative',
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   countdownEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
@@ -840,7 +623,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   prayerListCard: {
-    marginBottom: 20,
+    marginBottom: 0,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -934,170 +717,49 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
-  qiblaRow: {
+  duaAfterPrayerCard: {
+    marginBottom: 0,
+  },
+  duaAfterPrayerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  qiblaLeft: {
+  duaAfterPrayerHeaderLeft: {
     flex: 1,
   },
-  qiblaBearing: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 40,
-    lineHeight: 44,
-  },
-  qiblaLabel: {
+  duaAfterPrayerEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  qiblaLocation: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 11,
-    marginTop: 2,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
-  compassIconWrap: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 16,
+  duaAfterPrayerContext: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
   },
-  duaTitle: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 16,
-    marginBottom: 10,
+  duaAfterPrayerContent: {
+    gap: 8,
   },
-  duaArabic: {
-    marginBottom: 12,
-    lineHeight: 34,
+  duaAfterPrayerArabic: {
+    lineHeight: 36,
   },
-  duaTranslation: {
+  duaAfterPrayerTransliteration: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     lineHeight: 20,
-    marginBottom: 8,
   },
-  duaRef: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-  },
-  adhkarSection: {
-    marginBottom: 24,
-  },
-  adhkarHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingHorizontal: 2,
-  },
-  adhkarSub: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
-  },
-  adhkarScrollContent: {
-    gap: 12,
-    paddingRight: 8,
-  },
-  adhkarCard: {
-    width: 270,
-    marginBottom: 0,
-  },
-  adhkarCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  adhkarSource: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
-    flex: 1,
-    marginRight: 6,
-  },
-  adhkarCountBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  adhkarCountText: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 10,
-  },
-  adhkarArabic: {
-    marginBottom: 8,
-    lineHeight: 28,
-  },
-  adhkarTrans: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    lineHeight: 18,
-  },
-  presetScroll: {
-    gap: 8,
-    marginBottom: 16,
-  },
-  presetChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  presetChipText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
-  },
-  tasbihDhikrWrap: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  tasbihArabic: {
-    marginBottom: 4,
-  },
-  tasbihMeaning: {
+  duaAfterPrayerTranslation: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
+    lineHeight: 20,
   },
-  tasbihCounterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  tasbihTapBtn: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 14,
-  },
-  tasbihCountNum: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 48,
-    lineHeight: 52,
-  },
-  tasbihTapLabel: {
+  duaAfterPrayerRef: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  tasbihResetBtn: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-  },
-  tasbihResetText: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 11,
+    marginTop: 4,
   },
   methodNote: {
     fontFamily: 'Manrope_400Regular',
