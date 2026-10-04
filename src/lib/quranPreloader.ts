@@ -22,7 +22,7 @@ export interface QuranPreloadProgress {
 }
 
 const TOTAL_SURAHS = 114;
-const DELAY_BETWEEN_FETCHES_MS = 400;
+const DELAY_BETWEEN_FETCHES_MS = 250;
 
 let isPreloaderRunning = false;
 let shouldStopPreloader = false;

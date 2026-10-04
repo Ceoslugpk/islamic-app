@@ -183,13 +183,18 @@ function SurahDownloadAction({
 
   return (
     <TouchableOpacity
-      style={styles.downloadActionWrap}
+      style={[
+        styles.downloadActionWrap,
+        styles.downloadActionBtn,
+        { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface },
+      ]}
       onPress={handlePress}
       accessibilityRole="button"
       accessibilityLabel={`Download Surah ${surahName} audio`}
       hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
     >
-      <Ionicons name="cloud-download-outline" size={19} color={colors.textMuted} />
+      <Ionicons name="cloud-download-outline" size={14} color={colors.accent} />
+      <Text style={[styles.downloadLabelText, { color: colors.textSecondary }]}>Save</Text>
     </TouchableOpacity>
   );
 }
@@ -905,6 +910,20 @@ const styles = StyleSheet.create({
     minWidth: 36,
     paddingHorizontal: 2,
     flexShrink: 0,
+  },
+  downloadActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    minWidth: 0,
+  },
+  downloadLabelText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10,
   },
   downloadProgressText: {
     fontFamily: 'Manrope_600SemiBold',
