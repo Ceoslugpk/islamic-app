@@ -47,6 +47,12 @@ import {
   PrayerRowSkeleton,
   Skeleton,
 } from '../components/Skeleton';
+import {
+  PrayerHeroAtmosphere,
+  PrayerSegment,
+} from '../components/PrayerHeroAtmosphere';
+import { PrayerCountdown } from '../components/PrayerCountdown';
+import { PrayerTimeline } from '../components/PrayerTimeline';
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -56,6 +62,15 @@ const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Maghrib', label: 'Maghrib' },
   { key: 'Isha', label: 'Isha' },
 ];
+
+const PRAYER_ARABIC: Record<string, string> = {
+  Fajr: 'الفَجْر',
+  Sunrise: 'الشُّرُوق',
+  Dhuhr: 'الظُّهْر',
+  Asr: 'العَصْر',
+  Maghrib: 'المَغْرِب',
+  Isha: 'العِشَاء',
+};
 
 function parseHm(hm: string): number {
   const [h, m] = hm.split(':').map(Number);
@@ -219,6 +234,25 @@ export default function HomeScreen({
 
   const isCompact = useMemo(() => width <= 380, [width]);
 
+  const currentSegment = useMemo((): PrayerSegment => {
+    if (!data) return 'Dhuhr';
+    if (!next) return 'Isha';
+    if (next.index === 0) return 'Isha';
+    const prevKey = PRAYER_ORDER[next.index - 1].key as PrayerSegment;
+    return prevKey;
+  }, [data, next]);
+
+  const weekdayHijriLabel = useMemo(() => {
+    if (!data) return '';
+    const weekday = now.toLocaleDateString('en-US', { weekday: 'long' });
+    return `${weekday} · ${data.hijri.day} ${data.hijri.monthEn}`;
+  }, [data, now]);
+
+  const nextArabicName = useMemo(() => {
+    if (!next) return PRAYER_ARABIC.Fajr;
+    return PRAYER_ARABIC[next.name] || 'الفَجْر';
+  }, [next]);
+
   if (loading) {
     return (
       <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
@@ -244,18 +278,12 @@ export default function HomeScreen({
                 <PrayerRowSkeleton />
               </View>
             ))}
+            <Hairline />
+            <View style={styles.trackerSkeletonFooter}>
+              <Skeleton width="100" height={16} borderRadius={4} />
+              <Skeleton width="75" height={16} borderRadius={4} />
+            </View>
           </Card>
-          <View style={[styles.trackerRow, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-            <View style={styles.trackerStat}>
-              <Skeleton width="40" height={24} borderRadius={4} />
-              <Skeleton width="70" height={12} borderRadius={4} />
-            </View>
-            <View style={[styles.trackerDivider, { backgroundColor: colors.borderSubtle }]} />
-            <View style={styles.trackerStat}>
-              <Skeleton width="30" height={24} borderRadius={4} />
-              <Skeleton width="60" height={12} borderRadius={4} />
-            </View>
-          </View>
           <Card style={styles.cardSection}>
             <View style={styles.cardHeaderRow}>
               <Skeleton width="120" height={11} borderRadius={4} />
@@ -354,91 +382,81 @@ export default function HomeScreen({
           />
         )}
 
-        {/* 1. Prayer Hero (Next prayer, time, remaining countdown, elapsed progress bar) */}
-        <Card style={styles.countdownCard}>
-          <AnimatedPattern variant="star" size={isCompact ? 280 : 340} />
-          <Text style={[styles.countdownEyebrow, { color: colors.accent }]}>
-            {next ? 'Next Prayer' : 'Next Prayer · Tomorrow'}
-          </Text>
-          <Text style={[styles.countdownName, { color: colors.textPrimary }]}>
-            {next ? next.name : 'Fajr'}
-          </Text>
-          <Text style={[styles.countdownTime, { color: colors.textPrimary }]}>
-            {formatTime(next ? next.time : data.timings.Fajr, fmt)}
-          </Text>
-          {countdownRemaining ? (
-            <Text style={[styles.countdownRemaining, { color: colors.textMuted }]}>
-              {countdownRemaining === 'Now' ? 'Now' : `in ${countdownRemaining}`}
+        {/* 1. Prayer Hero (Visual Centerpiece with time-of-day atmosphere & smart countdown) */}
+        <Card style={styles.prayerHeroCard} padded={false}>
+          <PrayerHeroAtmosphere
+            segment={currentSegment}
+            size={isCompact ? 280 : 340}
+          />
+          <View style={styles.heroContent}>
+            {/* Line 1: Weekday · Hijri date */}
+            <Text style={[styles.heroEyebrow, { color: colors.textMuted }]}>
+              {weekdayHijriLabel}
             </Text>
-          ) : null}
 
-          <View style={styles.progressWrap}>
-            <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    backgroundColor: colors.accent,
-                    width: `${Math.round(progress * 100)}%`,
-                  },
-                ]}
+            {/* Line 2: Arabic prayer name */}
+            <ArabicText
+              size={isCompact ? 26 : 30}
+              align="center"
+              style={styles.heroArabicName}
+            >
+              {nextArabicName}
+            </ArabicText>
+
+            {/* Line 3: English name */}
+            <Text style={[styles.heroEnglishName, { color: colors.textPrimary }]}>
+              {next ? next.name : 'Fajr'}
+            </Text>
+
+            {/* Line 4: Very large TIME */}
+            <Text
+              style={[
+                styles.heroTime,
+                {
+                  color: colors.textPrimary,
+                  fontSize: isCompact ? 58 : 68,
+                  lineHeight: isCompact ? 64 : 74,
+                },
+              ]}
+            >
+              {formatTime(next ? next.time : data.timings.Fajr, fmt)}
+            </Text>
+
+            {/* Line 5: Tabular figures countdown with digit transitions */}
+            <View style={styles.heroCountdownWrap}>
+              <PrayerCountdown
+                targetTime={next ? next.time : data.timings.Fajr}
+                color={colors.accent}
+                separatorColor={colors.textMuted}
+                fontSize={18}
               />
             </View>
-            <View style={styles.progressMeta}>
-              <Text style={[styles.progressText, { color: colors.textMuted }]}>
-                {Math.round(progress * 100)}% elapsed
+
+            {/* Line 6: Divider + transition hint */}
+            <View style={styles.heroTransitionWrap}>
+              <View
+                style={[styles.heroDivider, { backgroundColor: colors.borderSubtle }]}
+              />
+              <Text style={[styles.heroTransitionText, { color: colors.textMuted }]}>
+                {currentSegment}{' '}
+                <Text style={{ color: colors.accent }}>→</Text>{' '}
+                {next ? next.name : 'Fajr'}
               </Text>
             </View>
           </View>
         </Card>
 
-        {/* 2. Prayer Times (5 prayers + sunrise list with completion toggles) */}
-        <Card style={styles.prayerListCard} padded={false}>
-          <AnimatedPattern variant="arch" size={isCompact ? 260 : 320} />
-          {PRAYER_ORDER.map((p, i) => {
-            const time = data.timings[p.key] || '--:--';
-            const isActive = next?.name === p.key;
-            const isDone = !!completed[p.key];
-            return (
-              <View key={p.key}>
-                {i > 0 && <Hairline />}
-                <TouchableOpacity
-                  style={[
-                    styles.row,
-                    {
-                      backgroundColor: isActive ? colors.accentDim : 'transparent',
-                      borderLeftWidth: 4,
-                      borderLeftColor: isActive ? colors.accent : 'transparent',
-                    },
-                  ]}
-                  onPress={() => togglePrayer(p.key)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isDone }}
-                  accessibilityLabel={`${p.label} at ${time}, ${isDone ? 'completed' : 'not completed'}`}
-                >
-                  <View style={styles.rowLeft}>
-                    <View
-                      style={[
-                        styles.check,
-                        { borderColor: isDone ? colors.accent : colors.borderStrong },
-                        isDone && { backgroundColor: colors.accent },
-                      ]}
-                    >
-                      {isDone && <Text style={styles.checkMark}>✓</Text>}
-                    </View>
-                    <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{p.label}</Text>
-                    {isActive && (
-                      <Text style={[styles.rowBadge, { color: colors.accent }]}>Now</Text>
-                    )}
-                  </View>
-                  <Text style={[styles.rowTime, { color: colors.textPrimary }]}>
-                    {formatTime(time, fmt)}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            );
-          })}
-        </Card>
+        {/* 2. Prayer Timeline with status dots and integrated Salah tracker footer */}
+        <PrayerTimeline
+          timings={data.timings}
+          completed={completed}
+          onTogglePrayer={togglePrayer}
+          currentPrayerSegment={currentSegment}
+          nextPrayerName={next ? next.name : 'Fajr'}
+          progressFraction={progress}
+          timeFormat={fmt}
+          streak={streak}
+        />
 
         {/* 3. Dua After Prayer — compact, collapsible, contextual */}
         <Card style={styles.duaAfterPrayerCard}>
@@ -492,20 +510,7 @@ export default function HomeScreen({
           </View>
         </Card>
 
-        {/* 4. Salah Completion (today X/5 + streak) */}
-        <View style={[styles.trackerRow, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-          <View style={styles.trackerStat}>
-            <Text style={[styles.trackerValue, { color: colors.textPrimary }]}>
-              {completedCount}/5
-            </Text>
-            <Text style={[styles.trackerLabel, { color: colors.textMuted }]}>Today&apos;s Salah</Text>
-          </View>
-          <View style={[styles.trackerDivider, { backgroundColor: colors.borderSubtle }]} />
-          <View style={styles.trackerStat}>
-            <Text style={[styles.trackerValue, { color: colors.accent }]}>{streak}</Text>
-            <Text style={[styles.trackerLabel, { color: colors.textMuted }]}>Day Streak</Text>
-          </View>
-        </View>
+
 
         {/* 5. Ayah of the Day */}
         {ayah && (
@@ -571,109 +576,83 @@ const styles = StyleSheet.create({
   content: { padding: 20 },
   patternTop: { top: -40, right: -60 },
   sectionHeader: { marginBottom: 20 },
-  countdownCard: { marginBottom: 20 },
+  prayerHeroCard: {
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
   cardWithPattern: {
     position: 'relative',
     marginBottom: 20,
     borderRadius: 16,
     overflow: 'hidden',
   },
-  countdownEyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-  },
-  countdownName: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 44,
-    lineHeight: 48,
-    marginTop: 6,
-  },
-  countdownTime: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 26,
-    lineHeight: 32,
-    marginTop: 2,
-  },
-  countdownRemaining: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 4,
-    letterSpacing: 0.2,
-  },
-  progressWrap: {
-    marginTop: 16,
-  },
-  progressTrack: {
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  progressMeta: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 6,
-  },
-  progressText: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
-  },
-  prayerListCard: {
-    marginBottom: 20,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  trackerRow: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderRadius: 12,
-    marginBottom: 24,
-    overflow: 'hidden',
-    alignItems: 'center',
-  },
-  trackerStat: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 16,
-    gap: 2,
-  },
-  trackerDivider: {
-    width: 1,
-    height: 36,
-  },
-  trackerValue: { fontFamily: 'Manrope_700Bold', fontSize: 24 },
-  trackerLabel: { fontFamily: 'Manrope_500Medium', fontSize: 12 },
-  check: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
+  heroContent: {
+    paddingVertical: 24,
+    paddingHorizontal: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkMark: { color: '#121110', fontFamily: 'Manrope_700Bold', fontSize: 13 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+  heroEyebrow: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginBottom: 6,
   },
-  rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  rowLabel: { fontFamily: 'Manrope_500Medium', fontSize: 16 },
-  rowBadge: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 10,
+  heroArabicName: {
+    lineHeight: 40,
+    textAlign: 'center',
+    marginBottom: 2,
+  },
+  heroEnglishName: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 34,
+    lineHeight: 38,
+    textAlign: 'center',
+    letterSpacing: 0.5,
+  },
+  heroTime: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    textAlign: 'center',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  heroCountdownWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  heroTransitionWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    width: '100%',
+  },
+  heroDivider: {
+    width: 44,
+    height: 1,
+    marginBottom: 8,
+  },
+  heroTransitionText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
-  rowTime: { fontFamily: 'Manrope_700Bold', fontSize: 16 },
+  prayerListCard: {
+    marginBottom: 20,
+    borderRadius: 14,
+    overflow: 'hidden',
+  },
+  trackerSkeletonFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   cardSection: {
     marginBottom: 24,
   },
