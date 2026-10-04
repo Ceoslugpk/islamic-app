@@ -27,8 +27,11 @@ function withWidgetManifest(config) {
     app.receiver.push({
       '$': {
         'android:name': '.IslamicWidgetProvider',
-        'android:exported': 'false',
+        // Widget receivers must be exported — the launcher sends APPWIDGET_UPDATE
+        // broadcasts from outside the app. exported=false would also let R8 strip it.
+        'android:exported': 'true',
       },
+      'tools:keep': '@xml/islamic_widget_info',
       'intent-filter': [
         {
           action: [{ $: { 'android:name': 'android.appwidget.action.APPWIDGET_UPDATE' } }],
@@ -56,6 +59,28 @@ function withWidgetNativeFiles(config) {
     fs.mkdirSync(path.join(resDir, 'xml'), { recursive: true });
     fs.mkdirSync(path.join(resDir, 'layout'), { recursive: true });
     fs.mkdirSync(javaDir, { recursive: true });
+
+    // 0. Proguard keep rule so R8 keeps the widget provider + manifest entries
+    const proguardPath = path.join(projectRoot, 'android', 'app', 'proguard-rules.pro');
+    try {
+      let pg = fs.readFileSync(proguardPath, 'utf8');
+      if (!pg.includes('IslamicWidgetProvider')) {
+        pg += `\n# Islamic home-screen widget — keep provider + manifest entries (R8)\n-keep class ${PACKAGE}.IslamicWidgetProvider { *; }\n-keep class ${PACKAGE}.IslamicWidgetProvider$Companion { *; }\n`;
+        fs.writeFileSync(proguardPath, pg);
+      }
+    } catch {}
+
+    // 0b. Disable AGP manifest minification — it strips the widget receiver from
+    // the release manifest despite tools:keep (code R8 is unaffected).
+    const gradlePropsPath = path.join(projectRoot, 'android', 'gradle.properties');
+    try {
+      let gp = fs.readFileSync(gradlePropsPath, 'utf8');
+      if (!gp.includes('enableManifestMinification=false')) {
+        // ensure the property lands on its own line (leading newline)
+        gp = gp.replace(/\s*$/, '\n') + '\n# Keep the Islamic widget receiver in the release manifest (R8 strips it otherwise).\nandroid.enableManifestMinification=false\n';
+        fs.writeFileSync(gradlePropsPath, gp);
+      }
+    } catch {}
 
     // 1. Widget provider info — 4x2 next-prayer widget, resizable, updatePeriod 30min
     fs.writeFileSync(
