@@ -192,6 +192,13 @@ export default function HomeScreen({
     return () => clearInterval(id);
   }, []);
 
+  // Real-time prayer rollover: when the countdown hits zero, refresh `now`
+  // immediately so `next`/`currentSegment`/compact bar switch to the next prayer
+  // without waiting for the 30s clock tick.
+  const handlePrayerExpire = useCallback(() => {
+    setNow(new Date());
+  }, []);
+
   const effectiveLocation = useMemo(() => {
     if (settings.locationMode === 'auto' && gpsLocation) return gpsLocation;
     return settings.manualLocation;
@@ -545,6 +552,7 @@ export default function HomeScreen({
             haptic('light');
             scrollRef.current?.scrollTo({ y: 0, animated: true });
           }}
+          onExpire={handlePrayerExpire}
         />
       </Animated.View>
 
@@ -694,6 +702,7 @@ export default function HomeScreen({
                     color={colors.accent}
                     separatorColor={colors.textMuted}
                     fontSize={18}
+                    onExpire={handlePrayerExpire}
                   />
                 </View>
               </Animated.View>

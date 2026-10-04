@@ -15,6 +15,7 @@ export interface CompactPrayerBarProps {
   prayerTime: string;
   targetTime?: string;
   onPress?: () => void;
+  onExpire?: () => void;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -28,6 +29,7 @@ export function CompactPrayerBar({
   prayerTime,
   targetTime,
   onPress,
+  onExpire,
   style,
 }: CompactPrayerBarProps) {
   const { colors } = useTheme();
@@ -62,6 +64,7 @@ export function CompactPrayerBar({
           color={colors.accent}
           separatorColor={colors.textMuted}
           fontSize={13}
+          onExpire={onExpire}
         />
       </View>
     </View>

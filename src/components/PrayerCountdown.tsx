@@ -125,6 +125,8 @@ interface PrayerCountdownProps {
   color?: string;
   separatorColor?: string;
   fontSize?: number;
+  /** Fires once when the countdown crosses zero (next prayer arrived). */
+  onExpire?: () => void;
 }
 
 export function PrayerCountdown({
@@ -132,8 +134,10 @@ export function PrayerCountdown({
   color = '#e0a96d',
   separatorColor = '#8c827a',
   fontSize = 18,
+  onExpire,
 }: PrayerCountdownProps) {
   const [reducedMotion, setReducedMotion] = useState(false);
+  const expiredRef = useRef(false);
   const [digits, setDigits] = useState<{
     h1: string;
     h2: string;
@@ -173,8 +177,13 @@ export function PrayerCountdown({
 
       if (diffMs <= 0) {
         setDigits({ h1: '0', h2: '0', m1: '0', m2: '0', s1: '0', s2: '0' });
+        if (!expiredRef.current) {
+          expiredRef.current = true;
+          onExpire?.();
+        }
         return;
       }
+      expiredRef.current = false;
 
       const totalSec = Math.floor(diffMs / 1000);
       const h = Math.floor(totalSec / 3600);
