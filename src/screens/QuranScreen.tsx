@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   ScrollView,
@@ -21,6 +22,15 @@ import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { useConnectivity } from '../lib/useConnectivity';
 import { SurahSkeleton, Skeleton } from '../components/Skeleton';
+import {
+  downloadSurah,
+  removeSurahDownload,
+  useSurahDownloads,
+  formatBytes,
+} from '../lib/surahDownloads';
+import { playSurah, resolveReciterName, getSurahBitrate } from '../lib/quranAudio';
+import { loadAudioSettings } from '../lib/db';
+
 
 interface QuranScreenProps {
   onOpenSurah: (n: number) => void;
@@ -41,6 +51,149 @@ const REVELATION_OPTIONS = [
   { value: 'Medinan' as const, label: 'Medinan' },
 ] as const;
 
+function SurahDownloadAction({
+  surah,
+  surahName,
+  arabicName,
+  reciter,
+  isOnline,
+  isCompact,
+}: {
+  surah: number;
+  surahName: string;
+  arabicName: string;
+  reciter: string;
+  isOnline: boolean;
+  isCompact: boolean;
+}) {
+  const { colors } = useTheme();
+  const bitrate = getSurahBitrate(reciter);
+  const { isDownloaded, getProgress, downloadedSurahs } = useSurahDownloads();
+  const [downloading, setDownloading] = useState(false);
+
+  const downloaded = isDownloaded(reciter, surah, bitrate);
+  const progress = getProgress(reciter, surah, bitrate);
+  const isCurrentlyDownloading = downloading || progress !== null;
+
+  const downloadMeta = downloadedSurahs.find(
+    (d) => d.edition === reciter && d.surah === surah && d.bitrate === bitrate
+  );
+
+  const handlePress = async () => {
+    if (downloaded) {
+      if (!isOnline) {
+        // Offline UX: play local audio file immediately with no network request
+        await playSurah(reciter, undefined, surahName, resolveReciterName(reciter), surah).catch(() => {});
+      } else {
+        // Online: tap shows confirm to remove
+        Alert.alert(
+          'Remove Download',
+          `Remove offline audio for Surah ${surahName} (${formatBytes(downloadMeta?.size || 0)})?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Remove',
+              style: 'destructive',
+              onPress: () => {
+                removeSurahDownload(reciter, surah, bitrate).catch(() => {});
+              },
+            },
+          ]
+        );
+      }
+    } else {
+      if (isCurrentlyDownloading) return;
+      try {
+        setDownloading(true);
+        await downloadSurah(reciter, surah, bitrate, {
+          surahName: arabicName,
+          surahEnglishName: surahName,
+        });
+      } catch {
+        Alert.alert('Download Error', 'Could not download surah audio. Please check your connection.');
+      } finally {
+        setDownloading(false);
+      }
+    }
+  };
+
+  const handleLongPress = () => {
+    if (downloaded) {
+      Alert.alert(
+        'Remove Download',
+        `Remove offline audio for Surah ${surahName} (${formatBytes(downloadMeta?.size || 0)})?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Remove',
+            style: 'destructive',
+            onPress: () => {
+              removeSurahDownload(reciter, surah, bitrate).catch(() => {});
+            },
+          },
+        ]
+      );
+    }
+  };
+
+  if (isCurrentlyDownloading) {
+    return (
+      <View style={styles.downloadActionWrap}>
+        <ActivityIndicator size="small" color={colors.accent} style={{ transform: [{ scale: 0.75 }] }} />
+        <Text style={[styles.downloadProgressText, { color: colors.accent }]}>
+          {progress !== null ? `${progress}%` : '...'}
+        </Text>
+      </View>
+    );
+  }
+
+  if (downloaded) {
+    if (!isOnline) {
+      return (
+        <TouchableOpacity
+          style={[styles.offlinePlayBadge, { backgroundColor: colors.accent }]}
+          onPress={handlePress}
+          onLongPress={handleLongPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Play Surah ${surahName} offline`}
+          hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+        >
+          <Ionicons name="play" size={10} color={colors.onAccent} />
+          <Text style={[styles.offlinePlayText, { color: colors.onAccent }]}>Offline</Text>
+        </TouchableOpacity>
+      );
+    }
+
+    return (
+      <TouchableOpacity
+        style={styles.downloadActionWrap}
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Downloaded. Tap to remove Surah ${surahName}`}
+        hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+      >
+        <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
+        <Text style={[styles.downloadedSizeText, { color: colors.textMuted }]}>
+          {downloadMeta?.size ? formatBytes(downloadMeta.size) : 'Offline'}
+        </Text>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      style={styles.downloadActionWrap}
+      onPress={handlePress}
+      accessibilityRole="button"
+      accessibilityLabel={`Download Surah ${surahName} audio`}
+      hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+    >
+      <Ionicons name="cloud-download-outline" size={19} color={colors.textMuted} />
+    </TouchableOpacity>
+  );
+}
+
 export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
@@ -48,7 +201,9 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
   const isNarrow = width < 380;
   const horizontalPadding = isCompact ? 12 : isNarrow ? 16 : 20;
 
-  const { refreshKey } = useConnectivity();
+  const { refreshKey, isOnline } = useConnectivity();
+  const [reciter] = useState(() => loadAudioSettings().reciter || 'ar.alafasy');
+
 
   const { language, setLanguage, edition, flag } = useQuranLanguage();
   const [langPickerOpen, setLangPickerOpen] = useState(false);
@@ -522,6 +677,14 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                   {item.numberOfAyahs} ayahs
                 </Text>
               </View>
+              <SurahDownloadAction
+                surah={item.number}
+                surahName={item.englishName}
+                arabicName={item.name}
+                reciter={reciter}
+                isOnline={isOnline}
+                isCompact={isCompact}
+              />
             </TouchableOpacity>
           )}
           ListEmptyComponent={
@@ -729,13 +892,46 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     alignItems: 'flex-end',
     justifyContent: 'center',
-    maxWidth: '38%',
+    maxWidth: '30%',
     gap: 2,
   },
   arabicName: {
     textAlign: 'right',
   },
   ayahCount: { fontFamily: 'Manrope_400Regular', fontSize: 11 },
+  downloadActionWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 36,
+    paddingHorizontal: 2,
+    flexShrink: 0,
+  },
+  downloadProgressText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 9,
+    marginTop: 2,
+  },
+  downloadedSizeText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 9,
+    marginTop: 2,
+    textAlign: 'center',
+  },
+  offlinePlayBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 12,
+    flexShrink: 0,
+  },
+  offlinePlayText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
   emptyWrap: {
     paddingVertical: 48,
     alignItems: 'center',

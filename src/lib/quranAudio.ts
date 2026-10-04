@@ -21,7 +21,10 @@ import {
   stopAudioPreloading,
   takePreloadedSound,
 } from './audioPreloader';
+import { isSurahDownloaded, resolveAudioUri } from './surahDownloads';
+export { resolveAudioUri };
 export {
+
   clearAudioPreloadCache,
   getAudioPreloadStats,
   hasPreloadedSound,
@@ -627,14 +630,18 @@ export function getAyahAudioUrl(identifier: string, surah: number, ayah: number)
  * Full-surah playback URL pattern from AlQuran Cloud CDN.
  * For verse-by-verse / EveryAyah editions without a full surah MP3, returns the first ayah URL.
  */
+export function getSurahBitrate(identifier: string): string {
+  const resolved = ALIAS_MAP[identifier] || identifier;
+  const known = KNOWN_BITRATES[resolved];
+  return known && known !== '192' && known !== '320' ? known : '128';
+}
+
 export function getSurahAudioUrl(identifier: string, surah: number): string {
   const resolved = ALIAS_MAP[identifier] || identifier;
   if (isVerseByVerseEdition(resolved)) {
     return getAyahAudioUrl(resolved, surah, 1);
   }
-  const known = KNOWN_BITRATES[resolved];
-  // audio-surah on AlQuran Cloud CDN is hosted at 128kbps (or 64 for 64-only editions)
-  const bitrate = known && known !== '192' && known !== '320' ? known : '128';
+  const bitrate = getSurahBitrate(resolved);
   return `https://cdn.islamic.network/quran/audio-surah/${bitrate}/${resolved}/${surah}.mp3`;
 }
 
@@ -1362,20 +1369,35 @@ async function playAudioUrl(url: string): Promise<void> {
     didJustFinish: false,
   });
 
+  // Resolve local offline audio URI if surah mode is active and downloaded
+  const targetUri =
+    currentPlayback?.type === 'surah' && currentPlayback.surah && currentPlayback.identifier
+      ? resolveAudioUri(
+          currentPlayback.identifier,
+          currentPlayback.surah,
+          getSurahBitrate(currentPlayback.identifier),
+          url
+        )
+      : url;
+
   try {
     const { sound } = await Audio.Sound.createAsync(
-      { uri: url },
+      { uri: targetUri },
       { shouldPlay: true, volume: 1.0 },
       handlePlaybackStatusUpdate
     );
     currentSound = sound;
-    currentPlaybackUrl = url;
+    currentPlaybackUrl = targetUri;
     if (currentPlayback) currentPlayback.isPlaying = true;
   } catch (err) {
     // If the provided url fails (e.g. bitrate mismatch), attempt 128kbps fallback
-    if (!url.includes('/128/')) {
-      const fallbackUrl = url.replace(/\/(192|64|48|40|32|320)\//, '/128/');
-      if (fallbackUrl !== url) {
+    if (
+      !targetUri.startsWith('file://') &&
+      !targetUri.startsWith('blob:') &&
+      !targetUri.includes('/128/')
+    ) {
+      const fallbackUrl = targetUri.replace(/\/(192|64|48|40|32|320)\//, '/128/');
+      if (fallbackUrl !== targetUri) {
         try {
           const { sound: fallbackSound } = await Audio.Sound.createAsync(
             { uri: fallbackUrl },
@@ -1391,6 +1413,7 @@ async function playAudioUrl(url: string): Promise<void> {
         }
       }
     }
+
     if (currentPlayback) currentPlayback.isPlaying = false;
     notifyStatusListeners({
       isPlaying: false,
@@ -1612,17 +1635,21 @@ export async function playSurah(
 ): Promise<void> {
   const resolvedId = ALIAS_MAP[identifier] || identifier;
   const targetSurah = surah || 1;
+  const bitrate = getSurahBitrate(resolvedId);
+  const downloaded = isSurahDownloaded(resolvedId, targetSurah, bitrate);
 
   // Non-Arabic / verse-by-verse editions, or when translationAudioEnabled is ON:
-  // Play Ayah 1 with isSurahMode=true so autoplayNext sequentially advances verse-by-verse (Arabic then Translation)
-  if (translationAudioEnabled || isVerseByVerseEdition(resolvedId)) {
+  // Play Ayah 1 with isSurahMode=true so autoplayNext sequentially advances verse-by-verse (Arabic then Translation).
+  // If the complete surah is downloaded offline, play the downloaded full surah audio directly!
+  if (!downloaded && (translationAudioEnabled || isVerseByVerseEdition(resolvedId))) {
     const arabicReciter = getActiveArabicReciter(resolvedId);
     const resolvedReciter = reciterName || resolveReciterName(arabicReciter);
     await playAyah(arabicReciter, undefined, undefined, resolvedReciter, targetSurah, 1, true);
     return;
   }
 
-  const playbackUrl = url || getSurahAudioUrl(resolvedId, targetSurah);
+  const rawPlaybackUrl = url || getSurahAudioUrl(resolvedId, targetSurah);
+  const playbackUrl = resolveAudioUri(resolvedId, targetSurah, bitrate, rawPlaybackUrl);
   const resolvedReciter = reciterName || resolveReciterName(resolvedId);
   const resolvedTitle = title || `Surah ${targetSurah}`;
 

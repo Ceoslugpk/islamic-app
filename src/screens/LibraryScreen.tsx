@@ -19,7 +19,8 @@ export type LibraryItemKey =
   | 'names'
   | 'names-prophet'
   | 'ramadan-guide'
-  | 'prayer-guide';
+  | 'prayer-guide'
+  | 'downloads';
 
 /* ─── Item model ──────────────────────────────────────────────── */
 
@@ -37,6 +38,7 @@ const ICONS: Record<LibraryItemKey, keyof typeof Ionicons.glyphMap> = {
   'names-prophet': 'star',
   'ramadan-guide': 'moon',
   'prayer-guide': 'hand-left',
+  downloads: 'cloud-download-outline',
 };
 
 /* ─── Grouped layout ──────────────────────────────────────────── */
@@ -51,6 +53,7 @@ const GROUPS: LibraryGroup[] = [
     label: 'Knowledge',
     items: [
       { key: 'hadith', title: 'Hadith Library', subtitle: 'Collections, books & saved hadith' },
+      { key: 'downloads', title: 'Downloads', subtitle: 'Offline Quran audio files' },
     ],
   },
   {

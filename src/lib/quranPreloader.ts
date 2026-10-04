@@ -108,6 +108,54 @@ export function subscribeQuranPreload(
   };
 }
 
+/**
+ * SECOND PROVIDER fallback: fetch a surah's Arabic (Uthmani) text from
+ * Quran.com v4 (keyless, CORS-safe) — used when AlQuran Cloud fails.
+ */
+async function fetchSurahFromQuranCom(surahNumber: number): Promise<SurahDetail | null> {
+  const chapterRes = await fetch(`https://api.quran.com/api/v4/chapters/${surahNumber}?language=en`);
+  if (!chapterRes.ok) throw new Error('quran.com chapter failed');
+  const chapterJson = await chapterRes.json();
+  const chapter = chapterJson?.chapter;
+  if (!chapter) throw new Error('quran.com no chapter');
+
+  const versesRes = await fetch(
+    `https://api.quran.com/api/v4/quran/verses/uthmani?chapter_number=${surahNumber}`
+  );
+  if (!versesRes.ok) throw new Error('quran.com verses failed');
+  const versesJson = await versesRes.json();
+  const verses = versesJson?.verses;
+  if (!verses || verses.length === 0) throw new Error('quran.com no verses');
+
+  const ayahs = verses
+    .filter((v: any) => v?.text_uthmani)
+    .map((v: any, i: number) => {
+      const keyParts = String(v.verse_key || '').split(':');
+      const numberInSurah = Number(keyParts[1]) || i + 1;
+      const globalNumber = Number(v.id) || 0;
+      return {
+        number: globalNumber,
+        numberInSurah,
+        text: v.text_uthmani,
+        surah: {
+          number: surahNumber,
+          name: chapter.name_arabic || `Surah ${surahNumber}`,
+          englishName: chapter.name_simple || `Surah ${surahNumber}`,
+        },
+        translation: undefined,
+      };
+    });
+
+  return {
+    number: surahNumber,
+    name: chapter.name_arabic || '',
+    englishName: chapter.name_simple || '',
+    englishNameTranslation: '',
+    numberOfAyahs: chapter.verses_count || ayahs.length,
+    ayahs,
+  };
+}
+
 async function preloadSingleSurah(
   surahNumber: number,
   editionIdentifier: string,
@@ -157,6 +205,20 @@ async function preloadSingleSurah(
       }
     } catch {
       // Fallback failed as well
+    }
+    // SECOND PROVIDER: AlQuran Cloud is down/failing — pull Arabic text from Quran.com v4
+    try {
+      const detail = await fetchSurahFromQuranCom(surahNumber);
+      if (detail && detail.ayahs && detail.ayahs.length > 0) {
+        saveQuranCache(cacheKey, detail);
+        const arKey = `surah:${surahNumber}:ar`;
+        if (!loadQuranCache(arKey)) {
+          saveQuranCache(arKey, detail);
+        }
+        return true;
+      }
+    } catch {
+      // Both providers failed — the outer retry loop will re-attempt
     }
   }
   return false;

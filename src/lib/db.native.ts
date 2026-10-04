@@ -208,6 +208,15 @@ export function loadQuranCache<T>(key: string): T | null {
   }
 }
 
+export function saveQuranAudioDownloads(payload: object) {
+  saveQuranCache('quran-audio-downloads', payload);
+}
+
+export function loadQuranAudioDownloads<T = Record<string, any>>(): T | null {
+  return loadQuranCache<T>('quran-audio-downloads');
+}
+
+
 /** Compute current streak (consecutive days with all 5 prayers completed). */
 export function computeStreak(history: Record<string, Record<string, boolean>>): number {
   const PRAYERS = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];

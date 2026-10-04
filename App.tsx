@@ -60,6 +60,7 @@ import MadinahLiveScreen from './src/screens/MadinahLiveScreen';
 import HajjLiveScreen from './src/screens/HajjLiveScreen';
 import RamadanGuideScreen from './src/screens/RamadanGuideScreen';
 import PrayerGuideScreen from './src/screens/PrayerGuideScreen';
+import DownloadsScreen from './src/screens/DownloadsScreen';
 import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
@@ -196,7 +197,8 @@ type LibraryView =
   | { screen: 'duas' }
   | { screen: 'hadith' }
   | { screen: 'ramadan-guide' }
-  | { screen: 'prayer-guide' };
+  | { screen: 'prayer-guide' }
+  | { screen: 'downloads' };
 
 type QuranView =
   | { screen: 'home' }
@@ -461,6 +463,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     else if (key === 'hadith') setLibrary({ screen: 'hadith' });
     else if (key === 'ramadan-guide') setLibrary({ screen: 'ramadan-guide' });
     else if (key === 'prayer-guide') setLibrary({ screen: 'prayer-guide' });
+    else if (key === 'downloads') setLibrary({ screen: 'downloads' });
   }
 
   return (
@@ -612,6 +615,16 @@ function Root({ splashDone }: { splashDone: boolean }) {
         {tab === 'library' && library.screen === 'prayer-guide' && (
           <PrayerGuideScreen onBack={() => setLibrary({ screen: 'hub' })} />
         )}
+        {tab === 'library' && library.screen === 'downloads' && (
+          <DownloadsScreen
+            onBack={() => setLibrary({ screen: 'hub' })}
+            onOpenSurah={(surah) => {
+              setQuran({ screen: 'reader', surah });
+              setTab('quran');
+            }}
+          />
+        )}
+
 
         {/* Tools Tab Views */}
         {tab === 'tools' && tools.screen === 'hub' && (
