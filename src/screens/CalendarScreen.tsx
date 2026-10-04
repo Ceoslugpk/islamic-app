@@ -17,6 +17,7 @@ import { ISLAMIC_EVENTS, IslamicEvent, getEventsForMonth, getNextEvent, formatHi
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
+import { CalendarGridSkeleton } from '../components/Skeleton';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const GREG_MONTHS = [
@@ -292,8 +293,8 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
         </View>
 
         {loading || !data ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={colors.accent} />
+          <View style={styles.contentWrap}>
+            <CalendarGridSkeleton compact={isCompact} />
           </View>
         ) : (
           <>

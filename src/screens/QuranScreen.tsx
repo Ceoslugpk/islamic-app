@@ -20,6 +20,7 @@ import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { useConnectivity } from '../lib/useConnectivity';
+import { SurahSkeleton, Skeleton } from '../components/Skeleton';
 
 interface QuranScreenProps {
   onOpenSurah: (n: number) => void;
@@ -133,8 +134,56 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
 
   if (loading && !surahs) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+      <View style={[styles.wrap, { backgroundColor: colors.bgBase }]}>
+        <View style={styles.contentWrap}>
+          <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
+            <SectionHeader
+              eyebrow="The Holy Quran"
+              title="Surahs"
+              style={styles.sectionHeader}
+            />
+            <View
+              style={[
+                styles.langBar,
+                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+              ]}
+            >
+              <View style={styles.langBarLeft}>
+                <Text style={[styles.langBarLabel, { color: colors.accent }]}>TRANSLATION</Text>
+                <Skeleton width="60%" height={13} borderRadius={4} />
+              </View>
+              <Skeleton width={80} height={32} borderRadius={6} />
+            </View>
+            <View
+              style={[
+                styles.searchBar,
+                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+              ]}
+            >
+              <Skeleton width="100%" height={24} borderRadius={8} />
+            </View>
+            <View style={styles.juzSection}>
+              <Skeleton width="40" height={11} borderRadius={4} />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.juzScrollView}
+                contentContainerStyle={styles.juzScroll}
+              >
+                {JUZ_LIST.slice(0, 10).map((j) => (
+                  <Skeleton key={j} width={40} height={40} borderRadius={20} />
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+          <FlatList
+            data={Array.from({ length: 15 })}
+            keyExtractor={(_, i) => `skeleton-${i}`}
+            contentContainerStyle={[styles.listContent, { paddingHorizontal: horizontalPadding }]}
+            ItemSeparatorComponent={() => <Hairline />}
+            renderItem={() => <SurahSkeleton compact={isCompact} />}
+          />
+        </View>
       </View>
     );
   }

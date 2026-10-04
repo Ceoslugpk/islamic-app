@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   TouchableOpacity,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -41,6 +42,13 @@ import { AyahCard } from '../components/AyahCard';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity } from '../lib/useConnectivity';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
+import {
+  CountdownCardSkeleton,
+  PrayerRowSkeleton,
+  DuaCardSkeleton,
+  NameRowSkeleton,
+  Skeleton,
+} from '../components/Skeleton';
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -76,6 +84,7 @@ export default function HomeScreen({
   const { haptic } = useHaptics();
   const { location: gpsLocation, status: locStatus, request: requestLocation, loading: locLoading } = useLocation(true);
   const { refreshKey } = useConnectivity();
+  const { width } = useWindowDimensions();
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -262,10 +271,92 @@ export default function HomeScreen({
     saveTasbihCount(currentDhikr.id, 0);
   }, [currentDhikr.id, haptic]);
 
+  const isCompact = useMemo(() => width <= 380, [width]);
+
   if (loading) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-        <ActivityIndicator color={colors.accent} />
+      <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: 40 },
+          ]}
+        >
+          <GeometricPattern size={260} opacity={0.04} style={styles.patternTop} />
+          <SectionHeader
+            eyebrow="Today"
+            title="Loading..."
+            subtitle="Preparing your dashboard"
+            style={styles.sectionHeader}
+          />
+          <CountdownCardSkeleton />
+          <Card style={styles.prayerListCard} padded={false}>
+            {PRAYER_ORDER.map((_, i) => (
+              <View key={i}>
+                {i > 0 && <Hairline />}
+                <PrayerRowSkeleton />
+              </View>
+            ))}
+          </Card>
+          <View style={[styles.trackerRow, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+            <View style={styles.trackerStat}>
+              <Skeleton width="40" height={24} borderRadius={4} />
+              <Skeleton width="70" height={12} borderRadius={4} />
+            </View>
+            <View style={[styles.trackerDivider, { backgroundColor: colors.borderSubtle }]} />
+            <View style={styles.trackerStat}>
+              <Skeleton width="30" height={24} borderRadius={4} />
+              <Skeleton width="60" height={12} borderRadius={4} />
+            </View>
+          </View>
+          <DuaCardSkeleton />
+          <DuaCardSkeleton />
+          <Card style={styles.cardSection}>
+            <View style={styles.cardHeaderRow}>
+              <Skeleton width="120" height={11} borderRadius={4} />
+            </View>
+            <Hairline style={styles.cardDivider} />
+            <NameRowSkeleton />
+          </Card>
+          <Card style={styles.cardSection}>
+            <View style={styles.cardHeaderRow}>
+              <Skeleton width="120" height={11} borderRadius={4} />
+            </View>
+            <Hairline style={styles.cardDivider} />
+            <DuaCardSkeleton />
+          </Card>
+          <View style={styles.adhkarSection}>
+            <View style={styles.adhkarHeaderRow}>
+              <Skeleton width="140" height={11} borderRadius={4} />
+              <Skeleton width="80" height={12} borderRadius={4} />
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.adhkarScrollContent}>
+              {[1, 2, 3].map((i) => (
+                <DuaCardSkeleton key={i} compact={isCompact} />
+              ))}
+            </ScrollView>
+          </View>
+          <Card style={styles.cardSection}>
+            <View style={styles.cardHeaderRow}>
+              <Skeleton width="150" height={11} borderRadius={4} />
+            </View>
+            <Hairline style={styles.cardDivider} />
+            <View style={styles.presetScroll}>
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} width={80} height={32} borderRadius={16} />
+              ))}
+            </View>
+            <View style={styles.tasbihDhikrWrap}>
+              <Skeleton width="120" height={26} borderRadius={4} />
+              <Skeleton width="180" height={13} borderRadius={4} />
+            </View>
+            <View style={styles.tasbihCounterRow}>
+              <Skeleton width="100%" height={80} borderRadius={12} />
+              <Skeleton width={80} height={48} borderRadius={12} />
+            </View>
+          </Card>
+        </ScrollView>
       </View>
     );
   }

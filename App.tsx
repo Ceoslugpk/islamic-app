@@ -65,6 +65,7 @@ import { rescheduleIfNeeded, setupNotificationResponseHandler, scheduleQuranRemi
 import { fetchPrayerTimes } from './src/lib/prayerTimes';
 import { useSettings } from './src/lib/settings';
 import { startQuranPreload } from './src/lib/quranPreloader';
+import { runFirstLaunchWarmup } from './src/lib/warmup';
 import { useEffect } from 'react';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
@@ -260,6 +261,26 @@ function Root() {
     }, 2500);
     return () => clearTimeout(timer);
   }, []);
+
+  // First-launch cache warm-up (runs once, low priority)
+  useEffect(() => {
+    let isMounted = true;
+    const timer = setTimeout(async () => {
+      if (!isMounted) return;
+      try {
+        await runFirstLaunchWarmup({
+          location: settings.manualLocation,
+          methodId: settings.methodId,
+        });
+      } catch {
+        // Non-fatal: warmup failures should not block app
+      }
+    }, 3000);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [settings.manualLocation, settings.methodId]);
 
   // Resume or ensure preloader is active when navigating to Quran tab
   useEffect(() => {

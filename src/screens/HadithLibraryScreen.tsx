@@ -30,6 +30,7 @@ import {
   fetchHadithBooks,
   fetchHadithsInBook,
 } from '../lib/hadithApi';
+import { CollectionCardSkeleton, HadithRowSkeleton, BookSkeleton } from '../components/Skeleton';
 import {
   SavedHadithItem,
   RecentHadithItem,
@@ -804,11 +805,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             </View>
 
             {collectionsLoading && (
-              <View style={styles.loadingWrap}>
-                <ActivityIndicator size="small" color={colors.accent} />
-                <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-                  Loading collections...
-                </Text>
+              <View style={styles.gap12}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <CollectionCardSkeleton key={i} />
+                ))}
               </View>
             )}
 
@@ -936,11 +936,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             </View>
 
             {booksLoading && (
-              <View style={styles.loadingWrap}>
-                <ActivityIndicator size="small" color={colors.accent} />
-                <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-                  Loading books...
-                </Text>
+              <View style={styles.gap12}>
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <BookSkeleton key={i} />
+                ))}
               </View>
             )}
 
@@ -1042,11 +1041,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                   }
                 />
                 {hadithsLoading && (
-                  <View style={styles.loadingWrap}>
-                    <ActivityIndicator size="small" color={colors.accent} />
-                    <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-                      Loading hadiths...
-                    </Text>
+                  <View style={styles.gap12}>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <HadithRowSkeleton key={i} />
+                    ))}
                   </View>
                 )}
                 {hadithsError && (

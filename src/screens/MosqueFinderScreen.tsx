@@ -22,6 +22,8 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
+import { MosqueCardSkeleton } from '../components/Skeleton';
+import { loadMosqueCache, saveMosqueCache } from '../lib/db';
 
 export interface MosqueItem {
   id: string;
@@ -114,6 +116,17 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
       }
       setError(null);
 
+      // Try cache first (unless manual refresh)
+      if (!isManualRefresh) {
+        const cached = loadMosqueCache(lat, lon, radius);
+        if (cached && cached.length > 0) {
+          setMosques(cached);
+          setLoading(false);
+          setRefreshing(false);
+          return;
+        }
+      }
+
       try {
         // Calculate bounding box based on radius
         // 1 degree latitude ~ 111 km
@@ -200,6 +213,8 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
         items.sort((a, b) => a.distanceKm - b.distanceKm);
 
         setMosques(items);
+        // Cache the results
+        saveMosqueCache(lat, lon, radius, items);
       } catch (err: any) {
         setError(err.message || 'Failed to fetch mosques. Please check your network connection.');
       } finally {
@@ -693,13 +708,10 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
         )}
         ListEmptyComponent={
           loading ? (
-            <View style={styles.centerBox}>
-              <ActivityIndicator color={colors.accent} size="large" />
-              <Text style={[styles.stateText, { color: colors.textMuted }]}>
-                {searchingArea
-                  ? `Searching for area '${searchedQuery}'...`
-                  : 'Searching for nearby mosques...'}
-              </Text>
+            <View style={styles.content}>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <MosqueCardSkeleton key={i} compact={isCompact} />
+              ))}
             </View>
           ) : areaNotFound ? (
             <Card style={styles.emptyCard} padded>

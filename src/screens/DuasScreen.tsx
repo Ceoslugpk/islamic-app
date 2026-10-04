@@ -19,6 +19,7 @@ import {
   DuaCategory,
   DuaItem,
 } from '../lib/duas';
+import { DuaCardSkeleton } from '../components/Skeleton';
 
 export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
@@ -27,6 +28,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   const paddingH = isCompact ? 16 : 20;
   const [selectedCategory, setSelectedCategory] = useState<DuaCategory>('All');
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const [showSkeleton, setShowSkeleton] = useState(true);
   const listRef = useRef<FlatList<DuaItem>>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -34,6 +36,11 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
     return () => {
       if (highlightTimer.current) clearTimeout(highlightTimer.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSkeleton(false), 300);
+    return () => clearTimeout(timer);
   }, []);
 
   const filteredDuas = useMemo(() => {
@@ -207,31 +214,41 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
       </View>
 
       {/* Duas List */}
-      <FlatList
-        ref={listRef}
-        data={filteredDuas}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        onScrollToIndexFailed={(info) => {
-          listRef.current?.scrollToOffset({
-            offset: info.averageItemLength * info.index,
-            animated: true,
-          });
-          setTimeout(() => {
-            try {
-              listRef.current?.scrollToIndex({
-                index: info.index,
-                animated: false,
-                viewPosition: 0.15,
-              });
-            } catch {
-              // still unmeasured — highlight remains as fallback
-            }
-          }, 120);
-        }}
-      />
+      {showSkeleton ? (
+        <FlatList
+          data={Array.from({ length: 6 })}
+          keyExtractor={(_, i) => `skeleton-${i}`}
+          renderItem={() => <DuaCardSkeleton compact={isCompact} />}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={filteredDuas}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+          onScrollToIndexFailed={(info) => {
+            listRef.current?.scrollToOffset({
+              offset: info.averageItemLength * info.index,
+              animated: true,
+            });
+            setTimeout(() => {
+              try {
+                listRef.current?.scrollToIndex({
+                  index: info.index,
+                  animated: false,
+                  viewPosition: 0.15,
+                });
+              } catch {
+                // still unmeasured — highlight remains as fallback
+              }
+            }, 120);
+          }}
+        />
+      )}
       </View>
     </View>
   );

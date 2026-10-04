@@ -585,5 +585,41 @@ export function clearCycleHistory(): void {
   for (const { key } of webKV.getAll('women:period:')) webKV.delete(key);
 }
 
+export interface MosqueCacheItem {
+  mosques: import('../screens/MosqueFinderScreen').MosqueItem[];
+  centerLat: number;
+  centerLon: number;
+  radiusKm: number;
+  cachedAt: number;
+}
+
+export function saveMosqueCache(
+  centerLat: number,
+  centerLon: number,
+  radiusKm: number,
+  mosques: import('../screens/MosqueFinderScreen').MosqueItem[]
+): void {
+  const key = `mosque:${centerLat.toFixed(2)}:${centerLon.toFixed(2)}:${radiusKm}`;
+  webKV.set(key, JSON.stringify({ mosques, centerLat, centerLon, radiusKm, cachedAt: Date.now() }));
+}
+
+export function loadMosqueCache(
+  centerLat: number,
+  centerLon: number,
+  radiusKm: number,
+  maxAgeMs = 24 * 60 * 60 * 1000
+): import('../screens/MosqueFinderScreen').MosqueItem[] | null {
+  const key = `mosque:${centerLat.toFixed(2)}:${centerLon.toFixed(2)}:${radiusKm}`;
+  const raw = webKV.get(key);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as MosqueCacheItem;
+    if (Date.now() - parsed.cachedAt > maxAgeMs) return null;
+    return parsed.mosques;
+  } catch {
+    return null;
+  }
+}
+
 
 

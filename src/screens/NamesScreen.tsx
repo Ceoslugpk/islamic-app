@@ -34,6 +34,7 @@ import {
   playNameAudio,
   resume,
 } from '../lib/quranAudio';
+import { NameRowSkeleton } from '../components/Skeleton';
 
 type LoadState = 'loading' | 'online' | 'offline';
 
@@ -115,19 +116,20 @@ export default function NamesScreen({
     });
   }, [supportsAudio]);
 
-  const activeFeed = !isProphet && feed && feed.language === language ? feed : null;
+const activeFeed = !isProphet && feed && feed.language === language ? feed : null;
   const names: NameRow[] = isProphet
     ? PROPHET_NAMES_99
     : activeFeed
-      ? activeFeed.names
-      : NAMES_99;
+    ? activeFeed.names
+    : NAMES_99;
   const loadState: LoadState = isProphet
     ? 'online'
     : !activeFeed
-      ? 'loading'
-      : activeFeed.source === 'static'
-        ? 'offline'
-        : 'online';
+    ? 'loading'
+    : activeFeed.source === 'static'
+    ? 'offline'
+    : 'online';
+  const isLoading = loadState === 'loading' && !isProphet && !activeFeed;
 
   const filteredNames = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -378,6 +380,17 @@ export default function NamesScreen({
           </Text>
         ) : null}
       </View>
+
+      {isLoading && (
+        <FlatList
+          data={Array.from({ length: 10 })}
+          keyExtractor={(_, i) => `skeleton-${i}`}
+          renderItem={() => <NameRowSkeleton compact={isCompact} />}
+          ItemSeparatorComponent={Hairline}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
 
       {/* List */}
       <FlatList
