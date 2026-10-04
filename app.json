@@ -42,7 +42,13 @@
           ]
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Location is used to calculate prayer times, Qibla direction, and find nearby mosques."
+        }
+      ]
     ]
   }
 }

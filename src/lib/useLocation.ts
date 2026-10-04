@@ -51,12 +51,55 @@ export function useLocation(askOnMount = false): UseLocationResult {
   const askedRef = useRef(false);
 
   const performRequest = useCallback(async (force = false): Promise<Loc | null> => {
-    // Web environment: short-circuit to 'unavailable' immediately
+    // Web environment: use the browser's Geolocation API (asks the permission prompt)
     if (Platform.OS === 'web') {
-      setStatus('unavailable');
-      cachedStatus = 'unavailable';
-      setLoading(false);
-      return null;
+      return new Promise<Loc | null>((resolve) => {
+        if (typeof navigator === 'undefined' || !navigator.geolocation) {
+          setStatus('unavailable');
+          cachedStatus = 'unavailable';
+          setLoading(false);
+          resolve(null);
+          return;
+        }
+        setLoading(true);
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            // Best-effort reverse geocode via Nominatim (keyless); fall back to coordinates
+            let label = `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+            try {
+              const res = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+              );
+              if (res.ok) {
+                const g = await res.json();
+                const city = g.address?.city || g.address?.town || g.address?.village || '';
+                const region = g.address?.state || '';
+                const country = g.address?.country || '';
+                const parts = [city, region, country].filter(Boolean);
+                if (parts.length > 0) label = parts.join(', ');
+              }
+            } catch {
+              // keep coordinate label
+            }
+            const newLoc: Loc = { latitude: lat, longitude: lng, label };
+            cachedLocation = newLoc;
+            cachedStatus = 'granted';
+            setLocation(newLoc);
+            setStatus('granted');
+            setLoading(false);
+            resolve(newLoc);
+          },
+          (err) => {
+            setStatus(err?.code === 1 ? 'denied' : 'unavailable');
+            cachedStatus = err?.code === 1 ? 'denied' : 'unavailable';
+            setLoading(false);
+            resolve(null);
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+        );
+      });
     }
 
     // Return cached location if valid and not forcing a fresh GPS read
