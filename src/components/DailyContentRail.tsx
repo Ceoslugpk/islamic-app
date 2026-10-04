@@ -211,7 +211,6 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel="Ayah of the Day. Tap to read."
                   >
-                    <AnimatedPattern variant="bloom" size={260} />
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
                         <Ionicons name="book-outline" size={12} color={colors.accent} />
@@ -266,7 +265,6 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel="Hadith of the Day. Tap to open Hadith Library."
                   >
-                    <AnimatedPattern variant="rings" size={240} />
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
                         <Ionicons name="library-outline" size={12} color={colors.accent} />
@@ -323,7 +321,6 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel="Name of the Day. Tap to view 99 Names."
                   >
-                    <AnimatedPattern variant="star-small" size={240} />
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
                         <Ionicons name="sparkles-outline" size={12} color={colors.accent} />

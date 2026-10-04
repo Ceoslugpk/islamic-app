@@ -113,7 +113,6 @@ export function PrayerHeroAtmosphere({
 
       {/* 2. Faint Islamic star pattern behind (~0.05 opacity) */}
       <View style={[StyleSheet.absoluteFill, styles.starWrapper]} pointerEvents="none">
-        <AnimatedPattern variant="star" size={size} />
       </View>
 
       {/* 3. Static floating orbs (barely noticeable: 0.03 - 0.05 opacity).

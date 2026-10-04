@@ -463,7 +463,6 @@ export default function HomeScreen({
             { paddingBottom: 40 },
           ]}
         >
-          <GeometricPattern size={260} opacity={0.04} style={styles.patternTop} />
           <SectionHeader
             eyebrow="Today"
             title="Loading..."
@@ -612,7 +611,6 @@ export default function HomeScreen({
           />
         }
       >
-        <GeometricPattern size={260} opacity={0.04} style={styles.patternTop} />
         <IslamicPullToRefreshIndicator refreshing={refreshing} />
 
         {/* Section Header: Eyebrow Today + Greeting (animates on scroll) */}
@@ -877,7 +875,6 @@ export default function HomeScreen({
                   style={[styles.duaCardSlide, { width: duaCardWidth }]}
                 >
                   <Card style={styles.duaAfterPrayerCard} padded={false}>
-                    <AnimatedPattern variant="rings" size={isCompact ? 240 : 300} />
                     <TouchableOpacity
                       activeOpacity={0.88}
                       style={styles.duaAfterPrayerHeader}
