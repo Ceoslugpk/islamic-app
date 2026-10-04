@@ -7,6 +7,16 @@ import { buildDeepLink } from './deeplinks';
 
 const FINGERPRINT_KEY = 'notification-fingerprint';
 
+/**
+ * Local notification scheduling (permissions, categories, scheduling, cancel) is
+ * native-only: on web, expo-notifications ships a stub scheduler whose methods
+ * throw `UnavailabilityError`. Callers must use this to skip the scheduling flow
+ * instead of letting an unhandled rejection abort their state updates.
+ */
+export function isNotificationSchedulingSupported(): boolean {
+  return Platform.OS !== 'web';
+}
+
 export interface NotificationFingerprint {
   location: Location;
   methodId: number;
@@ -22,37 +32,53 @@ export interface NotificationHealth {
   fingerprint: NotificationFingerprint | null;
 }
 
-// Configure notification presentation and Android channel
+// Configure notification presentation and Android channel.
+// Never throws: a failed/partial configuration must not abort the caller
+// (e.g. a settings toggle that awaits this before updating its state).
 export async function configureNotifications() {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-  });
+  if (!isNotificationSchedulingSupported()) return;
+
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+  } catch {
+    // presentation handler unsupported on this platform
+  }
 
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('prayer-times', {
-      name: 'Prayer times',
-      importance: Notifications.AndroidImportance.MAX,
-      sound: 'adhan_chime.wav',
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#D97706',
-      enableVibrate: true,
-      showBadge: true,
-    });
+    try {
+      await Notifications.setNotificationChannelAsync('prayer-times', {
+        name: 'Prayer times',
+        importance: Notifications.AndroidImportance.MAX,
+        sound: 'adhan_chime.wav',
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#D97706',
+        enableVibrate: true,
+        showBadge: true,
+      });
+    } catch {
+      // channel registration failed; fall through to categories
+    }
   }
 
   // Define notification category with "Mark Complete" action
-  await Notifications.setNotificationCategoryAsync('prayer', [
-    {
-      identifier: 'mark-complete',
-      buttonTitle: 'Mark Complete',
-      options: { opensAppToForeground: false },
-    },
-  ]);
+  try {
+    await Notifications.setNotificationCategoryAsync('prayer', [
+      {
+        identifier: 'mark-complete',
+        buttonTitle: 'Mark Complete',
+        options: { opensAppToForeground: false },
+      },
+    ]);
+  } catch {
+    // categories unsupported (throws UnavailabilityError on web)
+  }
 }
 
 function computeFingerprint(
@@ -204,6 +230,11 @@ export async function rescheduleIfNeeded(
     return false;
   }
 
+  if (!isNotificationSchedulingSupported()) {
+    // Web cannot schedule — don't store a fingerprint that claims otherwise.
+    return false;
+  }
+
   const currentFp = computeFingerprint(location, methodId, remindersEnabled, reminderOffsetMinutes, quranReminderEnabled);
   const currentFpStr = fingerprintToString(currentFp);
   const storedFpStr = await getStoredFingerprint();
@@ -255,6 +286,8 @@ export async function schedulePrayerNotifications(
   locationLabel?: string
 ): Promise<string[]> {
   const ids: string[] = [];
+
+  if (!isNotificationSchedulingSupported()) return ids;
 
   const prayers: { name: string; time: string }[] = [
     { name: 'Fajr', time: timings.timings.Fajr },
@@ -325,33 +358,51 @@ export async function schedulePrayerNotifications(
   return ids;
 }
 
-/** Cancel all previously scheduled prayer notifications. */
+/**
+ * Cancel scheduled prayer notifications.
+ * The Quran reminder is intentionally preserved — it has its own toggle and is
+ * cancelled by `cancelQuranReminder()`. Anything else (legacy prayer payloads,
+ * notifications from older builds) is cancelled.
+ */
 export async function cancelPrayerNotifications() {
   try {
-    await Notifications.cancelAllScheduledNotificationsAsync();
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      const data = n.content.data as { type?: string } | undefined;
+      if (data?.type === 'quran-reminder') continue;
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    }
   } catch {
-    // ignore
+    // ignore (unsupported platform or nothing scheduled)
   }
 }
 
 /** Schedule daily Quran reminder notification at 20:00. */
 export async function scheduleQuranReminder(): Promise<string | null> {
   try {
+    if (!isNotificationSchedulingSupported()) return null;
+
     const { getReadingPosition } = await import('./continuing');
     const { SURAHS_114 } = await import('./surahs114');
 
     const position = await getReadingPosition();
-    if (!position) return null;
-
-    const surah = SURAHS_114.find((s) => s.number === position.surah);
-    const surahName = surah?.englishName || `Surah ${position.surah}`;
+    const surah = position ? SURAHS_114.find((s) => s.number === position.surah) : undefined;
+    const title = '📖 Continue your Quran';
+    const body =
+      position && surah
+        ? `You stopped at ${surah.englishName} ${position.surah}:${position.ayah}.`
+        : 'Open the Quran and keep your daily reading habit alive.';
+    const data: Record<string, unknown> = { type: 'quran-reminder' };
+    if (position) {
+      data.url = buildDeepLink({ type: 'quran', surah: position.surah, ayah: position.ayah });
+    }
 
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: '📖 Continue your Quran',
-        body: `You stopped at ${surahName} ${position.surah}:${position.ayah}.`,
+        title,
+        body,
         sound: 'default',
-        data: { type: 'quran-reminder', url: buildDeepLink({ type: 'quran', surah: position.surah, ayah: position.ayah }) },
+        data,
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DAILY,
@@ -366,9 +417,21 @@ export async function scheduleQuranReminder(): Promise<string | null> {
   }
 }
 
-/** Cancel Quran reminder notification. */
+/**
+ * Cancel only the daily Quran reminder (20:00).
+ * Previously a no-op, which left the reminder firing after the toggle was off.
+ */
 export async function cancelQuranReminder() {
-  // Canceling and rescheduling is handled in rescheduleIfNeeded
+  try {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      const data = n.content.data as { type?: string } | undefined;
+      if (data?.type !== 'quran-reminder') continue;
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    }
+  } catch {
+    // ignore (unsupported platform or nothing scheduled)
+  }
 }
 
 /** Notification response listener setup - call once at app startup. */
@@ -435,6 +498,10 @@ export async function getNotificationHealth(
   let status: 'active' | 'paused' | 'permission-needed' = 'paused';
 
   if (!remindersEnabled && !quranReminderEnabled) {
+    status = 'paused';
+  } else if (!isNotificationSchedulingSupported()) {
+    // Web can't schedule local notifications — report "paused" (not "active" or
+    // "permission needed") and let the UI explain that reminders run on device.
     status = 'paused';
   } else if (permission !== 'granted') {
     status = 'permission-needed';

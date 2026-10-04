@@ -39,6 +39,7 @@ import {
   cancelPrayerNotifications,
   cancelQuranReminder,
   getNotificationHealth,
+  isNotificationSchedulingSupported,
   NotificationHealth,
 } from '../lib/notifications';
 import {
@@ -483,6 +484,11 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
   const quranLineHeight = settings.quranLineHeight;
   const quranShowTranslation = settings.quranShowTranslation;
 
+  // Web: expo-notifications ships a stub scheduler (no permissions, no
+  // scheduling) — toggles save the preference and the section explains that
+  // delivery happens on device.
+  const schedulingSupported = isNotificationSchedulingSupported();
+
   useEffect(() => {
     async function loadHealth() {
       try {
@@ -521,19 +527,26 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
 
   async function onToggleReminders() {
     const next = !remindersEnabled;
-    if (next) {
-      const granted = await requestNotificationPermission();
-      if (!granted) return;
-      await configureNotifications();
+    // The state update always runs: an async permission/config/schedule failure
+    // (or a web build with no scheduler) must never leave the toggle dead.
+    if (schedulingSupported) {
       try {
-        const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
-        await cancelPrayerNotifications();
-        await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
+        if (next) {
+          const granted = await requestNotificationPermission();
+          if (granted) {
+            await configureNotifications();
+            const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
+            await cancelPrayerNotifications();
+            await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
+          }
+          // Denied: the preference still flips and the "permission needed"
+          // banner appears (health refreshes on remindersEnabled change).
+        } else {
+          await cancelPrayerNotifications();
+        }
       } catch {
-        // scheduling failed; still enable the toggle, user can retry
+        // scheduling failed; the toggle still flips, user can retry
       }
-    } else {
-      await cancelPrayerNotifications();
     }
     setReminders(next);
     haptic('light');
@@ -541,17 +554,20 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
 
   async function onToggleQuranReminder() {
     const next = !quranReminderEnabled;
-    if (next) {
-      const granted = await requestNotificationPermission();
-      if (!granted) return;
-      await configureNotifications();
+    if (schedulingSupported) {
       try {
-        await scheduleQuranReminder();
+        if (next) {
+          const granted = await requestNotificationPermission();
+          if (granted) {
+            await configureNotifications();
+            await scheduleQuranReminder();
+          }
+        } else {
+          await cancelQuranReminder();
+        }
       } catch {
-        // scheduling failed; still enable the toggle, user can retry
+        // scheduling failed; the toggle still flips, user can retry
       }
-    } else {
-      await cancelQuranReminder();
     }
     setQuranReminderEnabled(next);
     haptic('light');
@@ -880,7 +896,32 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
 
         {/* Prayer reminders */}
         <Section label="Reminders">
-          {health?.status === 'permission-needed' && (
+          {!schedulingSupported && (
+            <View
+              style={[
+                styles.deviceOnlyNote,
+                {
+                  backgroundColor: colors.accentDim,
+                  borderColor: colors.accent,
+                  marginHorizontal: layout.cardPad,
+                  marginTop: layout.rowPad,
+                },
+              ]}
+            >
+              <Ionicons name="phone-portrait-outline" size={18} color={colors.accent} />
+              <View style={styles.rowFlex}>
+                <Text style={[styles.permissionBannerTitle, { color: colors.textPrimary }]}>
+                  Reminders deliver on your device
+                </Text>
+                <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
+                  Browsers can’t schedule notifications, so these switches are saved as preferences. Open the app on
+                  iOS or Android and they’ll schedule there automatically.
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {schedulingSupported && health?.status === 'permission-needed' && (
             <TouchableOpacity
               style={[
                 styles.permissionBanner,
@@ -892,15 +933,19 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
                 },
               ]}
               onPress={async () => {
-                const granted = await requestNotificationPermission();
-                if (granted) {
-                  await configureNotifications();
-                  const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
-                  await cancelPrayerNotifications();
-                  await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
-                  const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, true);
-                  setHealth(h);
-                  setReminders(true);
+                try {
+                  const granted = await requestNotificationPermission();
+                  if (granted) {
+                    await configureNotifications();
+                    const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
+                    await cancelPrayerNotifications();
+                    await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
+                    const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, true);
+                    setHealth(h);
+                    setReminders(true);
+                  }
+                } catch {
+                  // scheduling failed; health row shows the current state
                 }
               }}
               accessibilityRole="button"
@@ -1014,7 +1059,14 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
           {/* Compact Notification Health */}
           <Hairline />
           <View style={[styles.healthCompact, { paddingHorizontal: layout.cardPad }]}>
-            {isLoadingHealth ? (
+            {!schedulingSupported ? (
+              <View style={styles.healthCompactRow}>
+                <View style={[styles.healthCompactDot, { backgroundColor: colors.textMuted }]} />
+                <Text style={[styles.healthCompactText, { color: colors.textSecondary }]}>
+                  ○ Web — preferences saved, notifications schedule on your device
+                </Text>
+              </View>
+            ) : isLoadingHealth ? (
               <View style={styles.healthCompactLoading}>
                 <ActivityIndicator size="small" color={colors.accent} />
                 <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Checking…</Text>
@@ -1580,6 +1632,15 @@ const styles = StyleSheet.create({
   permissionBanner: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
+    padding: 12,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderRadius: 8,
+  },
+  deviceOnlyNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: 10,
     padding: 12,
     marginBottom: 4,
