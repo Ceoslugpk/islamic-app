@@ -22,7 +22,7 @@ export interface QuranPreloadProgress {
 }
 
 const TOTAL_SURAHS = 114;
-const DELAY_BETWEEN_FETCHES_MS = 800;
+const DELAY_BETWEEN_FETCHES_MS = 400;
 
 let isPreloaderRunning = false;
 let shouldStopPreloader = false;
@@ -124,6 +124,18 @@ async function preloadSingleSurah(
   try {
     const detail = await fetchSurah(surahNumber, true, editionIdentifier, force);
     if (detail && detail.ayahs && detail.ayahs.length > 0) {
+      // Also cache Arabic-only key so Arabic reader / Tafsir screens work completely offline
+      const arKey = `surah:${surahNumber}:ar`;
+      if (!loadQuranCache(arKey)) {
+        const arDetail: SurahDetail = {
+          ...detail,
+          ayahs: detail.ayahs.map((a) => ({
+            ...a,
+            translation: undefined,
+          })),
+        };
+        saveQuranCache(arKey, arDetail);
+      }
       return true;
     }
   } catch {
@@ -276,6 +288,11 @@ export function pauseQuranPreload(): void {
 
 export function isQuranPreloadRunning(): boolean {
   return isPreloaderRunning;
+}
+
+export function isQuranPreloadComplete(): boolean {
+  const { editionIdentifier } = getActiveEdition();
+  return getCachedSurahsCount(editionIdentifier) >= TOTAL_SURAHS;
 }
 
 // Automatically react to language changes

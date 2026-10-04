@@ -1,5 +1,13 @@
 import React, { useEffect, useMemo } from 'react';
-import { StyleSheet, View, ViewStyle, AccessibilityInfo, Dimensions, Animated } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  ViewStyle,
+  AccessibilityInfo,
+  Dimensions,
+  Animated,
+  Platform,
+} from 'react-native';
 import { useTheme } from '../lib/theme';
 
 type Variant = 'star' | 'rings' | 'arch' | 'bloom' | 'star-small';
@@ -12,6 +20,46 @@ interface AnimatedPatternProps {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const IS_TABLET = SCREEN_WIDTH >= 600;
+
+/** RN-web has no native animated module, so the JS driver drives the loop there. */
+const USE_NATIVE_DRIVER = Platform.OS !== 'web';
+
+/** Never throws: a failed reduce-motion query must not kill the animation. */
+async function prefersReducedMotion(): Promise<boolean> {
+  try {
+    const query = AccessibilityInfo.isReduceMotionEnabled;
+    if (typeof query !== 'function') return false;
+    return (await query.call(AccessibilityInfo)) === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Runs `create()` as an infinite loop unless the user prefers reduced motion.
+ * Returns a cleanup that stops the loop (and resets the layers).
+ */
+function startLoopIfMotionAllowed(
+  create: () => Animated.CompositeAnimation,
+  onStopped?: () => void
+): () => void {
+  let cancelled = false;
+  let running: Animated.CompositeAnimation | null = null;
+  const begin = (reduce: boolean) => {
+    if (cancelled || reduce || running) return;
+    running = Animated.loop(create());
+    running.start();
+  };
+  prefersReducedMotion().then(begin, () => begin(false));
+  return () => {
+    cancelled = true;
+    if (running) {
+      running.stop();
+      running = null;
+      onStopped?.();
+    }
+  };
+}
 
 function StarLayer({
   size,
@@ -28,20 +76,19 @@ function StarLayer({
 }) {
   const rotation = useMemo(() => new Animated.Value(0), []);
 
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
-      if (reduceMotion) return;
-      rotation.setValue(0);
-      Animated.loop(
-        Animated.timing(rotation, {
-          toValue: reverse ? -1 : 1,
-          duration: rotationSpeed,
-          useNativeDriver: true,
-        })
-      ).start();
-    });
-    return () => rotation.setValue(0);
-  }, [rotation, rotationSpeed, reverse]);
+  useEffect(
+    () =>
+      startLoopIfMotionAllowed(
+        () =>
+          Animated.timing(rotation, {
+            toValue: reverse ? -1 : 1,
+            duration: rotationSpeed,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+        () => rotation.setValue(0)
+      ),
+    [rotation, rotationSpeed, reverse]
+  );
 
   const rotate = rotation.interpolate({
     inputRange: [0, 1],
@@ -117,20 +164,19 @@ function RingLayer({
 }) {
   const rotation = useMemo(() => new Animated.Value(0), []);
 
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
-      if (reduceMotion) return;
-      rotation.setValue(0);
-      Animated.loop(
-        Animated.timing(rotation, {
-          toValue: reverse ? -1 : 1,
-          duration: rotationSpeed,
-          useNativeDriver: true,
-        })
-      ).start();
-    });
-    return () => rotation.setValue(0);
-  }, [rotation, rotationSpeed, reverse]);
+  useEffect(
+    () =>
+      startLoopIfMotionAllowed(
+        () =>
+          Animated.timing(rotation, {
+            toValue: reverse ? -1 : 1,
+            duration: rotationSpeed,
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+        () => rotation.setValue(0)
+      ),
+    [rotation, rotationSpeed, reverse]
+  );
 
   const rotate = rotation.interpolate({
     inputRange: [0, 1],
@@ -141,7 +187,7 @@ function RingLayer({
     <Animated.View style={styles.layer} pointerEvents="none">
       {Array.from({ length: ringCount }, (_, i) => {
         const ringSize = size * (0.25 + i * 0.18);
-        const ringOpacity = opacity * (0.6 - i * 0.12);
+        const ringOpacity = opacity * (1 - i * 0.16);
         return (
           <Animated.View
             key={i}
@@ -176,43 +222,43 @@ function ArchLayer({
   const scale = useMemo(() => new Animated.Value(1), []);
   const opacityAnim = useMemo(() => new Animated.Value(opacity), [opacity]);
 
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
-      if (reduceMotion) return;
-      Animated.loop(
-        Animated.sequence([
-          Animated.parallel([
-            Animated.timing(scale, {
-              toValue: 1.08,
-              duration: pulseSpeed / 2,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-              toValue: opacity * 1.5,
-              duration: pulseSpeed / 2,
-              useNativeDriver: true,
-            }),
+  useEffect(
+    () =>
+      startLoopIfMotionAllowed(
+        () =>
+          Animated.sequence([
+            Animated.parallel([
+              Animated.timing(scale, {
+                toValue: 1.08,
+                duration: pulseSpeed / 2,
+                useNativeDriver: USE_NATIVE_DRIVER,
+              }),
+              Animated.timing(opacityAnim, {
+                toValue: Math.min(opacity * 1.4, 0.18),
+                duration: pulseSpeed / 2,
+                useNativeDriver: USE_NATIVE_DRIVER,
+              }),
+            ]),
+            Animated.parallel([
+              Animated.timing(scale, {
+                toValue: 1,
+                duration: pulseSpeed / 2,
+                useNativeDriver: USE_NATIVE_DRIVER,
+              }),
+              Animated.timing(opacityAnim, {
+                toValue: opacity,
+                duration: pulseSpeed / 2,
+                useNativeDriver: USE_NATIVE_DRIVER,
+              }),
+            ]),
           ]),
-          Animated.parallel([
-            Animated.timing(scale, {
-              toValue: 1,
-              duration: pulseSpeed / 2,
-              useNativeDriver: true,
-            }),
-            Animated.timing(opacityAnim, {
-              toValue: opacity,
-              duration: pulseSpeed / 2,
-              useNativeDriver: true,
-            }),
-          ]),
-        ])
-      ).start();
-    });
-    return () => {
-      scale.setValue(1);
-      opacityAnim.setValue(opacity);
-    };
-  }, [scale, opacityAnim, pulseSpeed, opacity]);
+        () => {
+          scale.setValue(1);
+          opacityAnim.setValue(opacity);
+        }
+      ),
+    [scale, opacityAnim, pulseSpeed, opacity]
+  );
 
   const archSize = size * 0.5;
 
@@ -247,7 +293,7 @@ function ArchLayer({
             width: archSize * 0.7,
             height: archSize * 0.7,
             borderColor: color,
-            opacity: opacity * 0.7,
+            opacity: 0.6,
           },
         ]}
       />
@@ -258,7 +304,7 @@ function ArchLayer({
             width: archSize * 0.4,
             height: archSize * 0.4,
             borderColor: color,
-            opacity: opacity * 0.5,
+            opacity: 0.4,
           },
         ]}
       />
@@ -282,38 +328,36 @@ function BloomLayer({
   const rotation = useMemo(() => new Animated.Value(0), []);
   const scale = useMemo(() => new Animated.Value(1), []);
 
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
-      if (reduceMotion) return;
-      rotation.setValue(0);
-      scale.setValue(1);
-      Animated.loop(
-        Animated.parallel([
-          Animated.timing(rotation, {
-            toValue: 1,
-            duration: pulseSpeed * 2,
-            useNativeDriver: true,
-          }),
-          Animated.sequence([
-            Animated.timing(scale, {
-              toValue: 1.12,
-              duration: pulseSpeed / 2,
-              useNativeDriver: true,
-            }),
-            Animated.timing(scale, {
+  useEffect(
+    () =>
+      startLoopIfMotionAllowed(
+        () =>
+          Animated.parallel([
+            Animated.timing(rotation, {
               toValue: 1,
-              duration: pulseSpeed / 2,
-              useNativeDriver: true,
+              duration: pulseSpeed * 4,
+              useNativeDriver: USE_NATIVE_DRIVER,
             }),
+            Animated.sequence([
+              Animated.timing(scale, {
+                toValue: 1.12,
+                duration: pulseSpeed / 2,
+                useNativeDriver: USE_NATIVE_DRIVER,
+              }),
+              Animated.timing(scale, {
+                toValue: 1,
+                duration: pulseSpeed / 2,
+                useNativeDriver: USE_NATIVE_DRIVER,
+              }),
+            ]),
           ]),
-        ])
-      ).start();
-    });
-    return () => {
-      rotation.setValue(0);
-      scale.setValue(1);
-    };
-  }, [rotation, scale, pulseSpeed]);
+        () => {
+          rotation.setValue(0);
+          scale.setValue(1);
+        }
+      ),
+    [rotation, scale, pulseSpeed]
+  );
 
   const rotate = rotation.interpolate({
     inputRange: [0, 1],
@@ -321,6 +365,7 @@ function BloomLayer({
   });
 
   const bloomSize = size * 0.45;
+  const petalSize = bloomSize * 0.35;
 
   return (
     <Animated.View
@@ -340,12 +385,15 @@ function BloomLayer({
           style={[
             styles.petal,
             {
-              width: bloomSize * 0.35,
-              height: bloomSize * 0.35,
+              width: petalSize,
+              height: petalSize,
+              marginLeft: -petalSize / 2,
+              marginTop: -petalSize / 2,
               borderColor: color,
-              opacity: opacity * (0.5 + (i % 2) * 0.2),
+              opacity: opacity * (0.7 + (i % 2) * 0.3),
               transform: [
                 { rotate: `${(360 / petalCount) * i}deg` },
+                { translateY: -bloomSize * 0.32 },
                 { scale },
               ],
             },
@@ -360,7 +408,7 @@ function BloomLayer({
             width: bloomSize * 0.25,
             height: bloomSize * 0.25,
             borderColor: color,
-            opacity: opacity * 1.5,
+            opacity: Math.min(opacity * 1.25, 0.16),
           },
         ]}
       />
@@ -375,6 +423,8 @@ export function AnimatedPattern({
 }: AnimatedPatternProps) {
   const { colors } = useTheme();
 
+  // Opacities are the EFFECTIVE values on the card: nested layers multiply their
+  // parent's opacity, so each layer's inner multipliers are scaled to land here.
   const config = {
     star: {
       layers: [
@@ -382,15 +432,15 @@ export function AnimatedPattern({
           key="star-main"
           size={size}
           color={colors.accent}
-          opacity={0.055}
-          rotationSpeed={45000}
+          opacity={0.11}
+          rotationSpeed={22000}
         />,
         <StarLayer
           key="star-inner"
           size={size * 0.6}
           color={colors.borderSubtle}
-          opacity={0.035}
-          rotationSpeed={60000}
+          opacity={0.075}
+          rotationSpeed={30000}
           reverse
         />,
       ],
@@ -401,8 +451,8 @@ export function AnimatedPattern({
           key="star-small-main"
           size={size * 0.7}
           color={colors.accent}
-          opacity={0.05}
-          rotationSpeed={50000}
+          opacity={0.1}
+          rotationSpeed={26000}
         />,
       ],
     },
@@ -412,16 +462,16 @@ export function AnimatedPattern({
           key="rings-main"
           size={size}
           color={colors.accent}
-          opacity={0.045}
-          rotationSpeed={40000}
+          opacity={0.1}
+          rotationSpeed={20000}
           ringCount={4}
         />,
         <RingLayer
           key="rings-inner"
           size={size * 0.65}
           color={colors.borderSubtle}
-          opacity={0.03}
-          rotationSpeed={55000}
+          opacity={0.07}
+          rotationSpeed={28000}
           reverse
           ringCount={3}
         />,
@@ -433,15 +483,15 @@ export function AnimatedPattern({
           key="arch-main"
           size={size}
           color={colors.accent}
-          opacity={0.04}
-          pulseSpeed={8000}
+          opacity={0.1}
+          pulseSpeed={5000}
         />,
         <ArchLayer
           key="arch-inner"
           size={size * 0.7}
           color={colors.borderSubtle}
-          opacity={0.025}
-          pulseSpeed={10000}
+          opacity={0.07}
+          pulseSpeed={6500}
         />,
       ],
     },
@@ -451,16 +501,16 @@ export function AnimatedPattern({
           key="bloom-main"
           size={size}
           color={colors.accent}
-          opacity={0.05}
-          pulseSpeed={7000}
+          opacity={0.11}
+          pulseSpeed={5000}
           petalCount={8}
         />,
         <BloomLayer
           key="bloom-inner"
           size={size * 0.6}
           color={colors.borderSubtle}
-          opacity={0.03}
-          pulseSpeed={9000}
+          opacity={0.075}
+          pulseSpeed={6500}
           petalCount={6}
         />,
       ],
@@ -492,24 +542,24 @@ const styles = StyleSheet.create({
   },
   square: {
     position: 'absolute',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 2,
   },
   rotated: {
     transform: [{ rotate: '45deg' }],
   },
   inner: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 1,
   },
   ring: {
     position: 'absolute',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 999,
   },
   arch: {
     position: 'absolute',
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderRadius: 999,
     borderBottomWidth: 0,
     borderLeftWidth: 0,
@@ -520,12 +570,11 @@ const styles = StyleSheet.create({
   },
   petal: {
     position: 'absolute',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 999,
     borderBottomWidth: 0,
     borderLeftWidth: 0,
-    top: 0,
+    top: '50%',
     left: '50%',
-    marginLeft: -9999,
   },
 });

@@ -407,7 +407,7 @@ export async function fetchHadithsInBook(
   force = false
 ): Promise<HadithListResponse> {
   const cacheKey = `hadith:cache:list:${collectionSlug}:${bookNumber}:${offset}`;
-  if (!force && offset === 0) {
+  if (!force) {
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) {
@@ -426,17 +426,22 @@ export async function fetchHadithsInBook(
     if (response.ok) {
       const json = await response.json();
       if (json.code === 200 && json.data && Array.isArray(json.data.hadiths)) {
-        if (offset === 0) {
-          await AsyncStorage.setItem(cacheKey, JSON.stringify(json.data)).catch(() => {});
+        await AsyncStorage.setItem(cacheKey, JSON.stringify(json.data)).catch(() => {});
+        // Also cache individual hadiths for instant offline single-hadith lookups
+        for (const item of json.data.hadiths) {
+          if (item && item.hadithNumber) {
+            const singleKey = `hadith:cache:single:${collectionSlug}:${bookNumber}:${item.hadithNumber}`;
+            AsyncStorage.setItem(singleKey, JSON.stringify(item)).catch(() => {});
+          }
         }
         return json.data;
       }
     }
   } catch {
-    // API failed, try cache
+    // API failed, try cache below
   }
 
-  if (!force && offset === 0) {
+  if (!force) {
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) {
@@ -451,12 +456,57 @@ export async function fetchHadithsInBook(
   throw new Error(`Failed to load hadiths for book ${bookNumber}`);
 }
 
+export async function isHadithPageCached(
+  collectionSlug: string,
+  bookNumber: string,
+  offset: number
+): Promise<boolean> {
+  const cacheKey = `hadith:cache:list:${collectionSlug}:${bookNumber}:${offset}`;
+  try {
+    const cached = await AsyncStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      return !!(parsed && Array.isArray(parsed.hadiths));
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
+export async function saveHadithPageCache(
+  collectionSlug: string,
+  bookNumber: string,
+  offset: number,
+  data: HadithListResponse
+): Promise<void> {
+  const cacheKey = `hadith:cache:list:${collectionSlug}:${bookNumber}:${offset}`;
+  try {
+    await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
+  } catch {
+    // ignore
+  }
+}
+
 export async function fetchSingleHadith(
   collectionSlug: string,
   bookNumber: string,
-  hadithNumber: string
+  hadithNumber: string,
+  force = false
 ): Promise<HadithItem> {
   const cacheKey = `hadith:cache:single:${collectionSlug}:${bookNumber}:${hadithNumber}`;
+  if (!force) {
+    try {
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   try {
     const response = await fetch(
       `${API_BASE}/collections/${collectionSlug}/books/${bookNumber}/hadiths/${hadithNumber}`

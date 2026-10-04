@@ -25,7 +25,11 @@ import {
 } from '../lib/db';
 
 import { NAMES_99 } from '../lib/names99';
-import { DUAS_DATA } from '../lib/duas';
+import {
+  useAfterPrayerDuas,
+  selectAfterPrayerDua,
+  FALLBACK_AFTER_PRAYER_DUAS,
+} from '../lib/afterPrayerDuas';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { SectionHeader } from '../components/SectionHeader';
@@ -196,10 +200,6 @@ export default function HomeScreen({
     return NAMES_99[idx];
   }, [dayOfYear]);
 
-  const afterPrayerDua = useMemo(() => {
-    return DUAS_DATA.find((d) => d.category === 'After Prayer') || DUAS_DATA[0];
-  }, []);
-
   const completedCount = Object.values(completed).filter(Boolean).length;
   const lastCompletedPrayer = useMemo(() => {
     const prayerKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -208,6 +208,14 @@ export default function HomeScreen({
     }
     return null;
   }, [completed]);
+
+  const { duas: afterPrayerDuas } = useAfterPrayerDuas();
+  const afterPrayerDua = useMemo(
+    () =>
+      selectAfterPrayerDua(afterPrayerDuas, lastCompletedPrayer) ??
+      FALLBACK_AFTER_PRAYER_DUAS[0],
+    [afterPrayerDuas, lastCompletedPrayer]
+  );
 
   const isCompact = useMemo(() => width <= 380, [width]);
 
@@ -348,8 +356,8 @@ export default function HomeScreen({
 
         {/* 1. Prayer Hero (Next prayer, time, remaining countdown, elapsed progress bar) */}
         <View style={styles.cardWithPattern}>
-          <AnimatedPattern variant="star" size={isCompact ? 280 : 340} />
           <Card style={styles.countdownCard}>
+            <AnimatedPattern variant="star" size={isCompact ? 280 : 340} />
             <Text style={[styles.countdownEyebrow, { color: colors.accent }]}>
               {next ? 'Next Prayer' : 'Next Prayer · Tomorrow'}
             </Text>
@@ -388,8 +396,8 @@ export default function HomeScreen({
 
         {/* 2. Prayer Times (5 prayers + sunrise list with completion toggles) */}
         <View style={styles.cardWithPattern}>
-          <AnimatedPattern variant="arch" size={isCompact ? 260 : 320} />
           <Card style={styles.prayerListCard} padded={false}>
+            <AnimatedPattern variant="arch" size={isCompact ? 260 : 320} />
             {PRAYER_ORDER.map((p, i) => {
               const time = data.timings[p.key] || '--:--';
               const isActive = next?.name === p.key;
