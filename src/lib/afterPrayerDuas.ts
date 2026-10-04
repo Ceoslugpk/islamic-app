@@ -23,6 +23,7 @@ export interface AfterPrayerDua {
   transliteration: string;
   translation: string;
   source: string;
+  reference?: string;
 }
 
 const ENDPOINT = 'https://api.islamic.app/v1/dhikr/after-prayer';
@@ -42,6 +43,7 @@ export const FALLBACK_AFTER_PRAYER_DUAS: AfterPrayerDua[] = DUAS_DATA.filter(
   transliteration: dua.transliteration,
   translation: dua.translation,
   source: dua.reference,
+  reference: dua.reference,
 }));
 
 interface RawDua {
@@ -148,6 +150,7 @@ function mapRawDua(raw: RawDua, index: number): AfterPrayerDua | null {
     transliteration,
     translation,
     source,
+    reference: source,
   };
 }
 
@@ -157,10 +160,12 @@ async function requestAfterPrayerDuas(): Promise<AfterPrayerDua[]> {
     ? setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
     : null;
   try {
-    const response = await fetch(
-      ENDPOINT,
-      controller ? { signal: controller.signal } : undefined
-    );
+    const response = await fetch(ENDPOINT, {
+      headers: {
+        Accept: 'application/json',
+      },
+      ...(controller ? { signal: controller.signal } : {}),
+    });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const payload = (await response.json()) as RawPayload;
     const raw = payload?.data?.duas;

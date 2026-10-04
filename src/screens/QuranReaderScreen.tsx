@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Clipboard,
   FlatList,
   Modal,
   RefreshControl,
@@ -113,6 +114,16 @@ export default function QuranReaderScreen({
   const [tafsirLoading, setTafsirLoading] = useState<boolean>(false);
   const [tafsirText, setTafsirText] = useState<string | null>(null);
   const [tafsirEdition, setTafsirEdition] = useState<string | null>(null);
+
+  // Copy feedback state (which ayah was just copied)
+  const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
+  const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+    };
+  }, []);
 
   const listRef = useRef<FlatList<Ayah>>(null);
 
@@ -400,6 +411,20 @@ export default function QuranReaderScreen({
     Share.share({ message: textToShare }).catch(() => {});
   };
 
+  // Copy
+  const handleCopyAyah = (item: Ayah) => {
+    const textToCopy = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+    try {
+      Clipboard.setString(textToCopy);
+      haptic('selection');
+      setCopiedAyah(item.numberInSurah);
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 1500);
+    } catch {
+      // Clipboard unavailable — leave state unchanged
+    }
+  };
+
   const handleNavigateSurah = useCallback(
     (targetSurah: number) => {
       if (targetSurah < 1 || targetSurah > 114) return;
@@ -598,6 +623,21 @@ export default function QuranReaderScreen({
               accessibilityLabel={`Share Ayah ${item.numberInSurah}`}
             >
               <Ionicons name="share-social-outline" size={19} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            {/* Copy */}
+            <TouchableOpacity
+              onPress={() => handleCopyAyah(item)}
+              style={styles.actionBtn}
+              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Copy Ayah ${item.numberInSurah}`}
+            >
+              <Ionicons
+                name={copiedAyah === item.numberInSurah ? 'checkmark' : 'copy-outline'}
+                size={19}
+                color={copiedAyah === item.numberInSurah ? colors.accent : colors.textSecondary}
+              />
             </TouchableOpacity>
           </View>
         </View>

@@ -355,146 +355,142 @@ export default function HomeScreen({
         )}
 
         {/* 1. Prayer Hero (Next prayer, time, remaining countdown, elapsed progress bar) */}
-        <View style={styles.cardWithPattern}>
-          <Card style={styles.countdownCard}>
-            <AnimatedPattern variant="star" size={isCompact ? 280 : 340} />
-            <Text style={[styles.countdownEyebrow, { color: colors.accent }]}>
-              {next ? 'Next Prayer' : 'Next Prayer · Tomorrow'}
+        <Card style={styles.countdownCard}>
+          <AnimatedPattern variant="star" size={isCompact ? 280 : 340} />
+          <Text style={[styles.countdownEyebrow, { color: colors.accent }]}>
+            {next ? 'Next Prayer' : 'Next Prayer · Tomorrow'}
+          </Text>
+          <Text style={[styles.countdownName, { color: colors.textPrimary }]}>
+            {next ? next.name : 'Fajr'}
+          </Text>
+          <Text style={[styles.countdownTime, { color: colors.textPrimary }]}>
+            {formatTime(next ? next.time : data.timings.Fajr, fmt)}
+          </Text>
+          {countdownRemaining ? (
+            <Text style={[styles.countdownRemaining, { color: colors.textMuted }]}>
+              {countdownRemaining === 'Now' ? 'Now' : `in ${countdownRemaining}`}
             </Text>
-            <Text style={[styles.countdownName, { color: colors.textPrimary }]}>
-              {next ? next.name : 'Fajr'}
-            </Text>
-            <Text style={[styles.countdownTime, { color: colors.textPrimary }]}>
-              {formatTime(next ? next.time : data.timings.Fajr, fmt)}
-            </Text>
-            {countdownRemaining ? (
-              <Text style={[styles.countdownRemaining, { color: colors.textMuted }]}>
-                {countdownRemaining === 'Now' ? 'Now' : `in ${countdownRemaining}`}
-              </Text>
-            ) : null}
+          ) : null}
 
-            <View style={styles.progressWrap}>
-              <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      backgroundColor: colors.accent,
-                      width: `${Math.round(progress * 100)}%`,
-                    },
-                  ]}
-                />
-              </View>
-              <View style={styles.progressMeta}>
-                <Text style={[styles.progressText, { color: colors.textMuted }]}>
-                  {Math.round(progress * 100)}% elapsed
-                </Text>
-              </View>
+          <View style={styles.progressWrap}>
+            <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    backgroundColor: colors.accent,
+                    width: `${Math.round(progress * 100)}%`,
+                  },
+                ]}
+              />
             </View>
-          </Card>
-        </View>
+            <View style={styles.progressMeta}>
+              <Text style={[styles.progressText, { color: colors.textMuted }]}>
+                {Math.round(progress * 100)}% elapsed
+              </Text>
+            </View>
+          </View>
+        </Card>
 
         {/* 2. Prayer Times (5 prayers + sunrise list with completion toggles) */}
-        <View style={styles.cardWithPattern}>
-          <Card style={styles.prayerListCard} padded={false}>
-            <AnimatedPattern variant="arch" size={isCompact ? 260 : 320} />
-            {PRAYER_ORDER.map((p, i) => {
-              const time = data.timings[p.key] || '--:--';
-              const isActive = next?.name === p.key;
-              const isDone = !!completed[p.key];
-              return (
-                <View key={p.key}>
-                  {i > 0 && <Hairline />}
-                  <TouchableOpacity
-                    style={[
-                      styles.row,
-                      {
-                        backgroundColor: isActive ? colors.accentDim : 'transparent',
-                        borderLeftWidth: 4,
-                        borderLeftColor: isActive ? colors.accent : 'transparent',
-                      },
-                    ]}
-                    onPress={() => togglePrayer(p.key)}
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: isDone }}
-                    accessibilityLabel={`${p.label} at ${time}, ${isDone ? 'completed' : 'not completed'}`}
-                  >
-                    <View style={styles.rowLeft}>
-                      <View
-                        style={[
-                          styles.check,
-                          { borderColor: isDone ? colors.accent : colors.borderStrong },
-                          isDone && { backgroundColor: colors.accent },
-                        ]}
-                      >
-                        {isDone && <Text style={styles.checkMark}>✓</Text>}
-                      </View>
-                      <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{p.label}</Text>
-                      {isActive && (
-                        <Text style={[styles.rowBadge, { color: colors.accent }]}>Now</Text>
-                      )}
+        <Card style={styles.prayerListCard} padded={false}>
+          <AnimatedPattern variant="arch" size={isCompact ? 260 : 320} />
+          {PRAYER_ORDER.map((p, i) => {
+            const time = data.timings[p.key] || '--:--';
+            const isActive = next?.name === p.key;
+            const isDone = !!completed[p.key];
+            return (
+              <View key={p.key}>
+                {i > 0 && <Hairline />}
+                <TouchableOpacity
+                  style={[
+                    styles.row,
+                    {
+                      backgroundColor: isActive ? colors.accentDim : 'transparent',
+                      borderLeftWidth: 4,
+                      borderLeftColor: isActive ? colors.accent : 'transparent',
+                    },
+                  ]}
+                  onPress={() => togglePrayer(p.key)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isDone }}
+                  accessibilityLabel={`${p.label} at ${time}, ${isDone ? 'completed' : 'not completed'}`}
+                >
+                  <View style={styles.rowLeft}>
+                    <View
+                      style={[
+                        styles.check,
+                        { borderColor: isDone ? colors.accent : colors.borderStrong },
+                        isDone && { backgroundColor: colors.accent },
+                      ]}
+                    >
+                      {isDone && <Text style={styles.checkMark}>✓</Text>}
                     </View>
-                    <Text style={[styles.rowTime, { color: colors.textPrimary }]}>
-                      {formatTime(time, fmt)}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              );
-            })}
-          </Card>
-        </View>
+                    <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{p.label}</Text>
+                    {isActive && (
+                      <Text style={[styles.rowBadge, { color: colors.accent }]}>Now</Text>
+                    )}
+                  </View>
+                  <Text style={[styles.rowTime, { color: colors.textPrimary }]}>
+                    {formatTime(time, fmt)}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </Card>
 
         {/* 3. Dua After Prayer — compact, collapsible, contextual */}
-        <View style={styles.cardWithPattern}>
+        <Card style={styles.duaAfterPrayerCard}>
           <AnimatedPattern variant="rings" size={isCompact ? 240 : 300} />
-          <Card style={styles.duaAfterPrayerCard}>
-            <TouchableOpacity
-              style={styles.duaAfterPrayerHeader}
-              onPress={() => {
-                haptic('light');
-                setAfterPrayerExpanded((prev) => !prev);
-              }}
-              accessibilityRole="button"
-              accessibilityState={{ expanded: afterPrayerExpanded }}
-              accessibilityLabel={`Dua after prayer${lastCompletedPrayer ? ` for ${lastCompletedPrayer}` : ''}. Tap to expand.`}
-            >
-              <View style={styles.duaAfterPrayerHeaderLeft}>
-                <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent }]}>
-                  Dua After Prayer
+          <TouchableOpacity
+            style={styles.duaAfterPrayerHeader}
+            onPress={() => {
+              haptic('light');
+              setAfterPrayerExpanded((prev) => !prev);
+            }}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: afterPrayerExpanded }}
+            accessibilityLabel={`Dua after prayer${lastCompletedPrayer ? ` for ${lastCompletedPrayer}` : ''}. Tap to expand.`}
+          >
+            <View style={styles.duaAfterPrayerHeaderLeft}>
+              <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent }]}>
+                Dua After Prayer
+              </Text>
+              {lastCompletedPrayer && (
+                <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted }]}>
+                  For {lastCompletedPrayer}
                 </Text>
-                {lastCompletedPrayer && (
-                  <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted }]}>
-                    For {lastCompletedPrayer}
-                  </Text>
-                )}
-              </View>
-              <Ionicons
-                name={afterPrayerExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-                size={20}
-                color={colors.textMuted}
-              />
-            </TouchableOpacity>
-
-            <View style={styles.duaAfterPrayerContent}>
-              <ArabicText size={22} align="right" style={styles.duaAfterPrayerArabic} numberOfLines={afterPrayerExpanded ? 8 : 2}>
-                {afterPrayerDua.arabic}
-              </ArabicText>
-              {afterPrayerExpanded && (
-                <>
-                  <Text style={[styles.duaAfterPrayerTransliteration, { color: colors.textSecondary }]}>
-                    {afterPrayerDua.transliteration}
-                  </Text>
-                  <Text style={[styles.duaAfterPrayerTranslation, { color: colors.textSecondary }]}>
-                    {afterPrayerDua.translation}
-                  </Text>
-                  <Text style={[styles.duaAfterPrayerRef, { color: colors.textMuted }]}>
-                    {afterPrayerDua.reference}
-                  </Text>
-                </>
               )}
             </View>
-          </Card>
-        </View>
+            <Ionicons
+              name={afterPrayerExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+              size={20}
+              color={colors.textMuted}
+            />
+          </TouchableOpacity>
+
+          <View style={styles.duaAfterPrayerContent}>
+            <ArabicText size={22} align="right" style={styles.duaAfterPrayerArabic} numberOfLines={afterPrayerExpanded ? 8 : 2}>
+              {afterPrayerDua.arabic}
+            </ArabicText>
+            {afterPrayerExpanded && (
+              <>
+                <Text style={[styles.duaAfterPrayerTransliteration, { color: colors.textSecondary }]}>
+                  {afterPrayerDua.transliteration}
+                </Text>
+                <Text style={[styles.duaAfterPrayerTranslation, { color: colors.textSecondary }]}>
+                  {afterPrayerDua.translation}
+                </Text>
+                {(afterPrayerDua.reference || afterPrayerDua.source) ? (
+                  <Text style={[styles.duaAfterPrayerRef, { color: colors.textMuted }]}>
+                    {afterPrayerDua.reference || afterPrayerDua.source}
+                  </Text>
+                ) : null}
+              </>
+            )}
+          </View>
+        </Card>
 
         {/* 4. Salah Completion (today X/5 + streak) */}
         <View style={[styles.trackerRow, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
@@ -514,51 +510,49 @@ export default function HomeScreen({
         {/* 5. Ayah of the Day */}
         {ayah && (
           <View style={styles.cardWithPattern}>
-            <AnimatedPattern variant="bloom" size={isCompact ? 280 : 340} />
             <AyahCard ayah={ayah} onRefresh={refreshAyah} loading={ayahLoading} />
+            <AnimatedPattern variant="bloom" size={isCompact ? 280 : 340} />
           </View>
         )}
 
         {/* 6. Hadith of the Day */}
         {hadith && (
           <View style={styles.cardWithPattern}>
-            <AnimatedPattern variant="rings" size={isCompact ? 260 : 320} />
             <HadithCard hadith={hadith} onRefresh={refreshHadith} loading={hadithLoading} />
+            <AnimatedPattern variant="rings" size={isCompact ? 260 : 320} />
           </View>
         )}
 
         {/* 7. 99 Names of Allah (Name of the Day) */}
-        <View style={styles.cardWithPattern}>
+        <Card style={styles.cardSection}>
           <AnimatedPattern variant="star-small" size={isCompact ? 220 : 280} />
-          <Card style={styles.cardSection}>
-            <View style={styles.cardHeaderRow}>
-              <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>
-                Name of the Day · #{nameOfDay.number}
+          <View style={styles.cardHeaderRow}>
+            <Text style={[styles.sectionEyebrow, { color: colors.accent }]}>
+              Name of the Day · #{nameOfDay.number}
+            </Text>
+            {onOpenNames && (
+              <TouchableOpacity onPress={onOpenNames} style={styles.headerActionBtn}>
+                <Text style={[styles.headerActionText, { color: colors.accent }]}>
+                  All 99 →
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <Hairline style={styles.cardDivider} />
+          <View style={styles.nameRow}>
+            <View style={styles.nameLeft}>
+              <Text style={[styles.nameTranslit, { color: colors.textPrimary }]}>
+                {nameOfDay.transliteration}
               </Text>
-              {onOpenNames && (
-                <TouchableOpacity onPress={onOpenNames} style={styles.headerActionBtn}>
-                  <Text style={[styles.headerActionText, { color: colors.accent }]}>
-                    All 99 →
-                  </Text>
-                </TouchableOpacity>
-              )}
+              <Text style={[styles.nameMeaning, { color: colors.textSecondary }]}>
+                {nameOfDay.meaning}
+              </Text>
             </View>
-            <Hairline style={styles.cardDivider} />
-            <View style={styles.nameRow}>
-              <View style={styles.nameLeft}>
-                <Text style={[styles.nameTranslit, { color: colors.textPrimary }]}>
-                  {nameOfDay.transliteration}
-                </Text>
-                <Text style={[styles.nameMeaning, { color: colors.textSecondary }]}>
-                  {nameOfDay.meaning}
-                </Text>
-              </View>
-              <ArabicText size={32} bold align="right">
-                {nameOfDay.arabic}
-              </ArabicText>
-            </View>
-          </Card>
-        </View>
+            <ArabicText size={32} bold align="right">
+              {nameOfDay.arabic}
+            </ArabicText>
+          </View>
+        </Card>
 
         {/* Method + location note */}
         <Text style={[styles.methodNote, { color: colors.textMuted }]}>
@@ -631,7 +625,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   prayerListCard: {
-    marginBottom: 0,
+    marginBottom: 20,
     borderRadius: 12,
     overflow: 'hidden',
   },
@@ -726,7 +720,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   duaAfterPrayerCard: {
-    marginBottom: 0,
+    marginBottom: 20,
   },
   duaAfterPrayerHeader: {
     flexDirection: 'row',

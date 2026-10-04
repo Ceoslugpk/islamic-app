@@ -24,10 +24,23 @@ const IS_TABLET = SCREEN_WIDTH >= 600;
 /** RN-web has no native animated module, so the JS driver drives the loop there. */
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
+function isReducedMotionRequested(): boolean {
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    return false;
+  }
+  return false;
+}
+
 /** Never throws: a failed reduce-motion query must not kill the animation. */
 async function prefersReducedMotion(): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    return isReducedMotionRequested();
+  }
   try {
-    const query = AccessibilityInfo.isReduceMotionEnabled;
+    const query = AccessibilityInfo?.isReduceMotionEnabled;
     if (typeof query !== 'function') return false;
     return (await query.call(AccessibilityInfo)) === true;
   } catch {
@@ -45,12 +58,32 @@ function startLoopIfMotionAllowed(
 ): () => void {
   let cancelled = false;
   let running: Animated.CompositeAnimation | null = null;
-  const begin = (reduce: boolean) => {
-    if (cancelled || reduce || running) return;
-    running = Animated.loop(create());
-    running.start();
+
+  const start = () => {
+    if (cancelled || running) return;
+    try {
+      running = Animated.loop(create());
+      running.start();
+    } catch {
+      // Graceful fallback
+    }
   };
-  prefersReducedMotion().then(begin, () => begin(false));
+
+  if (Platform.OS === 'web') {
+    if (!isReducedMotionRequested()) {
+      start();
+    }
+  } else {
+    prefersReducedMotion().then(
+      (reduce) => {
+        if (!cancelled && !reduce) start();
+      },
+      () => {
+        if (!cancelled) start();
+      }
+    );
+  }
+
   return () => {
     cancelled = true;
     if (running) {
@@ -187,7 +220,7 @@ function RingLayer({
     <Animated.View style={styles.layer} pointerEvents="none">
       {Array.from({ length: ringCount }, (_, i) => {
         const ringSize = size * (0.25 + i * 0.18);
-        const ringOpacity = opacity * (1 - i * 0.16);
+        const ringOpacity = opacity * (1 - i * 0.12);
         return (
           <Animated.View
             key={i}
@@ -234,7 +267,7 @@ function ArchLayer({
                 useNativeDriver: USE_NATIVE_DRIVER,
               }),
               Animated.timing(opacityAnim, {
-                toValue: Math.min(opacity * 1.4, 0.18),
+                toValue: Math.min(opacity * 1.5, 0.22),
                 duration: pulseSpeed / 2,
                 useNativeDriver: USE_NATIVE_DRIVER,
               }),
@@ -293,7 +326,7 @@ function ArchLayer({
             width: archSize * 0.7,
             height: archSize * 0.7,
             borderColor: color,
-            opacity: 0.6,
+            opacity: 0.75,
           },
         ]}
       />
@@ -304,7 +337,7 @@ function ArchLayer({
             width: archSize * 0.4,
             height: archSize * 0.4,
             borderColor: color,
-            opacity: 0.4,
+            opacity: 0.55,
           },
         ]}
       />
@@ -390,7 +423,7 @@ function BloomLayer({
               marginLeft: -petalSize / 2,
               marginTop: -petalSize / 2,
               borderColor: color,
-              opacity: opacity * (0.7 + (i % 2) * 0.3),
+              opacity: opacity * (0.8 + (i % 2) * 0.25),
               transform: [
                 { rotate: `${(360 / petalCount) * i}deg` },
                 { translateY: -bloomSize * 0.32 },
@@ -408,7 +441,7 @@ function BloomLayer({
             width: bloomSize * 0.25,
             height: bloomSize * 0.25,
             borderColor: color,
-            opacity: Math.min(opacity * 1.25, 0.16),
+            opacity: Math.min(opacity * 1.3, 0.20),
           },
         ]}
       />
@@ -423,8 +456,7 @@ export function AnimatedPattern({
 }: AnimatedPatternProps) {
   const { colors } = useTheme();
 
-  // Opacities are the EFFECTIVE values on the card: nested layers multiply their
-  // parent's opacity, so each layer's inner multipliers are scaled to land here.
+  // Opacities are clearly visible yet tasteful (~0.08 - 0.12)
   const config = {
     star: {
       layers: [
@@ -432,14 +464,14 @@ export function AnimatedPattern({
           key="star-main"
           size={size}
           color={colors.accent}
-          opacity={0.11}
+          opacity={0.12}
           rotationSpeed={22000}
         />,
         <StarLayer
           key="star-inner"
           size={size * 0.6}
-          color={colors.borderSubtle}
-          opacity={0.075}
+          color={colors.accent}
+          opacity={0.085}
           rotationSpeed={30000}
           reverse
         />,
@@ -451,7 +483,7 @@ export function AnimatedPattern({
           key="star-small-main"
           size={size * 0.7}
           color={colors.accent}
-          opacity={0.1}
+          opacity={0.11}
           rotationSpeed={26000}
         />,
       ],
@@ -462,15 +494,15 @@ export function AnimatedPattern({
           key="rings-main"
           size={size}
           color={colors.accent}
-          opacity={0.1}
+          opacity={0.12}
           rotationSpeed={20000}
           ringCount={4}
         />,
         <RingLayer
           key="rings-inner"
           size={size * 0.65}
-          color={colors.borderSubtle}
-          opacity={0.07}
+          color={colors.accent}
+          opacity={0.085}
           rotationSpeed={28000}
           reverse
           ringCount={3}
@@ -483,14 +515,14 @@ export function AnimatedPattern({
           key="arch-main"
           size={size}
           color={colors.accent}
-          opacity={0.1}
+          opacity={0.12}
           pulseSpeed={5000}
         />,
         <ArchLayer
           key="arch-inner"
           size={size * 0.7}
-          color={colors.borderSubtle}
-          opacity={0.07}
+          color={colors.accent}
+          opacity={0.085}
           pulseSpeed={6500}
         />,
       ],
@@ -501,15 +533,15 @@ export function AnimatedPattern({
           key="bloom-main"
           size={size}
           color={colors.accent}
-          opacity={0.11}
+          opacity={0.12}
           pulseSpeed={5000}
           petalCount={8}
         />,
         <BloomLayer
           key="bloom-inner"
           size={size * 0.6}
-          color={colors.borderSubtle}
-          opacity={0.075}
+          color={colors.accent}
+          opacity={0.085}
           pulseSpeed={6500}
           petalCount={6}
         />,
@@ -542,24 +574,24 @@ const styles = StyleSheet.create({
   },
   square: {
     position: 'absolute',
-    borderWidth: 1.5,
+    borderWidth: 1.75,
     borderRadius: 2,
   },
   rotated: {
     transform: [{ rotate: '45deg' }],
   },
   inner: {
-    borderWidth: 1.5,
+    borderWidth: 1.75,
     borderRadius: 1,
   },
   ring: {
     position: 'absolute',
-    borderWidth: 1.5,
+    borderWidth: 1.75,
     borderRadius: 999,
   },
   arch: {
     position: 'absolute',
-    borderWidth: 2,
+    borderWidth: 2.25,
     borderRadius: 999,
     borderBottomWidth: 0,
     borderLeftWidth: 0,
@@ -570,7 +602,7 @@ const styles = StyleSheet.create({
   },
   petal: {
     position: 'absolute',
-    borderWidth: 1.5,
+    borderWidth: 1.75,
     borderRadius: 999,
     borderBottomWidth: 0,
     borderLeftWidth: 0,
