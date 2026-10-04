@@ -199,7 +199,13 @@ function mapEsmaItem(item: EsmaRecord, language: NamesLanguage): Name99 | null {
   const mapped: Name99 = { number, arabic, transliteration, meaning };
   if (localized && localized !== meaning) mapped.name = localized;
   if (slug) mapped.slug = slug;
-  if (audioPath) mapped.audioUrl = `${NAMES_API_BASE}${audioPath}`;
+  if (audioPath) {
+    // Prefer the API's exact audio path (its slug differs from `slug` for a few names,
+    // e.g. 84/85) and tolerate absolute URLs so playback never points at a 404.
+    mapped.audioUrl = /^https?:\/\//i.test(audioPath)
+      ? audioPath
+      : `${NAMES_API_BASE}${audioPath.startsWith('/') ? audioPath : `/${audioPath}`}`;
+  }
   if (verses.length > 0) mapped.verses = verses;
   return mapped;
 }

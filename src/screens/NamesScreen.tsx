@@ -84,6 +84,7 @@ export default function NamesScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const [playingUrl, setPlayingUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
 
   // Load cached names instantly, then refresh from the keyless API (static fallback on failure).
   // The Prophet variant is bundled-only, so it skips the network entirely.
@@ -110,6 +111,7 @@ export default function NamesScreen({
       const current = getCurrentPlayback();
       setPlayingUrl(current?.identifier === 'names99' ? current.url : null);
       setIsPlaying(status.isPlaying);
+      setIsBuffering(status.isBuffering);
     });
   }, [supportsAudio]);
 
@@ -139,6 +141,11 @@ export default function NamesScreen({
         item.number.toString() === q
     );
   }, [names, searchQuery]);
+
+  const countLabel =
+    filteredNames.length === names.length
+      ? `${names.length} Names`
+      : `${filteredNames.length} of ${names.length} Names`;
 
   const handleToggleAudio = (item: NameRow) => {
     if (!item.audioUrl) return;
@@ -241,11 +248,15 @@ export default function NamesScreen({
                       : `Play ${item.transliteration}`
                   }
                 >
-                  <Ionicons
-                    name={isActive && isPlaying ? 'pause' : 'play'}
-                    size={13}
-                    color={isActive ? colors.onAccent : colors.accent}
-                  />
+                  {isActive && isBuffering && !isPlaying ? (
+                    <ActivityIndicator size="small" color={isActive ? colors.onAccent : colors.accent} />
+                  ) : (
+                    <Ionicons
+                      name={isActive && isPlaying ? 'pause' : 'play'}
+                      size={13}
+                      color={isActive ? colors.onAccent : colors.accent}
+                    />
+                  )}
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -273,6 +284,11 @@ export default function NamesScreen({
         <SectionHeader
           eyebrow={isProphet ? 'Asma un-Nabi' : 'Asma ul-Husna'}
           title={isProphet ? '99 Names of the Prophet ﷺ' : '99 Names'}
+          subtitle={
+            isProphet
+              ? 'The names and titles of the Prophet Muhammad ﷺ, drawn from the classical Shama\u2019il compilations.'
+              : 'The 99 Beautiful Names of Allah, with Arabic, transliteration, and translated meanings.'
+          }
         />
 
       {/* Language Chips (Allah variant only — the Prophet's names are bundled in English) */}
@@ -345,6 +361,23 @@ export default function NamesScreen({
           Offline — showing the bundled list. Recitations are unavailable until you reconnect.
         </Text>
       ) : null}
+
+      {/* Prophet variant: honest, graceful notice — no keyless recitation source exists yet */}
+      {isProphet ? (
+        <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
+          {'Recitations coming soon — no public audio source is available for the Prophet\u2019s ﷺ names yet. Meanings are shown in English.'}
+        </Text>
+      ) : null}
+
+      {/* Count + translation source */}
+      <View style={styles.countRow}>
+        <Text style={[styles.countText, { color: colors.textSecondary }]}>{countLabel}</Text>
+        {!isProphet && loadState !== 'offline' ? (
+          <Text style={[styles.sourceText, { color: colors.textMuted }]}>
+            Translations · EsmaulHusna.org
+          </Text>
+        ) : null}
+      </View>
 
       {/* List */}
       <FlatList
@@ -436,6 +469,26 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 16,
     marginBottom: 12,
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 6,
+  },
+  countText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  sourceText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 10.5,
+    letterSpacing: 0.3,
+    flexShrink: 1,
+    textAlign: 'right',
   },
   listContent: {
     paddingBottom: 24,
