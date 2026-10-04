@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useHaptics } from '../lib/haptics';
 import { SectionHeader } from '../components/SectionHeader';
 import { AudioPlayerModal } from '../components/AudioPlayerModal';
 import {
@@ -27,6 +28,7 @@ import {
   getPlaybackStatus,
   getQueueIndex,
   getAyahAudioUrl,
+  getReciterCountry,
   getSurahAudioUrl,
   getAudioEditionForLanguage,
   isAudioTranslationEnabled,
@@ -75,6 +77,7 @@ interface QuranAudioScreenProps {
 
 export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   const { colors } = useTheme();
+  const { haptic } = useHaptics();
   const { width } = useWindowDimensions();
   const isNarrow = width < 380;
   const isCompact = width <= 350;
@@ -264,6 +267,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   };
 
   const handleSelectDefaultReciter = (identifier: string) => {
+    haptic('selection');
     setSelectedIdentifier(identifier);
     const updated = updateAudioSettings({ reciter: identifier });
     setSettings(updated);
@@ -566,6 +570,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               windowSize={7}
               renderItem={({ item }) => {
                 const isSelected = item.identifier === selectedIdentifier;
+                const country = item.country || getReciterCountry(item.identifier);
                 const isSamplingThis =
                   playback?.identifier === item.identifier &&
                   playback?.type === 'ayah' &&
@@ -578,7 +583,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     style={[
                       styles.reciterCard,
                       {
-                        backgroundColor: colors.bgSurface,
+                        backgroundColor: isSelected ? colors.accentDim : colors.bgSurface,
                         borderColor: isSelected ? colors.accent : colors.borderSubtle,
                       },
                     ]}
@@ -588,49 +593,34 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         onPress={() => handleSelectDefaultReciter(item.identifier)}
                         style={styles.reciterSelectArea}
                         accessibilityRole="button"
-                        accessibilityLabel={`Select ${item.englishName} as default reciter`}
+                        accessibilityLabel={`Select ${item.englishName}${country ? `, ${country}` : ''} as default reciter`}
                       >
-                        <View
-                          style={[
-                            styles.radioCircle,
-                            { borderColor: isSelected ? colors.accent : colors.borderSubtle },
-                          ]}
-                        >
-                          {isSelected && (
-                            <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />
+                        <View style={styles.radioArea}>
+                          {isSelected ? (
+                            <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
+                          ) : (
+                            <Ionicons name="ellipse-outline" size={20} color={colors.borderSubtle} />
                           )}
                         </View>
                         <View style={styles.reciterNameCol}>
-                          <View style={styles.reciterTitleRow}>
-                            <Text
-                              style={[styles.reciterName, { color: colors.textPrimary }]}
-                              numberOfLines={1}
-                              ellipsizeMode="tail"
-                            >
-                              {item.englishName}
+                          <Text
+                            style={[
+                              styles.reciterName,
+                              { color: isSelected ? colors.accent : colors.textPrimary },
+                            ]}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                          >
+                            {item.englishName}
+                          </Text>
+                          {country ? (
+                            <Text style={[styles.reciterCountry, { color: colors.textMuted }]}>
+                              {country}
                             </Text>
-                            <View
-                              style={[
-                                styles.langTag,
-                                {
-                                  backgroundColor: colors.accentDim,
-                                  borderColor: colors.accent,
-                                },
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.langTagText,
-                                  { color: colors.accent },
-                                ]}
-                              >
-                                ARABIC
-                              </Text>
-                            </View>
-                          </View>
+                          ) : null}
                           {item.name ? (
                             <Text
-                              style={[styles.reciterArabic, { color: colors.textMuted }]}
+                              style={[styles.reciterArabic, { color: colors.textSecondary }]}
                               numberOfLines={1}
                             >
                               {item.name}
@@ -1781,6 +1771,12 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 6,
   },
+  radioArea: {
+    width: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   radioCircle: {
     width: 20,
     height: 20,
@@ -1795,18 +1791,10 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
   },
-  reciterNameCol: {
-    flex: 1,
-  },
   reciterTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  reciterName: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
-    flexShrink: 1,
   },
   langTag: {
     paddingHorizontal: 5,
@@ -1817,6 +1805,18 @@ const styles = StyleSheet.create({
   langTagText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 9,
+  },
+  reciterNameCol: {
+    flex: 1,
+  },
+  reciterName: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 15,
+  },
+  reciterCountry: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
+    marginTop: 2,
   },
   reciterArabic: {
     fontFamily: 'Amiri_400Regular',

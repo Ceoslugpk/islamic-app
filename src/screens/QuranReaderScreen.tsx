@@ -43,6 +43,7 @@ import {
   fetchReciters,
   getAyahAudioUrl,
   getCurrentPlayback,
+  getReciterCountry,
   getSurahAudioUrl,
   playAyah,
   playSurah,
@@ -163,7 +164,6 @@ export default function QuranReaderScreen({
   const [selectedReciter, setSelectedReciter] = useState<string>('ar.alafasy');
   const [reciterChooserOpen, setReciterChooserOpen] = useState<boolean>(false);
   const [reciterSearch, setReciterSearch] = useState<string>('');
-  const [reciterLangFilter, setReciterLangFilter] = useState<string>('all');
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [playingAyahNumber, setPlayingAyahNumber] = useState<number | null>(null);
   const [isPlayingSurah, setIsPlayingSurah] = useState<boolean>(false);
@@ -363,23 +363,24 @@ export default function QuranReaderScreen({
 
   const filteredReciters = useMemo(() => {
     const query = reciterSearch.trim().toLowerCase();
-    const primaryLangs = ['ar', 'en', 'ur', 'zh', 'fr', 'ru', 'tr', 'fa'];
-    return reciters.filter((r) => {
-      const langMatch =
-        reciterLangFilter === 'all' ||
-        (reciterLangFilter === 'other'
-          ? !primaryLangs.includes(r.language)
-          : r.language === reciterLangFilter);
-      if (!langMatch) return false;
+    const list = reciters.filter((r) => {
+      if (r.language !== 'ar') return false;
       if (!query) return true;
       return (
         r.englishName.toLowerCase().includes(query) ||
         r.name.toLowerCase().includes(query) ||
-        r.identifier.toLowerCase().includes(query) ||
-        r.language.toLowerCase().includes(query)
+        r.identifier.toLowerCase().includes(query)
       );
     });
-  }, [reciters, reciterSearch, reciterLangFilter]);
+
+    // Ensure Alafasy is pinned at the top
+    const alafasyIdx = list.findIndex((r) => r.identifier === 'ar.alafasy');
+    if (alafasyIdx > 0) {
+      const [alafasy] = list.splice(alafasyIdx, 1);
+      list.unshift(alafasy);
+    }
+    return list;
+  }, [reciters, reciterSearch]);
 
   const handlePlaySurahToggle = async () => {
     if (isPlayingSurah) {
@@ -573,18 +574,6 @@ export default function QuranReaderScreen({
             <Text style={[styles.reciterNameText, { color: colors.textSecondary }]} numberOfLines={1}>
               {reciterLabel}
             </Text>
-            {currentReciterObj && currentReciterObj.language !== 'ar' && (
-              <View
-                style={[
-                  styles.inlineLangTag,
-                  { backgroundColor: colors.accentDim, borderColor: colors.accent },
-                ]}
-              >
-                <Text style={[styles.inlineLangTagText, { color: colors.accent }]}>
-                  {currentReciterObj.language.toUpperCase()}
-                </Text>
-              </View>
-            )}
             <Ionicons name="chevron-down" size={12} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
@@ -1108,144 +1097,108 @@ export default function QuranReaderScreen({
         onRequestClose={() => setReciterChooserOpen(false)}
       >
         <View style={[styles.modalWrap, { backgroundColor: colors.bgBase }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              Select Reciter
-            </Text>
-            <TouchableOpacity
-              onPress={() => setReciterChooserOpen(false)}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-            >
-              <Ionicons name="close" size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Search Box */}
-          <View
-            style={[
-              styles.reciterSearchWrap,
-              { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-            ]}
-          >
-            <Ionicons name="search" size={16} color={colors.textMuted} />
-            <TextInput
-              placeholder="Search reciters or languages..."
-              placeholderTextColor={colors.textMuted}
-              value={reciterSearch}
-              onChangeText={setReciterSearch}
-              style={[styles.reciterSearchInput, { color: colors.textPrimary }]}
-            />
-            {reciterSearch.length > 0 && (
-              <TouchableOpacity onPress={() => setReciterSearch('')}>
-                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+          <View style={styles.modalContentWrap}>
+            {/* Header: compact eyebrow + title + close */}
+            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
+              <View style={styles.modalHeaderLeft}>
+                <Text style={[styles.modalEyebrow, { color: colors.accent }]}>AUDIO RECITER</Text>
+                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                  Select Reciter
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setReciterChooserOpen(false)}
+                style={styles.closeBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                accessibilityRole="button"
+                accessibilityLabel="Close reciter selection"
+              >
+                <Ionicons name="close" size={22} color={colors.textPrimary} />
               </TouchableOpacity>
-            )}
-          </View>
+            </View>
 
-          {/* Language Filter Chips */}
-          <View style={{ height: 44 }}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.reciterFilterChipScroll}
+            {/* Search Box */}
+            <View
+              style={[
+                styles.reciterSearchWrap,
+                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+              ]}
             >
-              {(
-                [
-                  { key: 'all', label: 'All Reciters' },
-                  { key: 'ar', label: 'Arabic' },
-                  { key: 'en', label: 'English' },
-                  { key: 'ur', label: 'Urdu' },
-                  { key: 'zh', label: 'Chinese' },
-                  { key: 'fr', label: 'French' },
-                  { key: 'ru', label: 'Russian' },
-                  { key: 'tr', label: 'Turkish' },
-                  { key: 'fa', label: 'Persian' },
-                  { key: 'other', label: 'More' },
-                ] as const
-              ).map((chip) => {
-                const isSelected = reciterLangFilter === chip.key;
+              <Ionicons name="search" size={16} color={colors.textMuted} />
+              <TextInput
+                placeholder="Search reciter name..."
+                placeholderTextColor={colors.textMuted}
+                value={reciterSearch}
+                onChangeText={setReciterSearch}
+                style={[styles.reciterSearchInput, { color: colors.textPrimary }]}
+              />
+              {reciterSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setReciterSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Reciters List - Arabic only */}
+            <FlatList
+              data={filteredReciters}
+              keyExtractor={(item) => item.identifier}
+              contentContainerStyle={styles.reciterList}
+              initialNumToRender={15}
+              maxToRenderPerBatch={20}
+              windowSize={7}
+              renderItem={({ item }) => {
+                const isSelected = item.identifier === selectedReciter;
+                const country = item.country || getReciterCountry(item.identifier);
                 return (
                   <TouchableOpacity
-                    key={chip.key}
-                    onPress={() => setReciterLangFilter(chip.key)}
                     style={[
-                      styles.reciterFilterChip,
+                      styles.reciterRow,
                       {
-                        backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                        borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                        borderBottomColor: colors.borderSubtle,
+                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
                       },
                     ]}
+                    onPress={() => {
+                      haptic('selection');
+                      handleSelectReciter(item.identifier);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Select ${item.englishName}${country ? `, ${country}` : ''}`}
                   >
-                    <Text
-                      style={[
-                        styles.reciterFilterChipText,
-                        { color: isSelected ? '#121110' : colors.textSecondary },
-                      ]}
-                    >
-                      {chip.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-
-          <FlatList
-            data={filteredReciters}
-            keyExtractor={(item) => item.identifier}
-            contentContainerStyle={styles.reciterList}
-            renderItem={({ item }) => {
-              const isSelected = item.identifier === selectedReciter;
-              return (
-                <TouchableOpacity
-                  style={[
-                    styles.reciterRow,
-                    {
-                      borderBottomColor: colors.borderSubtle,
-                      backgroundColor: isSelected ? colors.accentDim : 'transparent',
-                    },
-                  ]}
-                  onPress={() => handleSelectReciter(item.identifier)}
-                >
-                  <View style={styles.reciterInfo}>
-                    <View style={styles.reciterTitleRow}>
-                      <Text style={[styles.reciterEngName, { color: colors.textPrimary }]} numberOfLines={1}>
+                    <View style={styles.reciterInfo}>
+                      <Text
+                        style={[
+                          styles.reciterEngName,
+                          { color: isSelected ? colors.accent : colors.textPrimary },
+                        ]}
+                        numberOfLines={1}
+                      >
                         {item.englishName}
                       </Text>
-                      <View
-                        style={[
-                          styles.reciterLangBadge,
-                          {
-                            backgroundColor: item.language === 'ar' ? colors.bgSurface : colors.accentDim,
-                            borderColor: item.language === 'ar' ? colors.borderSubtle : colors.accent,
-                          },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.reciterLangBadgeText,
-                            { color: item.language === 'ar' ? colors.textMuted : colors.accent },
-                          ]}
-                        >
-                          {item.language.toUpperCase()}
+                      {country ? (
+                        <Text style={[styles.reciterCountry, { color: colors.textMuted }]}>
+                          {country}
                         </Text>
-                      </View>
+                      ) : null}
+                      {item.name ? (
+                        <Text style={[styles.reciterArabicName, { color: colors.textSecondary }]}>
+                          {item.name}
+                        </Text>
+                      ) : null}
                     </View>
-                    {item.name ? (
-                      <Text style={[styles.reciterArabicName, { color: colors.textMuted }]}>
-                        {item.name}
-                      </Text>
-                    ) : null}
-                  </View>
-                  {isSelected && (
-                    <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
-                  )}
-                </TouchableOpacity>
-              );
-            }}
-          />
+                    <View style={styles.reciterTrailing}>
+                      {isSelected ? (
+                        <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
+                      ) : (
+                        <Ionicons name="ellipse-outline" size={20} color={colors.borderSubtle} />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
         </View>
       </Modal>
 
@@ -1756,63 +1709,51 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 40,
   },
+  modalContentWrap: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+  },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 16,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  modalHeaderLeft: {
+    flex: 1,
+  },
+  modalEyebrow: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 2,
   },
   modalTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
   },
   closeBtn: {
-    padding: 6,
-  },
-  reciterList: {
-    paddingHorizontal: 20,
-  },
-  reciterRow: {
-    flexDirection: 'row',
+    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  reciterInfo: {
-    flex: 1,
-  },
-  reciterEngName: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 15,
-  },
-  reciterArabicName: {
-    fontFamily: 'Amiri_400Regular',
-    fontSize: 14,
-    marginTop: 2,
-  },
-  inlineLangTag: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-    borderWidth: 1,
-    marginLeft: 4,
-  },
-  inlineLangTagText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 9,
+    justifyContent: 'center',
   },
   reciterSearchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     marginHorizontal: 20,
     marginTop: 12,
-    marginBottom: 8,
+    marginBottom: 12,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
     borderWidth: 1,
     gap: 8,
   },
@@ -1820,21 +1761,45 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Manrope_400Regular',
     fontSize: 14,
+    paddingVertical: 0,
   },
-  reciterFilterChipScroll: {
+  reciterList: {
     paddingHorizontal: 20,
-    gap: 8,
-    paddingBottom: 10,
+    paddingBottom: 32,
   },
-  reciterFilterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
+  reciterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 56,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    marginBottom: 4,
   },
-  reciterFilterChipText: {
-    fontFamily: 'Manrope_500Medium',
+  reciterInfo: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  reciterEngName: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 15,
+  },
+  reciterCountry: {
+    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
+    marginTop: 2,
+  },
+  reciterArabicName: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 14,
+    marginTop: 2,
+  },
+  reciterTrailing: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
   },
   reciterTitleRow: {
     flexDirection: 'row',
