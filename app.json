@@ -59,7 +59,8 @@
           "locationWhenInUsePermission": "Location is used to calculate prayer times, Qibla direction, and find nearby mosques."
         }
       ],
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-audio"
     ]
   }
 }

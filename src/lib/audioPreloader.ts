@@ -1,7 +1,7 @@
-import { Audio } from 'expo-av';
+import { AudioPlayer, createAudioPlayer, preload } from 'expo-audio';
 
 export interface PreloadCacheEntry {
-  sound: Audio.Sound;
+  player: AudioPlayer;
   url: string;
   lastAccessedAt: number;
 }
@@ -17,11 +17,11 @@ const MAX_CACHE_SIZE = 6;
 const MAX_CONCURRENT_PRELOADS = 2;
 const IN_FLIGHT_TIMEOUT_MS = 3000;
 
-// LRU Cache of loaded Sound objects keyed by audio URL
+// LRU Cache of loaded AudioPlayer objects keyed by audio URL
 const cache = new Map<string, PreloadCacheEntry>();
 
 // Active in-flight preload promises
-const inFlight = new Map<string, Promise<Audio.Sound | null>>();
+const inFlight = new Map<string, Promise<AudioPlayer | null>>();
 
 // Queue of URLs waiting to be preloaded
 let pendingQueue: string[] = [];
@@ -37,7 +37,7 @@ let isStopped = false;
  * If currently downloading in-flight, it awaits the in-flight download (up to 3000ms).
  * Returns null if not preloaded or if loading failed.
  */
-export async function takePreloadedSound(url: string): Promise<Audio.Sound | null> {
+export async function takePreloadedSound(url: string): Promise<AudioPlayer | null> {
   // Remove from pending queue if it hasn't started yet
   pendingQueue = pendingQueue.filter((u) => u !== url);
 
@@ -45,7 +45,7 @@ export async function takePreloadedSound(url: string): Promise<Audio.Sound | nul
   const cached = cache.get(url);
   if (cached) {
     cache.delete(url);
-    return cached.sound;
+    return cached.player;
   }
 
   // 2. Currently downloading in-flight
@@ -55,10 +55,10 @@ export async function takePreloadedSound(url: string): Promise<Audio.Sound | nul
       const timeoutPromise = new Promise<null>((resolve) =>
         setTimeout(() => resolve(null), IN_FLIGHT_TIMEOUT_MS)
       );
-      const sound = await Promise.race([inFlightPromise, timeoutPromise]);
-      if (sound) {
+      const player = await Promise.race([inFlightPromise, timeoutPromise]);
+      if (player) {
         cache.delete(url);
-        return sound;
+        return player;
       }
     } catch {
       return null;
@@ -94,7 +94,9 @@ export function enqueuePreloadUrls(urls: string[]): void {
   for (const [cachedUrl, entry] of cache.entries()) {
     if (!targetSet.has(cachedUrl)) {
       cache.delete(cachedUrl);
-      entry.sound.unloadAsync().catch(() => {});
+      try {
+        entry.player.remove();
+      } catch {}
     }
   }
 
@@ -130,15 +132,16 @@ async function runWorker(): Promise<void> {
 
       const preloadPromise = (async () => {
         try {
-          const { sound } = await Audio.Sound.createAsync(
-            { uri: url },
-            { shouldPlay: false, volume: 1.0 },
-            undefined,
-            false
-          );
+          // Warm native buffer
+          preload({ uri: url }).catch(() => {});
+
+          const player = createAudioPlayer({ uri: url }, { updateInterval: 250 });
+          player.volume = 1.0;
 
           if (isStopped) {
-            await sound.unloadAsync().catch(() => {});
+            try {
+              player.remove();
+            } catch {}
             return null;
           }
 
@@ -156,17 +159,19 @@ async function runWorker(): Promise<void> {
               const evicted = cache.get(oldestKey);
               cache.delete(oldestKey);
               if (evicted) {
-                await evicted.sound.unloadAsync().catch(() => {});
+                try {
+                  evicted.player.remove();
+                } catch {}
               }
             }
           }
 
           cache.set(url, {
-            sound,
+            player,
             url,
             lastAccessedAt: Date.now(),
           });
-          return sound;
+          return player;
         } catch {
           // Preload network or decoding error — silent fallback to on-demand playback
           return null;
@@ -212,7 +217,11 @@ export async function stopAudioPreloading(): Promise<void> {
 
   const entries = Array.from(cache.values());
   cache.clear();
-  await Promise.all(entries.map((e) => e.sound.unloadAsync().catch(() => {})));
+  for (const entry of entries) {
+    try {
+      entry.player.remove();
+    } catch {}
+  }
 }
 
 /**
@@ -222,7 +231,11 @@ export async function clearAudioPreloadCache(): Promise<void> {
   pendingQueue = [];
   const entries = Array.from(cache.values());
   cache.clear();
-  await Promise.all(entries.map((e) => e.sound.unloadAsync().catch(() => {})));
+  for (const entry of entries) {
+    try {
+      entry.player.remove();
+    } catch {}
+  }
 }
 
 /**

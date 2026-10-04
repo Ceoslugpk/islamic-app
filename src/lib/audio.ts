@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { AudioPlayer, AudioStatus, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface AdhanReciter {
@@ -62,7 +62,8 @@ export const ADHAN_RECITERS: AdhanReciter[] = [
   },
 ];
 
-let sound: Audio.Sound | null = null;
+let sound: AudioPlayer | null = null;
+let statusSubscription: { remove: () => void } | null = null;
 let currentPlayingReciterId: string | null = null;
 let activeReciterId = 'default';
 
@@ -112,10 +113,10 @@ export function getCurrentlyPlayingReciterId(): string | null {
 /** Set the app's audio mode so playback works even in silent mode. */
 export async function configureAudio(): Promise<void> {
   try {
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: true,
-      shouldDuckAndroid: true,
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      shouldPlayInBackground: true,
+      interruptionMode: 'duckOthers',
     });
   } catch {
     // ignore
@@ -125,9 +126,13 @@ export async function configureAudio(): Promise<void> {
 /** Stop playback if running. */
 export async function stopAdhan(): Promise<void> {
   try {
+    if (statusSubscription) {
+      statusSubscription.remove();
+      statusSubscription = null;
+    }
     if (sound) {
-      await sound.stopAsync();
-      await sound.unloadAsync();
+      sound.pause();
+      sound.remove();
       sound = null;
     }
   } catch {
@@ -174,52 +179,61 @@ export async function playAdhan(reciterId?: string): Promise<void> {
   currentPlayingReciterId = reciter.id;
   notifyListeners();
 
-  const onPlaybackStatusUpdate = (status: any) => {
+  const cleanup = () => {
+    if (statusSubscription) {
+      statusSubscription.remove();
+      statusSubscription = null;
+    }
+    if (sound) {
+      try {
+        sound.remove();
+      } catch {}
+      sound = null;
+    }
+  };
+
+  const onPlaybackStatusUpdate = (status: AudioStatus) => {
     if (status.isLoaded) {
       if (status.didJustFinish) {
         currentPlayingReciterId = null;
         notifyListeners();
-        if (sound) {
-          sound.unloadAsync().catch(() => {});
-          sound = null;
-        }
+        cleanup();
       }
     } else if (status.error) {
       currentPlayingReciterId = null;
       notifyListeners();
+      cleanup();
     }
   };
 
   try {
     if (reciter.id === 'default' || !reciter.url) {
       // Bundled chime
-      const { sound: s } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/adhan_chime.wav'),
-        { shouldPlay: true, volume: 1.0 },
-        onPlaybackStatusUpdate
-      );
+      const s = createAudioPlayer(require('../../assets/sounds/adhan_chime.wav'));
+      s.volume = 1.0;
+      statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
+      s.play();
       sound = s;
     } else {
       // Remote verified MP3 URL with offline fallback
       try {
-        const { sound: s } = await Audio.Sound.createAsync(
-          { uri: reciter.url },
-          { shouldPlay: true, volume: 1.0 },
-          onPlaybackStatusUpdate
-        );
+        const s = createAudioPlayer({ uri: reciter.url });
+        s.volume = 1.0;
+        statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
+        s.play();
         sound = s;
-      } catch (remoteError) {
+      } catch {
         // Fallback to bundled chime if remote network fails
-        const { sound: s } = await Audio.Sound.createAsync(
-          require('../../assets/sounds/adhan_chime.wav'),
-          { shouldPlay: true, volume: 1.0 },
-          onPlaybackStatusUpdate
-        );
+        const s = createAudioPlayer(require('../../assets/sounds/adhan_chime.wav'));
+        s.volume = 1.0;
+        statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
+        s.play();
         sound = s;
       }
     }
-  } catch (e) {
+  } catch {
     currentPlayingReciterId = null;
     notifyListeners();
+    cleanup();
   }
 }
