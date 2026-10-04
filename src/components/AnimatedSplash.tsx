@@ -71,38 +71,38 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
     }
 
     const timings: Array<[number, () => void]> = [];
-    // Safety fallback: if anything prevents animation sequence from completing, ensure app reveals within 1200ms
+    // Safety fallback: if anything prevents animation sequence from completing, ensure app reveals within 1600ms
     const safetyTimer = setTimeout(() => {
       onDone();
-    }, 1200);
+    }, 1600);
     timings.push([1, () => clearTimeout(safetyTimer)]);
 
-    // 0-200ms: slit appears (animates height and opacity; height requires useNativeDriver: false)
+    // 0-260ms: slit appears (animates height and opacity; height requires useNativeDriver: false)
     const slitAnim = Animated.timing(slit, {
       toValue: 1,
-      duration: 200,
+      duration: 260,
       useNativeDriver: false,
       easing: Easing.out(Easing.quad),
     });
-    // 200-500ms: grow outward from the slit (animates SVG x & width; requires useNativeDriver: false)
+    // 260-650ms: grow outward from the slit (animates SVG x & width; requires useNativeDriver: false)
     const growAnim = Animated.timing(grow, {
       toValue: 1,
-      duration: 300,
+      duration: 390,
       useNativeDriver: false,
       easing: Easing.out(Easing.cubic),
     });
-    // 500-750ms: hold + wordmark "ISLAMIC" appears
-    // 750-900ms: light sweep across the logo once (animates left property; requires useNativeDriver: false)
+    // 650-975ms: hold + wordmark "ISLAMIC" appears
+    // 975-1175ms: light sweep across the logo once (animates left property; requires useNativeDriver: false)
     const sweepAnim = Animated.timing(sweep, {
       toValue: 1,
-      duration: 150,
+      duration: 200,
       useNativeDriver: false,
       easing: Easing.inOut(Easing.sin),
     });
-    // 900-1000ms: fade into Today (animates View opacity; native driver supported)
+    // 1175-1335ms: fade into Today (animates View opacity; native driver supported)
     const fadeAnim = Animated.timing(fadeOut, {
       toValue: 0,
-      duration: 120,
+      duration: 160,
       useNativeDriver: USE_NATIVE_DRIVER,
     });
 
@@ -116,10 +116,10 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
                 clearTimeout(safetyTimer);
                 onDone();
               });
-            }, 120);
+            }, 160);
             timings.push([1, () => clearTimeout(hold2)]);
           });
-        }, 250);
+        }, 325);
         timings.push([1, () => clearTimeout(hold)]);
       });
     });
