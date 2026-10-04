@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -7,6 +7,11 @@ import {
   RefreshControl,
   TouchableOpacity,
   useWindowDimensions,
+  Animated,
+  Platform,
+  AccessibilityInfo,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -54,6 +59,7 @@ import { PrayerTimeline } from '../components/PrayerTimeline';
 import { ContinueReadingCard } from '../components/ContinueReadingCard';
 import { DailyContentRail } from '../components/DailyContentRail';
 import { QuickActionsStrip } from '../components/QuickActionsStrip';
+import { CompactPrayerBar } from '../components/CompactPrayerBar';
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -76,6 +82,22 @@ const PRAYER_ARABIC: Record<string, string> = {
 function parseHm(hm: string): number {
   const [h, m] = hm.split(':').map(Number);
   return (h || 0) * 60 + (m || 0);
+}
+
+const USE_NATIVE_DRIVER = Platform.OS !== 'web';
+
+function checkReducedMotion(cb: (reduced: boolean) => void) {
+  if (Platform.OS === 'web') {
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      cb(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+      return;
+    }
+    cb(false);
+    return;
+  }
+  AccessibilityInfo.isReduceMotionEnabled()
+    .then((val) => cb(!!val))
+    .catch(() => cb(false));
 }
 
 export interface HomeScreenProps {
@@ -289,6 +311,130 @@ export default function HomeScreen({
     return PRAYER_ARABIC[next.name] || 'الفَجْر';
   }, [next]);
 
+  const [reducedMotion, setReducedMotion] = useState(false);
+  useEffect(() => {
+    checkReducedMotion(setReducedMotion);
+  }, []);
+
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<ScrollView>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      if (y > 40 && !isScrolled) {
+        setIsScrolled(true);
+      } else if (y <= 40 && isScrolled) {
+        setIsScrolled(false);
+      }
+    },
+    [isScrolled]
+  );
+
+  // 1. Greeting header (large Today + Good morning) fades & shifts up (0-80px)
+  const greetingOpacity = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  const greetingTranslateY = scrollY.interpolate({
+    inputRange: [0, 80],
+    outputRange: [0, reducedMotion ? 0 : -14],
+    extrapolate: 'clamp',
+  });
+
+  // 2. Prayer Hero card container subtle scale compression (0-140px)
+  const heroCardScale = scrollY.interpolate({
+    inputRange: [0, 140],
+    outputRange: [1, reducedMotion ? 1 : 0.96],
+    extrapolate: 'clamp',
+  });
+
+  // 3. Hero Date eyebrow (Weekday · Hijri date): opacity 1→0 (0-60px)
+  const eyebrowOpacity = scrollY.interpolate({
+    inputRange: [0, 60],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  const eyebrowTranslateY = scrollY.interpolate({
+    inputRange: [0, 60],
+    outputRange: [0, reducedMotion ? 0 : -8],
+    extrapolate: 'clamp',
+  });
+
+  // 4. Arabic prayer name: opacity 1→0 (0-70px)
+  const arabicOpacity = scrollY.interpolate({
+    inputRange: [0, 70],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  const arabicTranslateY = scrollY.interpolate({
+    inputRange: [0, 70],
+    outputRange: [0, reducedMotion ? 0 : -10],
+    extrapolate: 'clamp',
+  });
+
+  // 5. English prayer name: opacity 1→0 (0-85px)
+  const englishOpacity = scrollY.interpolate({
+    inputRange: [0, 85],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  const englishTranslateY = scrollY.interpolate({
+    inputRange: [0, 85],
+    outputRange: [0, reducedMotion ? 0 : -12],
+    extrapolate: 'clamp',
+  });
+
+  // 6. Big time: translateY 0→-30, scale 1→0.88, opacity 1→0 (0-120px)
+  const bigTimeOpacity = scrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  const bigTimeTranslateY = scrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [0, reducedMotion ? 0 : -30],
+    extrapolate: 'clamp',
+  });
+  const bigTimeScale = scrollY.interpolate({
+    inputRange: [0, 120],
+    outputRange: [1, reducedMotion ? 1 : 0.88],
+    extrapolate: 'clamp',
+  });
+
+  // 7. Hero countdown (big): fade/translate up into compact bar (20-100px)
+  const countdownOpacity = scrollY.interpolate({
+    inputRange: [20, 100],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+  const countdownTranslateY = scrollY.interpolate({
+    inputRange: [20, 100],
+    outputRange: [0, reducedMotion ? 0 : -20],
+    extrapolate: 'clamp',
+  });
+
+  // 8. Hero transition hint: opacity 1→0 (0-60px)
+  const transitionOpacity = scrollY.interpolate({
+    inputRange: [0, 60],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  // 9. Compact bar: cross-fades IN (opacity 0→1 over 80-150px), slight translateY (-8→0)
+  const compactBarOpacity = scrollY.interpolate({
+    inputRange: [80, 150],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+  const compactBarTranslateY = scrollY.interpolate({
+    inputRange: [80, 150],
+    outputRange: [reducedMotion ? 0 : -8, 0],
+    extrapolate: 'clamp',
+  });
+
   if (loading) {
     return (
       <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
@@ -376,12 +522,43 @@ export default function HomeScreen({
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
-      <ScrollView
+      {/* Pinned persistent compact prayer bar on scroll */}
+      <Animated.View
+        style={[
+          styles.pinnedBarWrap,
+          {
+            opacity: compactBarOpacity,
+            transform: [{ translateY: compactBarTranslateY }],
+          },
+        ]}
+        pointerEvents={isScrolled ? 'auto' : 'none'}
+      >
+        <CompactPrayerBar
+          prayerName={next ? next.name : 'Fajr'}
+          prayerTime={formatTime(next ? next.time : data.timings.Fajr, fmt)}
+          targetTime={next ? next.time : data.timings.Fajr}
+          onPress={() => {
+            haptic('light');
+            scrollRef.current?.scrollTo({ y: 0, animated: true });
+          }}
+        />
+      </Animated.View>
+
+      <Animated.ScrollView
+        ref={scrollRef as any}
         style={styles.scroll}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: 40 },
         ]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          {
+            useNativeDriver: USE_NATIVE_DRIVER,
+            listener: handleScroll,
+          }
+        )}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -401,13 +578,20 @@ export default function HomeScreen({
         <GeometricPattern size={260} opacity={0.04} style={styles.patternTop} />
         <IslamicPullToRefreshIndicator refreshing={refreshing} />
 
-        {/* Section Header: Eyebrow Today + Greeting */}
-        <SectionHeader
-          eyebrow="Today"
-          title={greeting}
-          subtitle={`${locDisplay} · ${hijriLabel} (${data.readable || data.gregorian})`}
-          style={styles.sectionHeader}
-        />
+        {/* Section Header: Eyebrow Today + Greeting (animates on scroll) */}
+        <Animated.View
+          style={{
+            opacity: greetingOpacity,
+            transform: [{ translateY: greetingTranslateY }],
+          }}
+        >
+          <SectionHeader
+            eyebrow="Today"
+            title={greeting}
+            subtitle={`${locDisplay} · ${hijriLabel} (${data.readable || data.gregorian})`}
+            style={styles.sectionHeader}
+          />
+        </Animated.View>
 
         {/* Location Permission Note if auto mode enabled but permission denied/unavailable */}
         {settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'unavailable') && (
@@ -422,68 +606,110 @@ export default function HomeScreen({
         )}
 
         {/* 1. Prayer Hero (Visual Centerpiece with time-of-day atmosphere & smart countdown) */}
-        <Card style={styles.prayerHeroCard} padded={false}>
-          <PrayerHeroAtmosphere
-            segment={currentSegment}
-            size={isCompact ? 280 : 340}
-          />
-          <View style={styles.heroContent}>
-            {/* Line 1: Weekday · Hijri date */}
-            <Text style={[styles.heroEyebrow, { color: colors.textMuted }]}>
-              {weekdayHijriLabel}
-            </Text>
+        <Animated.View style={{ transform: [{ scale: heroCardScale }] }}>
+          <Card style={styles.prayerHeroCard} padded={false}>
+            <PrayerHeroAtmosphere
+              segment={currentSegment}
+              size={isCompact ? 280 : 340}
+            />
+            <View style={styles.heroContent}>
+              {/* Line 1: Weekday · Hijri date */}
+              <Animated.View
+                style={{
+                  opacity: eyebrowOpacity,
+                  transform: [{ translateY: eyebrowTranslateY }],
+                }}
+              >
+                <Text style={[styles.heroEyebrow, { color: colors.textMuted }]}>
+                  {weekdayHijriLabel}
+                </Text>
+              </Animated.View>
 
-            {/* Line 2: Arabic prayer name */}
-            <ArabicText
-              size={isCompact ? 26 : 30}
-              align="center"
-              style={styles.heroArabicName}
-            >
-              {nextArabicName}
-            </ArabicText>
+              {/* Line 2: Arabic prayer name */}
+              <Animated.View
+                style={{
+                  opacity: arabicOpacity,
+                  transform: [{ translateY: arabicTranslateY }],
+                }}
+              >
+                <ArabicText
+                  size={isCompact ? 26 : 30}
+                  align="center"
+                  style={styles.heroArabicName}
+                >
+                  {nextArabicName}
+                </ArabicText>
+              </Animated.View>
 
-            {/* Line 3: English name */}
-            <Text style={[styles.heroEnglishName, { color: colors.textPrimary }]}>
-              {next ? next.name : 'Fajr'}
-            </Text>
+              {/* Line 3: English name */}
+              <Animated.View
+                style={{
+                  opacity: englishOpacity,
+                  transform: [{ translateY: englishTranslateY }],
+                }}
+              >
+                <Text style={[styles.heroEnglishName, { color: colors.textPrimary }]}>
+                  {next ? next.name : 'Fajr'}
+                </Text>
+              </Animated.View>
 
-            {/* Line 4: Very large TIME */}
-            <Text
-              style={[
-                styles.heroTime,
-                {
-                  color: colors.textPrimary,
-                  fontSize: isCompact ? 58 : 68,
-                  lineHeight: isCompact ? 64 : 74,
-                },
-              ]}
-            >
-              {formatTime(next ? next.time : data.timings.Fajr, fmt)}
-            </Text>
+              {/* Line 4: Very large TIME */}
+              <Animated.View
+                style={{
+                  opacity: bigTimeOpacity,
+                  transform: [
+                    { translateY: bigTimeTranslateY },
+                    { scale: bigTimeScale },
+                  ],
+                }}
+              >
+                <Text
+                  style={[
+                    styles.heroTime,
+                    {
+                      color: colors.textPrimary,
+                      fontSize: isCompact ? 58 : 68,
+                      lineHeight: isCompact ? 64 : 74,
+                    },
+                  ]}
+                >
+                  {formatTime(next ? next.time : data.timings.Fajr, fmt)}
+                </Text>
+              </Animated.View>
 
-            {/* Line 5: Tabular figures countdown with digit transitions */}
-            <View style={styles.heroCountdownWrap}>
-              <PrayerCountdown
-                targetTime={next ? next.time : data.timings.Fajr}
-                color={colors.accent}
-                separatorColor={colors.textMuted}
-                fontSize={18}
-              />
+              {/* Line 5: Tabular figures countdown with digit transitions */}
+              <Animated.View
+                style={{
+                  opacity: countdownOpacity,
+                  transform: [{ translateY: countdownTranslateY }],
+                }}
+              >
+                <View style={styles.heroCountdownWrap}>
+                  <PrayerCountdown
+                    targetTime={next ? next.time : data.timings.Fajr}
+                    color={colors.accent}
+                    separatorColor={colors.textMuted}
+                    fontSize={18}
+                  />
+                </View>
+              </Animated.View>
+
+              {/* Line 6: Divider + transition hint */}
+              <Animated.View style={{ opacity: transitionOpacity }}>
+                <View style={styles.heroTransitionWrap}>
+                  <View
+                    style={[styles.heroDivider, { backgroundColor: colors.borderSubtle }]}
+                  />
+                  <Text style={[styles.heroTransitionText, { color: colors.textMuted }]}>
+                    {currentSegment}{' '}
+                    <Text style={{ color: colors.accent }}>→</Text>{' '}
+                    {next ? next.name : 'Fajr'}
+                  </Text>
+                </View>
+              </Animated.View>
             </View>
-
-            {/* Line 6: Divider + transition hint */}
-            <View style={styles.heroTransitionWrap}>
-              <View
-                style={[styles.heroDivider, { backgroundColor: colors.borderSubtle }]}
-              />
-              <Text style={[styles.heroTransitionText, { color: colors.textMuted }]}>
-                {currentSegment}{' '}
-                <Text style={{ color: colors.accent }}>→</Text>{' '}
-                {next ? next.name : 'Fajr'}
-              </Text>
-            </View>
-          </View>
-        </Card>
+          </Card>
+        </Animated.View>
 
         {/* 2. Prayer Timeline with status dots and integrated Salah tracker footer */}
         <PrayerTimeline
@@ -584,13 +810,21 @@ export default function HomeScreen({
         <Text style={[styles.methodNote, { color: colors.textMuted }]}>
           {data.method} · {data.timezone}
         </Text>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  pinnedBarWrap: {
+    position: 'absolute',
+    top: 10,
+    left: 20,
+    right: 20,
+    zIndex: 100,
+    elevation: 8,
+  },
   scroll: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 14 },
