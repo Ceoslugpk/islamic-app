@@ -34,17 +34,73 @@ const FETCH_TIMEOUT_MS = 12000;
 const PRAYER_ORDER = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
 const ANY_PRAYER_RE = /\b(fajr|dhuhr|asr|maghrib|isha)\b/i;
 
-/** Static offline fallback: the "After Prayer" entry already bundled with the app. */
-export const FALLBACK_AFTER_PRAYER_DUAS: AfterPrayerDua[] = DUAS_DATA.filter(
-  (dua) => dua.category === 'After Prayer'
-).map((dua) => ({
-  id: dua.id,
-  arabic: dua.arabic,
-  transliteration: dua.transliteration,
-  translation: dua.translation,
-  source: dua.reference,
-  reference: dua.reference,
-}));
+/** Static offline fallback: 8 authentic after-prayer adhkar from Hisn al-Muslim / Sunnah. */
+export const FALLBACK_AFTER_PRAYER_DUAS: AfterPrayerDua[] = [
+  {
+    id: 'after-prayer-1',
+    arabic: 'أَسْتَغْفِرُ اللهَ (ثَلاثاً)، اللَّهُمَّ أَنْتَ السَّلامُ وَمِنْكَ السَّلامُ، تَبَارَكْتَ يَا ذَا الْجَلالِ وَالإِكْرَامِ',
+    transliteration: 'Astaghfirullāh (three times). Allāhumma antas-salāmu wa minkas-salām, tabārakta yā dhal-jalāli wal-ikrām.',
+    translation: 'I ask Allah for forgiveness (three times). O Allah, You are Peace and from You comes peace. Blessed are You, O Possessor of majesty and honor.',
+    source: 'Sahih Muslim 591',
+    reference: 'Sahih Muslim 591',
+  },
+  {
+    id: 'after-prayer-2',
+    arabic: 'لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ، وَلَا مُعْطِيَ لِمَا مَنَعْتَ، وَلَا يَنْفَعُ ذَا الْجَدِّ مِنْكَ الْجَدُّ',
+    transliteration: 'Lā ilāha illallāhu waḥdahū lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Allāhumma lā māniʿa limā aʿṭayta, wa lā muʿṭiya limā manaʿta, wa lā yanfaʿu dhal-jaddi minkal-jadd.',
+    translation: 'None has the right to be worshipped except Allah alone, without partner. To Him belongs all sovereignty and praise, and He is over all things omnipotent. O Allah, none can prevent what You give, and none can give what You withhold, nor can the fortune of the wealthy avail them against You.',
+    source: 'Sahih al-Bukhari 844, Sahih Muslim 593',
+    reference: 'Sahih al-Bukhari 844, Sahih Muslim 593',
+  },
+  {
+    id: 'after-prayer-3',
+    arabic: 'لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللهِ، لَا إِلَهَ إِلَّا اللهُ، وَلَا نَعْبُدُ إِلَّا إِيَّاهُ، لَهُ النِّعْمَةُ وَلَهُ الْفَضْلُ وَلَهُ الثَّنَاءُ الْحَسَنُ، لَا إِلَهَ إِلَّا اللهُ مُخْلِصِينَ لَهُ الدِّينَ وَلَوْ كَرِهَ الْكَافِرُونَ',
+    transliteration: 'Lā ilāha illallāhu waḥdahū lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr. Lā ḥawla wa lā quwwata illā billāh, lā ilāha illallāh, wa lā naʿbudu illā iyyāh, lahun-niʿmatu wa lahul-faḍlu wa lahu-thanāʾul-ḥasan, lā ilāha illallāhu mukhliṣīna lahud-dīna wa law karihal-kāfirūn.',
+    translation: 'None has the right to be worshipped except Allah alone, without partner. To Him belongs all sovereignty and praise, and He is over all things omnipotent. There is no power and no might except through Allah. None has the right to be worshipped except Allah, and we worship none but Him. To Him belongs blessing, majesty, and worthy praise.',
+    source: 'Sahih Muslim 594',
+    reference: 'Sahih Muslim 594',
+  },
+  {
+    id: 'after-prayer-4',
+    arabic: 'سُبْحَانَ اللهِ (٣٣)، وَالْحَمْدُ للهِ (٣٣)، وَاللهُ أَكْبَرُ (٣٣)، لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',
+    transliteration: 'Subḥānallāh (33x), wal-ḥamdu lillāh (33x), wallāhu akbar (33x). Lā ilāha illallāhu waḥdahū lā sharīka lah, lahul-mulku wa lahul-ḥamd, wa huwa ʿalā kulli shayʾin qadīr.',
+    translation: 'Glory be to Allah (33 times), praise be to Allah (33 times), Allah is the greatest (33 times). None has the right to be worshipped except Allah alone, without partner, to Him belongs all sovereignty and praise, and He is over all things omnipotent.',
+    source: 'Sahih Muslim 597',
+    reference: 'Sahih Muslim 597',
+  },
+  {
+    id: 'after-prayer-5',
+    arabic: '﴿اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ لَّهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ مَن ذَا الَّذِي يَشْفَعُ عِندَهُ إِلَّا بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ بِشَيْءٍ مِّنْ عِلْمِهِ إِلَّا بِمَا شَاءَ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ وَلَا يَئُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ﴾',
+    transliteration: 'Allāhu lā ilāha illā huwal-ḥayyul-qayyūm, lā taʾkhudhuhū sinatuw-wa lā nawm, lahū mā fis-samāwāti wa mā fil-arḍ, man dhal-ladhī yashfaʿu ʿindahū illā bi-idhnih, yaʿlamu mā bayna aydīhim wa mā khalfahum, wa lā yuḥīṭūna bi-shayʾim-min ʿilmihī illā bimā shāʾ, wasiʿa kursiyyuhus-samāwāti wal-arḍ, wa lā yaʾūduhū ḥifẓuhumā, wa huwal-ʿaliyyul-ʿaẓīm.',
+    translation: 'Allah — there is no deity except Him, the Ever-Living, the Sustainer of existence. Neither drowsiness overtakes Him nor sleep... Whoever recites Ayat al-Kursi after every obligatory prayer, nothing will prevent him from entering Paradise except death.',
+    source: 'Quran 2:255 / Sunan an-Nasa\'i (Al-Kubra 9848)',
+    reference: 'Quran 2:255',
+  },
+  {
+    id: 'after-prayer-6',
+    arabic: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ ﴿قُلْ هُوَ اللَّهُ أَحَدٌ...﴾ وَ ﴿قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ...﴾ وَ ﴿قُلْ أَعُوذُ بِرَبِّ النَّاسِ...﴾',
+    transliteration: 'Surah Al-Ikhlas, Surah Al-Falaq, and Surah An-Nas (Recited after each prayer, and thrice after Fajr and Maghrib).',
+    translation: 'Recite the three protective Surahs (Al-Ikhlas, Al-Falaq, An-Nas) after every prayer.',
+    source: 'Sunan Abi Dawud 1523, Sunan an-Nasa\'i 1336',
+    reference: 'Sunan Abi Dawud 1523',
+  },
+  {
+    id: 'after-prayer-7',
+    arabic: 'لَا إِلَهَ إِلَّا اللهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ يُحْيِي وَيُمِيتُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ (عَشْرَ مَرَّاتٍ بَعْدَ الْمَغْرِبِ وَالصُّبْحِ)',
+    transliteration: 'Lā ilāha illallāhu waḥdahū lā sharīka lah, lahul-mulku wa lahul-ḥamd, yuḥyī wa yumītu wa huwa ʿalā kulli shayʾin qadīr (10x after Maghrib and Fajr).',
+    translation: 'None has the right to be worshipped except Allah alone, without partner. To Him belongs all kingdom and praise, He gives life and causes death, and He is over all things omnipotent. (Recite 10 times after Fajr and Maghrib).',
+    source: 'Jami\' at-Tirmidhi 3474',
+    reference: 'Jami\' at-Tirmidhi 3474',
+  },
+  {
+    id: 'after-prayer-8',
+    arabic: 'اللَّهُمَّ إِنِّي أَسْأَلُكَ عِلْمًا نَافِعًا، وَرِزْقًا طَيِّبًا، وَعَمَلًا مُتَقَبَّلًا (بَعْدَ صَلَاةِ الْفَجْرِ)',
+    transliteration: 'Allāhumma innī as-aluka ʿilman nāfiʿan, wa rizqan ṭayyiban, wa ʿamalan mutaqabbalan (after Fajr prayer).',
+    translation: 'O Allah, I ask You for beneficial knowledge, good and pure provision, and deeds that are accepted. (Said after Fajr prayer).',
+    source: 'Sunan Ibn Majah 925',
+    reference: 'Sunan Ibn Majah 925',
+  },
+];
 
 interface RawDua {
   number?: string | number;
@@ -255,4 +311,25 @@ export function selectAfterPrayerDua(
     prayer as (typeof PRAYER_ORDER)[number]
   );
   return pool[(position >= 0 ? position : 0) % pool.length];
+}
+
+/**
+ * Returns all after-prayer duas, placing any dua specifically recommended
+ * for the given prayer first in the swipe order.
+ */
+export function getAllAfterPrayerDuas(
+  duas: AfterPrayerDua[],
+  prayer?: string | null
+): AfterPrayerDua[] {
+  const list = duas && duas.length > 0 ? duas : FALLBACK_AFTER_PRAYER_DUAS;
+  if (!prayer) return list;
+
+  const prayerRe = new RegExp(`\\b${prayer}\\b`, 'i');
+  const matchedIdx = list.findIndex((dua) => prayerRe.test(searchable(dua)));
+
+  if (matchedIdx > 0) {
+    const matched = list[matchedIdx];
+    return [matched, ...list.slice(0, matchedIdx), ...list.slice(matchedIdx + 1)];
+  }
+  return list;
 }

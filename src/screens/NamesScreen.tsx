@@ -9,11 +9,11 @@ import {
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
-import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { EmptyState } from '../components/EmptyState';
 import {
@@ -142,35 +142,67 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
     const verseLabel = formatVerses(item.verses);
 
     return (
-      <View style={styles.row}>
-        {/* Number Badge */}
-        <View
-          style={[
-            styles.numberBox,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
-            },
-          ]}
-        >
-          <Text style={[styles.numberText, { color: colors.textSecondary }]}>
-            {item.number}
-          </Text>
-        </View>
-
-        {/* Main Info */}
-        <View style={styles.textCol}>
-          <View style={styles.topLine}>
+      <View
+        style={[
+          styles.card,
+          {
+            backgroundColor: colors.bgSurface,
+            borderColor: colors.borderSubtle,
+            padding: isCompact ? 14 : 16,
+          },
+        ]}
+      >
+        {/* Top Header Row: Circular Number Badge & Prominent Arabic Name */}
+        <View style={styles.cardTopRow}>
+          <View
+            style={[
+              styles.numberBadge,
+              {
+                backgroundColor: colors.accentDim,
+                width: isCompact ? 30 : 32,
+                height: isCompact ? 30 : 32,
+              },
+            ]}
+          >
             <Text
-              style={[styles.translit, { color: colors.textPrimary }]}
-              numberOfLines={1}
+              style={[
+                styles.numberText,
+                {
+                  color: colors.accent,
+                  fontSize: isCompact ? 13 : 14,
+                },
+              ]}
             >
-              {item.transliteration}
+              {item.number}
             </Text>
-            <ArabicText size={23} numberOfLines={1} style={styles.arabicText}>
+          </View>
+
+          <View style={styles.arabicWrap}>
+            <ArabicText
+              size={isCompact ? 23 : 27}
+              align="right"
+              numberOfLines={1}
+              style={styles.arabicName}
+            >
               {item.arabic}
             </ArabicText>
           </View>
+        </View>
+
+        {/* Name Details */}
+        <View style={styles.cardContent}>
+          <Text
+            style={[
+              styles.translit,
+              {
+                color: colors.textPrimary,
+                fontSize: isCompact ? 15 : 16,
+              },
+            ]}
+            numberOfLines={1}
+          >
+            {item.transliteration}
+          </Text>
 
           {item.name ? (
             <Text style={[styles.localName, { color: colors.accent }]} numberOfLines={1}>
@@ -178,24 +210,63 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             </Text>
           ) : null}
 
-          <Text style={[styles.meaning, { color: colors.textMuted }]} numberOfLines={2}>
+          <Text
+            style={[
+              styles.meaning,
+              {
+                color: colors.textSecondary,
+                fontSize: isCompact ? 12.5 : 13.5,
+              },
+            ]}
+            numberOfLines={3}
+          >
             {item.meaning}
           </Text>
 
           {item.note ? (
-            <Text style={[styles.note, { color: colors.textSecondary }]} numberOfLines={2}>
+            <Text
+              style={[
+                styles.note,
+                {
+                  color: colors.textMuted,
+                  fontSize: isCompact ? 12 : 13,
+                },
+              ]}
+              numberOfLines={2}
+            >
               {item.note}
             </Text>
           ) : null}
+        </View>
 
-          {verseLabel ? (
-            <View style={styles.metaLine}>
-              <Text style={[styles.verse, { color: colors.textSecondary }]} numberOfLines={1}>
+        {/* Verse Reference Footer Tag */}
+        {verseLabel ? (
+          <View style={styles.cardFooter}>
+            <View
+              style={[
+                styles.verseTag,
+                {
+                  backgroundColor: colors.bgBase,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <Ionicons name="book-outline" size={11} color={colors.textMuted} />
+              <Text
+                style={[
+                  styles.verse,
+                  {
+                    color: colors.textMuted,
+                    fontSize: isCompact ? 10 : 10.5,
+                  },
+                ]}
+                numberOfLines={1}
+              >
                 {verseLabel}
               </Text>
             </View>
-          ) : null}
-        </View>
+          </View>
+        ) : null}
       </View>
     );
   };
@@ -221,119 +292,128 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
           title={isProphet ? '99 Names of the Prophet ﷺ' : '99 Names'}
         />
 
-      {/* Language chips (Allah variant only) — single horizontally-scrollable row */}
-      {!isProphet && (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.chipRow}
-        contentContainerStyle={styles.chipRowContent}
-      >
-        {NAMES_LANGUAGES.map((lang) => {
-          const selected = lang.code === language;
-          return (
-            <TouchableOpacity
-              key={lang.code}
-              onPress={() => setNamesLanguage(lang.code)}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: selected ? colors.accent : colors.bgSurface,
-                  borderColor: selected ? colors.accent : colors.borderSubtle,
-                },
-              ]}
-              accessibilityRole="button"
-              accessibilityState={{ selected }}
-              accessibilityLabel={`Show names in ${lang.label}`}
-              hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
-              pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
-              delayPressIn={0}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  { color: selected ? colors.onAccent : colors.textSecondary },
-                ]}
-              >
-                {lang.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-        {loadState === 'loading' ? (
-          <ActivityIndicator size="small" color={colors.accent} style={styles.chipSpinner} />
-        ) : null}
-      </ScrollView>
-      )}
-
-      {/* Search Input */}
-      <View
-        style={[
-          styles.searchBox,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
-          },
-        ]}
-      >
-        <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
-        <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search by name, meaning, or number..."
-          placeholderTextColor={colors.textMuted}
-          style={[styles.searchInput, { color: colors.textPrimary }]}
-          autoCapitalize="none"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-          </TouchableOpacity>
+        {/* Language chips (Allah variant only) — single horizontally-scrollable row */}
+        {!isProphet && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.chipRow}
+            contentContainerStyle={styles.chipRowContent}
+          >
+            {NAMES_LANGUAGES.map((lang) => {
+              const selected = lang.code === language;
+              return (
+                <TouchableOpacity
+                  key={lang.code}
+                  onPress={() => setNamesLanguage(lang.code)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: selected ? colors.accent : colors.bgSurface,
+                      borderColor: selected ? colors.accent : colors.borderSubtle,
+                      height: isCompact ? 30 : 32,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`Show names in ${lang.label}`}
+                  hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+                  pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                  delayPressIn={0}
+                >
+                  <Text
+                    style={[
+                      styles.chipText,
+                      {
+                        color: selected ? colors.onAccent : colors.textSecondary,
+                        fontSize: isCompact ? 11 : 11.5,
+                      },
+                    ]}
+                  >
+                    {lang.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+            {loadState === 'loading' ? (
+              <ActivityIndicator size="small" color={colors.accent} style={styles.chipSpinner} />
+            ) : null}
+          </ScrollView>
         )}
-      </View>
 
-      {loadState === 'offline' ? (
-        <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
-          Offline — showing the bundled list.
-        </Text>
-      ) : null}
+        {/* Search Input */}
+        <View
+          style={[
+            styles.searchBox,
+            {
+              backgroundColor: colors.bgSurface,
+              borderColor: colors.borderSubtle,
+              height: isCompact ? 36 : 38,
+            },
+          ]}
+        >
+          <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search by name, meaning, or number..."
+            placeholderTextColor={colors.textMuted}
+            style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 12.5 : 13 }]}
+            autoCapitalize="none"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
 
-      {/* Count */}
-      <View style={styles.countRow}>
-        <Text style={[styles.countText, { color: colors.textSecondary }]}>{countLabel}</Text>
-      </View>
+        {loadState === 'offline' ? (
+          <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
+            Offline — showing the bundled list.
+          </Text>
+        ) : null}
 
-      {isLoading && (
+        {/* Count */}
+        <View style={styles.countRow}>
+          <Text style={[styles.countText, { color: colors.textSecondary }]}>{countLabel}</Text>
+        </View>
+
+        {isLoading && (
+          <FlatList
+            data={Array.from({ length: 8 })}
+            keyExtractor={(_, i) => `skeleton-${i}`}
+            renderItem={() => <NameRowSkeleton compact={isCompact} />}
+            ItemSeparatorComponent={() => <View style={{ height: isCompact ? 8 : 10 }} />}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+          />
+        )}
+
+        {/* Names List */}
         <FlatList
-          data={Array.from({ length: 10 })}
-          keyExtractor={(_, i) => `skeleton-${i}`}
-          renderItem={() => <NameRowSkeleton compact={isCompact} />}
-          ItemSeparatorComponent={Hairline}
+          data={filteredNames}
+          keyExtractor={(item) => item.number.toString()}
+          renderItem={renderItem}
+          ItemSeparatorComponent={() => <View style={{ height: isCompact ? 8 : 10 }} />}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          initialNumToRender={12}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews={Platform.OS !== 'web'}
+          ListEmptyComponent={
+            <EmptyState
+              icon="search-outline"
+              title="No names found"
+              subtitle={`No names match "${searchQuery}"`}
+              actionLabel="Clear search"
+              onAction={() => setSearchQuery('')}
+            />
+          }
         />
-      )}
-
-      {/* List */}
-      <FlatList
-        data={filteredNames}
-        keyExtractor={(item) => item.number.toString()}
-        renderItem={renderItem}
-        ItemSeparatorComponent={Hairline}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <EmptyState
-            icon="search-outline"
-            title="No names found"
-            subtitle={`No names match "${searchQuery}"`}
-            actionLabel="Clear search"
-            onAction={() => setSearchQuery('')}
-          />
-        }
-      />
       </View>
     </View>
   );
@@ -373,7 +453,6 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   chip: {
-    height: 34,
     paddingHorizontal: 12,
     borderRadius: 999,
     borderWidth: 1,
@@ -382,7 +461,6 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
   },
   chipSpinner: {
     marginLeft: 2,
@@ -393,7 +471,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 10,
-    height: 38,
     marginBottom: 10,
   },
   searchIcon: {
@@ -402,7 +479,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
     paddingVertical: 0,
   },
   offlineNote: {
@@ -416,7 +492,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    marginBottom: 4,
+    marginBottom: 8,
   },
   countText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -424,81 +500,74 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  sourceText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 10.5,
-    letterSpacing: 0.3,
-    flexShrink: 1,
-    textAlign: 'right',
-  },
   listContent: {
-    paddingBottom: 24,
+    paddingBottom: 32,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: 14,
-    gap: 14,
-  },
-  numberBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 8,
+  card: {
     borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 14,
+    overflow: 'hidden',
   },
-  numberText: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 18,
-  },
-  textCol: {
-    flex: 1,
-    minWidth: 0,
-  },
-  topLine: {
+  cardTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+    marginBottom: 8,
+  },
+  numberBadge: {
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  numberText: {
+    fontFamily: 'Manrope_700Bold',
+    lineHeight: 16,
+  },
+  arabicWrap: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  arabicName: {
+    lineHeight: 34,
+  },
+  cardContent: {
+    gap: 4,
   },
   translit: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 15,
-    flexShrink: 1,
-  },
-  arabicText: {
-    lineHeight: 32,
-    flexShrink: 1,
+    letterSpacing: -0.2,
   },
   localName: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
-    marginTop: 3,
   },
   meaning: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 3,
+    lineHeight: 18,
   },
   note: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 13,
     lineHeight: 18,
-    marginTop: 4,
+    marginTop: 2,
   },
-  metaLine: {
+  cardFooter: {
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    gap: 8,
+  },
+  verseTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
   },
   verse: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
-    letterSpacing: 0.4,
-    textTransform: 'uppercase',
-    flexShrink: 1,
+    fontFamily: 'Manrope_500Medium',
+    letterSpacing: 0.2,
   },
 });

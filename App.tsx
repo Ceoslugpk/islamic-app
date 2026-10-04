@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/lib/theme';
 import { SettingsProvider } from './src/lib/settings';
 import { useEditorialFonts } from './src/lib/fonts';
+import { AnimatedSplash } from './src/components/AnimatedSplash';
 import { useConnectivity } from './src/lib/useConnectivity';
 import { OfflineBanner } from './src/components/OfflineBanner';
 import { parseDeepLink, DeepLinkTarget } from './src/lib/deeplinks';
@@ -710,6 +711,7 @@ function Root() {
 
 export default function App() {
   const [fontsLoaded, fontError] = useEditorialFonts();
+  const [splashDone, setSplashDone] = useState(false);
 
   if (!fontsLoaded && !fontError) {
     return <View style={styles.loading} />;
@@ -719,6 +721,7 @@ export default function App() {
     <SettingsProvider>
       <ThemeProvider>
         <Root />
+        {!splashDone && <AnimatedSplash onDone={() => setSplashDone(true)} />}
       </ThemeProvider>
     </SettingsProvider>
   );

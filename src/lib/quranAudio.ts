@@ -495,6 +495,20 @@ let currentStatus: PlaybackStatus = {
 let currentQueue: PlaylistItem[] = [];
 let currentQueueIndex = -1;
 let isQueueLoaded = false;
+let isInternalQueuePlay = false;
+
+function buildSurahQueue(surahNumber: number): PlaylistItem[] {
+  const count = SURAH_AYAH_COUNTS[surahNumber - 1] || 7;
+  const items: PlaylistItem[] = [];
+  for (let a = 1; a <= count; a++) {
+    items.push({
+      surah: surahNumber,
+      ayah: a,
+      title: `Surah ${surahNumber}:${a}`,
+    });
+  }
+  return items;
+}
 
 function safeLoadQueue(): PlaylistItem[] {
   try {
@@ -988,7 +1002,12 @@ async function advanceAfterAyah(
 ): Promise<void> {
   const settings = safeLoadSettings();
   if (settings.repeatMode === 'one') {
-    await playAyah(arabicReciter, undefined, undefined, arabicReciterName, surah, ayah, isSurahMode);
+    isInternalQueuePlay = true;
+    try {
+      await playAyah(arabicReciter, undefined, undefined, arabicReciterName, surah, ayah, isSurahMode);
+    } finally {
+      isInternalQueuePlay = false;
+    }
     return;
   }
   if (settings.repeatMode === 'all' || settings.autoplayNext) {
@@ -1037,10 +1056,15 @@ export async function switchToLanguageSegment(target: PlaybackSegmentType): Prom
     return true;
   } else {
     // target === 'arabic'
-    if (currentPlayback.type === 'surah' && !isSurahMode) {
-      await playSurah(arabicReciter, undefined, undefined, arabicReciterName, surah);
-    } else {
-      await playAyah(arabicReciter, undefined, undefined, arabicReciterName, surah, ayah, isSurahMode);
+    isInternalQueuePlay = true;
+    try {
+      if (currentPlayback.type === 'surah' && !isSurahMode) {
+        await playSurah(arabicReciter, undefined, undefined, arabicReciterName, surah);
+      } else {
+        await playAyah(arabicReciter, undefined, undefined, arabicReciterName, surah, ayah, isSurahMode);
+      }
+    } finally {
+      isInternalQueuePlay = false;
     }
     return true;
   }
@@ -1219,14 +1243,36 @@ export async function playAyah(
       isSurahMode,
     };
 
-    // Sync queue index if this matches an item in the queue
-    const queue = getAudioQueue();
-    const matchIdx = queue.findIndex(
-      (item) => item.surah === resolvedSurah && (item.ayah === resolvedAyah || item.ayah === undefined)
-    );
-    if (matchIdx >= 0) {
-      currentQueueIndex = matchIdx;
-      notifyQueueListeners();
+    // Queue synchronization:
+    // If not invoked from within an existing queue sequence, build the strict scope queue:
+    // - Surah mode: all ayahs of this surah
+    // - Single ayah: exactly this one ayah
+    if (!isInternalQueuePlay) {
+      if (isSurahMode) {
+        const sQueue = buildSurahQueue(resolvedSurah);
+        const sIdx = Math.max(0, Math.min(sQueue.length - 1, (resolvedAyah || 1) - 1));
+        setAudioQueue(sQueue, sIdx);
+      } else {
+        setAudioQueue(
+          [
+            {
+              surah: resolvedSurah,
+              ayah: resolvedAyah,
+              title: resolvedTitle,
+            },
+          ],
+          0
+        );
+      }
+    } else {
+      const queue = getAudioQueue();
+      const matchIdx = queue.findIndex(
+        (item) => item.surah === resolvedSurah && item.ayah === resolvedAyah
+      );
+      if (matchIdx >= 0) {
+        currentQueueIndex = matchIdx;
+        notifyQueueListeners();
+      }
     }
 
     // Save to recently played
@@ -1275,13 +1321,32 @@ export async function playAyah(
     isSurahMode,
   };
 
-  const queue = getAudioQueue();
-  const matchIdx = queue.findIndex(
-    (item) => item.surah === resolvedSurah && item.ayah === resolvedAyah
-  );
-  if (matchIdx >= 0) {
-    currentQueueIndex = matchIdx;
-    notifyQueueListeners();
+  if (!isInternalQueuePlay) {
+    if (isSurahMode) {
+      const sQueue = buildSurahQueue(resolvedSurah);
+      const sIdx = Math.max(0, Math.min(sQueue.length - 1, (resolvedAyah || 1) - 1));
+      setAudioQueue(sQueue, sIdx);
+    } else {
+      setAudioQueue(
+        [
+          {
+            surah: resolvedSurah,
+            ayah: resolvedAyah,
+            title: resolvedTitle,
+          },
+        ],
+        0
+      );
+    }
+  } else {
+    const queue = getAudioQueue();
+    const matchIdx = queue.findIndex(
+      (item) => item.surah === resolvedSurah && item.ayah === resolvedAyah
+    );
+    if (matchIdx >= 0) {
+      currentQueueIndex = matchIdx;
+      notifyQueueListeners();
+    }
   }
 
   try {
@@ -1345,13 +1410,25 @@ export async function playSurah(
     isSurahMode: false,
   };
 
-  const queue = getAudioQueue();
-  const matchIdx = queue.findIndex(
-    (item) => item.surah === targetSurah && (item.ayah === undefined || item.ayah === null)
-  );
-  if (matchIdx >= 0) {
-    currentQueueIndex = matchIdx;
-    notifyQueueListeners();
+  if (!isInternalQueuePlay) {
+    setAudioQueue(
+      [
+        {
+          surah: targetSurah,
+          title: resolvedTitle,
+        },
+      ],
+      0
+    );
+  } else {
+    const queue = getAudioQueue();
+    const matchIdx = queue.findIndex(
+      (item) => item.surah === targetSurah && (item.ayah === undefined || item.ayah === null)
+    );
+    if (matchIdx >= 0) {
+      currentQueueIndex = matchIdx;
+      notifyQueueListeners();
+    }
   }
 
   try {
@@ -1435,10 +1512,15 @@ export async function playQueueItem(index: number): Promise<void> {
   const reciter = settings.reciter || currentPlayback?.identifier || 'ar.alafasy';
   const reciterName = resolveReciterName(reciter);
 
-  if (item.ayah !== undefined && item.ayah !== null) {
-    await playAyah(reciter, undefined, item.title, reciterName, item.surah, item.ayah, false);
-  } else {
-    await playSurah(reciter, undefined, item.title, reciterName, item.surah);
+  isInternalQueuePlay = true;
+  try {
+    if (item.ayah !== undefined && item.ayah !== null) {
+      await playAyah(reciter, undefined, item.title, reciterName, item.surah, item.ayah, false);
+    } else {
+      await playSurah(reciter, undefined, item.title, reciterName, item.surah);
+    }
+  } finally {
+    isInternalQueuePlay = false;
   }
 }
 
@@ -1488,11 +1570,16 @@ export async function playNext(): Promise<boolean> {
     return true;
   }
 
-  // 3. Fallback: Sequential Quran advancement
+  // 3. Fallback: Sequential Quran advancement (strictly scoped to surah mode)
   if (!currentPlayback) return false;
   const arabicReciter = currentPlayback.arabicReciter || getActiveArabicReciter(currentPlayback.identifier);
   const reciterName = currentPlayback.arabicReciterName || resolveReciterName(arabicReciter);
   const isSurahMode = currentPlayback.isSurahMode ?? false;
+
+  // Single-ayah play NEVER advances out of scope to other ayahs or surahs
+  if (!isSurahMode) {
+    return false;
+  }
 
   if (currentPlayback.surah && currentPlayback.ayah) {
     const surah = currentPlayback.surah;
@@ -1501,27 +1588,20 @@ export async function playNext(): Promise<boolean> {
 
     if (ayah < maxAyahs) {
       const nextAyah = ayah + 1;
-      await playAyah(arabicReciter, undefined, undefined, reciterName, surah, nextAyah, isSurahMode);
-      return true;
-    } else if (surah < 114) {
-      const nextSurah = surah + 1;
-      await playAyah(arabicReciter, undefined, undefined, reciterName, nextSurah, 1, isSurahMode);
-      return true;
-    } else if (settings.repeatMode === 'all') {
-      await playAyah(arabicReciter, undefined, undefined, reciterName, 1, 1, isSurahMode);
-      return true;
-    }
-    return false;
-  }
-
-  if (currentPlayback.type === 'surah' && currentPlayback.surah) {
-    const surah = currentPlayback.surah;
-    if (surah < 114) {
-      const nextSurah = surah + 1;
-      await playSurah(arabicReciter, undefined, `Surah ${nextSurah}`, reciterName, nextSurah);
+      isInternalQueuePlay = true;
+      try {
+        await playAyah(arabicReciter, undefined, undefined, reciterName, surah, nextAyah, true);
+      } finally {
+        isInternalQueuePlay = false;
+      }
       return true;
     } else if (settings.repeatMode === 'all') {
-      await playSurah(arabicReciter, undefined, `Surah 1`, reciterName, 1);
+      isInternalQueuePlay = true;
+      try {
+        await playAyah(arabicReciter, undefined, undefined, reciterName, surah, 1, true);
+      } finally {
+        isInternalQueuePlay = false;
+      }
       return true;
     }
     return false;
@@ -1551,12 +1631,16 @@ export async function playPrevious(): Promise<boolean> {
     const isSurahMode = currentPlayback.isSurahMode ?? false;
     const arabicReciter = currentPlayback.arabicReciter || 'ar.alafasy';
     const arabicReciterName = currentPlayback.arabicReciterName || resolveReciterName(arabicReciter);
-    await playAyah(arabicReciter, undefined, undefined, arabicReciterName, curSurah, curAyah, isSurahMode);
+    isInternalQueuePlay = true;
+    try {
+      await playAyah(arabicReciter, undefined, undefined, arabicReciterName, curSurah, curAyah, isSurahMode);
+    } finally {
+      isInternalQueuePlay = false;
+    }
     return true;
   }
 
   const queue = getAudioQueue();
-  const settings = safeLoadSettings();
 
   // In queue
   if (queue.length > 0 && currentQueueIndex > 0) {
@@ -1564,33 +1648,21 @@ export async function playPrevious(): Promise<boolean> {
     return true;
   }
 
-  // Sequential previous in Quran
-  if (currentPlayback) {
+  // Sequential previous in Quran (strictly scoped within current surah)
+  if (currentPlayback && (currentPlayback.isSurahMode ?? false)) {
     const arabicReciter = currentPlayback.arabicReciter || getActiveArabicReciter(currentPlayback.identifier);
     const reciterName = currentPlayback.arabicReciterName || resolveReciterName(arabicReciter);
-    const isSurahMode = currentPlayback.isSurahMode ?? false;
 
-    if (currentPlayback.surah && currentPlayback.ayah) {
+    if (currentPlayback.surah && currentPlayback.ayah && currentPlayback.ayah > 1) {
       const surah = currentPlayback.surah;
-      const ayah = currentPlayback.ayah;
-
-      if (ayah > 1) {
-        const prevAyah = ayah - 1;
-        await playAyah(arabicReciter, undefined, undefined, reciterName, surah, prevAyah, isSurahMode);
-        return true;
-      } else if (surah > 1) {
-        const prevSurah = surah - 1;
-        const maxAyahs = SURAH_AYAH_COUNTS[prevSurah - 1] || 1;
-        await playAyah(arabicReciter, undefined, undefined, reciterName, prevSurah, maxAyahs, isSurahMode);
-        return true;
+      const prevAyah = currentPlayback.ayah - 1;
+      isInternalQueuePlay = true;
+      try {
+        await playAyah(arabicReciter, undefined, undefined, reciterName, surah, prevAyah, true);
+      } finally {
+        isInternalQueuePlay = false;
       }
-    } else if (currentPlayback.type === 'surah' && currentPlayback.surah) {
-      const surah = currentPlayback.surah;
-      if (surah > 1) {
-        const prevSurah = surah - 1;
-        await playSurah(arabicReciter, undefined, `Surah ${prevSurah}`, reciterName, prevSurah);
-        return true;
-      }
+      return true;
     }
   }
 
@@ -1611,17 +1683,14 @@ export function canPlayNext(): boolean {
   if (queue.length > 0) {
     if (currentQueueIndex + 1 < queue.length) return true;
     if (settings.repeatMode === 'all') return true;
+    return false;
   }
   if (!currentPlayback) return false;
+  if (!currentPlayback.isSurahMode) return false;
   if (settings.repeatMode === 'all') return true;
   if (currentPlayback.surah && currentPlayback.ayah) {
-    return (
-      currentPlayback.surah < 114 ||
-      currentPlayback.ayah < (SURAH_AYAH_COUNTS[currentPlayback.surah - 1] || 7)
-    );
-  }
-  if (currentPlayback.type === 'surah' && currentPlayback.surah) {
-    return currentPlayback.surah < 114;
+    const maxAyahs = SURAH_AYAH_COUNTS[currentPlayback.surah - 1] || 7;
+    return currentPlayback.ayah < maxAyahs;
   }
   return false;
 }
@@ -1631,13 +1700,10 @@ export function canPlayPrevious(): boolean {
   if (translationAudioEnabled && currentPlayback?.segmentType === 'translation') return true;
   if (getAudioQueue().length > 0 && currentQueueIndex > 0) return true;
   if (!currentPlayback) return false;
-  if (currentPlayback.surah && currentPlayback.ayah) {
-    return currentPlayback.surah > 1 || currentPlayback.ayah > 1;
+  if (currentPlayback.isSurahMode && currentPlayback.surah && currentPlayback.ayah) {
+    return currentPlayback.ayah > 1;
   }
-  if (currentPlayback.type === 'surah' && currentPlayback.surah) {
-    return currentPlayback.surah > 1;
-  }
-  return true;
+  return false;
 }
 
 /** Pause currently playing sound. */

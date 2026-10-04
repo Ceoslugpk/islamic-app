@@ -32,7 +32,7 @@ import {
 import { NAMES_99 } from '../lib/names99';
 import {
   useAfterPrayerDuas,
-  selectAfterPrayerDua,
+  getAllAfterPrayerDuas,
   FALLBACK_AFTER_PRAYER_DUAS,
 } from '../lib/afterPrayerDuas';
 import { Card } from '../components/Card';
@@ -156,7 +156,8 @@ export default function HomeScreen({
   const [now, setNow] = useState(new Date());
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
   const [streak, setStreak] = useState(0);
-  const [afterPrayerExpanded, setAfterPrayerExpanded] = useState(false);
+  const [activeDuaIndex, setActiveDuaIndex] = useState(0);
+  const [expandedDuaIds, setExpandedDuaIds] = useState<Record<string, boolean>>({});
 
   const { ayah, loading: ayahLoading, refresh: refreshAyah } = useAyahOfDay();
   const { hadith, loading: hadithLoading, refresh: refreshHadith } = useHadithOfDay();
@@ -291,14 +292,15 @@ export default function HomeScreen({
   }, [completed]);
 
   const { duas: afterPrayerDuas } = useAfterPrayerDuas();
-  const afterPrayerDua = useMemo(
-    () =>
-      selectAfterPrayerDua(afterPrayerDuas, lastCompletedPrayer) ??
-      FALLBACK_AFTER_PRAYER_DUAS[0],
+  const allAfterPrayerDuas = useMemo(
+    () => getAllAfterPrayerDuas(afterPrayerDuas, lastCompletedPrayer),
     [afterPrayerDuas, lastCompletedPrayer]
   );
 
   const isCompact = useMemo(() => width <= 380, [width]);
+  const duaCardWidth = useMemo(() => Math.min(width - 48, 620), [width]);
+  const duaGap = 12;
+  const duaSnapInterval = duaCardWidth + duaGap;
 
   const currentSegment = useMemo((): PrayerSegment => {
     if (!data) return 'Dhuhr';
@@ -765,57 +767,183 @@ export default function HomeScreen({
           onOpenNames={onOpenNames}
         />
 
-        {/* 6. Dua After Prayer — compact, collapsible, contextual */}
-        <Card style={styles.duaAfterPrayerCard}>
-          <AnimatedPattern variant="rings" size={isCompact ? 240 : 300} />
-          <TouchableOpacity
-            style={styles.duaAfterPrayerHeader}
-            onPress={() => {
-              haptic('light');
-              setAfterPrayerExpanded((prev) => !prev);
-            }}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: afterPrayerExpanded }}
-            accessibilityLabel={`Dua after prayer${lastCompletedPrayer ? ` for ${lastCompletedPrayer}` : ''}. Tap to expand.`}
-          >
-            <View style={styles.duaAfterPrayerHeaderLeft}>
+        {/* 6. Dua After Prayer — swipeable carousel showing all after-prayer duas */}
+        <View style={styles.duaRailContainer}>
+          {/* Header Row: Eyebrow + context + pagination */}
+          <View style={styles.duaRailHeaderRow}>
+            <View style={styles.duaRailHeaderLeft}>
               <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent }]}>
                 Dua After Prayer
               </Text>
-              {lastCompletedPrayer && (
-                <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted }]}>
-                  For {lastCompletedPrayer}
-                </Text>
-              )}
+              <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted }]}>
+                {lastCompletedPrayer ? `For ${lastCompletedPrayer}` : 'Authentic Adhkar'}
+              </Text>
             </View>
-            <Ionicons
-              name={afterPrayerExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-              size={20}
-              color={colors.textMuted}
-            />
-          </TouchableOpacity>
 
-          <View style={styles.duaAfterPrayerContent}>
-            <ArabicText size={22} align="right" style={styles.duaAfterPrayerArabic} numberOfLines={afterPrayerExpanded ? 8 : 2}>
-              {afterPrayerDua.arabic}
-            </ArabicText>
-            {afterPrayerExpanded && (
-              <>
-                <Text style={[styles.duaAfterPrayerTransliteration, { color: colors.textSecondary }]}>
-                  {afterPrayerDua.transliteration}
-                </Text>
-                <Text style={[styles.duaAfterPrayerTranslation, { color: colors.textSecondary }]}>
-                  {afterPrayerDua.translation}
-                </Text>
-                {(afterPrayerDua.reference || afterPrayerDua.source) ? (
-                  <Text style={[styles.duaAfterPrayerRef, { color: colors.textMuted }]}>
-                    {afterPrayerDua.reference || afterPrayerDua.source}
-                  </Text>
-                ) : null}
-              </>
-            )}
+            {/* Pagination indicator: 1 of N + dots */}
+            <View style={styles.duaPaginationWrap}>
+              <Text style={[styles.duaPaginationText, { color: colors.textMuted }]}>
+                {activeDuaIndex + 1} of {allAfterPrayerDuas.length}
+              </Text>
+              <View style={styles.duaDotsRow}>
+                {allAfterPrayerDuas.map((_, i) => {
+                  const isActive = i === activeDuaIndex;
+                  return (
+                    <View
+                      key={i}
+                      style={[
+                        styles.duaDot,
+                        {
+                          backgroundColor: isActive ? colors.accent : colors.borderSubtle,
+                          width: isActive ? 12 : 5,
+                        },
+                      ]}
+                    />
+                  );
+                })}
+              </View>
+            </View>
           </View>
-        </Card>
+
+          {/* Horizontal Swipe Rail */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={duaSnapInterval}
+            snapToAlignment="center"
+            decelerationRate="fast"
+            nestedScrollEnabled
+            contentContainerStyle={styles.duaRailScrollContent}
+            onScroll={(event) => {
+              const offsetX = event.nativeEvent.contentOffset.x;
+              const index = Math.round(offsetX / duaSnapInterval);
+              if (index !== activeDuaIndex && index >= 0 && index < allAfterPrayerDuas.length) {
+                setActiveDuaIndex(index);
+              }
+            }}
+            scrollEventThrottle={16}
+          >
+            {allAfterPrayerDuas.map((item, idx) => {
+              const isExpanded = !!expandedDuaIds[item.id];
+              return (
+                <View
+                  key={item.id || idx}
+                  style={[styles.duaCardSlide, { width: duaCardWidth }]}
+                >
+                  <Card style={styles.duaAfterPrayerCard} padded={false}>
+                    <AnimatedPattern variant="rings" size={isCompact ? 240 : 300} />
+                    <TouchableOpacity
+                      activeOpacity={0.88}
+                      style={styles.duaAfterPrayerHeader}
+                      onPress={() => {
+                        haptic('light');
+                        setExpandedDuaIds((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
+                      }}
+                      accessibilityRole="button"
+                      accessibilityState={{ expanded: isExpanded }}
+                      accessibilityLabel={`Dua ${idx + 1} of ${allAfterPrayerDuas.length}. Tap to ${isExpanded ? 'collapse' : 'expand'}.`}
+                    >
+                      <View style={styles.duaBadgeRow}>
+                        <View
+                          style={[
+                            styles.duaNumberBadge,
+                            { backgroundColor: colors.accentDim },
+                          ]}
+                        >
+                          <Text style={[styles.duaNumberBadgeText, { color: colors.accent }]}>
+                            {idx + 1}
+                          </Text>
+                        </View>
+                        {lastCompletedPrayer && idx === 0 && (
+                          <View
+                            style={[
+                              styles.duaForPrayerTag,
+                              {
+                                backgroundColor: colors.bgBase,
+                                borderColor: colors.borderSubtle,
+                              },
+                            ]}
+                          >
+                            <Text style={[styles.duaForPrayerTagText, { color: colors.accent }]}>
+                              For {lastCompletedPrayer}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={styles.duaExpandBtn}>
+                        <Text style={[styles.duaExpandBtnText, { color: colors.textMuted }]}>
+                          {isExpanded ? 'Less' : 'More'}
+                        </Text>
+                        <Ionicons
+                          name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                          size={16}
+                          color={colors.textMuted}
+                        />
+                      </View>
+                    </TouchableOpacity>
+
+                    <View style={styles.duaAfterPrayerContent}>
+                      <ArabicText
+                        size={isCompact ? 20 : 22}
+                        align="right"
+                        style={styles.duaAfterPrayerArabic}
+                        numberOfLines={isExpanded ? undefined : 3}
+                      >
+                        {item.arabic}
+                      </ArabicText>
+
+                      {isExpanded ? (
+                        <View style={styles.duaExpandedDetails}>
+                          <Text
+                            style={[
+                              styles.duaAfterPrayerTransliteration,
+                              { color: colors.textSecondary },
+                            ]}
+                          >
+                            {item.transliteration}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.duaAfterPrayerTranslation,
+                              { color: colors.textPrimary },
+                            ]}
+                          >
+                            {item.translation}
+                          </Text>
+                          {(item.reference || item.source) ? (
+                            <View
+                              style={[
+                                styles.duaRefRow,
+                                { borderTopColor: colors.borderSubtle },
+                              ]}
+                            >
+                              <Ionicons name="book-outline" size={11} color={colors.textMuted} />
+                              <Text
+                                style={[styles.duaAfterPrayerRef, { color: colors.textMuted }]}
+                              >
+                                {item.reference || item.source}
+                              </Text>
+                            </View>
+                          ) : null}
+                        </View>
+                      ) : (
+                        <Text
+                          style={[
+                            styles.duaAfterPrayerTranslation,
+                            { color: colors.textSecondary },
+                          ]}
+                          numberOfLines={2}
+                        >
+                          {item.translation}
+                        </Text>
+                      )}
+                    </View>
+                  </Card>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
       </Animated.ScrollView>
     </View>
   );
@@ -959,17 +1087,91 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
-  duaAfterPrayerCard: {
+  duaRailContainer: {
+    gap: 12,
     marginBottom: 20,
+  },
+  duaRailHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  duaRailHeaderLeft: {
+    flex: 1,
+  },
+  duaPaginationWrap: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  duaPaginationText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 0.4,
+  },
+  duaDotsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  duaDot: {
+    height: 4,
+    borderRadius: 2,
+  },
+  duaRailScrollContent: {
+    gap: 12,
+    paddingRight: 4,
+  },
+  duaCardSlide: {
+    borderRadius: 16,
+  },
+  duaAfterPrayerCard: {
+    position: 'relative',
+    overflow: 'hidden',
+    padding: 16,
+    borderRadius: 16,
   },
   duaAfterPrayerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+    zIndex: 2,
   },
-  duaAfterPrayerHeaderLeft: {
-    flex: 1,
+  duaBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  duaNumberBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  duaNumberBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 11,
+  },
+  duaForPrayerTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  duaForPrayerTagText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+  },
+  duaExpandBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  duaExpandBtnText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
   },
   duaAfterPrayerEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
@@ -988,6 +1190,18 @@ const styles = StyleSheet.create({
   duaAfterPrayerArabic: {
     lineHeight: 36,
   },
+  duaExpandedDetails: {
+    gap: 8,
+    marginTop: 4,
+  },
+  duaRefRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 8,
+    marginTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
   duaAfterPrayerTransliteration: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
@@ -1001,7 +1215,6 @@ const styles = StyleSheet.create({
   duaAfterPrayerRef: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
-    marginTop: 4,
   },
   methodNote: {
     fontFamily: 'Manrope_400Regular',
