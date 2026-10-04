@@ -45,6 +45,7 @@ export interface Reciter {
   name: string;
   englishName: string;
   language: string;
+  country?: string;
 }
 
 const RECITERS_CACHE_KEY = 'reciters-cache';
@@ -71,6 +72,14 @@ export const ALIAS_MAP: Record<string, string> = {
   'ur.khan': 'ur.everyayah-shamshad',
   'fa.hedayatfarfooladvand': 'fa.everyayah-hedayatfar',
   'ru.kuliev-audio-2': 'ru.kuliev-audio',
+  'ar.alafasy-2': 'ar.alafasy',
+  'ar.husary-2': 'ar.husary',
+  'ar.mahermuaiqly-2': 'ar.mahermuaiqly',
+  'ar.hudhaify-2': 'ar.hudhaify',
+  'ar.husarymujawwad-2': 'ar.husarymujawwad',
+  'ar.minshawi-2': 'ar.minshawi',
+  'ar.muhammadayyoub-2': 'ar.muhammadayyoub',
+  'ar.muhammadjibreel-2': 'ar.muhammadjibreel',
 };
 
 export interface EveryAyahConfig {
@@ -236,16 +245,55 @@ export const VERIFIED_NON_ARABIC_EDITIONS: Reciter[] = [
 ];
 
 /** Offline fallback reciters (strictly Arabic recitations). Non-Arabic editions are maintained separately in VERIFIED_NON_ARABIC_EDITIONS. */
+/** Country lookup map for Arabic reciters */
+export const RECITER_COUNTRIES: Record<string, string> = {
+  'ar.alafasy': 'Kuwait',
+  'ar.abdulbasitmurattal': 'Egypt',
+  'ar.abdullahbasfar': 'Saudi Arabia',
+  'ar.abdurrahmaansudais': 'Saudi Arabia',
+  'ar.abdulsamad': 'Egypt',
+  'ar.shaatree': 'Saudi Arabia',
+  'ar.ahmedajamy': 'Saudi Arabia',
+  'ar.hanirifai': 'Saudi Arabia',
+  'ar.husary': 'Egypt',
+  'ar.husarymujawwad': 'Egypt',
+  'ar.hudhaify': 'Saudi Arabia',
+  'ar.ibrahimakhbar': 'Saudi Arabia',
+  'ar.mahermuaiqly': 'Saudi Arabia',
+  'ar.minshawi': 'Egypt',
+  'ar.minshawimujawwad': 'Egypt',
+  'ar.muhammadayyoub': 'Saudi Arabia',
+  'ar.muhammadjibreel': 'Egypt',
+  'ar.saoodshuraym': 'Saudi Arabia',
+  'ar.aymanswoaid': 'Syria',
+};
+
+export function getReciterCountry(identifier: string): string | undefined {
+  const resolved = ALIAS_MAP[identifier] || identifier;
+  return RECITER_COUNTRIES[resolved];
+}
+
+/** Offline fallback reciters (strictly verified working Arabic recitations). */
 export const DEFAULT_RECITERS: Reciter[] = [
-  { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Mishari Rashid al-Afasy', language: 'ar' },
-  { identifier: 'ar.abdulbasitmurattal', name: 'عبد الباسط عبد الصمد', englishName: 'Abdul Basit (Murattal)', language: 'ar' },
-  { identifier: 'ar.abdullahbasfar', name: 'عبد الله بصفر', englishName: 'Abdullah Basfar', language: 'ar' },
-  { identifier: 'ar.abdurrahmaansudais', name: 'عبد الرحمن السديس', englishName: 'Abdurrahmaan As-Sudais', language: 'ar' },
-  { identifier: 'ar.abdulsamad', name: 'عبد الباسط عبد الصمد', englishName: 'Abdul Samad', language: 'ar' },
-  { identifier: 'ar.hanirifai', name: 'هاني الرفاعي', englishName: 'Hani ar-Rifai', language: 'ar' },
-  { identifier: 'ar.husary', name: 'محمود خليل الحصري', englishName: 'Mahmoud Khalil Al-Husary', language: 'ar' },
-  { identifier: 'ar.minshawi', name: 'محمد صديق المنشاوي', englishName: 'Mohamed Siddiq Al-Minshawi', language: 'ar' },
-  { identifier: 'ar.hudhaify', name: 'علي الحذيفي', englishName: 'Ali Al-Hudhaify', language: 'ar' },
+  { identifier: 'ar.alafasy', name: 'مشاري العفاسي', englishName: 'Mishari Rashid al-Afasy', language: 'ar', country: 'Kuwait' },
+  { identifier: 'ar.abdulbasitmurattal', name: 'عبد الباسط عبد الصمد', englishName: 'Abdul Basit (Murattal)', language: 'ar', country: 'Egypt' },
+  { identifier: 'ar.abdullahbasfar', name: 'عبد الله بصفر', englishName: 'Abdullah Basfar', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.abdurrahmaansudais', name: 'عبد الرحمن السديس', englishName: 'Abdurrahmaan As-Sudais', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.abdulsamad', name: 'عبد الباسط عبد الصمد', englishName: 'Abdul Samad', language: 'ar', country: 'Egypt' },
+  { identifier: 'ar.shaatree', name: 'أبو بكر الشاطري', englishName: 'Abu Bakr Ash-Shaatree', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.ahmedajamy', name: 'أحمد بن علي العجمي', englishName: 'Ahmed ibn Ali al-Ajamy', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.hanirifai', name: 'هاني الرفاعي', englishName: 'Hani ar-Rifai', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.husary', name: 'محمود خليل الحصري', englishName: 'Mahmoud Khalil Al-Husary', language: 'ar', country: 'Egypt' },
+  { identifier: 'ar.husarymujawwad', name: 'محمود خليل الحصري (مجود)', englishName: 'Mahmoud Khalil Al-Husary (Mujawwad)', language: 'ar', country: 'Egypt' },
+  { identifier: 'ar.hudhaify', name: 'علي الحذيفي', englishName: 'Ali Al-Hudhaify', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.ibrahimakhbar', name: 'إبراهيم الأخضر', englishName: 'Ibrahim Al-Akhdar', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', englishName: 'Maher Al Muaiqly', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.minshawi', name: 'محمد صديق المنشاوي', englishName: 'Mohamed Siddiq Al-Minshawi', language: 'ar', country: 'Egypt' },
+  { identifier: 'ar.minshawimujawwad', name: 'محمد صديق المنشاوي (مجود)', englishName: 'Mohamed Siddiq Al-Minshawi (Mujawwad)', language: 'ar', country: 'Egypt' },
+  { identifier: 'ar.muhammadayyoub', name: 'محمد أيوب', englishName: 'Muhammad Ayyoub', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.muhammadjibreel', name: 'محمد جبريل', englishName: 'Muhammad Jibreel', language: 'ar', country: 'Egypt' },
+  { identifier: 'ar.saoodshuraym', name: 'سعود بن إبراهيم الشريم', englishName: 'Saood bin Ibraaheem Ash-Shuraym', language: 'ar', country: 'Saudi Arabia' },
+  { identifier: 'ar.aymanswoaid', name: 'أيمن سويد', englishName: 'Ayman Sowaid', language: 'ar', country: 'Syria' },
 ];
 
 /** Get list of verified non-Arabic translation audio editions (kept strictly separate from Arabic reciters). */
@@ -261,6 +309,9 @@ const KNOWN_BITRATES: Record<string, string> = {
   'ar.abdulsamad': '64',
   'ar.hanirifai': '192',
   'ar.aymanswoaid': '64',
+  'ar.ibrahimakhbar': '32',
+  'ar.minshawimujawwad': '64',
+  'ar.saoodshuraym': '64',
   'ru.kuliev-audio-2': '320',
   'en.everyayah-walk': '192',
   'en.walk': '192',
@@ -274,8 +325,9 @@ const KNOWN_BITRATES: Record<string, string> = {
   'ur.everyayah-farhathashmi': '32',
 };
 
-/** Editions on AlQuran Cloud API that return 403 on CDN and should be excluded in favor of verified sources. */
+/** Editions on AlQuran Cloud API that return 403 on CDN or are broken/duplicates and should be excluded. */
 const BLOCKED_EDITIONS = new Set([
+  // Non-Arabic editions with 403 or broken paths
   'en.walk',
   'fa.hedayatfarfooladvand',
   'ur.khan',
@@ -284,6 +336,167 @@ const BLOCKED_EDITIONS = new Set([
   'en.muhammadayyubenglishtranslationmuhsinkhanmikaalwaters',
   'en.sudaisandshuraymenglishtranslationpickthallaslamathar',
   'my.hashimtinmyint',
+
+  // Duplicate -2 mirror editions (mapped in ALIAS_MAP)
+  'ar.alafasy-2',
+  'ar.husary-2',
+  'ar.mahermuaiqly-2',
+  'ar.hudhaify-2',
+  'ar.husarymujawwad-2',
+  'ar.minshawi-2',
+  'ar.muhammadayyoub-2',
+  'ar.muhammadjibreel-2',
+
+  // Broken Arabic editions returning HTTP 403 on CDN
+  'ar.parhizgar',
+  'ar.abdulazizazzahrani',
+  'ar.abdulbariaththubaity',
+  'ar.abdulbarimohammed',
+  'ar.abdulbasitmujawwad',
+  'ar.abdulbasitmurattal-surah',
+  'ar.abdulkareemalhazmi',
+  'ar.abdullahalmatrood',
+  'ar.abdullahawadaljuhani',
+  'ar.abdullahbasfar-surah',
+  'ar.abdullahkhayat',
+  'ar.abdullahkhulaifi',
+  'ar.abdulmohsenalharthy',
+  'ar.abdulmunimabdulmubdi',
+  'ar.abdulwadoodhaneef',
+  'ar.abdurrasheedsufiabialhaarithanalkasaaee',
+  'ar.abdurrasheedsufiaddoorianabiamr',
+  'ar.abdurrasheedsufishubahanasim',
+  'ar.abdurrasheedsufisoosi',
+  'ar.abuabdullahmuniraltounsi',
+  'ar.abubakraldhabi',
+  'ar.adilkalbani',
+  'ar.ahmadalhawashy',
+  'ar.ahmadkhaderaltarabulsi',
+  'ar.ahmadsulaiman',
+  'ar.ahmedalajmi',
+  'ar.ahmedalhammad',
+  'ar.ahmedalmisbahi',
+  'ar.ahmedamir',
+  'ar.ahmedmohamedsalama',
+  'ar.ahmedsaber',
+  'ar.alafasy-surah',
+  'ar.alashryomran',
+  'ar.alfatehmuhammadzubair',
+  'ar.alhusaynialazazi',
+  'ar.alhusaynialazazichildren',
+  'ar.aliabdurrahmanalhuthaify',
+  'ar.aliabdurrahmanalhuthaifyqaloon',
+  'ar.alihajjajsouissi',
+  'ar.alzainmohamedahmed',
+  'ar.aymanswed',
+  'ar.azizalili',
+  'ar.basselabdulrahmanraoui',
+  'ar.benkirane',
+  'ar.darwishfarajdarwishalattar',
+  'ar.emadalmansary',
+  'ar.ezzatsabri',
+  'ar.faresabbad',
+  'ar.fouadalkhamiri',
+  'ar.hamadsinan',
+  'ar.hamdyalsayedtolbasaad',
+  'ar.haniarrifai',
+  'ar.hasanhashem',
+  'ar.hassansaleh',
+  'ar.hatemfarid',
+  'ar.ibrahimalakhdar',
+  'ar.ibrahimaldossari',
+  'ar.ibrahimaljormy',
+  'ar.ilhantok',
+  'ar.imadzuhairhafez',
+  'ar.jamaanalosaimi',
+  'ar.jamalshakerabdullah',
+  'ar.jazzaalswaileh',
+  'ar.kamel',
+  'ar.khaledalqahtani',
+  'ar.khaledbarakat',
+  'ar.khalidabdulkafi',
+  'ar.khalidaljalil',
+  'ar.khalidalmohanna',
+  'ar.khalifaaltunaiji',
+  'ar.laayounelkouchi',
+  'ar.lesaintcorantraduitenfrancais',
+  'ar.mahershakhashiro',
+  'ar.mahmoodalrifai',
+  'ar.mahmoudalialbanna',
+  'ar.mahmoudelsheimy',
+  'ar.mahmoudsaaddarouich',
+  'ar.mahmoudsayedeltayeb',
+  'ar.misharyrashidalafasy',
+  'ar.moeedhalharthi',
+  'ar.mohamedabdelaziz',
+  'ar.mohamedabdelhakimsaadalabdullah',
+  'ar.mohamedaljaberyalheyani',
+  'ar.mohamedalmohisni',
+  'ar.mohamedelkantaoui',
+  'ar.mohamedhassan',
+  'ar.mohamedmaabad',
+  'ar.mohamedosmankhan',
+  'ar.mohamedshaabanabuqarn',
+  'ar.mohamedtablawi',
+  'ar.mohammadismaeelalmuqaddim',
+  'ar.mohammadrachadalshareef',
+  'ar.mohammedbinsalehabuzaid',
+  'ar.muftahalsaltany',
+  'ar.muhammadabdulkareem',
+  'ar.muhammadalaalimaldokali',
+  'ar.muhammadalluhaidan',
+  'ar.muhammadalmehysni',
+  'ar.muhammadalsubayyil',
+  'ar.muhammadanwarshahat',
+  'ar.muhammadayyub',
+  'ar.muhammadsalehalimshah',
+  'ar.muhammadsiddiqalminshawimujawwad',
+  'ar.muhammadsulaimanpatel',
+  'ar.musabilal',
+  'ar.mustafaallahouni',
+  'ar.mustafaismail',
+  'ar.mustafaraadalazzawi',
+  'ar.mustaphagharbi',
+  'ar.nabilarrifai',
+  'ar.nasseralqatami',
+  'ar.neamahalhassan',
+  'ar.obeikan',
+  'ar.oimaoqataris',
+  'ar.omaralkazabri',
+  'ar.osamabinalialghanim',
+  'ar.rachidbelalia',
+  'ar.saberabdulhakam',
+  'ar.sadaqatali',
+  'ar.sahlyasin',
+  'ar.saidalshaalan',
+  'ar.salahalbudair',
+  'ar.salahalhashem',
+  'ar.salahbaothman',
+  'ar.samirbelaachya',
+  'ar.saudalshuraim',
+  'ar.sayedramadan',
+  'ar.shahriarparhizgar',
+  'ar.sudaisshuraymnaeemsultan',
+  'ar.tamerislam',
+  'ar.tareqabdulganidaawob',
+  'ar.tawfeeqassayegh',
+  'ar.turkiebeidalmarri',
+  'ar.waeldesouky',
+  'ar.waelradwanqureshi',
+  'ar.waleedidreesalmaneese',
+  'ar.waleednaehi',
+  'ar.waleedsamiraliabdulmajidsorour',
+  'ar.walidalshatti',
+  'ar.walidfathibashta',
+  'ar.yahyahawwa',
+  'ar.yassenaljazairi',
+  'ar.yasseraldossari',
+  'ar.yasseralmazroyee',
+  'ar.yasserqureshi',
+  'ar.yassersalama',
+  'ar.yassersarhaneldeeb',
+  'ar.yousufalshoaey',
+  'ar.yousufbinnoahahmad',
 ]);
 
 /** Convert 1-based (surah, ayah) to global Quranic ayah number (1..6236). */
@@ -296,10 +509,18 @@ export function getGlobalAyahNumber(surah: number, ayah: number): number {
   return offset + ayah;
 }
 
-/** Check if an edition is verse-by-verse recitation / translation (all non-Arabic editions). */
+/** Editions hosted on CDN with full single-surah MP3s. */
+const EDITIONS_WITH_SURAH_AUDIO = new Set([
+  'ar.alafasy',
+  'ar.abdulbasitmurattal',
+  'ar.abdullahbasfar',
+]);
+
+/** Check if an edition is verse-by-verse recitation / translation (all non-Arabic editions or Arabic editions without full surah MP3). */
 export function isVerseByVerseEdition(identifier: string): boolean {
   const resolved = ALIAS_MAP[identifier] || identifier;
   if (EVERYAYAH_EDITIONS[resolved]) return true;
+  if (!EDITIONS_WITH_SURAH_AUDIO.has(resolved)) return true;
   return (
     resolved === 'zh.chinese' ||
     resolved === 'fr.leclerc' ||
@@ -310,13 +531,13 @@ export function isVerseByVerseEdition(identifier: string): boolean {
   );
 }
 
-const ARABIC_RECITERS_CACHE_KEY = 'arabic-reciters-cache-v3';
+const ARABIC_RECITERS_CACHE_KEY = 'arabic-reciters-cache-v4';
 
 /**
  * Fetch reciters from AlQuran Cloud audio editions endpoint (strictly Arabic recitations).
  * Default reciter ar.alafasy is placed at index 0.
  * Non-Arabic editions are maintained separately and never mixed into this list.
- * Results are cached in AsyncStorage under 'arabic-reciters-cache-v3'.
+ * Results are cached in AsyncStorage under 'arabic-reciters-cache-v4'.
  */
 export async function fetchReciters(): Promise<Reciter[]> {
   let cachedReciters: Reciter[] | null = null;
@@ -325,7 +546,12 @@ export async function fetchReciters(): Promise<Reciter[]> {
     if (rawCache) {
       const parsed = JSON.parse(rawCache);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        cachedReciters = parsed.filter((r: any) => r && r.language === 'ar');
+        cachedReciters = parsed
+          .filter((r: any) => r && r.language === 'ar' && !BLOCKED_EDITIONS.has(r.identifier))
+          .map((r: any) => ({
+            ...r,
+            country: r.country || RECITER_COUNTRIES[r.identifier] || getReciterCountry(r.identifier),
+          }));
       }
     }
   } catch {
@@ -344,12 +570,16 @@ export async function fetchReciters(): Promise<Reciter[]> {
 
     const recitersFromApi: Reciter[] = json.data
       .filter((item: any) => !BLOCKED_EDITIONS.has(String(item.identifier ?? '')))
-      .map((item: any) => ({
-        identifier: String(item.identifier ?? ''),
-        name: String(item.name ?? ''),
-        englishName: String(item.englishName ?? ''),
-        language: String(item.language ?? ''),
-      }));
+      .map((item: any) => {
+        const identifier = String(item.identifier ?? '');
+        return {
+          identifier,
+          name: String(item.name ?? ''),
+          englishName: String(item.englishName ?? ''),
+          language: String(item.language ?? ''),
+          country: RECITER_COUNTRIES[identifier] || getReciterCountry(identifier),
+        };
+      });
 
     // Strictly Arabic reciters only (language === 'ar')
     const arabicReciters = recitersFromApi.filter((r) => r.language === 'ar');

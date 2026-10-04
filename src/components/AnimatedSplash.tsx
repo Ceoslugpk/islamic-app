@@ -118,11 +118,12 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
     return () => timings.forEach(([, c]) => c());
   }, [reduced, slit, grow, sweep, fadeOut, onDone]);
 
-  // Mask: a rectangle that grows from the slit (center x=50) outward to full width
-  const maskX = grow.interpolate({ inputRange: [0, 1], outputRange: [50, 0] });
-  const maskWidth = grow.interpolate({ inputRange: [0, 1], outputRange: [0, 100] });
+  // Mask: a rectangle that grows SYMMETRICALLY from the slit (x≈58, the true
+  // center of the logo's open-base gap between x=51.6 and x=65.4) outward both ways
+  const maskX = grow.interpolate({ inputRange: [0, 1], outputRange: [58, 0] });
+  const maskWidth = grow.interpolate({ inputRange: [0, 1], outputRange: [0, 116] });
 
-  // Slit: thin vertical line at x≈51-52 (the logo's open-base slit), subtle gold/ivory
+  // Slit: thin vertical line at x≈58 (center of the opening), subtle gold/ivory
   const slitOpacity = slit.interpolate({ inputRange: [0, 1], outputRange: [0, 0.5] });
   const slitHeight = slit.interpolate({ inputRange: [0, 1], outputRange: [20, 88] });
 
@@ -215,7 +216,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 2,
     borderRadius: 1,
-    top: 26,
+    // x≈58 units → 81px in the 140px wrap (1 unit = 1.4px); centered on the opening
+    left: 80,
+    top: 52, // y≈37 units → 52px (where the slit gap begins)
   },
   sweep: {
     position: 'absolute',
