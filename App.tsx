@@ -352,9 +352,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
       const currentPlayback = getCurrentPlayback();
       const fullStatus = getPlaybackStatus();
 
-      if (currentPlayback && (newStatus.isPlaying || fullStatus.isLoaded)) {
+      if (currentPlayback && (newStatus.isPlaying || fullStatus.isLoaded || fullStatus.isBuffering)) {
         await updateNowPlayingNotification();
-      } else if (!currentPlayback || !newStatus.isPlaying) {
+      } else if (!currentPlayback || (!newStatus.isPlaying && !fullStatus.isLoaded && !fullStatus.isBuffering)) {
         await stopNowPlayingNotification();
       }
     };
@@ -364,7 +364,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     // Initial check
     const initialPlayback = getCurrentPlayback();
     const initialStatus = getPlaybackStatus();
-    if (initialPlayback && initialStatus.isLoaded) {
+    if (initialPlayback && (initialStatus.isLoaded || initialStatus.isPlaying || initialStatus.isBuffering)) {
       startNowPlayingNotification();
     }
 

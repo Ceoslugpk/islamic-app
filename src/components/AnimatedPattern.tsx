@@ -107,31 +107,13 @@ function StarLayer({
   rotationSpeed: number;
   reverse?: boolean;
 }) {
-  const rotation = useMemo(() => new Animated.Value(0), []);
-
-  useEffect(
-    () =>
-      startLoopIfMotionAllowed(
-        () =>
-          Animated.timing(rotation, {
-            toValue: reverse ? -1 : 1,
-            duration: rotationSpeed,
-            useNativeDriver: USE_NATIVE_DRIVER,
-          }),
-        () => rotation.setValue(0)
-      ),
-    [rotation, rotationSpeed, reverse]
-  );
-
-  const rotate = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
+  // ponytail: static — no Animated.loop. Perpetual native-driver rotation loops
+  // in every card starve the Fabric renderer commit while scrolling (SDK 57).
   const starSize = size * 0.45;
+  const rotate = reverse ? '-360deg' : '360deg';
 
   return (
-    <Animated.View
+    <View
       style={[
         styles.layer,
         {
@@ -139,7 +121,6 @@ function StarLayer({
           height: starSize,
           borderColor: color,
           opacity,
-          transform: [{ rotate }],
         },
       ]}
       pointerEvents="none"
@@ -176,7 +157,7 @@ function StarLayer({
           },
         ]}
       />
-    </Animated.View>
+    </View>
   );
 }
 
@@ -195,34 +176,14 @@ function RingLayer({
   reverse?: boolean;
   ringCount?: number;
 }) {
-  const rotation = useMemo(() => new Animated.Value(0), []);
-
-  useEffect(
-    () =>
-      startLoopIfMotionAllowed(
-        () =>
-          Animated.timing(rotation, {
-            toValue: reverse ? -1 : 1,
-            duration: rotationSpeed,
-            useNativeDriver: USE_NATIVE_DRIVER,
-          }),
-        () => rotation.setValue(0)
-      ),
-    [rotation, rotationSpeed, reverse]
-  );
-
-  const rotate = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
+  // ponytail: static — no Animated.loop (Fabric starvation, see StarLayer).
   return (
-    <Animated.View style={styles.layer} pointerEvents="none">
+    <View style={styles.layer} pointerEvents="none">
       {Array.from({ length: ringCount }, (_, i) => {
         const ringSize = size * (0.25 + i * 0.18);
         const ringOpacity = opacity * (1 - i * 0.12);
         return (
-          <Animated.View
+          <View
             key={i}
             style={[
               styles.ring,
@@ -231,13 +192,12 @@ function RingLayer({
                 height: ringSize,
                 borderColor: color,
                 opacity: ringOpacity,
-                transform: [{ rotate }],
               },
             ]}
           />
         );
       })}
-    </Animated.View>
+    </View>
   );
 }
 
@@ -252,58 +212,17 @@ function ArchLayer({
   opacity: number;
   pulseSpeed: number;
 }) {
-  const scale = useMemo(() => new Animated.Value(1), []);
-  const opacityAnim = useMemo(() => new Animated.Value(opacity), [opacity]);
-
-  useEffect(
-    () =>
-      startLoopIfMotionAllowed(
-        () =>
-          Animated.sequence([
-            Animated.parallel([
-              Animated.timing(scale, {
-                toValue: 1.08,
-                duration: pulseSpeed / 2,
-                useNativeDriver: USE_NATIVE_DRIVER,
-              }),
-              Animated.timing(opacityAnim, {
-                toValue: Math.min(opacity * 1.5, 0.22),
-                duration: pulseSpeed / 2,
-                useNativeDriver: USE_NATIVE_DRIVER,
-              }),
-            ]),
-            Animated.parallel([
-              Animated.timing(scale, {
-                toValue: 1,
-                duration: pulseSpeed / 2,
-                useNativeDriver: USE_NATIVE_DRIVER,
-              }),
-              Animated.timing(opacityAnim, {
-                toValue: opacity,
-                duration: pulseSpeed / 2,
-                useNativeDriver: USE_NATIVE_DRIVER,
-              }),
-            ]),
-          ]),
-        () => {
-          scale.setValue(1);
-          opacityAnim.setValue(opacity);
-        }
-      ),
-    [scale, opacityAnim, pulseSpeed, opacity]
-  );
-
+  // ponytail: static — no Animated.loop (Fabric starvation, see StarLayer).
   const archSize = size * 0.5;
 
   return (
-    <Animated.View
+    <View
       style={[
         styles.layer,
         {
           width: archSize,
           height: archSize,
-          opacity: opacityAnim,
-          transform: [{ scale }],
+          opacity,
         },
       ]}
       pointerEvents="none"
@@ -341,7 +260,7 @@ function ArchLayer({
           },
         ]}
       />
-    </Animated.View>
+    </View>
   );
 }
 
@@ -358,62 +277,23 @@ function BloomLayer({
   pulseSpeed: number;
   petalCount?: number;
 }) {
-  const rotation = useMemo(() => new Animated.Value(0), []);
-  const scale = useMemo(() => new Animated.Value(1), []);
-
-  useEffect(
-    () =>
-      startLoopIfMotionAllowed(
-        () =>
-          Animated.parallel([
-            Animated.timing(rotation, {
-              toValue: 1,
-              duration: pulseSpeed * 4,
-              useNativeDriver: USE_NATIVE_DRIVER,
-            }),
-            Animated.sequence([
-              Animated.timing(scale, {
-                toValue: 1.12,
-                duration: pulseSpeed / 2,
-                useNativeDriver: USE_NATIVE_DRIVER,
-              }),
-              Animated.timing(scale, {
-                toValue: 1,
-                duration: pulseSpeed / 2,
-                useNativeDriver: USE_NATIVE_DRIVER,
-              }),
-            ]),
-          ]),
-        () => {
-          rotation.setValue(0);
-          scale.setValue(1);
-        }
-      ),
-    [rotation, scale, pulseSpeed]
-  );
-
-  const rotate = rotation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
+  // ponytail: static — no Animated.loop (Fabric starvation, see StarLayer).
   const bloomSize = size * 0.45;
   const petalSize = bloomSize * 0.35;
 
   return (
-    <Animated.View
+    <View
       style={[
         styles.layer,
         {
           width: bloomSize,
           height: bloomSize,
-          transform: [{ rotate }],
         },
       ]}
       pointerEvents="none"
     >
       {Array.from({ length: petalCount }, (_, i) => (
-        <Animated.View
+        <View
           key={i}
           style={[
             styles.petal,
@@ -427,7 +307,6 @@ function BloomLayer({
               transform: [
                 { rotate: `${(360 / petalCount) * i}deg` },
                 { translateY: -bloomSize * 0.32 },
-                { scale },
               ],
             },
           ]}
@@ -445,7 +324,7 @@ function BloomLayer({
           },
         ]}
       />
-    </Animated.View>
+    </View>
   );
 }
 

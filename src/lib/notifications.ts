@@ -40,12 +40,15 @@ export async function configureNotifications() {
 
   try {
     Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
+      handleNotification: async (notification) => {
+        const isNowPlaying = notification?.request?.content?.data?.nowPlaying === true;
+        return {
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: isNowPlaying ? false : true,
+          shouldSetBadge: false,
+        };
+      },
     });
   } catch {
     // presentation handler unsupported on this platform

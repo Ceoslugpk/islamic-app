@@ -1203,6 +1203,12 @@ function handlePlaybackStatusUpdate(status: AudioStatus): void {
           fallbackPlayer.play();
           currentSound = fallbackPlayer;
           if (currentPlayback) currentPlayback.isPlaying = true;
+          notifyStatusListeners({
+            ...currentStatus,
+            isPlaying: true,
+            isLoaded: true,
+            isBuffering: true,
+          });
           return;
         } catch {
           // fall through to error handling
@@ -1222,28 +1228,19 @@ function handlePlaybackStatusUpdate(status: AudioStatus): void {
     return;
   }
 
-  if (!status.isLoaded) {
-    // Still loading/buffering
-    notifyStatusListeners({
-      isPlaying: false,
-      positionMillis: 0,
-      durationMillis: 0,
-      isLoaded: false,
-      isBuffering: true,
-      didJustFinish: false,
-    });
-    return;
-  }
-
   const positionMillis = Math.round((status.currentTime ?? 0) * 1000);
   const durationMillis = Math.round((status.duration ?? 0) * 1000);
+  const isBuffering = status.isBuffering ?? !status.isLoaded;
+  const isPlaying = status.playing;
+  // An active audio player session is considered loaded while ready, buffering, or playing
+  const isLoaded = status.isLoaded || isBuffering || isPlaying || (currentPlayback?.isPlaying ?? false);
 
   const newStatus: PlaybackStatus = {
-    isPlaying: status.playing,
-    positionMillis,
-    durationMillis,
-    isLoaded: true,
-    isBuffering: status.isBuffering ?? false,
+    isPlaying,
+    positionMillis: positionMillis > 0 ? positionMillis : currentStatus.positionMillis,
+    durationMillis: durationMillis > 0 ? durationMillis : currentStatus.durationMillis,
+    isLoaded,
+    isBuffering,
     didJustFinish: status.didJustFinish ?? false,
   };
 
@@ -1530,6 +1527,17 @@ async function playAudioUrl(url: string): Promise<void> {
     currentSound = player;
     currentPlaybackUrl = targetUri;
     if (currentPlayback) currentPlayback.isPlaying = true;
+    // Notify immediately with isLoaded=true so the now-playing notification can
+    // start without waiting for the first playbackStatusUpdate (expo-audio fires
+    // that only after actual playback; buffering events report isLoaded=false and
+    // App.tsx gates the notification start on isLoaded — preloaded path above
+    // already does this, fresh streamed path must too).
+    notifyStatusListeners({
+      ...currentStatus,
+      isPlaying: true,
+      isLoaded: true,
+      isBuffering: false,
+    });
   } catch (err) {
     // If the provided url fails (e.g. bitrate mismatch), attempt 128kbps fallback
     if (
@@ -1548,6 +1556,12 @@ async function playAudioUrl(url: string): Promise<void> {
           currentSound = fallbackPlayer;
           currentPlaybackUrl = fallbackUrl;
           if (currentPlayback) currentPlayback.isPlaying = true;
+          notifyStatusListeners({
+            ...currentStatus,
+            isPlaying: true,
+            isLoaded: true,
+            isBuffering: true,
+          });
           return;
         } catch {
           // ignore fallback error and propagate original

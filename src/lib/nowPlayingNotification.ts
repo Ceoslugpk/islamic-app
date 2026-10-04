@@ -4,6 +4,7 @@ import { pause, resume, stop, playNext, playPrevious, getCurrentPlayback, getPla
 
 const NOW_PLAYING_CHANNEL_ID = 'now-playing';
 const NOW_PLAYING_CATEGORY_ID = 'now-playing-media';
+const NOW_PLAYING_PAUSED_CATEGORY_ID = 'now-playing-media-paused';
 const NOW_PLAYING_NOTIFICATION_ID = 'quran-now-playing';
 
 const ACTION_PLAY_PAUSE = 'play-pause';
@@ -13,21 +14,48 @@ const ACTION_STOP = 'stop';
 
 let isCategoryRegistered = false;
 let isChannelConfigured = false;
+let isHandlerConfigured = false;
 let responseListener: Notifications.EventSubscription | null = null;
 let currentNotificationId: string | null = null;
 
-function getPlayPauseTitle(isPlaying: boolean): string {
-  return isPlaying ? 'Pause' : 'Play';
+let lastUpdateTimestamp = 0;
+let lastPlaybackTitle: string | null = null;
+let lastIsPlaying: boolean | null = null;
+
+async function hasNotificationPermission(): Promise<boolean> {
+  if (Platform.OS === 'web') return false;
+  try {
+    const perm = await Notifications.getPermissionsAsync();
+    return perm.granted || perm.status === 'granted';
+  } catch {
+    return false;
+  }
 }
 
-function getPlayPauseIdentifier(isPlaying: boolean): string {
-  return isPlaying ? ACTION_PLAY_PAUSE : ACTION_PLAY_PAUSE;
+function ensureNotificationHandler(): void {
+  if (isHandlerConfigured) return;
+  try {
+    Notifications.setNotificationHandler({
+      handleNotification: async (notification) => {
+        const isNowPlaying = notification?.request?.content?.data?.nowPlaying === true;
+        return {
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: isNowPlaying ? false : true,
+          shouldSetBadge: false,
+        };
+      },
+    });
+    isHandlerConfigured = true;
+  } catch {
+    // Presentation handler may be unsupported on certain platforms
+  }
 }
 
 async function ensureCategoryRegistered(): Promise<void> {
   if (isCategoryRegistered) return;
 
-  const actions: Notifications.NotificationAction[] = [
+  const playingActions: Notifications.NotificationAction[] = [
     {
       identifier: ACTION_PREVIOUS,
       buttonTitle: 'Previous',
@@ -50,8 +78,35 @@ async function ensureCategoryRegistered(): Promise<void> {
     },
   ];
 
+  const pausedActions: Notifications.NotificationAction[] = [
+    {
+      identifier: ACTION_PREVIOUS,
+      buttonTitle: 'Previous',
+      options: { opensAppToForeground: false },
+    },
+    {
+      identifier: ACTION_PLAY_PAUSE,
+      buttonTitle: 'Play',
+      options: { opensAppToForeground: false },
+    },
+    {
+      identifier: ACTION_NEXT,
+      buttonTitle: 'Next',
+      options: { opensAppToForeground: false },
+    },
+    {
+      identifier: ACTION_STOP,
+      buttonTitle: 'Stop',
+      options: { isDestructive: true, opensAppToForeground: false },
+    },
+  ];
+
   try {
-    await Notifications.setNotificationCategoryAsync(NOW_PLAYING_CATEGORY_ID, actions, {
+    await Notifications.setNotificationCategoryAsync(NOW_PLAYING_CATEGORY_ID, playingActions, {
+      showTitle: true,
+      showSubtitle: true,
+    });
+    await Notifications.setNotificationCategoryAsync(NOW_PLAYING_PAUSED_CATEGORY_ID, pausedActions, {
       showTitle: true,
       showSubtitle: true,
     });
@@ -69,11 +124,13 @@ async function ensureChannelConfigured(): Promise<void> {
       name: 'Now Playing',
       description: 'Media playback controls for Quran audio',
       importance: Notifications.AndroidImportance.LOW,
-      sound: 'default',
+      sound: null,
+      enableVibrate: false,
       vibrationPattern: [],
       lightColor: '#121110',
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       bypassDnd: false,
+      showBadge: false,
     });
     isChannelConfigured = true;
   } catch (error) {
@@ -115,6 +172,17 @@ function setupResponseHandler(): void {
   });
 }
 
+async function ensureSetup(): Promise<boolean> {
+  const permitted = await hasNotificationPermission();
+  if (!permitted) return false;
+
+  await ensureCategoryRegistered();
+  await ensureChannelConfigured();
+  ensureNotificationHandler();
+  setupResponseHandler();
+  return true;
+}
+
 function buildNotificationContent(
   playback: { title: string; reciterName: string; surah?: number; ayah?: number } | null,
   status: { isPlaying: boolean; positionMillis: number; durationMillis: number }
@@ -141,9 +209,10 @@ function buildNotificationContent(
     title,
     subtitle: reciter,
     body: `${body}\n${progressText}`,
-    categoryIdentifier: NOW_PLAYING_CATEGORY_ID,
+    categoryIdentifier: status.isPlaying ? NOW_PLAYING_CATEGORY_ID : NOW_PLAYING_PAUSED_CATEGORY_ID,
     sticky: true,
     autoDismiss: false,
+    sound: false,
     priority: Platform.OS === 'android' ? Notifications.AndroidNotificationPriority.LOW : undefined,
     color: '#121110',
     data: { nowPlaying: true },
@@ -151,9 +220,8 @@ function buildNotificationContent(
 }
 
 export async function startNowPlayingNotification(): Promise<void> {
-  await ensureCategoryRegistered();
-  await ensureChannelConfigured();
-  setupResponseHandler();
+  const ready = await ensureSetup();
+  if (!ready) return;
 
   const playback = getCurrentPlayback();
   const status = getPlaybackStatus();
@@ -165,9 +233,12 @@ export async function startNowPlayingNotification(): Promise<void> {
   try {
     currentNotificationId = await Notifications.scheduleNotificationAsync({
       content,
-      trigger: null,
+      trigger: Platform.OS === 'android' ? { channelId: NOW_PLAYING_CHANNEL_ID } : null,
       identifier: NOW_PLAYING_NOTIFICATION_ID,
     });
+    lastUpdateTimestamp = Date.now();
+    lastPlaybackTitle = playback.title;
+    lastIsPlaying = status.isPlaying;
   } catch (error) {
     console.warn('[nowPlayingNotification] Failed to show notification:', error);
   }
@@ -182,40 +253,70 @@ export async function updateNowPlayingNotification(): Promise<void> {
     return;
   }
 
+  const ready = await ensureSetup();
+  if (!ready) return;
+
+  const now = Date.now();
+  const playbackTitle = playback.title;
+  const isPlaying = status.isPlaying;
+
+  const titleChanged = lastPlaybackTitle !== playbackTitle;
+  const isPlayingChanged = lastIsPlaying !== isPlaying;
+  const timeSinceLastUpdate = now - lastUpdateTimestamp;
+
+  // Always update immediately if track changed or play/pause state changed.
+  // Throttle progress updates to at most once per second during playback.
+  if (currentNotificationId && !titleChanged && !isPlayingChanged && timeSinceLastUpdate < 1000) {
+    return;
+  }
+
   const content = buildNotificationContent(playback, status);
 
   try {
-    if (currentNotificationId) {
-      await Notifications.dismissNotificationAsync(currentNotificationId);
-    }
+    // Schedule with the stable identifier to smoothly update the existing notification in place.
+    // Never call dismissNotificationAsync before scheduleNotificationAsync — doing so causes
+    // rapid cancel/repost churn and triggers Android notification rate-limiting.
     currentNotificationId = await Notifications.scheduleNotificationAsync({
       content,
-      trigger: null,
+      trigger: Platform.OS === 'android' ? { channelId: NOW_PLAYING_CHANNEL_ID } : null,
       identifier: NOW_PLAYING_NOTIFICATION_ID,
     });
+    lastUpdateTimestamp = now;
+    lastPlaybackTitle = playbackTitle;
+    lastIsPlaying = isPlaying;
   } catch (error) {
     console.warn('[nowPlayingNotification] Failed to update notification:', error);
   }
 }
 
 export async function stopNowPlayingNotification(): Promise<void> {
-  if (currentNotificationId) {
-    try {
-      await Notifications.dismissNotificationAsync(currentNotificationId);
-    } catch {
-      // ignore
-    }
-    currentNotificationId = null;
+  try {
+    await Notifications.dismissNotificationAsync(NOW_PLAYING_NOTIFICATION_ID);
+  } catch {
+    // ignore
   }
+  currentNotificationId = null;
+  lastPlaybackTitle = null;
+  lastIsPlaying = null;
+  lastUpdateTimestamp = 0;
 }
 
 export function cleanupNowPlayingNotification(): void {
   if (responseListener) {
-    responseListener.remove();
+    try {
+      responseListener.remove();
+    } catch {
+      // ignore
+    }
     responseListener = null;
   }
   isCategoryRegistered = false;
   isChannelConfigured = false;
+  isHandlerConfigured = false;
+  currentNotificationId = null;
+  lastPlaybackTitle = null;
+  lastIsPlaying = null;
+  lastUpdateTimestamp = 0;
 }
 
 export function registerNotificationResponseHandler(handler: (action: string) => void): () => void {
