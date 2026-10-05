@@ -8,50 +8,34 @@
  * / Jetpack Glance widgets without altering the core app runtime or requiring
  * new npm dependencies.
  * 
- * NATIVE ARCHITECTURE OVERVIEW:
- * -----------------------------
- * 1. iOS (WidgetKit):
- *    - Real home-screen widgets execute in a separate process (`WidgetExtension`).
- *    - App Groups (`group.com.islamic.app`) share a directory container.
- *    - The main React Native app writes `WidgetBundle` JSON to `NSUserDefaults(suiteName: "group.com.islamic.app")`
- *      or shared file container whenever prayer cache updates or app backgrounds.
- *    - SwiftUI `TimelineProvider` reads this snapshot and builds timeline entries
- *      scheduled at prayer times.
- *    - Deep links use `widgetURL(URL(string: "salah://..."))`.
- * 
- * 2. Android (AppWidgetProvider / Jetpack Glance):
- *    - Android widgets run as RemoteViews in the SystemUI launcher process.
- *    - App writes `WidgetBundle` JSON to multi-process `SharedPreferences` or
- *      a local SQLite/file cache.
- *    - An `AppWidgetProvider` broadcast receiver responds to update broadcasts,
- *      midnight roll-overs, and WorkManager periodic alarms (circumventing the
- *      system 30-min minimum update clamp).
- *    - RemoteViews use PendingIntents to launch deep links (`salah://...`).
- * 
- * THE 4 WIDGETS:
- * --------------
- * 1. Next Prayer: Big time (Instrument Serif), uppercase prayer name (e.g. MAGHRIB),
- *    and live countdown ("in 42 min" / "Now").
- * 2. Prayer Progress: "TODAY" header + 5 rows with ✓/○ (Fajr, Dhuhr, Asr, Maghrib, Isha)
- *    and completion count / streak.
- * 3. Quran — Continue Reading: Last read position ("Al-Baqarah · 2:255") + "Continue →".
- * 4. Hijri Calendar: Big day number, month name ("Rabi' al-Awwal"), and year ("1448 AH").
- * 
- * See `docs/widgets.md` for full native implementation details and Swift/Kotlin code.
+ * AUTHORITATIVE CACHE CONTRACT:
+ * - Widgets MUST use the SAME cached prayer data (date/location/timezone/method/
+ *   madhab/adjustments) as Today + notifications.
+ * - No second calculation system. No remote network calls inside widget refresh.
+ * - Graceful fallback / offline handling with zero synthetic or fake verses.
  * ============================================================================
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loadPrayerCache, getSalahEntries, getSalahHistory, computeStreak } from './db';
+import { loadPrayerCache, getSalahEntries, getSalahHistory, computeStreak, loadQuranCache } from './db';
 import { PrayerTimes, Location, getNextPrayer } from './prayerTimes';
 import { formatTime } from './timeFormat';
 import { getReadingPosition } from './continuing';
 import { SURAHS_114 } from './surahs114';
 import { gregorianToHijriString, HIJRI_MONTHS } from './hijri';
+import { qiblaBearing, distanceToKaabaKm } from './qibla';
+import { DUAS_DATA, DuaItem } from './duas';
 
 /* -------------------------------------------------------------------------- */
 /*                                  Types                                     */
 /* -------------------------------------------------------------------------- */
+
+export interface PrayerScheduleItem {
+  name: string;
+  time: string;
+  isNext: boolean;
+  isPassed: boolean;
+}
 
 export interface NextPrayerWidgetData {
   /** Uppercase prayer name, e.g. "MAGHRIB", "FAJR" */
@@ -76,6 +60,8 @@ export interface NextPrayerWidgetData {
   locationLabel: string;
   /** Fraction (0..1) of the current prayer interval elapsed */
   progressFraction: number;
+  /** 5-prayer daily schedule for medium/large widgets */
+  prayers: PrayerScheduleItem[];
 }
 
 export interface PrayerProgressItem {
@@ -124,11 +110,48 @@ export interface HijriWidgetData {
   gregorianDate: string;
 }
 
+export interface QuranVerseWidgetData {
+  surahNumber: number;
+  ayahNumber: number;
+  surahEnglishName: string;
+  surahArabicName: string;
+  reference: string;
+  arabicText: string;
+  translationText: string;
+  hasData: boolean;
+  fallbackText?: string;
+  deepLink: string;
+}
+
+export interface QiblaWidgetData {
+  hasLocation: boolean;
+  bearingDeg: number;
+  bearingText: string;
+  distanceKm: number;
+  distanceText: string;
+  locationLabel: string;
+  statusText: string;
+  deepLink: string;
+}
+
+export interface DuaWidgetData {
+  id: string;
+  title: string;
+  category: string;
+  arabicText: string;
+  translationText: string;
+  reference: string;
+  deepLink: string;
+}
+
 export interface WidgetBundle {
   nextPrayer: NextPrayerWidgetData;
   prayerProgress: PrayerProgressWidgetData;
   continueReading: ContinueReadingWidgetData;
   hijri: HijriWidgetData;
+  quranVerse: QuranVerseWidgetData;
+  qibla: QiblaWidgetData;
+  dua: DuaWidgetData;
   generatedAt: number;
 }
 
@@ -148,6 +171,7 @@ export interface WidgetProgressOptions {
 export interface WidgetOptions extends WidgetPrayerOptions {
   salahEntries?: Record<string, boolean>;
   cachedHijri?: { day: string; month: string; monthEn: string; year: string };
+  duaId?: string;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -194,15 +218,22 @@ export function formatWidgetCountdown(ms: number): string {
   return `in ${mins} min`;
 }
 
+function getCompassDirection(bearing: number): string {
+  const normalized = (bearing + 360) % 360;
+  const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+  const index = Math.round(normalized / 22.5) % 16;
+  return directions[index] || 'N';
+}
+
 /* -------------------------------------------------------------------------- */
 /*                        1. Next Prayer Widget Data                          */
 /* -------------------------------------------------------------------------- */
 
 /**
- * Produces the snapshot for Widget 1: Next Prayer.
+ * Produces the snapshot for Widget 1: Next Prayer & 5-Prayer Medium Schedule.
  * Reads cached prayer timings from SQLite/localStorage (`loadPrayerCache`)
- * and calculates the upcoming prayer and live countdown.
- * Read-only — never executes network calls or writes to storage.
+ * using the SAME authoritative cache as Today + notifications.
+ * Read-only — never executes network calls.
  */
 export async function getNextPrayerWidgetData(
   options: WidgetPrayerOptions = {}
@@ -239,7 +270,7 @@ export async function getNextPrayerWidgetData(
 
   let timings: PrayerTimes | null = options.timings || null;
 
-  // If timings weren't passed directly, look up the cache
+  // Look up authoritative cache if timings not passed directly
   if (!timings) {
     const locKey = `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`;
     let cached = loadPrayerCache(dateStr, locKey, method);
@@ -268,18 +299,26 @@ export async function getNextPrayerWidgetData(
 
   // Fallback empty state when no cache is available
   if (!timings || !timings.Fajr) {
+    const emptyPrayers: PrayerScheduleItem[] = DAILY_PRAYERS.map((p) => ({
+      name: p,
+      time: '--:--',
+      isNext: false,
+      isPassed: false,
+    }));
+
     return {
-      name: '',
-      rawName: '',
+      name: 'ISLAMIC',
+      rawName: 'Islamic',
       time: '--:--',
       rawTime: '',
       countdownMs: 0,
-      countdownText: 'Open app to load times',
+      countdownText: 'Open app to load',
       isTomorrow: false,
       hasData: false,
       fallbackText: 'Open app to load times',
       locationLabel: loc.label || 'Location',
       progressFraction: 0,
+      prayers: emptyPrayers,
     };
   }
 
@@ -318,7 +357,6 @@ export async function getNextPrayerWidgetData(
       progressFraction = Math.min(1, Math.max(0, (nowMin - prevMin) / interval));
     }
   } else {
-    // After Isha: interval is from Isha to tomorrow's Fajr
     const prevMin = parseHm(timings.Isha || '00:00');
     const nextMin = parseHm(timings.Fajr || '00:00') + 1440;
     const interval = nextMin - prevMin;
@@ -326,6 +364,22 @@ export async function getNextPrayerWidgetData(
       progressFraction = Math.min(1, Math.max(0, (nowMin - prevMin) / interval));
     }
   }
+
+  // Build 5-prayer daily schedule with active / passed flags
+  const prayers: PrayerScheduleItem[] = DAILY_PRAYERS.map((p) => {
+    const pTime = timings ? timings[p] : '--:--';
+    const pMin = parseHm(pTime || '');
+    const isThisNext = next
+      ? next.name.toLowerCase() === p.toLowerCase()
+      : p === 'Fajr' && isTomorrow;
+    const isPassed = !isTomorrow && nowMin > pMin;
+    return {
+      name: p,
+      time: formatTime(pTime || '--:--', timeFormat),
+      isNext: isThisNext,
+      isPassed,
+    };
+  });
 
   return {
     name,
@@ -338,6 +392,7 @@ export async function getNextPrayerWidgetData(
     hasData: true,
     locationLabel: loc.label || 'Makkah, Saudi Arabia',
     progressFraction: Math.round(progressFraction * 100) / 100,
+    prayers,
   };
 }
 
@@ -345,11 +400,6 @@ export async function getNextPrayerWidgetData(
 /*                      2. Prayer Progress Widget Data                        */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Produces the snapshot for Widget 2: Prayer Progress.
- * Reads today's 5 prayer completions from `salah_entries` via `getSalahEntries`.
- * Synchronous pure read from SQLite / localStorage cache.
- */
 export function getPrayerProgressWidgetData(
   options: WidgetProgressOptions = {}
 ): PrayerProgressWidgetData {
@@ -391,11 +441,6 @@ export function getPrayerProgressWidgetData(
 /*                    3. Quran Continue Reading Widget Data                   */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Produces the snapshot for Widget 3: Quran Continue Reading.
- * Reads the latest reading position from `continuing.ts` (`quran-last-reading`).
- * Looks up English and Arabic Surah names from `SURAHS_114`.
- */
 export async function getContinueReadingWidgetData(): Promise<ContinueReadingWidgetData> {
   const position = await getReadingPosition();
 
@@ -424,7 +469,6 @@ export async function getContinueReadingWidgetData(): Promise<ContinueReadingWid
     };
   }
 
-  // Fallback empty state when user hasn't started reading yet
   return {
     surahNumber: 1,
     ayahNumber: 1,
@@ -443,11 +487,6 @@ export async function getContinueReadingWidgetData(): Promise<ContinueReadingWid
 /*                         4. Hijri Widget Data                               */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Produces the snapshot for Widget 4: Hijri Calendar.
- * Uses cached Hijri data if available or computes offline tabular calculation
- * via `gregorianToHijriString`.
- */
 export function getHijriWidgetData(
   date = new Date(),
   cachedHijri?: { day: string; month: string; monthEn: string; year: string }
@@ -461,7 +500,6 @@ export function getHijriWidgetData(
   const weekday = weekdayNames[date.getDay()];
   const gregorianDate = `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
 
-  // If authoritative cached Hijri date exists from islamic.app / aladhan
   if (cachedHijri && cachedHijri.day && (cachedHijri.monthEn || cachedHijri.month)) {
     const rawMonth = cachedHijri.monthEn || cachedHijri.month;
     const month = rawMonth.replace(/\b\w/g, (c) => c.toUpperCase());
@@ -477,9 +515,7 @@ export function getHijriWidgetData(
     };
   }
 
-  // Fallback: tabular calculation from hijri.ts
   const rawStr = gregorianToHijriString(date.getFullYear(), date.getMonth() + 1, date.getDate());
-  // rawStr e.g. "4 Rabi' al-awwal 1448 AH"
   const parts = rawStr.split(' ');
   const day = parts[0] || String(date.getDate());
   const year = parts.slice(-2).join(' ') || '1448 AH';
@@ -497,20 +533,154 @@ export function getHijriWidgetData(
 }
 
 /* -------------------------------------------------------------------------- */
-/*                      5. All-in-One Widget Bundle                           */
+/*                    5. Quran Verse of the Day Widget Data                   */
 /* -------------------------------------------------------------------------- */
 
-/**
- * Returns snapshots for all four widgets at once.
- * Suitable for refreshing the WidgetPreviewScreen and for writing to
- * shared native containers (App Groups UserDefaults on iOS, SharedPreferences on Android).
- */
+export async function getQuranVerseWidgetData(): Promise<QuranVerseWidgetData> {
+  // Check reading position first
+  const pos = await getReadingPosition();
+  const surahNum = pos?.surah && pos.surah >= 1 && pos.surah <= 114 ? pos.surah : 1;
+  const ayahNum = pos?.ayah && pos.ayah >= 1 ? pos.ayah : 1;
+
+  // Try to load cached surah from local SQLite / web cache
+  let cachedSurah = loadQuranCache<any>(`surah:${surahNum}:en.sahih`);
+  if (!cachedSurah && surahNum !== 1) {
+    cachedSurah = loadQuranCache<any>('surah:1:en.sahih');
+  }
+
+  const surahMeta = SURAHS_114.find((s) => s.number === surahNum) || SURAHS_114[0];
+
+  if (cachedSurah?.ayahs && Array.isArray(cachedSurah.ayahs) && cachedSurah.ayahs.length > 0) {
+    const match = cachedSurah.ayahs.find((a: any) => a.numberInSurah === ayahNum) || cachedSurah.ayahs[0];
+    const actualAyah = match.numberInSurah || 1;
+    return {
+      surahNumber: surahMeta.number,
+      ayahNumber: actualAyah,
+      surahEnglishName: surahMeta.englishName,
+      surahArabicName: surahMeta.name,
+      reference: `${surahMeta.englishName} ${surahMeta.number}:${actualAyah}`,
+      arabicText: match.text || '',
+      translationText: match.translation || '',
+      hasData: true,
+      deepLink: `salah://quran/${surahMeta.number}/${actualAyah}`,
+    };
+  }
+
+  // Graceful empty/offline state — NEVER fake verses
+  return {
+    surahNumber: 1,
+    ayahNumber: 1,
+    surahEnglishName: 'Al-Fatihah',
+    surahArabicName: 'الفَاتِحة',
+    reference: 'The Holy Quran',
+    arabicText: '',
+    translationText: 'Open the app to read and cache the Holy Quran.',
+    hasData: false,
+    fallbackText: 'Open app to read',
+    deepLink: 'salah://quran/1/1',
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                         6. Qibla Widget Data                               */
+/* -------------------------------------------------------------------------- */
+
+export async function getQiblaWidgetData(options: WidgetPrayerOptions = {}): Promise<QiblaWidgetData> {
+  let loc = options.location;
+
+  if (!loc) {
+    try {
+      const rawSettings = await AsyncStorage.getItem('islamic-settings');
+      if (rawSettings) {
+        const s = JSON.parse(rawSettings);
+        if (s.locationMode === 'auto' && s.autoLocation) {
+          loc = s.autoLocation;
+        } else if (s.manualLocation) {
+          loc = s.manualLocation;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!loc || typeof loc.latitude !== 'number' || typeof loc.longitude !== 'number') {
+    return {
+      hasLocation: false,
+      bearingDeg: 0,
+      bearingText: '--°',
+      distanceKm: 0,
+      distanceText: 'Location unavailable',
+      locationLabel: 'Set Location in App',
+      statusText: 'Open app to align Qibla',
+      deepLink: 'salah://qibla',
+    };
+  }
+
+  const rawBearing = qiblaBearing(loc.latitude, loc.longitude);
+  const bearing = Math.round(rawBearing);
+  const dir = getCompassDirection(bearing);
+  const dist = Math.round(distanceToKaabaKm(loc.latitude, loc.longitude));
+
+  return {
+    hasLocation: true,
+    bearingDeg: bearing,
+    bearingText: `${bearing}° ${dir}`,
+    distanceKm: dist,
+    distanceText: `${dist.toLocaleString()} km to Makkah`,
+    locationLabel: loc.label || 'Your Location',
+    statusText: 'Qibla Direction',
+    deepLink: 'salah://qibla',
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                         7. Dua & Adhkar Widget Data                        */
+/* -------------------------------------------------------------------------- */
+
+export function getDuaWidgetData(options: WidgetOptions = {}): DuaWidgetData {
+  const now = options.now || new Date();
+  const hour = now.getHours();
+
+  let selected: DuaItem = DUAS_DATA[0];
+
+  if (options.duaId) {
+    const found = DUAS_DATA.find((d) => d.id === options.duaId);
+    if (found) selected = found;
+  } else if (hour >= 5 && hour < 12) {
+    // Morning Remembrance
+    selected = DUAS_DATA.find((d) => d.category === 'Morning') || DUAS_DATA[0];
+  } else if (hour >= 16 && hour < 22) {
+    // Evening Remembrance
+    selected = DUAS_DATA.find((d) => d.category === 'Evening') || DUAS_DATA[1];
+  } else {
+    // Distress / Protection / Daily
+    selected = DUAS_DATA.find((d) => d.id === 'after-salah') || DUAS_DATA[0];
+  }
+
+  return {
+    id: selected.id,
+    title: selected.title,
+    category: selected.category,
+    arabicText: selected.arabic,
+    translationText: selected.translation,
+    reference: selected.reference,
+    deepLink: `salah://duas/${selected.id}`,
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/*                      8. All-in-One Widget Bundle                           */
+/* -------------------------------------------------------------------------- */
+
 export async function getWidgetBundle(options: WidgetOptions = {}): Promise<WidgetBundle> {
   const now = options.now || new Date();
 
-  const [nextPrayer, continueReading] = await Promise.all([
+  const [nextPrayer, continueReading, quranVerse, qibla] = await Promise.all([
     getNextPrayerWidgetData(options),
     getContinueReadingWidgetData(),
+    getQuranVerseWidgetData(),
+    getQiblaWidgetData(options),
   ]);
 
   const prayerProgress = getPrayerProgressWidgetData({
@@ -519,12 +689,16 @@ export async function getWidgetBundle(options: WidgetOptions = {}): Promise<Widg
   });
 
   const hijri = getHijriWidgetData(now, options.cachedHijri);
+  const dua = getDuaWidgetData(options);
 
   return {
     nextPrayer,
     prayerProgress,
     continueReading,
     hijri,
+    quranVerse,
+    qibla,
+    dua,
     generatedAt: Date.now(),
   };
 }

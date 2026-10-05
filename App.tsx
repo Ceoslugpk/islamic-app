@@ -688,24 +688,52 @@ function Root({ splashDone }: { splashDone: boolean }) {
     };
   }, []);
 
-  // Deep link handling - initial URL (cold start)
+  // Canonical Deep Link Resolver integration:
+  // Keeps a ref of navigation setters so handlers are stable and don't re-subscribe
+  const navSettersRef = useRef<NavigationSetters>({
+    setTab,
+    setQuran,
+    setLibrary,
+    setTools,
+    setSettingsOpen,
+  });
+  navSettersRef.current = {
+    setTab,
+    setQuran,
+    setLibrary,
+    setTools,
+    setSettingsOpen,
+  };
+
+  const pendingDeepLinkRef = useRef<string | null>(null);
+
+  const routeDeepLinkUrl = useCallback((url: string) => {
+    const target = parseDeepLink(url);
+    if (target && navSettersRef.current) {
+      handleDeepLink(target, navSettersRef.current).catch(() => {});
+    }
+  }, []);
+
+  // Flush queued cold-start deep links once splash completes (no race with init)
+  useEffect(() => {
+    if (splashDone && pendingDeepLinkRef.current) {
+      const pending = pendingDeepLinkRef.current;
+      pendingDeepLinkRef.current = null;
+      routeDeepLinkUrl(pending);
+    }
+  }, [splashDone, routeDeepLinkUrl]);
+
+  // Cold start: getInitialURL()
   useEffect(() => {
     let isMounted = true;
     const checkInitialUrl = async () => {
-      if (!isMounted) return;
       try {
         const initialUrl = await Linking.getInitialURL();
-        if (initialUrl) {
-          const target = parseDeepLink(initialUrl);
-          if (target) {
-            const setters: NavigationSetters = {
-              setTab,
-              setQuran,
-              setLibrary,
-              setTools,
-              setSettingsOpen,
-            };
-            handleDeepLink(target, setters);
+        if (isMounted && initialUrl) {
+          if (!splashDone) {
+            pendingDeepLinkRef.current = initialUrl;
+          } else {
+            routeDeepLinkUrl(initialUrl);
           }
         }
       } catch {
@@ -713,22 +741,18 @@ function Root({ splashDone }: { splashDone: boolean }) {
       }
     };
     checkInitialUrl();
-    return () => { isMounted = false; };
-  }, [setTab, setQuran, setLibrary, setTools, setSettingsOpen]);
+    return () => {
+      isMounted = false;
+    };
+  }, [splashDone, routeDeepLinkUrl]);
 
-  // Deep link handling - event listener (app already running)
+  // Warm start & runtime links: addEventListener('url')
   useEffect(() => {
     const handleUrl = ({ url }: { url: string }) => {
-      const target = parseDeepLink(url);
-      if (target) {
-        const setters: NavigationSetters = {
-          setTab,
-          setQuran,
-          setLibrary,
-          setTools,
-          setSettingsOpen,
-        };
-        handleDeepLink(target, setters);
+      if (!splashDone) {
+        pendingDeepLinkRef.current = url;
+      } else {
+        routeDeepLinkUrl(url);
       }
     };
 
@@ -736,7 +760,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     return () => {
       subscription.remove();
     };
-  }, [setTab, setQuran, setLibrary, setTools, setSettingsOpen]);
+  }, [splashDone, routeDeepLinkUrl]);
   // Sync the home-screen widget snapshot: on mount, when the app returns to
   // foreground, and after prayer data loads (data changes → widget refresh).
   useEffect(() => {

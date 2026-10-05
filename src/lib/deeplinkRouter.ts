@@ -1,4 +1,5 @@
 import { DeepLinkTarget } from './deeplinks';
+import { getReadingPosition } from './continuing';
 
 export type NavigationSetters = {
   setTab: (tab: 'home' | 'quran' | 'library' | 'tools') => void;
@@ -8,15 +9,36 @@ export type NavigationSetters = {
   setSettingsOpen: (open: boolean) => void;
 };
 
-export function handleDeepLink(target: DeepLinkTarget, setters: NavigationSetters): void {
+export async function handleDeepLink(
+  target: DeepLinkTarget,
+  setters: NavigationSetters
+): Promise<void> {
   const { setTab, setQuran, setLibrary, setTools, setSettingsOpen } = setters;
 
   switch (target.type) {
-    case 'home': {
+    case 'home':
+    case 'prayer': {
       setTab('home');
       setQuran({ screen: 'home' });
       setLibrary({ screen: 'hub' });
       setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'quran-continue': {
+      setTab('quran');
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      try {
+        const pos = await getReadingPosition();
+        if (pos && typeof pos.surah === 'number' && pos.surah >= 1 && pos.surah <= 114) {
+          setQuran({ screen: 'reader', surah: pos.surah, initialAyah: pos.ayah });
+        } else {
+          setQuran({ screen: 'reader', surah: 1, initialAyah: 1 });
+        }
+      } catch {
+        setQuran({ screen: 'home' });
+      }
       break;
     }
 
@@ -121,7 +143,8 @@ export function handleDeepLink(target: DeepLinkTarget, setters: NavigationSetter
       break;
     }
 
-    case 'duas': {
+    case 'duas':
+    case 'adhkar': {
       setTab('library');
       setLibrary({ screen: 'duas' });
       setQuran({ screen: 'home' });
