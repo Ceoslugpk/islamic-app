@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { iconSizes } from '../lib/iconMap';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
@@ -382,7 +383,7 @@ export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreen
                   { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
                 ]}
               >
-                <Ionicons name="cloud-download-outline" size={32} color={colors.textMuted} />
+                <Ionicons name="cloud-download-outline" size={iconSizes.emptyState} color={colors.textMuted} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
                 No Downloads Yet
@@ -501,7 +502,7 @@ export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreen
                   >
                     <Ionicons
                       name={isPlaying ? 'pause' : 'play'}
-                      size={15}
+                      size={14}
                       color={isPlaying ? colors.onAccent : colors.accent}
                     />
                   </TouchableOpacity>
@@ -516,7 +517,7 @@ export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreen
                     accessibilityLabel={`Remove Surah ${englishName} download`}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Ionicons name="trash-outline" size={15} color={colors.textMuted} />
+                    <Ionicons name="trash-outline" size={iconSizes.small} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
               </View>

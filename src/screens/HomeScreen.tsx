@@ -40,6 +40,7 @@ import { Hairline } from '../components/Hairline';
 import { SectionHeader } from '../components/SectionHeader';
 import { GeometricPattern } from '../components/GeometricPattern';
 import { ArabicText } from '../components/ArabicText';
+import { iconSizes } from '../lib/iconMap';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity, isAppOnline } from '../lib/useConnectivity';
@@ -575,7 +576,7 @@ export default function HomeScreen({
   if (!data) {
     return (
       <View style={[styles.center, { backgroundColor: colors.bgBase, padding: 24 }]}>
-        <Ionicons name="cloud-offline-outline" size={48} color={colors.textMuted} style={{ marginBottom: 16 }} />
+        <Ionicons name="cloud-offline-outline" size={iconSizes.emptyState} color={colors.textMuted} style={{ marginBottom: 16 }} />
         <Text style={[styles.errorText, { color: colors.textPrimary, textAlign: 'center', marginBottom: 8, fontSize: 16, fontWeight: '600' }]}>
           {error || 'Prayer times unavailable offline'}
         </Text>
@@ -596,7 +597,7 @@ export default function HomeScreen({
           accessibilityRole="button"
           accessibilityLabel="Retry loading prayer times"
         >
-          <Text style={{ color: colors.bgBase, fontWeight: '600', fontSize: 14 }}>Retry</Text>
+          <Text style={{ color: colors.onAccent, fontWeight: '600', fontSize: 14 }}>Retry</Text>
         </TouchableOpacity>
       </View>
     );

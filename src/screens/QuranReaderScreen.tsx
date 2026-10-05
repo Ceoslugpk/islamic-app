@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
+import { iconSizes } from '../lib/iconMap';
 import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
 import { ArabicText, AyahText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { useSettings, QURAN_FONT_SIZE_MIN, QURAN_FONT_SIZE_MAX, QURAN_FONT_SIZE_STEP } from '../lib/settings';
@@ -165,7 +166,7 @@ function AyahBookmarkButton({
       <Animated.View style={{ transform: [{ scale: bounceAnim }] }}>
         <Ionicons
           name={isBookmarked ? 'heart' : 'heart-outline'}
-          size={19}
+          size={iconSizes.inlineLg}
           color={isBookmarked ? accentColor : inactiveColor}
         />
       </Animated.View>
@@ -813,7 +814,7 @@ export default function QuranReaderScreen({
             >
               <Ionicons
                 name={isTafsirOpen ? 'book' : 'book-outline'}
-                size={19}
+                size={iconSizes.inlineLg}
                 color={isTafsirOpen ? colors.accent : colors.textSecondary}
               />
             </TouchableOpacity>
@@ -835,7 +836,7 @@ export default function QuranReaderScreen({
               accessibilityRole="button"
               accessibilityLabel={`Share Ayah ${item.numberInSurah}`}
             >
-              <Ionicons name="share-social-outline" size={19} color={colors.textSecondary} />
+              <Ionicons name="share-social-outline" size={iconSizes.inlineLg} color={colors.textSecondary} />
             </TouchableOpacity>
 
             {/* Copy */}
@@ -848,7 +849,7 @@ export default function QuranReaderScreen({
             >
               <Ionicons
                 name={copiedAyah === item.numberInSurah ? 'checkmark' : 'copy-outline'}
-                size={19}
+                size={iconSizes.inlineLg}
                 color={copiedAyah === item.numberInSurah ? colors.accent : colors.textSecondary}
               />
             </TouchableOpacity>
@@ -1433,7 +1434,7 @@ export default function QuranReaderScreen({
               accessibilityRole="button"
               accessibilityLabel="Close"
             >
-              <Ionicons name="close" size={24} color={colors.textPrimary} />
+              <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -2006,7 +2007,7 @@ const styles = StyleSheet.create({
   reciterTrailing: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 28,
+    width: 24,
   },
   reciterTitleRow: {
     flexDirection: 'row',

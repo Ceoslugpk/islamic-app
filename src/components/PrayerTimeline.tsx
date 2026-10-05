@@ -170,11 +170,11 @@ function TimelineDot({
                 width: 7,
                 height: 7,
                 borderRadius: 3.5,
-                backgroundColor: '#121110',
+                backgroundColor: colors.onAccent,
               }}
             />
           ) : (
-            <Ionicons name="checkmark" size={11} color="#121110" />
+            <Ionicons name="checkmark" size={11} color={colors.onAccent} />
           )}
         </Animated.View>
       </View>
@@ -356,7 +356,7 @@ export function PrayerTimeline({
                             },
                           ]}
                         >
-                          <Text style={styles.nowBadgeText}>NOW</Text>
+                          <Text style={[styles.nowBadgeText, { color: colors.onAccent }]}>NOW</Text>
                         </View>
                       )}
                     </View>
@@ -558,7 +558,6 @@ const styles = StyleSheet.create({
   nowBadgeText: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 9,
-    color: '#121110',
     letterSpacing: 0.5,
   },
   rowTime: {
@@ -582,7 +581,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 11,
+    paddingVertical: 12,
   },
   trackerLeft: {
     flexDirection: 'row',

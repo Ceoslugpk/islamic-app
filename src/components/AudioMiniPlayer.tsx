@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { iconSizes } from '../lib/iconMap';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
 import { formatProgress } from '../lib/formatDuration';
 
@@ -316,10 +317,10 @@ export function AudioMiniPlayer({
           ) : (
             <Ionicons
               name="play"
-              size={18}
+              size={iconSizes.small}
               color={colors.onAccent}
             />
-          )}
+            )}
         </TouchableOpacity>
 
         <TouchableOpacity

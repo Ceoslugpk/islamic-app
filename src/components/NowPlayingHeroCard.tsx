@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { iconSizes } from '../lib/iconMap';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
 
@@ -357,12 +358,12 @@ export function NowPlayingHeroCard({
           disabled={status.isBuffering}
         >
           {status.isBuffering ? (
-            <ActivityIndicator size="small" color="#121110" />
+            <ActivityIndicator size="small" color={colors.onAccent} />
           ) : (
             <Ionicons
               name={status.isPlaying ? 'pause' : 'play'}
-              size={22}
-              color="#121110"
+              size={iconSizes.inlineLg}
+              color={colors.onAccent}
               style={status.isPlaying ? undefined : { marginLeft: 2 }}
             />
           )}

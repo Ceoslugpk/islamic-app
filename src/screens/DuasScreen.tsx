@@ -9,7 +9,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import {
@@ -136,21 +136,14 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
-      <View style={styles.contentWrap}>
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Library"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Library</Text>
-          </TouchableOpacity>
-        )}
-
-        <SectionHeader compact eyebrow="Supplications" title="Duas & Adhkar" />
+    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+      <ScreenHeader
+        title="Duas & Adhkar"
+        eyebrow="Supplications"
+        onBack={onBack}
+        backLabel="Library"
+      />
+      <View style={[styles.contentWrap, { paddingHorizontal: paddingH }]}>
 
       {/* Category Filter Chips + Random Dua */}
       <View style={styles.filterRow}>
@@ -183,7 +176,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
                   <Text
                     style={[
                       styles.categoryChipText,
-                      { color: isSelected ? colors.bgBase : colors.textSecondary },
+                      { color: isSelected ? colors.onAccent : colors.textSecondary },
                     ]}
                   >
                     {cat} ({DUA_COUNTS[cat]})
@@ -257,26 +250,12 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 20,
-    paddingBottom: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
   },
   categoryScroll: {
     gap: 6,

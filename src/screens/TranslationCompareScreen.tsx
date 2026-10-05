@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { iconSizes } from '../lib/iconMap';
 import { SectionHeader } from '../components/SectionHeader';
 import { ArabicText } from '../components/ArabicText';
 import { fetchAyahEditions, fetchSurahList, SurahMeta } from '../lib/quran';
@@ -222,7 +223,7 @@ export default function TranslationCompareScreen({
                   <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
                     All Languages...
                   </Text>
-                  <Ionicons name="chevron-forward" size={11} color={colors.accent} />
+                  <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
                 </TouchableOpacity>
               </View>
 
@@ -275,7 +276,7 @@ export default function TranslationCompareScreen({
                   <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
                     All Languages...
                   </Text>
-                  <Ionicons name="chevron-forward" size={11} color={colors.accent} />
+                  <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
                 </TouchableOpacity>
               </View>
 
@@ -329,7 +330,7 @@ export default function TranslationCompareScreen({
                     <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
                       All Languages...
                     </Text>
-                    <Ionicons name="chevron-forward" size={11} color={colors.accent} />
+                    <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
                   </TouchableOpacity>
                 </View>
 
@@ -356,7 +357,7 @@ export default function TranslationCompareScreen({
                         <Text
                           style={[
                             styles.choicePillText,
-                            { color: isSelected ? '#121110' : colors.textSecondary },
+                            { color: isSelected ? colors.onAccent : colors.textSecondary },
                           ]}
                         >
                           {ql.flag} {ql.label}
@@ -767,9 +768,9 @@ const styles = StyleSheet.create({
     fontSize: 10.5,
   },
   tag: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

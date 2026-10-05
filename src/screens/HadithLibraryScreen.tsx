@@ -478,12 +478,12 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 <Ionicons
                   name={t.icon as any}
                   size={14}
-                  color={isActive ? colors.bgBase : colors.textMuted}
+                  color={isActive ? colors.onAccent : colors.textMuted}
                 />
                 <Text
                   style={[
                     styles.tabChipText,
-                    { color: isActive ? colors.bgBase : colors.textPrimary },
+                    { color: isActive ? colors.onAccent : colors.textPrimary },
                   ]}
                 >
                   {t.label}
@@ -1235,12 +1235,12 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 <Ionicons
                   name={isCurrentSaved ? 'bookmark' : 'bookmark-outline'}
                   size={18}
-                  color={isCurrentSaved ? colors.bgBase : colors.textPrimary}
+                  color={isCurrentSaved ? colors.onAccent : colors.textPrimary}
                 />
                 <Text
                   style={[
                     styles.actionBtnText,
-                    { color: isCurrentSaved ? colors.bgBase : colors.textPrimary },
+                    { color: isCurrentSaved ? colors.onAccent : colors.textPrimary },
                   ]}
                 >
                   {isCurrentSaved ? 'Saved' : 'Save'}

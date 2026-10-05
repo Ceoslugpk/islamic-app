@@ -15,6 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
+import { iconSizes } from '../lib/iconMap';
 import { SectionHeader } from '../components/SectionHeader';
 import { AudioPlayerModal } from '../components/AudioPlayerModal';
 import {
@@ -494,7 +495,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       <Text
                         style={[
                           styles.tabBadgeText,
-                          { color: isTabActive ? '#121110' : colors.textSecondary },
+                          { color: isTabActive ? colors.onAccent : colors.textSecondary },
                         ]}
                       >
                         {t.badge}
@@ -649,12 +650,12 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         <Ionicons
                           name={isSamplingThis ? 'pause' : 'volume-medium'}
                           size={14}
-                          color={isSamplingThis ? '#121110' : colors.accent}
+                          color={isSamplingThis ? colors.onAccent : colors.accent}
                         />
                         <Text
                           style={[
                             styles.sampleBtnText,
-                            { color: isSamplingThis ? '#121110' : colors.accent },
+                            { color: isSamplingThis ? colors.onAccent : colors.accent },
                           ]}
                         >
                           {isSamplingThis ? 'Playing' : 'Sample'}
@@ -788,7 +789,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               <Text
                                 style={[
                                   styles.langTagText,
-                                  { color: isSelectedEdition ? '#121110' : colors.accent },
+                                  { color: isSelectedEdition ? colors.onAccent : colors.accent },
                                 ]}
                               >
                                 {item.language.toUpperCase()}
@@ -824,12 +825,12 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         <Ionicons
                           name={isSamplingThis ? 'pause' : 'volume-medium'}
                           size={14}
-                          color={isSamplingThis ? '#121110' : colors.accent}
+                          color={isSamplingThis ? colors.onAccent : colors.accent}
                         />
                         <Text
                           style={[
                             styles.sampleBtnText,
-                            { color: isSamplingThis ? '#121110' : colors.accent },
+                            { color: isSamplingThis ? colors.onAccent : colors.accent },
                           ]}
                         >
                           {isSamplingThis ? 'Playing' : 'Sample'}
@@ -904,7 +905,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       <Ionicons
                         name={isItemPlaying ? 'pause' : 'play'}
                         size={16}
-                        color={isItemPlaying ? '#121110' : colors.accent}
+                        color={isItemPlaying ? colors.onAccent : colors.accent}
                       />
                     </View>
                   </TouchableOpacity>
@@ -935,8 +936,8 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     accessibilityRole="button"
                     accessibilityLabel={`Play all ${selectedPlaylist.items.length} tracks`}
                   >
-                    <Ionicons name="play" size={14} color="#121110" />
-                    <Text style={styles.playAllBtnText}>Play All</Text>
+                    <Ionicons name="play" size={14} color={colors.onAccent} />
+                    <Text style={[styles.playAllBtnText, { color: colors.onAccent }]}>Play All</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -973,7 +974,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       <Text style={[styles.trackTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                         {item.title}
                       </Text>
-                      <Ionicons name="play-circle-outline" size={20} color={colors.accent} />
+                      <Ionicons name="play-circle-outline" size={iconSizes.action} color={colors.accent} />
                     </TouchableOpacity>
                   )}
                 />
@@ -1057,8 +1058,8 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               accessibilityRole="button"
                               accessibilityLabel={`Play preset: ${preset.title}`}
                             >
-                              <Ionicons name="play" size={13} color="#121110" />
-                              <Text style={styles.presetPlayBtnText}>Play</Text>
+                              <Ionicons name="play" size={14} color={colors.onAccent} />
+                              <Text style={[styles.presetPlayBtnText, { color: colors.onAccent }]}>Play</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -1083,8 +1084,8 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     accessibilityRole="button"
                     accessibilityLabel="Create a new playlist"
                   >
-                    <Ionicons name="add" size={16} color="#121110" />
-                    <Text style={styles.createBtnText}>New</Text>
+                    <Ionicons name="add" size={16} color={colors.onAccent} />
+                    <Text style={[styles.createBtnText, { color: colors.onAccent }]}>New</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -1392,7 +1393,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         <Ionicons
                           name={isPlayingThis ? 'pause' : 'play'}
                           size={14}
-                          color={isPlayingThis ? '#121110' : colors.accent}
+                          color={isPlayingThis ? colors.onAccent : colors.accent}
                         />
                       </TouchableOpacity>
 
@@ -1560,7 +1561,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       <Text
                         style={[
                           styles.repeatBtnText,
-                          { color: isSelected ? '#121110' : colors.textSecondary },
+                          { color: isSelected ? colors.onAccent : colors.textSecondary },
                         ]}
                       >
                         {mode === 'none' ? 'OFF' : mode === 'all' ? 'ALL' : 'REPEAT 1'}
@@ -1630,7 +1631,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               </Text>
             </View>
             <View style={[styles.floatingMiniOpenBtn, { backgroundColor: colors.accent }]}>
-              <Ionicons name="chevron-up" size={16} color="#121110" />
+              <Ionicons name="chevron-up" size={16} color={colors.onAccent} />
             </View>
           </TouchableOpacity>
         )}
@@ -1963,7 +1964,6 @@ const styles = StyleSheet.create({
   presetPlayBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
-    color: '#121110',
   },
   playlistActionRow: {
     flexDirection: 'row',
@@ -1984,7 +1984,6 @@ const styles = StyleSheet.create({
   createBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
-    color: '#121110',
   },
   userPlaylistsList: {
     gap: 10,
@@ -2057,7 +2056,6 @@ const styles = StyleSheet.create({
   playAllBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
-    color: '#121110',
   },
   playlistHeaderTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -2110,7 +2108,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   queueNum: {
-    width: 22,
+    width: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2144,8 +2142,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   queueRemoveBtn: {
-    width: 28,
-    height: 28,
+    width: 24,
+    height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2348,7 +2346,6 @@ const styles = StyleSheet.create({
   modalSubmitText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
-    color: '#121110',
   },
   reciterHeaderRow: {
     paddingHorizontal: 16,
@@ -2483,9 +2480,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   floatingMiniOpenBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },

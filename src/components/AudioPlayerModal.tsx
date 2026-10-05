@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { iconSizes } from '../lib/iconMap';
 import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
 import {
   addQueueListener,
@@ -389,7 +390,7 @@ export function AudioPlayerModal({
                     <Text
                       style={[
                         styles.langSegmentTitle,
-                        { color: activeSegment === 'arabic' ? '#121110' : colors.textPrimary },
+                        { color: activeSegment === 'arabic' ? colors.onAccent : colors.textPrimary },
                       ]}
                     >
                       العربية
@@ -420,7 +421,7 @@ export function AudioPlayerModal({
                       styles.langSegmentSub,
                       {
                         color:
-                          activeSegment === 'arabic' ? 'rgba(18,17,16,0.85)' : colors.textMuted,
+                          activeSegment === 'arabic' ? colors.onAccent : colors.textMuted,
                       },
                     ]}
                     numberOfLines={1}
@@ -453,7 +454,7 @@ export function AudioPlayerModal({
                     <Text
                       style={[
                         styles.langSegmentTitle,
-                        { color: activeSegment === 'translation' ? '#121110' : colors.textPrimary },
+                        { color: activeSegment === 'translation' ? colors.onAccent : colors.textPrimary },
                       ]}
                       numberOfLines={1}
                     >
@@ -485,7 +486,7 @@ export function AudioPlayerModal({
                       styles.langSegmentSub,
                       {
                         color:
-                          activeSegment === 'translation' ? 'rgba(18,17,16,0.85)' : colors.textMuted,
+                          activeSegment === 'translation' ? colors.onAccent : colors.textMuted,
                       },
                     ]}
                     numberOfLines={1}
@@ -627,12 +628,12 @@ export function AudioPlayerModal({
                   accessibilityLabel={status.isPlaying ? 'Pause audio' : 'Play audio'}
                 >
                   {status.isBuffering ? (
-                    <ActivityIndicator size="small" color="#121110" />
+                    <ActivityIndicator size="small" color={colors.onAccent} />
                   ) : (
                     <Ionicons
                       name={status.isPlaying ? 'pause' : 'play'}
-                      size={26}
-                      color="#121110"
+                      size={iconSizes.featured}
+                      color={colors.onAccent}
                       style={status.isPlaying ? undefined : { marginLeft: 3 }}
                     />
                   )}

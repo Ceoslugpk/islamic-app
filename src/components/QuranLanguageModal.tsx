@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { iconSizes } from '../lib/iconMap';
 import { QURAN_LANGUAGE_EDITIONS, QuranLanguageEdition } from '../lib/quranLanguages';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { Hairline } from './Hairline';
@@ -124,7 +125,7 @@ export function QuranLanguageModal({
                   accessibilityRole="button"
                   accessibilityLabel="Clear search"
                 >
-                  <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                  <Ionicons name="close-circle" size={iconSizes.inlineLg} color={colors.textMuted} />
                 </TouchableOpacity>
               )}
             </View>
@@ -383,7 +384,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 28,
+    width: 24,
   },
   emptyWrap: {
     paddingVertical: 48,
