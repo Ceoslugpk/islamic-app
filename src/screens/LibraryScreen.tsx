@@ -20,6 +20,7 @@ export type LibraryItemKey =
   | 'names-prophet'
   | 'ramadan-guide'
   | 'prayer-guide'
+  | 'shahada'
   | 'downloads';
 
 /* ─── Item model ──────────────────────────────────────────────── */
@@ -38,6 +39,7 @@ const ICONS: Record<LibraryItemKey, keyof typeof Ionicons.glyphMap> = {
   'names-prophet': 'star',
   'ramadan-guide': 'moon',
   'prayer-guide': 'hand-left',
+  shahada: 'shield-checkmark',
   downloads: 'cloud-download-outline',
 };
 
@@ -70,6 +72,7 @@ const GROUPS: LibraryGroup[] = [
     items: [
       { key: 'ramadan-guide', title: 'Ramadan & Eid Guide', subtitle: 'Fasting, Laylatul Qadr, Zakat al-Fitr, Eid Salah' },
       { key: 'prayer-guide', title: 'Prayer Guide (Fiqh)', subtitle: 'Wudu, Salah, Janazah, Eid, Istikhara, Taraweeh' },
+      { key: 'shahada', title: 'The Shahada', subtitle: "The declaration of faith — Qur'an & hadith" },
     ],
   },
 ];
