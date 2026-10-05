@@ -92,7 +92,16 @@ npm test                # 10 architecture tests (provider/cache/offline/notifica
 
 ## 📸 Screenshots
 
-*(Coming soon — install the app and explore: prayer hero, Qur'an reader, tools.)*
+<div align="center">
+
+<img src="screenshots/home.png" width="220" alt="Home — prayer times & greeting" />
+<img src="screenshots/quran.png" width="220" alt="Quran — surahs, translation & audio" />
+<img src="screenshots/tools.png" width="220" alt="Tools — prayers, qibla, tasbih & more" />
+<img src="screenshots/settings.png" width="220" alt="Settings — themes, reminders & about" />
+
+</div>
+
+*Home · Quran · Tools · Settings — captured from the actual app.*
 
 ---
 
