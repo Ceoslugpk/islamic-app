@@ -1360,7 +1360,11 @@ const styles = StyleSheet.create({
   headerBrand: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    // fixed width — equal to the gear side — so the Bismillah middle is
+    // mathematically centered between them (flex:1 on both sides drifts
+    // because the brand's content is wider than the gear's)
+    width: 110,
+    flexShrink: 0,
     minWidth: 0,
   },
   headerLogo: {
@@ -1393,7 +1397,9 @@ const styles = StyleSheet.create({
   },
   gearBtn: {
     padding: 8,
-    flex: 1,
+    // fixed width — equal to the brand side — keeps the middle truly centered
+    width: 110,
+    flexShrink: 0,
     alignItems: 'flex-end',
   },
   gear: {
