@@ -8,7 +8,7 @@
 
 [![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-0F5A4A)](https://github.com/Ceoslugpk/islamic-app)
 [![Framework](https://img.shields.io/badge/Expo%20SDK-57-0F5A4A)](https://expo.dev)
-[![License](https://img.shields.io/badge/License-Proprietary%20%7C%20Free-8B7355)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-8B7355)](LICENSE)
 [![Made for Ummah](https://img.shields.io/badge/Made%20for-Ummah%20%E2%9D%A4%EF%B8%8F-B24A3D)](https://github.com/Ceoslugpk/islamic-app)
 
 > **تَوَكَّلْتُ عَلَى ٱللَّٰهُ** — *I place my trust in Allah.*
@@ -56,7 +56,7 @@ Prayer times that are **accurate**, a Qur'an that is **beautiful to read**, and 
 ## 🏗 Architecture
 
 ```
-Expo SDK 57 · React Native (Fabric) · Hermes · TypeScript strict
+Expo SDK 57 · React Native (Fabric) · TypeScript strict
 ```
 
 | Layer | Tech |
