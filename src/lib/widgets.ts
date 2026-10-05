@@ -88,6 +88,10 @@ export interface ContinueReadingWidgetData {
   surahArabicName: string;
   /** E.g. "Al-Baqarah · 2:255" or "Start reading" */
   reference: string;
+  /** Whole-number percent through the surah (0-100). */
+  progressPercent?: number;
+  /** Total ayahs in the surah (for progress context). */
+  totalAyahs?: number;
   actionText: string;
   hasPosition: boolean;
   fallbackText?: string;
@@ -468,6 +472,11 @@ export async function getContinueReadingWidgetData(): Promise<ContinueReadingWid
     const surahArabicName = surah?.name || '';
     const reference = `${surahEnglishName} · ${position.surah}:${position.ayah}`;
     const deepLink = `salah://quran/${position.surah}/${position.ayah}`;
+    const totalAyahs = surah?.numberOfAyahs || position.ayah;
+    const progressPercent = Math.max(
+      0,
+      Math.min(100, Math.round((position.ayah / totalAyahs) * 100))
+    );
 
     return {
       surahNumber: position.surah,
@@ -475,6 +484,8 @@ export async function getContinueReadingWidgetData(): Promise<ContinueReadingWid
       surahEnglishName,
       surahArabicName,
       reference,
+      progressPercent,
+      totalAyahs,
       actionText: 'Continue →',
       hasPosition: true,
       savedAt: position.savedAt,

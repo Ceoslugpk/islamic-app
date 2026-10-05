@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { pause, resume, stop, playNext, playPrevious, getCurrentPlayback, getPlaybackStatus } from './quranAudio';
+import { syncNowPlaying, clearNowPlaying } from './systemMediaAdapter';
 
 const NOW_PLAYING_CHANNEL_ID = 'now-playing';
 const NOW_PLAYING_CATEGORY_ID = 'now-playing-media';
@@ -220,6 +221,15 @@ function buildNotificationContent(
 }
 
 export async function startNowPlayingNotification(): Promise<void> {
+  // Drive native lock screen / Control Center / Dynamic Island / MediaSession
+  syncNowPlaying().catch(() => {});
+
+  // On Android, expo-audio AudioControlsService posts the native MediaStyle notification;
+  // scheduling a second notification via expo-notifications causes duplicate alert banners.
+  if (Platform.OS === 'android') {
+    return;
+  }
+
   const ready = await ensureSetup();
   if (!ready) return;
 
@@ -233,7 +243,7 @@ export async function startNowPlayingNotification(): Promise<void> {
   try {
     currentNotificationId = await Notifications.scheduleNotificationAsync({
       content,
-      trigger: Platform.OS === 'android' ? { channelId: NOW_PLAYING_CHANNEL_ID } : null,
+      trigger: null,
       identifier: NOW_PLAYING_NOTIFICATION_ID,
     });
     lastUpdateTimestamp = Date.now();
@@ -245,6 +255,13 @@ export async function startNowPlayingNotification(): Promise<void> {
 }
 
 export async function updateNowPlayingNotification(): Promise<void> {
+  // Drive native lock screen / Control Center / Dynamic Island / MediaSession
+  syncNowPlaying().catch(() => {});
+
+  if (Platform.OS === 'android') {
+    return;
+  }
+
   const playback = getCurrentPlayback();
   const status = getPlaybackStatus();
 
@@ -273,12 +290,9 @@ export async function updateNowPlayingNotification(): Promise<void> {
   const content = buildNotificationContent(playback, status);
 
   try {
-    // Schedule with the stable identifier to smoothly update the existing notification in place.
-    // Never call dismissNotificationAsync before scheduleNotificationAsync — doing so causes
-    // rapid cancel/repost churn and triggers Android notification rate-limiting.
     currentNotificationId = await Notifications.scheduleNotificationAsync({
       content,
-      trigger: Platform.OS === 'android' ? { channelId: NOW_PLAYING_CHANNEL_ID } : null,
+      trigger: null,
       identifier: NOW_PLAYING_NOTIFICATION_ID,
     });
     lastUpdateTimestamp = now;
@@ -290,6 +304,7 @@ export async function updateNowPlayingNotification(): Promise<void> {
 }
 
 export async function stopNowPlayingNotification(): Promise<void> {
+  clearNowPlaying().catch(() => {});
   try {
     await Notifications.dismissNotificationAsync(NOW_PLAYING_NOTIFICATION_ID);
   } catch {
@@ -302,6 +317,7 @@ export async function stopNowPlayingNotification(): Promise<void> {
 }
 
 export function cleanupNowPlayingNotification(): void {
+  clearNowPlaying().catch(() => {});
   if (responseListener) {
     try {
       responseListener.remove();

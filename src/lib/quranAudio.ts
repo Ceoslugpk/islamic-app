@@ -823,6 +823,51 @@ export function getActiveArabicReciter(preferredId?: string): string {
 let currentSound: AudioPlayer | null = null;
 let currentSoundSubscription: { remove: () => void } | null = null;
 let currentPlaybackUrl: string | null = null;
+let currentPlaybackRate = 1.0;
+
+type SoundCreatedListener = (sound: AudioPlayer) => void;
+const soundCreatedListeners = new Set<SoundCreatedListener>();
+
+export function addSoundCreatedListener(listener: SoundCreatedListener): () => void {
+  soundCreatedListeners.add(listener);
+  if (currentSound) {
+    try {
+      listener(currentSound);
+    } catch {}
+  }
+  return () => {
+    soundCreatedListeners.delete(listener);
+  };
+}
+
+function notifySoundCreated(sound: AudioPlayer): void {
+  soundCreatedListeners.forEach((listener) => {
+    try {
+      listener(sound);
+    } catch {}
+  });
+}
+
+export function getCurrentAudioPlayer(): AudioPlayer | null {
+  return currentSound;
+}
+
+export async function setRate(rate: number): Promise<void> {
+  const safeRate = Math.max(0.25, Math.min(2.0, rate));
+  currentPlaybackRate = safeRate;
+  if (currentSound) {
+    try {
+      currentSound.setPlaybackRate(safeRate);
+    } catch {}
+  }
+}
+
+export function getRate(): number {
+  return currentPlaybackRate;
+}
+
+export const setPlaybackRate = setRate;
+export const getPlaybackRate = getRate;
 
 function cleanupCurrentSound(): void {
   if (currentSoundSubscription) {
@@ -832,6 +877,9 @@ function cleanupCurrentSound(): void {
     currentSoundSubscription = null;
   }
   if (currentSound) {
+    try {
+      currentSound.clearLockScreenControls();
+    } catch {}
     try {
       currentSound.pause();
       currentSound.remove();
@@ -1205,9 +1253,15 @@ function handlePlaybackStatusUpdate(status: AudioStatus): void {
         try {
           const fallbackPlayer = createAudioPlayer({ uri: fallbackUrl }, { updateInterval: 250 });
           fallbackPlayer.volume = 1.0;
+          if (currentPlaybackRate !== 1.0) {
+            try {
+              fallbackPlayer.setPlaybackRate(currentPlaybackRate);
+            } catch {}
+          }
           currentSoundSubscription = fallbackPlayer.addListener('playbackStatusUpdate', handlePlaybackStatusUpdate);
           fallbackPlayer.play();
           currentSound = fallbackPlayer;
+          notifySoundCreated(fallbackPlayer);
           if (currentPlayback) currentPlayback.isPlaying = true;
           notifyStatusListeners({
             ...currentStatus,
@@ -1489,8 +1543,14 @@ async function playAudioUrl(url: string): Promise<void> {
     try {
       currentSound = preloaded;
       currentPlaybackUrl = url;
+      if (currentPlaybackRate !== 1.0) {
+        try {
+          preloaded.setPlaybackRate(currentPlaybackRate);
+        } catch {}
+      }
       currentSoundSubscription = preloaded.addListener('playbackStatusUpdate', handlePlaybackStatusUpdate);
       preloaded.play();
+      notifySoundCreated(preloaded);
       if (currentPlayback) currentPlayback.isPlaying = true;
       notifyStatusListeners({
         ...currentStatus,
@@ -1528,10 +1588,16 @@ async function playAudioUrl(url: string): Promise<void> {
   try {
     const player = createAudioPlayer({ uri: targetUri }, { updateInterval: 250 });
     player.volume = 1.0;
+    if (currentPlaybackRate !== 1.0) {
+      try {
+        player.setPlaybackRate(currentPlaybackRate);
+      } catch {}
+    }
     currentSoundSubscription = player.addListener('playbackStatusUpdate', handlePlaybackStatusUpdate);
     player.play();
     currentSound = player;
     currentPlaybackUrl = targetUri;
+    notifySoundCreated(player);
     if (currentPlayback) currentPlayback.isPlaying = true;
     // Notify immediately with isLoaded=true so the now-playing notification can
     // start without waiting for the first playbackStatusUpdate (expo-audio fires
@@ -1557,10 +1623,16 @@ async function playAudioUrl(url: string): Promise<void> {
           cleanupCurrentSound();
           const fallbackPlayer = createAudioPlayer({ uri: fallbackUrl }, { updateInterval: 250 });
           fallbackPlayer.volume = 1.0;
+          if (currentPlaybackRate !== 1.0) {
+            try {
+              fallbackPlayer.setPlaybackRate(currentPlaybackRate);
+            } catch {}
+          }
           currentSoundSubscription = fallbackPlayer.addListener('playbackStatusUpdate', handlePlaybackStatusUpdate);
           fallbackPlayer.play();
           currentSound = fallbackPlayer;
           currentPlaybackUrl = fallbackUrl;
+          notifySoundCreated(fallbackPlayer);
           if (currentPlayback) currentPlayback.isPlaying = true;
           notifyStatusListeners({
             ...currentStatus,
@@ -2209,3 +2281,11 @@ export async function unload(): Promise<void> {
     });
   }
 }
+
+/** Convenient helper to play a specific surah and ayah. */
+export async function playSurahAyah(surah: number, ayah: number, reciter?: string): Promise<void> {
+  const activeReciter = reciter || getActiveArabicReciter();
+  const reciterName = resolveReciterName(activeReciter);
+  await playAyah(activeReciter, undefined, undefined, reciterName, surah, ayah, true);
+}
+

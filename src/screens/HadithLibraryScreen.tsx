@@ -1610,6 +1610,11 @@ const styles = StyleSheet.create({
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 22,
     lineHeight: 26,
+    // Reusable long-title guard: flex:1 so the English title takes the
+    // available width and wraps/ellipsizes instead of collapsing when the
+    // Arabic sibling is long.
+    flex: 1,
+    flexShrink: 1,
   },
   colHadithCount: {
     fontFamily: 'Manrope_400Regular',
@@ -1618,6 +1623,10 @@ const styles = StyleSheet.create({
   },
   colArabic: {
     textAlign: 'right',
+    // Cap Arabic width so it wraps within the card instead of pushing the
+    // English title into a collapsed column.
+    flexShrink: 1,
+    maxWidth: '55%',
   },
   colIntro: {
     fontFamily: 'Manrope_400Regular',
@@ -1668,10 +1677,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 24,
     marginTop: 4,
+    // Keep the title inside the card: stretch to the card width so a long
+    // Arabic sibling can never widen the column and squeeze this text
+    // into a one-character column. Long English titles wrap or ellipsize.
+    flexShrink: 1,
+    width: '100%',
   },
   bookTitleAr: {
     textAlign: 'right',
     marginTop: 2,
+    // Arabic must wrap within the card, never force the column wider.
+    flexShrink: 1,
+    width: '100%',
   },
   hadithRange: {
     fontFamily: 'Manrope_400Regular',

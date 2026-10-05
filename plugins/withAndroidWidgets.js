@@ -176,6 +176,16 @@ function withWidgetNativeFiles(config) {
     );
 
     fs.writeFileSync(
+      path.join(resDir, 'drawable', 'widget_accent_rule.xml'),
+      `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/widget_accent_amber" />
+    <corners android:radius="1dp" />
+</shape>`
+    );
+
+    fs.writeFileSync(
       path.join(resDir, 'drawable', 'widget_active_row.xml'),
       `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
@@ -186,8 +196,8 @@ function withWidgetNativeFiles(config) {
 </shape>`
     );
 
-    // 3. Provider info XMLs (Sensible min/max resize limits)
-    const writeInfoXml = (fileName, minWidth, minHeight, targetW, targetH, minResizeW, minResizeH, maxResizeW, maxResizeH, initialLayout, desc) => {
+    // 3. Provider info XMLs (Sensible min/max resize limits + picker polish)
+    const writeInfoXml = (fileName, minWidth, minHeight, targetW, targetH, minResizeW, minResizeH, maxResizeW, maxResizeH, initialLayout, label, desc) => {
       fs.writeFileSync(
         path.join(resDir, 'xml', fileName),
         `<?xml version="1.0" encoding="utf-8"?>
@@ -202,18 +212,20 @@ function withWidgetNativeFiles(config) {
     android:maxResizeHeight="${maxResizeH}"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/${initialLayout}"
+    android:previewImage="@drawable/widget_preview_${initialLayout.replace('widget_', '').replace('_layout', '')}"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
+    android:label="${label}"
     android:description="${desc}" />`
       );
     };
 
-    writeInfoXml('widget_prayer_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '420dp', '180dp', 'widget_prayer_small', '@string/app_name');
-    writeInfoXml('widget_quran_info.xml', '240dp', '90dp', '4', '2', '220dp', '80dp', '420dp', '180dp', 'widget_quran', '@string/app_name');
-    writeInfoXml('widget_continue_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '320dp', '180dp', 'widget_continue', '@string/app_name');
-    writeInfoXml('widget_qibla_info.xml', '150dp', '90dp', '2', '2', '140dp', '80dp', '320dp', '180dp', 'widget_qibla', '@string/app_name');
-    writeInfoXml('widget_dua_info.xml', '240dp', '90dp', '4', '2', '220dp', '80dp', '420dp', '180dp', 'widget_dua', '@string/app_name');
-    writeInfoXml('islamic_widget_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '420dp', '180dp', 'widget_prayer_small', '@string/app_name');
+    writeInfoXml('widget_prayer_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '420dp', '180dp', 'widget_prayer_small', 'Prayer Times', 'Next prayer time and countdown for your location');
+    writeInfoXml('widget_quran_info.xml', '240dp', '90dp', '4', '2', '220dp', '80dp', '420dp', '180dp', 'widget_quran', 'Quran Verse', 'A verse of the Quran with translation — tap to read');
+    writeInfoXml('widget_continue_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '320dp', '180dp', 'widget_continue', 'Continue Reading', 'Jump back to your exact Quran reading position');
+    writeInfoXml('widget_qibla_info.xml', '150dp', '90dp', '2', '2', '140dp', '80dp', '320dp', '180dp', 'widget_qibla', 'Qibla Direction', 'Qibla direction and degrees for your location');
+    writeInfoXml('widget_dua_info.xml', '240dp', '90dp', '4', '2', '220dp', '80dp', '420dp', '180dp', 'widget_dua', 'Dua &amp; Remembrance', 'Daily duas and adhkar with translations');
+    writeInfoXml('islamic_widget_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '420dp', '180dp', 'widget_prayer_small', 'Prayer Times', 'Next prayer time and countdown for your location');
 
     // 4. RemoteViews Layouts (Compact glanceable redesign)
     const layoutPrayerSmall = `<?xml version="1.0" encoding="utf-8"?>
@@ -226,6 +238,12 @@ function withWidgetNativeFiles(config) {
     android:padding="12dp"
     android:gravity="center_vertical">
 
+    <View
+        android:layout_width="28dp"
+        android:layout_height="2dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/widget_accent_rule" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -237,16 +255,16 @@ function withWidgetNativeFiles(config) {
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="ISLAMIC"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold"
-            android:letterSpacing="0.15"
+            android:letterSpacing="0.18"
             android:textColor="@color/widget_accent_green" />
         <TextView
             android:id="@+id/widget_location"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Dubai"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:singleLine="true"
             android:ellipsize="end"
             android:textColor="@color/widget_text_secondary" />
@@ -258,18 +276,18 @@ function withWidgetNativeFiles(config) {
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:text="NEXT PRAYER · FAJR"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
-        android:letterSpacing="0.1"
+        android:letterSpacing="0.12"
         android:textColor="@color/widget_accent_amber" />
 
     <TextView
         android:id="@+id/widget_prayer_time"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="1dp"
         android:text="05:12 AM"
-        android:textSize="26sp"
+        android:textSize="24sp"
         android:textStyle="bold"
         android:fontFamily="serif"
         android:includeFontPadding="false"
@@ -278,7 +296,7 @@ function withWidgetNativeFiles(config) {
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="5dp"
         android:background="@drawable/widget_badge_accent"
         android:paddingLeft="8dp"
         android:paddingRight="8dp"
@@ -290,7 +308,7 @@ function withWidgetNativeFiles(config) {
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="in 42 min"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold"
             android:textColor="@color/widget_accent_amber" />
     </LinearLayout>
@@ -306,6 +324,12 @@ function withWidgetNativeFiles(config) {
     android:padding="12dp"
     android:gravity="center_vertical">
 
+    <View
+        android:layout_width="28dp"
+        android:layout_height="2dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/widget_accent_rule" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -317,16 +341,16 @@ function withWidgetNativeFiles(config) {
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="ISLAMIC"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold"
-            android:letterSpacing="0.15"
+            android:letterSpacing="0.18"
             android:textColor="@color/widget_accent_green" />
         <TextView
             android:id="@+id/widget_location"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Dubai, UAE"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:singleLine="true"
             android:ellipsize="end"
             android:textColor="@color/widget_text_secondary" />
@@ -337,7 +361,7 @@ function withWidgetNativeFiles(config) {
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginTop="4dp">
+        android:layout_marginTop="3dp">
 
         <LinearLayout
             android:layout_width="0dp"
@@ -349,16 +373,16 @@ function withWidgetNativeFiles(config) {
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="NEXT PRAYER · ASR"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:textStyle="bold"
-                android:letterSpacing="0.1"
+                android:letterSpacing="0.12"
                 android:textColor="@color/widget_accent_amber" />
             <TextView
                 android:id="@+id/widget_prayer_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="3:30 PM"
-                android:textSize="22sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
                 android:fontFamily="serif"
                 android:includeFontPadding="false"
@@ -378,7 +402,7 @@ function withWidgetNativeFiles(config) {
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="in 42 min"
-                android:textSize="10sp"
+                android:textSize="9sp"
                 android:textStyle="bold"
                 android:textColor="@color/widget_accent_amber" />
         </LinearLayout>
@@ -387,8 +411,8 @@ function withWidgetNativeFiles(config) {
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginBottom="6dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginBottom="5dp"
         android:background="@color/widget_border" />
 
     <LinearLayout
@@ -550,6 +574,12 @@ function withWidgetNativeFiles(config) {
     android:padding="12dp"
     android:gravity="center_vertical">
 
+    <View
+        android:layout_width="28dp"
+        android:layout_height="2dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/widget_accent_rule" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -569,7 +599,7 @@ function withWidgetNativeFiles(config) {
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Al-Baqarah 2:255"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textStyle="bold"
             android:textColor="@color/widget_text_secondary" />
     </LinearLayout>
@@ -594,7 +624,7 @@ function withWidgetNativeFiles(config) {
         android:layout_height="wrap_content"
         android:layout_marginTop="3dp"
         android:text="Allah! There is no deity except Him, the Ever-Living, the Sustainer of existence."
-        android:textSize="11sp"
+        android:textSize="10sp"
         android:maxLines="1"
         android:ellipsize="end"
         android:includeFontPadding="false"
@@ -604,9 +634,9 @@ function withWidgetNativeFiles(config) {
         android:id="@+id/widget_quran_cta"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="4dp"
         android:text="Read Ayah →"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
         android:textColor="@color/widget_accent_amber" />
 </LinearLayout>`;
@@ -620,6 +650,12 @@ function withWidgetNativeFiles(config) {
     android:background="@drawable/widget_background"
     android:padding="12dp"
     android:gravity="center_vertical">
+
+    <View
+        android:layout_width="28dp"
+        android:layout_height="2dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/widget_accent_rule" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -666,17 +702,27 @@ function withWidgetNativeFiles(config) {
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:text="Surah 2 · Ayah 255"
-        android:textSize="11sp"
+        android:textSize="10sp"
         android:includeFontPadding="false"
         android:textColor="@color/widget_text_secondary" />
+
+    <TextView
+        android:id="@+id/widget_continue_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="68% through · 175 ayahs remaining"
+        android:textSize="9sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_accent_amber" />
 
     <TextView
         android:id="@+id/widget_continue_cta"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="4dp"
         android:text="Resume Reading →"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:textStyle="bold"
         android:textColor="@color/widget_accent_amber" />
 </LinearLayout>`;
@@ -690,6 +736,12 @@ function withWidgetNativeFiles(config) {
     android:background="@drawable/widget_background"
     android:padding="12dp"
     android:gravity="center_vertical">
+
+    <View
+        android:layout_width="28dp"
+        android:layout_height="2dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/widget_accent_rule" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -718,7 +770,7 @@ function withWidgetNativeFiles(config) {
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:text="1,640 km to Makkah"
-        android:textSize="11sp"
+        android:textSize="10sp"
         android:textStyle="bold"
         android:includeFontPadding="false"
         android:textColor="@color/widget_text_primary" />
@@ -727,9 +779,9 @@ function withWidgetNativeFiles(config) {
         android:id="@+id/widget_qibla_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="5dp"
+        android:layout_marginTop="4dp"
         android:text="Dubai, UAE · Tap to align compass →"
-        android:textSize="10sp"
+        android:textSize="9sp"
         android:singleLine="true"
         android:ellipsize="end"
         android:textColor="@color/widget_text_secondary" />
@@ -744,6 +796,12 @@ function withWidgetNativeFiles(config) {
     android:background="@drawable/widget_background"
     android:padding="12dp"
     android:gravity="center_vertical">
+
+    <View
+        android:layout_width="28dp"
+        android:layout_height="2dp"
+        android:layout_marginBottom="6dp"
+        android:background="@drawable/widget_accent_rule" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -836,6 +894,105 @@ function withWidgetNativeFiles(config) {
     for (const [name, content] of Object.entries(layouts)) {
       fs.writeFileSync(path.join(resDir, 'layout', name), content);
       fs.writeFileSync(path.join(resDir, 'layout-night', name), content);
+    }
+
+    // 4b. Widget picker preview drawables (Android 12+ scalable previews).
+    // Static shape-based previews mirroring each layout so the picker
+    // shows a real widget, not a blank box. Light version only — the
+    // launcher previews on a system background that matches light.
+    const previewDrawables = {
+      'widget_preview_prayer_small.xml': `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_bg" />
+            <corners android:radius="18dp" />
+            <stroke android:width="1dp" android:color="@color/widget_border" />
+        </shape>
+    </item>
+    <item android:left="14dp" android:top="10dp" android:right="14dp" android:bottom="10dp">
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <solid android:color="@android:color/transparent" />
+                </shape>
+            </item>
+            <item android:top="0dp" android:height="2dp">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/widget_accent_amber" />
+                </shape>
+            </item>
+        </layer-list>
+    </item>
+</layer-list>`,
+      'widget_preview_quran.xml': `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_bg" />
+            <corners android:radius="18dp" />
+            <stroke android:width="1dp" android:color="@color/widget_border" />
+        </shape>
+    </item>
+    <item android:left="14dp" android:top="12dp" android:right="14dp" android:bottom="12dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_surface" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+</layer-list>`,
+      'widget_preview_continue.xml': `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_bg" />
+            <corners android:radius="18dp" />
+            <stroke android:width="1dp" android:color="@color/widget_border" />
+        </shape>
+    </item>
+    <item android:left="14dp" android:top="16dp" android:right="14dp" android:bottom="16dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_badge_bg" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+</layer-list>`,
+      'widget_preview_qibla.xml': `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_bg" />
+            <corners android:radius="18dp" />
+            <stroke android:width="1dp" android:color="@color/widget_border" />
+        </shape>
+    </item>
+    <item android:left="14dp" android:top="12dp" android:right="14dp" android:bottom="12dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_badge_bg" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+</layer-list>`,
+      'widget_preview_dua.xml': `<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_bg" />
+            <corners android:radius="18dp" />
+            <stroke android:width="1dp" android:color="@color/widget_border" />
+        </shape>
+    </item>
+    <item android:left="14dp" android:top="12dp" android:right="14dp" android:bottom="12dp">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_surface" />
+            <corners android:radius="8dp" />
+        </shape>
+    </item>
+</layer-list>`,
+    };
+
+    for (const [name, content] of Object.entries(previewDrawables)) {
+      fs.writeFileSync(path.join(resDir, 'drawable', name), content);
     }
 
     // 5. Kotlin Sources
@@ -1213,6 +1370,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
+import android.view.View
 import android.widget.RemoteViews
 
 class ContinueReadingWidgetProvider : AppWidgetProvider() {
@@ -1241,11 +1399,21 @@ class ContinueReadingWidgetProvider : AppWidgetProvider() {
             val reference = if (hasPosition) "Surah \$surahNum · Ayah \$ayahNum" else "Begin with Al-Fatihah"
             val cta = if (hasPosition) "Resume Reading →" else "Start Reading →"
             val deepLink = cont?.optString("deepLink") ?: "salah://quran/\$surahNum/\$ayahNum"
+            val progressPercent = cont?.optInt("progressPercent", -1) ?: -1
+            val totalAyahs = cont?.optInt("totalAyahs", ayahNum) ?: ayahNum
+            val progressText =
+                if (hasPosition && progressPercent >= 0) "\$progressPercent% through · \${ayahNum} of \${totalAyahs} ayahs"
+                else ""
 
             views.setTextViewText(R.id.widget_continue_surah, surah)
             views.setTextViewText(R.id.widget_continue_arabic_name, arabic)
             views.setTextViewText(R.id.widget_continue_reference, reference)
             views.setTextViewText(R.id.widget_continue_cta, cta)
+            if (progressText.isNotEmpty()) {
+                views.setTextViewText(R.id.widget_continue_progress, progressText)
+            } else {
+                views.setViewVisibility(R.id.widget_continue_progress, View.GONE)
+            }
 
             views.setContentDescription(R.id.widget_root, "Continue reading \$surah, Ayah \$ayahNum")
             val pending = WidgetUtils.createDeepLinkPendingIntent(context, deepLink, id)

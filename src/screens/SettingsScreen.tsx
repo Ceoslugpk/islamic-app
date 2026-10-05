@@ -21,6 +21,7 @@ import { useTheme } from '../lib/theme';
 import { getForwardIcon, iconSizes } from '../lib/iconMap';
 import WidgetPreviewScreen from './WidgetPreviewScreen';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
+import { BackupRestoreScreen } from './BackupRestoreScreen';
 import {
   useSettings,
   QURAN_FONT_SIZE_MIN,
@@ -498,6 +499,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
   const [health, setHealth] = useState<NotificationHealth | null>(null);
   const [isLoadingHealth, setIsLoadingHealth] = useState(true);
   const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
+  const [showBackupRestore, setShowBackupRestore] = useState(false);
 
   // Sync sub-screen back handler with modal backRef
   useEffect(() => {
@@ -507,6 +509,11 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
           setActiveLegalScreen(null);
           return true;
         };
+      } else if (showBackupRestore) {
+        onBackRef.current = () => {
+          setShowBackupRestore(false);
+          return true;
+        };
       } else {
         onBackRef.current = null;
       }
@@ -514,17 +521,18 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
     return () => {
       if (onBackRef) onBackRef.current = null;
     };
-  }, [activeLegalScreen, onBackRef]);
+  }, [activeLegalScreen, showBackupRestore, onBackRef]);
 
   // Handle hardware back press on Android when sub-screen is active
   useEffect(() => {
-    if (!activeLegalScreen) return;
+    if (!activeLegalScreen && !showBackupRestore) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      setActiveLegalScreen(null);
+      if (activeLegalScreen) setActiveLegalScreen(null);
+      if (showBackupRestore) setShowBackupRestore(false);
       return true;
     });
     return () => sub.remove();
-  }, [activeLegalScreen]);
+  }, [activeLegalScreen, showBackupRestore]);
 
   useEffect(() => {
     const unsub = addAdhanPlaybackListener((id) => {
@@ -711,6 +719,10 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
         onBack={() => setActiveLegalScreen(null)}
       />
     );
+  }
+
+  if (showBackupRestore) {
+    return <BackupRestoreScreen onBack={() => setShowBackupRestore(false)} />;
   }
 
   return (
@@ -1678,6 +1690,41 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
             desc="GitHub repository & community issue tracker"
             onPress={() => {
               setActiveLegalScreen('contact');
+              haptic('light');
+            }}
+            right={
+              <Ionicons
+                name={getForwardIcon('chevron')}
+                size={iconSizes.inlineLg}
+                color={colors.accent}
+              />
+            }
+          />
+        </Section>
+
+        {/* Data & App — near the bottom */}
+        <Section label="Data">
+          <Row
+            title="Backup & Restore"
+            desc="Export or restore your local data from a file"
+            onPress={() => {
+              setShowBackupRestore(true);
+              haptic('light');
+            }}
+            right={
+              <Ionicons
+                name={getForwardIcon('chevron')}
+                size={iconSizes.inlineLg}
+                color={colors.accent}
+              />
+            }
+          />
+          <Hairline />
+          <Row
+            title="App Credits"
+            desc="Built with the open-source Expo & React Native ecosystem"
+            onPress={() => {
+              setActiveLegalScreen('licenses');
               haptic('light');
             }}
             right={

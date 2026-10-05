@@ -1369,8 +1369,13 @@ const styles = StyleSheet.create({
   bismillahWrap: {
     flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
+    // Push the Bismillah toward the gear with a comfortable gap instead of
+    // dead-centering it between the logo and the gear (user: it felt too
+    // close to the ISLAMIC wordmark).
+    justifyContent: 'flex-end',
     paddingHorizontal: 8,
+    // Comfortable gap before the gear so it never feels attached.
+    paddingRight: 16,
     minWidth: 0,
     // Cap the middle slot so a wide Arabic Basmala can never overflow
     // left into the ISLAMIC wordmark (or right into the gear). The text
