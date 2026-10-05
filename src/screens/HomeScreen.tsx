@@ -854,8 +854,6 @@ export default function HomeScreen({
           ayah={ayah}
           hadith={hadith}
           nameOfDay={nameOfDay}
-          ayahLoading={ayahLoading}
-          hadithLoading={hadithLoading}
           onRefreshAyah={refreshAyah}
           onRefreshHadith={refreshHadith}
           onOpenAyah={handleOpenReader}

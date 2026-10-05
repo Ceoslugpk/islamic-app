@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { iconSizes } from '../lib/iconMap';
 import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
 import {
@@ -52,6 +53,7 @@ export function AudioPlayerModal({
 }: AudioPlayerModalProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isTablet = width >= 640;
 
   const { playback, status, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
@@ -206,6 +208,36 @@ export function AudioPlayerModal({
 
   const [sheetAnim] = useState(() => new Animated.Value(0));
 
+  // Drag-to-dismiss: dragging the grab pill (or any non-scroll area) downward
+  // pulls the sheet; releasing past a threshold closes it.
+  const dragY = useRef(new Animated.Value(0)).current;
+  const dragging = useRef<Animated.Value>(new Animated.Value(0)).current;
+  const dismissPanRef = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 8 && g.dy > 0,
+      onPanResponderMove: (_e, g) => {
+        if (g.dy < 0) return;
+        dragY.setValue(g.dy);
+        dragging.setValue(Math.min(1, g.dy / 200));
+      },
+      onPanResponderRelease: (_e, g) => {
+        if (g.dy > 140) {
+          onClose();
+        }
+        Animated.parallel([
+          Animated.timing(dragY, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(dragging, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
+        ]).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.parallel([
+          Animated.timing(dragY, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(dragging, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
+        ]).start();
+      },
+    })
+  ).current;
+
   useEffect(() => {
     if (visible) {
       sheetAnim.setValue(0);
@@ -240,17 +272,32 @@ export function AudioPlayerModal({
               opacity: sheetAnim,
               transform: [
                 {
-                  translateY: sheetAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [80, 0],
-                  }),
+                  translateY: Animated.add(
+                    sheetAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [80, 0],
+                    }),
+                    dragY
+                  ),
                 },
               ],
             },
+            { paddingBottom: Math.max(insets.bottom, 16) + 12 },
           ]}
         >
           {/* Drag Pill */}
-          <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
+          <View
+            style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]}
+            {...dismissPanRef.panHandlers}
+          />
+          {/* Dim the backdrop while dragging */}
+          <Animated.View
+            style={[
+              styles.dragDim,
+              { opacity: dragging.interpolate({ inputRange: [0, 1], outputRange: [0, 0.35] }) },
+            ]}
+            pointerEvents="none"
+          />
 
           {/* Header Row */}
           <View style={styles.headerRow}>
@@ -955,6 +1002,15 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     marginBottom: 40,
+  },
+  dragDim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#000',
+    zIndex: -1,
   },
   dragPill: {
     width: 36,

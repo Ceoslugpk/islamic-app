@@ -9,11 +9,10 @@ import { AyahOfDay } from '../lib/useAyahOfDay';
 interface AyahCardProps {
   ayah: AyahOfDay;
   onRefresh?: () => void;
-  loading?: boolean;
   onLongPress?: () => void;
 }
 
-export function AyahCard({ ayah, onRefresh, loading }: AyahCardProps) {
+export function AyahCard({ ayah, onRefresh }: AyahCardProps) {
   const { colors } = useTheme();
 
   return (
@@ -21,10 +20,8 @@ export function AyahCard({ ayah, onRefresh, loading }: AyahCardProps) {
       <View style={styles.header}>
         <Text style={[styles.eyebrow, { color: colors.accent }]}>Ayah of the Day</Text>
         {onRefresh && (
-          <TouchableOpacity onPress={onRefresh} disabled={loading} style={styles.refreshBtn}>
-            <Text style={[styles.refreshText, { color: loading ? colors.textMuted : colors.accent }]}>
-              {loading ? 'Loading...' : 'Refresh'}
-            </Text>
+          <TouchableOpacity onPress={onRefresh} style={styles.refreshBtn}>
+            <Text style={[styles.refreshText, { color: colors.accent }]}>Refresh</Text>
           </TouchableOpacity>
         )}
       </View>

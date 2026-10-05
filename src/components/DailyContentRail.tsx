@@ -31,8 +31,6 @@ export interface DailyContentRailProps {
   ayah: AyahOfDay | null;
   hadith: Hadith | null;
   nameOfDay: DailyNameItem;
-  ayahLoading?: boolean;
-  hadithLoading?: boolean;
   onRefreshAyah?: () => void;
   onRefreshHadith?: () => void;
   onOpenAyah?: (surah: number, ayah: number) => void;
@@ -45,8 +43,6 @@ export function DailyContentRail({
   ayah,
   hadith,
   nameOfDay,
-  ayahLoading,
-  hadithLoading,
   onRefreshAyah,
   onRefreshHadith,
   onOpenAyah,

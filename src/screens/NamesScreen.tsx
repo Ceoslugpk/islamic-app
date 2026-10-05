@@ -227,7 +227,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             <ArabicText
               size={isCompact ? 23 : 27}
               align="right"
-              numberOfLines={1}
+              numberOfLines={2}
               style={styles.arabicName}
             >
               {item.arabic}

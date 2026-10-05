@@ -5,6 +5,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -152,6 +153,10 @@ export function WomenPinModal({
       onRequestClose={onCancel}
     >
       <View style={styles.backdrop}>
+        <TouchableWithoutFeedback onPress={onCancel}>
+          <View style={StyleSheet.absoluteFill} />
+        </TouchableWithoutFeedback>
+
         <View
           style={[
             styles.card,

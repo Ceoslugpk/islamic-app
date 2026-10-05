@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -155,6 +155,14 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
   }, [todayEntry]);
 
   // Handle logging a missed fast
+  const [justLogged, setJustLogged] = useState(false);
+  const logTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (logTimerRef.current) clearTimeout(logTimerRef.current);
+    };
+  }, []);
+
   const handleAddMissedFast = useCallback(() => {
     if (!missedDateInput.trim()) {
       Alert.alert('Invalid Date', 'Please provide a valid date string (YYYY-MM-DD).');
@@ -174,6 +182,9 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
     saveMissedFast(newItem);
     setMissedList(loadMissedFasts());
     setShowAddMissed(false);
+    setJustLogged(true);
+    if (logTimerRef.current) clearTimeout(logTimerRef.current);
+    logTimerRef.current = setTimeout(() => setJustLogged(false), 1800);
   }, [missedDateInput, missedReasonInput]);
 
   // Toggle missed fast completion
@@ -187,13 +198,26 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
   }, []);
 
   // Delete missed fast record
+  const [justDeletedMissed, setJustDeletedMissed] = useState<string | null>(null);
+  const missedDeleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (missedDeleteTimerRef.current) clearTimeout(missedDeleteTimerRef.current);
+    };
+  }, []);
+
   const handleDeleteMissed = useCallback((id: string) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch { /* ignore */ }
 
     deleteMissedFast(id);
-    setMissedList(loadMissedFasts());
+    setJustDeletedMissed(id);
+    if (missedDeleteTimerRef.current) clearTimeout(missedDeleteTimerRef.current);
+    missedDeleteTimerRef.current = setTimeout(() => {
+      setJustDeletedMissed(null);
+      setMissedList(loadMissedFasts());
+    }, 1200);
   }, []);
 
   // Stats
@@ -569,9 +593,13 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
                 onPress={() => setShowAddMissed(true)}
                 accessibilityRole="button"
               >
-                <Ionicons name="add-circle-outline" size={17} color={colors.accent} />
+                <Ionicons
+                  name={justLogged ? 'checkmark-circle' : 'add-circle-outline'}
+                  size={17}
+                  color={colors.accent}
+                />
                 <Text style={[styles.addMissedBtnText, { color: colors.accent }]}>
-                  + Log Missed Fast
+                  {justLogged ? 'Logged ✓' : '+ Log Missed Fast'}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -629,8 +657,13 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
                     style={[styles.formBtn, { backgroundColor: colors.accent, borderColor: colors.accent }]}
                     onPress={handleAddMissedFast}
                   >
-                    <Text style={{ color: '#FFFFFF', fontFamily: 'Manrope_600SemiBold' }}>
-                      Save Record
+                    <Text
+                      style={{
+                        color: '#FFFFFF',
+                        fontFamily: 'Manrope_600SemiBold',
+                      }}
+                    >
+                      {justLogged ? 'Saved ✓' : 'Save Record'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -685,11 +718,18 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
                   </View>
 
                   <TouchableOpacity
-                    style={styles.deleteBtn}
+                    style={[
+                      styles.deleteBtn,
+                      justDeletedMissed === item.id && { opacity: 0.45 },
+                    ]}
                     onPress={() => handleDeleteMissed(item.id)}
-                    accessibilityLabel="Delete missed fast"
+                    accessibilityLabel={justDeletedMissed === item.id ? 'Missed fast deleted' : 'Delete missed fast'}
                   >
-                    <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                    <Ionicons
+                      name={justDeletedMissed === item.id ? 'checkmark' : 'trash-outline'}
+                      size={16}
+                      color={justDeletedMissed === item.id ? colors.accent : colors.textMuted}
+                    />
                   </TouchableOpacity>
                 </Card>
               ))

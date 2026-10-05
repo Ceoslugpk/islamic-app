@@ -24,6 +24,7 @@ import { getBookmarks, getNotes } from '../lib/study';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { useQuranPreload } from '../lib/quranPreloader';
 import { useSettings } from '../lib/settings';
+import { useFlatListRestore } from '../lib/useScrollRestore';
 
 interface QuranHomeScreenProps {
   onOpenSurah: (surahNumber: number, initialAyah?: number) => void;
@@ -165,6 +166,10 @@ export default function QuranHomeScreen({
       );
     });
   }, [surahs, searchQuery, translatedNames]);
+
+  // Restore the surah list scroll position when the tab remounts
+  // (App.tsx unmounts tab screens on switch, so lists otherwise reset to top).
+  useFlatListRestore('quran-home-scroll', listRef);
 
   const handleSelectJuz = (j: number) => {
     const nextJuz = selectedJuz === j ? null : j;
@@ -924,6 +929,8 @@ export default function QuranHomeScreen({
         renderItem={renderSurahRow}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={[styles.listContent, { paddingHorizontal: horizontalPadding }]}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         initialNumToRender={20}
         maxToRenderPerBatch={20}
         windowSize={9}

@@ -7,11 +7,13 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { iconSizes } from '../lib/iconMap';
 import { QURAN_LANGUAGE_EDITIONS, QuranLanguageEdition } from '../lib/quranLanguages';
 import { useQuranLanguage } from '../lib/quranLanguageState';
@@ -36,7 +38,9 @@ export function QuranLanguageModal({
 }: QuranLanguageModalProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isCompact = width <= 360;
+  const isTablet = width >= 640;
   const { language: currentGlobalLang, setLanguage: setGlobalLang } = useQuranLanguage();
   const [search, setSearch] = useState('');
 
@@ -66,12 +70,26 @@ export function QuranLanguageModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      transparent={false}
+      animationType="fade"
+      transparent
       onRequestClose={onClose}
+      statusBarTranslucent
     >
-      <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-        <View style={styles.contentWrap}>
+      <View style={styles.modalOverlay}>
+        <TouchableWithoutFeedback onPress={onClose}>
+          <View style={styles.backdrop} />
+        </TouchableWithoutFeedback>
+
+        <View
+          style={[
+            styles.sheet,
+            isTablet && styles.sheetTablet,
+            { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+          ]}
+        >
+          {/* Drag Pill */}
+          <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
+
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
             <View style={styles.headerTitles}>
@@ -84,7 +102,7 @@ export function QuranLanguageModal({
             <TouchableOpacity
               style={[
                 styles.closeBtn,
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
               ]}
               onPress={onClose}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -142,7 +160,10 @@ export function QuranLanguageModal({
           <FlatList
             data={filtered}
             keyExtractor={(item) => item.editionIdentifier}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingBottom: Math.max(insets.bottom, 16) + 16 },
+            ]}
             ItemSeparatorComponent={() => <Hairline />}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -249,23 +270,53 @@ export function QuranLanguageModal({
 }
 
 const styles = StyleSheet.create({
-  container: {
+  modalOverlay: {
     flex: 1,
-    paddingTop: Platform.OS === 'ios' ? 44 : 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  contentWrap: {
-    flex: 1,
+  backdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  sheet: {
     width: '100%',
     maxWidth: 680,
+    maxHeight: '92%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    overflow: 'hidden',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  sheetTablet: {
+    borderRadius: 24,
+    borderWidth: 1,
+    marginBottom: 40,
+  },
+  dragPill: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
     alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: 4,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   headerTitles: {

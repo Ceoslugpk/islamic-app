@@ -545,6 +545,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               style={[styles.rescheduleBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
               onPress={onReschedulePress}
               disabled={isRescheduling}
+              activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel="Re-schedule alarms now"
             >
@@ -561,6 +562,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
             <TouchableOpacity
               style={[styles.snoozeBtn, { borderColor: colors.borderSubtle }]}
               onPress={onSnoozePress}
+              activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel="Snooze 10 minutes"
             >
@@ -583,6 +585,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
             <TouchableOpacity
               style={[styles.stopAdhanBtn, { backgroundColor: colors.accent }]}
               onPress={() => stopAdhanPlayback()}
+              activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel="Stop adhan playback"
             >
@@ -638,6 +641,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                           styles.miniPill,
                           { borderColor: colors.borderSubtle },
                           config.adhan && config.enabled && { backgroundColor: colors.accentDim, borderColor: colors.accent },
+                          !config.enabled && { opacity: 0.5 },
                         ]}
                         onPress={() => onTogglePrayer(p.key, 'adhan')}
                         disabled={!config.enabled}
@@ -663,6 +667,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                           styles.miniPill,
                           { borderColor: colors.borderSubtle },
                           config.vibration && config.enabled && { backgroundColor: colors.accentDim, borderColor: colors.accent },
+                          !config.enabled && { opacity: 0.5 },
                         ]}
                         onPress={() => onTogglePrayer(p.key, 'vibration')}
                         disabled={!config.enabled}

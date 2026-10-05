@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   ScrollView,
   TextInput,
   useWindowDimensions,
@@ -124,6 +125,14 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
   }, []);
 
   // Save calculation to history
+  const [justSaved, setJustSaved] = useState(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, []);
+
   const handleSaveCalculation = useCallback(() => {
     if (evaluation.totalGrossAssets <= 0) {
       Alert.alert('No Assets Entered', 'Please enter your assets to calculate and save Zakat.');
@@ -155,16 +164,31 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
 
     saveZakatCalculation(newCalc);
     setHistory(loadZakatCalculations());
-    Alert.alert('Saved', 'Zakat calculation has been saved to your history ledger.');
+    setJustSaved(true);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setJustSaved(false), 1800);
   }, [evaluation, selectedCurrencyCode, nisabStandard]);
 
   // Delete history item
+  const [justDeleted, setJustDeleted] = useState<string | null>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    };
+  }, []);
+
   const handleDeleteHistory = useCallback((id: string) => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch { /* ignore */ }
     deleteZakatCalculation(id);
-    setHistory(loadZakatCalculations());
+    setJustDeleted(id);
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    deleteTimerRef.current = setTimeout(() => {
+      setJustDeleted(null);
+      setHistory(loadZakatCalculations());
+    }, 1200);
   }, []);
 
   const isCompact = width < 380;
@@ -175,6 +199,7 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
       style={{ backgroundColor: colors.bgBase }}
       contentContainerStyle={[styles.scroll, { paddingHorizontal: paddingH }]}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
     >
       <View style={[styles.container, { maxWidth: maxW }]}>
         {onBack && (
@@ -442,13 +467,29 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
               {/* Action Buttons */}
               <View style={styles.resultsActions}>
                 <TouchableOpacity
-                  style={[styles.saveCalcBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
+                  style={[
+                    styles.saveCalcBtn,
+                    {
+                      backgroundColor: justSaved ? colors.accent : colors.accentDim,
+                      borderColor: colors.accent,
+                    },
+                  ]}
                   onPress={handleSaveCalculation}
                   accessibilityRole="button"
+                  accessibilityLabel={justSaved ? 'Calculation saved' : 'Save calculation'}
                 >
-                  <Ionicons name="bookmark-outline" size={15} color={colors.accent} />
-                  <Text style={[styles.saveCalcBtnText, { color: colors.accent }]}>
-                    Save Calculation
+                  <Ionicons
+                    name={justSaved ? 'checkmark-circle' : 'bookmark-outline'}
+                    size={15}
+                    color={justSaved ? colors.onAccent : colors.accent}
+                  />
+                  <Text
+                    style={[
+                      styles.saveCalcBtnText,
+                      { color: justSaved ? colors.onAccent : colors.accent },
+                    ]}
+                  >
+                    {justSaved ? 'Saved ✓' : 'Save Calculation'}
                   </Text>
                 </TouchableOpacity>
 
@@ -644,11 +685,15 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
                         </Text>
                       </View>
                       <TouchableOpacity
-                        style={styles.deleteHistoryBtn}
+                        style={[styles.deleteHistoryBtn, justDeleted === item.id && { opacity: 0.45 }]}
                         onPress={() => handleDeleteHistory(item.id)}
-                        accessibilityLabel="Delete record"
+                        accessibilityLabel={justDeleted === item.id ? 'Record deleted' : 'Delete record'}
                       >
-                        <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                        <Ionicons
+                          name={justDeleted === item.id ? 'checkmark' : 'trash-outline'}
+                          size={16}
+                          color={justDeleted === item.id ? colors.accent : colors.textMuted}
+                        />
                       </TouchableOpacity>
                     </View>
 
@@ -704,12 +749,16 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
         {/* Currency Selector Modal */}
         <Modal
           visible={showCurrencyModal}
-          animationType="slide"
+          animationType="fade"
           transparent
           onRequestClose={() => setShowCurrencyModal(false)}
         >
           <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => setShowCurrencyModal(false)}>
+              <View style={styles.modalBackdrop} />
+            </TouchableWithoutFeedback>
             <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+              <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
               <View style={styles.modalHeader}>
                 <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
                   Select Currency
@@ -717,6 +766,8 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
                 <TouchableOpacity
                   onPress={() => setShowCurrencyModal(false)}
                   style={styles.modalCloseBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close currency selector"
                 >
                   <Ionicons name="close" size={20} color={colors.textMuted} />
                 </TouchableOpacity>
@@ -1105,12 +1156,36 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modalSheet: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    width: '100%',
+    maxWidth: 640,
+    maxHeight: '88%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     borderTopWidth: 1,
     padding: 20,
+    paddingTop: 10,
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  dragPill: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 8,
   },
   modalHeader: {
     flexDirection: 'row',

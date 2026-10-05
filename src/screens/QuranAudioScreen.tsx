@@ -1,14 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   useWindowDimensions,
   View,
 } from 'react-native';
@@ -18,6 +20,8 @@ import { useHaptics } from '../lib/haptics';
 import { iconSizes } from '../lib/iconMap';
 import { SectionHeader } from '../components/SectionHeader';
 import { AudioPlayerModal } from '../components/AudioPlayerModal';
+import { EmptyState } from '../components/EmptyState';
+import { SkeletonCard } from '../components/Skeleton';
 import {
   addPlaybackStatusListener,
   addQueueListener,
@@ -510,22 +514,20 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
         {/* Tab Content */}
         {loading ? (
-          <View style={styles.centerBox}>
-            <ActivityIndicator size="large" color={colors.accent} />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-              Loading reciters & audio data...
-            </Text>
-          </View>
+          <FlatList
+            data={Array.from({ length: 6 })}
+            keyExtractor={(_, i) => `skeleton-${i}`}
+            renderItem={() => <SkeletonCard lines={3} lineHeight={15} avatar avatarSize={36} style={styles.skeletonCard} />}
+            contentContainerStyle={styles.listContent}
+          />
         ) : error ? (
-          <View style={styles.centerBox}>
-            <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
-            <TouchableOpacity
-              onPress={loadAllData}
-              style={[styles.retryBtn, { borderColor: colors.accent }]}
-            >
-              <Text style={[styles.retryBtnText, { color: colors.accent }]}>Retry</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="Couldn't load reciters"
+            subtitle={error}
+            actionLabel="Retry"
+            onAction={loadAllData}
+          />
         ) : activeTab === 'reciters' ? (
           /* Reciters Tab */
           <View style={styles.tabContent}>
@@ -568,6 +570,8 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               data={filteredReciters}
               keyExtractor={(item) => item.identifier}
               contentContainerStyle={styles.listContent}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               initialNumToRender={15}
               maxToRenderPerBatch={20}
               windowSize={7}
@@ -595,6 +599,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       <TouchableOpacity
                         onPress={() => handleSelectDefaultReciter(item.identifier)}
                         style={styles.reciterSelectArea}
+                        activeOpacity={0.75}
                         accessibilityRole="button"
                         accessibilityLabel={`Select ${item.englishName}${country ? `, ${country}` : ''} as default reciter`}
                       >
@@ -752,6 +757,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       <TouchableOpacity
                         onPress={() => setAudioTranslation(item.identifier)}
                         style={styles.reciterSelectArea}
+                        activeOpacity={0.75}
                         accessibilityRole="button"
                         accessibilityLabel={`Select ${item.englishName} for Quran translation audio`}
                       >
@@ -1046,7 +1052,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               accessibilityLabel={isSaved ? 'Saved to playlists' : 'Save preset'}
                             >
                               <Ionicons
-                                name={isSaved ? 'bookmark' : 'bookmark-outline'}
+                                name={isSaved ? 'checkmark' : 'bookmark-outline'}
                                 size={14}
                                 color={isSaved ? colors.accent : colors.textMuted}
                               />
@@ -1158,8 +1164,12 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               animationType="fade"
               transparent
               onRequestClose={() => setNewPlaylistModalOpen(false)}
+              statusBarTranslucent
             >
               <View style={styles.modalBackdrop}>
+                <TouchableWithoutFeedback onPress={() => setNewPlaylistModalOpen(false)}>
+                  <View style={styles.modalBackdropDim} />
+                </TouchableWithoutFeedback>
                 <View
                   style={[
                     styles.modalBox,
@@ -1169,6 +1179,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     },
                   ]}
                 >
+                  <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
                   <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
                     <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
                       New Playlist
@@ -1183,24 +1194,28 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     </TouchableOpacity>
                   </View>
 
-                  <View style={styles.modalBody}>
-                    <Text style={[styles.formLabel, { color: colors.textSecondary }]}>
-                      Playlist Name
-                    </Text>
-                    <TextInput
-                      placeholder="e.g. Daily Fajr, Heart Healing, Sleep"
-                      placeholderTextColor={colors.textMuted}
-                      value={newPlaylistName}
-                      onChangeText={setNewPlaylistName}
-                      style={[
-                        styles.modalInput,
-                        {
-                          color: colors.textPrimary,
-                          backgroundColor: colors.bgBase,
-                          borderColor: colors.borderSubtle,
-                        },
-                      ]}
-                    />
+                  <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    style={{ width: '100%' }}
+                  >
+                    <View style={styles.modalBody}>
+                      <Text style={[styles.formLabel, { color: colors.textSecondary }]}>
+                        Playlist Name
+                      </Text>
+                      <TextInput
+                        placeholder="e.g. Daily Fajr, Heart Healing, Sleep"
+                        placeholderTextColor={colors.textMuted}
+                        value={newPlaylistName}
+                        onChangeText={setNewPlaylistName}
+                        style={[
+                          styles.modalInput,
+                          {
+                            color: colors.textPrimary,
+                            backgroundColor: colors.bgBase,
+                            borderColor: colors.borderSubtle,
+                          },
+                        ]}
+                      />
 
                     <Text style={[styles.formLabel, { color: colors.textSecondary, marginTop: 12 }]}>
                       Select First Surah
@@ -1254,7 +1269,8 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         <Text style={styles.modalSubmitText}>Create Playlist</Text>
                       </TouchableOpacity>
                     </View>
-                  </View>
+                    </View>
+                  </KeyboardAvoidingView>
                 </View>
               </View>
             </Modal>
@@ -1356,6 +1372,9 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     <TouchableOpacity
                       style={styles.queueMainPress}
                       onPress={() => handlePlayQueueIndex(index)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Play track ${index + 1}: ${item.title}`}
+                      activeOpacity={0.7}
                     >
                       <Text
                         style={[
@@ -1830,31 +1849,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
-  centerBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    marginTop: 10,
-  },
-  errorText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 14,
-    marginBottom: 10,
-  },
-  retryBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 6,
+  skeletonCard: {
     borderWidth: 1,
-  },
-  retryBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    borderColor: 'rgba(127,127,127,0.14)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
   },
   recentCard: {
     flexDirection: 'row',
@@ -2251,16 +2251,39 @@ const styles = StyleSheet.create({
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    padding: 20,
+  },
+  modalBackdropDim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  dragPill: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
   },
   modalBox: {
     width: '100%',
     maxWidth: 520,
-    borderRadius: 14,
-    borderWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
     overflow: 'hidden',
+    maxHeight: '92%',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    paddingBottom: 24,
   },
   modalHeader: {
     flexDirection: 'row',

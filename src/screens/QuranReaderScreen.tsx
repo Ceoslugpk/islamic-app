@@ -14,6 +14,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
   useWindowDimensions,
 } from 'react-native';
@@ -21,6 +22,7 @@ import type { ViewabilityConfig, ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHaptics } from '../lib/haptics';
 import { iconSizes } from '../lib/iconMap';
 import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
@@ -154,6 +156,7 @@ function AyahBookmarkButton({
   return (
     <TouchableOpacity
       onPress={handlePress}
+      activeOpacity={0.75}
       style={{
         padding: 6,
         borderRadius: 8,
@@ -184,6 +187,7 @@ export default function QuranReaderScreen({
   const { haptic } = useHaptics();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
   const { settings, setQuranFontSize, setQuranShowTranslation, setTafsirSourceId } = useSettings();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
@@ -795,6 +799,7 @@ export default function QuranReaderScreen({
             <TouchableOpacity
               onPress={() => handlePlayAyahToggle(item.numberInSurah)}
               style={styles.actionBtn}
+              activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel={`Play Ayah ${item.numberInSurah}`}
             >
@@ -809,6 +814,7 @@ export default function QuranReaderScreen({
             <TouchableOpacity
               onPress={() => handleOpenTafsir(item.numberInSurah)}
               style={styles.actionBtn}
+              activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel={`Tafsir for Ayah ${item.numberInSurah}`}
             >
@@ -833,6 +839,7 @@ export default function QuranReaderScreen({
               onPress={() => handleShareAyah(item)}
               style={styles.actionBtn}
               hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+              activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel={`Share Ayah ${item.numberInSurah}`}
             >
@@ -844,6 +851,7 @@ export default function QuranReaderScreen({
               onPress={() => handleCopyAyah(item)}
               style={styles.actionBtn}
               hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+              activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel={`Copy Ayah ${item.numberInSurah}`}
             >
@@ -1107,9 +1115,15 @@ export default function QuranReaderScreen({
         animationType="fade"
         transparent={true}
         onRequestClose={() => setToolsMenuOpen(false)}
+        statusBarTranslucent
       >
-        <View style={styles.toolsMenuOverlay} onStartShouldSetResponder={() => true} onResponderGrant={() => setToolsMenuOpen(false)}>
+        <View style={styles.toolsMenuOverlay}>
+          <TouchableWithoutFeedback onPress={() => setToolsMenuOpen(false)}>
+            <View style={styles.toolsMenuBackdrop} />
+          </TouchableWithoutFeedback>
           <View style={[styles.toolsMenuPanel, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            {/* Drag Pill */}
+            <View style={[styles.toolsMenuDragPill, { backgroundColor: colors.borderSubtle }]} />
             {/* Reading Mode */}
             <TouchableOpacity
               style={styles.toolsMenuItem}
@@ -1300,12 +1314,20 @@ export default function QuranReaderScreen({
       {/* Reciter Chooser Modal */}
       <Modal
         visible={reciterChooserOpen}
-        animationType="slide"
-        transparent={false}
+        animationType="fade"
+        transparent
         onRequestClose={() => setReciterChooserOpen(false)}
+        statusBarTranslucent
       >
-        <View style={[styles.modalWrap, { backgroundColor: colors.bgBase }]}>
-          <View style={styles.modalContentWrap}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setReciterChooserOpen(false)}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            {/* Drag Pill */}
+            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
+
             {/* Header: compact eyebrow + title + close */}
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <View style={styles.modalHeaderLeft}>
@@ -1329,7 +1351,7 @@ export default function QuranReaderScreen({
             <View
               style={[
                 styles.reciterSearchWrap,
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
               ]}
             >
               <Ionicons name="search" size={16} color={colors.textMuted} />
@@ -1351,7 +1373,12 @@ export default function QuranReaderScreen({
             <FlatList
               data={filteredReciters}
               keyExtractor={(item) => item.identifier}
-              contentContainerStyle={styles.reciterList}
+              contentContainerStyle={[
+                styles.reciterList,
+                { paddingBottom: Math.max(insets.bottom, 16) + 24 },
+              ]}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
               initialNumToRender={15}
               maxToRenderPerBatch={20}
               windowSize={7}
@@ -1419,76 +1446,85 @@ export default function QuranReaderScreen({
       {/* Tafsir Source Chooser Modal */}
       <Modal
         visible={tafsirSourcePickerOpen}
-        animationType="slide"
-        transparent={false}
+        animationType="fade"
+        transparent
         onRequestClose={() => setTafsirSourcePickerOpen(false)}
+        statusBarTranslucent
       >
-        <View style={[styles.modalWrap, { backgroundColor: colors.bgBase }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              Select Tafsir Source
-            </Text>
-            <TouchableOpacity
-              onPress={() => setTafsirSourcePickerOpen(false)}
-              style={styles.closeBtn}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-            >
-              <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setTafsirSourcePickerOpen(false)}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
 
-          <FlatList
-            data={TAFSIR_SOURCES}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => {
-              const isSelected = item.id === settings.tafsirSourceId;
-              return (
-                <TouchableOpacity
-                  style={[
-                    styles.reciterRow,
-                    {
-                      borderBottomColor: colors.borderSubtle,
-                      backgroundColor: isSelected ? colors.accentDim : 'transparent',
-                    },
-                  ]}
-                  onPress={() => { setTafsirSourceId(item.id as any); setTafsirSourcePickerOpen(false); }}
-                >
-                  <View style={styles.reciterInfo}>
-                    <View style={styles.reciterTitleRow}>
-                      <Text style={[styles.reciterEngName, { color: colors.textPrimary }]} numberOfLines={1}>
-                        {item.name}
-                      </Text>
-                      <View
-                        style={[
-                          styles.reciterLangBadge,
-                          {
-                            backgroundColor: item.languageCode === 'ar' ? colors.bgSurface : colors.accentDim,
-                            borderColor: item.languageCode === 'ar' ? colors.borderSubtle : colors.accent,
-                          },
-                        ]}
-                      >
-                        <Text
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
+            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                Select Tafsir Source
+              </Text>
+              <TouchableOpacity
+                onPress={() => setTafsirSourcePickerOpen(false)}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={TAFSIR_SOURCES}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 24 }}
+              renderItem={({ item }) => {
+                const isSelected = item.id === settings.tafsirSourceId;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.reciterRow,
+                      {
+                        borderBottomColor: colors.borderSubtle,
+                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                      },
+                    ]}
+                    onPress={() => { setTafsirSourceId(item.id as any); setTafsirSourcePickerOpen(false); }}
+                  >
+                    <View style={styles.reciterInfo}>
+                      <View style={styles.reciterTitleRow}>
+                        <Text style={[styles.reciterEngName, { color: colors.textPrimary }]} numberOfLines={1}>
+                          {item.name}
+                        </Text>
+                        <View
                           style={[
-                            styles.reciterLangBadgeText,
-                            { color: item.languageCode === 'ar' ? colors.textMuted : colors.accent },
+                            styles.reciterLangBadge,
+                            {
+                              backgroundColor: item.languageCode === 'ar' ? colors.bgSurface : colors.accentDim,
+                              borderColor: item.languageCode === 'ar' ? colors.borderSubtle : colors.accent,
+                            },
                           ]}
                         >
-                          {item.language.toUpperCase()}
-                        </Text>
+                          <Text
+                            style={[
+                              styles.reciterLangBadgeText,
+                              { color: item.languageCode === 'ar' ? colors.textMuted : colors.accent },
+                            ]}
+                          >
+                            {item.language.toUpperCase()}
+                          </Text>
+                        </View>
                       </View>
+                      <Text style={[styles.reciterArabicName, { color: colors.textMuted }]}>
+                        {item.author}
+                      </Text>
                     </View>
-                    <Text style={[styles.reciterArabicName, { color: colors.textMuted }]}>
-                      {item.author}
-                    </Text>
-                  </View>
-                  {isSelected && (
-                    <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
-                  )}
-                </TouchableOpacity>
-              );
-            }}
-          />
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
         </View>
       </Modal>
     </View>
@@ -1626,23 +1662,39 @@ const styles = StyleSheet.create({
   /* Tools Menu (dots) */
   toolsMenuOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
-    padding: 16,
-    paddingBottom: 32,
+    alignItems: 'center',
+  },
+  toolsMenuBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   toolsMenuPanel: {
-    borderRadius: 16,
-    borderWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
     overflow: 'hidden',
     maxWidth: 380,
-    alignSelf: 'center',
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 12,
+    paddingBottom: 32,
+  },
+  toolsMenuDragPill: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
   },
   toolsMenuItem: {
     flexDirection: 'row',
@@ -1913,23 +1965,48 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     flex: 1,
   },
-  modalWrap: {
+  modalOverlay: {
     flex: 1,
-    paddingTop: 40,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
-  modalContentWrap: {
-    flex: 1,
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalSheet: {
     width: '100%',
-    maxWidth: 680,
+    maxWidth: 640,
+    maxHeight: '92%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    overflow: 'hidden',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  modalDragPill: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
     alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: 4,
+    paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   modalHeaderLeft: {
@@ -1973,7 +2050,6 @@ const styles = StyleSheet.create({
   },
   reciterList: {
     paddingHorizontal: 20,
-    paddingBottom: 32,
   },
   reciterRow: {
     flexDirection: 'row',

@@ -40,6 +40,10 @@ export function ArabicText({
 }: ArabicTextProps) {
   const { colors } = useTheme();
   const resolvedFamily = fontFamily ?? (bold ? QURAN_FONT_FAMILIES.amiri.bold : QURAN_FONT_FAMILIES.amiri.regular);
+  // Arabic needs generous line-height (~1.6x) or diacritics/ascenders clip.
+  // Callers may override via the `lineHeight` prop or a `style` lineHeight —
+  // both win because `style` sits last in the array.
+  const resolvedLineHeight = lineHeight ?? Math.round(size * 1.6);
   return (
     <Text
       style={[
@@ -49,7 +53,7 @@ export function ArabicText({
           fontFamily: resolvedFamily,
           color: colors.textPrimary,
           textAlign: align,
-          lineHeight,
+          lineHeight: resolvedLineHeight,
         },
         style,
       ]}

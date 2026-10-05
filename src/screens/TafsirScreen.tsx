@@ -1,20 +1,23 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Modal,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SectionHeader } from '../components/SectionHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { SkeletonCard } from '../components/Skeleton';
+import { EmptyState } from '../components/EmptyState';
 import { fetchSurah, fetchSurahList, fetchSurahTafsir, SurahDetail, SurahMeta } from '../lib/quran';
 import { useSettings } from '../lib/settings';
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
@@ -31,6 +34,7 @@ export default function TafsirScreen({
   onOpenReader,
 }: TafsirScreenProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const { settings, setTafsirSourceId } = useSettings();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -235,26 +239,20 @@ export default function TafsirScreen({
         </View>
 
         {loading ? (
-          <View style={styles.centerBox}>
-            <ActivityIndicator size="large" color={colors.accent} />
-            <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-              Loading {currentTafsirSource.name}...
-            </Text>
-          </View>
+          <FlatList
+            data={Array.from({ length: 5 })}
+            keyExtractor={(_, i) => `skeleton-${i}`}
+            renderItem={() => <SkeletonCard lines={4} lineHeight={16} style={styles.skeletonCard} />}
+            contentContainerStyle={styles.listContent}
+          />
         ) : error ? (
-          <View style={styles.centerBox}>
-            <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-              {error}
-            </Text>
-            <TouchableOpacity
-              onPress={loadData}
-              style={[styles.retryBtn, { borderColor: colors.accent }]}
-            >
-              <Text style={[styles.retryBtnText, { color: colors.accent }]}>
-                Retry
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="Couldn't load Tafsir"
+            subtitle={error}
+            actionLabel="Retry"
+            onAction={loadData}
+          />
         ) : (
           <FlatList
             data={tafsirList}
@@ -268,12 +266,18 @@ export default function TafsirScreen({
       {/* Surah Chooser Modal */}
       <Modal
         visible={pickerOpen}
-        animationType="slide"
-        transparent={false}
+        animationType="fade"
+        transparent
         onRequestClose={() => setPickerOpen(false)}
+        statusBarTranslucent
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.bgBase }]}>
-          <View style={styles.modalContentWrap}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setPickerOpen(false)}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
                 Select Surah
@@ -298,7 +302,7 @@ export default function TafsirScreen({
                   styles.modalSearchInput,
                   {
                     color: colors.textPrimary,
-                    backgroundColor: colors.bgSurface,
+                    backgroundColor: colors.bgBase,
                     borderColor: colors.borderSubtle,
                   },
                 ]}
@@ -308,6 +312,12 @@ export default function TafsirScreen({
             <FlatList
               data={filteredSurahs}
               keyExtractor={(item) => String(item.number)}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              contentContainerStyle={[
+                styles.modalListContent,
+                { paddingBottom: Math.max(insets.bottom, 16) + 24 },
+              ]}
               renderItem={({ item }) => {
                 const isSelected = item.number === currentSurah;
                 return (
@@ -372,12 +382,18 @@ export default function TafsirScreen({
       {/* Tafsir Source Chooser Modal */}
       <Modal
         visible={tafsirSourcePickerOpen}
-        animationType="slide"
-        transparent={false}
+        animationType="fade"
+        transparent
         onRequestClose={() => setTafsirSourcePickerOpen(false)}
+        statusBarTranslucent
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.bgBase }]}>
-          <View style={styles.modalContentWrap}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setTafsirSourcePickerOpen(false)}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
                 Select Tafsir Source
@@ -395,6 +411,7 @@ export default function TafsirScreen({
             <FlatList
               data={TAFSIR_SOURCES}
               keyExtractor={(item) => item.id}
+              contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 24 }}
               renderItem={({ item }) => {
                 const isSelected = item.id === settings.tafsirSourceId;
                 return (
@@ -524,31 +541,11 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingBottom: 40,
   },
-  centerBox: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    marginTop: 12,
-  },
-  errorText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 14,
-    marginBottom: 12,
-  },
-  retryBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+  skeletonCard: {
     borderWidth: 1,
-  },
-  retryBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    borderColor: 'rgba(127,127,127,0.14)',
+    borderRadius: 12,
+    padding: 16,
   },
   card: {
     padding: 16,
@@ -604,22 +601,48 @@ const styles = StyleSheet.create({
     writingDirection: 'rtl',
     lineHeight: 30,
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
-    paddingTop: 40,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
     alignItems: 'center',
   },
-  modalContentWrap: {
-    flex: 1,
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  modalSheet: {
     width: '100%',
     maxWidth: 680,
+    maxHeight: '92%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    overflow: 'hidden',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  dragPill: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: 10,
+    marginBottom: 6,
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingBottom: 16,
+    paddingTop: 4,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   modalTitle: {
@@ -635,6 +658,10 @@ const styles = StyleSheet.create({
   },
   modalSearchWrap: {
     padding: 16,
+    paddingBottom: 8,
+  },
+  modalListContent: {
+    paddingBottom: 40,
   },
   modalSearchInput: {
     height: 44,

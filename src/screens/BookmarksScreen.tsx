@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -31,14 +31,28 @@ export default function BookmarksScreen({
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
+  const [justRemoved, setJustRemoved] = useState<string | null>(null);
+  const removedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setBookmarks(getBookmarks());
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (removedTimerRef.current) clearTimeout(removedTimerRef.current);
+    };
+  }, []);
+
   const handleRemove = (surah: number, ayah: number) => {
     removeBookmark(surah, ayah);
-    setBookmarks(getBookmarks());
+    const key = `${surah}:${ayah}`;
+    setJustRemoved(key);
+    if (removedTimerRef.current) clearTimeout(removedTimerRef.current);
+    removedTimerRef.current = setTimeout(() => {
+      setJustRemoved(null);
+      setBookmarks(getBookmarks());
+    }, 1200);
   };
 
   const renderBookmark = ({ item }: { item: VerseRef }) => {
@@ -52,6 +66,7 @@ export default function BookmarksScreen({
           {
             backgroundColor: colors.bgSurface,
             borderColor: colors.borderSubtle,
+            opacity: justRemoved === `${item.surah}:${item.ayah}` ? 0.45 : 1,
           },
         ]}
       >
@@ -64,10 +79,14 @@ export default function BookmarksScreen({
           <TouchableOpacity
             style={styles.deleteBtn}
             accessibilityRole="button"
-            accessibilityLabel="Delete bookmark"
+            accessibilityLabel={justRemoved === `${item.surah}:${item.ayah}` ? 'Bookmark removed' : 'Delete bookmark'}
             onPress={() => handleRemove(item.surah, item.ayah)}
           >
-            <Ionicons name="trash-outline" size={17} color={colors.textMuted} />
+            <Ionicons
+              name={justRemoved === `${item.surah}:${item.ayah}` ? 'checkmark' : 'trash-outline'}
+              size={17}
+              color={justRemoved === `${item.surah}:${item.ayah}` ? colors.accent : colors.textMuted}
+            />
           </TouchableOpacity>
         </View>
 

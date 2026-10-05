@@ -191,6 +191,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
                     isDone && { backgroundColor: colors.accentDim },
                   ]}
                   onPress={() => togglePrayer(p.key)}
+                  activeOpacity={0.7}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isDone }}
                   accessibilityLabel={`${p.label} at ${formatted}, ${isDone ? 'completed' : 'not completed'}`}

@@ -1,11 +1,15 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   Image,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Modal,
+  Animated,
+  Easing,
+  Platform,
   useWindowDimensions,
   Linking,
   AppState,
@@ -567,11 +571,15 @@ function Root({ splashDone }: { splashDone: boolean }) {
   }, []);
 
   // Android hardware back: go back through screens instead of exiting.
-  // Priority: settings modal → sub-screen → tab hub → default (exit).
+  // Priority: settings modal → audio player modal → sub-screen → tab hub → default (exit).
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (settingsOpen) {
         setSettingsOpen(false);
+        return true;
+      }
+      if (audioModalOpen) {
+        setAudioModalOpen(false);
         return true;
       }
       if (library.screen !== 'hub') {
@@ -593,7 +601,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
       return false; // let default back behavior exit the app
     });
     return () => sub.remove();
-  }, [settingsOpen, library, quran, tools, tab]);
+  }, [settingsOpen, audioModalOpen, library, quran, tools, tab]);
 
   const isAudioCenter = tab === 'quran' && quran.screen === 'audio';
   const showMiniPlayer = visible && playback !== null && !isAudioCenter;
@@ -927,17 +935,78 @@ function Root({ splashDone }: { splashDone: boolean }) {
       />
 
 
-      {/* Settings modal */}
-      <Modal
+      {/* Settings modal — full-screen sheet, animated slide-up + fade like the audio player, backdrop tap dismisses */}
+      <SettingsModal
         visible={settingsOpen}
-        animationType="slide"
-        onRequestClose={() => setSettingsOpen(false)}
-      >
-        <View style={[styles.safe, { backgroundColor: colors.bgBase }]}>
-          <SettingsScreen onClose={() => setSettingsOpen(false)} />
-        </View>
-      </Modal>
+        onClose={() => setSettingsOpen(false)}
+      />
     </View>
+  );
+}
+
+function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const [anim] = useState(() => new Animated.Value(0));
+
+  useEffect(() => {
+    if (visible) {
+      anim.setValue(0);
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 260,
+        useNativeDriver: Platform.OS !== 'web',
+        easing: Easing.out(Easing.cubic),
+      }).start();
+    }
+  }, [visible, anim]);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      statusBarTranslucent
+    >
+      <View style={styles.settingsOverlay}>
+        <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Close settings">
+          <View style={styles.settingsBackdrop} />
+        </TouchableWithoutFeedback>
+        <Animated.View
+          style={[
+            styles.settingsSheet,
+            {
+              backgroundColor: colors.bgBase,
+              opacity: anim,
+              transform: [
+                {
+                  translateY: anim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [60, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.settingsSheetPill,
+              { backgroundColor: colors.borderSubtle, marginTop: insets.top + 8 },
+            ]}
+          />
+          <View
+            style={[
+              styles.settingsSheetContent,
+              { paddingBottom: Math.max(insets.bottom, 16) + 12 },
+            ]}
+          >
+            <SettingsScreen onClose={onClose} />
+          </View>
+        </Animated.View>
+      </View>
+    </Modal>
   );
 }
 
@@ -1039,5 +1108,43 @@ const styles = StyleSheet.create({
     width: 24,
     height: 2,
     borderRadius: 1,
+  },
+  settingsOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  settingsBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  settingsSheet: {
+    width: '100%',
+    maxWidth: 720,
+    height: '100%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    borderColor: 'rgba(128, 128, 128, 0.25)',
+    overflow: 'hidden',
+    elevation: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  settingsSheetPill: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 6,
+  },
+  settingsSheetContent: {
+    flex: 1,
   },
 });

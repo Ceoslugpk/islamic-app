@@ -299,7 +299,8 @@ function Segmented<T extends string | number>({
             style={[
               styles.seg,
               { borderColor: colors.borderSubtle, minWidth: layout.segMinW },
-              selected && { backgroundColor: colors.accentDim, borderColor: colors.accent },
+              selected && !disabled && { backgroundColor: colors.accentDim, borderColor: colors.accent },
+              disabled && { opacity: 0.55 },
             ]}
             onPress={() => onChange(option.value)}
             disabled={disabled}
@@ -312,10 +313,10 @@ function Segmented<T extends string | number>({
                 styles.segLabel,
                 {
                   fontSize: layout.segLabelSize,
-                  color: selected
-                    ? colors.accent
-                    : disabled
+                  color: disabled
                     ? colors.textMuted
+                    : selected
+                    ? colors.accent
                     : colors.textSecondary,
                 },
               ]}

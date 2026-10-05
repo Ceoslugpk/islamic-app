@@ -285,6 +285,8 @@ export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreen
                 accessibilityRole="button"
                 accessibilityLabel="Verify locally stored Quran text"
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                activeOpacity={0.75}
+                style={verifyingText ? { opacity: 0.6 } : undefined}
               >
                 <Text style={[styles.textVerifyBtn, { color: colors.accent }]}>
                   {verifyingText ? 'Checking…' : 'Verify'}

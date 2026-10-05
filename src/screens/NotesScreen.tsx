@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -33,9 +33,17 @@ export default function NotesScreen({
   const [refInput, setRefInput] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
+  const [justSaved, setJustSaved] = useState(false);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setNotes(getNotes());
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
   }, []);
 
   const onSave = () => {
@@ -62,11 +70,28 @@ export default function NotesScreen({
     setInput('');
     setRefInput('');
     setNotes(getNotes());
+    setJustSaved(true);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => setJustSaved(false), 1500);
   };
+
+  const [justDeleted, setJustDeleted] = useState<string | null>(null);
+  const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    };
+  }, []);
 
   const handleDelete = (id: string) => {
     deleteNote(id);
-    setNotes(getNotes());
+    setJustDeleted(id);
+    if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
+    deleteTimerRef.current = setTimeout(() => {
+      setJustDeleted(null);
+      setNotes(getNotes());
+    }, 1200);
   };
 
   const renderNote = ({ item }: { item: Note }) => {
@@ -77,6 +102,7 @@ export default function NotesScreen({
           {
             backgroundColor: colors.bgSurface,
             borderColor: colors.borderSubtle,
+            opacity: justDeleted === item.id ? 0.45 : 1,
           },
         ]}
       >
@@ -92,10 +118,14 @@ export default function NotesScreen({
           <TouchableOpacity
             style={styles.deleteBtn}
             accessibilityRole="button"
-            accessibilityLabel="Delete note"
+            accessibilityLabel={justDeleted === item.id ? 'Note deleted' : 'Delete note'}
             onPress={() => handleDelete(item.id)}
           >
-            <Ionicons name="trash-outline" size={17} color={colors.textMuted} />
+            <Ionicons
+              name={justDeleted === item.id ? 'checkmark' : 'trash-outline'}
+              size={17}
+              color={justDeleted === item.id ? colors.accent : colors.textMuted}
+            />
           </TouchableOpacity>
         </View>
 
@@ -174,12 +204,17 @@ export default function NotesScreen({
                 ]}
               />
               <TouchableOpacity
-                style={[styles.saveBtn, { backgroundColor: colors.accent }]}
+                style={[
+                  styles.saveBtn,
+                  { backgroundColor: justSaved ? colors.accent : colors.accent },
+                ]}
                 onPress={onSave}
                 accessibilityRole="button"
-                accessibilityLabel="Save reflection"
+                accessibilityLabel={justSaved ? 'Reflection saved' : 'Save reflection'}
               >
-                <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>Save</Text>
+                <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>
+                  {justSaved ? 'Saved ✓' : 'Save'}
+                </Text>
               </TouchableOpacity>
             </View>
             {error && (

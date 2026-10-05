@@ -306,6 +306,7 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
               backgroundColor: colors.bgSurface,
             },
           ]}
+          activeOpacity={0.75}
           accessibilityRole="button"
           accessibilityLabel="Reset count to zero"
         >
