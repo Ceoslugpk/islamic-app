@@ -22,6 +22,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
+import { getBackIcon } from '../lib/iconMap';
+import { buttonTokens, touchTargetTokens } from '../lib/buttonTokens';
 import {
   PeriodEntry,
   PurityStatus,
@@ -31,16 +35,31 @@ import {
 } from '../lib/db';
 import {
   formatYMD,
+  parseYMD,
+  isValidYMD,
   computeAverageCycleLength,
   predictNextPeriod,
   getCycleDay,
   getFertileWindow,
 } from '../lib/womensFiqh';
 
-export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
+interface WomenCycleScreenProps {
+  onBack?: () => void;
+  onOpenPurity?: () => void;
+  onOpenQada?: () => void;
+  onOpenGuidance?: () => void;
+}
+
+function WomenCycleScreen({
+  onBack,
+  onOpenPurity,
+  onOpenQada,
+  onOpenGuidance,
+}: WomenCycleScreenProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
+  const { saveUndoState } = useUndoToast();
 
   const [periodEntries, setPeriodEntries] = useState<PeriodEntry[]>([]);
   const [showLogPeriod, setShowLogPeriod] = useState(false);
@@ -49,6 +68,11 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
   const [newNotes, setNewNotes] = useState('');
 
   const todayStr = useMemo(() => formatYMD(new Date()), []);
+  const yesterdayStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return formatYMD(d);
+  }, []);
 
   const refreshData = useCallback(() => {
     setPeriodEntries(loadPeriodEntries());
@@ -94,13 +118,12 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
   }, [activePeriod, todayStr]);
 
   // Handlers
-  const handleSavePeriod = () => {
-    if (!newStartDate.trim()) return;
+  const proceedSavePeriod = (startDate: string, endDate?: string, notes?: string) => {
     const entry: PeriodEntry = {
       id: `period_${Date.now()}`,
-      startDate: newStartDate.trim(),
-      endDate: newEndDate.trim() ? newEndDate.trim() : undefined,
-      notes: newNotes.trim() ? newNotes.trim() : undefined,
+      startDate,
+      endDate: endDate || undefined,
+      notes: notes || undefined,
       purityDays: {},
       createdAt: Date.now(),
     };
@@ -110,6 +133,57 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
     setNewEndDate('');
     setNewNotes('');
     refreshData();
+  };
+
+  const handleSavePeriod = () => {
+    const cleanStart = newStartDate.trim();
+    const cleanEnd = newEndDate.trim();
+    const cleanNotes = newNotes.trim();
+
+    if (!cleanStart) {
+      Alert.alert('Start Date Required', 'Please provide a valid start date for this period.');
+      return;
+    }
+
+    if (!isValidYMD(cleanStart)) {
+      Alert.alert('Invalid Start Date', 'Please enter start date in YYYY-MM-DD format (e.g. 2026-10-05).');
+      return;
+    }
+
+    if (cleanEnd && !isValidYMD(cleanEnd)) {
+      Alert.alert('Invalid End Date', 'Please enter end date in YYYY-MM-DD format (e.g. 2026-10-10).');
+      return;
+    }
+
+    if (cleanEnd && cleanEnd < cleanStart) {
+      Alert.alert('Invalid Range', 'End date cannot be earlier than start date.');
+      return;
+    }
+
+    // Check if an ongoing active period exists
+    if (!cleanEnd && activePeriod && activePeriod.startDate !== cleanStart) {
+      Alert.alert(
+        'Active Period in Progress',
+        `An active cycle started on ${activePeriod.startDate} is currently open. Would you like to end the previous cycle as of ${cleanStart} and start this new entry?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'End Previous & Start New',
+            onPress: () => {
+              const closedPrevious: PeriodEntry = {
+                ...activePeriod,
+                endDate: cleanStart,
+              };
+              savePeriodEntry(closedPrevious);
+              proceedSavePeriod(cleanStart, cleanEnd, cleanNotes);
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    proceedSavePeriod(cleanStart, cleanEnd, cleanNotes);
   };
 
   const handleEndPeriod = (entry: PeriodEntry) => {
@@ -122,14 +196,45 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
     refreshData();
     Alert.alert(
       'Period Ended · Purity Resumed',
-      'Remember to perform Ghusl (ritual purification) before resuming your daily prayers and fasting. Check the Purity & Ghusl tool for step-by-step guidance.',
-      [{ text: 'OK' }]
+      'Remember to perform Ghusl (ritual purification) before resuming your daily prayers and fasting.',
+      [
+        { text: 'Later', style: 'cancel' },
+        ...(onOpenPurity
+          ? [
+              {
+                text: 'View Ghusl Guide',
+                onPress: () => onOpenPurity(),
+              },
+            ]
+          : [{ text: 'OK' }]),
+      ]
     );
   };
 
-  const handleDeletePeriod = (id: string) => {
-    deletePeriodEntry(id);
-    refreshData();
+  const handleDeletePeriod = (item: PeriodEntry) => {
+    Alert.alert(
+      'Delete Period Entry?',
+      `Are you sure you want to delete the record for ${item.startDate}${item.endDate ? ` → ${item.endDate}` : ' (Active)'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deletePeriodEntry(item.id);
+            refreshData();
+            saveUndoState({
+              id: item.id,
+              action: 'Period entry deleted',
+              revert: () => {
+                savePeriodEntry(item);
+                refreshData();
+              },
+            });
+          },
+        },
+      ]
+    );
   };
 
   const handleToggleDayPurity = (entry: PeriodEntry, dateKey: string) => {
@@ -158,6 +263,7 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
       contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
+      keyboardShouldPersistTaps="handled"
     >
       {onBack && (
         <TouchableOpacity
@@ -165,9 +271,10 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
           onPress={onBack}
           accessibilityRole="button"
           accessibilityLabel="Back to Tools"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={touchTargetTokens.hitSlop8}
         >
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
+          <Ionicons name={getBackIcon()} size={18} color={colors.accent} />
+          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>Tools</Text>
         </TouchableOpacity>
       )}
 
@@ -182,44 +289,44 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
       <View style={[styles.privacyBadge, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Ionicons name="shield-checkmark" size={14} color={colors.accent} />
         <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
-          Private & local · All logs are stored securely on your device only
+          Private & local · Stored securely on your device only · Never sent to servers
         </Text>
       </View>
 
       {/* Active Status Hero Card */}
       <Card style={styles.heroCard}>
         <View style={styles.heroHeader}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.heroEyebrow, { color: colors.accent }]}>
-              {activePeriod ? 'ACTIVE PERIOD' : 'PURITY STATE'}
+              {activePeriod ? 'ACTIVE CYCLE' : 'PURITY STATE'}
             </Text>
             <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
               {activePeriod
                 ? `Menstruating · Day ${getCycleDay(activePeriod.startDate)}`
-                : `Ritual Purity · Day ${cycleDay}`}
+                : `Ritual Purity (Tuhr) · Day ${cycleDay}`}
             </Text>
           </View>
           <View
             style={[
               styles.statusPill,
               {
-                backgroundColor: activePeriod ? '#991B1B25' : colors.accentDim,
-                borderColor: activePeriod ? '#DC2626' : colors.accent,
+                backgroundColor: activePeriod ? '#991B1B20' : colors.accentDim,
+                borderColor: activePeriod ? colors.destructive : colors.accent,
               },
             ]}
           >
             <Ionicons
               name={activePeriod ? 'water' : 'sparkles'}
-              size={14}
-              color={activePeriod ? '#EF4444' : colors.accent}
+              size={13}
+              color={activePeriod ? colors.destructive : colors.accent}
             />
             <Text
               style={[
                 styles.statusPillText,
-                { color: activePeriod ? '#EF4444' : colors.accent },
+                { color: activePeriod ? colors.destructive : colors.accent },
               ]}
             >
-              {activePeriod ? 'Exempt from Salah' : 'Salah Obligatory'}
+              {activePeriod ? 'Exempt from Salah' : 'Normal Worship'}
             </Text>
           </View>
         </View>
@@ -233,9 +340,9 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
             {/* Explicit-recording driven status reminder */}
             {todayRecordedStatus === 'menstruating' && (
               <View style={[styles.recordedReminderChip, { backgroundColor: '#EF444415', borderColor: '#EF444450' }]}>
-                <Ionicons name="information-circle" size={15} color="#EF4444" />
+                <Ionicons name="information-circle" size={15} color={colors.destructive} />
                 <Text style={[styles.recordedReminderText, { color: colors.textPrimary }]}>
-                  Recorded as Flow today: <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>Remember: no fasting today, mark qada later.</Text>
+                  Recorded as Flow today: <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>Exempt from fasting; record qada makeup days later.</Text>
                 </Text>
               </View>
             )}
@@ -248,60 +355,90 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
               </View>
             )}
 
-            <TouchableOpacity
-              style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-              onPress={() => handleEndPeriod(activePeriod)}
-            >
-              <Ionicons name="checkmark-done" size={16} color={colors.onAccent} />
-              <Text style={[styles.primaryBtnText, { color: colors.onAccent }]}>
-                End Period / Mark Pure
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.heroBtnRow}>
+              <TouchableOpacity
+                style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+                onPress={() => handleEndPeriod(activePeriod)}
+                accessibilityRole="button"
+                accessibilityLabel="End Period and Mark Pure"
+              >
+                <Ionicons name="checkmark-done" size={16} color={colors.onAccent} />
+                <Text style={[styles.primaryBtnText, { color: colors.onAccent }]}>
+                  End Period / Mark Pure
+                </Text>
+              </TouchableOpacity>
+              {onOpenPurity && (
+                <TouchableOpacity
+                  style={[styles.guideLinkBtn, { borderColor: colors.borderSubtle }]}
+                  onPress={onOpenPurity}
+                  accessibilityRole="button"
+                  accessibilityLabel="View Ghusl Guide"
+                >
+                  <Ionicons name="water-outline" size={15} color={colors.accent} />
+                  <Text style={[styles.guideLinkText, { color: colors.accent }]}>Ghusl Guide</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         ) : (
           <View style={styles.heroBody}>
             {prediction && (
-              <View style={[styles.predictionBox, { borderColor: colors.borderSubtle }]}>
+              <View style={[styles.predictionBox, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
                 <Ionicons name="calendar-outline" size={16} color={colors.accent} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.predictionTitle, { color: colors.textPrimary }]}>
                     Next predicted cycle in ~{prediction.daysRemaining > 0 ? `${prediction.daysRemaining} days` : 'soon'}
                   </Text>
                   <Text style={[styles.predictionSub, { color: colors.textMuted }]}>
-                    Estimated: {prediction.nextDate} · Avg interval: {avgCycle} days
+                    Estimated: {prediction.nextDate} · Average interval: {avgCycle} days
                   </Text>
                 </View>
               </View>
             )}
 
             {fertileWindow && (
-              <View style={[styles.fertileBadge, { borderColor: colors.borderSubtle }]}>
+              <View style={[styles.fertileBadge, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
                 <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
                 <Text style={[styles.fertileText, { color: colors.textSecondary }]}>
-                  Approx. fertile window: {fertileWindow.start} to {fertileWindow.end}
+                  Estimated fertile window: {fertileWindow.start} to {fertileWindow.end}
                 </Text>
               </View>
             )}
             <Text style={[styles.disclaimerText, { color: colors.textMuted }]}>
-              Predictions are calculated from past averages for personal tracking only. Not for medical diagnosis or contraception.
+              Predictions are informational estimates computed strictly from past entries. Not for medical diagnosis or contraception.
             </Text>
 
             <View style={[styles.explicitRuleBox, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
               <Ionicons name="shield-checkmark-outline" size={14} color={colors.accent} />
               <Text style={[styles.explicitRuleText, { color: colors.textMuted }]}>
-                Explicit recording only: Predictions never auto-change prayer schedules, reminders, or fasting records.
+                Explicit recording rule: Predictions never auto-change prayer schedules, reminders, or fasting records.
               </Text>
             </View>
 
-            <TouchableOpacity
-              style={[styles.secondaryBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
-              onPress={() => setShowLogPeriod(true)}
-            >
-              <Ionicons name="add-circle-outline" size={16} color={colors.accent} />
-              <Text style={[styles.secondaryBtnText, { color: colors.accent }]}>
-                Log New Period Start
-              </Text>
-            </TouchableOpacity>
+            <View style={styles.heroBtnRow}>
+              <TouchableOpacity
+                style={[styles.secondaryBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim, flex: 1 }]}
+                onPress={() => setShowLogPeriod(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Log New Period Start"
+              >
+                <Ionicons name="add-circle-outline" size={16} color={colors.accent} />
+                <Text style={[styles.secondaryBtnText, { color: colors.accent }]}>
+                  Log Period Start
+                </Text>
+              </TouchableOpacity>
+              {onOpenPurity && (
+                <TouchableOpacity
+                  style={[styles.guideLinkBtn, { borderColor: colors.borderSubtle }]}
+                  onPress={onOpenPurity}
+                  accessibilityRole="button"
+                  accessibilityLabel="View Ghusl Guide"
+                >
+                  <Ionicons name="water-outline" size={15} color={colors.accent} />
+                  <Text style={[styles.guideLinkText, { color: colors.accent }]}>Ghusl Guide</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         )}
       </Card>
@@ -316,19 +453,19 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
             </Text>
           </View>
           <Text style={[styles.cardSub, { color: colors.textSecondary }]}>
-            Tap any day to toggle status: Menstruating → Spotting → Pure
+            Tap any day to toggle status: Flow → Spotting → Pure
           </Text>
           <View style={styles.chipsGrid}>
             {Array.from({ length: Math.min(15, Math.max(7, getCycleDay(activePeriod.startDate))) }).map(
               (_, idx) => {
                 const dayNum = idx + 1;
-                const d = new Date(activePeriod.startDate);
+                const d = parseYMD(activePeriod.startDate);
                 d.setDate(d.getDate() + idx);
                 const dStr = formatYMD(d);
                 const status = activePeriod.purityDays?.[dStr] || (dayNum <= getCycleDay(activePeriod.startDate) ? 'menstruating' : 'pure');
 
                 const statusColors = {
-                  menstruating: { bg: '#991B1B25', border: '#DC2626', text: '#EF4444', label: 'Flow' },
+                  menstruating: { bg: '#991B1B20', border: colors.destructive, text: colors.destructive, label: 'Flow' },
                   spotting: { bg: '#D9770620', border: '#D97706', text: '#F59E0B', label: 'Spot' },
                   pure: { bg: '#05966920', border: '#059669', text: '#10B981', label: 'Pure' },
                 }[status];
@@ -342,7 +479,7 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
                     ]}
                     onPress={() => handleToggleDayPurity(activePeriod, dStr)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Day ${dayNum}, ${status}`}
+                    accessibilityLabel={`Day ${dayNum}, date ${dStr}, status ${status}`}
                   >
                     <Text style={[styles.dayChipNum, { color: colors.textPrimary }]}>
                       D{dayNum}
@@ -355,9 +492,9 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
               }
             )}
           </View>
-          <View style={styles.legendRow}>
+          <View style={[styles.legendRow, { borderTopColor: colors.borderSubtle }]}>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+              <View style={[styles.legendDot, { backgroundColor: colors.destructive }]} />
               <Text style={[styles.legendText, { color: colors.textMuted }]}>Flow (Bleeding)</Text>
             </View>
             <View style={styles.legendItem}>
@@ -366,7 +503,7 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
-              <Text style={[styles.legendText, { color: colors.textMuted }]}>Pure (Dry / White)</Text>
+              <Text style={[styles.legendText, { color: colors.textMuted }]}>Pure (Dry / Tuhr)</Text>
             </View>
           </View>
         </Card>
@@ -376,34 +513,75 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
       {showLogPeriod && (
         <Card style={styles.formCard}>
           <Text style={[styles.formTitle, { color: colors.textPrimary }]}>Log Period Entry</Text>
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Start Date (YYYY-MM-DD)</Text>
+          
+          <View style={styles.labelRow}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Start Date (YYYY-MM-DD)</Text>
+            <View style={styles.quickPillsRow}>
+              <TouchableOpacity
+                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
+                onPress={() => setNewStartDate(todayStr)}
+              >
+                <Text style={[styles.quickPillText, { color: colors.accent }]}>Today</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
+                onPress={() => setNewStartDate(yesterdayStr)}
+              >
+                <Text style={[styles.quickPillText, { color: colors.textSecondary }]}>Yesterday</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <TextInput
             style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
             value={newStartDate}
             onChangeText={setNewStartDate}
             placeholder="YYYY-MM-DD"
             placeholderTextColor={colors.textMuted}
+            keyboardType="numbers-and-punctuation"
           />
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>End Date (Optional, leave blank if active)</Text>
+
+          <View style={styles.labelRow}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>End Date (Optional, leave blank if active)</Text>
+            <View style={styles.quickPillsRow}>
+              <TouchableOpacity
+                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
+                onPress={() => setNewEndDate(todayStr)}
+              >
+                <Text style={[styles.quickPillText, { color: colors.accent }]}>Today</Text>
+              </TouchableOpacity>
+              {newEndDate ? (
+                <TouchableOpacity
+                  style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
+                  onPress={() => setNewEndDate('')}
+                >
+                  <Text style={[styles.quickPillText, { color: colors.textMuted }]}>Clear</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
           <TextInput
             style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
             value={newEndDate}
             onChangeText={setNewEndDate}
             placeholder="YYYY-MM-DD"
             placeholderTextColor={colors.textMuted}
+            keyboardType="numbers-and-punctuation"
           />
+
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Notes (Optional)</Text>
           <TextInput
             style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
             value={newNotes}
             onChangeText={setNewNotes}
-            placeholder="Cycle notes, flow intensity..."
+            placeholder="Cycle notes, flow intensity, pain..."
             placeholderTextColor={colors.textMuted}
           />
           <View style={styles.formBtnRow}>
             <TouchableOpacity
               style={[styles.cancelBtn, { borderColor: colors.borderSubtle }]}
               onPress={() => setShowLogPeriod(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
             >
               <Text style={{ color: colors.textMuted, fontFamily: 'Manrope_600SemiBold', fontSize: 13 }}>
                 Cancel
@@ -412,6 +590,8 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
             <TouchableOpacity
               style={[styles.submitBtn, { backgroundColor: colors.accent }]}
               onPress={handleSavePeriod}
+              accessibilityRole="button"
+              accessibilityLabel="Save Period Entry"
             >
               <Text style={{ color: colors.onAccent, fontFamily: 'Manrope_700Bold', fontSize: 13 }}>
                 Save Entry
@@ -433,13 +613,14 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
         </View>
 
         {periodEntries.length === 0 ? (
-          <Card style={{ alignItems: 'center', padding: 24 }}>
-            <Ionicons name="calendar-outline" size={28} color={colors.textMuted} style={{ marginBottom: 8 }} />
-            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>No periods recorded yet</Text>
-            <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-              Log the start of your cycle to track duration, predictions, and purity markers.
-            </Text>
-          </Card>
+          <EmptyState
+            icon="calendar-outline"
+            title="No periods recorded yet"
+            subtitle="Log the start of your cycle to track duration, predictions, and purity markers."
+            actionLabel="+ Log Period Start"
+            onAction={() => setShowLogPeriod(true)}
+            iconSize={40}
+          />
         ) : (
           periodEntries.map((item) => (
             <Card key={item.id} style={{ marginBottom: 10, padding: 14 }}>
@@ -450,8 +631,8 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
                       {item.startDate} {item.endDate ? `→ ${item.endDate}` : '· (Active)'}
                     </Text>
                     {!item.endDate && (
-                      <View style={[styles.liveBadge, { backgroundColor: '#EF444425' }]}>
-                        <Text style={{ color: '#EF4444', fontSize: 10, fontFamily: 'Manrope_700Bold' }}>
+                      <View style={[styles.liveBadge, { backgroundColor: '#EF444420', borderColor: colors.destructive, borderWidth: 1 }]}>
+                        <Text style={{ color: colors.destructive, fontSize: 9.5, fontFamily: 'Manrope_700Bold' }}>
                           ACTIVE
                         </Text>
                       </View>
@@ -462,8 +643,10 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
                   )}
                 </View>
                 <TouchableOpacity
-                  onPress={() => handleDeletePeriod(item.id)}
-                  accessibilityLabel="Delete entry"
+                  onPress={() => handleDeletePeriod(item)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete entry for ${item.startDate}`}
+                  hitSlop={touchTargetTokens.hitSlop10}
                 >
                   <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
                 </TouchableOpacity>
@@ -476,6 +659,8 @@ export default function WomenCycleScreen({ onBack }: { onBack?: () => void }) {
   );
 }
 
+export default withUndoToast(WomenCycleScreen);
+
 const styles = StyleSheet.create({
   content: {
     padding: 20,
@@ -484,11 +669,13 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
+    minHeight: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
     paddingRight: 10,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -499,7 +686,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
     marginTop: -4,
@@ -508,6 +695,7 @@ const styles = StyleSheet.create({
   privacyText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11.5,
+    flex: 1,
   },
   heroCard: {
     padding: 18,
@@ -517,6 +705,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 10,
     marginBottom: 10,
   },
   heroEyebrow: {
@@ -527,20 +716,21 @@ const styles = StyleSheet.create({
   },
   heroTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 24,
+    fontSize: 23,
+    lineHeight: 28,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 20,
     borderWidth: 1,
   },
   statusPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 10.5,
   },
   heroBody: {
     gap: 10,
@@ -550,13 +740,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  heroBtnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
   primaryBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 12,
-    borderRadius: 8,
+    minHeight: buttonTokens.md.minHeight,
+    paddingHorizontal: 14,
+    borderRadius: buttonTokens.md.borderRadius,
   },
   primaryBtnText: {
     fontFamily: 'Manrope_700Bold',
@@ -567,13 +765,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 10,
-    borderRadius: 8,
+    minHeight: buttonTokens.md.minHeight,
+    paddingHorizontal: 14,
+    borderRadius: buttonTokens.md.borderRadius,
     borderWidth: 1,
   },
   secondaryBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
+  },
+  guideLinkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: buttonTokens.md.minHeight,
+    paddingHorizontal: 12,
+    borderRadius: buttonTokens.md.borderRadius,
+    borderWidth: 1,
+  },
+  guideLinkText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12.5,
   },
   predictionBox: {
     flexDirection: 'row',
@@ -590,6 +802,7 @@ const styles = StyleSheet.create({
   predictionSub: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11.5,
+    marginTop: 2,
   },
   fertileBadge: {
     flexDirection: 'row',
@@ -603,6 +816,7 @@ const styles = StyleSheet.create({
   fertileText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11.5,
+    flex: 1,
   },
   disclaimerText: {
     fontFamily: 'Manrope_400Regular',
@@ -656,7 +870,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#FFFFFF15',
     paddingTop: 8,
   },
   legendItem: {
@@ -683,15 +896,35 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     marginBottom: 4,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
   inputLabel: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11.5,
+  },
+  quickPillsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  quickPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  quickPillText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10.5,
   },
   textInput: {
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 9,
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
   },
@@ -703,14 +936,18 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 6,
+    minHeight: buttonTokens.sm.minHeight,
+    borderRadius: buttonTokens.sm.borderRadius,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitBtn: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+    minHeight: buttonTokens.sm.minHeight,
+    borderRadius: buttonTokens.sm.borderRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   historySection: {
     marginTop: 8,
@@ -748,16 +985,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
   },
-  emptyTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13.5,
-  },
-  emptySub: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
-    textAlign: 'center',
-    marginTop: 4,
-  },
   recordedReminderChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -766,7 +993,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    marginVertical: 10,
+    marginVertical: 4,
   },
   recordedReminderText: {
     flex: 1,
@@ -782,7 +1009,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    marginVertical: 10,
+    marginVertical: 4,
   },
   explicitRuleText: {
     flex: 1,

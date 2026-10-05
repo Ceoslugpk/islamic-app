@@ -241,8 +241,24 @@ function FastingScreen({ onBack }: { onBack?: () => void }) {
     () => history.filter((h) => h.fasting && h.type === 'ramadan').length,
     [history]
   );
-  const qadaPendingCount = useMemo(() => missedList.filter((m) => !m.madeUp).length, [missedList]);
-  const qadaMadeUpCount = useMemo(() => missedList.filter((m) => m.madeUp).length, [missedList]);
+
+  const availableMissedReasons = useMemo(() => {
+    if (settings.womenWorshipEnabled) return MISSED_REASONS;
+    return MISSED_REASONS.filter(
+      (r) => !r.toLowerCase().includes('menstru') && !r.toLowerCase().includes('post-natal')
+    );
+  }, [settings.womenWorshipEnabled]);
+
+  const visibleMissedList = useMemo(() => {
+    if (settings.womenWorshipEnabled) return missedList;
+    return missedList.filter((m) => {
+      const r = (m.reason || '').toLowerCase();
+      return !r.includes('menstru') && !r.includes('post-natal') && !r.includes('postnatal');
+    });
+  }, [missedList, settings.womenWorshipEnabled]);
+
+  const qadaPendingCount = useMemo(() => visibleMissedList.filter((m) => !m.madeUp).length, [visibleMissedList]);
+  const qadaMadeUpCount = useMemo(() => visibleMissedList.filter((m) => m.madeUp).length, [visibleMissedList]);
 
   // Countdown & times
   const suhoorTimeRaw = timings?.timings?.Fajr || '';
@@ -632,7 +648,7 @@ function FastingScreen({ onBack }: { onBack?: () => void }) {
 
                 <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Reason:</Text>
                 <View style={styles.reasonPillsRow}>
-                  {MISSED_REASONS.map((r) => {
+                  {availableMissedReasons.map((r) => {
                     const isSelected = missedReasonInput === r;
                     return (
                       <TouchableOpacity
@@ -688,14 +704,14 @@ function FastingScreen({ onBack }: { onBack?: () => void }) {
               Missed Fasts Ledger
             </Text>
 
-            {missedList.length === 0 ? (
+            {visibleMissedList.length === 0 ? (
               <EmptyState
                 icon="checkmark-done-circle-outline"
                 title="All caught up!"
                 subtitle="No missed fasts recorded in your ledger."
               />
             ) : (
-              missedList.map((item) => (
+              visibleMissedList.map((item) => (
                 <Card key={item.id} style={styles.missedItemCard}>
                   <View style={styles.missedItemLeft}>
                     <TouchableOpacity

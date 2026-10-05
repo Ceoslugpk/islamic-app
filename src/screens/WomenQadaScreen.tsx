@@ -13,11 +13,16 @@ import {
   TouchableOpacity,
   TextInput,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
+import { EmptyState } from '../components/EmptyState';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
+import { getBackIcon } from '../lib/iconMap';
+import { buttonTokens, touchTargetTokens } from '../lib/buttonTokens';
 import {
   MissedFastItem,
   loadMissedFasts,
@@ -25,41 +30,72 @@ import {
   toggleMissedFastMadeUp,
   deleteMissedFast,
 } from '../lib/db';
-import { formatYMD } from '../lib/womensFiqh';
+import { formatYMD, isValidYMD } from '../lib/womensFiqh';
 
-export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
+interface WomenQadaScreenProps {
+  onBack?: () => void;
+  onOpenCycle?: () => void;
+}
+
+function WomenQadaScreen({ onBack, onOpenCycle }: WomenQadaScreenProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
+  const { saveUndoState } = useUndoToast();
 
   // Qada / Missed fasts state
-  const [missedFasts, setMissedFasts] = useState<MissedFastItem[]>([]);
+  const [allMissedFasts, setAllMissedFasts] = useState<MissedFastItem[]>([]);
   const [showAddQada, setShowAddQada] = useState(false);
   const [qadaDate, setQadaDate] = useState(formatYMD(new Date()));
   const [qadaReason, setQadaReason] = useState('Menstruation / Post-natal');
   const [qadaNote, setQadaNote] = useState('');
 
+  const todayStr = useMemo(() => formatYMD(new Date()), []);
+  const yesterdayStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return formatYMD(d);
+  }, []);
+
   const refreshData = useCallback(() => {
-    setMissedFasts(loadMissedFasts());
+    setAllMissedFasts(loadMissedFasts());
   }, []);
 
   useEffect(() => {
     refreshData();
   }, [refreshData]);
 
+  // Filter to women's worship missed fasts (menses & postnatal)
+  const womenMissedFasts = useMemo(() => {
+    return allMissedFasts.filter((f) => {
+      const r = (f.reason || '').toLowerCase();
+      return r.includes('menstru') || r.includes('post-natal') || r.includes('postnatal');
+    });
+  }, [allMissedFasts]);
+
   const qadaStats = useMemo(() => {
-    const total = missedFasts.length;
-    const completed = missedFasts.filter((f) => f.madeUp).length;
+    const total = womenMissedFasts.length;
+    const completed = womenMissedFasts.filter((f) => f.madeUp).length;
     const pending = total - completed;
     return { total, completed, pending };
-  }, [missedFasts]);
+  }, [womenMissedFasts]);
 
   // Handlers for Qada
   const handleSaveQada = () => {
-    if (!qadaDate.trim()) return;
+    const cleanDate = qadaDate.trim();
+    if (!cleanDate) {
+      Alert.alert('Date Required', 'Please enter a valid date in YYYY-MM-DD format.');
+      return;
+    }
+
+    if (!isValidYMD(cleanDate)) {
+      Alert.alert('Invalid Date', 'Please enter date in YYYY-MM-DD format (e.g. 2026-10-05).');
+      return;
+    }
+
     const item: MissedFastItem = {
       id: `missed_${Date.now()}`,
-      date: qadaDate.trim(),
+      date: cleanDate,
       reason: qadaReason.trim() + (qadaNote.trim() ? ` · ${qadaNote.trim()}` : ''),
       madeUp: false,
       createdAt: Date.now(),
@@ -76,9 +112,30 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
     refreshData();
   };
 
-  const handleDeleteQada = (id: string) => {
-    deleteMissedFast(id);
-    refreshData();
+  const handleDeleteQada = (fast: MissedFastItem) => {
+    Alert.alert(
+      'Delete Missed Fast Record?',
+      `Are you sure you want to delete the record for ${fast.date}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            deleteMissedFast(fast.id);
+            refreshData();
+            saveUndoState({
+              id: fast.id,
+              action: 'Missed fast record deleted',
+              revert: () => {
+                saveMissedFast(fast);
+                refreshData();
+              },
+            });
+          },
+        },
+      ]
+    );
   };
 
   const isCompact = width < 380;
@@ -88,6 +145,7 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
     <ScrollView
       style={{ backgroundColor: colors.bgBase }}
       contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
+      keyboardShouldPersistTaps="handled"
     >
       {onBack && (
         <TouchableOpacity
@@ -95,9 +153,10 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
           onPress={onBack}
           accessibilityRole="button"
           accessibilityLabel="Back to Tools"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={touchTargetTokens.hitSlop8}
         >
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
+          <Ionicons name={getBackIcon()} size={18} color={colors.accent} />
+          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>Tools</Text>
         </TouchableOpacity>
       )}
 
@@ -112,7 +171,7 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
       <View style={[styles.privacyBadge, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Ionicons name="shield-checkmark" size={14} color={colors.accent} />
         <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
-          Private & synchronized · Stored in your central fasting tracker
+          Private & synchronized · Stored safely in your local fasting database
         </Text>
       </View>
 
@@ -120,7 +179,7 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
       <View style={[styles.explicitBadge, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
         <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
         <Text style={[styles.explicitText, { color: colors.textMuted }]}>
-          Explicit recording only: Fasts are only tracked when you manually log them here. Predictions never auto-create missed fasts.
+          Explicit recording only: Missed fasts are only logged when you manually add them. Predictions never auto-create records.
         </Text>
       </View>
 
@@ -135,7 +194,7 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
           <Text style={[styles.qadaStatLbl, { color: colors.textMuted }]}>Made Up (Qada)</Text>
         </View>
         <View style={[styles.qadaStatBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-          <Text style={[styles.qadaStatNum, { color: qadaStats.pending > 0 ? '#EF4444' : colors.textPrimary }]}>
+          <Text style={[styles.qadaStatNum, { color: qadaStats.pending > 0 ? colors.destructive : colors.textPrimary }]}>
             {qadaStats.pending}
           </Text>
           <Text style={[styles.qadaStatLbl, { color: colors.textMuted }]}>Remaining Days</Text>
@@ -147,6 +206,8 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
         <TouchableOpacity
           style={[styles.primaryBtn, { backgroundColor: colors.accent, marginVertical: 14 }]}
           onPress={() => setShowAddQada(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Log Missed Ramadan Fast"
         >
           <Ionicons name="add-circle" size={18} color={colors.onAccent} />
           <Text style={[styles.primaryBtnText, { color: colors.onAccent }]}>
@@ -161,13 +222,30 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
           <Text style={[styles.formTitle, { color: colors.textPrimary }]}>
             Log Missed Fast Day
           </Text>
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Date (YYYY-MM-DD)</Text>
+          <View style={styles.labelRow}>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Date (YYYY-MM-DD)</Text>
+            <View style={styles.quickPillsRow}>
+              <TouchableOpacity
+                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
+                onPress={() => setQadaDate(todayStr)}
+              >
+                <Text style={[styles.quickPillText, { color: colors.accent }]}>Today</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
+                onPress={() => setQadaDate(yesterdayStr)}
+              >
+                <Text style={[styles.quickPillText, { color: colors.textSecondary }]}>Yesterday</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
           <TextInput
             style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
             value={qadaDate}
             onChangeText={setQadaDate}
             placeholder="YYYY-MM-DD"
             placeholderTextColor={colors.textMuted}
+            keyboardType="numbers-and-punctuation"
           />
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Reason</Text>
           <TextInput
@@ -189,6 +267,8 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
             <TouchableOpacity
               style={[styles.cancelBtn, { borderColor: colors.borderSubtle }]}
               onPress={() => setShowAddQada(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel"
             >
               <Text style={{ color: colors.textMuted, fontSize: 13, fontFamily: 'Manrope_600SemiBold' }}>
                 Cancel
@@ -197,6 +277,8 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
             <TouchableOpacity
               style={[styles.submitBtn, { backgroundColor: colors.accent }]}
               onPress={handleSaveQada}
+              accessibilityRole="button"
+              accessibilityLabel="Save Missed Fast"
             >
               <Text style={{ color: colors.onAccent, fontSize: 13, fontFamily: 'Manrope_700Bold' }}>
                 Save Fast
@@ -211,19 +293,20 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
         Missed Fast Ledger
       </Text>
       <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        Synchronized with the main Fasting tracker. Tap the checkbox once made up.
+        Tap checkbox once made up. Synchronized with your central fasting records.
       </Text>
 
-      {missedFasts.length === 0 ? (
-        <Card style={{ alignItems: 'center', padding: 24, marginTop: 8 }}>
-          <Ionicons name="moon-outline" size={28} color={colors.textMuted} style={{ marginBottom: 8 }} />
-          <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>No missed fasts recorded</Text>
-          <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-            Days missed during Ramadan due to menstruation or postpartum can be recorded here.
-          </Text>
-        </Card>
+      {womenMissedFasts.length === 0 ? (
+        <EmptyState
+          icon="moon-outline"
+          title="No missed fasts recorded"
+          subtitle="Days missed during Ramadan due to menstruation or postpartum can be recorded here."
+          actionLabel="+ Log Missed Fast"
+          onAction={() => setShowAddQada(true)}
+          iconSize={40}
+        />
       ) : (
-        missedFasts.map((fast) => (
+        womenMissedFasts.map((fast) => (
           <Card key={fast.id} style={{ marginBottom: 10, padding: 14 }}>
             <View style={styles.qadaRow}>
               <TouchableOpacity
@@ -235,6 +318,7 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
                 onPress={() => handleToggleQada(fast.id, fast.madeUp)}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: fast.madeUp }}
+                accessibilityLabel={`Mark fast from ${fast.date} as ${fast.madeUp ? 'unmade' : 'made up'}`}
               >
                 {fast.madeUp && <Ionicons name="checkmark" size={14} color="#FFF" />}
               </TouchableOpacity>
@@ -258,8 +342,10 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
                 )}
               </View>
               <TouchableOpacity
-                onPress={() => handleDeleteQada(fast.id)}
-                accessibilityLabel="Delete missed fast"
+                onPress={() => handleDeleteQada(fast)}
+                accessibilityRole="button"
+                accessibilityLabel={`Delete missed fast for ${fast.date}`}
+                hitSlop={touchTargetTokens.hitSlop10}
               >
                 <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
               </TouchableOpacity>
@@ -271,6 +357,8 @@ export default function WomenQadaScreen({ onBack }: { onBack?: () => void }) {
   );
 }
 
+export default withUndoToast(WomenQadaScreen);
+
 const styles = StyleSheet.create({
   content: {
     padding: 20,
@@ -279,11 +367,13 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
+    minHeight: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
     paddingRight: 10,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -294,7 +384,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
     marginTop: -4,
@@ -303,13 +393,14 @@ const styles = StyleSheet.create({
   privacyText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11.5,
+    flex: 1,
   },
   explicitBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
     marginBottom: 12,
@@ -345,8 +436,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 12,
-    borderRadius: 8,
+    minHeight: buttonTokens.md.minHeight,
+    borderRadius: buttonTokens.md.borderRadius,
   },
   primaryBtnText: {
     fontFamily: 'Manrope_700Bold',
@@ -362,15 +453,35 @@ const styles = StyleSheet.create({
     fontSize: 14.5,
     marginBottom: 4,
   },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
   inputLabel: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11.5,
+  },
+  quickPillsRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  quickPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  quickPillText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10.5,
   },
   textInput: {
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 9,
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
   },
@@ -382,14 +493,18 @@ const styles = StyleSheet.create({
   },
   cancelBtn: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 6,
+    minHeight: buttonTokens.sm.minHeight,
+    borderRadius: buttonTokens.sm.borderRadius,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   submitBtn: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+    minHeight: buttonTokens.sm.minHeight,
+    borderRadius: buttonTokens.sm.borderRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionTitle: {
     fontFamily: 'Manrope_700Bold',
@@ -398,18 +513,8 @@ const styles = StyleSheet.create({
   sectionDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
-    marginBottom: 10,
-    lineHeight: 17,
-  },
-  emptyTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13.5,
-  },
-  emptySub: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
-    textAlign: 'center',
-    marginTop: 4,
+    marginBottom: 8,
+    lineHeight: 16,
   },
   qadaRow: {
     flexDirection: 'row',
@@ -419,22 +524,23 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 6,
+    borderRadius: 5,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   qadaDate: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13,
+    fontSize: 13.5,
   },
   qadaReason: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
+    marginTop: 2,
   },
   qadaMadeUpNote: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 10.5,
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
     marginTop: 2,
   },
 });

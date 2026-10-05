@@ -459,9 +459,10 @@ export interface SettingsScreenProps {
   onClose?: () => void;
   onOpenWidgets?: () => void;
   onBackRef?: React.MutableRefObject<(() => boolean) | null>;
+  onOpenToolsItem?: (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => void;
 }
 
-export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef }: SettingsScreenProps) {
+export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOpenToolsItem }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, mode, accentKey, setAccent } = useTheme();
   const {
@@ -493,7 +494,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef }: Se
   const [widgetsModalOpen, setWidgetsModalOpen] = useState(false);
   const [isPlayingAdhan, setIsPlayingAdhan] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
-  const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'set' | 'change' | null>(null);
+  const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'verifyDisableLock' | 'set' | 'change' | null>(null);
   const [health, setHealth] = useState<NotificationHealth | null>(null);
   const [isLoadingHealth, setIsLoadingHealth] = useState(true);
   const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
@@ -1402,8 +1403,23 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef }: Se
                 right={
                   <TouchableOpacity
                     style={[styles.privacyActionBtn, { borderColor: colors.accent }]}
-                    onPress={() => setWomenLockEnabled(!womenLockEnabled)}
+                    onPress={() => {
+                      if (womenLockEnabled) {
+                        if (womenPinHash) {
+                          setPinModalMode('verifyDisableLock');
+                        } else {
+                          setWomenLockEnabled(false);
+                        }
+                      } else {
+                        if (!womenPinHash) {
+                          setPinModalMode('set');
+                        } else {
+                          setWomenLockEnabled(true);
+                        }
+                      }
+                    }}
                     accessibilityRole="button"
+                    accessibilityLabel={womenLockEnabled ? "Disable App lock PIN" : "Enable App lock PIN"}
                   >
                     <Text style={[styles.privacyActionText, { color: colors.accent }]}>
                       {womenLockEnabled ? 'Disable' : 'Enable'}
@@ -1424,6 +1440,76 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef }: Se
                   onPress={() => setPinModalMode('set')}
                   right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>Set</Text>}
                 />
+              )}
+
+              {/* Direct links to Women's tools */}
+              {onOpenToolsItem && (
+                <>
+                  <Hairline />
+                  <Row
+                    title="Cycle Tracker"
+                    desc="Period logging, cycle duration & predictions"
+                    onPress={() => {
+                      onClose?.();
+                      onOpenToolsItem('women-cycle');
+                    }}
+                    right={
+                      <Ionicons
+                        name={getForwardIcon('chevron')}
+                        size={iconSizes.inlineLg}
+                        color={colors.accent}
+                      />
+                    }
+                  />
+                  <Hairline />
+                  <Row
+                    title="Purity & Ghusl"
+                    desc="Step-by-step ghusl guide, tuhr & nifas tracker"
+                    onPress={() => {
+                      onClose?.();
+                      onOpenToolsItem('women-purity');
+                    }}
+                    right={
+                      <Ionicons
+                        name={getForwardIcon('chevron')}
+                        size={iconSizes.inlineLg}
+                        color={colors.accent}
+                      />
+                    }
+                  />
+                  <Hairline />
+                  <Row
+                    title="Worship Guidance"
+                    desc="Authentic fiqh, exemptions & bleeding types"
+                    onPress={() => {
+                      onClose?.();
+                      onOpenToolsItem('women-guidance');
+                    }}
+                    right={
+                      <Ionicons
+                        name={getForwardIcon('chevron')}
+                        size={iconSizes.inlineLg}
+                        color={colors.accent}
+                      />
+                    }
+                  />
+                  <Hairline />
+                  <Row
+                    title="Qada Fasts"
+                    desc="Missed Ramadan fasts makeup ledger"
+                    onPress={() => {
+                      onClose?.();
+                      onOpenToolsItem('women-qada');
+                    }}
+                    right={
+                      <Ionicons
+                        name={getForwardIcon('chevron')}
+                        size={iconSizes.inlineLg}
+                        color={colors.accent}
+                      />
+                    }
+                  />
+                </>
               )}
 
               {/* Clear cycle history */}
@@ -1467,7 +1553,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef }: Se
           )}
         </Section>
 
-        {/* PIN modal: set / change / verify-to-enable */}
+        {/* PIN modal: set / change / verify-to-enable / verify-to-disable */}
         <WomenPinModal
           visible={pinModalMode !== null}
           mode={pinModalMode === 'set' ? 'set' : pinModalMode === 'change' ? 'change' : 'verify'}
@@ -1477,12 +1563,18 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef }: Se
               // PIN verified → show consent, then enable
               setPinModalMode(null);
               setConsentOpen(true);
+            } else if (pinModalMode === 'verifyDisableLock') {
+              setPinModalMode(null);
+              setWomenLockEnabled(false);
             } else {
               setPinModalMode(null);
             }
           }}
           onCancel={() => setPinModalMode(null)}
-          onSetPin={(newHash) => setWomenPinHash(newHash)}
+          onSetPin={(newHash) => {
+            setWomenPinHash(newHash);
+            setWomenLockEnabled(true);
+          }}
         />
 
         {/* About & Legal */}

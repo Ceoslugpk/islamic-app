@@ -12,13 +12,20 @@ import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
+import { getBackIcon } from '../lib/iconMap';
+import { touchTargetTokens } from '../lib/buttonTokens';
 import {
   WORSHIP_GUIDELINES,
   BLEEDING_TYPES,
   WOMENS_FIQH_RESOURCES,
 } from '../lib/womensFiqh';
 
-export default function WomenGuidanceScreen({ onBack }: { onBack?: () => void }) {
+interface WomenGuidanceScreenProps {
+  onBack?: () => void;
+  onOpenPurity?: () => void;
+}
+
+export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuidanceScreenProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -36,9 +43,10 @@ export default function WomenGuidanceScreen({ onBack }: { onBack?: () => void })
           onPress={onBack}
           accessibilityRole="button"
           accessibilityLabel="Back to Tools"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={touchTargetTokens.hitSlop8}
         >
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
+          <Ionicons name={getBackIcon()} size={18} color={colors.accent} />
+          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>Tools</Text>
         </TouchableOpacity>
       )}
 
@@ -67,7 +75,7 @@ export default function WomenGuidanceScreen({ onBack }: { onBack?: () => void })
 
       {WORSHIP_GUIDELINES.map((item) => {
         const statusConfig = {
-          restricted: { color: '#EF4444', icon: 'close-circle', label: 'Exempt / Restricted' },
+          restricted: { color: colors.destructive, icon: 'close-circle', label: 'Exempt / Restricted' },
           permitted: { color: '#3B82F6', icon: 'checkmark-circle', label: 'Permitted' },
           recommended: { color: '#10B981', icon: 'star', label: 'Highly Encouraged' },
         }[item.status];
@@ -102,9 +110,9 @@ export default function WomenGuidanceScreen({ onBack }: { onBack?: () => void })
 
       {BLEEDING_TYPES.map((b) => (
         <Card key={b.name} style={{ marginBottom: 10, padding: 14 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <Text style={[styles.bleedingName, { color: colors.textPrimary }]}>{b.name}</Text>
-            <ArabicText size={18}>{b.arabic}</ArabicText>
+            <ArabicText size={18} style={{ lineHeight: 26 }}>{b.arabic}</ArabicText>
           </View>
           <Text style={[styles.bleedingDef, { color: colors.textSecondary }]}>{b.definition}</Text>
           <View style={styles.bleedingRow}>
@@ -123,7 +131,7 @@ export default function WomenGuidanceScreen({ onBack }: { onBack?: () => void })
         Recommended Fiqh References
       </Text>
       <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        Classical and contemporary authoritative works on women's jurisprudence.
+        {"Classical and contemporary authoritative works on women's jurisprudence."}
       </Text>
 
       {WOMENS_FIQH_RESOURCES.map((res) => (
@@ -158,11 +166,13 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
+    minHeight: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
     paddingRight: 10,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -173,7 +183,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
     marginTop: -4,
@@ -182,6 +192,7 @@ const styles = StyleSheet.create({
   privacyText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11.5,
+    flex: 1,
   },
   sectionTitle: {
     fontFamily: 'Manrope_700Bold',

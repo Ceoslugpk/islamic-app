@@ -63,6 +63,7 @@ import WomenCycleScreen from './src/screens/WomenCycleScreen';
 import WomenPurityScreen from './src/screens/WomenPurityScreen';
 import WomenGuidanceScreen from './src/screens/WomenGuidanceScreen';
 import WomenQadaScreen from './src/screens/WomenQadaScreen';
+import { WomenPinModal } from './src/components/WomenPinModal';
 import UmrahGuideScreen from './src/screens/UmrahGuideScreen';
 import UmrahResourcesScreen from './src/screens/UmrahResourcesScreen';
 import HajjJourneyScreen from './src/screens/HajjJourneyScreen';
@@ -303,6 +304,43 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const [library, setLibrary] = useState<LibraryView>({ screen: 'hub' });
   const [quran, setQuran] = useState<QuranView>({ screen: 'home' });
   const [tools, setTools] = useState<ToolsView>({ screen: 'hub' });
+
+  // Session unlock & PIN protection for Women's Worship
+  const [womenUnlocked, setWomenUnlocked] = useState(false);
+  const [pendingWomenScreen, setPendingWomenScreen] = useState<ToolsView | null>(null);
+  const [womenPinModalOpen, setWomenPinModalOpen] = useState(false);
+
+  // Background re-lock: when app moves to background/inactive, re-lock sensitive session
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState.match(/inactive|background/)) {
+        if (settings.womenLockEnabled) {
+          setWomenUnlocked(false);
+          setTools((prev) => {
+            if (prev.screen.startsWith('women-')) {
+              return { screen: 'hub' };
+            }
+            return prev;
+          });
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [settings.womenLockEnabled]);
+
+  const handleOpenWomenFromSettings = useCallback(
+    (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => {
+      setSettingsOpen(false);
+      setTab('tools');
+      if (settings.womenLockEnabled && settings.womenPinHash && !womenUnlocked) {
+        setPendingWomenScreen({ screen: key });
+        setWomenPinModalOpen(true);
+        return;
+      }
+      setTools({ screen: key });
+    },
+    [settings.womenLockEnabled, settings.womenPinHash, womenUnlocked]
+  );
 
   // Global Audio Mini Player state
   const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
@@ -652,9 +690,14 @@ function Root({ splashDone }: { splashDone: boolean }) {
   }, []);
 
   // Android hardware back: go back through screens instead of exiting.
-  // Priority: settings modal → audio player modal → sub-screen → tab hub → default (exit).
+  // Priority: PIN modal → settings modal → audio player modal → sub-screen → tab hub → default (exit).
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (womenPinModalOpen) {
+        setWomenPinModalOpen(false);
+        setPendingWomenScreen(null);
+        return true;
+      }
       if (settingsOpen) {
         if (settingsBackRef.current && settingsBackRef.current()) {
           return true;
@@ -711,6 +754,13 @@ function Root({ splashDone }: { splashDone: boolean }) {
   }
 
   function openToolsItem(key: ToolsItemKey) {
+    if (key.startsWith('women-')) {
+      if (settings.womenLockEnabled && settings.womenPinHash && !womenUnlocked) {
+        setPendingWomenScreen({ screen: key as any });
+        setWomenPinModalOpen(true);
+        return;
+      }
+    }
     if (key === 'qibla') setTools({ screen: 'qibla' });
     else if (key === 'tracker') setTools({ screen: 'tracker' });
     else if (key === 'location') setTools({ screen: 'location' });
@@ -958,17 +1008,30 @@ function Root({ splashDone }: { splashDone: boolean }) {
         )}
 
         {/* Women's Worship Views */}
-        {tab === 'tools' && tools.screen === 'women-cycle' && (
-          <WomenCycleScreen onBack={() => setTools({ screen: 'hub' })} />
+        {tab === 'tools' && settings.womenWorshipEnabled && tools.screen === 'women-cycle' && (
+          <WomenCycleScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenPurity={() => setTools({ screen: 'women-purity' })}
+          />
         )}
-        {tab === 'tools' && tools.screen === 'women-purity' && (
-          <WomenPurityScreen onBack={() => setTools({ screen: 'hub' })} />
+        {tab === 'tools' && settings.womenWorshipEnabled && tools.screen === 'women-purity' && (
+          <WomenPurityScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenQada={() => setTools({ screen: 'women-qada' })}
+            onOpenGuidance={() => setTools({ screen: 'women-guidance' })}
+          />
         )}
-        {tab === 'tools' && tools.screen === 'women-guidance' && (
-          <WomenGuidanceScreen onBack={() => setTools({ screen: 'hub' })} />
+        {tab === 'tools' && settings.womenWorshipEnabled && tools.screen === 'women-guidance' && (
+          <WomenGuidanceScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenPurity={() => setTools({ screen: 'women-purity' })}
+          />
         )}
-        {tab === 'tools' && tools.screen === 'women-qada' && (
-          <WomenQadaScreen onBack={() => setTools({ screen: 'hub' })} />
+        {tab === 'tools' && settings.womenWorshipEnabled && tools.screen === 'women-qada' && (
+          <WomenQadaScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenCycle={() => setTools({ screen: 'women-cycle' })}
+          />
         )}
 
         {/* Hajj & Umrah Views */}
@@ -1037,6 +1100,26 @@ function Root({ splashDone }: { splashDone: boolean }) {
         visible={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         backRef={settingsBackRef}
+        onOpenToolsItem={handleOpenWomenFromSettings}
+      />
+
+      {/* PIN Unlock Modal for Women's Worship tools */}
+      <WomenPinModal
+        visible={womenPinModalOpen}
+        currentHash={settings.womenPinHash}
+        mode="verify"
+        onSuccess={() => {
+          setWomenUnlocked(true);
+          setWomenPinModalOpen(false);
+          if (pendingWomenScreen) {
+            setTools(pendingWomenScreen);
+            setPendingWomenScreen(null);
+          }
+        }}
+        onCancel={() => {
+          setWomenPinModalOpen(false);
+          setPendingWomenScreen(null);
+        }}
       />
 
       {/* Location Setup Modal for first-time users without usable location */}
@@ -1055,10 +1138,12 @@ function SettingsModal({
   visible,
   onClose,
   backRef,
+  onOpenToolsItem,
 }: {
   visible: boolean;
   onClose: () => void;
   backRef?: React.MutableRefObject<(() => boolean) | null>;
+  onOpenToolsItem?: (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => void;
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -1124,7 +1209,11 @@ function SettingsModal({
               { paddingBottom: Math.max(insets.bottom, 16) + 12 },
             ]}
           >
-            <SettingsScreen onClose={onClose} onBackRef={backRef} />
+            <SettingsScreen
+              onClose={onClose}
+              onBackRef={backRef}
+              onOpenToolsItem={onOpenToolsItem}
+            />
           </View>
         </Animated.View>
       </View>

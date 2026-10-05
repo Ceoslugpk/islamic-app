@@ -167,21 +167,21 @@ export const BLEEDING_TYPES: BleedingTypeInfo[] = [
     name: 'Hayd (Menstruation)',
     arabic: 'حيض',
     definition: 'Natural, regular monthly bleeding that occurs from the womb in healthy adult women.',
-    duration: 'Commonly 5–7 days. Jurisprudential minimum: 1 day/night; standard maximum: 15 days.',
+    duration: 'Commonly 5–7 days. Classical limits: Shafi’i & Hanbali: 1–15 days; Hanafi: 3–10 days.',
     rulings: 'Salah and fasting cease. Complete ghusl required upon cessation. Missed fasts are made up later; prayers are not.',
   },
   {
     name: 'Nifas (Postpartum Bleeding)',
     arabic: 'نفاس',
     definition: 'Bleeding following childbirth (natural or cesarean) from the womb.',
-    duration: 'Maximum period is 40 days. If bleeding stops earlier, the woman performs ghusl immediately and resumes worship.',
-    rulings: 'Same exemptions as Hayd. If bleeding extends past 40 days, it is treated as Istihadha (irregular bleeding) unless it coincides with regular cycle.',
+    duration: 'Standard Sunnah maximum is 40 days (majority). Shafi’i jurists note it may extend up to 60 days.',
+    rulings: 'Same exemptions as Hayd. If bleeding extends past the maximum, it is treated as Istihadha unless coinciding with regular cycle.',
   },
   {
     name: 'Istihadha (Irregular Bleeding)',
     arabic: 'استحاضة',
     definition: 'Non-menstrual bleeding resulting from a ruptured blood vessel or medical condition, beyond regular cycle limits.',
-    duration: 'Occurs irregularly, or continuous bleeding exceeding the maximum 15-day limit.',
+    duration: 'Occurs irregularly, or continuous bleeding exceeding the maximum Hayd limit.',
     rulings: 'Ghusl is performed once when the regular menstrual period ends. Thereafter, the woman washes, makes wudu for EACH obligatory prayer, and prays/fasts normally.',
   },
 ];
@@ -235,11 +235,34 @@ export function formatYMD(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Timezone-safe parse for YYYY-MM-DD strings.
+ * Avoids the standard JS UTC midnight parsing bug where new Date("YYYY-MM-DD")
+ * shifts by 1 day in western timezones.
+ */
+export function parseYMD(dateStr: string): Date {
+  if (!dateStr) return new Date();
+  const parts = dateStr.split('-').map((p) => parseInt(p, 10));
+  if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+  return new Date();
+}
+
+/** Validate whether a string is a valid calendar date in YYYY-MM-DD format */
+export function isValidYMD(dateStr: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr.trim())) return false;
+  const [y, m, d] = dateStr.trim().split('-').map(Number);
+  if (!y || !m || !d || m < 1 || m > 12 || d < 1 || d > 31) return false;
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+}
+
 /** Calculate days between two YYYY-MM-DD dates */
 export function daysBetween(d1: string, d2: string): number {
-  const ms1 = new Date(d1).getTime();
-  const ms2 = new Date(d2).getTime();
-  return Math.round(Math.abs(ms2 - ms1) / (1000 * 60 * 60 * 24));
+  const dt1 = parseYMD(d1).getTime();
+  const dt2 = parseYMD(d2).getTime();
+  return Math.round(Math.abs(dt2 - dt1) / (1000 * 60 * 60 * 24));
 }
 
 /** Compute average cycle length from previous period entries */
@@ -252,7 +275,7 @@ export function computeAverageCycleLength(
   const intervals: number[] = [];
   for (let i = 1; i < sorted.length; i++) {
     const diff = daysBetween(sorted[i - 1].startDate, sorted[i].startDate);
-    // Typical cycle length is between 21 and 40 days
+    // Typical cycle length is between 20 and 45 days
     if (diff >= 20 && diff <= 45) {
       intervals.push(diff);
     }
@@ -267,11 +290,13 @@ export function predictNextPeriod(
   latestStartDate: string,
   avgCycleLength: number = 28
 ): { nextDate: string; daysRemaining: number } {
-  const start = new Date(latestStartDate);
+  const start = parseYMD(latestStartDate);
+  start.setHours(0, 0, 0, 0);
   const next = new Date(start.getTime() + avgCycleLength * 86400000);
   const nextDate = formatYMD(next);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  next.setHours(0, 0, 0, 0);
   const diffDays = Math.round((next.getTime() - today.getTime()) / 86400000);
   return {
     nextDate,
@@ -281,9 +306,9 @@ export function predictNextPeriod(
 
 /** Get elapsed cycle day relative to period start date (1-indexed) */
 export function getCycleDay(startDate: string, targetDate?: string): number {
-  const start = new Date(startDate);
+  const start = parseYMD(startDate);
   start.setHours(0, 0, 0, 0);
-  const target = targetDate ? new Date(targetDate) : new Date();
+  const target = targetDate ? parseYMD(targetDate) : new Date();
   target.setHours(0, 0, 0, 0);
   const diff = Math.round((target.getTime() - start.getTime()) / 86400000);
   return Math.max(1, diff + 1);
@@ -297,7 +322,8 @@ export function getFertileWindow(
   latestStartDate: string,
   avgCycleLength: number = 28
 ): { start: string; end: string } {
-  const start = new Date(latestStartDate);
+  const start = parseYMD(latestStartDate);
+  start.setHours(0, 0, 0, 0);
   // Estimated ovulation: ~14 days before next period
   const ovulationDay = Math.max(12, avgCycleLength - 14);
   const fertileStart = new Date(start.getTime() + (ovulationDay - 4) * 86400000);
