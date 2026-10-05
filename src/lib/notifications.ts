@@ -382,9 +382,33 @@ export function getNextPrayerFromTimings(timings: DayTimings): { name: string; t
  */
 export async function canScheduleExactAlarms(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
-  // Best-effort: assume the declared permission is granted on 12+; scheduling
-  // failures are caught by callers and degrade to the platform default.
-  return true;
+  try {
+    // expo-notifications exposes exact-alarm status through the permission response
+    // on Android 13+ (USE_EXACT_ALARM). On 12 (API 31-32) SCHEDULE_EXACT_ALARM is
+    // requested via the OS settings; we check the notification permission status
+    // which reflects the grant.
+    const perms = await Notifications.getPermissionsAsync();
+    if (perms.status === 'granted') return true;
+    return false;
+  } catch {
+    return true; // unknown — assume granted, scheduling failures degrade gracefully
+  }
+}
+
+/**
+ * Request exact-alarm scheduling permission on Android 12+ (API 31-32 needs the
+ * runtime SCHEDULE_EXACT_ALARM grant; API 33+ grants USE_EXACT_ALARM via the
+ * notification permission request). Best-effort: on failure the daily triggers
+ * still fire inexactly (graceful degradation), and Settings guides the user.
+ */
+export async function requestExactAlarmPermission(): Promise<boolean> {
+  if (Platform.OS !== 'android') return true;
+  try {
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -479,6 +503,12 @@ export async function rescheduleIfNeeded(
 
   await configureNotifications();
   try {
+    // Ensure exact-alarm permission on Android 12+ so DAILY triggers fire on time
+    // (pre-prayer 5/10/15-min notices depend on this). Best-effort — inexact fallback
+    // still works, just possibly delayed.
+    if (Platform.OS === 'android') {
+      await requestExactAlarmPermission();
+    }
     const { fetchPrayerTimes } = await import('./prayerTimes');
     // fetchPrayerTimes is cache-aware: serves cached schedule without network when offline
     const data = await fetchPrayerTimes(location, methodId, new Date(), { madhab: madhab as any });
