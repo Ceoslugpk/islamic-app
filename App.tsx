@@ -1343,17 +1343,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   bismillahWrap: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 60,
+    paddingHorizontal: 8,
+    minWidth: 0,
     zIndex: 1,
   },
   bismillahText: {
     fontFamily: 'Amiri_400Regular',
     textAlign: 'center',
+    // ensure the Arabic sits on the same optical baseline as the row
+    includeFontPadding: false,
+    marginTop: 1,
   },
   headerBrand: {
     flexDirection: 'row',
@@ -1391,6 +1393,8 @@ const styles = StyleSheet.create({
   },
   gearBtn: {
     padding: 8,
+    flex: 1,
+    alignItems: 'flex-end',
   },
   gear: {
     fontSize: 20,
