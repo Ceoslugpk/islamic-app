@@ -17,8 +17,8 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loadPrayerCache, getSalahEntries, getSalahHistory, computeStreak, loadQuranCache } from './db';
-import { PrayerTimes, Location, getNextPrayer } from './prayerTimes';
+import { loadPrayerCache, getSalahEntries, getSalahHistory, computeStreak, loadQuranCache, loadLatestPrayerCache } from './db';
+import { PrayerTimes, Location, getNextPrayer, getCachedPrayerTimes, normalizePayload, Madhab, DEFAULT_LOCATION } from './prayerTimes';
 import { formatTime } from './timeFormat';
 import { getReadingPosition } from './continuing';
 import { SURAHS_114 } from './surahs114';
@@ -33,6 +33,7 @@ import { DUAS_DATA, DuaItem } from './duas';
 export interface PrayerScheduleItem {
   name: string;
   time: string;
+  rawTime: string;
   isNext: boolean;
   isPassed: boolean;
 }
@@ -161,6 +162,8 @@ export interface WidgetPrayerOptions {
   method?: number;
   timeFormat?: '12h' | '24h';
   timings?: PrayerTimes;
+  madhab?: Madhab;
+  adjustments?: Record<string, number>;
 }
 
 export interface WidgetProgressOptions {
@@ -178,11 +181,6 @@ export interface WidgetOptions extends WidgetPrayerOptions {
 /*                                  Helpers                                   */
 /* -------------------------------------------------------------------------- */
 
-const DEFAULT_LOCATION: Location = {
-  latitude: 21.4225,
-  longitude: 39.8262,
-  label: 'Makkah, Saudi Arabia',
-};
 
 const DAILY_PRAYERS: ('Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha')[] = [
   'Fajr',
@@ -244,6 +242,8 @@ export async function getNextPrayerWidgetData(
   let method = options.method ?? 16;
   let loc = options.location || DEFAULT_LOCATION;
   let timeFormat = options.timeFormat ?? '12h';
+  let madhab: Madhab = options.madhab ?? 'shafi';
+  let adjustments = options.adjustments;
 
   // Read stored preferences from AsyncStorage if options not provided
   try {
@@ -263,6 +263,12 @@ export async function getNextPrayerWidgetData(
       if (!options.timeFormat && (s.timeFormat === '12h' || s.timeFormat === '24h')) {
         timeFormat = s.timeFormat;
       }
+      if (!options.madhab && (s.madhab === 'shafi' || s.madhab === 'hanafi')) {
+        madhab = s.madhab;
+      }
+      if (!options.adjustments && s.adjustments) {
+        adjustments = s.adjustments;
+      }
     }
   } catch {
     // Ignore storage parse issues; fallback to defaults
@@ -272,36 +278,42 @@ export async function getNextPrayerWidgetData(
 
   // Look up authoritative cache if timings not passed directly
   if (!timings) {
-    const locKey = `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`;
-    let cached = loadPrayerCache(dateStr, locKey, method);
-
-    // Fallback: try default Dubai coordinates if custom location is not cached
-    if (!cached && locKey !== '25.20,55.27') {
-      cached = loadPrayerCache(dateStr, '25.20,55.27', method) || loadPrayerCache(dateStr, '25.20,55.27', 16);
+    // 1. Authoritative primary lookup: exact same function & composite key as HomeScreen & notifications
+    const cachedDay = getCachedPrayerTimes(loc, method, now, madhab, adjustments);
+    if (cachedDay && cachedDay.timings && cachedDay.timings.Fajr) {
+      timings = cachedDay.timings;
     }
 
-    if (cached) {
-      try {
-        let payload: any = cached.payload;
-        if (typeof payload === 'string') {
-          payload = JSON.parse(payload);
-        }
-        if (payload?.timings) {
-          timings = payload.timings;
-        } else if (payload?.data?.timings) {
-          timings = payload.data.timings;
-        }
-      } catch {
-        timings = null;
+    // 2. Date rollover / offline fallback: try latest cached prayer timings for this location or any location
+    if (!timings) {
+      const locKey = `${Number(loc.latitude).toFixed(4)},${Number(loc.longitude).toFixed(4)}`;
+      const latest = loadLatestPrayerCache(locKey, method, madhab) || loadLatestPrayerCache(undefined, method, madhab) || loadLatestPrayerCache();
+      if (latest) {
+        try {
+          const parsed = JSON.parse(latest.payload);
+          const normalized = normalizePayload(parsed, parsed.method || 'Islamic.app');
+          if (normalized && normalized.timings?.Fajr) {
+            timings = normalized.timings;
+          }
+        } catch {}
+      }
+    }
+
+    // 3. Fallback: try default Dubai coordinates if custom location is not cached
+    if (!timings) {
+      const dubaiCached = getCachedPrayerTimes(DEFAULT_LOCATION, 16, now, 'shafi');
+      if (dubaiCached && dubaiCached.timings && dubaiCached.timings.Fajr) {
+        timings = dubaiCached.timings;
       }
     }
   }
 
-  // Fallback empty state when no cache is available
+  // Fallback empty state when truly no cache is available (first install, never opened)
   if (!timings || !timings.Fajr) {
     const emptyPrayers: PrayerScheduleItem[] = DAILY_PRAYERS.map((p) => ({
       name: p,
       time: '--:--',
+      rawTime: '',
       isNext: false,
       isPassed: false,
     }));
@@ -309,14 +321,14 @@ export async function getNextPrayerWidgetData(
     return {
       name: 'ISLAMIC',
       rawName: 'Islamic',
-      time: '--:--',
+      time: 'Open App',
       rawTime: '',
       countdownMs: 0,
-      countdownText: 'Open app to load',
+      countdownText: 'Tap to load times',
       isTomorrow: false,
       hasData: false,
-      fallbackText: 'Open app to load times',
-      locationLabel: loc.label || 'Location',
+      fallbackText: 'Add prayer times by opening Islamic once',
+      locationLabel: loc.label || 'Set Location',
       progressFraction: 0,
       prayers: emptyPrayers,
     };
@@ -376,6 +388,7 @@ export async function getNextPrayerWidgetData(
     return {
       name: p,
       time: formatTime(pTime || '--:--', timeFormat),
+      rawTime: pTime || '',
       isNext: isThisNext,
       isPassed,
     };
@@ -566,17 +579,17 @@ export async function getQuranVerseWidgetData(): Promise<QuranVerseWidgetData> {
     };
   }
 
-  // Graceful empty/offline state — NEVER fake verses
+  // Graceful initial state — Al-Fatihah 1:1 (Bismillah) is always authentic
   return {
     surahNumber: 1,
     ayahNumber: 1,
     surahEnglishName: 'Al-Fatihah',
     surahArabicName: 'الفَاتِحة',
-    reference: 'The Holy Quran',
-    arabicText: '',
-    translationText: 'Open the app to read and cache the Holy Quran.',
-    hasData: false,
-    fallbackText: 'Open app to read',
+    reference: 'Al-Fatihah 1:1',
+    arabicText: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
+    translationText: 'In the name of Allah, the Entirely Merciful, the Especially Merciful.',
+    hasData: true,
+    fallbackText: 'Read Quran',
     deepLink: 'salah://quran/1/1',
   };
 }

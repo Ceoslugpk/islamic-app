@@ -15,6 +15,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { LiveVideoPlayer } from '../components/LiveVideoPlayer';
 
 const MAKKAH_VIDEO_ID = 'eC4LfEVxvKg'; // بث مباشر || قناة القرآن الكريم Makkah Live
 const MAKKAH_CHANNEL_ID = 'UCos52azQNBgW63_9uDJoPDA'; // Official Saudi Quran TV (قناة القرآن الكريم)
@@ -78,73 +79,13 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
         </Text>
       </View>
 
-      {/* Video Container: Web iframe vs Native Fallback */}
-      {Platform.OS === 'web' ? (
-        <View
-          key={reloadKey}
-          style={[
-            styles.playerContainer,
-            { backgroundColor: '#000000', borderColor: colors.borderSubtle },
-          ]}
-        >
-          {React.createElement('iframe', {
-            src: MAKKAH_EMBED_URL,
-            title: 'Makkah Live Stream - Saudi Quran TV',
-            style: {
-              width: '100%',
-              height: '100%',
-              border: 0,
-            },
-            allow:
-              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-            allowFullScreen: true,
-          })}
-        </View>
-      ) : (
-        <Card style={{ marginBottom: 18, padding: 18 }}>
-          <View style={styles.nativeCardHeader}>
-            <View style={[styles.tvIconWrap, { backgroundColor: colors.accent + '20' }]}>
-              <Ionicons name="tv-outline" size={24} color={colors.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.nativeTitle, { color: colors.textPrimary }]}>
-                Live Stream from Makkah
-              </Text>
-              <Text style={[styles.nativeSub, { color: colors.textMuted }]}>
-                Official 24/7 HD feed from Al-Masjid Al-Haram
-              </Text>
-            </View>
-          </View>
-
-          <Text style={[styles.nativeBody, { color: colors.textSecondary }]}>
-            The embedded web player runs seamlessly on the Web version of the app. On your mobile device, launch the official uninterrupted YouTube stream directly in the YouTube app or your browser:
-          </Text>
-
-          <View style={styles.nativeActions}>
-            <TouchableOpacity
-              style={[styles.primaryActionBtn, { backgroundColor: colors.accent }]}
-              onPress={openYouTubeLive}
-              accessibilityRole="button"
-              accessibilityLabel="Watch Makkah Live on YouTube"
-            >
-              <Ionicons name="play" size={16} color="#FFFFFF" />
-              <Text style={styles.primaryActionText}>Watch Live on YouTube</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.secondaryActionBtn, { borderColor: colors.borderSubtle }]}
-              onPress={openChannel}
-              accessibilityRole="button"
-              accessibilityLabel="Open Saudi Quran TV Channel"
-            >
-              <Ionicons name="logo-youtube" size={16} color={colors.textSecondary} />
-              <Text style={[styles.secondaryActionText, { color: colors.textSecondary }]}>
-                Saudi Quran TV
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-      )}
+      {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
+      <LiveVideoPlayer
+        embedUrl={MAKKAH_EMBED_URL}
+        watchUrl={MAKKAH_LIVE_URL}
+        title="Live Stream from Makkah"
+        subtitle="Official 24/7 HD feed from Al-Masjid Al-Haram"
+      />
 
       {/* Stream Controls for Web */}
       {Platform.OS === 'web' && (

@@ -27,6 +27,7 @@ import {
   computeStreak,
   getSalahHistory,
 } from '../lib/db';
+import { updateWidgetSnapshot } from '../lib/widgetBridge';
 
 import { NAMES_99 } from '../lib/names99';
 import {
@@ -243,6 +244,7 @@ export default function HomeScreen({
         setData(cached);
         setLoading(false);
         setError(null);
+        updateWidgetSnapshot().catch(() => {});
         return; // Valid cache exists for today's config; skip network entirely!
       }
     }
@@ -274,6 +276,7 @@ export default function HomeScreen({
       ]);
       setData(result);
       setError(null);
+      updateWidgetSnapshot().catch(() => {});
     } catch (err: any) {
       // Check cache one more time in case it exists
       const fallbackCached = getCachedPrayerTimes(
@@ -285,6 +288,7 @@ export default function HomeScreen({
       if (fallbackCached) {
         setData(fallbackCached);
         setError(null);
+        updateWidgetSnapshot().catch(() => {});
       } else if (!data) {
         setError(prayerTimesOfflineError);
       }

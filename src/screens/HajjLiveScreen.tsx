@@ -15,6 +15,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { LiveVideoPlayer } from '../components/LiveVideoPlayer';
 import { getHijriDate, HIJRI_MONTH_NAMES } from '../lib/fasting';
 
 // Verified YouTube Channel IDs
@@ -167,73 +168,13 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
         </TouchableOpacity>
       </View>
 
-      {/* Video Container: Web iframe vs Native Fallback */}
-      {Platform.OS === 'web' ? (
-        <View
-          key={`${selectedChannel}-${reloadKey}`}
-          style={[
-            styles.playerContainer,
-            { backgroundColor: '#000000', borderColor: colors.borderSubtle },
-          ]}
-        >
-          {React.createElement('iframe', {
-            src: embedUrl,
-            title: `Hajj Live Broadcast - ${selectedChannel === 'ekhbariya' ? 'Al Ekhbariya' : 'Ministry of Hajj'}`,
-            style: {
-              width: '100%',
-              height: '100%',
-              border: 0,
-            },
-            allow:
-              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-            allowFullScreen: true,
-          })}
-        </View>
-      ) : (
-        <Card style={{ marginBottom: 18, padding: 18 }}>
-          <View style={styles.nativeCardHeader}>
-            <View style={[styles.tvIconWrap, { backgroundColor: colors.accent + '20' }]}>
-              <Ionicons name="radio-outline" size={24} color={colors.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.nativeTitle, { color: colors.textPrimary }]}>
-                {selectedChannel === 'ekhbariya' ? 'Al Ekhbariya Official Feed' : 'Ministry of Hajj & Umrah'}
-              </Text>
-              <Text style={[styles.nativeSub, { color: colors.textMuted }]}>
-                Official broadcasting channel for Hajj proceedings
-              </Text>
-            </View>
-          </View>
-
-          <Text style={[styles.nativeBody, { color: colors.textSecondary }]}>
-            The embedded video player runs on the Web preview of the app. On your mobile phone, open the official livestream directly in YouTube or your preferred browser:
-          </Text>
-
-          <View style={styles.nativeActions}>
-            <TouchableOpacity
-              style={[styles.primaryActionBtn, { backgroundColor: colors.accent }]}
-              onPress={openYouTubeLive}
-              accessibilityRole="button"
-              accessibilityLabel="Watch Hajj Broadcast on YouTube"
-            >
-              <Ionicons name="play" size={16} color="#FFFFFF" />
-              <Text style={styles.primaryActionText}>Watch on YouTube</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.secondaryActionBtn, { borderColor: colors.borderSubtle }]}
-              onPress={openChannel}
-              accessibilityRole="button"
-              accessibilityLabel="Open Official Channel"
-            >
-              <Ionicons name="logo-youtube" size={16} color={colors.textSecondary} />
-              <Text style={[styles.secondaryActionText, { color: colors.textSecondary }]}>
-                Channel Page
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-      )}
+      {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
+      <LiveVideoPlayer
+        embedUrl={embedUrl}
+        watchUrl={liveUrl}
+        title={selectedChannel === 'ekhbariya' ? 'Al Ekhbariya Official Feed' : 'Ministry of Hajj & Umrah'}
+        subtitle="Official broadcasting channel for Hajj proceedings"
+      />
 
       {/* Stream Controls for Web */}
       {Platform.OS === 'web' && (

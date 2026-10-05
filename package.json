@@ -26,6 +26,7 @@
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
     "expo-task-manager": "~57.0.21",
+    "expo-video": "~57.0.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
@@ -46,7 +47,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "test:prayer": "node tests/test_prayer_architecture.mjs",
-    "test": "node tests/test_prayer_architecture.mjs"
+    "test:widgets": "node tests/test_widgets.mjs",
+    "test": "node tests/test_prayer_architecture.mjs && node tests/test_widgets.mjs"
   },
   "private": true
 }
