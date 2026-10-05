@@ -1372,6 +1372,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
     minWidth: 0,
+    // Cap the middle slot so a wide Arabic Basmala can never overflow
+    // left into the ISLAMIC wordmark (or right into the gear). The text
+    // then shrinks via adjustsFontSizeToFit inside the capped width.
+    maxWidth: '44%',
     zIndex: 1,
   },
   bismillahText: {

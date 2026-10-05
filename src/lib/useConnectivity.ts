@@ -71,7 +71,15 @@ export async function checkConnectivity(): Promise<boolean> {
 
       const online = await Promise.race([fetchPromise, timeoutPromise]);
       const prevOnline = globalIsOnline;
-      globalIsOnline = online;
+      // Probe failure (timeout / HEAD not-ok) NEVER declares the app
+      // offline — a cold-start probe can flake (network stack not warmed).
+      // Only a confirmed reachable response proves online; otherwise we
+      // stay optimistic and the OS-level offline listeners (NetInfo /
+      // window 'offline') are the authoritative offline signal. This
+      // prevents the first-open "offline" flash when the app is fine.
+      if (online) {
+        globalIsOnline = true;
+      }
       globalIsChecking = false;
 
       if (online && !prevOnline) {
