@@ -1463,28 +1463,61 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
           ))}
         </Section>
 
-        {/* Mission — Sadaqah Jariyah, in several languages */}
-        <View style={styles.missionWrap}>
+        {/* Mission — Sadaqah Jariyah, translations & acknowledgments */}
+        <Card
+          padded={false}
+          style={{
+            ...styles.missionCard,
+            marginTop: layout.sectionGap,
+            padding: layout.isCompact ? 16 : 20,
+          }}
+        >
           <Text style={[styles.missionEyebrow, { color: colors.accent }]}>SADAQAH JARIYAH</Text>
-          {MISSION_TRANSLATIONS.map((m) => (
-            <View key={m.lang} style={styles.missionRow}>
-              <Text style={[styles.missionLang, { color: colors.textSecondary }]}>{m.lang}</Text>
-              <Text style={[styles.missionText, { color: colors.textPrimary }]}>{m.text}</Text>
-            </View>
-          ))}
+          <View style={styles.missionList}>
+            {MISSION_TRANSLATIONS.map((m) => {
+              const isRtl = m.lang === 'العربية' || m.lang === 'اردو';
+              return (
+                <View key={m.lang} style={styles.missionRow}>
+                  <Text
+                    style={[
+                      styles.missionLang,
+                      { color: colors.textSecondary },
+                      isRtl && styles.missionLangRtl,
+                    ]}
+                  >
+                    {m.lang}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.missionText,
+                      { color: colors.textPrimary },
+                      isRtl && styles.missionTextRtl,
+                    ]}
+                  >
+                    {m.text}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+
+          <Hairline style={styles.missionDivider} />
+
+          {/* Unified thanks to all providers */}
+          <Text style={[styles.thanksText, { color: colors.textSecondary }]}>
+            {THANKS_TEXT}
+          </Text>
+        </Card>
+
+        {/* Footer */}
+        <View style={[styles.footerWrap, { marginTop: layout.isCompact ? 16 : 20 }]}>
+          <Text style={[styles.footer, { color: colors.textMuted }]}>
+            Made for Ummah ❤️
+          </Text>
+          <Text style={[styles.footerArabic, { color: colors.textSecondary }]}>
+            تَوَكَّلْتُ عَلَى ٱللَّٰهُ
+          </Text>
         </View>
-
-        {/* Unified thanks to all providers */}
-        <Text style={[styles.thanksText, { color: colors.textSecondary }]}>
-          {THANKS_TEXT}
-        </Text>
-
-        <Text style={[styles.footer, { color: colors.textMuted, marginTop: 8 }]}>
-          Made for Ummah ❤️
-        </Text>
-        <Text style={[styles.footerArabic, { color: colors.textSecondary }]}>
-          تَوَكَّلْتُ عَلَى ٱللَّٰهُ
-        </Text>
 
         <QuranLanguageModal
           visible={quranLangModalOpen}
@@ -1650,16 +1683,19 @@ const styles = StyleSheet.create({
   },
   segLabel: { fontFamily: 'Manrope_600SemiBold', fontSize: 13, textAlign: 'center' },
   testBtn: { fontFamily: 'Manrope_700Bold', fontSize: 13 },
+  footerWrap: {
+    alignItems: 'center',
+    gap: 4,
+  },
   footer: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
-    marginTop: 24,
     textAlign: 'center',
   },
   footerArabic: {
     fontFamily: 'NotoNaskhArabic_700Bold',
     fontSize: 13,
-    marginTop: 2,
+    lineHeight: 22,
     textAlign: 'center',
   },
   aboutNote: {
@@ -1669,15 +1705,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
-  missionWrap: {
-    marginTop: 24,
-    gap: 14,
+  missionCard: {
+    width: '100%',
   },
   missionEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 2.5,
     textAlign: 'center',
+    marginBottom: 14,
+  },
+  missionList: {
+    gap: 12,
   },
   missionRow: {
     gap: 3,
@@ -1687,16 +1726,26 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1.2,
   },
+  missionLangRtl: {
+    textAlign: 'right',
+  },
   missionText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     lineHeight: 19,
   },
+  missionTextRtl: {
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    lineHeight: 23,
+  },
+  missionDivider: {
+    marginVertical: 16,
+  },
   thanksText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12.5,
+    fontSize: 12,
     lineHeight: 18,
-    marginTop: 20,
     textAlign: 'center',
   },
   aboutLogo: {
