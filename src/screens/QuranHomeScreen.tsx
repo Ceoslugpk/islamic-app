@@ -428,7 +428,7 @@ export default function QuranHomeScreen({
                   key={recent.surah}
                   activeOpacity={0.7}
                   onPress={() => onOpenSurah(recent.surah)}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
                   accessibilityRole="button"
                   accessibilityLabel={`Open Surah ${recent.name}`}
                   style={[
@@ -479,7 +479,7 @@ export default function QuranHomeScreen({
               },
             ]}
             onPress={onOpenAudio}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
           >
             <View
               style={[
@@ -525,7 +525,7 @@ export default function QuranHomeScreen({
               },
             ]}
             onPress={onOpenTafsir}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
           >
             <View
               style={[
@@ -571,7 +571,7 @@ export default function QuranHomeScreen({
               },
             ]}
             onPress={onOpenTopics}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
           >
             <View
               style={[
@@ -617,7 +617,7 @@ export default function QuranHomeScreen({
               },
             ]}
             onPress={onOpenCompare}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
           >
             <View
               style={[
@@ -672,7 +672,7 @@ export default function QuranHomeScreen({
                 },
               ]}
               onPress={onOpenBookmarks}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
             >
               <Ionicons name="bookmark-outline" size={isCompact ? 13 : 14} color={colors.accent} />
               <Text
@@ -701,7 +701,7 @@ export default function QuranHomeScreen({
                 },
               ]}
               onPress={onOpenNotes}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
             >
               <Ionicons name="create-outline" size={isCompact ? 13 : 14} color={colors.accent} />
               <Text
@@ -730,7 +730,7 @@ export default function QuranHomeScreen({
                 },
               ]}
               onPress={onOpenPlans}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
             >
               <Ionicons name="calendar-outline" size={isCompact ? 13 : 14} color={colors.accent} />
               <Text
@@ -754,7 +754,7 @@ export default function QuranHomeScreen({
                 },
               ]}
               onPress={onOpenHifz}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
             >
               <Ionicons name="school-outline" size={isCompact ? 13 : 14} color={colors.accent} />
               <Text
@@ -912,7 +912,7 @@ export default function QuranHomeScreen({
           },
         ]}
         onPress={() => onOpenSurah(item.number)}
-            pressRetentionOffset={{ top: 0, left: 0, right: 0, bottom: 0 }}
+            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
         activeOpacity={0.7}
       >
         <View style={styles.surahLeft}>

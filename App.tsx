@@ -80,7 +80,12 @@ import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback } from
 import { rescheduleIfNeeded, setupNotificationResponseHandler } from './src/lib/notifications';
 import { startQuranPreload } from './src/lib/quranPreloader';
 import { runFirstLaunchWarmup } from './src/lib/warmup';
-import { runFirstLaunchPermissions } from './src/lib/firstLaunchPermissions';
+import {
+  runFirstLaunchPermissions,
+  hasDismissedLocationSetup,
+  markLocationSetupDismissed,
+} from './src/lib/firstLaunchPermissions';
+import { LocationSetupModal } from './src/components/LocationSetupModal';
 import { useLocation, refreshLocationSilently, computeDistanceKm } from './src/lib/useLocation';
 import { updateWidgetSnapshot } from './src/lib/widgetBridge';
 import { registerBackgroundPreload } from './src/lib/backgroundPreload';
@@ -287,10 +292,13 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const { colors, mode } = useTheme();
   const { isOnline } = useConnectivity();
   const { settings, setAutoLocation } = useSettings();
-  const { request: requestLocation } = useLocation();
+  const { request: requestLocation, status: locStatus } = useLocation();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [audioModalOpen, setAudioModalOpen] = useState(false);
+  const [showLocationSetup, setShowLocationSetup] = useState(false);
+  const [locationSetupLoading, setLocationSetupLoading] = useState(false);
+  const [citiesReturnTab, setCitiesReturnTab] = useState<TabKey>('tools');
   const [library, setLibrary] = useState<LibraryView>({ screen: 'hub' });
   const [quran, setQuran] = useState<QuranView>({ screen: 'home' });
   const [tools, setTools] = useState<ToolsView>({ screen: 'hub' });
@@ -298,7 +306,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
   // Global Audio Mini Player state
   const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
 
-  // First-launch permissions onboarding (runs once after splash: notifications -> location)
+  // First-launch notifications onboarding (runs once after splash: only when reminders enabled)
+  // Location permission is decoupled from this and never uses a vague "OK" blocking alert
   useEffect(() => {
     if (!splashDone) return;
     let isMounted = true;
@@ -306,12 +315,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
       if (!isMounted) return;
       try {
         await runFirstLaunchPermissions({
-          requestLocation,
-          onLocationGranted: (loc) => {
-            if (loc) {
-              setAutoLocation(loc, Date.now());
-            }
-          },
+          skipLocation: true,
+          remindersEnabled: Boolean(settings.remindersEnabled || settings.quranReminderEnabled),
         });
       } catch {
         // Non-fatal: permission errors must not block the app
@@ -321,7 +326,82 @@ function Root({ splashDone }: { splashDone: boolean }) {
       isMounted = false;
       clearTimeout(timer);
     };
-  }, [splashDone, requestLocation, setAutoLocation]);
+  }, [splashDone, settings.remindersEnabled, settings.quranReminderEnabled]);
+
+  // First-time location setup check:
+  // Shows concise Setup UI (Use current location / Choose a city / Not now)
+  // ONLY if the user genuinely has no usable location:
+  // - settings.locationMode !== 'manual' (no saved manual location choice)
+  // - settings.autoLocation === null (no valid saved auto location)
+  // - !hasDismissedLocationSetup() (setup not previously dismissed/completed)
+  // - locStatus !== 'denied' (permission not previously denied)
+  useEffect(() => {
+    if (!splashDone) return;
+    let isMounted = true;
+
+    async function checkLocationSetup() {
+      // 1. Valid saved MANUAL location exists -> Home opens clean, NO modal, NO GPS request
+      if (settings.locationMode === 'manual') return;
+
+      // 2. Valid saved AUTO location exists -> Use immediately, NO modal, NO re-request
+      if (
+        settings.autoLocation &&
+        typeof settings.autoLocation.latitude === 'number' &&
+        typeof settings.autoLocation.longitude === 'number' &&
+        !isNaN(settings.autoLocation.latitude) &&
+        !isNaN(settings.autoLocation.longitude)
+      ) {
+        return;
+      }
+
+      // 3. User previously dismissed or completed location setup -> do not re-prompt
+      const dismissed = await hasDismissedLocationSetup();
+      if (dismissed) return;
+
+      // 4. Permission was previously denied -> do not re-prompt explanation modal
+      if (locStatus === 'denied') return;
+
+      // 5. First-time user with NO usable location -> show concise location SETUP UI
+      if (isMounted) {
+        setShowLocationSetup(true);
+      }
+    }
+
+    const timer = setTimeout(checkLocationSetup, 1600);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [splashDone, settings.locationMode, settings.autoLocation, locStatus]);
+
+  const handleUseCurrentLocation = async () => {
+    setLocationSetupLoading(true);
+    try {
+      const loc = await requestLocation(true);
+      if (loc) {
+        setAutoLocation(loc, Date.now());
+      }
+    } catch {
+      // Non-fatal
+    } finally {
+      setLocationSetupLoading(false);
+      await markLocationSetupDismissed();
+      setShowLocationSetup(false);
+    }
+  };
+
+  const handleChooseCityFromSetup = async () => {
+    await markLocationSetupDismissed();
+    setShowLocationSetup(false);
+    setCitiesReturnTab('home');
+    setTools({ screen: 'cities' });
+    setTab('tools');
+  };
+
+  const handleDismissLocationSetup = async () => {
+    await markLocationSetupDismissed();
+    setShowLocationSetup(false);
+  };
 
   // Location freshness & background refresh for AUTO mode
   // Uses saved location immediately without prompt; refreshes silently in background if stale (>24h)
@@ -582,6 +662,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
         setAudioModalOpen(false);
         return true;
       }
+      if (showLocationSetup) {
+        handleDismissLocationSetup();
+        return true;
+      }
       if (library.screen !== 'hub') {
         setLibrary({ screen: 'hub' });
         return true;
@@ -601,7 +685,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
       return false; // let default back behavior exit the app
     });
     return () => sub.remove();
-  }, [settingsOpen, audioModalOpen, library, quran, tools, tab]);
+  }, [settingsOpen, audioModalOpen, showLocationSetup, library, quran, tools, tab]);
 
   const isAudioCenter = tab === 'quran' && quran.screen === 'audio';
   const showMiniPlayer = visible && playback !== null && !isAudioCenter;
@@ -626,7 +710,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
     if (key === 'qibla') setTools({ screen: 'qibla' });
     else if (key === 'tracker') setTools({ screen: 'tracker' });
     else if (key === 'location') setTools({ screen: 'location' });
-    else if (key === 'cities') setTools({ screen: 'cities' });
+    else if (key === 'cities') {
+      setCitiesReturnTab('tools');
+      setTools({ screen: 'cities' });
+    }
     else if (key === 'notifications' || key === 'prayer-reminders') setTools({ screen: 'prayer-reminders' });
     else if (key === 'fasting') setTools({ screen: 'fasting' });
     else if (key === 'zakat') setTools({ screen: 'zakat' });
