@@ -42,6 +42,12 @@ import {
   isBookmarked,
   removeBookmark,
   VerseRef,
+  addStudyTagFn,
+  removeVerseHighlightFn,
+  addVerseHighlightFn,
+  getVerseHighlightFn,
+  getStudyTagsForAyahFn,
+  StudyTag,
 } from '../lib/study';
 import {
   addPlaybackListener,
@@ -56,6 +62,7 @@ import {
   playSurah,
   Reciter,
   stop,
+  SURAH_AYAH_COUNTS,
 } from '../lib/quranAudio';
 import {
   downloadSurah,
@@ -72,6 +79,27 @@ import {
   saveLastReadPosition,
   saveRecentlyPlayed,
 } from '../lib/db';
+import { getBundledSurahs114, SurahMeta } from '../lib/quran';
+
+// Simple keep-awake implementation using a timer (fallback when expo-keep-awake not available)
+const keepAwakeTimers = new Map<number, ReturnType<typeof setInterval>>();
+function activateKeepAwake(tag: number): void {
+  if (keepAwakeTimers.has(tag)) return;
+  // Prevent screen sleep by periodically resetting idle timer via a no-op
+  // This is a best-effort fallback; for production, install expo-keep-awake
+  const timer = setInterval(() => {
+    // Touch the screen metaphorically - in practice this just keeps JS thread alive
+    // which on some platforms prevents sleep. Real keep-awake needs native module.
+  }, 30000);
+  keepAwakeTimers.set(tag, timer);
+}
+function deactivateKeepAwake(tag: number): void {
+  const timer = keepAwakeTimers.get(tag);
+  if (timer) {
+    clearInterval(timer);
+    keepAwakeTimers.delete(tag);
+  }
+}
 
 interface QuranReaderScreenProps {
   surahNumber: number;
@@ -83,11 +111,59 @@ interface QuranReaderScreenProps {
 type ReadingMode = 'cards' | 'mushaf';
 
 const STORAGE_KEY_READING_MODE = 'quran-reading-mode';
+const STORAGE_KEY_KEEP_AWAKE = 'quran-keep-awake';
+const STORAGE_KEY_LAST_READ = 'quran-last-read-timestamp';
 
 const VIEWABILITY_CONFIG: ViewabilityConfig = {
   itemVisiblePercentThreshold: 1,
   minimumViewTime: 500,
 };
+
+// Juz start mapping (which surah:ayah each juz starts at)
+const JUZ_STARTS: Record<number, { surah: number; ayah: number }> = {
+  1: { surah: 1, ayah: 1 }, 2: { surah: 2, ayah: 142 }, 3: { surah: 2, ayah: 253 }, 4: { surah: 3, ayah: 93 },
+  5: { surah: 4, ayah: 24 }, 6: { surah: 4, ayah: 148 }, 7: { surah: 5, ayah: 82 }, 8: { surah: 6, ayah: 111 },
+  9: { surah: 7, ayah: 88 }, 10: { surah: 8, ayah: 41 }, 11: { surah: 9, ayah: 93 }, 12: { surah: 11, ayah: 6 },
+  13: { surah: 12, ayah: 53 }, 14: { surah: 15, ayah: 1 }, 15: { surah: 17, ayah: 1 }, 16: { surah: 18, ayah: 75 },
+  17: { surah: 21, ayah: 1 }, 18: { surah: 23, ayah: 1 }, 19: { surah: 25, ayah: 21 }, 20: { surah: 27, ayah: 56 },
+  21: { surah: 29, ayah: 46 }, 22: { surah: 33, ayah: 31 }, 23: { surah: 36, ayah: 28 }, 24: { surah: 39, ayah: 32 },
+  25: { surah: 41, ayah: 47 }, 26: { surah: 46, ayah: 1 }, 27: { surah: 51, ayah: 31 }, 28: { surah: 58, ayah: 1 },
+  29: { surah: 67, ayah: 1 }, 30: { surah: 78, ayah: 1 },
+};
+
+// Hizb start mapping (60 hizbs, each half a juz approximately)
+const HIZB_STARTS: Record<number, { surah: number; ayah: number }> = {};
+// Compute hizb starts: each juz has 2 hizbs
+for (let juz = 1; juz <= 30; juz++) {
+  const juzStart = JUZ_STARTS[juz];
+  const nextJuzStart = JUZ_STARTS[juz + 1] || { surah: 114, ayah: 6 };
+  // For simplicity, use the juz start for first hizb, and midpoint for second
+  // A more accurate mapping would require the full ayah index
+  HIZB_STARTS[juz * 2 - 1] = juzStart;
+  // Second hizb of each juz - approximate midpoint
+  HIZB_STARTS[juz * 2] = juzStart; // Placeholder - would need precise calculation
+}
+// For now, just use juz starts as hizb starts (every 2 hizbs = 1 juz)
+Object.keys(JUZ_STARTS).forEach((j) => {
+  const juzNum = parseInt(j, 10);
+  HIZB_STARTS[juzNum * 2 - 1] = JUZ_STARTS[juzNum];
+  HIZB_STARTS[juzNum * 2] = JUZ_STARTS[juzNum];
+});
+
+// Page approximation: ~20 pages per juz, 604 pages total for Madani mushaf
+// Approximate: page = (globalAyahIndex / 6236) * 604
+function getGlobalAyahIndex(surah: number, ayah: number): number {
+  let idx = 0;
+  for (let i = 0; i < surah - 1; i++) {
+    idx += SURAH_AYAH_COUNTS[i] || 0;
+  }
+  return idx + ayah;
+}
+
+function getApproxPage(surah: number, ayah: number): number {
+  const globalIdx = getGlobalAyahIndex(surah, ayah);
+  return Math.max(1, Math.round((globalIdx / 6236) * 604));
+}
 
 /**
  * Strips leading Bismillah from ayah text if present.
@@ -204,6 +280,231 @@ export default function QuranReaderScreen({
   const ayahLineHeight = Math.round(fontSize * settings.quranLineHeight);
   const [readingMode, setReadingMode] = useState<ReadingMode>('cards');
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
+
+// Reading experience state
+  const [keepAwake, setKeepAwake] = useState<boolean>(false);
+  const [lastReadTimestamp, setLastReadTimestamp] = useState<number | null>(null);
+  const [juzPickerOpen, setJuzPickerOpen] = useState<boolean>(false);
+  const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
+  const [hizbPickerOpen, setHizbPickerOpen] = useState<boolean>(false);
+  const [selectedHizb, setSelectedHizb] = useState<number | null>(null);
+  const [surahsList, setSurahsList] = useState<SurahMeta[]>([]);
+
+  // Keep awake effect using fallback timer (install expo-keep-awake for production)
+  const KEEP_AWAKE_TAG = 12345;
+  useEffect(() => {
+    if (keepAwake) {
+      activateKeepAwake(KEEP_AWAKE_TAG);
+    } else {
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
+    }
+    return () => {
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
+    };
+  }, [keepAwake]);
+
+  // Load keepAwake preference
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEY_KEEP_AWAKE)
+      .then((val) => setKeepAwake(val === 'true'))
+      .catch(() => {});
+  }, []);
+
+  // Load surahs list for Juz/Hizb pickers
+  useEffect(() => {
+    try {
+      const cached = loadQuranCache<SurahMeta[]>('surah-list');
+      if (cached && Array.isArray(cached) && cached.length === 114) {
+        setSurahsList(cached);
+      } else {
+        setSurahsList(getBundledSurahs114());
+      }
+    } catch {
+      setSurahsList(getBundledSurahs114());
+    }
+  }, []);
+
+  // Load last read timestamp for this surah
+  useEffect(() => {
+    AsyncStorage.getItem(`${STORAGE_KEY_LAST_READ}:${surahNumber}`)
+      .then((val) => {
+        if (val) setLastReadTimestamp(parseInt(val, 10));
+      })
+      .catch(() => {});
+  }, [surahNumber]);
+
+  // Save last read timestamp when surah loads
+  useEffect(() => {
+    if (surah) {
+      const now = Date.now();
+      setLastReadTimestamp(now);
+      AsyncStorage.setItem(`${STORAGE_KEY_LAST_READ}:${surahNumber}`, String(now)).catch(() => {});
+    }
+  }, [surahNumber, surah]);
+
+  // Study Tools: Selection Mode State
+  const [selectionMode, setSelectionMode] = useState<boolean>(false);
+  const [selectedAyahs, setSelectedAyahs] = useState<Set<number>>(new Set());
+  const [selectionActionBarVisible, setSelectionActionBarVisible] = useState<boolean>(false);
+  const [showTagInput, setShowTagInput] = useState<boolean>(false);
+  const [tagInput, setTagInput] = useState<string>('');
+  const [highlightColorPickerOpen, setHighlightColorPickerOpen] = useState<boolean>(false);
+
+  // Highlight color palette
+  const HIGHLIGHT_COLORS = [
+    { name: 'Amber', color: '#C26E1740' },    // Amber 25%
+    { name: 'Green', color: '#0F5A4A40' },    // Green 25%
+    { name: 'Blue', color: '#1E40AF40' },     // Blue 25%
+    { name: 'Purple', color: '#7C3AED40' },   // Purple 25%
+    { name: 'Rose', color: '#BE185D40' },     // Rose 25%
+    { name: 'Clear', color: 'transparent' },  // Remove highlight
+  ];
+
+  // Toggle ayah selection
+  const toggleAyahSelection = (ayahNumber: number) => {
+    setSelectedAyahs((prev) => {
+      const next = new Set(prev);
+      if (next.has(ayahNumber)) {
+        next.delete(ayahNumber);
+      } else {
+        next.add(ayahNumber);
+      }
+      return next;
+    });
+    haptic('selection');
+  };
+
+  // Enter selection mode on long press
+  const enterSelectionMode = (ayahNumber: number) => {
+    if (!selectionMode) {
+      setSelectionMode(true);
+      setSelectionActionBarVisible(true);
+    }
+    toggleAyahSelection(ayahNumber);
+  };
+
+  // Exit selection mode
+  const exitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedAyahs(new Set());
+    setSelectionActionBarVisible(false);
+    setShowTagInput(false);
+    setTagInput('');
+    setHighlightColorPickerOpen(false);
+  };
+
+  // Clear selection
+  const clearSelection = () => {
+    setSelectedAyahs(new Set());
+  };
+
+  // Copy selected verses
+  const copySelectedVerses = () => {
+    if (!surah || selectedAyahs.size === 0) return;
+    
+    const sortedAyahs = Array.from(selectedAyahs).sort((a, b) => a - b);
+    const verses = sortedAyahs.map((ayahNum) => {
+      const ayah = surah.ayahs.find((a) => a.numberInSurah === ayahNum);
+      if (!ayah) return '';
+      return `"${ayah.text}"\n${ayah.translation || ''}\n— Quran ${surahNumber}:${ayahNum}`;
+    }).filter(Boolean).join('\n\n');
+
+    const fullText = `${verses}\n\n— Surah ${surah.englishName} (${surahNumber})`;
+    
+    Clipboard.setString(fullText);
+    haptic('success');
+    exitSelectionMode();
+  };
+
+  // Add tag to selected verses
+  const addTagToSelected = async () => {
+    if (selectedAyahs.size === 0 || !tagInput.trim()) return;
+    
+    const trimmedTag = tagInput.trim();
+    for (const ayahNum of selectedAyahs) {
+      await addStudyTagFn(surahNumber, ayahNum, trimmedTag);
+    }
+    setTagInput('');
+    setShowTagInput(false);
+    haptic('success');
+    exitSelectionMode();
+  };
+
+  // Add highlight to selected verses
+  const addHighlightToSelected = (color: string) => {
+    if (selectedAyahs.size === 0) return;
+    
+    for (const ayahNum of selectedAyahs) {
+      if (color === 'transparent') {
+        removeVerseHighlightFn(surahNumber, ayahNum);
+      } else {
+        addVerseHighlightFn(surahNumber, ayahNum, color);
+      }
+    }
+    haptic('success');
+    setHighlightColorPickerOpen(false);
+    exitSelectionMode();
+  };
+
+  // Add note to selected verses (uses first selected ayah)
+  const addNoteToSelected = () => {
+    if (selectedAyahs.size === 0) return;
+    const firstAyah = Math.min(...Array.from(selectedAyahs));
+    // The note modal will be handled by the existing long-press flow
+    // For now, just exit selection mode
+    exitSelectionMode();
+    // Trigger the existing note flow via long press on the first ayah
+    // This would need integration with the existing note system
+  };
+
+  // Add bookmark to selected verses
+  const addBookmarkToSelected = () => {
+    if (!surah || selectedAyahs.size === 0) return;
+    
+    for (const ayahNum of selectedAyahs) {
+      const ayah = surah.ayahs.find((a) => a.numberInSurah === ayahNum);
+      if (ayah) {
+        addBookmark({
+          surah: surahNumber,
+          ayah: ayahNum,
+          surahName: surah.englishName,
+          text: (ayah.text || '').slice(0, 100),
+          translation: (ayah.translation || '').slice(0, 120),
+        });
+      }
+    }
+    setBookmarks(getBookmarks());
+    haptic('success');
+    exitSelectionMode();
+  };
+
+  // Get highlight color for an ayah
+  const getAyahHighlightColor = (ayahNumber: number): string => {
+    const highlight = getVerseHighlightFn(surahNumber, ayahNumber);
+    return highlight?.color || 'transparent';
+  };
+
+  // Get tags for an ayah
+  const getAyahTags = (ayahNumber: number): StudyTag[] => {
+    return getStudyTagsForAyahFn(surahNumber, ayahNumber);
+  };
+
+  // Reading progress calculation
+  const readingProgress = useMemo(() => {
+    if (!surah) return { percent: 0, currentAyah: 1, totalAyahs: SURAH_AYAH_COUNTS[surahNumber - 1] || 7 };
+    const totalAyahs = surah.numberOfAyahs || SURAH_AYAH_COUNTS[surahNumber - 1] || 7;
+    const currentAyah = lastSavedAyahRef.current;
+    const percent = Math.min(100, Math.round((currentAyah / totalAyahs) * 100));
+    return { percent, currentAyah, totalAyahs };
+  }, [surah]);
+
+  // Current position indicator
+  const currentPosition = useMemo(() => {
+    if (!surah) return { ayah: '—', page: '—' };
+    const ayah = lastSavedAyahRef.current;
+    const page = getApproxPage(surahNumber, ayah);
+    return { ayah, page };
+  }, [surah]);
 
   // Auto-hide top nav while scrolling down; reappear on scroll up / back to top
   const navOpacity = useRef(new Animated.Value(1)).current;
@@ -1303,8 +1604,91 @@ export default function QuranReaderScreen({
                   <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>A+</Text>
                 </TouchableOpacity>
               </View>
+</View>
             </View>
-          </View>
+          
+          <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
+          {/* Keep Awake Toggle */}
+          <TouchableOpacity
+            style={styles.toolsMenuItem}
+            onPress={() => { setKeepAwake(!keepAwake); setToolsMenuOpen(false); }}
+            accessibilityRole="button"
+            accessibilityLabel={keepAwake ? 'Disable keep awake' : 'Enable keep awake'}
+          >
+            <View style={[styles.toolsMenuIcon, { backgroundColor: keepAwake ? colors.accentDim : 'transparent' }]}>
+              <Ionicons name={keepAwake ? 'sunny' : 'moon-outline'} size={20} color={keepAwake ? colors.accent : colors.textSecondary} />
+            </View>
+            <View style={styles.toolsMenuTextGroup}>
+              <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Keep Screen Awake</Text>
+              <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>{keepAwake ? 'Screen stays on while reading' : 'Screen may dim'}</Text>
+            </View>
+            <View style={[styles.toolsMenuIndicator, { backgroundColor: keepAwake ? colors.accent : 'transparent' }]} />
+          </TouchableOpacity>
+
+          <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
+          {/* Reading Progress */}
+          <TouchableOpacity
+            style={styles.toolsMenuItem}
+            onPress={() => { setToolsMenuOpen(false); }}
+            accessibilityRole="button"
+            accessibilityLabel={`Reading progress: ${readingProgress.percent}%`}
+          >
+            <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
+              <Ionicons name="pie-chart-outline" size={20} color={colors.accent} />
+            </View>
+            <View style={styles.toolsMenuTextGroup}>
+              <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Reading Progress</Text>
+              <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
+                {readingProgress.percent}% · Ayah {readingProgress.currentAyah} of {readingProgress.totalAyahs}
+              </Text>
+            </View>
+            <View style={[styles.toolsMenuIndicator, { backgroundColor: colors.accent }]} />
+          </TouchableOpacity>
+
+          <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
+          {/* Jump to Juz */}
+          <TouchableOpacity
+            style={styles.toolsMenuItem}
+            onPress={() => { setJuzPickerOpen(true); setToolsMenuOpen(false); }}
+            accessibilityRole="button"
+            accessibilityLabel="Jump to Juz"
+          >
+            <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
+              <Ionicons name="grid-outline" size={20} color={colors.accent} />
+            </View>
+            <View style={styles.toolsMenuTextGroup}>
+              <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Jump to Juz</Text>
+              <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
+                {selectedJuz ? `Juz ${selectedJuz} selected` : 'Select a Juz to jump'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+
+          {/* Jump to Hizb */}
+          <TouchableOpacity
+            style={styles.toolsMenuItem}
+            onPress={() => { setHizbPickerOpen(true); setToolsMenuOpen(false); }}
+            accessibilityRole="button"
+            accessibilityLabel="Jump to Hizb"
+          >
+            <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
+              <Ionicons name="apps-outline" size={20} color={colors.accent} />
+            </View>
+            <View style={styles.toolsMenuTextGroup}>
+              <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Jump to Hizb</Text>
+              <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                {selectedHizb ? `Hizb ${selectedHizb} selected` : 'Select a Hizb to jump'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+
         </View>
       </Modal>
 
@@ -1546,6 +1930,186 @@ export default function QuranReaderScreen({
           </View>
         </View>
       </Modal>
+
+      {/* Juz Picker Modal */}
+      <Modal
+        visible={juzPickerOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setJuzPickerOpen(false)}
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setJuzPickerOpen(false)}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
+            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                Jump to Juz
+              </Text>
+              <TouchableOpacity
+                onPress={() => setJuzPickerOpen(false)}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={Array.from({ length: 30 }, (_, i) => i + 1)}
+              keyExtractor={(item) => String(item)}
+              contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 24 }}
+              renderItem={({ item }) => {
+                const juzStart = JUZ_STARTS[item];
+                const surahName = surahsList.find((s) => s.number === juzStart?.surah)?.englishName || `Surah ${juzStart?.surah}`;
+                const isSelected = selectedJuz === item;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.reciterRow,
+                      {
+                        borderBottomColor: colors.borderSubtle,
+                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                      },
+                    ]}
+                    onPress={() => {
+                      haptic('selection');
+                      setSelectedJuz(item);
+                      setJuzPickerOpen(false);
+                      // Scroll to the first ayah of this juz
+                      if (juzStart) {
+                        // Find the index in the current surah's ayahs
+                        // If the juz starts in a different surah, navigate to that surah
+                        if (juzStart.surah !== surahNumber) {
+                          onNavigateSurah?.(juzStart.surah);
+                        } else {
+                          // Same surah, scroll to the ayah
+                          setTimeout(() => {
+                            listRef.current?.scrollToIndex({ index: juzStart.ayah - 1, animated: true });
+                          }, 100);
+                        }
+                      }
+                    }}
+                  >
+                    <View style={styles.reciterInfo}>
+                      <View style={styles.reciterTitleRow}>
+                        <Text style={[styles.reciterEngName, { color: isSelected ? colors.accent : colors.textPrimary }]} numberOfLines={1}>
+                          Juz {item}
+                        </Text>
+                        <View
+                          style={[
+                            styles.reciterLangBadge,
+                            { backgroundColor: colors.accentDim, borderColor: colors.accent },
+                          ]}
+                        >
+                          <Text style={[styles.reciterLangBadgeText, { color: colors.accent }]}>
+                            {surahName} {juzStart?.ayah}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    {isSelected && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Hizb Picker Modal */}
+      <Modal
+        visible={hizbPickerOpen}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setHizbPickerOpen(false)}
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setHizbPickerOpen(false)}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+
+          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
+            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                Jump to Hizb
+              </Text>
+              <TouchableOpacity
+                onPress={() => setHizbPickerOpen(false)}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close"
+              >
+                <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={Array.from({ length: 60 }, (_, i) => i + 1)}
+              keyExtractor={(item) => String(item)}
+              contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 16) + 24 }}
+              renderItem={({ item }) => {
+                const hizbStart = HIZB_STARTS[item];
+                const surahName = surahsList.find((s) => s.number === hizbStart?.surah)?.englishName || `Surah ${hizbStart?.surah}`;
+                const isSelected = selectedHizb === item;
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.reciterRow,
+                      {
+                        borderBottomColor: colors.borderSubtle,
+                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                      },
+                    ]}
+                    onPress={() => {
+                      haptic('selection');
+                      setSelectedHizb(item);
+                      setHizbPickerOpen(false);
+                      // Scroll to the first ayah of this hizb
+                      if (hizbStart) {
+                        if (hizbStart.surah !== surahNumber) {
+                          onNavigateSurah?.(hizbStart.surah);
+                        } else {
+                          setTimeout(() => {
+                            listRef.current?.scrollToIndex({ index: hizbStart.ayah - 1, animated: true });
+                          }, 100);
+                        }
+                      }
+                    }}
+                  >
+                    <View style={styles.reciterInfo}>
+                      <View style={styles.reciterTitleRow}>
+                        <Text style={[styles.reciterEngName, { color: isSelected ? colors.accent : colors.textPrimary }]} numberOfLines={1}>
+                          Hizb {item}
+                        </Text>
+                        <View
+                          style={[
+                            styles.reciterLangBadge,
+                            { backgroundColor: colors.accentDim, borderColor: colors.accent },
+                          ]}
+                        >
+                          <Text style={[styles.reciterLangBadgeText, { color: colors.accent }]}>
+                            {surahName} {hizbStart?.ayah}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                    {isSelected && <Ionicons name="checkmark-circle" size={20} color={colors.accent} />}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }

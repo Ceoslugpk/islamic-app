@@ -152,3 +152,187 @@ export function isFacingQibla(needleRotation: number, toleranceDeg = 5): boolean
   return diff <= toleranceDeg;
 }
 
+/**
+ * Magnetic interference detection.
+ * Returns an object with:
+ * - hasInterference: boolean indicating if interference is detected
+ * - level: 'low' | 'medium' | 'high' | 'none'
+ * - details: human-readable explanation
+ * 
+ * Uses heading variance over time and rapid heading changes to detect
+ * unreliable magnetometer readings (near metal, electronics, etc.).
+ */
+export interface InterferenceResult {
+  hasInterference: boolean;
+  level: 'none' | 'low' | 'medium' | 'high';
+  details: string;
+}
+
+let interferenceHistory: number[] = [];
+let lastHeadingForInterference: number | null = null;
+let lastTimestampForInterference: number = 0;
+
+export function checkMagneticInterference(
+  currentHeading: number,
+  accuracy: 'high' | 'medium' | 'low' | 'uncalibrated' | 'unknown'
+): InterferenceResult {
+  const now = Date.now();
+  
+  // Add to history
+  interferenceHistory.push(currentHeading);
+  if (interferenceHistory.length > 30) {
+    interferenceHistory.shift();
+  }
+  
+  let level: InterferenceResult['level'] = 'none';
+  let details = '';
+  let hasInterference = false;
+  
+  // Check 1: Rapid heading change (angular velocity)
+  if (lastHeadingForInterference !== null) {
+    const timeDelta = now - lastTimestampForInterference;
+    if (timeDelta > 0 && timeDelta < 500) {
+      const angleDelta = Math.abs(shortestAngleDelta(currentHeading, lastHeadingForInterference));
+      const degPerSecond = (angleDelta / timeDelta) * 1000;
+      if (degPerSecond > 180) { // More than 180 deg/sec = physically implausible
+        level = 'high';
+        hasInterference = true;
+        details = 'Extremely rapid heading changes detected — likely near metal or electronics';
+      } else if (degPerSecond > 90) {
+        level = 'medium';
+        hasInterference = true;
+        details = 'Fast heading changes — possible magnetic interference';
+      }
+    }
+  }
+  
+  // Check 2: Heading variance (jitter) over recent samples
+  if (!hasInterference && interferenceHistory.length >= 10) {
+    const sorted = [...interferenceHistory].sort((a, b) => a - b);
+    // Handle wrap-around for variance calculation
+    const mean = sorted.reduce((a, b) => a + b, 0) / sorted.length;
+    const variance = sorted.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / sorted.length;
+    const stdDev = Math.sqrt(variance);
+    
+    if (stdDev > 15) {
+      level = 'high';
+      hasInterference = true;
+      details = 'High magnetic field variance — move away from metal objects and electronics';
+    } else if (stdDev > 8) {
+      level = 'medium';
+      hasInterference = true;
+      details = 'Moderate heading instability — check for nearby magnetic sources';
+    } else if (stdDev > 4) {
+      level = 'low';
+      details = 'Slight heading fluctuation — hold device steady';
+    }
+  }
+  
+  // Check 3: Low accuracy from sensor
+  if (!hasInterference && accuracy === 'uncalibrated') {
+    level = 'medium';
+    hasInterference = true;
+    details = 'Compass uncalibrated — wave device in figure-8 motion';
+  } else if (!hasInterference && accuracy === 'low') {
+    level = 'low';
+    details = 'Compass accuracy low — calibrate by moving in figure-8';
+  }
+  
+  lastHeadingForInterference = currentHeading;
+  lastTimestampForInterference = now;
+  
+  return { hasInterference, level, details };
+}
+
+export function resetInterferenceHistory(): void {
+  interferenceHistory = [];
+  lastHeadingForInterference = null;
+  lastTimestampForInterference = 0;
+}
+
+/**
+ * Format distance to Kaaba with locale-aware formatting.
+ */
+export function formatDistanceToKaaba(km: number, locale = 'en-US'): string {
+  if (km < 1) {
+    return `${Math.round(km * 1000)} m`;
+  }
+  if (km < 10) {
+    return `${km.toFixed(1).replace('.0', '')} km`;
+  }
+  if (km < 100) {
+    return `${Math.round(km)} km`;
+  }
+  return km.toLocaleString(locale, { maximumFractionDigits: 0 }) + ' km';
+}
+
+/**
+ * Calibration step guidance for the Qibla compass.
+ */
+export type CalibrationStep = 'hold-flat' | 'rotate-slowly' | 'align' | 'ready';
+
+export interface CalibrationGuidance {
+  step: CalibrationStep;
+  title: string;
+  description: string;
+  icon: string; // Ionicons name
+  progress: number; // 0-1
+}
+
+export function getCalibrationGuidance(
+  isStaticMode: boolean,
+  calibrating: boolean,
+  heading: number | null,
+  bearing: number | null,
+  accuracy: 'high' | 'medium' | 'low' | 'uncalibrated' | 'unknown',
+  isAligned: boolean
+): CalibrationGuidance {
+  if (isStaticMode) {
+    return {
+      step: 'ready',
+      title: 'Static Direction Mode',
+      description: 'Hardware compass unavailable. Align the top of your device toward the bearing shown.',
+      icon: 'compass-outline',
+      progress: 1,
+    };
+  }
+  
+  if (calibrating || heading === null) {
+    return {
+      step: 'hold-flat',
+      title: 'Hold Phone Level',
+      description: 'Place your phone flat on your palm, screen facing up. Keep it steady.',
+      icon: 'phone-portrait-outline',
+      progress: 0.25,
+    };
+  }
+  
+  if (accuracy === 'uncalibrated' || accuracy === 'low') {
+    return {
+      step: 'rotate-slowly',
+      title: 'Rotate Slowly',
+      description: 'Wave the phone slowly in a figure-8 motion to calibrate the magnetometer.',
+      icon: 'infinite',
+      progress: 0.5,
+    };
+  }
+  
+  if (!isAligned) {
+    return {
+      step: 'align',
+      title: 'Align with Qibla',
+      description: 'Turn your body until the amber needle points straight up to the top marker.',
+      icon: 'navigate-outline',
+      progress: 0.75,
+    };
+  }
+  
+  return {
+    step: 'ready',
+    title: 'Aligned with Qibla',
+    description: 'You are facing the Kaaba. The needle is steady and accurate.',
+    icon: 'checkmark-circle',
+    progress: 1,
+  };
+}
+

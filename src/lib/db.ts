@@ -739,6 +739,149 @@ export function clearCycleHistory(): void {
   for (const { key } of webKV.getAll('women:period:')) webKV.delete(key);
 }
 
+/* ─── Study Tools (tags & highlights) ──────────────────────────── */
+
+export interface StudyTag {
+  id: string;
+  surah: number;
+  ayah: number;
+  tag: string;
+  createdAt: number;
+}
+
+export interface VerseHighlight {
+  id: string;
+  surah: number;
+  ayah: number;
+  color: string;
+  createdAt: number;
+}
+
+export function addStudyTag(surah: number, ayah: number, tag: string): StudyTag | false {
+  try {
+    const id = `${surah}:${ayah}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const createdAt = Date.now();
+    webKV.set(`study:tag:${id}`, JSON.stringify({ id, surah, ayah, tag, createdAt }));
+    return { id, surah, ayah, tag, createdAt };
+  } catch {
+    return false;
+  }
+}
+
+export function removeStudyTag(id: string): boolean {
+  try {
+    webKV.delete(`study:tag:${id}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getStudyTagsForAyah(surah: number, ayah: number): StudyTag[] {
+  try {
+    const rows = webKV.getAll('study:tag:');
+    const items: StudyTag[] = [];
+    for (const { value } of rows) {
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed && parsed.surah === surah && parsed.ayah === ayah) {
+          items.push(parsed);
+        }
+      } catch { /* ignore */ }
+    }
+    return items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  } catch {
+    return [];
+  }
+}
+
+export function getAllStudyTags(): StudyTag[] {
+  try {
+    const rows = webKV.getAll('study:tag:');
+    const items: StudyTag[] = [];
+    for (const { value } of rows) {
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed && parsed.id) items.push(parsed);
+      } catch { /* ignore */ }
+    }
+    return items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  } catch {
+    return [];
+  }
+}
+
+export function addVerseHighlight(surah: number, ayah: number, color: string): VerseHighlight | false {
+  try {
+    const id = `${surah}:${ayah}:${Date.now()}`;
+    const createdAt = Date.now();
+    // Remove existing highlight for this ayah first
+    const rows = webKV.getAll('study:highlight:');
+    for (const { key, value } of rows) {
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed && parsed.surah === surah && parsed.ayah === ayah) {
+          webKV.delete(key);
+        }
+      } catch { /* ignore */ }
+    }
+    webKV.set(`study:highlight:${id}`, JSON.stringify({ id, surah, ayah, color, createdAt }));
+    return { id, surah, ayah, color, createdAt };
+  } catch {
+    return false;
+  }
+}
+
+export function removeVerseHighlight(surah: number, ayah: number): boolean {
+  try {
+    const rows = webKV.getAll('study:highlight:');
+    for (const { key, value } of rows) {
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed && parsed.surah === surah && parsed.ayah === ayah) {
+          webKV.delete(key);
+        }
+      } catch { /* ignore */ }
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getVerseHighlight(surah: number, ayah: number): VerseHighlight | null {
+  try {
+    const rows = webKV.getAll('study:highlight:');
+    for (const { value } of rows) {
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed && parsed.surah === surah && parsed.ayah === ayah) {
+          return parsed;
+        }
+      } catch { /* ignore */ }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function getAllVerseHighlights(): VerseHighlight[] {
+  try {
+    const rows = webKV.getAll('study:highlight:');
+    const items: VerseHighlight[] = [];
+    for (const { value } of rows) {
+      try {
+        const parsed = JSON.parse(value);
+        if (parsed && parsed.id) items.push(parsed);
+      } catch { /* ignore */ }
+    }
+    return items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  } catch {
+    return [];
+  }
+}
+
 export interface MosqueCacheItem {
   mosques: import('../screens/MosqueFinderScreen').MosqueItem[];
   centerLat: number;

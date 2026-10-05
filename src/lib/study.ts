@@ -1,9 +1,21 @@
 /**
- * Study data layer — bookmarks & notes persistence via db.ts.
- * Keys: 'bookmarks' and 'notes' stored as JSON arrays.
+ * Study data layer — bookmarks, notes, tags & highlights persistence via db.ts.
+ * Keys: 'bookmarks', 'notes', 'study_tags', 'verse_highlights' stored as JSON arrays.
  */
 
 import { saveQuranCache, loadQuranCache } from './db';
+import {
+  addStudyTag,
+  removeStudyTag,
+  getStudyTagsForAyah,
+  getAllStudyTags,
+  addVerseHighlight,
+  removeVerseHighlight,
+  getVerseHighlight,
+  getAllVerseHighlights,
+  StudyTag,
+  VerseHighlight,
+} from './db';
 
 const BOOKMARKS_KEY = 'bookmarks';
 const NOTES_KEY = 'notes';
@@ -23,6 +35,9 @@ export interface Note {
   body: string;
   createdAt: number;
 }
+
+// Re-export study tools types
+export type { StudyTag, VerseHighlight };
 
 function dedupeBookmarks(existing: VerseRef[], newRef: VerseRef): VerseRef[] {
   const key = `${newRef.surah}:${newRef.ayah}`;
@@ -93,4 +108,38 @@ export function deleteNote(id: string): boolean {
   } catch {
     return false;
   }
+}
+
+// Study Tags
+export function addStudyTagFn(surah: number, ayah: number, tag: string): StudyTag | false {
+  return addStudyTag(surah, ayah, tag);
+}
+
+export function removeStudyTagFn(id: string): boolean {
+  return removeStudyTag(id);
+}
+
+export function getStudyTagsForAyahFn(surah: number, ayah: number): StudyTag[] {
+  return getStudyTagsForAyah(surah, ayah);
+}
+
+export function getAllStudyTagsFn(): StudyTag[] {
+  return getAllStudyTags();
+}
+
+// Verse Highlights
+export function addVerseHighlightFn(surah: number, ayah: number, color: string): VerseHighlight | false {
+  return addVerseHighlight(surah, ayah, color);
+}
+
+export function removeVerseHighlightFn(surah: number, ayah: number): boolean {
+  return removeVerseHighlight(surah, ayah);
+}
+
+export function getVerseHighlightFn(surah: number, ayah: number): VerseHighlight | null {
+  return getVerseHighlight(surah, ayah);
+}
+
+export function getAllVerseHighlightsFn(): VerseHighlight[] {
+  return getAllVerseHighlights();
 }

@@ -348,51 +348,90 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
             </>
           )}
 
-          {screen === 'data' && (
+{screen === 'data' && (
             <>
               <LegalSection title="What Data is Stored Locally" badge="Stored on Phone">
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   All your personal interactions and records remain stored strictly within your
-                  device&apos;s isolated application container:
+                  device&apos;s isolated application container. The app uses an embedded SQLite database
+                  (expo-sqlite) plus AsyncStorage for preferences:
                 </Text>
                 <BulletItem
                   title="Holy Quran"
-                  text="Reading bookmarks, last-read ayah, verse notes, and personal reading plan progress."
+                  text="Reading bookmarks (bookmarks table), last-read ayah (quran_cache: 'last-read'), verse notes (notes table), and personal reading plan progress (plan_entries table)."
                 />
                 <BulletItem
                   title="Salah Tracker & Tasbih"
-                  text="Daily prayer completion records, prayer streaks, and digital tasbih tally counts."
+                  text="Daily prayer completion records (salah_entries table), prayer streaks, and digital tasbih tally counts (tasbih_entries, tasbih_daily tables)."
                 />
                 <BulletItem
                   title="Women's Worship"
-                  text="Cycle dates, purity intervals, nifas tracking, and fasting qada records (kept in local SQLite, with optional PIN lock protection)."
+                  text="Cycle dates (period_entries table), purity intervals, nifas tracking (nifas_entries table), and fasting qada records (missed_fasts table, filtered by reason). Optional PIN lock via hashPin."
+                />
+                <BulletItem
+                  title="Fasting & Zakat"
+                  text="Fasting history (fasting_entries table) with type (ramadan/voluntary/qada), and zakat calculations (zakat_history table)."
+                />
+                <BulletItem
+                  title="Hifz & Hadith"
+                  text="Hifz memorization status (hifz_entries table), saved hadiths (hadith_saved table), and read markers (hadith_recent, hadith_read_markers tables)."
                 />
                 <BulletItem
                   title="Downloaded Media"
-                  text="Preloaded Quranic text editions and downloaded audio recitation files."
+                  text="Preloaded Quranic text editions (quran_cache table) and downloaded audio recitation files (quran_cache: 'quran-audio-downloads')."
                 />
                 <BulletItem
                   title="Application Settings"
-                  text="Theme, accent color, calculation method, madhab, notification reminders, and font sizes."
+                  text="Theme, accent color, calculation method, madhab, notification reminders, font sizes, and reciter selection (AsyncStorage keys)."
                 />
               </LegalSection>
 
-              <LegalSection title="What Leaves Your Device" badge="Strictly Minimal">
+              <LegalSection title="Device Permissions Used" badge="Optional & Revocable">
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
-                  No personal profile data ever leaves your phone. Network traffic is restricted
-                  exclusively to:
+                  The app requests only the minimum permissions necessary. Each is optional and can be revoked in system settings:
                 </Text>
                 <BulletItem
-                  title="Prayer Calculations"
-                  text="Geographic latitude and longitude coordinates, prayer calculation method ID, and madhab selection sent to Islamic.app."
+                  title="Location (Precise & Approximate)"
+                  text="Used strictly on-device to calculate local prayer times and determine the Qibla direction. Your coordinates are never sent to our servers or linked to your identity. You can revoke this permission anytime and choose a manual city instead."
+                />
+                <BulletItem
+                  title="Notifications"
+                  text="Used solely to schedule local prayer alerts, Adhan playback, and Quran reminders directly on your phone. Notifications are generated locally without any external push-notification services. No microphone permission is used — the app has no voice search feature."
+                />
+                <BulletItem
+                  title="Storage (Media & Files)"
+                  text="Required to cache Quran text, translations, and downloaded audio recitations for offline access. You can clear this in Settings → Downloads."
+                />
+              </LegalSection>
+
+              <LegalSection title="What Leaves Your Device (Network Endpoints)" badge="Strictly Minimal">
+                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                  No personal profile data ever leaves your phone. Network traffic is restricted
+                  exclusively to the following public endpoints:
+                </Text>
+                <BulletItem
+                  title="Prayer Times & Hadith API"
+                  text="api.islamic.app — receives approximate latitude, longitude, calculation method ID, and madhab to return prayer schedules and authentic hadith collections (Bukhari, Muslim, etc.)."
+                />
+                <BulletItem
+                  title="Quran Text & Translations"
+                  text="AlQuran Cloud (cdn.alquran.cloud / api.alquran.cloud) — provides verified Uthmani script, surah/ayah metadata, and multilingual translations. No user identifiers sent."
+                />
+                <BulletItem
+                  title="Quran Audio Recitations"
+                  text="islamic.network / EveryAyah CDNs (cdn.islamic.network, everyayah.com) — direct requests for verse-by-verse audio from reciters like Alafasy, Abdulbasit, Al-Ghamadi. No tracking parameters."
+                />
+                <BulletItem
+                  title="Hijri Calendar"
+                  text="AlAdhan / Umm al-Qura algorithms (local calculation with fallback to api.aladhan.com for validation) — astronomical Hijri date conversion."
                 />
                 <BulletItem
                   title="City & Mosque Search"
-                  text="Search keywords entered in the city picker or mosque finder sent to OpenStreetMap Nominatim."
+                  text="OpenStreetMap Nominatim (nominatim.openstreetmap.org) — search text queries for geocoding city names and nearby mosque discovery via Overpass API."
                 />
                 <BulletItem
-                  title="Audio Streaming"
-                  text="Direct requests to content delivery networks for Quran recitations and Adhan audio files."
+                  title="99 Names of Allah"
+                  text="EsmaulHusna.org — provides authentic meanings, benefits, and commentary for the 99 Beautiful Names."
                 />
               </LegalSection>
 
@@ -402,15 +441,23 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                 </Text>
                 <BulletItem
                   title="Delete Women's Data"
-                  text="Use the 'Delete women's data' button under Settings → Women's Worship to instantly erase all cycle and qada records from SQLite."
+                  text="Settings → Women's Worship → 'Delete women's data' — instantly erases all cycle, purity, nifas, and related qada records from SQLite."
                 />
                 <BulletItem
-                  title="Remove Downloaded Audio"
-                  text="Visit Settings → Downloads to clear downloaded surahs and free device storage."
+                  title="Clear Fasting History"
+                  text="Settings → Data & Privacy → use 'Clear fasting data' (if available) or clear fasting_entries and missed_fasts tables via Backup & Restore → Export → edit → Import."
                 />
                 <BulletItem
-                  title="Full Reset / Uninstall"
-                  text="Clearing the app storage in your phone's system settings or uninstalling the app permanently deletes all SQLite databases, AsyncStorage keys, and cached files."
+                  title="Remove Downloaded Audio & Text"
+                  text="Settings → Downloads → 'Clear All Downloads' — removes all cached Quran text editions and downloaded audio files, freeing device storage."
+                />
+                <BulletItem
+                  title="Reset All App Data"
+                  text="Settings → Backup & Restore → 'Clear All Data' — wipes SQLite database, AsyncStorage, and cached files. Or use system Settings → Apps → Islamic → Clear Storage."
+                />
+                <BulletItem
+                  title="Backup & Restore"
+                  text="Settings → Backup & Restore — export all local data as a JSON file for backup, or import a previously exported backup. No cloud sync involved."
                 />
               </LegalSection>
 

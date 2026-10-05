@@ -23,6 +23,11 @@ import {
   resolveLocationHeading,
   isFacingQibla,
   shortestAngleDelta,
+  formatDistanceToKaaba,
+  checkMagneticInterference,
+  resetInterferenceHistory,
+  getCalibrationGuidance,
+  CalibrationGuidance,
 } from '../lib/qibla';
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
@@ -87,6 +92,22 @@ export default function QiblaScreen({
   const [error, setError] = useState<string | null>(null);
   const [recalibrating, setRecalibrating] = useState<boolean>(false);
 
+  // Calibration guidance
+  const [calibrationGuidance, setCalibrationGuidance] = useState<CalibrationGuidance>({
+    step: 'hold-flat',
+    title: '',
+    description: '',
+    icon: '',
+    progress: 0,
+  });
+
+  // Interference detection
+  const [interference, setInterference] = useState<{
+    hasInterference: boolean;
+    level: 'none' | 'low' | 'medium' | 'high';
+    details: string;
+  }>({ hasInterference: false, level: 'none', details: '' });
+
   // Refs for subscriptions & smoothing
   const smoothHeadingRef = useRef<number>(0);
   const lastEmittedHeadingRef = useRef<number | null>(null);
@@ -99,6 +120,8 @@ export default function QiblaScreen({
   const wasAlignedRef = useRef<boolean>(false);
   const latRef = useRef<number | null>(null);
   const lngRef = useRef<number | null>(null);
+  const interferenceCheckTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hapticAlignedRef = useRef<boolean>(false);
 
   // Needle rotation: bearing - heading
   // When heading=0 (phone points true north), needle points at bearing
@@ -106,6 +129,7 @@ export default function QiblaScreen({
   const rotation =
     heading !== null && bearing !== null ? (bearing - heading + 360) % 360 : 0;
   const isAligned = heading !== null && bearing !== null && isFacingQibla(rotation, 4);
+  const isPreciselyAligned = heading !== null && bearing !== null && isFacingQibla(rotation, 3);
 
   // Effective location: GPS if available, otherwise saved autoLocation (if in auto mode), otherwise manual location
   const effectiveLocation = useMemo(() => {
@@ -137,15 +161,65 @@ export default function QiblaScreen({
     }
   }, [effectiveLocation, gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation.label]);
 
-  // Trigger haptic vibration when user turns and faces Qibla
+  // Calibration guidance update
   useEffect(() => {
-    if (isAligned && !wasAlignedRef.current) {
-      wasAlignedRef.current = true;
-      haptic('selection');
-    } else if (!isAligned && wasAlignedRef.current) {
-      wasAlignedRef.current = false;
+    const isStaticMode = Platform.OS === 'web' || source === 'static';
+    const guidance = getCalibrationGuidance(
+      isStaticMode,
+      calibrating,
+      heading,
+      bearing,
+      accuracy,
+      isAligned
+    );
+    setCalibrationGuidance(guidance);
+  }, [calibrating, heading, bearing, accuracy, isAligned, source]);
+
+  // Interference detection - check periodically when we have heading data
+  useEffect(() => {
+    if (heading === null || Platform.OS === 'web' || source === 'static') {
+      setInterference({ hasInterference: false, level: 'none', details: '' });
+      return;
     }
-  }, [isAligned, haptic]);
+
+    // Initial check
+    const result = checkMagneticInterference(heading, accuracy);
+    setInterference(result);
+
+    // Periodic check every 2 seconds
+    interferenceCheckTimerRef.current = setInterval(() => {
+      if (heading !== null) {
+        const r = checkMagneticInterference(heading, accuracy);
+        setInterference(r);
+      }
+    }, 2000);
+
+    return () => {
+      if (interferenceCheckTimerRef.current) {
+        clearInterval(interferenceCheckTimerRef.current);
+        interferenceCheckTimerRef.current = null;
+      }
+    };
+  }, [heading, accuracy, source]);
+
+  // Trigger haptic vibration when user turns and faces Qibla (within ~3°)
+  useEffect(() => {
+    if (isPreciselyAligned && !hapticAlignedRef.current) {
+      hapticAlignedRef.current = true;
+      haptic('selection');
+    } else if (!isPreciselyAligned && hapticAlignedRef.current) {
+      hapticAlignedRef.current = false;
+    }
+  }, [isPreciselyAligned, haptic]);
+
+  // Trigger haptic when calibration completes (transition from calibrating -> ready)
+  const wasCalibratingRef = useRef(true);
+  useEffect(() => {
+    if (wasCalibratingRef.current && !calibrating) {
+      haptic('success');
+    }
+    wasCalibratingRef.current = calibrating;
+  }, [calibrating, haptic]);
 
   const cleanupSubscriptions = useCallback(() => {
     if (watchdogTimerRef.current) {
@@ -155,6 +229,10 @@ export default function QiblaScreen({
     if (pollingTimerRef.current) {
       clearInterval(pollingTimerRef.current);
       pollingTimerRef.current = null;
+    }
+    if (interferenceCheckTimerRef.current) {
+      clearInterval(interferenceCheckTimerRef.current);
+      interferenceCheckTimerRef.current = null;
     }
     if (locationSubRef.current) {
       locationSubRef.current.remove();
@@ -361,15 +439,6 @@ export default function QiblaScreen({
     }
   }, [locStatus, startCompass]);
 
-  // Haptic when calibration completes (transition from calibrating -> ready)
-  const wasCalibratingRef = useRef(true);
-  useEffect(() => {
-    if (wasCalibratingRef.current && !calibrating) {
-      haptic('success');
-    }
-    wasCalibratingRef.current = calibrating;
-  }, [calibrating, haptic]);
-
   const handleRecalibrate = async () => {
     haptic('light');
     setRecalibrating(true);
@@ -546,6 +615,91 @@ export default function QiblaScreen({
           </View>
         )}
 
+        {/* Calibration Guidance Card */}
+        {!isStaticMode && !error && (
+          <Card style={styles.calibrationCard} padded>
+            <View style={styles.calibrationHeader}>
+              <View style={styles.calibrationIconWrap}>
+                <Ionicons
+                  name={calibrationGuidance.icon as any}
+                  size={22}
+                  color={colors.accent}
+                />
+              </View>
+              <View style={styles.calibrationTextWrap}>
+                <Text style={[styles.calibrationTitle, { color: colors.textPrimary }]}>
+                  {calibrationGuidance.title}
+                </Text>
+                <Text style={[styles.calibrationDescription, { color: colors.textSecondary }]}>
+                  {calibrationGuidance.description}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.calibrationProgressWrap}>
+              <View style={styles.calibrationProgressTrack}>
+                <View
+                  style={[
+                    styles.calibrationProgressFill,
+                    {
+                      backgroundColor: colors.accent,
+                      width: `${Math.round(calibrationGuidance.progress * 100)}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.calibrationStepText, { color: colors.textMuted }]}>
+                Step {['Hold Flat', 'Rotate Slowly', 'Align', 'Ready'].indexOf(
+                  calibrationGuidance.step.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                ) + 1} of 4
+              </Text>
+            </View>
+          </Card>
+        )}
+
+        {/* Magnetic Interference Banner */}
+        {interference.hasInterference && !isStaticMode && (
+          <View
+            style={[
+              styles.interferenceBanner,
+              {
+                backgroundColor:
+                  interference.level === 'high'
+                    ? colors.accent + '20'
+                    : interference.level === 'medium'
+                    ? colors.accent + '15'
+                    : colors.bgRaised,
+                borderColor:
+                  interference.level === 'high'
+                    ? colors.accent
+                    : interference.level === 'medium'
+                    ? colors.accent + '80'
+                    : colors.borderLine,
+              },
+            ]}
+          >
+            <Ionicons
+              name={
+                interference.level === 'high'
+                  ? 'alert-circle-outline'
+                  : interference.level === 'medium'
+                  ? 'warning-outline'
+                  : 'magnet-outline'
+              }
+              size={18}
+              color={
+                interference.level === 'high'
+                  ? colors.accent
+                  : interference.level === 'medium'
+                  ? colors.accent
+                  : colors.textSecondary
+              }
+            />
+            <Text style={[styles.interferenceText, { color: colors.textSecondary }]}>
+              {interference.details}
+            </Text>
+          </View>
+        )}
+
         {/* Compass Dial Area */}
         <View style={styles.compassWrapper}>
           {calibrating && heading === null && bearing === null ? (
@@ -577,7 +731,7 @@ export default function QiblaScreen({
           </Text>
           {distance !== null && (
             <Text style={[styles.distanceHero, { color: colors.textSecondary }]}>
-              {`${Math.round(distance).toLocaleString()} km to ${KAABA_LABEL}`}
+              {formatDistanceToKaaba(distance)}
             </Text>
           )}
         </View>
@@ -853,5 +1007,69 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     textAlign: 'center',
+  },
+  calibrationCard: {
+    marginBottom: 20,
+  },
+  calibrationHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 12,
+  },
+  calibrationIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#C26E1715',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calibrationTextWrap: {
+    flex: 1,
+  },
+  calibrationTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 15,
+  },
+  calibrationDescription: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 13,
+    lineHeight: 19,
+    marginTop: 2,
+  },
+  calibrationProgressWrap: {
+    gap: 6,
+  },
+  calibrationProgressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#E8ECEF',
+    overflow: 'hidden',
+  },
+  calibrationProgressFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  calibrationStepText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11,
+    textAlign: 'right',
+  },
+  interferenceBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 20,
+  },
+  interferenceText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
   },
 });

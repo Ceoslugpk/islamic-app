@@ -142,6 +142,20 @@ function migrate(database: SQLite.SQLiteDatabase) {
       notes TEXT,
       created_at INTEGER
     );
+    CREATE TABLE IF NOT EXISTS study_tags (
+      id TEXT PRIMARY KEY,
+      surah INTEGER NOT NULL,
+      ayah INTEGER NOT NULL,
+      tag TEXT NOT NULL,
+      created_at INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS verse_highlights (
+      id TEXT PRIMARY KEY,
+      surah INTEGER NOT NULL,
+      ayah INTEGER NOT NULL,
+      color TEXT NOT NULL,
+      created_at INTEGER
+    );
   `);
 }
 
@@ -1093,6 +1107,155 @@ export function loadNifasEntries(): NifasEntry[] {
       startDate: r.start_date,
       endDate: r.end_date || undefined,
       notes: r.notes || undefined,
+      createdAt: r.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/* ─── Study Tools (tags & highlights) ──────────────────────────── */
+
+export interface StudyTag {
+  id: string;
+  surah: number;
+  ayah: number;
+  tag: string;
+  createdAt: number;
+}
+
+export interface VerseHighlight {
+  id: string;
+  surah: number;
+  ayah: number;
+  color: string;
+  createdAt: number;
+}
+
+interface StudyTagRow {
+  id: string;
+  surah: number;
+  ayah: number;
+  tag: string;
+  created_at: number;
+}
+
+interface VerseHighlightRow {
+  id: string;
+  surah: number;
+  ayah: number;
+  color: string;
+  created_at: number;
+}
+
+export function addStudyTag(surah: number, ayah: number, tag: string): StudyTag | false {
+  try {
+    const id = `${surah}:${ayah}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
+    const createdAt = Date.now();
+    getDb().runSync(
+      `INSERT INTO study_tags (id, surah, ayah, tag, created_at) VALUES (?, ?, ?, ?, ?)`,
+      id, surah, ayah, tag, createdAt
+    );
+    return { id, surah, ayah, tag, createdAt };
+  } catch {
+    return false;
+  }
+}
+
+export function removeStudyTag(id: string): boolean {
+  try {
+    getDb().runSync('DELETE FROM study_tags WHERE id = ?', id);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getStudyTagsForAyah(surah: number, ayah: number): StudyTag[] {
+  try {
+    const rows = getDb().getAllSync<StudyTagRow>(
+      'SELECT * FROM study_tags WHERE surah = ? AND ayah = ? ORDER BY created_at DESC',
+      surah, ayah
+    );
+    return rows.map((r) => ({
+      id: r.id,
+      surah: r.surah,
+      ayah: r.ayah,
+      tag: r.tag,
+      createdAt: r.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export function getAllStudyTags(): StudyTag[] {
+  try {
+    const rows = getDb().getAllSync<StudyTagRow>('SELECT * FROM study_tags ORDER BY created_at DESC');
+    return rows.map((r) => ({
+      id: r.id,
+      surah: r.surah,
+      ayah: r.ayah,
+      tag: r.tag,
+      createdAt: r.created_at,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export function addVerseHighlight(surah: number, ayah: number, color: string): VerseHighlight | false {
+  try {
+    const id = `${surah}:${ayah}:${Date.now()}`;
+    const createdAt = Date.now();
+    // Remove existing highlight for this ayah first
+    getDb().runSync('DELETE FROM verse_highlights WHERE surah = ? AND ayah = ?', surah, ayah);
+    getDb().runSync(
+      `INSERT INTO verse_highlights (id, surah, ayah, color, created_at) VALUES (?, ?, ?, ?, ?)`,
+      id, surah, ayah, color, createdAt
+    );
+    return { id, surah, ayah, color, createdAt };
+  } catch {
+    return false;
+  }
+}
+
+export function removeVerseHighlight(surah: number, ayah: number): boolean {
+  try {
+    getDb().runSync('DELETE FROM verse_highlights WHERE surah = ? AND ayah = ?', surah, ayah);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function getVerseHighlight(surah: number, ayah: number): VerseHighlight | null {
+  try {
+    const row = getDb().getFirstSync<VerseHighlightRow>(
+      'SELECT * FROM verse_highlights WHERE surah = ? AND ayah = ?',
+      surah, ayah
+    );
+    if (!row) return null;
+    return {
+      id: row.id,
+      surah: row.surah,
+      ayah: row.ayah,
+      color: row.color,
+      createdAt: row.created_at,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function getAllVerseHighlights(): VerseHighlight[] {
+  try {
+    const rows = getDb().getAllSync<VerseHighlightRow>('SELECT * FROM verse_highlights ORDER BY created_at DESC');
+    return rows.map((r) => ({
+      id: r.id,
+      surah: r.surah,
+      ayah: r.ayah,
+      color: r.color,
       createdAt: r.created_at,
     }));
   } catch {

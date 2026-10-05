@@ -99,6 +99,30 @@ export default function QuranHomeScreen({
     clearHistory: clearSearchHistory,
   } = useSearchHistory('quran-surahs');
 
+  // Search filter state
+  const [searchFilter, setSearchFilter] = useState<'name' | 'meaning' | 'all'>('all');
+
+  // Detect verse reference pattern (e.g., "2:255", "Baqarah 2:255", "Al-Baqarah 2:255")
+  const parseVerseReference = (query: string): { surah: number; ayah: number } | null => {
+    const trimmed = query.trim();
+    // Pattern: "surah:ayah" or "surah-name surah:ayah"
+    const verseRefRegex = /^(?:.+\s+)?(\d+):(\d+)$/;
+    const match = trimmed.match(verseRefRegex);
+    if (match) {
+      const surah = parseInt(match[1], 10);
+      const ayah = parseInt(match[2], 10);
+      if (surah >= 1 && surah <= 114) {
+        const surahMeta = surahs?.find((s) => s.number === surah);
+        if (surahMeta && ayah >= 1 && ayah <= surahMeta.numberOfAyahs) {
+          return { surah, ayah };
+        }
+      }
+    }
+    return null;
+  };
+
+  const verseRef = useMemo(() => parseVerseReference(searchQuery), [searchQuery, surahs]);
+
   const listRef = useRef<FlatList<SurahMeta>>(null);
 
   const loadData = useCallback(async () => {
@@ -165,16 +189,41 @@ export default function QuranHomeScreen({
     if (!surahs) return [];
     const query = searchQuery.trim().toLowerCase();
     if (!query) return surahs;
+    
+    // If verse reference detected, return just that surah
+    if (verseRef) {
+      return surahs.filter((s) => s.number === verseRef.surah);
+    }
+    
     return surahs.filter((s) => {
       const tr = translatedNames?.[s.number]?.toLowerCase() || '';
-      return (
-        s.englishName.toLowerCase().includes(query) ||
-        s.englishNameTranslation.toLowerCase().includes(query) ||
-        tr.includes(query) ||
-        s.number.toString() === query
-      );
+      const nameMatch = s.englishName.toLowerCase().includes(query);
+      const meaningMatch = s.englishNameTranslation.toLowerCase().includes(query);
+      const trMatch = tr.includes(query);
+      const numberMatch = s.number.toString() === query;
+      
+      switch (searchFilter) {
+        case 'name':
+          return nameMatch || numberMatch;
+        case 'meaning':
+          return meaningMatch || trMatch;
+        case 'all':
+        default:
+          return nameMatch || meaningMatch || trMatch || numberMatch;
+      }
     });
-  }, [surahs, searchQuery, translatedNames]);
+  }, [surahs, searchQuery, translatedNames, searchFilter, verseRef]);
+
+  // Navigate to verse reference when detected and user submits search
+  useEffect(() => {
+    if (verseRef && searchQuery.trim().length > 0) {
+      // Auto-navigate after a short delay to allow UI to update
+      const timer = setTimeout(() => {
+        onOpenSurah(verseRef.surah, verseRef.ayah);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [verseRef, searchQuery, onOpenSurah]);
 
   // Restore the surah list scroll position when the tab remounts
   // (App.tsx unmounts tab screens on switch, so lists otherwise reset to top).
@@ -772,89 +821,165 @@ export default function QuranHomeScreen({
         <Hairline style={styles.sectionDivider} />
 
         {/* Search Bar */}
-        <View
-          style={[
-            styles.searchBar,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
-            },
-          ]}
-        >
-          <Ionicons name="search" size={16} color={colors.textMuted} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 12.5 : 13 }]}
-            placeholder="Search by surah name or meaning..."
-            placeholderTextColor={colors.textMuted}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-            onSubmitEditing={submitSearch}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Recent Search Queries */}
-        {searchHistory.length > 0 && !searchQuery && (
-          <View style={styles.searchRecentWrap}>
-            <View style={styles.searchRecentHeader}>
-              <Text style={[styles.searchRecentLabel, { color: colors.textMuted }]}>Recent searches</Text>
-              <TouchableOpacity
-                onPress={clearSearchHistory}
-                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                accessibilityRole="button"
-                accessibilityLabel="Clear surah search history"
-              >
-                <Text style={[styles.searchRecentClear, { color: colors.textMuted }]}>Clear</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.searchRecentScroll}
-            >
-              {searchHistory.map((item) => (
-                <View
-                  key={item}
+        <View style={styles.searchSection}>
+          {/* Filter Picker */}
+          <View style={styles.searchFilterRow}>
+            {(['all', 'name', 'meaning'] as const).map((filter) => {
+              const labels = { all: 'All', name: 'Surah Name', meaning: 'Meaning' };
+              const isSelected = searchFilter === filter;
+              return (
+                <TouchableOpacity
+                  key={filter}
                   style={[
-                    styles.searchRecentChip,
-                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    styles.searchFilterBtn,
+                    {
+                      backgroundColor: isSelected ? colors.accentDim : colors.bgSurface,
+                      borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                    },
                   ]}
+                  onPress={() => setSearchFilter(filter)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isSelected }}
                 >
-                  <TouchableOpacity
-                    onPress={() => {
-                      setSearchQuery(item);
-                      addQuery(item);
-                    }}
-                    style={styles.searchRecentChipBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Search for ${item}`}
+                  <Text
+                    style={[
+                      styles.searchFilterBtnText,
+                      { color: isSelected ? colors.accent : colors.textSecondary },
+                    ]}
                   >
-                    <Ionicons name="time-outline" size={13} color={colors.accent} />
-                    <Text style={[styles.searchRecentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => removeSearchHistoryQuery(item)}
-                    style={styles.searchRecentChipRemove}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Remove ${item} from search history`}
-                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
-                  >
-                    <Ionicons name="close" size={12} color={colors.textMuted} />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
+                    {labels[filter]}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
-        )}
+
+          {/* Search Input */}
+          <View
+            style={[
+              styles.searchBar,
+              {
+                backgroundColor: colors.bgSurface,
+                borderColor: colors.borderSubtle,
+              },
+            ]}
+          >
+            <Ionicons name="search" size={16} color={colors.textMuted} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 12.5 : 13 }]}
+              placeholder={
+                verseRef
+                  ? `Jumping to ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || 'Surah'} ${verseRef?.ayah}…`
+                  : searchFilter === 'name'
+                  ? 'Search surah name…'
+                  : searchFilter === 'meaning'
+                  ? 'Search meaning…'
+                  : 'Search surah name or meaning…'
+              }
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              onSubmitEditing={submitSearch}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Verse Reference Hint */}
+          {verseRef && (
+            <View
+              style={[
+                styles.verseRefHint,
+                { backgroundColor: colors.accentDim, borderColor: colors.accent },
+              ]}
+            >
+              <Ionicons name="arrow-forward-outline" size={14} color={colors.accent} />
+              <Text style={[styles.verseRefHintText, { color: colors.accent }]}>
+                Verse reference detected — jumping to <Text style={{ fontFamily: 'Manrope_700Bold' }}>
+                  {surahs?.find((s) => s.number === verseRef.surah)?.englishName || `Surah ${verseRef.surah}`} {verseRef.ayah}
+                </Text>
+              </Text>
+            </View>
+          )}
+
+          {/* Recent Search Queries */}
+          {searchHistory.length > 0 && !searchQuery && (
+            <View style={styles.searchRecentWrap}>
+              <View style={styles.searchRecentHeader}>
+                <Text style={[styles.searchRecentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                <TouchableOpacity
+                  onPress={clearSearchHistory}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear surah search history"
+                >
+                  <Text style={[styles.searchRecentClear, { color: colors.textMuted }]}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.searchRecentScroll}
+              >
+                {searchHistory.map((item) => (
+                  <View
+                    key={item}
+                    style={[
+                      styles.searchRecentChip,
+                      { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      onPress={() => {
+                        setSearchQuery(item);
+                        addQuery(item);
+                      }}
+                      style={styles.searchRecentChipBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Search for ${item}`}
+                    >
+                      <Ionicons name="time-outline" size={13} color={colors.accent} />
+                      <Text style={[styles.searchRecentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                        {item}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => removeSearchHistoryQuery(item)}
+                      style={styles.searchRecentChipRemove}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${item} from search history`}
+                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+                    >
+                      <Ionicons name="close" size={12} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Empty History Hint */}
+          {searchHistory.length === 0 && !searchQuery && !loading && (
+            <View
+              style={[
+                styles.emptyHistoryHint,
+                { backgroundColor: colors.bgRaised, borderColor: colors.borderSubtle },
+              ]}
+            >
+              <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+              <Text style={[styles.emptyHistoryHintText, { color: colors.textSecondary }]}>
+                No recent searches yet. Type a surah name, meaning, or verse reference (e.g., "2:255").
+              </Text>
+            </View>
+          )}
+
+        </View>
 
         {/* Juz Filter Scroll */}
         <View style={[styles.juzRow, { gap: isNarrow ? 8 : 10 }]}>
@@ -1012,7 +1137,11 @@ export default function QuranHomeScreen({
             <EmptyState
               icon="search-outline"
               title="No surahs found"
-              subtitle={`No surahs match "${searchQuery}"`}
+              subtitle={
+                verseRef
+                  ? `Surah ${verseRef.surah} does not have ayah ${verseRef.ayah}`
+                  : `No surahs match "${searchQuery}"${searchFilter !== 'all' ? ` in "${searchFilter === 'name' ? 'Surah Name' : 'Meaning'}"` : ''}`
+              }
               actionLabel="Clear search"
               onAction={() => setSearchQuery('')}
             />
@@ -1421,5 +1550,54 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     maxWidth: '38%',
     textAlign: 'right',
+  },
+  searchSection: {
+    marginBottom: 12,
+  },
+  searchFilterRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 8,
+  },
+  searchFilterBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  searchFilterBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+  },
+  verseRefHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 6,
+  },
+  verseRefHintText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    flex: 1,
+  },
+  emptyHistoryHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  emptyHistoryHintText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
   },
 });
