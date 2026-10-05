@@ -145,82 +145,83 @@ export default function MosqueFinderScreen({
       }
 
       try {
-        // Calculate bounding box based on radius
-        // 1 degree latitude ~ 111 km
+        // Overpass API — query real mosques (amenity=place_of_worship + religion=muslim)
+        // in the bounding box. Much more reliable than Nominatim's free-text q=mosque.
         const dLat = radius / 111;
         const cosLat = Math.cos((lat * Math.PI) / 180);
         const dLon = radius / (111 * (Math.abs(cosLat) > 0.05 ? Math.abs(cosLat) : 1));
 
-        const minLon = lon - dLon;
-        const maxLon = lon + dLon;
-        const minLat = lat - dLat;
-        const maxLat = lat + dLat;
+        const south = lat - dLat, north = lat + dLat;
+        const west = lon - dLon, east = lon + dLon;
 
-        // Nominatim viewbox format: <left>,<top>,<right>,<bottom>
-        // where left=minLon, top=maxLat, right=maxLon, bottom=minLat
-        const viewbox = `${minLon.toFixed(4)},${maxLat.toFixed(4)},${maxLon.toFixed(4)},${minLat.toFixed(4)}`;
+        const overpassQuery = `[out:json][timeout:20];(node["amenity"="place_of_worship"]["religion"="muslim"](${south.toFixed(5)},${west.toFixed(5)},${north.toFixed(5)},${east.toFixed(5)});way["amenity"="place_of_worship"]["religion"="muslim"](${south.toFixed(5)},${west.toFixed(5)},${north.toFixed(5)},${east.toFixed(5)}););out center 30;`;
 
-        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=mosque&limit=30&bounded=1&viewbox=${viewbox}`;
+        // Overpass mirrors — try in order; the main server is frequently overloaded.
+        const OVERPASS_ENDPOINTS = [
+          'https://overpass-api.de/api/interpreter',
+          'https://overpass.kumi.systems/api/interpreter',
+          'https://overpass.private.coffee/api/interpreter',
+        ];
 
-        // ponytail: bounded timeout — a hanging Nominatim fetch would leave the
-        // screen stuck in loading forever (same class as the earlier global-stall).
-        const res = await fetch(url, {
-          headers: {
-            'User-Agent': 'IslamicAppMobile/1.0 (https://islamic.app)',
-            Accept: 'application/json',
-          },
-          signal: AbortSignal.timeout(8000),
-        });
-
-        if (!res.ok) {
-          throw new Error(`Server returned status ${res.status}`);
+        let data: any = null;
+        let lastErr: Error | null = null;
+        for (const endpoint of OVERPASS_ENDPOINTS) {
+          // ponytail: bounded timeout — a hanging Overpass fetch would leave the
+          // screen stuck in loading forever (same class as the earlier global-stall).
+          const url = `${endpoint}?data=${encodeURIComponent(overpassQuery)}`;
+          try {
+            const res = await fetch(url, {
+              headers: { 'User-Agent': 'IslamicAppMobile/1.0' },
+              signal: AbortSignal.timeout(12000),
+            });
+            if (!res.ok) throw new Error(`Server returned status ${res.status}`);
+            const json = await res.json();
+            if (json && Array.isArray(json.elements)) {
+              data = json;
+              break;
+            }
+            throw new Error('Invalid response structure');
+          } catch (err: any) {
+            lastErr = err;
+            // try next mirror
+          }
         }
 
-        const data = await res.json();
-
-        if (!Array.isArray(data)) {
-          throw new Error('Invalid response structure');
+        if (!data) {
+          throw lastErr || new Error('All Overpass mirrors failed');
         }
 
         const items: MosqueItem[] = [];
         const seen = new Set<string>();
 
-        for (const place of data) {
-          const mLat = parseFloat(place.lat);
-          const mLon = parseFloat(place.lon);
-          if (isNaN(mLat) || isNaN(mLon)) continue;
+        for (const el of data.elements) {
+          // Nodes have lat/lon; ways/relations have center.lat/center.lon
+          const mLat = el.lat ?? el.center?.lat;
+          const mLon = el.lon ?? el.center?.lon;
+          if (typeof mLat !== 'number' || typeof mLon !== 'number' || isNaN(mLat) || isNaN(mLon)) continue;
 
-          // Unique key by coordinates or ID
+          const tags = el.tags || {};
+
+          // Unique key by coordinates
           const coordKey = `${mLat.toFixed(4)},${mLon.toFixed(4)}`;
           if (seen.has(coordKey)) continue;
           seen.add(coordKey);
 
-          let name = place.name;
-          if (!name && place.address) {
-            name = place.address.amenity || place.address.building || place.address.place_of_worship;
-          }
-          if (!name) {
-            name = 'Mosque';
-          }
+          const name = tags.name || 'Mosque';
 
-          // Clean up address
-          let address = place.display_name || '';
-          if (place.address) {
-            const parts = [
-              place.address.road || place.address.street,
-              place.address.quarter || place.address.suburb || place.address.neighbourhood,
-              place.address.city || place.address.town || place.address.village,
-              place.address.state || place.address.country,
-            ].filter(Boolean);
-            if (parts.length > 0) {
-              address = parts.join(', ');
-            }
-          }
+          // Build a readable address from available tags
+          const parts = [
+            tags['addr:street'],
+            tags['addr:district'] || tags['addr:suburb'] || tags['addr:quarter'],
+            tags['addr:city'] || tags['addr:town'] || tags['addr:village'],
+            tags['addr:state'] || tags['addr:country'],
+          ].filter(Boolean);
+          const address = parts.length > 0 ? parts.join(', ') : (tags['addr:full'] || '');
 
           const dist = distanceKm(lat, lon, mLat, mLon);
 
           items.push({
-            id: String(place.place_id || place.osm_id || coordKey),
+            id: String(el.id ?? coordKey),
             name,
             address,
             latitude: mLat,
@@ -495,9 +496,12 @@ export default function MosqueFinderScreen({
                 {searchingArea ? (
                   <ActivityIndicator size="small" color={colors.bgBase} />
                 ) : (
-                  <Text style={[styles.searchSubmitText, { color: colors.bgBase }]}>
-                    Search
-                  </Text>
+                  <>
+                    <Ionicons name="search" size={14} color={colors.bgBase} style={{ marginRight: 4 }} />
+                    <Text style={[styles.searchSubmitText, { color: colors.bgBase }]}>
+                      Find
+                    </Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
@@ -923,38 +927,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 38,
-    marginTop: 2,
-    marginBottom: 8,
+    borderRadius: 14,
+    paddingHorizontal: 6,
+    height: 48,
+    marginTop: 4,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   searchIcon: {
-    marginRight: 8,
+    marginLeft: 6,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 14,
     height: '100%',
   },
   clearBtn: {
-    padding: 4,
-    marginRight: 6,
+    padding: 6,
+    marginRight: 4,
   },
   searchSubmitBtn: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    minWidth: 64,
   },
   searchSubmitBtnDisabled: {
     opacity: 0.5,
   },
   searchSubmitText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
   recentWrap: {
     marginBottom: 8,
