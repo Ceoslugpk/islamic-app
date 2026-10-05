@@ -110,6 +110,7 @@ export function AdhanReciterModal({
             <TouchableOpacity
               style={[styles.closeBtn, { backgroundColor: colors.bgBase }]}
               onPress={handleClose}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
               accessibilityLabel="Close reciter selector"
             >
@@ -307,9 +308,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   closeBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 12,

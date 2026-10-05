@@ -18,9 +18,9 @@ export function EmptyState({ icon, title, subtitle, actionLabel, onAction, iconS
 
   return (
     <View style={styles.wrap}>
-      <Ionicons name={icon} size={iconSize} color={colors.textMuted} />
-      <Text style={[styles.title, { color: colors.textMuted }]}>{title}</Text>
-      <Text style={[styles.subtitle, { color: colors.textMuted }]}>{subtitle}</Text>
+      <Ionicons name={icon} size={iconSize} color={colors.textSecondary} />
+      <Text style={[styles.title, { color: colors.textSecondary }]}>{title}</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
       {actionLabel && onAction ? (
         <TouchableOpacity
           onPress={onAction}

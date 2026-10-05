@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   Animated,
+  Easing,
   Platform,
   AccessibilityInfo,
 } from 'react-native';
@@ -45,7 +46,7 @@ function TimelineDot({
   const prevCompleted = useRef(isCompleted);
   const [popStep, setPopStep] = useState<'idle' | 'circle' | 'filled' | 'checked'>('idle');
 
-  // Completion 3-step spring pop sequence: ○ → ◉ → ✓
+  // Completion 3-step pop sequence: ○ → ◉ → ✓ (calm cubic-out, no springs)
   useEffect(() => {
     let t1: any;
     let t2: any;
@@ -54,19 +55,20 @@ function TimelineDot({
       Animated.sequence([
         Animated.timing(popAnim, {
           toValue: 0.85,
-          duration: 70,
+          duration: 80,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
-        Animated.spring(popAnim, {
-          toValue: 1.35,
-          friction: 5,
-          tension: 180,
+        Animated.timing(popAnim, {
+          toValue: 1.25,
+          duration: 140,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
-        Animated.spring(popAnim, {
+        Animated.timing(popAnim, {
           toValue: 1,
-          friction: 6,
-          tension: 130,
+          duration: 120,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
       ]).start();
@@ -84,19 +86,22 @@ function TimelineDot({
     };
   }, [isCompleted, popAnim, reducedMotion]);
 
-  // Current prayer glowing/pulsing ring loop
+  // Current prayer glowing/pulsing ring loop — ambient brand pulse, gated by
+  // reduce-motion. Calm 1400ms cycle with cubic easing, not linear.
   useEffect(() => {
     if (isCurrent && !reducedMotion) {
       const pulseLoop = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 1000,
+            duration: 700,
+            easing: Easing.out(Easing.cubic),
             useNativeDriver: USE_NATIVE_DRIVER,
           }),
           Animated.timing(pulseAnim, {
             toValue: 0.35,
-            duration: 1000,
+            duration: 700,
+            easing: Easing.inOut(Easing.cubic),
             useNativeDriver: USE_NATIVE_DRIVER,
           }),
         ])
@@ -272,7 +277,6 @@ export function PrayerTimeline({
 
           return (
             <View key={item.key}>
-              {index > 0 && <Hairline />}
               <TouchableOpacity
                 style={[
                   styles.timelineRow,
@@ -410,29 +414,8 @@ export function PrayerTimeline({
 
       {/* Integrated Salah Tracker Footer */}
       <Hairline />
-      <View
-        style={[
-          styles.trackerFooter,
-          {
-            backgroundColor: colors.bgSurface,
-          },
-        ]}
-      >
+      <View style={styles.trackerFooter}>
         <View style={styles.trackerLeft}>
-          <View style={styles.dotsRow}>
-            {salahKeys.map((k) => (
-              <View
-                key={k}
-                style={[
-                  styles.miniDot,
-                  {
-                    backgroundColor: completed?.[k] ? colors.accent : 'transparent',
-                    borderColor: completed?.[k] ? colors.accent : colors.borderStrong,
-                  },
-                ]}
-              />
-            ))}
-          </View>
           <Text style={[styles.trackerText, { color: colors.textSecondary }]}>
             <Text style={[styles.trackerBold, { color: colors.textPrimary }]}>
               {completedCount} / 5
@@ -442,7 +425,6 @@ export function PrayerTimeline({
         </View>
 
         <View style={styles.trackerRight}>
-          <Ionicons name="flame" size={15} color={colors.accent} />
           <Text style={[styles.trackerText, { color: colors.textSecondary }]}>
             Streak{' '}
             <Text style={[styles.trackerBold, { color: colors.accent }]}>
@@ -586,18 +568,6 @@ const styles = StyleSheet.create({
   trackerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-  },
-  dotsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  miniDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    borderWidth: 1,
   },
   trackerRight: {
     flexDirection: 'row',

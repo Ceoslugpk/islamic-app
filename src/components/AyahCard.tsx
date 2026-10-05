@@ -20,7 +20,13 @@ export function AyahCard({ ayah, onRefresh }: AyahCardProps) {
       <View style={styles.header}>
         <Text style={[styles.eyebrow, { color: colors.accent }]}>Ayah of the Day</Text>
         {onRefresh && (
-          <TouchableOpacity onPress={onRefresh} style={styles.refreshBtn}>
+          <TouchableOpacity
+            onPress={onRefresh}
+            style={styles.refreshBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Refresh Ayah of the Day"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Text style={[styles.refreshText, { color: colors.accent }]}>Refresh</Text>
           </TouchableOpacity>
         )}
@@ -36,7 +42,7 @@ export function AyahCard({ ayah, onRefresh }: AyahCardProps) {
         <Text style={[styles.translation, { color: colors.textSecondary }]}>{ayah.translation}</Text>
       </View>
 
-      <Text style={[styles.source, { color: colors.textMuted }]}>{ayah.reference}</Text>
+      <Text style={[styles.source, { color: colors.textSecondary }]}>{ayah.reference}</Text>
     </Card>
   );
 }

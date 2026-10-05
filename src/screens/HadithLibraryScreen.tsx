@@ -428,6 +428,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
+  const isWide = width >= 600;
   const paddingH = isCompact ? 16 : 20;
 
   return (
@@ -517,9 +518,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 subtitle='While reading any hadith, tap the "Save" bookmark button to keep it here for quick access.'
               />
             ) : (
-              <View style={styles.gap12}>
+              <View style={[styles.gap12, isWide && styles.gridWide]}>
                 {savedList.map((item) => (
-                  <Card key={item.id} padded style={styles.savedCard}>
+                  <View key={item.id} style={isWide && styles.gridCell}>
+                  <Card padded style={styles.savedCard}>
                     <TouchableOpacity
                       onPress={() =>
                         openDetail(
@@ -590,6 +592,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       </View>
                     </TouchableOpacity>
                   </Card>
+                  </View>
                 ))}
               </View>
             )}
@@ -613,9 +616,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 subtitle="As you browse collections and read hadith details, they will automatically appear here."
               />
             ) : (
-              <View style={styles.gap12}>
+              <View style={[styles.gap12, isWide && styles.gridWide]}>
                 {recentList.map((item) => (
-                  <Card key={item.id} padded>
+                  <View key={item.id} style={isWide && styles.gridCell}>
+                  <Card padded>
                     <TouchableOpacity
                       onPress={() =>
                         openDetail(
@@ -668,6 +672,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       </Text>
                     </TouchableOpacity>
                   </Card>
+                  </View>
                 ))}
               </View>
             )}
@@ -709,14 +714,15 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
               </Text>
             </View>
 
-            <View style={styles.gap12}>
+            <View style={[styles.gap12, isWide && styles.gridWide]}>
               {collections.map((col) => {
                 const count = readCounts[col.slug] || 0;
                 const total = col.totalAvailable || col.totalHadith || 1;
                 const pct = total > 0 ? Math.min(100, Math.round((count / total) * 1000) / 10) : 0;
 
                 return (
-                  <Card key={col.slug} padded>
+                  <View key={col.slug} style={isWide && styles.gridCell}>
+                  <Card padded>
                     <TouchableOpacity
                       onPress={() => {
                         setActiveTab('collections');
@@ -757,6 +763,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       </View>
                     </TouchableOpacity>
                   </Card>
+                  </View>
                 );
               })}
             </View>
@@ -827,13 +834,14 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             )}
 
             {/* Collections List */}
-            <View style={styles.gap12}>
+            <View style={[styles.gap12, isWide && styles.gridWide]}>
               {filteredCollections.map((item) => {
                 const readCount = readCounts[item.slug] || 0;
                 const total = item.totalAvailable || item.totalHadith || 0;
 
                 return (
-                  <Card key={item.slug} padded>
+                  <View key={item.slug} style={isWide && styles.gridCell}>
+                  <Card padded>
                     <TouchableOpacity
                       onPress={() => openCollection(item)}
                       style={styles.colTouch}
@@ -875,6 +883,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       </View>
                     </TouchableOpacity>
                   </Card>
+                  </View>
                 );
               })}
             </View>
@@ -959,9 +968,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             )}
 
             {/* Books List */}
-            <View style={styles.gap12}>
+            <View style={[styles.gap12, isWide && styles.gridWide]}>
               {filteredBooks.map((item) => (
-                <Card key={item.bookNumber} padded>
+                <View key={item.bookNumber} style={isWide && styles.gridCell}>
+                <Card padded>
                   <TouchableOpacity
                     onPress={() => openBook(view.collection, item)}
                     style={styles.bookTouch}
@@ -1002,11 +1012,12 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       </Text>
                     </View>
                   </TouchableOpacity>
-                </Card>
-              ))}
-            </View>
+                                    </Card>
+                                  </View>
+                                ))}
+                              </View>
 
-            {bookFilter.trim().length > 0 && filteredBooks.length === 0 && (
+                              {bookFilter.trim().length > 0 && filteredBooks.length === 0 && (
               <EmptyState
                 icon="search-outline"
                 title="No matches"
@@ -1375,6 +1386,15 @@ const styles = StyleSheet.create({
   },
   gap12: {
     gap: 12,
+  },
+  gridWide: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  gridCell: {
+    flexBasis: '48%',
+    minWidth: 0,
   },
   mb12: {
     marginBottom: 12,

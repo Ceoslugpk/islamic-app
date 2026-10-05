@@ -4,6 +4,7 @@ import {
   Text,
   View,
   Animated,
+  Easing,
   Platform,
   AccessibilityInfo,
 } from 'react-native';
@@ -41,7 +42,8 @@ function AnimatedDigit({
 
       Animated.timing(anim, {
         toValue: 1,
-        duration: 180,
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: USE_NATIVE_DRIVER,
       }).start(() => {
         setPrevDigit(null);
@@ -217,7 +219,12 @@ export function PrayerCountdown({
   };
 
   return (
-    <View style={styles.container} accessibilityLabel={`Countdown ${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}`}>
+    <View
+      style={styles.container}
+      accessibilityRole="text"
+      accessibilityLiveRegion="polite"
+      accessibilityLabel={`Countdown ${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}`}
+    >
       {/* Hours */}
       <View style={styles.unitPair}>
         <AnimatedDigit

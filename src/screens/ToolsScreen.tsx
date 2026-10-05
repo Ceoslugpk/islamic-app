@@ -55,7 +55,7 @@ const BASE_GROUPS: ToolsGroup[] = [
         key: 'mosque',
         title: 'Mosque Finder',
         subtitle: 'Nearby mosques & directions',
-        icon: 'map',
+        icon: 'location',
       },
       {
         key: 'tracker',
@@ -200,6 +200,7 @@ export default function ToolsScreen({
 
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
+  const isWide = width >= 600;
   const paddingH = isCompact ? 16 : 20;
 
   return (
@@ -218,9 +219,12 @@ export default function ToolsScreen({
         {groups.map((group, gi) => (
           <View key={group.label} style={gi > 0 ? styles.groupGap : undefined}>
             <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{group.label}</Text>
-            <View style={styles.list}>
+            <View style={[styles.list, isWide && styles.listWide]}>
               {group.items.map((item, i) => (
-                <View key={item.key}>
+                <View
+                  key={item.key}
+                  style={isWide ? (item.sectionHeader ? styles.subHeaderFull : styles.itemCell) : undefined}
+                >
                   {item.sectionHeader ? (
                     <View style={[styles.subHeaderWrap, { borderTopColor: colors.borderSubtle }]}>
                       <Text style={[styles.subHeaderLabel, { color: colors.accent }]}>
@@ -228,10 +232,16 @@ export default function ToolsScreen({
                       </Text>
                     </View>
                   ) : (
-                    i > 0 && <Hairline />
+                    i > 0 && !isWide && <Hairline />
                   )}
                   <TouchableOpacity
-                    style={styles.row}
+                    style={[
+                      styles.row,
+                      isWide && [
+                        styles.rowCard,
+                        { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                      ],
+                    ]}
                     onPress={() => onOpen(item.key)}
                     accessibilityRole="button"
                     accessibilityLabel={`Open ${item.title}`}
@@ -295,7 +305,25 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginLeft: 4,
   },
-  list: { borderWidth: 1, borderColor: 'transparent' },
+  list: {},
+  listWide: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  itemCell: {
+    flexBasis: '48%',
+    minWidth: 0,
+  },
+  subHeaderFull: {
+    flexBasis: '100%',
+  },
+  rowCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

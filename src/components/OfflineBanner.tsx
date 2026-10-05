@@ -7,7 +7,11 @@ export function OfflineBanner() {
   const { colors } = useTheme();
 
   return (
-    <View style={[styles.banner, { backgroundColor: colors.accentDim, borderBottomColor: colors.borderSubtle }]}>
+    <View
+      style={[styles.banner, { backgroundColor: colors.accentDim, borderBottomColor: colors.borderSubtle }]}
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
       <View style={styles.content}>
         <Ionicons name="cloud-offline-outline" size={14} color={colors.accent} style={styles.icon} />
         <Text style={[styles.text, { color: colors.textPrimary }]}>Offline · Using saved data</Text>

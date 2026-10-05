@@ -6,6 +6,7 @@ import {
   AccessibilityInfo,
   Dimensions,
   Animated,
+  Easing,
   Platform,
 } from 'react-native';
 import { useTheme } from '../lib/theme';
@@ -467,7 +468,8 @@ export function GeometricLoadingStar({
       () =>
         Animated.timing(rotation, {
           toValue: 1,
-          duration: 2200,
+          duration: 1800,
+          easing: Easing.inOut(Easing.cubic),
           useNativeDriver: USE_NATIVE_DRIVER,
         }),
       () => rotation.setValue(0)

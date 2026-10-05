@@ -723,7 +723,9 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
         </View>
 
         {/* Pre-Prayer Advance Notice Offset */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>PRE-PRAYER ADVANCE NOTICE</Text>
+        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
+          PRE-PRAYER ADVANCE NOTICE — {reminderOffsetMinutes === 0 ? 'OFF' : `${reminderOffsetMinutes} MIN BEFORE`}
+        </Text>
         <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>
             Send an early alert before prayer time begins so you can prepare wudu. Select &quot;Off&quot; to receive
@@ -903,7 +905,9 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
             <View style={styles.rowFlex}>
               <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Quran reading reminder</Text>
               <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-                Daily local reminder to recite Quran at {quranReminderTime}
+                {quranReminderEnabled
+                  ? `On · daily at ${quranReminderTime}`
+                  : 'Off — no daily reminder'}
               </Text>
             </View>
             <TouchableOpacity

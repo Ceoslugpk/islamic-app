@@ -4,6 +4,7 @@ import {
   View,
   ViewStyle,
   Animated,
+  Easing,
   Platform,
   AccessibilityInfo,
 } from 'react-native';
@@ -67,14 +68,16 @@ export function PrayerHeroAtmosphere({
     if (segment !== displayedSegment) {
       setPrevSegment(displayedSegment);
       setDisplayedSegment(segment);
+      // Calm 300ms crossfade; skip animation entirely under reduce-motion.
       crossfadeAnim.setValue(0);
       Animated.timing(crossfadeAnim, {
         toValue: 1,
-        duration: 1000,
+        duration: reducedMotion ? 0 : 300,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: USE_NATIVE_DRIVER,
       }).start();
     }
-  }, [segment, displayedSegment, crossfadeAnim]);
+  }, [segment, displayedSegment, crossfadeAnim, reducedMotion]);
 
   const prevConfig = PRAYER_ATMOSPHERE_CONFIG[prevSegment];
   const currConfig = PRAYER_ATMOSPHERE_CONFIG[displayedSegment];

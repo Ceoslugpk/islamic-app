@@ -99,6 +99,7 @@ export function ScreenHeader({
                 { color: colors.accent, fontSize: isCompact ? 9.5 : 10.5 },
               ]}
               numberOfLines={1}
+              maxFontSizeMultiplier={1.4}
             >
               {eyebrow}
             </Text>
@@ -114,6 +115,8 @@ export function ScreenHeader({
             ]}
             numberOfLines={1}
             ellipsizeMode="tail"
+            accessibilityRole="header"
+            maxFontSizeMultiplier={1.4}
           >
             {title}
           </Text>
@@ -125,6 +128,7 @@ export function ScreenHeader({
               ]}
               numberOfLines={1}
               ellipsizeMode="tail"
+              maxFontSizeMultiplier={1.4}
             >
               {subtitle}
             </Text>

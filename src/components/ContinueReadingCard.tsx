@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   Animated,
+  Easing,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,19 +51,19 @@ export function ContinueReadingCard({
   }, [loadPosition]);
 
   const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
+    Animated.timing(scaleAnim, {
       toValue: 0.98,
-      friction: 8,
-      tension: 200,
+      duration: 120,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
+    Animated.timing(scaleAnim, {
       toValue: 1,
-      friction: 8,
-      tension: 200,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
   };
@@ -111,7 +112,6 @@ export function ContinueReadingCard({
           {/* Top Row: Eyebrow + Arabic name */}
           <View style={styles.topRow}>
             <View style={styles.eyebrowWrap}>
-              <View style={[styles.eyebrowDot, { backgroundColor: colors.accent }]} />
               <Text style={[styles.eyebrow, { color: colors.accent }]}>
                 {eyebrowText}
               </Text>
@@ -159,6 +159,9 @@ export function ContinueReadingCard({
               styles.progressTrack,
               { backgroundColor: colors.borderSubtle },
             ]}
+            accessibilityRole="progressbar"
+            accessibilityValue={{ min: 0, max: 100, now: progressPercent }}
+            accessibilityLabel={`Reading progress ${progressPercent} percent`}
           >
             <View
               style={[
@@ -196,11 +199,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-  },
-  eyebrowDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
   },
   eyebrow: {
     fontFamily: 'Manrope_600SemiBold',

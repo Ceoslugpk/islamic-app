@@ -149,6 +149,7 @@ export default function LibraryScreen({
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const isCompact = width < 380;
+  const isWide = width >= 600;
   const paddingH = isCompact ? 16 : 20;
 
   return (
@@ -165,21 +166,25 @@ export default function LibraryScreen({
           <View key={group.label} style={gi > 0 ? styles.groupGap : undefined}>
             <GroupHeader label={group.label} />
             <View
-              style={[
-                styles.groupCard,
-                {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
-                },
-              ]}
-            >
-              {group.items.map((item, i) => (
-                <View key={item.key}>
-                  {i > 0 && <Hairline style={styles.insetHairline} />}
-                  <LibraryRow item={item} onPress={() => onOpen(item.key)} />
-                </View>
-              ))}
-            </View>
+                            style={[
+                              styles.groupCard,
+                              isWide && styles.groupCardWide,
+                              {
+                                backgroundColor: colors.bgSurface,
+                                borderColor: colors.borderSubtle,
+                              },
+                            ]}
+                          >
+                            {group.items.map((item, i) => (
+                              <View
+                                key={item.key}
+                                style={isWide && styles.itemCard}
+                              >
+                                {i > 0 && !isWide && <Hairline style={styles.insetHairline} />}
+                                <LibraryRow item={item} onPress={() => onOpen(item.key)} />
+                              </View>
+                            ))}
+                          </View>
           </View>
         ))}
 
@@ -221,6 +226,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     overflow: 'hidden',
+  },
+  groupCardWide: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 12,
+    gap: 12,
+  },
+  itemCard: {
+    flexBasis: '47%',
+    minWidth: 0,
   },
 
   /* Individual row */

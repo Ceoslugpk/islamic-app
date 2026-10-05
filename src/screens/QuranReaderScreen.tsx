@@ -18,7 +18,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import type { ViewabilityConfig, ViewToken } from 'react-native';
+import type { NativeScrollEvent, NativeSyntheticEvent, ViewabilityConfig, ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -205,6 +205,38 @@ export default function QuranReaderScreen({
   const ayahLineHeight = Math.round(fontSize * settings.quranLineHeight);
   const [readingMode, setReadingMode] = useState<ReadingMode>('cards');
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
+
+  // Auto-hide top nav while scrolling down; reappear on scroll up / back to top
+  const navOpacity = useRef(new Animated.Value(1)).current;
+  const [navHidden, setNavHidden] = useState<boolean>(false);
+  const navHiddenRef = useRef(false);
+  const lastScrollYRef = useRef(0);
+
+  const handleReaderScroll = useCallback(
+    (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = event.nativeEvent.contentOffset.y;
+      const dy = y - lastScrollYRef.current;
+      lastScrollYRef.current = y;
+      if (dy > 2 && y > 90 && !navHiddenRef.current) {
+        navHiddenRef.current = true;
+        setNavHidden(true);
+        Animated.timing(navOpacity, {
+          toValue: 0,
+          duration: 180,
+          useNativeDriver: Platform.OS !== 'web',
+        }).start();
+      } else if ((dy < -2 || y <= 10) && navHiddenRef.current) {
+        navHiddenRef.current = false;
+        setNavHidden(false);
+        Animated.timing(navOpacity, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver: Platform.OS !== 'web',
+        }).start();
+      }
+    },
+    [navOpacity]
+  );
 
   // Audio state
   const [reciters, setReciters] = useState<Reciter[]>([]);
@@ -733,6 +765,9 @@ export default function QuranReaderScreen({
     const isBookmarked = bookmarkedSet.has(item.numberInSurah);
     const isAyahPlaying = isPlayingAudio && playingAyahNumber === item.numberInSurah;
     const isTafsirOpen = activeTafsirAyah === item.numberInSurah;
+    // Actions stay muted except on the active ayah (playing / tafsir open / just copied)
+    const isActiveAyah = isAyahPlaying || isTafsirOpen || copiedAyah === item.numberInSurah;
+    const actionColor = isActiveAyah ? colors.accent : colors.textMuted;
 
     const handleLongPress = () => {
       Alert.alert(
@@ -779,8 +814,8 @@ export default function QuranReaderScreen({
         style={[
           styles.ayahCard,
           {
-            backgroundColor: isAyahPlaying ? colors.accentDim : colors.bgSurface,
-            borderColor: isAyahPlaying ? colors.accent : colors.borderSubtle,
+            backgroundColor: isAyahPlaying ? colors.accentDim : 'transparent',
+            borderColor: isAyahPlaying ? colors.accent : 'transparent',
           },
         ]}
         // @ts-ignore - onLongPress not in strict TS types for View
@@ -805,8 +840,8 @@ export default function QuranReaderScreen({
             >
               <Ionicons
                 name={isAyahPlaying ? 'pause-circle' : 'play-circle-outline'}
-                size={22}
-                color={isAyahPlaying ? colors.accent : colors.textSecondary}
+                size={isAyahPlaying ? 22 : iconSizes.inlineLg}
+                color={isAyahPlaying ? colors.accent : actionColor}
               />
             </TouchableOpacity>
 
@@ -821,7 +856,7 @@ export default function QuranReaderScreen({
               <Ionicons
                 name={isTafsirOpen ? 'book' : 'book-outline'}
                 size={iconSizes.inlineLg}
-                color={isTafsirOpen ? colors.accent : colors.textSecondary}
+                color={isTafsirOpen ? colors.accent : actionColor}
               />
             </TouchableOpacity>
 
@@ -830,7 +865,7 @@ export default function QuranReaderScreen({
               isBookmarked={isBookmarked}
               onPress={() => handleToggleBookmark(item)}
               accentColor={colors.accent}
-              inactiveColor={colors.textSecondary}
+              inactiveColor={actionColor}
               ayahNumber={item.numberInSurah}
             />
 
@@ -843,7 +878,7 @@ export default function QuranReaderScreen({
               accessibilityRole="button"
               accessibilityLabel={`Share Ayah ${item.numberInSurah}`}
             >
-              <Ionicons name="share-social-outline" size={iconSizes.inlineLg} color={colors.textSecondary} />
+              <Ionicons name="share-social-outline" size={iconSizes.inlineLg} color={actionColor} />
             </TouchableOpacity>
 
             {/* Copy */}
@@ -858,7 +893,7 @@ export default function QuranReaderScreen({
               <Ionicons
                 name={copiedAyah === item.numberInSurah ? 'checkmark' : 'copy-outline'}
                 size={iconSizes.inlineLg}
-                color={copiedAyah === item.numberInSurah ? colors.accent : colors.textSecondary}
+                color={copiedAyah === item.numberInSurah ? colors.accent : actionColor}
               />
             </TouchableOpacity>
           </View>
@@ -923,6 +958,8 @@ export default function QuranReaderScreen({
     return (
       <ScrollView
         contentContainerStyle={styles.mushafScrollContent}
+        onScroll={handleReaderScroll}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -1027,14 +1064,16 @@ export default function QuranReaderScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      {/* Top Navigation Bar - Clean single row */}
-      <View
+      {/* Top Navigation Bar - Clean single row (auto-hides while scrolling down) */}
+      <Animated.View
         style={[
           styles.navBar,
           { borderBottomColor: colors.borderSubtle },
           { paddingHorizontal: navBarPaddingH, paddingVertical: navBarPaddingV },
           isCompact ? styles.navBarCompact : styles.navBarTablet,
+          { opacity: navOpacity },
         ]}
+        pointerEvents={navHidden ? 'none' : 'auto'}
       >
         {/* Back button - fixed left */}
         <TouchableOpacity
@@ -1107,7 +1146,7 @@ export default function QuranReaderScreen({
         >
           <Ionicons name="ellipsis-horizontal" size={dotsIconSize} color={colors.textSecondary} />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
       {/* Dots Menu Modal */}
       <Modal
@@ -1296,6 +1335,8 @@ export default function QuranReaderScreen({
           maxToRenderPerBatch={15}
           windowSize={7}
           onScrollToIndexFailed={() => {}}
+          onScroll={handleReaderScroll}
+          scrollEventThrottle={16}
           viewabilityConfig={VIEWABILITY_CONFIG}
           onViewableItemsChanged={handleViewableItemsChanged}
           refreshControl={

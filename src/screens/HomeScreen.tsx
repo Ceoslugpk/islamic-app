@@ -612,7 +612,7 @@ export default function HomeScreen({
     : locLabel;
   const fmt = settings.timeFormat;
   const hour = now.getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
@@ -668,12 +668,17 @@ export default function HomeScreen({
             transform: [{ translateY: greetingTranslateY }],
           }}
         >
-          <SectionHeader
-            eyebrow="Today"
-            title={greeting}
-            subtitle={`${locDisplay} · ${hijriLabel} (${data.readable || data.gregorian})`}
-            style={styles.sectionHeader}
-          />
+<SectionHeader
+              eyebrow="Today"
+              title="Assalam o Alaikum"
+              subtitle={`${locDisplay} · ${hijriLabel} (${data.readable || data.gregorian})`}
+              style={styles.sectionHeader}
+            />
+            <Text style={[
+              { fontFamily: 'Manrope_400Regular', fontSize: 14, color: colors.textSecondary, marginTop: 4 },
+            ]}>
+              {timeGreeting}
+            </Text>
         </Animated.View>
 
         {/* Quran preload progress banner — visible so it never looks stuck */}

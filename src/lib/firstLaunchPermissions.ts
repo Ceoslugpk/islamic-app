@@ -1,11 +1,21 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { requestNotificationPermission, configureNotifications } from './notifications';
 import { Location as Loc } from './prayerTimes';
 
 export const PERMISSIONS_ASKED_KEY = 'permissions-asked-v1';
 export const PERMISSIONS_VERSION = 1;
+
+/** Explains why the app needs notifications before showing the OS prompt. */
+function explainNotifications(): void {
+  if (Platform.OS === 'web' || Platform.OS === 'ios') return; // web: no native prompt; iOS: system rationale below
+  Alert.alert(
+    'Prayer reminders',
+    'Notifications let Islamic play the Adhan at prayer time and remind you to read the Quran daily.\n\nYou can change or turn these off anytime in Settings.',
+    [{ text: 'OK' }]
+  );
+}
 
 export interface FirstLaunchPermissionsOptions {
   /** Optional custom location requester, e.g. from useLocation().request */
@@ -132,6 +142,7 @@ export async function runFirstLaunchPermissions(
   // Step 1: Notifications permission
   let notificationsGranted = false;
   try {
+    explainNotifications();
     notificationsGranted = await requestNotificationPermission();
     if (notificationsGranted) {
       await configureNotifications();

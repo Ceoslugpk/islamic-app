@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
   ScrollView,
+  useWindowDimensions,
 } from 'react-native';
 import * as Location from 'expo-location';
 import { Magnetometer } from 'expo-sensors';
@@ -59,6 +60,8 @@ export default function QiblaScreen({
   onOpenCities?: () => void;
 } = {}) {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const compassSize = Math.min(280, width - 40);
   const { haptic } = useHaptics();
   const { settings, setAutoLocation } = useSettings();
   const {
@@ -546,7 +549,7 @@ export default function QiblaScreen({
         {/* Compass Dial Area */}
         <View style={styles.compassWrapper}>
           {calibrating && heading === null && bearing === null ? (
-            <View style={styles.loadingCompass}>
+            <View style={[styles.loadingCompass, { height: compassSize }]}>
               <ActivityIndicator size="large" color={colors.accent} />
               <Text style={[styles.loadingText, { color: colors.textMuted }]}>
                 Calibrating directional sensors…
@@ -559,7 +562,7 @@ export default function QiblaScreen({
               heading={heading}
               isAligned={isAligned}
               isStaticMode={isStaticMode}
-              size={280}
+              size={compassSize}
             />
           )}
         </View>

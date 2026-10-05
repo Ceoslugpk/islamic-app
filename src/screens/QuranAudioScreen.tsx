@@ -639,6 +639,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
                       <TouchableOpacity
                         onPress={() => handlePlayReciterSample(item)}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                         style={[
                           styles.sampleBtn,
                           {
@@ -815,6 +816,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
                       <TouchableOpacity
                         onPress={() => handlePlayReciterSample(item)}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                         style={[
                           styles.sampleBtn,
                           {
@@ -938,6 +940,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
                   <TouchableOpacity
                     onPress={() => handlePlayPlaylistItem(selectedPlaylist.items[0], selectedPlaylist, 0)}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     style={[styles.playAllBtn, { backgroundColor: colors.accent }]}
                     accessibilityRole="button"
                     accessibilityLabel={`Play all ${selectedPlaylist.items.length} tracks`}
@@ -1041,6 +1044,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                           <View style={styles.presetActionButtons}>
                             <TouchableOpacity
                               onPress={() => handleSavePreset(preset)}
+                              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                               style={[
                                 styles.presetSaveBtn,
                                 {
@@ -1060,6 +1064,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
                             <TouchableOpacity
                               onPress={() => handlePlayPreset(preset)}
+                              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                               style={[styles.presetPlayBtn, { backgroundColor: colors.accent }]}
                               accessibilityRole="button"
                               accessibilityLabel={`Play preset: ${preset.title}`}
@@ -1086,6 +1091,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   </View>
                   <TouchableOpacity
                     onPress={() => setNewPlaylistModalOpen(true)}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     style={[styles.createBtn, { backgroundColor: colors.accent }]}
                     accessibilityRole="button"
                     accessibilityLabel="Create a new playlist"
@@ -1135,6 +1141,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         <View style={styles.playlistRightControls}>
                           <TouchableOpacity
                             onPress={() => handlePlayPlaylistItem(item.items[0], item, 0)}
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                             style={[styles.smallPlayBtn, { backgroundColor: colors.accentDim }]}
                             accessibilityRole="button"
                             accessibilityLabel={`Play playlist ${item.name}`}
@@ -1144,6 +1151,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
                           <TouchableOpacity
                             onPress={() => handleDeletePlaylist(item.id)}
+                            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                             style={styles.deletePlaylistBtn}
                             accessibilityRole="button"
                             accessibilityLabel={`Delete playlist ${item.name}`}
@@ -1400,6 +1408,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     <View style={styles.queueControls}>
                       <TouchableOpacity
                         onPress={() => handlePlayQueueIndex(index)}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                         style={[
                           styles.queuePlayBtn,
                           {
@@ -1418,6 +1427,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
                       <TouchableOpacity
                         onPress={() => handleRemoveQueueItem(index)}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                         style={styles.queueRemoveBtn}
                         accessibilityRole="button"
                         accessibilityLabel={`Remove ${item.title} from queue`}
@@ -1457,6 +1467,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               </View>
               <TouchableOpacity
                 onPress={() => setActiveTab('reciters')}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 style={[styles.changeReciterBtn, { backgroundColor: colors.accentDim }]}
                 accessibilityRole="button"
                 accessibilityLabel="Change default reciter"
@@ -1567,6 +1578,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     <TouchableOpacity
                       key={`repeat-${mode}`}
                       onPress={() => handleSetRepeatMode(mode)}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       style={[
                         styles.repeatBtn,
                         {
@@ -2377,6 +2389,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
   },
   reciterHeaderTitle: {
     fontFamily: 'Manrope_700Bold',

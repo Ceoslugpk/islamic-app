@@ -149,7 +149,7 @@ export function QuranLanguageModal({
             </View>
             {search.trim().length > 0 && (
               <View style={styles.searchMetaRow}>
-                <Text style={[styles.searchMetaText, { color: colors.textMuted }]}>
+                <Text style={[styles.searchMetaText, { color: colors.textSecondary }]}>
                   Found {filtered.length} of {QURAN_LANGUAGE_EDITIONS.length} translations
                 </Text>
               </View>

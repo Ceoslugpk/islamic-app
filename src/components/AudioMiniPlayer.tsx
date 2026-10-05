@@ -302,6 +302,7 @@ export function AudioMiniPlayer({
       <View style={styles.controls}>
         <TouchableOpacity
           onPress={onPlayPause}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           style={[
             styles.ctrlBtn,
             { backgroundColor: status.isPlaying ? colors.accentDim : colors.accent },
@@ -325,6 +326,7 @@ export function AudioMiniPlayer({
 
         <TouchableOpacity
           onPress={onStop}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           style={[styles.ctrlBtnSecondary, { borderColor: colors.borderSubtle }]}
           accessibilityRole="button"
           accessibilityLabel="Stop audio"

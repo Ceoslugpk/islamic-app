@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, View, ViewStyle, Platform } from 'react-native';
+import { Animated, Easing, StyleSheet, View, ViewStyle, Platform } from 'react-native';
 import { useTheme } from '../lib/theme';
 
 function useReducedMotion(): boolean {
   const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
     if (Platform.OS !== 'web') return;
+    // Guard: `window` may be absent in SSR/web-worker contexts.
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     setReduceMotion(mediaQuery.matches);
     const handler = (e: MediaQueryListEvent) => setReduceMotion(e.matches);
@@ -38,18 +40,26 @@ export function Skeleton({
     if (reduceMotion) return;
     animRef.setValue(0);
     Animated.loop(
-      Animated.timing(animRef, {
-        toValue: 1,
-        duration: 1200,
-        easing: (t) => t,
-        useNativeDriver: true,
-      })
+      Animated.sequence([
+        Animated.timing(animRef, {
+          toValue: 1,
+          duration: 220, // calm micro fade-in
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.delay(900), // long still pause between shimmer passes
+        Animated.timing(animRef, {
+          toValue: 0,
+          duration: 0,
+          useNativeDriver: true,
+        }),
+      ])
     ).start();
   }, [reduceMotion, animRef]);
 
   const animatedStyle = animRef.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.4, 0.7, 0.4],
+    inputRange: [0, 1],
+    outputRange: [0.35, 0.75],
   });
 
   const baseColor = colors.bgRaised || colors.bgSurface;

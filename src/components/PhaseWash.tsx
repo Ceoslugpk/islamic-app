@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Platform, StyleSheet, View, AccessibilityInfo } from 'react-native';
+import { Animated, Easing, Platform, StyleSheet, View, AccessibilityInfo } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { PRAYER_ATMOSPHERE_CONFIG, PrayerSegment } from './PrayerHeroAtmosphere';
 
@@ -48,7 +48,8 @@ export function PhaseWash({ segment, intensity = 0.5, style }: PhaseWashProps) {
     fade.setValue(0);
     Animated.timing(fade, {
       toValue: 1,
-      duration: reduced ? 0 : 1200,
+      duration: reduced ? 0 : 300,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
   }, [segment, displayed, fade, reduced]);

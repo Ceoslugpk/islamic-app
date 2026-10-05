@@ -197,7 +197,7 @@ export function WomenPinModal({
           {/* Error Message */}
           <View style={styles.errorContainer}>
             {errorMsg ? (
-              <Text style={styles.errorText}>{errorMsg}</Text>
+              <Text style={[styles.errorText, { color: colors.destructive }]}>{errorMsg}</Text>
             ) : (
               <Text style={[styles.hintText, { color: colors.textMuted }]}>
                 {step === 'confirm_new' ? 'Confirming PIN' : 'Strictly on-device lock'}
@@ -224,7 +224,7 @@ export function WomenPinModal({
                         accessibilityRole="button"
                         accessibilityLabel="Cancel"
                       >
-                        <Text style={[styles.cancelText, { color: colors.textMuted }]}>Cancel</Text>
+                        <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
                       </TouchableOpacity>
                     );
                   }
@@ -252,7 +252,12 @@ export function WomenPinModal({
                       accessibilityRole="button"
                       accessibilityLabel={`Digit ${item}`}
                     >
-                      <Text style={[styles.keyDigit, { color: colors.textPrimary }]}>{item}</Text>
+                      <Text
+                        style={[styles.keyDigit, { color: colors.textPrimary }]}
+                        maxFontSizeMultiplier={1.4}
+                      >
+                        {item}
+                      </Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -322,7 +327,6 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
-    color: '#EF4444',
     textAlign: 'center',
   },
   hintText: {

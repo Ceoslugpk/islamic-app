@@ -33,6 +33,7 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
             { color: colors.accent, fontSize: eyebrowFontSize, marginBottom: isCompact ? 4 : 10 },
           ]}
           numberOfLines={1}
+          maxFontSizeMultiplier={1.4}
         >
           {eyebrow}
         </Text>
@@ -46,6 +47,8 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
             lineHeight: titleLineHeight,
           },
         ]}
+        accessibilityRole="header"
+        maxFontSizeMultiplier={1.4}
       >
         {title}
       </Text>
@@ -60,6 +63,7 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
               marginTop: isCompact ? 4 : 8,
             },
           ]}
+          maxFontSizeMultiplier={1.4}
         >
           {subtitle}
         </Text>

@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   Animated,
+  Easing,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,19 +34,20 @@ function ActionButton({ icon, label, onPress }: ActionItemProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
+    // Calm press feedback: 120ms cubic-out scale, no springy overshoot.
+    Animated.timing(scaleAnim, {
       toValue: 0.94,
-      friction: 7,
-      tension: 200,
+      duration: 120,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
+    Animated.timing(scaleAnim, {
       toValue: 1,
-      friction: 7,
-      tension: 200,
+      duration: 180,
+      easing: Easing.out(Easing.cubic),
       useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
   };

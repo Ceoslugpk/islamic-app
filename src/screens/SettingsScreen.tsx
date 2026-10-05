@@ -52,6 +52,7 @@ import {
 } from '../lib/audio';
 import { AdhanReciterModal } from '../components/AdhanReciterModal';
 import { useQuranLanguage } from '../lib/quranLanguageState';
+import { formatTime } from '../lib/timeFormat';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { accentThemes, ACCENT_KEYS } from '../lib/accents';
 import { clearWomenData, clearCycleHistory } from '../lib/db';
@@ -1089,7 +1090,11 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
 
           <Row
             title="Prayer reminders"
-            desc={`Notification ${reminderOffsetMinutes} minutes before each prayer`}
+            desc={
+              remindersEnabled
+                ? `On · ${reminderOffsetMinutes} min before each prayer`
+                : 'Off — no prayer notifications'
+            }
             right={
               <Toggle
                 checked={remindersEnabled}
@@ -1103,7 +1108,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
           <Hairline />
           <Row
             title="Remind before prayer"
-            desc="Minutes before each prayer time"
+            desc={`${reminderOffsetMinutes} min before each prayer`}
             accessibilityRole="text"
           />
           <Segmented<number>
@@ -1169,7 +1174,11 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
           <Hairline />
           <Row
             title="Quran reminder"
-            desc="Daily reminder to continue reading at 8:00 PM"
+            desc={
+              quranReminderEnabled
+                ? `On · daily at ${formatTime(settings.quranReminderTime, timeFormat)}`
+                : 'Off — no daily reminder'
+            }
             right={
               <Toggle
                 checked={quranReminderEnabled}
@@ -1324,11 +1333,11 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
               <Row
                 title="App lock (PIN)"
                 desc={
-                  womenPinHash
-                    ? womenLockEnabled
-                      ? "Locked — PIN required to open women's features"
-                      : 'PIN set but not enabled — tap to enable'
-                    : "Protect women's screens with a 4-digit PIN"
+                  womenLockEnabled
+                    ? "On · PIN required to open women's features"
+                    : womenPinHash
+                    ? 'Off — PIN set but not enabled'
+                    : "Off — protect women's screens with a 4-digit PIN"
                 }
                 right={
                   <TouchableOpacity
@@ -1342,11 +1351,18 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
                   </TouchableOpacity>
                 }
               />
-              {womenPinHash && (
+              {womenPinHash ? (
                 <Row
                   title="Change PIN"
                   onPress={() => setPinModalMode('change')}
                   right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>Change</Text>}
+                />
+              ) : (
+                <Row
+                  title="Set PIN"
+                  desc="Add a 4-digit PIN to lock women's screens"
+                  onPress={() => setPinModalMode('set')}
+                  right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>Set</Text>}
                 />
               )}
 

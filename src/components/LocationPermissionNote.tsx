@@ -50,7 +50,7 @@ export function LocationPermissionNote({
     : 'Location detection unavailable';
 
   const defaultDesc = isDenied
-    ? `Enable location access to automatically detect prayer times and Qibla direction for your area. Currently using saved location (${fallbackCity}).`
+    ? `Enable location access so prayer times and Qibla direction are calculated for where you are. Until then, the app uses the saved location (${fallbackCity}). You'll only be asked once on first launch.`
     : `GPS is not available on this device or platform. Currently using saved location (${fallbackCity}).`;
 
   const description = customMessage || defaultDesc;

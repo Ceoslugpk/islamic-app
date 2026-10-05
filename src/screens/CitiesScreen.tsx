@@ -84,8 +84,8 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
     const isSelected = isCitySelected(item);
 
     return (
-      <View>
-        {index > 0 && <Hairline />}
+      <View style={isWide && styles.itemCell}>
+        {index > 0 && !isWide && <Hairline />}
         <TouchableOpacity
           style={[
             styles.row,
@@ -146,6 +146,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
 
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
+  const isWide = width >= 600;
   const paddingH = isCompact ? 16 : 20;
 
   return (
@@ -228,10 +229,16 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
 
       {/* Cities FlatList */}
       <FlatList
+        key={isWide ? 'cities-grid' : 'cities-list'}
+        numColumns={isWide ? 2 : 1}
         data={filtered}
         keyExtractor={(item) => `${item.name}-${item.country}`}
         renderItem={renderItem}
-        contentContainerStyle={[styles.listContent, { paddingHorizontal: paddingH }]}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingHorizontal: paddingH },
+          isWide && styles.listGrid,
+        ]}
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
@@ -296,6 +303,14 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
+  },
+  listGrid: {
+    gap: 12,
+  },
+  itemCell: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 0,
   },
   row: {
     flexDirection: 'row',

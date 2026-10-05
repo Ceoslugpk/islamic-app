@@ -120,7 +120,10 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 accessibilityRole="button"
                 accessibilityLabel="I Understand and enable Women's Worship"
               >
-                <Text style={[styles.primaryBtnText, { color: colors.onAccent }]}>
+                <Text
+                  style={[styles.primaryBtnText, { color: colors.onAccent }]}
+                  maxFontSizeMultiplier={1.4}
+                >
                   I Understand
                 </Text>
               </TouchableOpacity>
@@ -131,7 +134,10 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 accessibilityRole="button"
                 accessibilityLabel="Cancel"
               >
-                <Text style={[styles.cancelBtnText, { color: colors.textMuted }]}>
+                <Text
+                  style={[styles.cancelBtnText, { color: colors.textSecondary }]}
+                  maxFontSizeMultiplier={1.4}
+                >
                   Cancel
                 </Text>
               </TouchableOpacity>

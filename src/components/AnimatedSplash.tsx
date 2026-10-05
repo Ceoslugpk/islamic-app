@@ -91,7 +91,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
       toValue: 1,
       duration: 260,
       useNativeDriver: false,
-      easing: Easing.out(Easing.quad),
+      easing: Easing.out(Easing.cubic),
     });
     // 260-650ms: grow outward from the slit (animates SVG x & width; requires useNativeDriver: false)
     const growAnim = Animated.timing(grow, {
@@ -106,7 +106,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
       toValue: 1,
       duration: 200,
       useNativeDriver: false,
-      easing: Easing.inOut(Easing.sin),
+      easing: Easing.out(Easing.cubic),
     });
     // 1175-1335ms: fade into Today (animates View opacity; native driver supported)
     const fadeAnim = Animated.timing(fadeOut, {

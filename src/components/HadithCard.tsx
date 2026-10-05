@@ -23,8 +23,23 @@ export function HadithCard({ hadith, onRefresh, loading }: HadithCardProps) {
       <View style={styles.header}>
         <Text style={[styles.eyebrow, { color: colors.accent }]}>Hadith of the Day</Text>
         {onRefresh && (
-          <TouchableOpacity onPress={onRefresh} disabled={loading} style={styles.refreshBtn}>
-            <Text style={[styles.refreshText, { color: loading ? colors.textMuted : colors.accent }]}>
+          <TouchableOpacity
+            onPress={onRefresh}
+            disabled={loading}
+            style={styles.refreshBtn}
+            accessibilityRole="button"
+            accessibilityLabel={loading ? 'Loading hadith' : 'Show another hadith'}
+            accessibilityState={{ disabled: !!loading }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text
+              style={[
+                styles.refreshText,
+                // textMuted fails contrast on bgSurface (3.15:1) — use
+                // textSecondary for the disabled state instead.
+                { color: loading ? colors.textSecondary : colors.accent },
+              ]}
+            >
               {loading ? 'Loading...' : 'Another'}
             </Text>
           </TouchableOpacity>
@@ -41,7 +56,7 @@ export function HadithCard({ hadith, onRefresh, loading }: HadithCardProps) {
         <Text style={[styles.translation, { color: colors.textSecondary }]}>{hadith.translation}</Text>
       </View>
 
-      <Text style={[styles.source, { color: colors.textMuted }]}>{hadith.source}</Text>
+      <Text style={[styles.source, { color: colors.textSecondary }]}>{hadith.source}</Text>
     </Card>
   );
 }

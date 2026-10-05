@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   Animated,
+  Easing,
   useWindowDimensions,
   Platform,
 } from 'react-native';
@@ -71,12 +72,14 @@ export function DailyContentRail({
     Animated.parallel([
       Animated.timing(entranceAnim, {
         toValue: 1,
-        duration: 320,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: USE_NATIVE_DRIVER,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 320,
+        duration: 300,
+        easing: Easing.out(Easing.cubic),
         useNativeDriver: USE_NATIVE_DRIVER,
       }),
     ]).start();
@@ -128,9 +131,6 @@ export function DailyContentRail({
       <View style={styles.headerRow}>
         <View style={styles.eyebrowWrap}>
           <Text style={[styles.eyebrow, { color: colors.accent }]}>TODAY</Text>
-          <Text style={[styles.eyebrowSub, { color: colors.textMuted }]}>
-            Daily Inspiration
-          </Text>
         </View>
 
         {/* Paging Indicators */}
@@ -159,6 +159,7 @@ export function DailyContentRail({
         showsHorizontalScrollIndicator={false}
         snapToInterval={snapInterval}
         decelerationRate="fast"
+        accessibilityLabel="Daily inspiration cards. Swipe left or right for Ayah, Hadith, and Names of God."
         contentContainerStyle={{
           paddingHorizontal: 0,
           gap,
@@ -214,12 +215,6 @@ export function DailyContentRail({
                           AYAH OF THE DAY
                         </Text>
                       </View>
-                      <View style={styles.affordanceRow}>
-                        <Text style={[styles.affordanceText, { color: colors.accent }]}>
-                          Read
-                        </Text>
-                        <Ionicons name="arrow-forward" size={13} color={colors.accent} />
-                      </View>
                     </View>
 
                     {ayah ? (
@@ -239,7 +234,7 @@ export function DailyContentRail({
                           {ayah.translation}
                         </Text>
                         <View style={styles.footerRow}>
-                          <Text style={[styles.referenceText, { color: colors.textMuted }]}>
+                          <Text style={[styles.referenceText, { color: colors.textSecondary }]}>
                             {ayah.reference}
                           </Text>
                         </View>
@@ -268,12 +263,6 @@ export function DailyContentRail({
                           HADITH OF THE DAY
                         </Text>
                       </View>
-                      <View style={styles.affordanceRow}>
-                        <Text style={[styles.affordanceText, { color: colors.accent }]}>
-                          Library
-                        </Text>
-                        <Ionicons name="arrow-forward" size={13} color={colors.accent} />
-                      </View>
                     </View>
 
                     {hadith ? (
@@ -295,7 +284,7 @@ export function DailyContentRail({
                           "{hadith.translation}"
                         </Text>
                         <View style={styles.footerRow}>
-                          <Text style={[styles.referenceText, { color: colors.textMuted }]}>
+                          <Text style={[styles.referenceText, { color: colors.textSecondary }]}>
                             {hadith.reference || hadith.source}
                           </Text>
                         </View>
@@ -323,12 +312,6 @@ export function DailyContentRail({
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
                           NAME OF THE DAY · #{nameOfDay.number}
                         </Text>
-                      </View>
-                      <View style={styles.affordanceRow}>
-                        <Text style={[styles.affordanceText, { color: colors.accent }]}>
-                          All 99
-                        </Text>
-                        <Ionicons name="arrow-forward" size={13} color={colors.accent} />
                       </View>
                     </View>
 
@@ -358,7 +341,7 @@ export function DailyContentRail({
                     </View>
 
                     <View style={styles.footerRow}>
-                      <Text style={[styles.referenceText, { color: colors.textMuted }]}>
+                      <Text style={[styles.referenceText, { color: colors.textSecondary }]}>
                         Asma ul-Husna · The Divine Attributes
                       </Text>
                     </View>
@@ -393,10 +376,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2,
     textTransform: 'uppercase',
-  },
-  eyebrowSub: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
   },
   dotsWrap: {
     flexDirection: 'row',
@@ -439,15 +418,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
-  },
-  affordanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  affordanceText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
   },
   arabicText: {
     lineHeight: 32,

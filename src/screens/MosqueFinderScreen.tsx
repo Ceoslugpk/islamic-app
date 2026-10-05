@@ -382,16 +382,20 @@ export default function MosqueFinderScreen({
     : `MANUAL (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`;
 
   const isCompact = width < 380;
+  const isWide = width >= 600;
   const paddingH = isCompact ? 16 : 20;
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.bgBase }]}>
       <FlatList
+        key={isWide ? 'mosques-grid' : 'mosques-list'}
+        numColumns={isWide ? 2 : 1}
         data={mosques}
         keyExtractor={(item) => item.id}
         contentContainerStyle={[
           styles.content,
           { maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH },
+          isWide && styles.listGrid,
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -670,8 +674,8 @@ export default function MosqueFinderScreen({
           </View>
         }
         renderItem={({ item, index }) => (
-          <View style={styles.itemWrap}>
-            {index > 0 && <Hairline style={styles.itemHairline} />}
+          <View style={[styles.itemWrap, isWide && styles.itemCell]}>
+            {index > 0 && !isWide && <Hairline style={styles.itemHairline} />}
             <Card style={styles.mosqueCard} padded>
               <View style={styles.cardHeader}>
                 <View style={styles.cardTitleWrap}>
@@ -824,6 +828,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 6,
     paddingBottom: 40,
+  },
+  listGrid: {
+    gap: 12,
+  },
+  itemCell: {
+    flexBasis: 0,
+    flexGrow: 1,
+    minWidth: 0,
   },
   headerWrap: {
     marginBottom: 6,

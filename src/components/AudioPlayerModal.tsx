@@ -386,7 +386,12 @@ export function AudioPlayerModal({
 
           {/* Track Details or Standby */}
           {playback ? (
-            <View style={styles.trackContent}>
+            <ScrollView
+              style={styles.trackContent}
+              contentContainerStyle={styles.trackContentInner}
+              showsVerticalScrollIndicator={false}
+              nestedScrollEnabled
+            >
               <View style={styles.infoArea}>
                 <Text
                   style={[styles.reciterName, { color: colors.textSecondary }]}
@@ -789,7 +794,7 @@ export function AudioPlayerModal({
                   </ScrollView>
                 </View>
               )}
-            </View>
+            </ScrollView>
           ) : (
             <View style={styles.emptyContainer}>
               <View style={[styles.emptyIconWrap, { backgroundColor: colors.accentDim }]}>
@@ -1073,6 +1078,10 @@ const styles = StyleSheet.create({
   },
   trackContent: {
     width: '100%',
+    flexShrink: 1,
+  },
+  trackContentInner: {
+    paddingBottom: 4,
   },
   infoArea: {
     marginBottom: 16,
