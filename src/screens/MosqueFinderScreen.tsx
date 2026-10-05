@@ -36,16 +36,22 @@ export interface MosqueItem {
 
 const RADIUS_OPTIONS = [5, 10, 20]; // in km
 
-export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) {
+export default function MosqueFinderScreen({
+  onBack,
+  onOpenCities,
+}: {
+  onBack?: () => void;
+  onOpenCities?: () => void;
+}) {
   const { colors } = useTheme();
-  const { settings } = useSettings();
+  const { settings, setAutoLocation } = useSettings();
   const {
     location: hookGpsLocation,
     status: locStatus,
     loading: locLoading,
     request: requestLocation,
     refresh: refreshLocation,
-  } = useLocation(true);
+  } = useLocation(false);
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
 
@@ -76,14 +82,16 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
   // Determine user's local location (GPS or manual fallback)
   const myLocation = useMemo<Loc>(() => {
     if (freshGps) return freshGps;
-    if (settings.locationMode === 'auto' && hookGpsLocation) return hookGpsLocation;
+    if (settings.locationMode === 'auto') {
+      return hookGpsLocation || settings.autoLocation || settings.manualLocation;
+    }
     return settings.manualLocation;
-  }, [freshGps, settings.locationMode, hookGpsLocation, settings.manualLocation]);
+  }, [freshGps, settings.locationMode, hookGpsLocation, settings.autoLocation, settings.manualLocation]);
 
   const isUsingGps = useMemo(() => {
     if (areaSearchCenter) return false;
-    return Boolean(freshGps) || (settings.locationMode === 'auto' && Boolean(hookGpsLocation));
-  }, [areaSearchCenter, freshGps, settings.locationMode, hookGpsLocation]);
+    return Boolean(freshGps) || (settings.locationMode === 'auto' && Boolean(hookGpsLocation || settings.autoLocation));
+  }, [areaSearchCenter, freshGps, settings.locationMode, hookGpsLocation, settings.autoLocation]);
 
   // Set initial GPS timestamp when hook gives location
   useEffect(() => {
@@ -247,18 +255,22 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
     try {
       const fresh = await refreshLocation();
       if (fresh) {
+        if (settings.locationMode === 'auto') {
+          setAutoLocation(fresh, Date.now());
+        }
         setFreshGps(fresh);
         const now = new Date();
         const h = now.getHours().toString().padStart(2, '0');
         const m = now.getMinutes().toString().padStart(2, '0');
         setGpsTimestamp(`${h}:${m}`);
         await fetchMosquesForCenter(fresh.latitude, fresh.longitude, radiusKm);
-      } else if (hookGpsLocation) {
+      } else if (hookGpsLocation || settings.autoLocation) {
+        const activeGps = hookGpsLocation || settings.autoLocation!;
         const now = new Date();
         const h = now.getHours().toString().padStart(2, '0');
         const m = now.getMinutes().toString().padStart(2, '0');
         setGpsTimestamp(`${h}:${m}`);
-        await fetchMosquesForCenter(hookGpsLocation.latitude, hookGpsLocation.longitude, radiusKm);
+        await fetchMosquesForCenter(activeGps.latitude, activeGps.longitude, radiusKm);
       } else {
         await fetchMosquesForCenter(settings.manualLocation.latitude, settings.manualLocation.longitude, radiusKm);
       }
@@ -551,6 +563,7 @@ export default function MosqueFinderScreen({ onBack }: { onBack?: () => void }) 
                 <LocationPermissionNote
                   status={locStatus}
                   onEnable={handleUseMyLocation}
+                  onChooseCity={onOpenCities}
                   loading={isLocating || locLoading}
                   fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
                   style={{ marginTop: 12 }}

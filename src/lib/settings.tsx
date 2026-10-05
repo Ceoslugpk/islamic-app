@@ -5,6 +5,7 @@ import { AccentKey } from './accents';
 import { NamesLanguage } from './names99';
 import { setAudioTranslationEnabled } from './quranAudio';
 import { setActiveAdhanReciterId } from './audio';
+import { setCachedLocation } from './useLocation';
 
 export type TimeFormat = '12h' | '24h';
 export type LocationMode = 'auto' | 'manual';
@@ -75,6 +76,7 @@ export interface AppSettings {
   locationMode: LocationMode;
   manualLocation: Location;
   autoLocation: Location | null;
+  autoLocationTimestamp: number | null;
   remindersEnabled: boolean;
   reminderOffsetMinutes: number;
   prayerConfigs: PrayerConfigs;
@@ -106,7 +108,7 @@ interface SettingsContextValue {
   setTimeFormat: (f: TimeFormat) => void;
   setLocationMode: (m: LocationMode) => void;
   setManualLocation: (loc: Location) => void;
-  setAutoLocation: (loc: Location) => void;
+  setAutoLocation: (loc: Location, timestamp?: number) => void;
   setReminders: (enabled: boolean) => void;
   setReminderOffsetMinutes: (minutes: number) => void;
   setPrayerConfig: (prayer: PrayerNameKey, config: Partial<PrayerReminderConfig>) => void;
@@ -140,6 +142,7 @@ const DEFAULTS: AppSettings = {
   locationMode: 'auto',
   manualLocation: { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' },
   autoLocation: null,
+  autoLocationTimestamp: null,
   remindersEnabled: false,
   reminderOffsetMinutes: 15,
   prayerConfigs: DEFAULT_PRAYER_CONFIGS,
@@ -256,6 +259,17 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           migrated = true;
         }
 
+        next.autoLocationTimestamp =
+          typeof parsed.autoLocationTimestamp === 'number'
+            ? parsed.autoLocationTimestamp
+            : parsed.autoLocation
+            ? Date.now()
+            : null;
+
+        if (next.autoLocation) {
+          setCachedLocation(next.autoLocation, next.autoLocationTimestamp ?? Date.now());
+        }
+
         setSettings(next);
         setAudioTranslationEnabled(next.translationAudioEnabled);
         setActiveAdhanReciterId(next.adhanReciterId || 'alafasy');
@@ -287,7 +301,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setTimeFormat: (timeFormat) => setSettings((prev) => persist({ ...prev, timeFormat })),
     setLocationMode: (locationMode) => setSettings((prev) => persist({ ...prev, locationMode })),
     setManualLocation: (manualLocation) => setSettings((prev) => persist({ ...prev, manualLocation })),
-    setAutoLocation: (autoLocation) => setSettings((prev) => persist({ ...prev, autoLocation })),
+    setAutoLocation: (autoLocation, timestamp = Date.now()) => {
+      setCachedLocation(autoLocation, timestamp);
+      setSettings((prev) => persist({ ...prev, autoLocation, autoLocationTimestamp: timestamp }));
+    },
     setReminders: (remindersEnabled) => setSettings((prev) => persist({ ...prev, remindersEnabled })),
     setReminderOffsetMinutes: (reminderOffsetMinutes) => setSettings((prev) => persist({ ...prev, reminderOffsetMinutes })),
     setPrayerConfig: (prayer, config) =>

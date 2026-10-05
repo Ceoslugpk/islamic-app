@@ -51,17 +51,23 @@ function mapAccuracy(acc: number): CompassAccuracy {
   return 'unknown';
 }
 
-export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
+export default function QiblaScreen({
+  onBack,
+  onOpenCities,
+}: {
+  onBack?: () => void;
+  onOpenCities?: () => void;
+} = {}) {
   const { colors } = useTheme();
   const { haptic } = useHaptics();
-  const { settings } = useSettings();
+  const { settings, setAutoLocation } = useSettings();
   const {
     location: gpsLocation,
     status: locStatus,
     loading: locLoading,
     request: requestLocation,
     refresh: refreshLocation,
-  } = useLocation(true);
+  } = useLocation(false);
 
   // Heading & Bearing state
   const [heading, setHeading] = useState<number | null>(null);
@@ -98,11 +104,12 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
     heading !== null && bearing !== null ? (bearing - heading + 360) % 360 : 0;
   const isAligned = heading !== null && bearing !== null && isFacingQibla(rotation, 4);
 
-  // Effective location: GPS if available, otherwise manual location
+  // Effective location: GPS if available, otherwise saved autoLocation (if in auto mode), otherwise manual location
   const effectiveLocation = useMemo(() => {
     if (gpsLocation) return gpsLocation;
+    if (settings.locationMode === 'auto' && settings.autoLocation) return settings.autoLocation;
     return settings.manualLocation;
-  }, [gpsLocation, settings.manualLocation]);
+  }, [gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation]);
 
   // Compute bearing and distance whenever effective location changes
   useEffect(() => {
@@ -119,12 +126,13 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
     setDistance(qDistance);
     setDeclination(qDecl);
 
-    if (gpsLocation) {
-      setLocLabel(gpsLocation.label);
+    const activeLoc = gpsLocation || (settings.locationMode === 'auto' ? settings.autoLocation : null);
+    if (activeLoc) {
+      setLocLabel(activeLoc.label);
     } else {
       setLocLabel(`Using manual location (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`);
     }
-  }, [effectiveLocation, gpsLocation, settings.manualLocation.label]);
+  }, [effectiveLocation, gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation.label]);
 
   // Trigger haptic vibration when user turns and faces Qibla
   useEffect(() => {
@@ -365,7 +373,10 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
     smoothHeadingRef.current = 0;
     isFirstHeadingRef.current = true;
     lastEmittedHeadingRef.current = null;
-    await refreshLocation();
+    const fresh = await refreshLocation();
+    if (fresh && settings.locationMode === 'auto') {
+      setAutoLocation(fresh, Date.now());
+    }
     await startCompass();
     setRecalibrating(false);
   };
@@ -420,8 +431,12 @@ export default function QiblaScreen({ onBack }: { onBack?: () => void } = {}) {
           <LocationPermissionNote
             status={locStatus}
             onEnable={async () => {
-              await requestLocation(true);
+              const loc = await requestLocation(true);
+              if (loc && settings.locationMode === 'auto') {
+                setAutoLocation(loc, Date.now());
+              }
             }}
+            onChooseCity={onOpenCities}
             loading={locLoading}
             fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
           />

@@ -15,6 +15,7 @@ import { LocationPermissionStatus } from '../lib/useLocation';
 export interface LocationPermissionNoteProps {
   status: LocationPermissionStatus;
   onEnable?: () => void | Promise<void>;
+  onChooseCity?: () => void;
   loading?: boolean;
   fallbackCity?: string;
   compact?: boolean;
@@ -24,11 +25,12 @@ export interface LocationPermissionNoteProps {
 
 /**
  * Reusable banner/note displayed when location permission is denied or unavailable.
- * Harmonizes the "using manual location (City)" notice and provides an "Enable" retry button.
+ * Harmonizes the "using saved location (City)" notice and provides "Choose City" and "Enable Location" buttons.
  */
 export function LocationPermissionNote({
   status,
   onEnable,
+  onChooseCity,
   loading = false,
   fallbackCity = 'Makkah, Saudi Arabia',
   compact = false,
@@ -48,8 +50,8 @@ export function LocationPermissionNote({
     : 'Location detection unavailable';
 
   const defaultDesc = isDenied
-    ? `Enable location access to automatically detect prayer times and Qibla direction for your area. Currently using manual location (${fallbackCity}).`
-    : `GPS is not available on this device or platform. Currently using manual location (${fallbackCity}).`;
+    ? `Enable location access to automatically detect prayer times and Qibla direction for your area. Currently using saved location (${fallbackCity}).`
+    : `GPS is not available on this device or platform. Currently using saved location (${fallbackCity}).`;
 
   const description = customMessage || defaultDesc;
 
@@ -90,36 +92,57 @@ export function LocationPermissionNote({
         </View>
       </View>
 
-      {onEnable && (
+      {(onEnable || onChooseCity) && (
         <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[
-              styles.enableBtn,
-              {
-                backgroundColor: colors.accent,
-              },
-            ]}
-            onPress={onEnable}
-            disabled={loading}
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel={isDenied ? 'Enable auto-location' : 'Retry location detection'}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color={colors.bgBase} />
-            ) : (
-              <>
-                <Ionicons
-                  name={isDenied ? 'shield-checkmark-outline' : 'refresh-outline'}
-                  size={15}
-                  color={colors.bgBase}
-                />
-                <Text style={[styles.enableBtnText, { color: colors.bgBase }]}>
-                  {isDenied ? 'Enable Auto-Location' : 'Retry Detection'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+          {onChooseCity && (
+            <TouchableOpacity
+              style={[
+                styles.cityBtn,
+                {
+                  borderColor: colors.borderSubtle,
+                  backgroundColor: colors.bgBase,
+                },
+              ]}
+              onPress={onChooseCity}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Choose city from world cities"
+            >
+              <Ionicons name="business-outline" size={14} color={colors.textPrimary} />
+              <Text style={[styles.cityBtnText, { color: colors.textPrimary }]}>Choose City</Text>
+            </TouchableOpacity>
+          )}
+
+          {onEnable && (
+            <TouchableOpacity
+              style={[
+                styles.enableBtn,
+                {
+                  backgroundColor: colors.accent,
+                },
+              ]}
+              onPress={onEnable}
+              disabled={loading}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={isDenied ? 'Enable location' : 'Retry detection'}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={colors.onAccent} />
+              ) : (
+                <>
+                  <Ionicons
+                    name={isDenied ? 'shield-checkmark-outline' : 'refresh-outline'}
+                    size={14}
+                    color={colors.onAccent}
+                  />
+                  <Text style={[styles.enableBtnText, { color: colors.onAccent }]}>
+                    {isDenied ? 'Enable Location' : 'Retry Detection'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -168,6 +191,23 @@ const styles = StyleSheet.create({
     marginTop: 12,
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  cityBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    minHeight: 36,
+  },
+  cityBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12.5,
   },
   enableBtn: {
     flexDirection: 'row',

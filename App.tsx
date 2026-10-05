@@ -77,7 +77,7 @@ import { rescheduleIfNeeded, setupNotificationResponseHandler } from './src/lib/
 import { startQuranPreload } from './src/lib/quranPreloader';
 import { runFirstLaunchWarmup } from './src/lib/warmup';
 import { runFirstLaunchPermissions } from './src/lib/firstLaunchPermissions';
-import { useLocation } from './src/lib/useLocation';
+import { useLocation, refreshLocationSilently, computeDistanceKm } from './src/lib/useLocation';
 import { updateWidgetSnapshot } from './src/lib/widgetBridge';
 import { registerBackgroundPreload } from './src/lib/backgroundPreload';
 
@@ -305,7 +305,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
           requestLocation,
           onLocationGranted: (loc) => {
             if (loc) {
-              setAutoLocation(loc);
+              setAutoLocation(loc, Date.now());
             }
           },
         });
@@ -319,13 +319,64 @@ function Root({ splashDone }: { splashDone: boolean }) {
     };
   }, [splashDone, requestLocation, setAutoLocation]);
 
+  // Location freshness & background refresh for AUTO mode
+  // Uses saved location immediately without prompt; refreshes silently in background if stale (>24h)
+  useEffect(() => {
+    if (!splashDone) return;
+    if (settings.locationMode !== 'auto') return;
+
+    let isMounted = true;
+    const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+    async function checkLocationFreshness() {
+      const hasAuto = Boolean(settings.autoLocation);
+      const isFresh =
+        hasAuto &&
+        settings.autoLocationTimestamp &&
+        Date.now() - settings.autoLocationTimestamp < STALE_THRESHOLD_MS;
+
+      // Fresh (<24h) saved location exists: do not request GPS, use saved location immediately
+      if (isFresh) {
+        return;
+      }
+
+      // Stale or missing autoLocation: silently refresh in background without blocking UI or prompting
+      try {
+        const fresh = await refreshLocationSilently();
+        if (isMounted && fresh) {
+          const oldLoc = settings.autoLocation;
+          const moved = oldLoc
+            ? computeDistanceKm(oldLoc.latitude, oldLoc.longitude, fresh.latitude, fresh.longitude) > 10
+            : true;
+
+          if (moved || !oldLoc) {
+            setAutoLocation(fresh, Date.now());
+          } else {
+            setAutoLocation({ ...oldLoc, latitude: fresh.latitude, longitude: fresh.longitude }, Date.now());
+          }
+        }
+      } catch {
+        // Background refresh failure must never block or throw
+      }
+    }
+
+    const timer = setTimeout(checkLocationFreshness, 2000);
+    return () => {
+      isMounted = false;
+      clearTimeout(timer);
+    };
+  }, [splashDone, settings.locationMode, settings.autoLocation, settings.autoLocationTimestamp, setAutoLocation]);
+
   // Notification health: reschedule on app start if fingerprint changed
   useEffect(() => {
     let isMounted = true;
     async function checkAndReschedule() {
       if (!isMounted) return;
+      const activeLoc = settings.locationMode === 'auto'
+        ? (settings.autoLocation || settings.manualLocation)
+        : settings.manualLocation;
       await rescheduleIfNeeded(
-        settings.manualLocation,
+        activeLoc,
         settings.methodId,
         settings.remindersEnabled,
         settings.reminderOffsetMinutes,
@@ -339,6 +390,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
     checkAndReschedule();
     return () => { isMounted = false; };
   }, [
+    settings.locationMode,
+    settings.autoLocation,
     settings.manualLocation,
     settings.methodId,
     settings.remindersEnabled,
@@ -488,8 +541,11 @@ function Root({ splashDone }: { splashDone: boolean }) {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         updateWidgetSnapshot();
+        const activeLoc = settings.locationMode === 'auto'
+          ? (settings.autoLocation || settings.manualLocation)
+          : settings.manualLocation;
         rescheduleIfNeeded(
-          settings.manualLocation,
+          activeLoc,
           settings.methodId,
           settings.remindersEnabled,
           settings.reminderOffsetMinutes,
@@ -645,6 +701,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
               setLibrary({ screen: 'tasbih' });
               setTab('library');
             }}
+            onOpenCities={() => {
+              setTools({ screen: 'cities' });
+              setTab('tools');
+            }}
           />
         )}
 
@@ -756,7 +816,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
           <ToolsScreen onOpen={openToolsItem} />
         )}
         {tab === 'tools' && tools.screen === 'qibla' && (
-          <QiblaScreen onBack={() => setTools({ screen: 'hub' })} />
+          <QiblaScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenCities={() => setTools({ screen: 'cities' })}
+          />
         )}
         {tab === 'tools' && tools.screen === 'tracker' && (
           <SalahTrackerScreen onBack={() => setTools({ screen: 'hub' })} />
@@ -783,7 +846,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
           <CalendarScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
         {tab === 'tools' && tools.screen === 'mosque' && (
-          <MosqueFinderScreen onBack={() => setTools({ screen: 'hub' })} />
+          <MosqueFinderScreen
+            onBack={() => setTools({ screen: 'hub' })}
+            onOpenCities={() => setTools({ screen: 'cities' })}
+          />
         )}
 
         {/* Women's Worship Views */}

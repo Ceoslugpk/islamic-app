@@ -40,7 +40,7 @@ function getTodayIso(): string {
 export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
   const { settings } = useSettings();
-  const { location: gpsLocation } = useLocation(true);
+  const { location: gpsLocation } = useLocation(false);
 
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,9 +48,11 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
   const [streak, setStreak] = useState(0);
 
   const effectiveLocation = useMemo(() => {
-    if (settings.locationMode === 'auto' && gpsLocation) return gpsLocation;
+    if (settings.locationMode === 'auto') {
+      return gpsLocation || settings.autoLocation || settings.manualLocation;
+    }
     return settings.manualLocation;
-  }, [settings.locationMode, gpsLocation, settings.manualLocation]);
+  }, [settings.locationMode, gpsLocation, settings.autoLocation, settings.manualLocation]);
 
   // Load tracker status & streak
   useEffect(() => {

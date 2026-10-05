@@ -111,6 +111,7 @@ export interface HomeScreenProps {
   onOpenDuas?: () => void;
   onOpenAdhkar?: () => void;
   onOpenTasbih?: () => void;
+  onOpenCities?: () => void;
 }
 
 export default function HomeScreen({
@@ -123,9 +124,10 @@ export default function HomeScreen({
   onOpenDuas,
   onOpenAdhkar,
   onOpenTasbih,
+  onOpenCities,
 }: HomeScreenProps) {
   const { colors } = useTheme();
-  const { settings } = useSettings();
+  const { settings, setAutoLocation } = useSettings();
   const { haptic } = useHaptics();
 
   const handleOpenReader = useCallback(
@@ -146,7 +148,7 @@ export default function HomeScreen({
       onOpenQuran();
     }
   }, [onOpenQuranTab, onOpenQuran]);
-  const { location: gpsLocation, status: locStatus, request: requestLocation, loading: locLoading } = useLocation(true);
+  const { location: gpsLocation, status: locStatus, request: requestLocation, loading: locLoading } = useLocation(false);
   const { refreshKey } = useConnectivity();
   const { width } = useWindowDimensions();
   const { progress: preloadProgress } = useQuranPreload();
@@ -201,9 +203,11 @@ export default function HomeScreen({
   }, []);
 
   const effectiveLocation = useMemo(() => {
-    if (settings.locationMode === 'auto' && gpsLocation) return gpsLocation;
+    if (settings.locationMode === 'auto') {
+      return gpsLocation || settings.autoLocation || settings.manualLocation;
+    }
     return settings.manualLocation;
-  }, [settings.locationMode, gpsLocation, settings.manualLocation]);
+  }, [settings.locationMode, gpsLocation, settings.autoLocation, settings.manualLocation]);
 
   const lastDateStrRef = useRef<string>(todayDdmmyyyy(new Date()));
 
@@ -699,10 +703,14 @@ export default function HomeScreen({
           <LocationPermissionNote
             status={locStatus}
             onEnable={async () => {
-              await requestLocation(true);
+              const loc = await requestLocation(true);
+              if (loc) {
+                setAutoLocation(loc, Date.now());
+              }
             }}
+            onChooseCity={onOpenCities}
             loading={locLoading}
-            fallbackCity={settings.manualLocation.label || 'Dubai, UAE'}
+            fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
           />
         )}
 

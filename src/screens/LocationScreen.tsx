@@ -27,13 +27,13 @@ export default function LocationScreen({
   onOpenCities?: () => void;
 }) {
   const { colors } = useTheme();
-  const { settings, setLocationMode, setManualLocation } = useSettings();
+  const { settings, setLocationMode, setManualLocation, setAutoLocation } = useSettings();
   const {
     location: gpsLocation,
     status: locStatus,
     loading: locLoading,
     request: requestGps,
-  } = useLocation(true);
+  } = useLocation(false);
 
   const [latInput, setLatInput] = useState(String(settings.manualLocation.latitude));
   const [lngInput, setLngInput] = useState(String(settings.manualLocation.longitude));
@@ -43,10 +43,20 @@ export default function LocationScreen({
 
   const isAuto = settings.locationMode === 'auto';
 
-  function handleModeChange(mode: LocationMode) {
+  async function handleModeChange(mode: LocationMode) {
     setLocationMode(mode);
-    if (mode === 'auto' && locStatus !== 'granted') {
-      requestGps(true);
+    if (mode === 'auto') {
+      if (locStatus !== 'granted') {
+        const loc = await requestGps(true);
+        if (loc) {
+          setAutoLocation(loc, Date.now());
+        }
+      } else if (!settings.autoLocation) {
+        const loc = await requestGps(false);
+        if (loc) {
+          setAutoLocation(loc, Date.now());
+        }
+      }
     }
   }
 
@@ -78,12 +88,16 @@ export default function LocationScreen({
   }
 
   // Active display info
+  const activeLoc = isAuto
+    ? (gpsLocation || settings.autoLocation)
+    : settings.manualLocation;
+
   const activeLabel = isAuto
-    ? gpsLocation?.label || (locStatus === 'granted' ? 'Current GPS Location' : `Using manual location (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`)
+    ? activeLoc?.label || (locStatus === 'granted' ? 'Current GPS Location' : `Using manual location (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`)
     : settings.manualLocation.label || 'Manual Coordinates';
 
-  const activeLat = isAuto ? (gpsLocation?.latitude ?? settings.manualLocation.latitude) : settings.manualLocation.latitude;
-  const activeLng = isAuto ? (gpsLocation?.longitude ?? settings.manualLocation.longitude) : settings.manualLocation.longitude;
+  const activeLat = isAuto ? (activeLoc?.latitude ?? settings.manualLocation.latitude) : settings.manualLocation.latitude;
+  const activeLng = isAuto ? (activeLoc?.longitude ?? settings.manualLocation.longitude) : settings.manualLocation.longitude;
 
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -199,8 +213,12 @@ export default function LocationScreen({
           <LocationPermissionNote
             status={locStatus}
             onEnable={async () => {
-              await requestGps(true);
+              const loc = await requestGps(true);
+              if (loc) {
+                setAutoLocation(loc, Date.now());
+              }
             }}
+            onChooseCity={onOpenCities}
             loading={locLoading}
             fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
           />

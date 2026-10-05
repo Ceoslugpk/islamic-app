@@ -17,8 +17,114 @@ export interface UseLocationResult {
 
 // Module-level cache to share across screens and prevent duplicate native calls
 let cachedLocation: Loc | null = null;
+let cachedTimestamp: number | null = null;
 let cachedStatus: LocationPermissionStatus | null = null;
 let inFlightRequest: Promise<Loc | null> | null = null;
+
+export function getCachedLocation(): Loc | null {
+  return cachedLocation;
+}
+
+export function getCachedStatus(): LocationPermissionStatus | null {
+  return cachedStatus;
+}
+
+export function getCachedLocationTimestamp(): number | null {
+  return cachedTimestamp;
+}
+
+export function setCachedLocation(loc: Loc | null, timestamp?: number): void {
+  cachedLocation = loc;
+  cachedTimestamp = timestamp ?? (loc ? Date.now() : null);
+  if (loc && cachedStatus !== 'denied') {
+    cachedStatus = 'granted';
+  }
+}
+
+export function computeDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+export async function getPermissionStatus(): Promise<LocationPermissionStatus> {
+  if (Platform.OS === 'web') {
+    cachedStatus = 'unavailable';
+    return 'unavailable';
+  }
+  try {
+    const perm = await Location.getForegroundPermissionsAsync();
+    const status: LocationPermissionStatus = perm.granted
+      ? 'granted'
+      : perm.status === 'denied'
+      ? 'denied'
+      : 'pending';
+    cachedStatus = status;
+    return status;
+  } catch {
+    cachedStatus = 'unavailable';
+    return 'unavailable';
+  }
+}
+
+/**
+ * Silently refreshes GPS in the background without prompting for permission or blocking UI.
+ * Used for stale (>24h) auto-location updates.
+ */
+export async function refreshLocationSilently(): Promise<Loc | null> {
+  if (Platform.OS === 'web') return null;
+
+  try {
+    const perm = await Location.getForegroundPermissionsAsync();
+    if (!perm.granted) {
+      if (perm.status === 'denied') {
+        cachedStatus = 'denied';
+      }
+      return null;
+    }
+    cachedStatus = 'granted';
+
+    let pos = await Location.getLastKnownPositionAsync().catch(() => null);
+    if (!pos || Date.now() - pos.timestamp > 3600000) {
+      const posPromise = Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Location request timed out')), 5000)
+      );
+      pos = await Promise.race([posPromise, timeoutPromise]);
+    }
+    if (!pos) return null;
+
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+
+    let label = cachedLocation?.label;
+    const moved = cachedLocation
+      ? computeDistanceKm(cachedLocation.latitude, cachedLocation.longitude, lat, lng) > 10
+      : true;
+
+    if (moved || !label) {
+      label = await reverseGeocode(lat, lng);
+    }
+
+    const newLoc: Loc = { latitude: lat, longitude: lng, label };
+    cachedLocation = newLoc;
+    cachedTimestamp = Date.now();
+    cachedStatus = 'granted';
+    return newLoc;
+  } catch {
+    return null;
+  }
+}
 
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
@@ -89,6 +195,7 @@ export function useLocation(askOnMount = false): UseLocationResult {
             }
             const newLoc: Loc = { latitude: lat, longitude: lng, label };
             cachedLocation = newLoc;
+            cachedTimestamp = Date.now();
             cachedStatus = 'granted';
             setLocation(newLoc);
             setStatus('granted');
@@ -132,11 +239,19 @@ export function useLocation(askOnMount = false): UseLocationResult {
 
     const exec = async (): Promise<Loc | null> => {
       try {
-        const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
-        if (permStatus !== 'granted') {
-          setStatus('denied');
-          cachedStatus = 'denied';
-          return null;
+        // Query permission silently first without prompting
+        const currentPerm = await Location.getForegroundPermissionsAsync();
+        let isGranted = currentPerm.granted;
+
+        if (!isGranted) {
+          // Explicit prompt only if not already granted
+          const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
+          if (permStatus !== 'granted') {
+            setStatus('denied');
+            cachedStatus = 'denied';
+            return null;
+          }
+          isGranted = true;
         }
 
         const posPromise = Location.getCurrentPositionAsync({
@@ -158,6 +273,7 @@ export function useLocation(askOnMount = false): UseLocationResult {
         };
 
         cachedLocation = newLoc;
+        cachedTimestamp = Date.now();
         cachedStatus = 'granted';
         setLocation(newLoc);
         setStatus('granted');
@@ -192,15 +308,31 @@ export function useLocation(askOnMount = false): UseLocationResult {
   }, [performRequest]);
 
   useEffect(() => {
+    let isMounted = true;
+    if (Platform.OS === 'web') {
+      setStatus('unavailable');
+      cachedStatus = 'unavailable';
+      return;
+    }
+
+    // Silent permission status check on mount (never prompts OS dialog)
+    getPermissionStatus().then((newStatus) => {
+      if (isMounted) {
+        setStatus(newStatus);
+        if (cachedLocation) {
+          setLocation(cachedLocation);
+        }
+      }
+    });
+
     if (askOnMount && !askedRef.current) {
       askedRef.current = true;
-      if (Platform.OS === 'web') {
-        setStatus('unavailable');
-        cachedStatus = 'unavailable';
-      } else {
-        performRequest(false);
-      }
+      performRequest(false);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [askOnMount, performRequest]);
 
   return {
