@@ -30,6 +30,7 @@ import {
   NamesProvider,
 } from '../lib/names99';
 import { PROPHET_NAMES_99 } from '../lib/prophetNames';
+import { useSearchHistory } from '../lib/searchHistory';
 import { useSettings } from '../lib/settings';
 import { NameRowSkeleton } from '../components/Skeleton';
 
@@ -115,6 +116,14 @@ export default function NamesScreen({
 
   const [feed, setFeed] = useState<NamesFeed | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Recent-search history (persisted per scope)
+  const {
+    history: searchHistory,
+    addQuery,
+    removeQuery: removeSearchHistoryQuery,
+    clearHistory: clearSearchHistory,
+  } = useSearchHistory(isProphet ? 'names-prophet' : 'names');
 
   // Load cached names instantly, then refresh from the keyless APIs (islamic.app primary,
   // UmmahAPI secondary, static fallback on failure). The Prophet variant is bundled-only,
@@ -434,6 +443,12 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             autoCapitalize="none"
             autoCorrect={false}
             clearButtonMode="while-editing"
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (searchQuery.trim().length >= 2) {
+                addQuery(searchQuery.trim());
+              }
+            }}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -441,6 +456,62 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Recent Search Queries */}
+        {searchHistory.length > 0 && !searchQuery && (
+          <View style={styles.recentSearchesWrap}>
+            <View style={styles.recentSearchesHeader}>
+              <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+              <TouchableOpacity
+                onPress={clearSearchHistory}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear names search history"
+              >
+                <Text style={[styles.clearAllText, { color: colors.textMuted }]}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recentChipsScroll}
+            >
+              {searchHistory.map((item) => (
+                <View
+                  key={item}
+                  style={[
+                    styles.recentChip,
+                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchQuery(item);
+                      addQuery(item);
+                    }}
+                    style={styles.recentChipBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Search for ${item}`}
+                  >
+                    <Ionicons name="time-outline" size={13} color={colors.accent} />
+                    <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {item}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => removeSearchHistoryQuery(item)}
+                    style={styles.recentChipRemove}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${item} from search history`}
+                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+                  >
+                    <Ionicons name="close" size={12} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {loadState === 'offline' ? (
           <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
@@ -671,5 +742,55 @@ const styles = StyleSheet.create({
   verse: {
     fontFamily: 'Manrope_500Medium',
     letterSpacing: 0.2,
+  },
+  recentSearchesWrap: {
+    marginBottom: 10,
+  },
+  recentSearchesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  recentLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  clearAllText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+  },
+  recentChipsScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
+  },
+  recentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingLeft: 8,
+    paddingRight: 4,
+    height: 28,
+  },
+  recentChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  recentChipText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    maxWidth: 140,
+  },
+  recentChipRemove: {
+    padding: 4,
+    marginLeft: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

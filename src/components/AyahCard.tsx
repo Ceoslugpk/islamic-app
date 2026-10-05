@@ -10,6 +10,7 @@ interface AyahCardProps {
   ayah: AyahOfDay;
   onRefresh?: () => void;
   loading?: boolean;
+  onLongPress?: () => void;
 }
 
 export function AyahCard({ ayah, onRefresh, loading }: AyahCardProps) {

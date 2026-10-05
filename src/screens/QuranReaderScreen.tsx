@@ -729,6 +729,46 @@ export default function QuranReaderScreen({
     const isAyahPlaying = isPlayingAudio && playingAyahNumber === item.numberInSurah;
     const isTafsirOpen = activeTafsirAyah === item.numberInSurah;
 
+    const handleLongPress = () => {
+      Alert.alert(
+        `Ayah ${item.numberInSurah}`,
+        undefined,
+        [
+          {
+            text: 'Play',
+            onPress: () => {
+              handlePlayAyahToggle(item.numberInSurah);
+            },
+          },
+          {
+            text: 'Bookmark',
+            onPress: () => {
+              handleToggleBookmark(item);
+            },
+          },
+          {
+            text: 'Copy',
+            onPress: () => {
+              const textToCopy = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+              Clipboard.setString(textToCopy);
+              haptic('selection');
+              setCopiedAyah(item.numberInSurah);
+              if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+              copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 1500);
+            },
+          },
+          {
+            text: 'Share',
+            onPress: () => {
+              const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+              Share.share({ message: textToShare }).catch(() => {});
+            },
+          },
+        ],
+        { cancelable: true }
+      );
+    };
+
     return (
       <View
         style={[
@@ -738,6 +778,8 @@ export default function QuranReaderScreen({
             borderColor: isAyahPlaying ? colors.accent : colors.borderSubtle,
           },
         ]}
+        // @ts-ignore - onLongPress not in strict TS types for View
+        onLongPress={handleLongPress}
       >
         {/* Action Header */}
         <View style={styles.ayahActionBar}>
