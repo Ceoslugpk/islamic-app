@@ -66,16 +66,29 @@ import {
 } from '../lib/quranPreloader';
 
 const ABOUT_ROWS: { title: string; subtitle: string }[] = [
-  { title: 'Islamic · v1.0.0', subtitle: 'Version 1.0.0' },
-  { title: 'Prayer times', subtitle: 'Islamic.app' },
-  { title: 'Hijri calendar', subtitle: 'AlAdhan (Umm al-Qura)' },
-  { title: 'Quran text', subtitle: 'AlQuran Cloud' },
-  { title: 'Quran audio', subtitle: 'islamic.network CDN + EveryAyah' },
-  { title: 'Hadith', subtitle: 'islamic.app Hadith API' },
-  { title: '99 Names', subtitle: 'islamic.app + EsmaulHusna.org' },
-  { title: 'Qibla', subtitle: 'Great-circle calculation' },
-  { title: 'Mosques', subtitle: 'OpenStreetMap Nominatim' },
+  { title: 'Islamic — Your Daily Companion', subtitle: 'Version 1.0' },
 ];
+
+/**
+ * The app's mission, in several languages.
+ * "This app does not make any revenue. It is made entirely for Sadaqah Jariyah."
+ */
+const MISSION_TRANSLATIONS: { lang: string; text: string }[] = [
+  { lang: 'English', text: 'This app makes no revenue — it is made entirely as Sadaqah Jariyah (ongoing charity).' },
+  { lang: 'العربية', text: 'هذا التطبيق لا يجني أي أرباح، وهو مخلوق بالكامل كصدقة جارية.' },
+  { lang: 'اردو', text: 'یہ ایپ کوئی آمدنی نہیں کماتی — یہ مکمل طور پر صدقہ جاریہ کے لیے بنائی گئی ہے۔' },
+  { lang: 'Bahasa Indonesia', text: 'Aplikasi ini tidak menghasilkan pendapatan — dibuat sepenuhnya sebagai sedekah jariah.' },
+  { lang: 'Français', text: 'Cette application ne génère aucun revenu — elle est faite entièrement comme Sadaqah Jariyah.' },
+  { lang: 'Türkçe', text: 'Bu uygulama hiçbir gelir elde etmez — tamamen sadaka-i cariye olarak yapılmıştır.' },
+  { lang: 'Melayu', text: 'Aplikasi ini tidak meraih sebarang pendapatan — ia dibuat sepenuhnya sebagai sedekah jariah.' },
+];
+
+/**
+ * All data providers, thanked together.
+ */
+const THANKS_TEXT =
+  'Thank you to every provider who makes this possible: Islamic.app · AlAdhan · AlQuran Cloud · islamic.network · EveryAyah · EsmaulHusna.org · OpenStreetMap · Google Fonts · Expo & the open-source community. May Allah reward them all.';
+
 
 const QURAN_FONT_OPTIONS: { key: QuranArabicFont; label: string; desc: string }[] = [
   { key: 'amiri', label: 'Amiri', desc: 'Classic Naskh — the Quran reader default' },
@@ -1449,12 +1462,21 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
             </View>
           ))}
         </Section>
-        <Text style={[styles.aboutNote, { color: colors.textMuted }]}>
-          All data sources are free public APIs used with attribution.
-        </Text>
 
-        <Text style={[styles.footer, { color: colors.textMuted }]}>
-          Prayer times by Islamic.app · Islamic v1.0
+        {/* Mission — Sadaqah Jariyah, in several languages */}
+        <View style={styles.missionWrap}>
+          <Text style={[styles.missionEyebrow, { color: colors.accent }]}>SADAQAH JARIYAH</Text>
+          {MISSION_TRANSLATIONS.map((m) => (
+            <View key={m.lang} style={styles.missionRow}>
+              <Text style={[styles.missionLang, { color: colors.textSecondary }]}>{m.lang}</Text>
+              <Text style={[styles.missionText, { color: colors.textPrimary }]}>{m.text}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Unified thanks to all providers */}
+        <Text style={[styles.thanksText, { color: colors.textSecondary }]}>
+          {THANKS_TEXT}
         </Text>
 
         <Text style={[styles.footer, { color: colors.textMuted, marginTop: 8 }]}>
@@ -1646,6 +1668,36 @@ const styles = StyleSheet.create({
     color: undefined,
     textAlign: 'center',
     marginTop: 12,
+  },
+  missionWrap: {
+    marginTop: 24,
+    gap: 14,
+  },
+  missionEyebrow: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 2.5,
+    textAlign: 'center',
+  },
+  missionRow: {
+    gap: 3,
+  },
+  missionLang: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 1.2,
+  },
+  missionText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  thanksText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12.5,
+    lineHeight: 18,
+    marginTop: 20,
+    textAlign: 'center',
   },
   aboutLogo: {
     width: 72,

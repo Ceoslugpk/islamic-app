@@ -797,6 +797,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
               setTab('library');
             }}
             onOpenCities={() => {
+              setCitiesReturnTab('home');
               setTools({ screen: 'cities' });
               setTab('tools');
             }}
@@ -926,7 +927,12 @@ function Root({ splashDone }: { splashDone: boolean }) {
           />
         )}
         {tab === 'tools' && tools.screen === 'cities' && (
-          <CitiesScreen onBack={() => setTools({ screen: 'hub' })} />
+          <CitiesScreen
+            onBack={() => {
+              setTools({ screen: 'hub' });
+              setTab(citiesReturnTab);
+            }}
+          />
         )}
         {tab === 'tools' && (tools.screen === 'prayer-reminders' || tools.screen === 'notifications') && (
           <PrayerRemindersScreen onBack={() => setTools({ screen: 'hub' })} />
@@ -1026,6 +1032,15 @@ function Root({ splashDone }: { splashDone: boolean }) {
       <SettingsModal
         visible={settingsOpen}
         onClose={() => setSettingsOpen(false)}
+      />
+
+      {/* Location Setup Modal for first-time users without usable location */}
+      <LocationSetupModal
+        visible={showLocationSetup}
+        loading={locationSetupLoading}
+        onUseCurrentLocation={handleUseCurrentLocation}
+        onChooseCity={handleChooseCityFromSetup}
+        onDismiss={handleDismissLocationSetup}
       />
     </View>
   );
