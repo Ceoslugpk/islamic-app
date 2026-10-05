@@ -23,6 +23,9 @@ export interface HijriMonthData {
   source: 'api' | 'local';
 }
 
+import { fetchWithTimeout } from './quran';
+import { isAppOnline } from './useConnectivity';
+
 const HIJRI_MONTHS = [
   'Muharram', 'Safar', "Rabi' al-awwal", "Rabi' al-thani",
   'Jumada al-awwal', 'Jumada al-thani', 'Rajab', "Sha'ban",
@@ -35,9 +38,15 @@ export async function fetchHijriMonth(
   gregorianMonth: number,
   force = false
 ): Promise<HijriMonthData> {
+  if (!isAppOnline()) {
+    return buildHijriMonthLocal(gregorianYear, gregorianMonth);
+  }
+
   try {
-    const res = await fetch(
-      `https://api.aladhan.com/v1/gToHCalendar/${gregorianMonth}/${gregorianYear}`
+    const res = await fetchWithTimeout(
+      `https://api.aladhan.com/v1/gToHCalendar/${gregorianMonth}/${gregorianYear}`,
+      {},
+      4000
     );
     if (!res.ok) throw new Error(`Aladhan HTTP ${res.status}`);
     const json = await res.json();

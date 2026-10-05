@@ -157,6 +157,18 @@ export function loadPrayerCache(date: string, location: string, method: number):
   }
 }
 
+export function loadLatestPrayerCache(location: string, method: number): { payload: string } | null {
+  try {
+    const row = getDb().getFirstSync<PrayerCacheRow>(
+      'SELECT payload FROM prayer_cache WHERE location = ? AND method = ? ORDER BY cached_at DESC LIMIT 1',
+      location, method
+    );
+    return row ? { payload: row.payload } : null;
+  } catch {
+    return null;
+  }
+}
+
 export function markSalahCompleted(date: string, prayer: string, completed: boolean) {
   try {
     getDb().runSync(
@@ -206,6 +218,29 @@ export function loadQuranCache<T>(key: string): T | null {
   } catch {
     return null;
   }
+}
+
+export function isQuranCacheKeyPresent(key: string): boolean {
+  try {
+    const row = getDb().getFirstSync<{ found: number }>(
+      'SELECT 1 AS found FROM quran_cache WHERE key = ? LIMIT 1',
+      key
+    );
+    return Boolean(row && row.found === 1);
+  } catch {
+    return false;
+  }
+}
+
+export function getCachedQuranKeys(): Set<string> {
+  const set = new Set<string>();
+  try {
+    const rows = getDb().getAllSync<{ key: string }>('SELECT key FROM quran_cache');
+    for (const r of rows) set.add(r.key);
+  } catch {
+    // non-fatal
+  }
+  return set;
 }
 
 export function saveQuranAudioDownloads(payload: object) {

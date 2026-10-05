@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isAppOnline } from './useConnectivity';
 
 export interface AyahOfDay {
   arabic: string;
@@ -146,6 +147,13 @@ export function useAyahOfDay() {
       // Ignore cache read failures
     }
 
+    if (!isAppOnline()) {
+      const fallback = getFallbackAyah(dayOfYear);
+      setAyah(fallback);
+      setLoading(false);
+      return;
+    }
+
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
 
@@ -154,7 +162,7 @@ export function useAyahOfDay() {
         timer = setTimeout(() => {
           try { controller.abort(); } catch {}
           reject(new Error('Ayah fetch timed out'));
-        }, 5000);
+        }, 3500);
       });
 
       const fetchPromise = fetch(

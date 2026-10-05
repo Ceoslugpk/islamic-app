@@ -7,6 +7,9 @@
  *   GET /v1/ayah/{n}/{edition} (single ayah + tafsir)
  */
 import { saveQuranCache, loadQuranCache } from './db';
+import { isAppOnline } from './useConnectivity';
+import { SURAHS_114 } from './surahs114';
+import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
 
 export interface SurahMeta {
   number: number;
@@ -38,64 +41,88 @@ const BASE = 'https://api.alquran.cloud/v1';
 // Saheeh International translation edition
 const TRANSLATION = 'en.sahih';
 
-import { SURAHS_114 } from './surahs114';
-
-export async function fetchSurahList(force = false): Promise<SurahMeta[]> {
-  if (!force) {
-    const cached = loadQuranCache<SurahMeta[]>('surah-list');
-    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
-  }
-
+export async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 4000): Promise<Response> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout>;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      try { controller.abort(); } catch {}
+      reject(new Error(`Timeout of ${timeoutMs}ms exceeded for ${url}`));
+    }, timeoutMs);
+  });
 
   try {
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      timer = setTimeout(() => {
-        try { controller.abort(); } catch {}
-        reject(new Error('fetchSurahList timed out'));
-      }, 5000);
-    });
-
-    const fetchPromise = fetch(`${BASE}/surah`, { signal: controller.signal });
-    const res = await Promise.race([fetchPromise, timeoutPromise]);
-
-    if (!res.ok) throw new Error('Quran list failed');
-    const json = await res.json();
-    if (json.code !== 200 || !Array.isArray(json.data)) throw new Error('Quran list non-200');
-
-    const list: SurahMeta[] = json.data.map((s: any) => ({
-      number: s.number,
-      name: s.name,
-      englishName: s.englishName,
-      englishNameTranslation: s.englishNameTranslation,
-      numberOfAyahs: s.numberOfAyahs,
-      revelationType: s.revelationType,
-    }));
-
-    saveQuranCache('surah-list', list);
-    return list;
-  } catch {
-    // If network fails/times out, use cached data if present, or bundled SURAHS_114
-    const cached = loadQuranCache<SurahMeta[]>('surah-list');
-    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
-
-    const fallbackList: SurahMeta[] = SURAHS_114.map((s) => ({
-      number: s.number,
-      name: s.name,
-      englishName: s.englishName,
-      englishNameTranslation: s.englishName,
-      numberOfAyahs: s.numberOfAyahs,
-      revelationType: s.revelationType,
-    }));
-    saveQuranCache('surah-list', fallbackList);
-    return fallbackList;
+    return await Promise.race([
+      fetch(url, { ...options, signal: controller.signal }),
+      timeoutPromise,
+    ]);
   } finally {
     clearTimeout(timer!);
   }
 }
 
-import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
+export function getBundledSurahs114(): SurahMeta[] {
+  return SURAHS_114.map((s) => ({
+    number: s.number,
+    name: s.name,
+    englishName: s.englishName,
+    englishNameTranslation: s.englishName,
+    numberOfAyahs: s.numberOfAyahs,
+    revelationType: s.revelationType,
+  }));
+}
+
+let inFlightSurahList: Promise<SurahMeta[]> | null = null;
+
+export async function fetchSurahList(force = false): Promise<SurahMeta[]> {
+  if (!force) {
+    const cached = loadQuranCache<SurahMeta[]>('surah-list');
+    if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+    if (!isAppOnline()) {
+      const fallbackList = getBundledSurahs114();
+      saveQuranCache('surah-list', fallbackList);
+      return fallbackList;
+    }
+  }
+
+  if (inFlightSurahList) {
+    return inFlightSurahList;
+  }
+
+  const exec = async (): Promise<SurahMeta[]> => {
+    try {
+      const res = await fetchWithTimeout(`${BASE}/surah`, {}, 4000);
+      if (!res.ok) throw new Error('Quran list failed');
+      const json = await res.json();
+      if (json.code !== 200 || !Array.isArray(json.data)) throw new Error('Quran list non-200');
+
+      const list: SurahMeta[] = json.data.map((s: any) => ({
+        number: s.number,
+        name: s.name,
+        englishName: s.englishName,
+        englishNameTranslation: s.englishNameTranslation,
+        numberOfAyahs: s.numberOfAyahs,
+        revelationType: s.revelationType,
+      }));
+
+      saveQuranCache('surah-list', list);
+      return list;
+    } catch {
+      // If network fails/times out, use cached data if present, or bundled SURAHS_114
+      const cached = loadQuranCache<SurahMeta[]>('surah-list');
+      if (cached && Array.isArray(cached) && cached.length > 0) return cached;
+
+      const fallbackList = getBundledSurahs114();
+      saveQuranCache('surah-list', fallbackList);
+      return fallbackList;
+    } finally {
+      inFlightSurahList = null;
+    }
+  };
+
+  inFlightSurahList = exec();
+  return inFlightSurahList;
+}
 
 export async function fetchSurahListForLanguage(
   languageCode: string,
@@ -107,11 +134,19 @@ export async function fetchSurahListForLanguage(
   if (!force) {
     const cached = loadQuranCache<Record<number, string>>(cacheKey);
     if (cached) return cached;
+    if (!isAppOnline()) {
+      const localMap = SURAH_NAME_TRANSLATIONS[languageCode];
+      if (localMap) {
+        saveQuranCache(cacheKey, localMap);
+        return localMap;
+      }
+      return null;
+    }
   }
 
   // Try API: https://api.alquran.cloud/v1/surah/{lang}
   try {
-    const res = await fetch(`${BASE}/surah/${languageCode}`);
+    const res = await fetchWithTimeout(`${BASE}/surah/${languageCode}`, {}, 4000);
     if (res.ok) {
       const json = await res.json();
       if (json.code === 200 && Array.isArray(json.data)) {
@@ -157,10 +192,19 @@ export async function fetchSurah(
     ? `quran-uthmani,${translationEdition}`
     : 'quran-uthmani';
   
-  let res = await fetch(`${BASE}/surah/${number}/editions/${edition}`);
+  let res: Response;
+  try {
+    res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/${edition}`, {}, 4000);
+  } catch (err) {
+    if (translationEdition !== 'en.sahih') {
+      res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/quran-uthmani,en.sahih`, {}, 4000);
+    } else {
+      throw err;
+    }
+  }
   if (!res.ok && translationEdition !== 'en.sahih') {
     // Fallback to Saheeh International if selected edition fails
-    res = await fetch(`${BASE}/surah/${number}/editions/quran-uthmani,en.sahih`);
+    res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/quran-uthmani,en.sahih`, {}, 4000);
   }
   if (!res.ok) throw new Error('Surah fetch failed');
   const json = await res.json();
@@ -250,7 +294,7 @@ export async function fetchSurahMultiEditions(
   // If all requested translation editions are cached but Arabic is missing, fetch Arabic-only
   if (uncachedEditions.length === 0 && (!arDetail || !arDetail.ayahs || arDetail.ayahs.length === 0)) {
     try {
-      const res = await fetch(`${BASE}/surah/${number}/editions/quran-uthmani`);
+      const res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/quran-uthmani`, {}, 4000);
       if (res.ok) {
         const json = await res.json();
         const arabicData = json.data?.[0];
@@ -298,7 +342,7 @@ export async function fetchSurahMultiEditions(
 
     try {
       const editionsParam = `quran-uthmani,${batch.join(',')}`;
-      const res = await fetch(`${BASE}/surah/${number}/editions/${editionsParam}`);
+      const res = await fetchWithTimeout(`${BASE}/surah/${number}/editions/${editionsParam}`, {}, 4000);
       if (!res.ok) {
         continue;
       }
@@ -386,7 +430,7 @@ export async function fetchAyah(
   const cached = loadQuranCache<Ayah>(key);
   if (cached) return cached;
 
-  const res = await fetch(`${BASE}/ayah/${reference}/${edition}`);
+  const res = await fetchWithTimeout(`${BASE}/ayah/${reference}/${edition}`, {}, 4000);
   if (!res.ok) throw new Error('Ayah fetch failed');
   const json = await res.json();
   if (json.code !== 200) throw new Error('Ayah non-200');
@@ -413,7 +457,7 @@ export async function fetchAyahTafsir(
   if (cached) return cached;
 
   try {
-    const res = await fetch(`${BASE}/ayah/${surah}:${ayah}/${tafsirIdentifier}`);
+    const res = await fetchWithTimeout(`${BASE}/ayah/${surah}:${ayah}/${tafsirIdentifier}`, {}, 4000);
     if (res.ok) {
       const json = await res.json();
       if (json.code === 200 && json.data && json.data.edition?.type === 'tafsir') {
@@ -426,7 +470,7 @@ export async function fetchAyahTafsir(
     // fallback below
   }
 
-  const res2 = await fetch(`${BASE}/ayah/${surah}:${ayah}/ar.jalalayn`);
+  const res2 = await fetchWithTimeout(`${BASE}/ayah/${surah}:${ayah}/ar.jalalayn`, {}, 4000);
   if (!res2.ok) throw new Error('Tafsir fetch failed');
   const json2 = await res2.json();
   if (json2.code !== 200 || !json2.data) throw new Error('Tafsir non-200');
@@ -447,7 +491,7 @@ export async function fetchSurahTafsir(
   const cached = loadQuranCache<Array<{ ayahNumber: number; text: string }>>(key);
   if (cached) return cached;
 
-  const res = await fetch(`${BASE}/surah/${surah}/${tafsirIdentifier}`);
+  const res = await fetchWithTimeout(`${BASE}/surah/${surah}/${tafsirIdentifier}`, {}, 4000);
   if (!res.ok) throw new Error('Surah tafsir fetch failed');
   const json = await res.json();
   if (json.code !== 200 || !json.data || !Array.isArray(json.data.ayahs)) {
@@ -471,7 +515,7 @@ export async function fetchAyahEditions(
   const cached = loadQuranCache<Record<string, string>>(key);
   if (cached) return cached;
 
-  const res = await fetch(`${BASE}/ayah/${surah}:${ayah}/editions/${editions.join(',')}`);
+  const res = await fetchWithTimeout(`${BASE}/ayah/${surah}:${ayah}/editions/${editions.join(',')}`, {}, 4000);
   if (!res.ok) throw new Error('Ayah editions fetch failed');
   const json = await res.json();
   if (json.code !== 200 || !Array.isArray(json.data)) throw new Error('Editions non-200');

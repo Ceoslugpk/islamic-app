@@ -23,6 +23,8 @@ import {
 } from './audioPreloader';
 import { isSurahDownloaded, resolveAudioUri } from './surahDownloads';
 export { resolveAudioUri };
+import { fetchWithTimeout } from './quran';
+import { isAppOnline } from './useConnectivity';
 export {
 
   clearAudioPreloadCache,
@@ -660,11 +662,15 @@ export async function fetchReciters(): Promise<Reciter[]> {
       }
     }
   } catch {
-    // Cache read failed; proceed to network request
+    // Cache read failed
+  }
+
+  if (cachedReciters && cachedReciters.length > 0 && !isAppOnline()) {
+    return cachedReciters;
   }
 
   try {
-    const res = await fetch('https://api.alquran.cloud/v1/edition/format/audio');
+    const res = await fetchWithTimeout('https://api.alquran.cloud/v1/edition/format/audio', {}, 4000);
     if (!res.ok) {
       throw new Error(`HTTP ${res.status}`);
     }

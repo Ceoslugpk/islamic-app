@@ -849,6 +849,10 @@ export default function App() {
   const [fontsLoaded, fontError] = useEditorialFonts();
   const [splashDone, setSplashDone] = useState(false);
 
+  const handleSplashDone = useCallback(() => {
+    setSplashDone(true);
+  }, []);
+
   if (!fontsLoaded && !fontError) {
     return <View style={styles.loading} />;
   }
@@ -858,7 +862,7 @@ export default function App() {
       <ThemeProvider>
         <SafeAreaProvider>
           <Root splashDone={splashDone} />
-          {!splashDone && <AnimatedSplash onDone={() => setSplashDone(true)} />}
+          {!splashDone && <AnimatedSplash onDone={handleSplashDone} />}
         </SafeAreaProvider>
       </ThemeProvider>
     </SettingsProvider>

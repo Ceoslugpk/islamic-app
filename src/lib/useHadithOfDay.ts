@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HADITHS, Hadith } from './hadith';
+import { isAppOnline } from './useConnectivity';
 
 interface ApiHadithResponse {
   code: number;
@@ -79,6 +80,13 @@ export function useHadithOfDay() {
         }
       }
 
+      if (!isAppOnline()) {
+        const fallback = getFallbackHadith();
+        setHadith((prev) => prev || fallback);
+        setLoading(false);
+        return;
+      }
+
       const controller = new AbortController();
       let timer: ReturnType<typeof setTimeout>;
 
@@ -87,7 +95,7 @@ export function useHadithOfDay() {
           timer = setTimeout(() => {
             try { controller.abort(); } catch {}
             reject(new Error('Hadith fetch timed out'));
-          }, 5000);
+          }, 3500);
         });
 
         const fetchPromise = fetch('https://api.islamic.app/v1/hadith/today', {

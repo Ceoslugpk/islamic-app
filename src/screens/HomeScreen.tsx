@@ -515,13 +515,6 @@ export default function HomeScreen({
     );
   }
 
-  if (error && data) {
-    return (
-      <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
-      </View>
-    );
-  }
 
   const hijriLabel = `${data.hijri.day} ${data.hijri.monthEn} ${data.hijri.year}`;
   const locLabel = effectiveLocation.label;

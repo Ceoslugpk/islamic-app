@@ -3,7 +3,8 @@
  * Verified: islamic.app city=Dubai&method=2 → Fajr 05:09, Dhuhr 12:09, Isha 19:06
  */
 
-import { savePrayerCache, loadPrayerCache } from './db';
+import { savePrayerCache, loadPrayerCache, loadLatestPrayerCache } from './db';
+import { isAppOnline } from './useConnectivity';
 
 export interface PrayerTimes {
   Fajr: string;
@@ -58,7 +59,7 @@ function todayDdmmyyyy(d = new Date()): string {
   return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 5000): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 4000): Promise<Response> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -103,7 +104,26 @@ export async function fetchPrayerTimes(
     }
   }
 
-  // 2. Primary: islamic.app
+  // 2. Fast offline shortcut: if device is offline and not forced, return cached/local immediately (0ms)
+  if (!force && !isAppOnline()) {
+    const latest = loadLatestPrayerCache(locKey, method);
+    if (latest) {
+      try {
+        const parsed = JSON.parse(latest.payload);
+        const normalized = normalizePayload(parsed, 'Cache');
+        if (normalized && normalized.timings?.Fajr) {
+          return normalized;
+        }
+      } catch {
+        // fall through to local fallback
+      }
+    }
+    const fallback = localFallback(loc, method, date);
+    savePrayerCache(dateStr, locKey, method, fallback);
+    return fallback;
+  }
+
+  // 3. Primary: islamic.app
   try {
     const rawCity = loc.label ? loc.label.split(',')[0].trim() : '';
     const isCoordinateLabel = rawCity.includes('°') || !rawCity;
@@ -111,7 +131,7 @@ export async function fetchPrayerTimes(
       ? `https://api.islamic.app/v1/timings/today?city=${encodeURIComponent(rawCity)}&method=${method}`
       : `https://api.islamic.app/v1/timings/today?latitude=${loc.latitude}&longitude=${loc.longitude}&method=${method}`;
 
-    const res = await fetchWithTimeout(islamicUrl, {}, 5000);
+    const res = await fetchWithTimeout(islamicUrl, {}, 4000);
     if (res.ok) {
       const json = await res.json();
       if (json.code === 200 && json.data?.timings) {
@@ -124,12 +144,12 @@ export async function fetchPrayerTimes(
     // fall through to AlAdhan
   }
 
-  // 3. Fallback: AlAdhan
+  // 4. Fallback: AlAdhan
   try {
     const url =
       `https://api.aladhan.com/v1/timings/${dateStr}` +
       `?latitude=${loc.latitude}&longitude=${loc.longitude}&method=${method}`;
-    const res = await fetchWithTimeout(url, {}, 5000);
+    const res = await fetchWithTimeout(url, {}, 4000);
     if (!res.ok) throw new Error(`Aladhan HTTP ${res.status}`);
     const json = await res.json();
     if (json.code !== 200 || !json.data) throw new Error('Aladhan non-200 code');
@@ -141,9 +161,9 @@ export async function fetchPrayerTimes(
     // fall through to cache / localFallback
   }
 
-  // 4. Offline cache fallback (stale cache is better than math fallback when offline)
+  // 5. Offline cache fallback (stale cache from any date for this location is better than math fallback)
   try {
-    const cached = loadPrayerCache(dateStr, locKey, method);
+    const cached = loadPrayerCache(dateStr, locKey, method) || loadLatestPrayerCache(locKey, method);
     if (cached) {
       const parsed = JSON.parse(cached.payload);
       const normalized = normalizePayload(parsed, 'Cache');
@@ -155,8 +175,9 @@ export async function fetchPrayerTimes(
     // ignore
   }
 
-  // 5. Final: local astronomical calculation
+  // 6. Final: local astronomical calculation (always available, saves to cache)
   const fallback = localFallback(loc, method, date);
+  savePrayerCache(dateStr, locKey, method, fallback);
   return fallback;
 }
 

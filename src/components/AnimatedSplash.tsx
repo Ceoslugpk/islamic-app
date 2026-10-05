@@ -45,11 +45,14 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
 
   // Phase progress (0..1 drives the timeline, we step phases manually)
   const [phase, setPhase] = useState(0);
+  const [isFading, setIsFading] = useState(false);
   const slit = useRef(new Animated.Value(0)).current;
   const grow = useRef(new Animated.Value(0)).current;
   const sweep = useRef(new Animated.Value(0)).current;
   const fadeOut = useRef(new Animated.Value(1)).current;
   const [reduced, setReduced] = useState(false);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
 
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -62,19 +65,25 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
   }, []);
 
   useEffect(() => {
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      setIsFading(true);
+      onDoneRef.current();
+    };
+
     if (reduced) {
       // Reduced motion: show the logo immediately, hold briefly, done.
       slit.setValue(1);
       grow.setValue(1);
-      const t = setTimeout(onDone, 700);
+      const t = setTimeout(finish, 700);
       return () => clearTimeout(t);
     }
 
     const timings: Array<[number, () => void]> = [];
     // Safety fallback: if anything prevents animation sequence from completing, ensure app reveals within 1600ms
-    const safetyTimer = setTimeout(() => {
-      onDone();
-    }, 1600);
+    const safetyTimer = setTimeout(finish, 1600);
     timings.push([1, () => clearTimeout(safetyTimer)]);
 
     // 0-260ms: slit appears (animates height and opacity; height requires useNativeDriver: false)
@@ -112,9 +121,10 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
         const hold = setTimeout(() => {
           sweepAnim.start(() => {
             const hold2 = setTimeout(() => {
+              setIsFading(true);
               fadeAnim.start(() => {
                 clearTimeout(safetyTimer);
-                onDone();
+                finish();
               });
             }, 160);
             timings.push([1, () => clearTimeout(hold2)]);
@@ -125,7 +135,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
     });
 
     return () => timings.forEach(([, c]) => c());
-  }, [reduced, slit, grow, sweep, fadeOut, onDone]);
+  }, [reduced]);
 
   // Mask: a rectangle that grows SYMMETRICALLY from the slit (x≈58, the true
   // center of the logo's open-base gap between x=51.6 and x=65.4) outward both ways
@@ -144,6 +154,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
 
   return (
     <Animated.View
+      pointerEvents={isFading ? 'none' : 'auto'}
       style={[styles.root, { backgroundColor: bg, opacity: fadeOut }]}
       accessibilityLabel="Islamic app splash"
     >

@@ -4,23 +4,54 @@ import { Platform } from 'react-native';
 const REACHABILITY_URL = 'https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=8';
 const POLL_INTERVAL_OFFLINE = 15000;
 const POLL_INTERVAL_ONLINE = 60000;
-const PROBE_TIMEOUT = 5000;
+const PROBE_TIMEOUT = 3000;
 
-export function useConnectivity(): { isOnline: boolean; isChecking: boolean; refreshKey: number } {
-  const [isOnline, setIsOnline] = useState(true);
-  const [isChecking, setIsChecking] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+// Module-level singleton state shared across all components and libraries
+let globalIsOnline = true;
+let globalIsChecking = false;
+let globalRefreshKey = 0;
+let globalInFlightProbe: Promise<boolean> | null = null;
+let pollTimer: ReturnType<typeof setTimeout> | null = null;
+let probeAbortController: AbortController | null = null;
+const listeners = new Set<() => void>();
 
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
-  const mountedRef = useRef(true);
-  const lastKnownOnlineRef = useRef(true);
+function notifyListeners() {
+  listeners.forEach((listener) => {
+    try {
+      listener();
+    } catch {
+      // non-fatal
+    }
+  });
+}
 
-  const probe = useCallback(async (): Promise<boolean> => {
-    if (abortRef.current) abortRef.current.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
+/** Synchronous connectivity check for data/background libraries (warmup, preloader, prayerTimes). */
+export function isAppOnline(): boolean {
+  return globalIsOnline;
+}
 
+export function subscribeConnectivity(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+export async function checkConnectivity(): Promise<boolean> {
+  if (globalInFlightProbe) {
+    return globalInFlightProbe;
+  }
+
+  if (probeAbortController) {
+    try { probeAbortController.abort(); } catch {}
+  }
+  const controller = new AbortController();
+  probeAbortController = controller;
+
+  globalIsChecking = true;
+  notifyListeners();
+
+  const exec = async (): Promise<boolean> => {
     let timer: ReturnType<typeof setTimeout>;
     try {
       const timeoutPromise = new Promise<boolean>((resolve) => {
@@ -29,6 +60,7 @@ export function useConnectivity(): { isOnline: boolean; isChecking: boolean; ref
           resolve(false);
         }, PROBE_TIMEOUT);
       });
+
       const fetchPromise = fetch(REACHABILITY_URL, {
         method: 'HEAD',
         signal: controller.signal,
@@ -37,78 +69,72 @@ export function useConnectivity(): { isOnline: boolean; isChecking: boolean; ref
         .then((res) => res.ok)
         .catch(() => false);
 
-      return await Promise.race([fetchPromise, timeoutPromise]);
+      const online = await Promise.race([fetchPromise, timeoutPromise]);
+      const prevOnline = globalIsOnline;
+      globalIsOnline = online;
+      globalIsChecking = false;
+
+      if (online && !prevOnline) {
+        globalRefreshKey++;
+      }
+
+      notifyListeners();
+      scheduleNextGlobalPoll(online);
+      return online;
     } finally {
       clearTimeout(timer!);
+      globalIsChecking = false;
+      globalInFlightProbe = null;
     }
-  }, []);
+  };
 
-  const checkAndUpdate = useCallback(async () => {
-    if (!mountedRef.current) return;
-    setIsChecking(true);
-    const online = await probe();
-    if (!mountedRef.current) return;
-    setIsChecking(false);
+  globalInFlightProbe = exec();
+  return globalInFlightProbe;
+}
 
-    if (online !== lastKnownOnlineRef.current) {
-      lastKnownOnlineRef.current = online;
-      setIsOnline(online);
-      if (online) {
-        setRefreshKey((k) => k + 1);
-      }
+function scheduleNextGlobalPoll(online: boolean) {
+  if (pollTimer) clearTimeout(pollTimer);
+  const interval = online ? POLL_INTERVAL_ONLINE : POLL_INTERVAL_OFFLINE;
+  pollTimer = setTimeout(() => {
+    checkConnectivity().catch(() => {});
+  }, interval);
+}
+
+// Initial probe setup
+if (Platform.OS === 'web') {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+      globalIsOnline = true;
+      globalRefreshKey++;
+      notifyListeners();
+      scheduleNextGlobalPoll(true);
+    });
+    window.addEventListener('offline', () => {
+      globalIsOnline = false;
+      notifyListeners();
+      scheduleNextGlobalPoll(false);
+    });
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      globalIsOnline = false;
     }
-    scheduleNextPoll(online);
-  }, [probe]);
+  }
+}
 
-  const scheduleNextPoll = useCallback((online: boolean) => {
-    if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-    const interval = online ? POLL_INTERVAL_ONLINE : POLL_INTERVAL_OFFLINE;
-    pollTimerRef.current = setTimeout(checkAndUpdate, interval);
-  }, [checkAndUpdate]);
+// Start initial probe immediately
+checkConnectivity().catch(() => {});
+
+export function useConnectivity(): { isOnline: boolean; isChecking: boolean; refreshKey: number } {
+  const [, setTick] = useState(0);
 
   useEffect(() => {
-    mountedRef.current = true;
-    lastKnownOnlineRef.current = true;
+    return subscribeConnectivity(() => {
+      setTick((t) => t + 1);
+    });
+  }, []);
 
-    if (Platform.OS === 'web') {
-      const onOnline = () => {
-        lastKnownOnlineRef.current = true;
-        setIsOnline(true);
-        setRefreshKey((k) => k + 1);
-        scheduleNextPoll(true);
-      };
-      const onOffline = () => {
-        lastKnownOnlineRef.current = false;
-        setIsOnline(false);
-        scheduleNextPoll(false);
-      };
-      window.addEventListener('online', onOnline);
-      window.addEventListener('offline', onOffline);
-
-      if (!navigator.onLine) {
-        setIsOnline(false);
-        lastKnownOnlineRef.current = false;
-        scheduleNextPoll(false);
-      } else {
-        checkAndUpdate();
-      }
-
-      return () => {
-        mountedRef.current = false;
-        window.removeEventListener('online', onOnline);
-        window.removeEventListener('offline', onOffline);
-        if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-        if (abortRef.current) abortRef.current.abort();
-      };
-    } else {
-      checkAndUpdate();
-      return () => {
-        mountedRef.current = false;
-        if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-        if (abortRef.current) abortRef.current.abort();
-      };
-    }
-  }, [checkAndUpdate, scheduleNextPoll]);
-
-  return { isOnline, isChecking, refreshKey };
+  return {
+    isOnline: globalIsOnline,
+    isChecking: globalIsChecking,
+    refreshKey: globalRefreshKey,
+  };
 }

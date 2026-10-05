@@ -15,9 +15,10 @@ import {
   HadithCollection,
   HadithBook,
 } from './hadithApi';
-import { fetchSurahList, fetchSurahListForLanguage } from './quran';
+import { fetchSurahList, fetchSurahListForLanguage, fetchWithTimeout } from './quran';
 import { getQuranTranslationLanguage } from './quranLanguageState';
 import { loadQuranPreloadRequested } from './settings';
+import { isAppOnline } from './useConnectivity';
 
 const WARMUP_DONE_KEY = 'warmup-done-v1';
 const WARMUP_VERSION = 1;
@@ -218,6 +219,10 @@ export async function startHadithWarmup(options?: {
   force?: boolean;
   onProgress?: (progress: HadithWarmupProgress) => void;
 }): Promise<void> {
+  if (!isAppOnline()) {
+    hadithWarmupRunning = false;
+    return;
+  }
   if (hadithWarmupRunning && !options?.force) {
     return;
   }
@@ -550,6 +555,19 @@ export async function runFirstLaunchWarmup(options?: {
   methodId?: number;
   onProgress?: (progress: WarmupProgress) => void;
 }): Promise<void> {
+  if (!isAppOnline()) {
+    try {
+      const loc = options?.location || { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' };
+      const method = options?.methodId || 8;
+      await fetchPrayerTimes(loc, method, new Date(), false);
+      await fetchSurahList();
+      await markWarmupDone();
+    } catch {
+      // non-fatal
+    }
+    return;
+  }
+
   const quickDone = await hasWarmupRun();
   const preloadRequested = await loadQuranPreloadRequested();
 
@@ -660,7 +678,7 @@ export async function runFirstLaunchWarmup(options?: {
     // Step 5: Hadith of the Day
     updateProgress(4, steps[4].label);
     try {
-      const response = await fetch('https://api.islamic.app/v1/hadith/today', { method: 'HEAD' });
+      const response = await fetchWithTimeout('https://api.islamic.app/v1/hadith/today', { method: 'HEAD' }, 3000);
       if (response.ok) {
         completed.push(steps[4].key);
       }

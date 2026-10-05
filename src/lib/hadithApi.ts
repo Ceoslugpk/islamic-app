@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchWithTimeout } from './quran';
+import { isAppOnline } from './useConnectivity';
 
 export interface HadithCollection {
   slug: string;
@@ -333,8 +335,21 @@ export async function fetchHadithCollections(force = false): Promise<HadithColle
     }
   }
 
+  if (!isAppOnline()) {
+    try {
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return FALLBACK_COLLECTIONS;
+  }
+
   try {
-    const response = await fetch(`${API_BASE}/collections`);
+    const response = await fetchWithTimeout(`${API_BASE}/collections`, {}, 4000);
     if (response.ok) {
       const json = await response.json();
       if (json.code === 200 && Array.isArray(json.data) && json.data.length > 0) {
@@ -361,7 +376,7 @@ export async function fetchHadithCollections(force = false): Promise<HadithColle
 
 export async function fetchHadithBooks(collectionSlug: string, force = false): Promise<HadithBook[]> {
   const cacheKey = `hadith:cache:books:${collectionSlug}`;
-  if (!force) {
+  if (!force || !isAppOnline()) {
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) {
@@ -373,8 +388,12 @@ export async function fetchHadithBooks(collectionSlug: string, force = false): P
     }
   }
 
+  if (!isAppOnline()) {
+    throw new Error(`Offline: books not cached for ${collectionSlug}`);
+  }
+
   try {
-    const response = await fetch(`${API_BASE}/collections/${collectionSlug}/books`);
+    const response = await fetchWithTimeout(`${API_BASE}/collections/${collectionSlug}/books`, {}, 4000);
     if (response.ok) {
       const json = await response.json();
       if (json.code === 200 && Array.isArray(json.data)) {
@@ -407,7 +426,7 @@ export async function fetchHadithsInBook(
   force = false
 ): Promise<HadithListResponse> {
   const cacheKey = `hadith:cache:list:${collectionSlug}:${bookNumber}:${offset}`;
-  if (!force) {
+  if (!force || !isAppOnline()) {
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) {
@@ -419,9 +438,15 @@ export async function fetchHadithsInBook(
     }
   }
 
+  if (!isAppOnline()) {
+    throw new Error(`Offline: hadiths not cached for ${collectionSlug} book ${bookNumber}`);
+  }
+
   try {
-    const response = await fetch(
-      `${API_BASE}/collections/${collectionSlug}/books/${bookNumber}/hadiths?limit=${limit}&offset=${offset}`
+    const response = await fetchWithTimeout(
+      `${API_BASE}/collections/${collectionSlug}/books/${bookNumber}/hadiths?limit=${limit}&offset=${offset}`,
+      {},
+      4000
     );
     if (response.ok) {
       const json = await response.json();
@@ -495,7 +520,7 @@ export async function fetchSingleHadith(
   force = false
 ): Promise<HadithItem> {
   const cacheKey = `hadith:cache:single:${collectionSlug}:${bookNumber}:${hadithNumber}`;
-  if (!force) {
+  if (!force || !isAppOnline()) {
     try {
       const cached = await AsyncStorage.getItem(cacheKey);
       if (cached) {
@@ -507,9 +532,15 @@ export async function fetchSingleHadith(
     }
   }
 
+  if (!isAppOnline()) {
+    throw new Error(`Offline: hadith ${hadithNumber} not cached`);
+  }
+
   try {
-    const response = await fetch(
-      `${API_BASE}/collections/${collectionSlug}/books/${bookNumber}/hadiths/${hadithNumber}`
+    const response = await fetchWithTimeout(
+      `${API_BASE}/collections/${collectionSlug}/books/${bookNumber}/hadiths/${hadithNumber}`,
+      {},
+      4000
     );
     if (response.ok) {
       const json = await response.json();

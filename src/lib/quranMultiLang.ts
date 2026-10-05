@@ -1,3 +1,6 @@
+import { fetchWithTimeout } from './quran';
+import { isAppOnline } from './useConnectivity';
+
 const BASE = 'https://api.alquran.cloud/v1';
 
 export interface TranslationAyah {
@@ -21,10 +24,14 @@ export async function fetchSurahTranslations(
     throw new Error('At least one edition identifier is required');
   }
 
+  if (!isAppOnline()) {
+    throw new Error(`Device offline: cannot fetch translations for surah ${surahNumber}`);
+  }
+
   const editionsParam = editionIdentifiers.join(',');
   const url = `${BASE}/surah/${surahNumber}/editions/${editionsParam}`;
 
-  const res = await fetch(url);
+  const res = await fetchWithTimeout(url, {}, 4000);
   if (!res.ok) {
     throw new Error(`Failed to fetch surah ${surahNumber} translations: ${res.status} ${res.statusText}`);
   }

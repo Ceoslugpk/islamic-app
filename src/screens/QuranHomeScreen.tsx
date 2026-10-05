@@ -12,11 +12,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { fetchSurahList, fetchSurahListForLanguage, SurahMeta } from '../lib/quran';
+import { fetchSurahList, fetchSurahListForLanguage, getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { ArabicText } from '../components/ArabicText';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
-import { LastReadPosition, loadLastReadPosition } from '../lib/db';
+import { LastReadPosition, loadLastReadPosition, loadQuranCache } from '../lib/db';
 import { getReadingPosition, ReadingPosition } from '../lib/continuing';
 import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
 import { useQuranLanguage } from '../lib/quranLanguageState';
@@ -68,8 +68,18 @@ export default function QuranHomeScreen({
   const { progress: preloadProgress, startPreload, pausePreload } = useQuranPreload();
   const { setQuranPreloadRequested } = useSettings();
 
-  const [surahs, setSurahs] = useState<SurahMeta[] | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [surahs, setSurahs] = useState<SurahMeta[]>(() => {
+    try {
+      const cached = loadQuranCache<SurahMeta[]>('surah-list');
+      if (cached && Array.isArray(cached) && cached.length === 114) {
+        return cached;
+      }
+    } catch {
+      // non-fatal
+    }
+    return getBundledSurahs114();
+  });
+  const [loading, setLoading] = useState<boolean>(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [noteCount, setNoteCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -82,7 +92,6 @@ export default function QuranHomeScreen({
   const listRef = useRef<FlatList<SurahMeta>>(null);
 
   const loadData = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
       const [list] = await Promise.all([
@@ -90,9 +99,7 @@ export default function QuranHomeScreen({
       ]);
       setSurahs(list);
     } catch {
-      setError('Could not load the Quran. Check your connection.');
-    } finally {
-      setLoading(false);
+      // Fallback is already present in state
     }
   }, []);
 
@@ -886,7 +893,7 @@ export default function QuranHomeScreen({
     );
   };
 
-  if (loading && !surahs) {
+  if (loading && (!surahs || surahs.length === 0)) {
     return (
       <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
         <ActivityIndicator size="large" color={colors.accent} />
@@ -894,7 +901,7 @@ export default function QuranHomeScreen({
     );
   }
 
-  if (error && !surahs) {
+  if (error && (!surahs || surahs.length === 0)) {
     return (
       <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
         <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>

@@ -19,6 +19,23 @@ export function loadPrayerCache(date: string, location: string, method: number):
   }
 }
 
+export function loadLatestPrayerCache(location: string, method: number): { payload: string } | null {
+  const rows = webKV.getAll('prayer:');
+  let best: { payload: string; cached_at: number } | null = null;
+  for (const { key, value } of rows) {
+    const parts = key.split(':');
+    if (parts[2] === location && Number(parts[3]) === method) {
+      try {
+        const parsed = JSON.parse(value);
+        if (!best || parsed.cached_at > best.cached_at) {
+          best = parsed;
+        }
+      } catch {}
+    }
+  }
+  return best ? { payload: typeof best.payload === 'string' ? best.payload : JSON.stringify(best.payload) } : null;
+}
+
 export function markSalahCompleted(date: string, prayer: string, completed: boolean) {
   webKV.set(`salah:${date}:${prayer}`, JSON.stringify({ completed, completed_at: completed ? Date.now() : null }));
 }
@@ -66,6 +83,19 @@ export function loadQuranCache<T>(key: string): T | null {
   } catch {
     return null;
   }
+}
+
+export function isQuranCacheKeyPresent(key: string): boolean {
+  return webKV.get(`quran:${key}`) !== null;
+}
+
+export function getCachedQuranKeys(): Set<string> {
+  const set = new Set<string>();
+  const rows = webKV.getAll('quran:');
+  for (const { key } of rows) {
+    set.add(key.replace(/^quran:/, ''));
+  }
+  return set;
 }
 
 export function saveQuranAudioDownloads(payload: object) {
