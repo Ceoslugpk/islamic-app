@@ -14,6 +14,7 @@ import {
   Linking,
   AppState,
   BackHandler,
+  AccessibilityInfo,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -183,9 +184,48 @@ function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) =>
 }
 
 /** Top app header: brand mark + ISLAMIC wordmark + settings gear. */
-function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
+function AppHeader({
+  onOpenSettings,
+  showBismillah,
+}: {
+  onOpenSettings: () => void;
+  showBismillah?: boolean;
+}) {
   const { colors, mode } = useTheme();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+
+  // Bismillah entrance: subtle LEFT → RIGHT reveal, short + calm.
+  // Re-triggers on each return to Today (showBismillah flips true on tab switch).
+  const bismillahProgress = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useRef(false);
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((v) => (reduceMotion.current = v));
+  }, []);
+  useEffect(() => {
+    if (!showBismillah) return;
+    bismillahProgress.setValue(0);
+    if (reduceMotion.current) {
+      bismillahProgress.setValue(1);
+      return;
+    }
+    Animated.timing(bismillahProgress, {
+      toValue: 1,
+      duration: 420,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [showBismillah, bismillahProgress]);
+
+  // Compact at 360px: keep the Arabic phrase small and centered; it never clips
+  // because the container is absolutely positioned in the free center space.
+  const translateX = bismillahProgress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [-24, 0],
+  });
+  const opacity = bismillahProgress;
+
   return (
     <View
       style={[
@@ -233,6 +273,40 @@ function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
           ISLAMIC
         </Text>
       </View>
+
+      {/* Bismillah — subtle devotional identity, centered in the free header space.
+          L→R reveal on entering Today; static afterwards (never marquees). */}
+      {showBismillah && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.bismillahWrap,
+            {
+              opacity,
+              transform: [{ translateX }],
+            },
+          ]}
+          accessible={false}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          <Text
+            style={[
+              styles.bismillahText,
+              {
+                color: colors.textSecondary,
+                fontSize: isCompact ? 12 : 13,
+              },
+            ]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
+          >
+            بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+          </Text>
+        </Animated.View>
+      )}
+
       <TouchableOpacity
         onPress={onOpenSettings}
         accessibilityRole="button"
@@ -806,7 +880,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
   return (
     <View style={[styles.safe, { backgroundColor: colors.bgBase }]}>
         <StatusBar style={mode === 'ink' ? 'light' : 'dark'} />
-        <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
+        <AppHeader
+          onOpenSettings={() => setSettingsOpen(true)}
+          showBismillah={tab === 'home'}
+        />
         {!isOnline && <OfflineBanner />}
         <View style={styles.screenWrap}>
         {tab === 'home' && (
@@ -1264,6 +1341,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderBottomWidth: 1,
+  },
+  bismillahWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 60,
+    zIndex: 1,
+  },
+  bismillahText: {
+    fontFamily: 'Amiri_400Regular',
+    textAlign: 'center',
   },
   headerBrand: {
     flexDirection: 'row',
