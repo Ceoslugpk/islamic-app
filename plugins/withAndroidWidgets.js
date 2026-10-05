@@ -60,7 +60,72 @@ function withWidgetNativeFiles(config) {
     fs.mkdirSync(path.join(resDir, 'layout'), { recursive: true });
     fs.mkdirSync(javaDir, { recursive: true });
 
-    // 0. Proguard keep rule so R8 keeps the widget provider + manifest entries
+    // 3b. Classic ReactPackage + module — registers the JS→widget bridge in the
+    //     app's own package list (no autolinking dependency, always compiled).
+    fs.writeFileSync(
+      path.join(javaDir, 'IslamicWidgetPackage.kt'),
+      `package ${PACKAGE}
+
+import com.facebook.react.ReactPackage
+import com.facebook.react.bridge.NativeModule
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.uimanager.ViewManager
+
+class IslamicWidgetPackage : ReactPackage {
+  override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> =
+    listOf(IslamicWidgetModule(reactContext))
+
+  override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> =
+    emptyList()
+}`
+    );
+
+    fs.writeFileSync(
+      path.join(javaDir, 'IslamicWidgetModule.kt'),
+      `package ${PACKAGE}
+
+import android.content.Context
+import android.content.SharedPreferences
+import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
+import com.facebook.react.bridge.ReactMethod
+
+class IslamicWidgetModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
+
+  override fun getName(): String = "IslamicWidget"
+
+  @ReactMethod
+  fun updateWidget(bundleJson: String) {
+    val context = reactApplicationContext
+    val prefs: SharedPreferences =
+      context.getSharedPreferences(IslamicWidgetProvider.PREFS, Context.MODE_MULTI_PROCESS)
+    prefs.edit().putString(IslamicWidgetProvider.KEY_BUNDLE, bundleJson).apply()
+    IslamicWidgetProvider.updateAll(context)
+  }
+
+  @ReactMethod
+  fun getWidgetSnapshot(callback: com.facebook.react.bridge.Callback) {
+    val context = reactApplicationContext
+    val prefs = context.getSharedPreferences(IslamicWidgetProvider.PREFS, Context.MODE_MULTI_PROCESS)
+    callback.invoke(prefs.getString(IslamicWidgetProvider.KEY_BUNDLE, "") ?: "")
+  }
+}`
+    );
+
+    // 3c. Register the package in MainApplication
+    const mainAppPath = path.join(javaDir, 'MainApplication.kt');
+    try {
+      let ma = fs.readFileSync(mainAppPath, 'utf8');
+      if (!ma.includes('IslamicWidgetPackage')) {
+        ma = ma.replace(
+          '// Packages that cannot be autolinked yet can be added manually here, for example:',
+          'add(IslamicWidgetPackage())\n          // Packages that cannot be autolinked yet can be added manually here, for example:'
+        );
+        fs.writeFileSync(mainAppPath, ma);
+      }
+    } catch {}
+
+    // 3d. Proguard keep rule so R8 keeps the widget provider + manifest entries
     const proguardPath = path.join(projectRoot, 'android', 'app', 'proguard-rules.pro');
     try {
       let pg = fs.readFileSync(proguardPath, 'utf8');
@@ -101,6 +166,47 @@ function withWidgetNativeFiles(config) {
     // 2. RemoteViews layout — Next Prayer (time + name + countdown), tap opens app
     fs.writeFileSync(
       path.join(resDir, 'layout', 'islamic_widget_layout.xml'),
+      `<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/transparent"
+    android:padding="12dp"
+    android:id="@+id/widget_root">
+  <TextView
+      android:id="@+id/widget_prayer_name"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="FAJR"
+      android:textSize="11sp"
+      android:textStyle="bold"
+      android:letterSpacing="0.15"
+      android:textColor="#B8975A" />
+  <TextView
+      android:id="@+id/widget_prayer_time"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="--:--"
+      android:textSize="34sp"
+      android:textStyle="bold"
+      android:textColor="#0E1214" />
+  <TextView
+      android:id="@+id/widget_countdown"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="Open app to load"
+      android:textSize="12sp"
+      android:textColor="#57503F" />
+</LinearLayout>`
+    );
+
+    // 2b. Dark-theme RemoteViews layout (values-night layout variant — the
+    //     launcher resolves it automatically in dark mode; light stays default).
+    const nightLayoutDir = path.join(resDir, 'layout-night');
+    fs.mkdirSync(nightLayoutDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(nightLayoutDir, 'islamic_widget_layout.xml'),
       `<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"

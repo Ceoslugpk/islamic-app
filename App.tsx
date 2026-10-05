@@ -74,6 +74,7 @@ import { runFirstLaunchWarmup } from './src/lib/warmup';
 import { runFirstLaunchPermissions } from './src/lib/firstLaunchPermissions';
 import { useLocation } from './src/lib/useLocation';
 import { updateWidgetSnapshot } from './src/lib/widgetBridge';
+import { registerBackgroundPreload } from './src/lib/backgroundPreload';
 import { AppState } from 'react-native';
 import { useEffect } from 'react';
 import { BackHandler } from 'react-native';
@@ -471,6 +472,12 @@ function Root({ splashDone }: { splashDone: boolean }) {
       if (state === 'active') updateWidgetSnapshot();
     });
     return () => sub.remove();
+  }, []);
+
+  // Register the background preload task (continues Quran preloading in short
+  // OS-allowed bursts when the app is backgrounded — respects user pause).
+  useEffect(() => {
+    registerBackgroundPreload().catch(() => {});
   }, []);
 
   // Android hardware back: go back through screens instead of exiting.

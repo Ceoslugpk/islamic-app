@@ -46,18 +46,18 @@
       "./plugins/withAndroidWidgets",
       "expo-font",
       [
-       "expo-notifications",
-       {
-        "sounds": [
-         "./assets/sounds/adhan_chime.wav"
-        ],
-        "androidMode": "default",
-        "androidPermissions": [
-         "RECEIVE_BOOT_COMPLETED",
-         "SCHEDULE_EXACT_ALARM",
-         "USE_EXACT_ALARM"
-        ]
-       }
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/adhan_chime.wav"
+          ],
+          "androidMode": "default",
+          "androidPermissions": [
+            "RECEIVE_BOOT_COMPLETED",
+            "SCHEDULE_EXACT_ALARM",
+            "USE_EXACT_ALARM"
+          ]
+        }
       ],
       "expo-sqlite",
       [
@@ -67,7 +67,8 @@
         }
       ],
       "expo-splash-screen",
-      "expo-audio"
+      "expo-audio",
+      "expo-background-fetch"
     ]
   }
 }
