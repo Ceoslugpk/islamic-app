@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -45,7 +44,6 @@ import { gettingPrayerTimes, preparingDashboard, retry, prayerTimesOfflineError,
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity, isAppOnline } from '../lib/useConnectivity';
-import { useQuranPreload } from '../lib/quranPreloader';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import {
   CountdownCardSkeleton,
@@ -153,7 +151,7 @@ export default function HomeScreen({
   const { location: gpsLocation, status: locStatus, request: requestLocation, loading: locLoading } = useLocation(false);
   const { refreshKey } = useConnectivity();
   const { width } = useWindowDimensions();
-  const { progress: preloadProgress } = useQuranPreload();
+  const [locationDismissed, setLocationDismissed] = useState(false);
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -210,6 +208,26 @@ export default function HomeScreen({
     }
     return settings.manualLocation;
   }, [settings.locationMode, gpsLocation, settings.autoLocation, settings.manualLocation]);
+
+  const hasUsableLocation = useMemo(() => {
+    const autoValid = Boolean(
+      settings.autoLocation &&
+      typeof settings.autoLocation.latitude === 'number' &&
+      typeof settings.autoLocation.longitude === 'number' &&
+      !isNaN(settings.autoLocation.latitude) &&
+      !isNaN(settings.autoLocation.longitude) &&
+      Boolean(settings.autoLocation.label)
+    );
+    const manualValid = Boolean(
+      settings.manualLocation &&
+      typeof settings.manualLocation.latitude === 'number' &&
+      typeof settings.manualLocation.longitude === 'number' &&
+      !isNaN(settings.manualLocation.latitude) &&
+      !isNaN(settings.manualLocation.longitude) &&
+      Boolean(settings.manualLocation.label)
+    );
+    return autoValid || manualValid;
+  }, [settings.autoLocation, settings.manualLocation]);
 
   const lastDateStrRef = useRef<string>(todayDdmmyyyy(new Date()));
 
@@ -682,33 +700,11 @@ export default function HomeScreen({
             </Text>
         </Animated.View>
 
-        {/* Quran preload progress banner — visible so it never looks stuck */}
-        {preloadProgress.isRunning && !preloadProgress.isComplete && (
-          <View style={[styles.preloadBanner, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={styles.preloadBannerLeft}>
-              <ActivityIndicator size="small" color={colors.accent} />
-              <Text style={[styles.preloadBannerText, { color: colors.textSecondary }]}>
-                Getting the Quran ready… {preloadProgress.cached}/114
-              </Text>
-            </View>
-            <View style={[styles.preloadBannerTrack, { backgroundColor: colors.borderSubtle }]}>
-              <View
-                style={[
-                  styles.preloadBannerFill,
-                  {
-                    backgroundColor: colors.accent,
-                    width: `${Math.min(100, Math.round((preloadProgress.cached / 114) * 100))}%`,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        )}
-
-        {/* Location Permission Note if auto mode enabled but permission denied/unavailable */}
-        {settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'unavailable') && (
+        {/* Location Permission Note: only when no usable saved/manual location exists AND not dismissed this session */}
+        {!hasUsableLocation && !locationDismissed && settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'unavailable') && (
           <LocationPermissionNote
             status={locStatus}
+            compact
             onEnable={async () => {
               const loc = await requestLocation(true);
               if (loc) {
@@ -716,8 +712,9 @@ export default function HomeScreen({
               }
             }}
             onChooseCity={onOpenCities}
+            onDismiss={() => setLocationDismissed(true)}
             loading={locLoading}
-            fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
+            fallbackCity={settings.manualLocation?.label || 'Makkah, Saudi Arabia'}
           />
         )}
 
@@ -1063,39 +1060,6 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 14 },
   content: { padding: 24, gap: 24 },
   patternTop: { top: -40, right: -60 },
-  preloadBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginBottom: 16,
-  },
-  preloadBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flexShrink: 1,
-  },
-  preloadBannerText: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
-    flexShrink: 1,
-  },
-  preloadBannerTrack: {
-    width: 60,
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-    flexShrink: 0,
-  },
-  preloadBannerFill: {
-    height: 4,
-    borderRadius: 2,
-  },
   sectionHeader: { marginBottom: 20 },
   prayerHeroCard: {
     marginBottom: 20,

@@ -1457,6 +1457,13 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
           Prayer times by Islamic.app · Islamic v1.0
         </Text>
 
+        <Text style={[styles.footer, { color: colors.textMuted, marginTop: 8 }]}>
+          Made for Ummah ❤️
+        </Text>
+        <Text style={[styles.footerArabic, { color: colors.textSecondary }]}>
+          تَوَكَّلْتُ عَلَى ٱللَّٰهُ
+        </Text>
+
         <QuranLanguageModal
           visible={quranLangModalOpen}
           onClose={() => setQuranLangModalOpen(false)}
@@ -1625,6 +1632,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 24,
+    textAlign: 'center',
+  },
+  footerArabic: {
+    fontFamily: 'NotoNaskhArabic_700Bold',
+    fontSize: 13,
+    marginTop: 2,
     textAlign: 'center',
   },
   aboutNote: {

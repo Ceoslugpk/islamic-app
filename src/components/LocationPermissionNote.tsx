@@ -17,6 +17,7 @@ export interface LocationPermissionNoteProps {
   status: LocationPermissionStatus;
   onEnable?: () => void | Promise<void>;
   onChooseCity?: () => void;
+  onDismiss?: () => void;
   loading?: boolean;
   fallbackCity?: string;
   compact?: boolean;
@@ -32,6 +33,7 @@ export function LocationPermissionNote({
   status,
   onEnable,
   onChooseCity,
+  onDismiss,
   loading = false,
   fallbackCity = 'Makkah, Saudi Arabia',
   compact = false,
@@ -97,6 +99,18 @@ export function LocationPermissionNote({
             {description}
           </Text>
         </View>
+
+        {onDismiss && (
+          <TouchableOpacity
+            onPress={onDismiss}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss location note"
+            style={styles.dismissBtn}
+          >
+            <Ionicons name="close" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {(onEnable || onChooseCity) && (
@@ -247,5 +261,10 @@ const styles = StyleSheet.create({
   enableBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12.5,
+  },
+  dismissBtn: {
+    padding: 4,
+    marginLeft: 4,
+    alignSelf: 'flex-start',
   },
 });
