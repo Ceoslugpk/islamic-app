@@ -12,12 +12,15 @@ import {
   Modal,
   SafeAreaView,
   Linking,
+  BackHandler,
 } from 'react-native';
 import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
+import { getForwardIcon, iconSizes } from '../lib/iconMap';
 import WidgetPreviewScreen from './WidgetPreviewScreen';
+import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import {
   useSettings,
   QURAN_FONT_SIZE_MIN,
@@ -455,9 +458,10 @@ function AdjustRow({
 export interface SettingsScreenProps {
   onClose?: () => void;
   onOpenWidgets?: () => void;
+  onBackRef?: React.MutableRefObject<(() => boolean) | null>;
 }
 
-export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScreenProps) {
+export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, mode, accentKey, setAccent } = useTheme();
   const {
@@ -492,6 +496,34 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
   const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'set' | 'change' | null>(null);
   const [health, setHealth] = useState<NotificationHealth | null>(null);
   const [isLoadingHealth, setIsLoadingHealth] = useState(true);
+  const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
+
+  // Sync sub-screen back handler with modal backRef
+  useEffect(() => {
+    if (onBackRef) {
+      if (activeLegalScreen) {
+        onBackRef.current = () => {
+          setActiveLegalScreen(null);
+          return true;
+        };
+      } else {
+        onBackRef.current = null;
+      }
+    }
+    return () => {
+      if (onBackRef) onBackRef.current = null;
+    };
+  }, [activeLegalScreen, onBackRef]);
+
+  // Handle hardware back press on Android when sub-screen is active
+  useEffect(() => {
+    if (!activeLegalScreen) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setActiveLegalScreen(null);
+      return true;
+    });
+    return () => sub.remove();
+  }, [activeLegalScreen]);
 
   useEffect(() => {
     const unsub = addAdhanPlaybackListener((id) => {
@@ -670,6 +702,15 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
     value: m,
     label: `${m} min`,
   }));
+
+  if (activeLegalScreen) {
+    return (
+      <LegalScreen
+        screen={activeLegalScreen}
+        onBack={() => setActiveLegalScreen(null)}
+      />
+    );
+  }
 
   return (
     <ScrollView
@@ -1443,6 +1484,105 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
           onCancel={() => setPinModalMode(null)}
           onSetPin={(newHash) => setWomenPinHash(newHash)}
         />
+
+        {/* About & Legal */}
+        <Section label="About & Legal">
+          <Row
+            title="Privacy Policy"
+            desc="No tracking, no accounts, data stays on device"
+            onPress={() => {
+              setActiveLegalScreen('privacy');
+              haptic('light');
+            }}
+            right={
+              <Ionicons
+                name={getForwardIcon('chevron')}
+                size={iconSizes.inlineLg}
+                color={colors.accent}
+              />
+            }
+          />
+          <Hairline />
+          <Row
+            title="Terms of Use"
+            desc="Free service provided as-is for educational use"
+            onPress={() => {
+              setActiveLegalScreen('terms');
+              haptic('light');
+            }}
+            right={
+              <Ionicons
+                name={getForwardIcon('chevron')}
+                size={iconSizes.inlineLg}
+                color={colors.accent}
+              />
+            }
+          />
+          <Hairline />
+          <Row
+            title="Data & Privacy"
+            desc="Local storage, third-party requests & data removal"
+            onPress={() => {
+              setActiveLegalScreen('data');
+              haptic('light');
+            }}
+            right={
+              <Ionicons
+                name={getForwardIcon('chevron')}
+                size={iconSizes.inlineLg}
+                color={colors.accent}
+              />
+            }
+          />
+          <Hairline />
+          <Row
+            title="Open Source Licenses"
+            desc="Expo, React Native & open-source libraries"
+            onPress={() => {
+              setActiveLegalScreen('licenses');
+              haptic('light');
+            }}
+            right={
+              <Ionicons
+                name={getForwardIcon('chevron')}
+                size={iconSizes.inlineLg}
+                color={colors.accent}
+              />
+            }
+          />
+          <Hairline />
+          <Row
+            title="Third-Party Services"
+            desc="Public APIs for prayer times, Quran text & audio"
+            onPress={() => {
+              setActiveLegalScreen('services');
+              haptic('light');
+            }}
+            right={
+              <Ionicons
+                name={getForwardIcon('chevron')}
+                size={iconSizes.inlineLg}
+                color={colors.accent}
+              />
+            }
+          />
+          <Hairline />
+          <Row
+            title="Contact / Report an Issue"
+            desc="GitHub repository & community issue tracker"
+            onPress={() => {
+              setActiveLegalScreen('contact');
+              haptic('light');
+            }}
+            right={
+              <Ionicons
+                name={getForwardIcon('chevron')}
+                size={iconSizes.inlineLg}
+                color={colors.accent}
+              />
+            }
+          />
+        </Section>
 
         {/* About — muted, at the bottom */}
         <Section label="About">

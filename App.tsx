@@ -295,6 +295,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const { request: requestLocation, status: locStatus } = useLocation();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsBackRef = useRef<(() => boolean) | null>(null);
   const [audioModalOpen, setAudioModalOpen] = useState(false);
   const [showLocationSetup, setShowLocationSetup] = useState(false);
   const [locationSetupLoading, setLocationSetupLoading] = useState(false);
@@ -655,6 +656,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (settingsOpen) {
+        if (settingsBackRef.current && settingsBackRef.current()) {
+          return true;
+        }
         setSettingsOpen(false);
         return true;
       }
@@ -1032,6 +1036,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
       <SettingsModal
         visible={settingsOpen}
         onClose={() => setSettingsOpen(false)}
+        backRef={settingsBackRef}
       />
 
       {/* Location Setup Modal for first-time users without usable location */}
@@ -1046,10 +1051,25 @@ function Root({ splashDone }: { splashDone: boolean }) {
   );
 }
 
-function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
+function SettingsModal({
+  visible,
+  onClose,
+  backRef,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  backRef?: React.MutableRefObject<(() => boolean) | null>;
+}) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [anim] = useState(() => new Animated.Value(0));
+
+  const handleRequestClose = useCallback(() => {
+    if (backRef?.current && backRef.current()) {
+      return;
+    }
+    onClose();
+  }, [backRef, onClose]);
 
   useEffect(() => {
     if (visible) {
@@ -1068,11 +1088,11 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onClose}
+      onRequestClose={handleRequestClose}
       statusBarTranslucent
     >
       <View style={styles.settingsOverlay}>
-        <TouchableWithoutFeedback onPress={onClose} accessibilityLabel="Close settings">
+        <TouchableWithoutFeedback onPress={handleRequestClose} accessibilityLabel="Close settings">
           <View style={styles.settingsBackdrop} />
         </TouchableWithoutFeedback>
         <Animated.View
@@ -1104,7 +1124,7 @@ function SettingsModal({ visible, onClose }: { visible: boolean; onClose: () => 
               { paddingBottom: Math.max(insets.bottom, 16) + 12 },
             ]}
           >
-            <SettingsScreen onClose={onClose} />
+            <SettingsScreen onClose={onClose} onBackRef={backRef} />
           </View>
         </Animated.View>
       </View>
