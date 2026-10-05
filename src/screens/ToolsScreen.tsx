@@ -12,6 +12,7 @@ export type ToolsItemKey =
   | 'location'
   | 'cities'
   | 'notifications'
+  | 'prayer-reminders'
   | 'fasting'
   | 'zakat'
   | 'calendar'
@@ -63,6 +64,12 @@ const BASE_GROUPS: ToolsGroup[] = [
         icon: 'checkmark-circle',
       },
       {
+        key: 'prayer-reminders',
+        title: 'Prayer Reminders',
+        subtitle: 'Adhan alerts, per-prayer toggles & test',
+        icon: 'notifications',
+      },
+      {
         key: 'location',
         title: 'Location',
         subtitle: 'GPS auto vs manual coordinates',
@@ -73,12 +80,6 @@ const BASE_GROUPS: ToolsGroup[] = [
         title: 'Cities',
         subtitle: '68 world cities directory & selector',
         icon: 'business',
-      },
-      {
-        key: 'notifications',
-        title: 'Notifications',
-        subtitle: 'Prayer reminders & adhan test',
-        icon: 'notifications',
       },
     ],
   },

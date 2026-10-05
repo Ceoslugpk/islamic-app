@@ -4,7 +4,7 @@ export type NavigationSetters = {
   setTab: (tab: 'home' | 'quran' | 'library' | 'tools') => void;
   setQuran: (view: { screen: 'home' } | { screen: 'reader'; surah: number; initialAyah?: number } | { screen: 'audio' } | { screen: 'tafsir'; surah?: number } | { screen: 'topics' } | { screen: 'compare'; surah?: number; ayah?: number } | { screen: 'bookmarks' } | { screen: 'notes' } | { screen: 'plans' } | { screen: 'hifz' }) => void;
   setLibrary: (view: { screen: 'hub' } | { screen: 'tasbih' } | { screen: 'names' } | { screen: 'duas' } | { screen: 'hadith' }) => void;
-  setTools: (view: { screen: 'hub' } | { screen: 'qibla' } | { screen: 'tracker' } | { screen: 'location' } | { screen: 'cities' } | { screen: 'notifications' } | { screen: 'fasting' } | { screen: 'zakat' } | { screen: 'calendar' } | { screen: 'mosque' } | { screen: 'women-cycle' } | { screen: 'women-purity' } | { screen: 'women-guidance' } | { screen: 'women-qada' }) => void;
+  setTools: (view: { screen: 'hub' } | { screen: 'qibla' } | { screen: 'tracker' } | { screen: 'location' } | { screen: 'cities' } | { screen: 'notifications' } | { screen: 'prayer-reminders' } | { screen: 'fasting' } | { screen: 'zakat' } | { screen: 'calendar' } | { screen: 'mosque' } | { screen: 'women-cycle' } | { screen: 'women-purity' } | { screen: 'women-guidance' } | { screen: 'women-qada' }) => void;
   setSettingsOpen: (open: boolean) => void;
 };
 

@@ -38,6 +38,36 @@ export function clampQuranLineHeight(value: number): number {
   return Math.max(QURAN_LINE_HEIGHT_MIN, Math.min(QURAN_LINE_HEIGHT_MAX, rounded));
 }
 
+export type PrayerNameKey = 'Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha';
+
+export interface PrayerReminderConfig {
+  enabled: boolean;
+  adhan: boolean;
+  vibration: boolean;
+}
+
+export type PrayerConfigs = Record<PrayerNameKey, PrayerReminderConfig>;
+
+export type QuranGoalType = 'minutes' | 'pages' | 'custom';
+
+export interface QuranGoalConfig {
+  type: QuranGoalType;
+  target: number;
+}
+
+export const DEFAULT_PRAYER_CONFIGS: PrayerConfigs = {
+  Fajr: { enabled: true, adhan: true, vibration: true },
+  Dhuhr: { enabled: true, adhan: true, vibration: true },
+  Asr: { enabled: true, adhan: true, vibration: true },
+  Maghrib: { enabled: true, adhan: true, vibration: true },
+  Isha: { enabled: true, adhan: true, vibration: true },
+};
+
+export const DEFAULT_QURAN_GOAL: QuranGoalConfig = {
+  type: 'minutes',
+  target: 15,
+};
+
 export interface AppSettings {
   methodId: number;
   madhab: Madhab;
@@ -47,7 +77,10 @@ export interface AppSettings {
   autoLocation: Location | null;
   remindersEnabled: boolean;
   reminderOffsetMinutes: number;
+  prayerConfigs: PrayerConfigs;
   quranReminderEnabled: boolean;
+  quranReminderTime: string;
+  quranGoal: QuranGoalConfig;
   adhanReciterId: string;
   themeMode: ThemeMode;
   accentKey: AccentKey;
@@ -76,7 +109,11 @@ interface SettingsContextValue {
   setAutoLocation: (loc: Location) => void;
   setReminders: (enabled: boolean) => void;
   setReminderOffsetMinutes: (minutes: number) => void;
+  setPrayerConfig: (prayer: PrayerNameKey, config: Partial<PrayerReminderConfig>) => void;
+  setPrayerConfigs: (configs: PrayerConfigs) => void;
   setQuranReminderEnabled: (enabled: boolean) => void;
+  setQuranReminderTime: (time: string) => void;
+  setQuranGoal: (goal: QuranGoalConfig) => void;
   setAdhanReciterId: (id: string) => void;
   setThemeMode: (m: ThemeMode) => void;
   setAccentKey: (key: AccentKey) => void;
@@ -105,7 +142,10 @@ const DEFAULTS: AppSettings = {
   autoLocation: null,
   remindersEnabled: false,
   reminderOffsetMinutes: 15,
+  prayerConfigs: DEFAULT_PRAYER_CONFIGS,
   quranReminderEnabled: false,
+  quranReminderTime: '20:00',
+  quranGoal: DEFAULT_QURAN_GOAL,
   adhanReciterId: 'alafasy',
   themeMode: 'system',
   accentKey: 'amber',
@@ -188,6 +228,19 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             : DEFAULTS.quranPreloadRequested;
         preloadRequestedMem = next.quranPreloadRequested;
 
+        next.prayerConfigs = {
+          ...DEFAULT_PRAYER_CONFIGS,
+          ...(parsed.prayerConfigs || {}),
+        };
+        next.quranReminderTime =
+          typeof parsed.quranReminderTime === 'string' && parsed.quranReminderTime.includes(':')
+            ? parsed.quranReminderTime
+            : DEFAULTS.quranReminderTime;
+        next.quranGoal = {
+          ...DEFAULT_QURAN_GOAL,
+          ...(parsed.quranGoal || {}),
+        };
+
         // Adopt legacy QuranReaderScreen AsyncStorage values once, when settings
         // don't own them yet — settings become the source of truth from here on.
         let migrated = false;
@@ -237,7 +290,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setAutoLocation: (autoLocation) => setSettings((prev) => persist({ ...prev, autoLocation })),
     setReminders: (remindersEnabled) => setSettings((prev) => persist({ ...prev, remindersEnabled })),
     setReminderOffsetMinutes: (reminderOffsetMinutes) => setSettings((prev) => persist({ ...prev, reminderOffsetMinutes })),
+    setPrayerConfig: (prayer, config) =>
+      setSettings((prev) =>
+        persist({
+          ...prev,
+          prayerConfigs: {
+            ...prev.prayerConfigs,
+            [prayer]: {
+              ...(prev.prayerConfigs?.[prayer] || DEFAULT_PRAYER_CONFIGS[prayer]),
+              ...config,
+            },
+          },
+        })
+      ),
+    setPrayerConfigs: (prayerConfigs) => setSettings((prev) => persist({ ...prev, prayerConfigs })),
     setQuranReminderEnabled: (quranReminderEnabled) => setSettings((prev) => persist({ ...prev, quranReminderEnabled })),
+    setQuranReminderTime: (quranReminderTime) => setSettings((prev) => persist({ ...prev, quranReminderTime })),
+    setQuranGoal: (quranGoal) => setSettings((prev) => persist({ ...prev, quranGoal })),
     setAdhanReciterId: (adhanReciterId) => {
       setActiveAdhanReciterId(adhanReciterId);
       setSettings((prev) => persist({ ...prev, adhanReciterId }));

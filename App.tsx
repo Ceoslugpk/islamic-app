@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,17 +8,24 @@ import {
   Modal,
   useWindowDimensions,
   Linking,
+  AppState,
+  BackHandler,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemeProvider, useTheme } from './src/lib/theme';
-import { SettingsProvider } from './src/lib/settings';
+import {
+  SettingsProvider,
+  useSettings,
+  getQuranPreloadRequested,
+  loadQuranPreloadRequested,
+} from './src/lib/settings';
 import { useEditorialFonts } from './src/lib/fonts';
 import { AnimatedSplash } from './src/components/AnimatedSplash';
 import { useConnectivity } from './src/lib/useConnectivity';
 import { OfflineBanner } from './src/components/OfflineBanner';
-import { parseDeepLink, DeepLinkTarget } from './src/lib/deeplinks';
+import { parseDeepLink } from './src/lib/deeplinks';
 import { handleDeepLink, NavigationSetters } from './src/lib/deeplinkRouter';
 
 import HomeScreen from './src/screens/HomeScreen';
@@ -46,7 +53,7 @@ import ToolsScreen, { ToolsItemKey } from './src/screens/ToolsScreen';
 import SalahTrackerScreen from './src/screens/SalahTrackerScreen';
 import LocationScreen from './src/screens/LocationScreen';
 import CitiesScreen from './src/screens/CitiesScreen';
-import NotificationsScreen from './src/screens/NotificationsScreen';
+import PrayerRemindersScreen from './src/screens/PrayerRemindersScreen';
 import MosqueFinderScreen from './src/screens/MosqueFinderScreen';
 import WomenCycleScreen from './src/screens/WomenCycleScreen';
 import WomenPurityScreen from './src/screens/WomenPurityScreen';
@@ -66,18 +73,13 @@ import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
 import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayingNotification, cleanupNowPlayingNotification } from './src/lib/nowPlayingNotification';
 import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback } from './src/lib/quranAudio';
-import { rescheduleIfNeeded, setupNotificationResponseHandler, scheduleQuranReminder, cancelQuranReminder } from './src/lib/notifications';
-import { fetchPrayerTimes } from './src/lib/prayerTimes';
-import { useSettings, getQuranPreloadRequested, loadQuranPreloadRequested } from './src/lib/settings';
+import { rescheduleIfNeeded, setupNotificationResponseHandler } from './src/lib/notifications';
 import { startQuranPreload } from './src/lib/quranPreloader';
 import { runFirstLaunchWarmup } from './src/lib/warmup';
 import { runFirstLaunchPermissions } from './src/lib/firstLaunchPermissions';
 import { useLocation } from './src/lib/useLocation';
 import { updateWidgetSnapshot } from './src/lib/widgetBridge';
 import { registerBackgroundPreload } from './src/lib/backgroundPreload';
-import { AppState } from 'react-native';
-import { useEffect } from 'react';
-import { BackHandler } from 'react-native';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
 
@@ -261,6 +263,7 @@ type ToolsView =
   | { screen: 'location' }
   | { screen: 'cities' }
   | { screen: 'notifications' }
+  | { screen: 'prayer-reminders' }
   | { screen: 'fasting' }
   | { screen: 'zakat' }
   | { screen: 'calendar' }
@@ -326,12 +329,26 @@ function Root({ splashDone }: { splashDone: boolean }) {
         settings.methodId,
         settings.remindersEnabled,
         settings.reminderOffsetMinutes,
-        settings.quranReminderEnabled
+        settings.quranReminderEnabled,
+        settings.madhab,
+        settings.prayerConfigs,
+        settings.quranReminderTime,
+        settings.quranGoal
       );
     }
     checkAndReschedule();
     return () => { isMounted = false; };
-  }, [settings.manualLocation, settings.methodId, settings.remindersEnabled, settings.reminderOffsetMinutes, settings.quranReminderEnabled]);
+  }, [
+    settings.manualLocation,
+    settings.methodId,
+    settings.remindersEnabled,
+    settings.reminderOffsetMinutes,
+    settings.quranReminderEnabled,
+    settings.madhab,
+    settings.prayerConfigs,
+    settings.quranReminderTime,
+    settings.quranGoal,
+  ]);
 
   // Setup notification action handler (Mark Complete)
   useEffect(() => {
@@ -469,10 +486,23 @@ function Root({ splashDone }: { splashDone: boolean }) {
   useEffect(() => {
     updateWidgetSnapshot();
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'active') updateWidgetSnapshot();
+      if (state === 'active') {
+        updateWidgetSnapshot();
+        rescheduleIfNeeded(
+          settings.manualLocation,
+          settings.methodId,
+          settings.remindersEnabled,
+          settings.reminderOffsetMinutes,
+          settings.quranReminderEnabled,
+          settings.madhab,
+          settings.prayerConfigs,
+          settings.quranReminderTime,
+          settings.quranGoal
+        ).catch(() => {});
+      }
     });
     return () => sub.remove();
-  }, []);
+  }, [settings]);
 
   // Register the background preload task (continues Quran preloading in short
   // OS-allowed bursts when the app is backgrounded — respects user pause).
@@ -533,7 +563,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     else if (key === 'tracker') setTools({ screen: 'tracker' });
     else if (key === 'location') setTools({ screen: 'location' });
     else if (key === 'cities') setTools({ screen: 'cities' });
-    else if (key === 'notifications') setTools({ screen: 'notifications' });
+    else if (key === 'notifications' || key === 'prayer-reminders') setTools({ screen: 'prayer-reminders' });
     else if (key === 'fasting') setTools({ screen: 'fasting' });
     else if (key === 'zakat') setTools({ screen: 'zakat' });
     else if (key === 'calendar') setTools({ screen: 'calendar' });
@@ -740,8 +770,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
         {tab === 'tools' && tools.screen === 'cities' && (
           <CitiesScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
-        {tab === 'tools' && tools.screen === 'notifications' && (
-          <NotificationsScreen onBack={() => setTools({ screen: 'hub' })} />
+        {tab === 'tools' && (tools.screen === 'prayer-reminders' || tools.screen === 'notifications') && (
+          <PrayerRemindersScreen onBack={() => setTools({ screen: 'hub' })} />
         )}
         {tab === 'tools' && tools.screen === 'fasting' && (
           <FastingScreen onBack={() => setTools({ screen: 'hub' })} />

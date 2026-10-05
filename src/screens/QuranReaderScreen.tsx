@@ -30,6 +30,7 @@ import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { saveReadingPosition } from '../lib/continuing';
+import { recordQuranReadingSession } from '../lib/quranProgress';
 import { recordSurahVisit } from '../lib/recentSurahs';
 import { preloadRemainingSurahsForEdition } from '../lib/quranPreloader';
 import {
@@ -224,6 +225,17 @@ export default function QuranReaderScreen({
       if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
     };
   }, []);
+
+  // Track daily reading session minutes towards Quran goal
+  useEffect(() => {
+    const interval = setInterval(() => {
+      recordQuranReadingSession({ minutes: 1 }, settings.quranGoal).catch(() => {});
+    }, 60000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [settings.quranGoal]);
 
   const listRef = useRef<FlatList<Ayah>>(null);
 
