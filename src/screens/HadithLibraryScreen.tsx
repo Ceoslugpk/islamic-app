@@ -1584,8 +1584,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   gridCell: {
-    flexBasis: '48%',
+    flexBasis: '47%',
     minWidth: 0,
+    flexGrow: 0,
   },
   mb12: {
     marginBottom: 12,
