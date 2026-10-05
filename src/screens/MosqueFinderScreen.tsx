@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  ScrollView,
   ActivityIndicator,
   RefreshControl,
   Linking,
@@ -24,6 +25,7 @@ import { Hairline } from '../components/Hairline';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import { MosqueCardSkeleton } from '../components/Skeleton';
 import { loadMosqueCache, saveMosqueCache } from '../lib/db';
+import { useSearchHistory } from '../lib/searchHistory';
 
 export interface MosqueItem {
   id: string;
@@ -71,6 +73,13 @@ export default function MosqueFinderScreen({
   } | null>(null);
   const [areaNotFound, setAreaNotFound] = useState<boolean>(false);
   const [searchedQuery, setSearchedQuery] = useState<string>('');
+
+  const {
+    history: areaHistory,
+    addQuery: addAreaQuery,
+    removeQuery: removeAreaQuery,
+    clearHistory: clearAreaHistory,
+  } = useSearchHistory('mosque-areas');
 
   // Radius & Results
   const [radiusKm, setRadiusKm] = useState<number>(10);
@@ -340,6 +349,7 @@ export default function MosqueFinderScreen({
         query: q,
       };
 
+      addAreaQuery(q);
       setAreaSearchCenter(newCenter);
       await fetchMosquesForCenter(lat, lon, radiusKm);
     } catch (err: any) {
@@ -399,6 +409,7 @@ export default function MosqueFinderScreen({
         ]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -490,6 +501,62 @@ export default function MosqueFinderScreen({
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* Recent Area Searches */}
+            {areaHistory.length > 0 && !areaSearchCenter && (
+              <View style={styles.recentWrap}>
+                <View style={styles.recentHeader}>
+                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                  <TouchableOpacity
+                    onPress={clearAreaHistory}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear area search history"
+                  >
+                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recentChipsScroll}
+                >
+                  {areaHistory.map((item) => (
+                    <View
+                      key={item}
+                      style={[
+                        styles.recentChip,
+                        { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        onPress={() => {
+                          setAreaInput(item);
+                          handleSearchArea(item);
+                        }}
+                        style={styles.recentChipBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Search for mosques near ${item}`}
+                      >
+                        <Ionicons name="time-outline" size={13} color={colors.accent} />
+                        <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                          {item}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => removeAreaQuery(item)}
+                        style={styles.recentChipRemove}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${item} from search history`}
+                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+                      >
+                        <Ionicons name="close" size={12} color={colors.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {/* Location & Radius Control Card */}
             <Card style={styles.controlCard} padded>
@@ -888,6 +955,56 @@ const styles = StyleSheet.create({
   searchSubmitText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11.5,
+  },
+  recentWrap: {
+    marginBottom: 8,
+  },
+  recentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  recentLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  recentClearText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+  },
+  recentChipsScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
+  },
+  recentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingLeft: 8,
+    paddingRight: 4,
+    height: 28,
+  },
+  recentChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  recentChipText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    maxWidth: 140,
+  },
+  recentChipRemove: {
+    padding: 4,
+    marginLeft: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   controlCard: {
     marginBottom: 8,

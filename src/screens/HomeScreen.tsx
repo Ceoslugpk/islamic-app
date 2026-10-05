@@ -41,6 +41,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { GeometricPattern } from '../components/GeometricPattern';
 import { ArabicText } from '../components/ArabicText';
 import { iconSizes } from '../lib/iconMap';
+import { gettingPrayerTimes, preparingDashboard, retry, prayerTimesOfflineError, prayerTimesNeedsConnection } from '../lib/strings';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity, isAppOnline } from '../lib/useConnectivity';
@@ -234,7 +235,7 @@ export default function HomeScreen({
     if (!force && !isAppOnline()) {
       setLoading(false);
       if (!data) {
-        setError('Prayer times unavailable offline');
+        setError(prayerTimesOfflineError);
       }
       return;
     }
@@ -269,7 +270,7 @@ export default function HomeScreen({
         setData(fallbackCached);
         setError(null);
       } else if (!data) {
-        setError('Prayer times unavailable offline');
+        setError(prayerTimesOfflineError);
       }
     } finally {
       setLoading(false);
@@ -529,8 +530,8 @@ export default function HomeScreen({
         >
           <SectionHeader
             eyebrow="Today"
-            title="Loading..."
-            subtitle="Preparing your dashboard"
+            title={gettingPrayerTimes}
+            subtitle={preparingDashboard}
             style={styles.sectionHeader}
           />
           <CountdownCardSkeleton />
@@ -578,10 +579,10 @@ export default function HomeScreen({
       <View style={[styles.center, { backgroundColor: colors.bgBase, padding: 24 }]}>
         <Ionicons name="cloud-offline-outline" size={iconSizes.emptyState} color={colors.textMuted} style={{ marginBottom: 16 }} />
         <Text style={[styles.errorText, { color: colors.textPrimary, textAlign: 'center', marginBottom: 8, fontSize: 16, fontWeight: '600' }]}>
-          {error || 'Prayer times unavailable offline'}
+          {error || prayerTimesOfflineError}
         </Text>
         <Text style={{ color: colors.textMuted, textAlign: 'center', marginBottom: 20, fontSize: 14 }}>
-          Connect to the internet to fetch the authoritative prayer schedule for your location.
+          {prayerTimesNeedsConnection}
         </Text>
         <TouchableOpacity
           style={{
@@ -597,7 +598,7 @@ export default function HomeScreen({
           accessibilityRole="button"
           accessibilityLabel="Retry loading prayer times"
         >
-          <Text style={{ color: colors.onAccent, fontWeight: '600', fontSize: 14 }}>Retry</Text>
+          <Text style={{ color: colors.onAccent, fontWeight: '600', fontSize: 14 }}>{retry}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -687,7 +688,7 @@ export default function HomeScreen({
             <View style={styles.preloadBannerLeft}>
               <ActivityIndicator size="small" color={colors.accent} />
               <Text style={[styles.preloadBannerText, { color: colors.textSecondary }]}>
-                Preloading Quran translations… {preloadProgress.cached}/114
+                Getting the Quran ready… {preloadProgress.cached}/114
               </Text>
             </View>
             <View style={[styles.preloadBannerTrack, { backgroundColor: colors.borderSubtle }]}>

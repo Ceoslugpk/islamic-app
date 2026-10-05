@@ -16,6 +16,7 @@ import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { HifzStatus, saveHifzStatus, loadHifzStatuses } from '../lib/db';
+import { EmptyState } from '../components/EmptyState';
 
 type FilterTab = 'All' | 'Memorized' | 'Revising' | 'Not started';
 
@@ -323,11 +324,20 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              No surahs found in this category
-            </Text>
-          </View>
+          <EmptyState
+            icon="search-outline"
+            title="No surahs found"
+            subtitle={
+              searchQuery
+                ? `Nothing matches "${searchQuery}". Try a different name or number.`
+                : 'Nothing in this category yet — tap a surah to start memorizing.'
+            }
+            actionLabel="Clear filters"
+            onAction={() => {
+              setActiveFilter('All');
+              setSearchQuery('');
+            }}
+          />
         }
       />
       </View>
@@ -483,13 +493,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 10,
     marginTop: 2,
-  },
-  emptyContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
   },
 });

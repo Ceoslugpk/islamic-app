@@ -215,7 +215,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
             <View style={styles.nextEventRow}>
               <Hairline style={{ marginVertical: 12, backgroundColor: colors.borderSubtle }} />
               <View style={styles.nextEventContent}>
-                <Text style={[styles.nextEventLabel, { color: colors.textMuted }]}>NEXT EVENT</Text>
+                <Text style={[styles.nextEventLabel, { color: colors.textMuted }]}>Next event</Text>
                 <Text style={[styles.nextEventName, { color: colors.textPrimary }]}>
                   {nextEvent.event.name} {nextEvent.event.arabic ? `(${nextEvent.event.arabic})` : ''}
                 </Text>
@@ -237,7 +237,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
           </TouchableOpacity>
           <View style={styles.navTitle}>
             <Text style={[styles.monthName, { color: colors.textPrimary }]}>
-              {data ? data.hijriMonthName : 'Loading'}
+              {data ? data.hijriMonthName : 'Loading…'}
             </Text>
             <Text style={[styles.monthMeta, { color: colors.textMuted }]}>
               {data ? `${data.hijriYear} AH · ${GREG_MONTHS[month - 1]} ${year}` : '...'}
@@ -255,7 +255,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
 
         {/* NEW: Month overview strip - 12 Hijri months as chips */}
         <View style={styles.monthStripContainer}>
-          <Text style={[styles.monthStripLabel, { color: colors.textMuted }]}>HIJRI MONTHS</Text>
+          <Text style={[styles.monthStripLabel, { color: colors.textMuted }]}>Hijri months</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -360,14 +360,14 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
             </View>
 
             <Text style={[styles.legend, { color: colors.textMuted }]}>
-              Hijri day shown under each date
-              {'\n'}Amber = Today · Orange text = Friday · Amber dot + icon = Islamic event
+              Hijri date shown under each day
+              {'\n'}Amber = today · Orange = Friday · Amber dot + icon = Islamic event
             </Text>
 
             {/* NEW: Events list */}
             <View style={styles.eventsSection}>
               <Hairline style={{ marginVertical: 16, backgroundColor: colors.borderSubtle }} />
-              <SectionHeader eyebrow="Islamic Events" title="This Year" subtitle={`${ISLAMIC_EVENTS.length} major dates • sorted by Hijri month`} compact={isCompact} />
+              <SectionHeader eyebrow="Islamic Events" title="This Year" subtitle={`${ISLAMIC_EVENTS.length} major dates · by Hijri month`} compact={isCompact} />
               <View style={styles.eventsList}>
                 {allEventsWithCountdown.map((event) => (
                   <TouchableOpacity
@@ -392,7 +392,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
                       <View style={styles.eventHeader}>
                         <Text style={[styles.eventName, { color: colors.textPrimary }]}>{event.name}</Text>
                         {event.inCurrentMonth && (
-                          <Text style={styles.eventCurrentBadge}>This Month</Text>
+                          <Text style={styles.eventCurrentBadge}>This month</Text>
                         )}
                       </View>
                       <Text style={[styles.eventArabic, { color: colors.accent }]}>{event.arabic}</Text>
@@ -415,7 +415,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
         )}
 
         <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
-          Offline mode uses tabular Umm al-Qura approximation (may differ ±1 day from official sighting).
+          Offline, dates follow the tabular Umm al-Qura calendar and may differ by a day from a sighting.
         </Text>
       </View>
     </ScrollView>

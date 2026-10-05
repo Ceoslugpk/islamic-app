@@ -11,6 +11,7 @@ import {
   useWindowDimensions,
   Modal,
   SafeAreaView,
+  Linking,
 } from 'react-native';
 import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -1067,6 +1068,11 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
                     const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, true);
                     setHealth(h);
                     setReminders(true);
+                  } else {
+                    // Not granted — either first-time dismissal or permanent
+                    // denial. Either way the OS settings screen is the
+                    // guaranteed path back.
+                    Linking.openSettings().catch(() => {});
                   }
                 } catch {
                   // scheduling failed; health row shows the current state
@@ -1081,7 +1087,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
                   Notification permission needed
                 </Text>
                 <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
-                  Tap to allow notifications so prayer reminders can sound.
+                  Tap to allow notifications so prayer reminders and the Adhan can sound at prayer time.
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={16} color={colors.accent} />

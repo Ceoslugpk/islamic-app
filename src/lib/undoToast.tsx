@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 
 export interface UndoToastSaveParams {
   id: string;
-  action: 'bookmark' | 'note' | 'salah';
+  action: string;
   revert: () => void;
 }
 
@@ -162,3 +162,40 @@ const styles = {
 };
 
 export { UndoToast };
+
+/* ─── Screen-level undo wrapper ────────────────────────────────────────
+ * withUndoToast mounts the provider + toast around a screen so the screen
+ * can call useUndoToast().saveUndoState({ id, action, revert }) and get a
+ * 4s "Undo" toast with a revert callback — no App.tsx wiring needed.
+ * action doubles as the toast label ("Bookmark deleted", "Note deleted", …).
+ */
+function UndoToastBridge() {
+  const { pendingUndo, clear } = useContext(UndoToastContext);
+  const onUndo = useCallback(() => {
+    pendingUndo?.revert();
+    clear();
+  }, [pendingUndo, clear]);
+  const onClose = useCallback(() => clear(), [clear]);
+  return (
+    <UndoToast
+      actionDescription={pendingUndo?.action ?? ''}
+      onUndo={onUndo}
+      onClose={onClose}
+    />
+  );
+}
+
+export function withUndoToast<P extends object>(
+  Screen: React.ComponentType<P>
+): React.FC<P> {
+  return function UndoToastScreen(props: P) {
+    return (
+      <UndoToastProvider>
+        <View style={{ flex: 1 }}>
+          <Screen {...props} />
+          <UndoToastBridge />
+        </View>
+      </UndoToastProvider>
+    );
+  };
+}

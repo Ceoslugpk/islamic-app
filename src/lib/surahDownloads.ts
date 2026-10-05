@@ -166,8 +166,19 @@ export async function downloadSurah(
 
     try {
       if (Platform.OS === 'web' || !FileSystem.documentDirectory) {
-        // Web execution: stream / fetch blob
-        const response = await fetch(remoteUrl);
+        // Web execution: stream / fetch blob.
+        // Bounded watchdog: an unbounded fetch or stream never settles, which would
+        // leave QuranReader's download spinner stuck forever. Abort on timeout.
+        // ponytail: generous 60s since a full-surah MP3 can legitimately take a while.
+        const DOWNLOAD_TIMEOUT_MS = 60000;
+        const controller = new AbortController();
+        const watchdog = setTimeout(() => {
+          try {
+            controller.abort();
+          } catch {}
+        }, DOWNLOAD_TIMEOUT_MS);
+        try {
+        const response = await fetch(remoteUrl, { signal: controller.signal });
         if (!response.ok) {
           throw new Error(`Failed to fetch surah audio: HTTP ${response.status}`);
         }
@@ -216,6 +227,9 @@ export async function downloadSurah(
         updated[key] = meta;
         updateStore(updated);
         return meta;
+        } finally {
+          clearTimeout(watchdog);
+        }
       } else {
         // Native execution (iOS / Android): FileSystem download to documentDirectory
         const dir = `${FileSystem.documentDirectory}quran-audio/`;

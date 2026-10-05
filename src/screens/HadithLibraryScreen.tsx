@@ -44,6 +44,7 @@ import {
   loadHadithReadCounts,
 } from '../lib/db';
 import { useConnectivity } from '../lib/useConnectivity';
+import { useSearchHistory } from '../lib/searchHistory';
 
 type MainTab = 'collections' | 'saved' | 'recent' | 'progress';
 
@@ -66,6 +67,20 @@ interface HadithLibraryScreenProps {
 export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps) {
   const { colors } = useTheme();
   const { refreshKey } = useConnectivity();
+
+  const {
+    history: collectionHistory,
+    addQuery: addCollectionQuery,
+    removeQuery: removeCollectionQuery,
+    clearHistory: clearCollectionHistory,
+  } = useSearchHistory('hadith-collections');
+
+  const {
+    history: bookHistory,
+    addQuery: addBookQuery,
+    removeQuery: removeBookQuery,
+    clearHistory: clearBookHistory,
+  } = useSearchHistory('hadith-books');
 
   // Navigation state
   const [activeTab, setActiveTab] = useState<MainTab>('collections');
@@ -774,6 +789,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         {activeTab === 'collections' && view.type === 'collections' && (
           <ScrollView
             contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             refreshControl={
               <RefreshControl
                 refreshing={collectionsRefreshing}
@@ -807,6 +824,11 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 placeholderTextColor={colors.textMuted}
                 style={[styles.searchInput, { color: colors.textPrimary }]}
                 clearButtonMode="while-editing"
+                returnKeyType="search"
+                onSubmitEditing={() => {
+                  const q = collectionFilter.trim();
+                  if (q.length >= 2) addCollectionQuery(q);
+                }}
               />
               {collectionFilter.length > 0 && (
                 <TouchableOpacity onPress={() => setCollectionFilter('')}>
@@ -814,6 +836,62 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Recent Collection Searches */}
+            {collectionHistory.length > 0 && !collectionFilter && (
+              <View style={styles.recentWrap}>
+                <View style={styles.recentHeader}>
+                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                  <TouchableOpacity
+                    onPress={clearCollectionHistory}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear hadith collection search history"
+                  >
+                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recentChipsScroll}
+                >
+                  {collectionHistory.map((item) => (
+                    <View
+                      key={item}
+                      style={[
+                        styles.recentChip,
+                        { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        onPress={() => {
+                          setCollectionFilter(item);
+                          addCollectionQuery(item);
+                        }}
+                        style={styles.recentChipBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Search for ${item}`}
+                      >
+                        <Ionicons name="time-outline" size={13} color={colors.accent} />
+                        <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                          {item}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => removeCollectionQuery(item)}
+                        style={styles.recentChipRemove}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${item} from search history`}
+                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+                      >
+                        <Ionicons name="close" size={12} color={colors.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {collectionsLoading && (
               <View style={styles.gap12}>
@@ -904,6 +982,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         {activeTab === 'collections' && view.type === 'books' && (
           <ScrollView
             contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             refreshControl={
               <RefreshControl
                 refreshing={booksRefreshing}
@@ -941,6 +1021,11 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 placeholderTextColor={colors.textMuted}
                 style={[styles.searchInput, { color: colors.textPrimary }]}
                 clearButtonMode="while-editing"
+                returnKeyType="search"
+                onSubmitEditing={() => {
+                  const q = bookFilter.trim();
+                  if (q.length >= 2) addBookQuery(q);
+                }}
               />
               {bookFilter.length > 0 && (
                 <TouchableOpacity onPress={() => setBookFilter('')}>
@@ -948,6 +1033,62 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Recent Book Searches */}
+            {bookHistory.length > 0 && !bookFilter && (
+              <View style={styles.recentWrap}>
+                <View style={styles.recentHeader}>
+                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                  <TouchableOpacity
+                    onPress={clearBookHistory}
+                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear hadith book search history"
+                  >
+                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.recentChipsScroll}
+                >
+                  {bookHistory.map((item) => (
+                    <View
+                      key={item}
+                      style={[
+                        styles.recentChip,
+                        { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        onPress={() => {
+                          setBookFilter(item);
+                          addBookQuery(item);
+                        }}
+                        style={styles.recentChipBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Search for ${item}`}
+                      >
+                        <Ionicons name="time-outline" size={13} color={colors.accent} />
+                        <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                          {item}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => removeBookQuery(item)}
+                        style={styles.recentChipRemove}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Remove ${item} from search history`}
+                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+                      >
+                        <Ionicons name="close" size={12} color={colors.textMuted} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
 
             {booksLoading && (
               <View style={styles.gap12}>
@@ -1372,6 +1513,56 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     padding: 0,
+  },
+  recentWrap: {
+    marginBottom: 10,
+  },
+  recentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  recentLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  recentClearText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+  },
+  recentChipsScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
+  },
+  recentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingLeft: 8,
+    paddingRight: 4,
+    height: 28,
+  },
+  recentChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  recentChipText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    maxWidth: 140,
+  },
+  recentChipRemove: {
+    padding: 4,
+    marginLeft: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingWrap: {
     flexDirection: 'row',

@@ -17,6 +17,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import { ArabicText } from '../components/ArabicText';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
 import { formatTime } from '../lib/timeFormat';
@@ -52,7 +53,7 @@ const MISSED_REASONS = [
   'Other',
 ];
 
-export default function FastingScreen({ onBack }: { onBack?: () => void }) {
+function FastingScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
   const { settings } = useSettings();
   const { width } = useWindowDimensions();
@@ -69,6 +70,7 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
   });
   const [history, setHistory] = useState<FastingEntry[]>([]);
   const [missedList, setMissedList] = useState<MissedFastItem[]>([]);
+  const { saveUndoState } = useUndoToast();
 
   // Qada Form State
   const [showAddMissed, setShowAddMissed] = useState(false);
@@ -211,14 +213,25 @@ export default function FastingScreen({ onBack }: { onBack?: () => void }) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch { /* ignore */ }
 
+    const target = missedList.find((m) => m.id === id);
     deleteMissedFast(id);
+    setMissedList(loadMissedFasts());
     setJustDeletedMissed(id);
     if (missedDeleteTimerRef.current) clearTimeout(missedDeleteTimerRef.current);
     missedDeleteTimerRef.current = setTimeout(() => {
       setJustDeletedMissed(null);
-      setMissedList(loadMissedFasts());
     }, 1200);
-  }, []);
+    if (target) {
+      saveUndoState({
+        id,
+        action: 'Record deleted',
+        revert: () => {
+          saveMissedFast(target);
+          setMissedList(loadMissedFasts());
+        },
+      });
+    }
+  }, [missedList, saveUndoState]);
 
   // Stats
   const streak = useMemo(() => computeFastingStreak(history), [history]);
@@ -1307,3 +1320,6 @@ const styles = StyleSheet.create({
     height: 30,
   },
 });
+
+export default withUndoToast(FastingScreen);
+

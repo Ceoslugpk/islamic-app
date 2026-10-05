@@ -27,6 +27,7 @@ import { useHaptics } from '../lib/haptics';
 import { iconSizes } from '../lib/iconMap';
 import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
 import { ArabicText, AyahText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
+import { retry, cancel, remove, copy, share, play, bookmark, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
 import { useSettings, QURAN_FONT_SIZE_MIN, QURAN_FONT_SIZE_MAX, QURAN_FONT_SIZE_STEP } from '../lib/settings';
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
@@ -379,7 +380,7 @@ export default function QuranReaderScreen({
           setSurah(arCached);
           return;
         }
-        setError('Could not load Surah. Please check your connection.');
+        setError(surahLoadFailed);
       }
     } finally {
       setLoading(false);
@@ -562,7 +563,7 @@ export default function QuranReaderScreen({
       setTafsirText(res.text);
       setTafsirEdition(res.edition);
     } catch {
-      setTafsirText('Could not load Tafsir for this ayah. Please check your connection.');
+      setTafsirText(tafsirLoadFailed);
     } finally {
       setTafsirLoading(false);
     }
@@ -596,9 +597,9 @@ export default function QuranReaderScreen({
         'Remove Download',
         `Remove offline audio for Surah ${surah?.englishName ?? surahNumber} (${surahDownloadSize || '—'})?`,
         [
-          { text: 'Cancel', style: 'cancel' },
+          { text: cancel, style: 'cancel' },
           {
-            text: 'Remove',
+            text: remove,
             style: 'destructive',
             onPress: () => {
               removeSurahDownload(selectedReciter, surahNumber, bitrate)
@@ -623,7 +624,7 @@ export default function QuranReaderScreen({
       }
       refreshDownloadState();
     } catch {
-      Alert.alert('Download Error', 'Could not download surah audio. Please check your connection.');
+      Alert.alert(downloadFailedTitle, downloadFailedBody);
     } finally {
       setSurahDownloading(false);
       setSurahDownloadProgress(null);
@@ -775,19 +776,19 @@ export default function QuranReaderScreen({
         undefined,
         [
           {
-            text: 'Play',
+            text: play,
             onPress: () => {
               handlePlayAyahToggle(item.numberInSurah);
             },
           },
           {
-            text: 'Bookmark',
+            text: bookmark,
             onPress: () => {
               handleToggleBookmark(item);
             },
           },
           {
-            text: 'Copy',
+            text: copy,
             onPress: () => {
               const textToCopy = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
               Clipboard.setString(textToCopy);
@@ -798,7 +799,7 @@ export default function QuranReaderScreen({
             },
           },
           {
-            text: 'Share',
+            text: share,
             onPress: () => {
               const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
               Share.share({ message: textToShare }).catch(() => {});
@@ -1046,7 +1047,7 @@ export default function QuranReaderScreen({
           accessibilityRole="button"
           accessibilityLabel="Retry loading surah"
         >
-          <Text style={[styles.retryBtnText, { color: colors.accent }]}>Retry</Text>
+          <Text style={[styles.retryBtnText, { color: colors.accent }]}>{retry}</Text>
         </TouchableOpacity>
       </View>
     );

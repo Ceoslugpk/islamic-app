@@ -5,6 +5,7 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  Linking,
   StyleProp,
   ViewStyle,
 } from 'react-native';
@@ -54,6 +55,12 @@ export function LocationPermissionNote({
     : `GPS is not available on this device or platform. Currently using saved location (${fallbackCity}).`;
 
   const description = customMessage || defaultDesc;
+
+  // If the user has permanently denied (Android "don't ask again"), an in-app
+  // retry can never succeed — the only path back is the OS settings screen.
+  const openDeviceSettings = () => {
+    Linking.openSettings().catch(() => {});
+  };
 
   return (
     <View
@@ -141,6 +148,25 @@ export function LocationPermissionNote({
                   </Text>
                 </>
               )}
+            </TouchableOpacity>
+          )}
+
+          {isDenied && (
+            <TouchableOpacity
+              style={[
+                styles.cityBtn,
+                {
+                  borderColor: colors.borderSubtle,
+                  backgroundColor: colors.bgBase,
+                },
+              ]}
+              onPress={openDeviceSettings}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Open device settings to enable location"
+            >
+              <Ionicons name="settings-outline" size={14} color={colors.textPrimary} />
+              <Text style={[styles.cityBtnText, { color: colors.textPrimary }]}>Device Settings</Text>
             </TouchableOpacity>
           )}
         </View>

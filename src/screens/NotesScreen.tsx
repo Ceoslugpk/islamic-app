@@ -13,6 +13,7 @@ import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { getNotes, addNote, deleteNote, Note } from '../lib/study';
 import { EmptyState } from '../components/EmptyState';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
 
 interface NotesScreenProps {
   onBack?: () => void;
@@ -20,7 +21,7 @@ interface NotesScreenProps {
   onOpenVerse?: (surah: number, ayah: number) => void;
 }
 
-export default function NotesScreen({
+function NotesScreen({
   onBack,
   backLabel = 'Quran',
   onOpenVerse,
@@ -35,6 +36,7 @@ export default function NotesScreen({
   const [notes, setNotes] = useState<Note[]>([]);
   const [justSaved, setJustSaved] = useState(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { saveUndoState } = useUndoToast();
 
   useEffect(() => {
     setNotes(getNotes());
@@ -85,13 +87,23 @@ export default function NotesScreen({
   }, []);
 
   const handleDelete = (id: string) => {
+    const target = notes.find((n) => n.id === id);
+    if (!target) return;
     deleteNote(id);
+    setNotes(getNotes());
     setJustDeleted(id);
     if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
     deleteTimerRef.current = setTimeout(() => {
       setJustDeleted(null);
-      setNotes(getNotes());
     }, 1200);
+    saveUndoState({
+      id,
+      action: 'Note deleted',
+      revert: () => {
+        addNote(target.surah, target.ayah, target.body);
+        setNotes(getNotes());
+      },
+    });
   };
 
   const renderNote = ({ item }: { item: Note }) => {
@@ -228,7 +240,7 @@ export default function NotesScreen({
           <EmptyState
             icon="create-outline"
             title="No reflections yet"
-            subtitle="Add thoughts and reflections on verses as you read the Quran."
+            subtitle="Add thoughts and reflections on verses as you read the Quran — or write your first one above."
           />
         }
       />
@@ -343,3 +355,5 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 });
+
+export default withUndoToast(NotesScreen);

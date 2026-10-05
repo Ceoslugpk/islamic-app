@@ -444,6 +444,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             autoCorrect={false}
             clearButtonMode="while-editing"
             returnKeyType="search"
+            autoFocus
             onSubmitEditing={() => {
               if (searchQuery.trim().length >= 2) {
                 addQuery(searchQuery.trim());
@@ -547,6 +548,8 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
           maxToRenderPerBatch={10}
           windowSize={5}
           removeClippedSubviews={Platform.OS !== 'web'}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           ListEmptyComponent={
             <EmptyState
               icon="search-outline"

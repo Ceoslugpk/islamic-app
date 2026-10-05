@@ -113,10 +113,10 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
               />
             </View>
             <View style={styles.textWrap}>
-              <Text style={[styles.cityName, { color: colors.textPrimary }]}>
+              <Text style={[styles.cityName, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail">
                 {item.name}
               </Text>
-              <Text style={[styles.countryName, { color: colors.textSecondary }]}>
+              <Text style={[styles.countryName, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
                 {item.country}
               </Text>
             </View>
@@ -196,7 +196,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
           compact
           eyebrow="Directory"
           title="Cities"
-          subtitle="Choose from 68 world cities to set your manual location"
+          subtitle="Pick a city to set your location"
         />
 
         {/* Search Bar */}
@@ -212,7 +212,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 13 : 14 }]}
-            placeholder="Search by city or country..."
+            placeholder="Search city or country…"
             placeholderTextColor={colors.textMuted}
             value={query}
             onChangeText={setQuery}
@@ -243,7 +243,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              No cities found matching &ldquo;{query}&rdquo;
+              No matches for &ldquo;{query}&rdquo;
             </Text>
           </View>
         }

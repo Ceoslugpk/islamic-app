@@ -18,6 +18,7 @@ import {
   clearAllDownloads,
   formatBytes,
   removeSurahDownload,
+  downloadSurah,
   useSurahDownloads,
   DownloadedSurahMeta,
 } from '../lib/surahDownloads';
@@ -28,6 +29,7 @@ import {
   resolveReciterName,
 } from '../lib/quranAudio';
 import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import { SURAHS_114 } from '../lib/surahs114';
 import {
   useQuranPreload,
@@ -44,7 +46,7 @@ interface DownloadsScreenProps {
   onOpenSurah?: (surah: number) => void;
 }
 
-export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
+function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width <= 360;
@@ -58,6 +60,7 @@ export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreen
   const { setQuranPreloadRequested } = useSettings();
   const [textVerification, setTextVerification] = useState<QuranPreloadVerification | null>(null);
   const [verifyingText, setVerifyingText] = useState(false);
+  const { saveUndoState } = useUndoToast();
 
   // When everything claims to be cached, prove it by reading the local cache only.
   const autoVerifyDone = useRef(false);
@@ -129,20 +132,17 @@ export default function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreen
   const handleRemoveItem = (item: DownloadedSurahMeta) => {
     const summary = SURAHS_114[item.surah - 1];
     const name = item.surahEnglishName || summary?.englishName || `Surah ${item.surah}`;
-    Alert.alert(
-      'Remove Download',
-      `Remove offline audio for ${name} (${formatBytes(item.size)})?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: () => {
-            removeSurahDownload(item.edition, item.surah, item.bitrate).catch(() => {});
-          },
-        },
-      ]
-    );
+    removeSurahDownload(item.edition, item.surah, item.bitrate).catch(() => {});
+    saveUndoState({
+      id: `${item.edition}:${item.surah}:${item.bitrate}`,
+      action: 'Download removed',
+      revert: () => {
+        downloadSurah(item.edition, item.surah, item.bitrate, {
+          surahName: item.surahName,
+          surahEnglishName: item.surahEnglishName,
+        }).catch(() => {});
+      },
+    });
   };
 
   const handleTogglePlay = async (item: DownloadedSurahMeta) => {
@@ -794,3 +794,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+export default withUndoToast(DownloadsScreen);
+

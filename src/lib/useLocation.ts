@@ -239,6 +239,13 @@ export function useLocation(askOnMount = false): UseLocationResult {
 
     const exec = async (): Promise<Loc | null> => {
       try {
+        // Already permanently denied: don't re-prompt — the only path back is
+        // the OS settings screen (see LocationPermissionNote "Device Settings").
+        if (cachedStatus === 'denied') {
+          setStatus('denied');
+          return null;
+        }
+
         // Query permission silently first without prompting
         const currentPerm = await Location.getForegroundPermissionsAsync();
         let isGranted = currentPerm.granted;

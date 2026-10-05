@@ -48,10 +48,13 @@ export function NotificationPermissionNote({
     }
   };
 
-  const title = customTitle || 'Notifications are turned off';
+  const isUndetermined = status !== 'denied' && status !== 'granted' && status != null;
+  const title = customTitle || (isUndetermined ? 'Notifications not allowed yet' : 'Notifications are turned off');
   const description =
     customMessage ||
-    'To receive Adhan calls, timely prayer alerts, and daily dhikr reminders, please enable notifications for Islamic in your device settings.';
+    (isUndetermined
+      ? 'Allow notifications so Islamic can play the Adhan at prayer time and remind you to read the Quran daily.'
+      : 'To receive Adhan calls, timely prayer alerts, and daily dhikr reminders, please enable notifications for Islamic in your device settings.');
 
   return (
     <View

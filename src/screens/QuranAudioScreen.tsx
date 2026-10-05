@@ -22,6 +22,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { AudioPlayerModal } from '../components/AudioPlayerModal';
 import { EmptyState } from '../components/EmptyState';
 import { SkeletonCard } from '../components/Skeleton';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import {
   addPlaybackStatusListener,
   addQueueListener,
@@ -82,12 +83,13 @@ interface QuranAudioScreenProps {
   onBack?: () => void;
 }
 
-export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
+function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   const { colors } = useTheme();
   const { haptic } = useHaptics();
   const { width } = useWindowDimensions();
   const isNarrow = width < 380;
   const isCompact = width <= 350;
+  const { saveUndoState } = useUndoToast();
 
   const [activeTab, setActiveTab] = useState<AudioTab>('reciters');
 
@@ -329,6 +331,7 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   };
 
   const handleDeletePlaylist = (id: string) => {
+    const target = playlists.find((p) => p.id === id);
     deletePlaylist(id);
     const updated = loadPlaylists();
     setPlaylists(updated);
@@ -343,6 +346,18 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
         return next;
       });
     }
+    if (!target) return;
+    saveUndoState({
+      id,
+      action: 'Playlist deleted',
+      revert: () => {
+        savePlaylist(target);
+        setPlaylists(loadPlaylists());
+        if (match) {
+          setSavedPresetIds((prev) => new Set([...prev, match[1]]));
+        }
+      },
+    });
   };
 
   const handlePlayPlaylistItem = async (item: PlaylistItem, playlistContext?: Playlist, index = 0) => {
@@ -858,15 +873,13 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               keyExtractor={(item) => item.id}
               contentContainerStyle={styles.listContent}
               ListEmptyComponent={
-                <View style={styles.emptyBox}>
-                  <Ionicons name="musical-notes-outline" size={40} color={colors.textMuted} />
-                  <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                    No recent audio
-                  </Text>
-                  <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
-                    Audio recitations you play in the Quran reader or Audio center will appear here.
-                  </Text>
-                </View>
+                <EmptyState
+                  icon="musical-notes-outline"
+                  title="No recent audio"
+                  subtitle="Audio you play in the Quran reader or here will appear in this list."
+                  actionLabel="Open the Quran"
+                  onAction={onBack}
+                />
               }
               renderItem={({ item }) => {
                 const isItemPlaying =
@@ -1102,15 +1115,13 @@ export default function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 </View>
 
                 {playlists.length === 0 ? (
-                  <View style={styles.emptyBox}>
-                    <Ionicons name="albums-outline" size={36} color={colors.textMuted} />
-                    <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                      No custom playlists yet
-                    </Text>
-                    <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
-                      Create a playlist of your favorite Surahs or save a curated preset above.
-                    </Text>
-                  </View>
+                  <EmptyState
+                    icon="albums-outline"
+                    title="No playlists yet"
+                    subtitle="Create a playlist of your favorite surahs, or save one of the curated presets above."
+                    actionLabel="Create playlist"
+                    onAction={() => setNewPlaylistModalOpen(true)}
+                  />
                 ) : (
                   <View style={styles.userPlaylistsList}>
                     {playlists.map((item) => (
@@ -2524,3 +2535,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
+export default withUndoToast(QuranAudioScreen);
+

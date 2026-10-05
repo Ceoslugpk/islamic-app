@@ -18,6 +18,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
+import { latitudeInvalid, longitudeInvalid, locationSaved } from '../lib/strings';
 
 export default function LocationScreen({
   onBack,
@@ -68,11 +69,11 @@ export default function LocationScreen({
     const lng = parseFloat(lngInput.trim());
 
     if (isNaN(lat) || lat < -90 || lat > 90) {
-      setErrorMessage('Latitude must be a number between -90 and 90');
+      setErrorMessage(latitudeInvalid);
       return;
     }
     if (isNaN(lng) || lng < -180 || lng > 180) {
-      setErrorMessage('Longitude must be a number between -180 and 180');
+      setErrorMessage(longitudeInvalid);
       return;
     }
 
@@ -83,7 +84,7 @@ export default function LocationScreen({
       label,
     });
     setLocationMode('manual');
-    setSaveMessage('Coordinates saved and set as active location');
+    setSaveMessage(locationSaved);
     setTimeout(() => setSaveMessage(null), 3500);
   }
 
@@ -130,11 +131,11 @@ export default function LocationScreen({
             compact
             eyebrow="Preferences"
             title="Location"
-            subtitle="Configure automatic GPS detection or enter custom coordinates"
+            subtitle="Use GPS automatically or enter a city or coordinates"
           />
 
         {/* Location Mode Selector */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>LOCATION DETECTION</Text>
+        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Location detection</Text>
         <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           <TouchableOpacity
             style={styles.row}
@@ -146,8 +147,8 @@ export default function LocationScreen({
               <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Auto-detect (GPS)</Text>
               <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
                 {isAuto
-                  ? 'Determines prayer times from device location'
-                  : 'Disabled - currently using manual location'}
+                  ? 'Prayer times follow your device location'
+                  : 'Off — using your chosen city'}
               </Text>
             </View>
             <View
@@ -170,7 +171,7 @@ export default function LocationScreen({
         </View>
 
         {/* Current Active Location Card */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>ACTIVE LOCATION</Text>
+        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Active location</Text>
         <Card style={styles.activeCard} padded>
           <View style={styles.badgeRow}>
             <View
@@ -188,14 +189,14 @@ export default function LocationScreen({
                   { color: isAuto ? colors.accent : colors.textSecondary },
                 ]}
               >
-                {isAuto ? 'GPS AUTO' : 'MANUAL'}
+                {isAuto ? 'GPS Auto' : 'Manual'}
               </Text>
             </View>
             {isAuto && locStatus === 'denied' && (
-              <Text style={[styles.statusWarn, { color: colors.accent }]}>Permission Denied</Text>
+              <Text style={[styles.statusWarn, { color: colors.accent }]}>Permission denied</Text>
             )}
             {isAuto && locStatus === 'unavailable' && (
-              <Text style={[styles.statusWarn, { color: colors.accent }]}>GPS Unavailable</Text>
+              <Text style={[styles.statusWarn, { color: colors.accent }]}>GPS unavailable</Text>
             )}
           </View>
 
@@ -238,7 +239,7 @@ export default function LocationScreen({
             <View style={styles.shortcutLeft}>
               <Ionicons name="business-outline" size={18} color={colors.accent} />
               <Text style={[styles.shortcutText, { color: colors.textPrimary }]}>
-                Select from 68 World Cities
+                Pick from 68 world cities
               </Text>
             </View>
             <Text style={[styles.shortcutArrow, { color: colors.accent }]}>›</Text>
@@ -246,9 +247,9 @@ export default function LocationScreen({
         )}
 
         {/* Manual Coordinates Override */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>MANUAL COORDINATES</Text>
+        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Manual coordinates</Text>
         <View style={[styles.formCard, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>City / Place Name</Text>
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>City / place name</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary, backgroundColor: colors.bgBase }]}
             value={labelInput}
@@ -259,7 +260,7 @@ export default function LocationScreen({
 
           <View style={styles.coordsRow}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Latitude (-90 to 90)</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Latitude (−90 to 90)</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary, backgroundColor: colors.bgBase }]}
                 value={latInput}
@@ -270,7 +271,7 @@ export default function LocationScreen({
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Longitude (-180 to 180)</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Longitude (−180 to 180)</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary, backgroundColor: colors.bgBase }]}
                 value={lngInput}
@@ -296,7 +297,7 @@ export default function LocationScreen({
             accessibilityRole="button"
             accessibilityLabel="Save coordinates"
           >
-            <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>Save Coordinates</Text>
+            <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>Save location</Text>
           </TouchableOpacity>
         </View>
         </View>

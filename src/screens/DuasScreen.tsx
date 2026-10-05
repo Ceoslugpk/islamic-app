@@ -6,12 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  TextInput,
   useWindowDimensions,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { EmptyState } from '../components/EmptyState';
+import { useSearchHistory } from '../lib/searchHistory';
 import {
   DUAS_DATA,
   DUA_CATEGORIES,
@@ -29,8 +33,16 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   const [selectedCategory, setSelectedCategory] = useState<DuaCategory>('All');
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
   const [showSkeleton, setShowSkeleton] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const listRef = useRef<FlatList<DuaItem>>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const {
+    history: searchHistory,
+    addQuery,
+    removeQuery: removeSearchHistoryQuery,
+    clearHistory: clearSearchHistory,
+  } = useSearchHistory('duas');
 
   useEffect(() => {
     return () => {
@@ -44,9 +56,22 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   }, []);
 
   const filteredDuas = useMemo(() => {
-    if (selectedCategory === 'All') return DUAS_DATA;
-    return DUAS_DATA.filter((d) => d.category === selectedCategory);
-  }, [selectedCategory]);
+    const byCategory = selectedCategory === 'All' ? DUAS_DATA : DUAS_DATA.filter((d) => d.category === selectedCategory);
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return byCategory;
+    return byCategory.filter(
+      (d) =>
+        d.title.toLowerCase().includes(q) ||
+        d.transliteration.toLowerCase().includes(q) ||
+        d.translation.toLowerCase().includes(q) ||
+        d.arabic.toLowerCase().includes(q)
+    );
+  }, [selectedCategory, searchQuery]);
+
+  const submitSearch = () => {
+    const q = searchQuery.trim();
+    if (q.length >= 2) addQuery(q);
+  };
 
   const handleRandomDua = () => {
     if (filteredDuas.length === 0) return;
@@ -206,6 +231,92 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
         </TouchableOpacity>
       </View>
 
+      {/* Search Bar */}
+      <View
+        style={[
+          styles.searchWrap,
+          {
+            backgroundColor: colors.bgSurface,
+            borderColor: colors.borderSubtle,
+          },
+        ]}
+      >
+        <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search duas by title, transliteration, or meaning..."
+          placeholderTextColor={colors.textMuted}
+          style={[styles.searchInput, { color: colors.textPrimary }]}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+          autoFocus
+          onSubmitEditing={submitSearch}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Recent Search Queries */}
+      {searchHistory.length > 0 && !searchQuery && (
+        <View style={styles.recentWrap}>
+          <View style={styles.recentHeader}>
+            <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+            <TouchableOpacity
+              onPress={clearSearchHistory}
+              hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+              accessibilityRole="button"
+              accessibilityLabel="Clear duas search history"
+            >
+              <Text style={[styles.clearAllText, { color: colors.textMuted }]}>Clear</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.recentChipsScroll}
+          >
+            {searchHistory.map((item) => (
+              <View
+                key={item}
+                style={[
+                  styles.recentChip,
+                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                ]}
+              >
+                <TouchableOpacity
+                  onPress={() => {
+                    setSearchQuery(item);
+                    addQuery(item);
+                  }}
+                  style={styles.recentChipBtn}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Search for ${item}`}
+                >
+                  <Ionicons name="time-outline" size={13} color={colors.accent} />
+                  <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {item}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => removeSearchHistoryQuery(item)}
+                  style={styles.recentChipRemove}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Remove ${item} from search history`}
+                  hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+                >
+                  <Ionicons name="close" size={12} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Duas List */}
       {showSkeleton ? (
         <FlatList
@@ -223,6 +334,17 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           renderItem={renderItem}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          ListEmptyComponent={
+            <EmptyState
+              icon="search-outline"
+              title="No duas found"
+              subtitle={`No duas match "${searchQuery}"`}
+              actionLabel="Clear search"
+              onAction={() => setSearchQuery('')}
+            />
+          }
           onScrollToIndexFailed={(info) => {
             listRef.current?.scrollToOffset({
               offset: info.averageItemLength * info.index,
@@ -298,6 +420,77 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: 30,
     gap: 16,
+  },
+  searchWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    height: 38,
+    marginBottom: 10,
+  },
+  searchIcon: {
+    marginRight: 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 13,
+    paddingVertical: 0,
+  },
+  clearBtn: {
+    padding: 4,
+  },
+  recentWrap: {
+    marginBottom: 10,
+  },
+  recentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  recentLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  clearAllText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+  },
+  recentChipsScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
+  },
+  recentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingLeft: 8,
+    paddingRight: 4,
+    height: 28,
+  },
+  recentChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  recentChipText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    maxWidth: 140,
+  },
+  recentChipRemove: {
+    padding: 4,
+    marginLeft: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   duaCard: {
     borderWidth: 1,

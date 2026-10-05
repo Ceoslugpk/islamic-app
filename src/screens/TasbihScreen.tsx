@@ -14,6 +14,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { saveTasbihCount, loadTasbihCounts, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
 
 export interface DhikrItem {
   id: string;
@@ -57,13 +58,14 @@ export const DHIKR_PRESETS: DhikrItem[] = [
 
 const TARGET_OPTIONS = [33, 99];
 
-export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
+function TasbihScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
   const { haptic } = useHaptics();
   const [selectedDhikr, setSelectedDhikr] = useState<DhikrItem>(DHIKR_PRESETS[0]);
   const [target, setTarget] = useState<number>(33);
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [todayTotal, setTodayTotal] = useState<number>(0);
+  const { saveUndoState } = useUndoToast();
 
   const todayKey = new Date().toISOString().slice(0, 10);
 
@@ -99,12 +101,24 @@ export default function TasbihScreen({ onBack }: { onBack?: () => void }) {
 
   const handleReset = useCallback(() => {
     haptic('warning');
+    const prevCount = counts[selectedDhikr.id] || 0;
     setCounts((prev) => ({
       ...prev,
       [selectedDhikr.id]: 0,
     }));
     saveTasbihCount(selectedDhikr.id, 0);
-  }, [selectedDhikr.id, haptic]);
+    saveUndoState({
+      id: `tasbih:${selectedDhikr.id}`,
+      action: 'Count reset',
+      revert: () => {
+        setCounts((prev) => ({
+          ...prev,
+          [selectedDhikr.id]: prevCount,
+        }));
+        saveTasbihCount(selectedDhikr.id, prevCount);
+      },
+    });
+  }, [selectedDhikr.id, haptic, counts, saveUndoState]);
 
   const rounds = Math.floor(currentCount / target);
   const progressInRound = currentCount % target;
@@ -532,3 +546,6 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
 });
+
+export default withUndoToast(TasbihScreen);
+

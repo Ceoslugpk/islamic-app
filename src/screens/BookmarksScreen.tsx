@@ -10,10 +10,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
-import { getBookmarks, removeBookmark, VerseRef } from '../lib/study';
+import { getBookmarks, removeBookmark, addBookmark, VerseRef } from '../lib/study';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { EmptyState } from '../components/EmptyState';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
 
 interface BookmarksScreenProps {
   onBack?: () => void;
@@ -21,7 +22,7 @@ interface BookmarksScreenProps {
   onOpenVerse?: (surah: number, ayah: number) => void;
 }
 
-export default function BookmarksScreen({
+function BookmarksScreen({
   onBack,
   backLabel = 'Quran',
   onOpenVerse,
@@ -33,6 +34,7 @@ export default function BookmarksScreen({
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
   const [justRemoved, setJustRemoved] = useState<string | null>(null);
   const removedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { saveUndoState } = useUndoToast();
 
   useEffect(() => {
     setBookmarks(getBookmarks());
@@ -45,14 +47,24 @@ export default function BookmarksScreen({
   }, []);
 
   const handleRemove = (surah: number, ayah: number) => {
+    const target = bookmarks.find((b) => b.surah === surah && b.ayah === ayah);
+    if (!target) return;
     removeBookmark(surah, ayah);
+    setBookmarks(getBookmarks());
     const key = `${surah}:${ayah}`;
     setJustRemoved(key);
     if (removedTimerRef.current) clearTimeout(removedTimerRef.current);
     removedTimerRef.current = setTimeout(() => {
       setJustRemoved(null);
-      setBookmarks(getBookmarks());
     }, 1200);
+    saveUndoState({
+      id: key,
+      action: 'Bookmark removed',
+      revert: () => {
+        addBookmark(target);
+        setBookmarks(getBookmarks());
+      },
+    });
   };
 
   const renderBookmark = ({ item }: { item: VerseRef }) => {
@@ -128,7 +140,9 @@ export default function BookmarksScreen({
             <EmptyState
               icon="bookmark-outline"
               title="No bookmarks yet"
-              subtitle="Tap the bookmark icon on any ayah in the Quran reader to save it here for quick access."
+              subtitle="Open the Quran and tap the bookmark icon on any ayah to save it here for quick access."
+              actionLabel="Open the Quran"
+              onAction={onOpenVerse ? () => onOpenVerse(1, 1) : undefined}
             />
           }
         />
@@ -201,3 +215,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
+export default withUndoToast(BookmarksScreen);

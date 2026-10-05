@@ -17,6 +17,16 @@ function explainNotifications(): void {
   );
 }
 
+/** Explains why the app needs location before showing the OS prompt. */
+function explainLocation(): void {
+  if (Platform.OS === 'web' || Platform.OS === 'ios') return; // web: no native prompt; iOS: system rationale below
+  Alert.alert(
+    'Your location for prayer times',
+    'Islamic uses your location only to calculate accurate prayer times and the Qibla direction for where you are.\n\nIf you prefer, you can skip this and choose a city instead — you can change this anytime in Settings.',
+    [{ text: 'OK' }]
+  );
+}
+
 export interface FirstLaunchPermissionsOptions {
   /** Optional custom location requester, e.g. from useLocation().request */
   requestLocation?: (force?: boolean) => Promise<Loc | null>;
@@ -161,6 +171,7 @@ export async function runFirstLaunchPermissions(
   let locationGranted = false;
   let locationResult: Loc | null = null;
   try {
+    explainLocation();
     if (options?.requestLocation) {
       locationResult = await options.requestLocation(false);
     } else {

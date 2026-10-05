@@ -18,6 +18,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
+import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import {
   SUPPORTED_CURRENCIES,
   CurrencyConfig,
@@ -36,10 +37,11 @@ import {
 
 type ZakatSubTab = 'calculator' | 'history' | 'guide';
 
-export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
+function ZakatScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
+  const { saveUndoState } = useUndoToast();
 
   const [activeTab, setActiveTab] = useState<ZakatSubTab>('calculator');
   const [selectedCurrencyCode, setSelectedCurrencyCode] = useState('AED');
@@ -182,14 +184,25 @@ export default function ZakatScreen({ onBack }: { onBack?: () => void }) {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     } catch { /* ignore */ }
+    const target = history.find((h) => h.id === id);
     deleteZakatCalculation(id);
+    setHistory(loadZakatCalculations());
     setJustDeleted(id);
     if (deleteTimerRef.current) clearTimeout(deleteTimerRef.current);
     deleteTimerRef.current = setTimeout(() => {
       setJustDeleted(null);
-      setHistory(loadZakatCalculations());
     }, 1200);
-  }, []);
+    if (target) {
+      saveUndoState({
+        id,
+        action: 'Record deleted',
+        revert: () => {
+          saveZakatCalculation(target);
+          setHistory(loadZakatCalculations());
+        },
+      });
+    }
+  }, [history, saveUndoState]);
 
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
@@ -1223,3 +1236,6 @@ const styles = StyleSheet.create({
     height: 30,
   },
 });
+
+export default withUndoToast(ZakatScreen);
+

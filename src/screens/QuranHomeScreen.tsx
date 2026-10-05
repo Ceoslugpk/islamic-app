@@ -25,6 +25,8 @@ import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { useQuranPreload } from '../lib/quranPreloader';
 import { useSettings } from '../lib/settings';
 import { useFlatListRestore } from '../lib/useScrollRestore';
+import { useSearchHistory } from '../lib/searchHistory';
+import { EmptyState } from '../components/EmptyState';
 
 interface QuranHomeScreenProps {
   onOpenSurah: (surahNumber: number, initialAyah?: number) => void;
@@ -89,6 +91,13 @@ export default function QuranHomeScreen({
   const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
   const [readingPosition, setReadingPosition] = useState<ReadingPosition | null>(null);
   const [recentSurahs, setRecentSurahs] = useState<RecentSurah[]>([]);
+
+  const {
+    history: searchHistory,
+    addQuery,
+    removeQuery: removeSearchHistoryQuery,
+    clearHistory: clearSearchHistory,
+  } = useSearchHistory('quran-surahs');
 
   const listRef = useRef<FlatList<SurahMeta>>(null);
 
@@ -212,6 +221,11 @@ export default function QuranHomeScreen({
     } else {
       onOpenSurah(1, 1);
     }
+  };
+
+  const submitSearch = () => {
+    const q = searchQuery.trim();
+    if (q.length >= 2) addQuery(q);
   };
 
   const renderHeader = () => {
@@ -776,6 +790,8 @@ export default function QuranHomeScreen({
             onChangeText={setSearchQuery}
             autoCapitalize="none"
             autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={submitSearch}
           />
           {searchQuery.length > 0 && (
             <TouchableOpacity onPress={() => setSearchQuery('')}>
@@ -783,6 +799,62 @@ export default function QuranHomeScreen({
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Recent Search Queries */}
+        {searchHistory.length > 0 && !searchQuery && (
+          <View style={styles.searchRecentWrap}>
+            <View style={styles.searchRecentHeader}>
+              <Text style={[styles.searchRecentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+              <TouchableOpacity
+                onPress={clearSearchHistory}
+                hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                accessibilityRole="button"
+                accessibilityLabel="Clear surah search history"
+              >
+                <Text style={[styles.searchRecentClear, { color: colors.textMuted }]}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.searchRecentScroll}
+            >
+              {searchHistory.map((item) => (
+                <View
+                  key={item}
+                  style={[
+                    styles.searchRecentChip,
+                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchQuery(item);
+                      addQuery(item);
+                    }}
+                    style={styles.searchRecentChipBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Search for ${item}`}
+                  >
+                    <Ionicons name="time-outline" size={13} color={colors.accent} />
+                    <Text style={[styles.searchRecentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {item}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => removeSearchHistoryQuery(item)}
+                    style={styles.searchRecentChipRemove}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Remove ${item} from search history`}
+                    hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+                  >
+                    <Ionicons name="close" size={12} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Juz Filter Scroll */}
         <View style={[styles.juzRow, { gap: isNarrow ? 8 : 10 }]}>
@@ -935,6 +1007,17 @@ export default function QuranHomeScreen({
         maxToRenderPerBatch={20}
         windowSize={9}
         onScrollToIndexFailed={() => {}}
+        ListEmptyComponent={
+          searchQuery.trim().length > 0 ? (
+            <EmptyState
+              icon="search-outline"
+              title="No surahs found"
+              subtitle={`No surahs match "${searchQuery}"`}
+              actionLabel="Clear search"
+              onAction={() => setSearchQuery('')}
+            />
+          ) : null
+        }
       />
 
       <QuranLanguageModal
@@ -1231,6 +1314,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 14,
+  },
+  searchRecentWrap: {
+    marginBottom: 12,
+  },
+  searchRecentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+  },
+  searchRecentLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+    letterSpacing: 0.2,
+  },
+  searchRecentClear: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+  },
+  searchRecentScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingRight: 4,
+  },
+  searchRecentChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingLeft: 8,
+    paddingRight: 4,
+    height: 28,
+  },
+  searchRecentChipBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  searchRecentChipText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    maxWidth: 140,
+  },
+  searchRecentChipRemove: {
+    padding: 4,
+    marginLeft: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   juzLabel: {
     fontFamily: 'Manrope_600SemiBold',

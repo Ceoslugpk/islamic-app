@@ -23,6 +23,7 @@ import {
 import { SectionHeader } from '../components/SectionHeader';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
+import { EmptyState } from '../components/EmptyState';
 
 const PRAYERS = [
   { key: 'Fajr', label: 'Fajr' },
@@ -64,9 +65,11 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
   }, []);
 
   // Fetch today's prayer times
+  const [fetchFailed, setFetchFailed] = useState(false);
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setFetchFailed(false);
     fetchPrayerTimes(effectiveLocation, settings.methodId)
       .then((res) => {
         if (!cancelled) {
@@ -77,6 +80,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
       .catch(() => {
         if (!cancelled) {
           setLoading(false);
+          setFetchFailed(true);
         }
       });
 
@@ -176,6 +180,26 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
           <View style={styles.loadingWrap}>
             <ActivityIndicator color={colors.accent} />
           </View>
+        ) : fetchFailed && !data ? (
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="Prayer times unavailable"
+            subtitle="Couldn't load today's prayer times. Check your connection or location, then try again."
+            actionLabel="Retry"
+            onAction={() => {
+              setLoading(true);
+              setFetchFailed(false);
+              fetchPrayerTimes(effectiveLocation, settings.methodId)
+                .then((res) => {
+                  setData(res);
+                  setLoading(false);
+                })
+                .catch(() => {
+                  setLoading(false);
+                  setFetchFailed(true);
+                });
+            }}
+          />
         ) : (
           PRAYERS.map((p, i) => {
             const isDone = !!completed[p.key];

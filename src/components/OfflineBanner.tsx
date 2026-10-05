@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { offlineUsingSavedData } from '../lib/strings';
 
 export function OfflineBanner() {
   const { colors } = useTheme();
@@ -14,7 +15,7 @@ export function OfflineBanner() {
     >
       <View style={styles.content}>
         <Ionicons name="cloud-offline-outline" size={14} color={colors.accent} style={styles.icon} />
-        <Text style={[styles.text, { color: colors.textPrimary }]}>Offline · Using saved data</Text>
+        <Text style={[styles.text, { color: colors.textPrimary }]}>{offlineUsingSavedData}</Text>
       </View>
     </View>
   );
