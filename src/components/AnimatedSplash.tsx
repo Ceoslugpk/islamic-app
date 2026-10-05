@@ -204,11 +204,11 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
           ISLAMIC
         </Animated.Text>
 
-        {/* "Today" hint — appears at the very end (phase 2) */}
+        {/* Tagline — appears at the very end (phase 2) */}
         <Animated.Text
-          style={[styles.todayHint, { color: accentColor, opacity: wordmarkOpacity }]}
+          style={[styles.tagline, { color: accentColor, opacity: wordmarkOpacity }]}
         >
-          ↓ Today
+          Your Daily Companion
         </Animated.Text>
       </View>
     </Animated.View>
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     letterSpacing: 8,
     marginTop: 18,
   },
-  todayHint: {
+  tagline: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     letterSpacing: 3,
