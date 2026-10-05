@@ -310,14 +310,14 @@ export function AudioMiniPlayer({
           disabled={status.isBuffering}
         >
           {status.isBuffering ? (
-            <ActivityIndicator size="small" color="#121110" />
+            <ActivityIndicator size="small" color={colors.onAccent} />
           ) : status.isPlaying ? (
             <EqualizerBars color={colors.accent} isPlaying={status.isPlaying} />
           ) : (
             <Ionicons
               name="play"
               size={18}
-              color="#121110"
+              color={colors.onAccent}
             />
           )}
         </TouchableOpacity>
@@ -345,11 +345,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderTopWidth: 1,
-    elevation: 8,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
   },
   progressTrack: {
     position: 'absolute',
@@ -388,8 +383,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   segmentBadge: {
-    paddingHorizontal: 5,
-    paddingVertical: 1,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
   },

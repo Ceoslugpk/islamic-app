@@ -78,6 +78,8 @@ export const useUndoToast = (): {
   return context;
 };
 
+import { useTheme } from './theme';
+
 const UndoToast: React.FC<{
   actionDescription: string;
   onUndo: () => void;
@@ -90,6 +92,7 @@ const UndoToast: React.FC<{
   duration = 4000,
 }) => {
   const { visible, pendingUndo } = useContext(UndoToastContext);
+  const { colors } = useTheme();
   const [internalTimeoutId, setInternalTimeoutId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -97,19 +100,32 @@ const UndoToast: React.FC<{
       if (internalTimeoutId !== null) clearTimeout(internalTimeoutId);
       const t = setTimeout(() => {
         onClose();
-      }, 4000);
+      }, duration);
       setInternalTimeoutId(t);
     }
     return () => {
       if (internalTimeoutId !== null) clearTimeout(internalTimeoutId);
     };
-  }, [visible, 4000, onClose, internalTimeoutId]);
+  }, [visible, duration, onClose, internalTimeoutId]);
 
   return visible ? (
-    <View style={styles.toastContainer}>
-      <Text style={styles.toastText}>{actionDescription}</Text>
-      <TouchableOpacity style={styles.undoBtn} onPress={onUndo}>
-        <Text style={styles.undoBtnText}>Undo</Text>
+    <View
+      style={[
+        styles.toastContainer,
+        {
+          backgroundColor: colors.bgRaised,
+          borderColor: colors.borderSubtle,
+          borderWidth: 1,
+        },
+      ]}
+    >
+      <Text style={[styles.toastText, { color: colors.textPrimary }]}>{actionDescription}</Text>
+      <TouchableOpacity
+        style={styles.undoBtn}
+        onPress={onUndo}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Text style={[styles.undoBtnText, { color: colors.accent }]}>Undo</Text>
       </TouchableOpacity>
     </View>
   ) : null;
@@ -121,7 +137,6 @@ const styles = {
     bottom: 80,
     left: 20,
     right: 20,
-    backgroundColor: 'rgba(0,0,0,0.86)',
     borderRadius: 12,
     padding: 12,
     zIndex: 1000,
@@ -130,15 +145,17 @@ const styles = {
     justifyContent: 'space-between',
   } as const,
   toastText: {
-    color: 'white',
     fontFamily: 'Manrope_500Medium',
     fontSize: 14,
   } as const,
   undoBtn: {
-    padding: 6,
+    minHeight: 40,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
   } as const,
   undoBtnText: {
-    color: '#facc15',
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   } as const,

@@ -8,7 +8,7 @@ import { ViewStyle, TextStyle } from 'react-native';
 import { ThemeColors } from './constants';
 
 export type ButtonSize = 'sm' | 'md' | 'lg';
-export type ButtonVariant = 'primary' | 'secondary' | 'subtle' | 'ghost';
+export type ButtonVariant = 'primary' | 'secondary' | 'subtle' | 'ghost' | 'destructive' | 'icon';
 
 export interface ButtonDimensionToken {
   minHeight: number;
@@ -64,6 +64,14 @@ export const cardTokens = {
 export const pressedStateTokens = {
   activeOpacity: 0.75,
   feedbackScale: 0.98,
+} as const;
+
+export const touchTargetTokens = {
+  minTarget: 44,
+  compactTarget: 40,
+  hitSlop8: { top: 8, bottom: 8, left: 8, right: 8 },
+  hitSlop10: { top: 10, bottom: 10, left: 10, right: 10 },
+  hitSlop12: { top: 12, bottom: 12, left: 12, right: 12 },
 } as const;
 
 /**
@@ -145,5 +153,38 @@ export function getButtonStyles(
           color: colors.accent,
         },
       };
+
+    case 'destructive':
+      return {
+        container: {
+          ...baseContainer,
+          backgroundColor: colors.bgSurface,
+          borderWidth: 1,
+          borderColor: colors.destructive,
+        },
+        text: {
+          ...baseText,
+          color: colors.destructive,
+        },
+      };
+
+    case 'icon':
+      return {
+        container: {
+          minHeight: Math.max(dim.minHeight, touchTargetTokens.compactTarget),
+          minWidth: Math.max(dim.minHeight, touchTargetTokens.compactTarget),
+          paddingHorizontal: 0,
+          paddingVertical: 0,
+          borderRadius: dim.borderRadius,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: 'transparent',
+        },
+        text: {
+          ...baseText,
+          color: colors.textPrimary,
+        },
+      };
   }
 }
+

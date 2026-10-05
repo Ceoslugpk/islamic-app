@@ -330,6 +330,7 @@ export function AudioPlayerModal({
               style={[styles.closeBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
               accessibilityRole="button"
               accessibilityLabel="Close audio player modal"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons name="close" size={18} color={colors.textPrimary} />
             </TouchableOpacity>
