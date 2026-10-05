@@ -72,14 +72,8 @@ const BASE_GROUPS: ToolsGroup[] = [
       {
         key: 'location',
         title: 'Location',
-        subtitle: 'GPS auto vs manual coordinates',
+        subtitle: 'GPS auto vs manual coordinates · choose a city',
         icon: 'navigate',
-      },
-      {
-        key: 'cities',
-        title: 'Cities',
-        subtitle: '68 world cities directory & selector',
-        icon: 'business',
       },
     ],
   },

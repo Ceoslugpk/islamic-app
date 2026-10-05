@@ -295,7 +295,7 @@ type ToolsView =
 function Root({ splashDone }: { splashDone: boolean }) {
   const { colors, mode } = useTheme();
   const { isOnline } = useConnectivity();
-  const { settings, setAutoLocation } = useSettings();
+  const { settings, setAutoLocation, setLocationMode } = useSettings();
   const { request: requestLocation, status: locStatus } = useLocation();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -422,6 +422,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
       const loc = await requestLocation(true);
       if (loc) {
         setAutoLocation(loc, Date.now());
+        // CRITICAL: switch to AUTO mode so Home's effectiveLocation uses the
+        // GPS location — otherwise prayer times stay on the manual fallback.
+        setLocationMode('auto');
       }
     } catch {
       // Non-fatal
