@@ -1442,6 +1442,20 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
                 />
               )}
 
+              {/* Protect with device security (system biometrics / PIN / face) */}
+              <Hairline />
+              <Row
+                title="Protect Women's Worship"
+                desc="Require your device security (fingerprint, face, or PIN) before viewing private Women's Worship information."
+                right={
+                  <Toggle
+                    checked={womenLockEnabled}
+                    onChange={() => setWomenLockEnabled(!womenLockEnabled)}
+                    label="Protect Women's Worship"
+                  />
+                }
+              />
+
               {/* Direct links to Women's tools */}
               {onOpenToolsItem && (
                 <>

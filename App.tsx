@@ -60,6 +60,7 @@ import CitiesScreen from './src/screens/CitiesScreen';
 import PrayerRemindersScreen from './src/screens/PrayerRemindersScreen';
 import MosqueFinderScreen from './src/screens/MosqueFinderScreen';
 import WomenCycleScreen from './src/screens/WomenCycleScreen';
+import { WomenLockGate } from './src/components/WomenLockGate';
 import WomenPurityScreen from './src/screens/WomenPurityScreen';
 import WomenGuidanceScreen from './src/screens/WomenGuidanceScreen';
 import WomenQadaScreen from './src/screens/WomenQadaScreen';
@@ -1007,31 +1008,35 @@ function Root({ splashDone }: { splashDone: boolean }) {
           />
         )}
 
-        {/* Women's Worship Views */}
-        {tab === 'tools' && settings.womenWorshipEnabled && tools.screen === 'women-cycle' && (
-          <WomenCycleScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenPurity={() => setTools({ screen: 'women-purity' })}
-          />
-        )}
-        {tab === 'tools' && settings.womenWorshipEnabled && tools.screen === 'women-purity' && (
-          <WomenPurityScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenQada={() => setTools({ screen: 'women-qada' })}
-            onOpenGuidance={() => setTools({ screen: 'women-guidance' })}
-          />
-        )}
-        {tab === 'tools' && settings.womenWorshipEnabled && tools.screen === 'women-guidance' && (
-          <WomenGuidanceScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenPurity={() => setTools({ screen: 'women-purity' })}
-          />
-        )}
-        {tab === 'tools' && settings.womenWorshipEnabled && tools.screen === 'women-qada' && (
-          <WomenQadaScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenCycle={() => setTools({ screen: 'women-cycle' })}
-          />
+        {/* Women's Worship Views — gated by optional system-auth lock */}
+        {tab === 'tools' && settings.womenWorshipEnabled && (tools.screen === 'women-cycle' || tools.screen === 'women-purity' || tools.screen === 'women-guidance' || tools.screen === 'women-qada') && (
+          <WomenLockGate>
+            {tools.screen === 'women-cycle' && (
+              <WomenCycleScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenPurity={() => setTools({ screen: 'women-purity' })}
+              />
+            )}
+            {tools.screen === 'women-purity' && (
+              <WomenPurityScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenQada={() => setTools({ screen: 'women-qada' })}
+                onOpenGuidance={() => setTools({ screen: 'women-guidance' })}
+              />
+            )}
+            {tools.screen === 'women-guidance' && (
+              <WomenGuidanceScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenPurity={() => setTools({ screen: 'women-purity' })}
+              />
+            )}
+            {tools.screen === 'women-qada' && (
+              <WomenQadaScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenCycle={() => setTools({ screen: 'women-cycle' })}
+              />
+            )}
+          </WomenLockGate>
         )}
 
         {/* Hajj & Umrah Views */}
