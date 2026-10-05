@@ -11,6 +11,7 @@ export type LocationMode = 'auto' | 'manual';
 export type ThemeMode = 'system' | 'ink' | 'paper';
 export type QuranArabicFont = 'amiri' | 'notonaskh';
 export type TafsirSourceId = 'jalalayn' | 'qurtubi' | 'miqbas' | 'waseet' | 'baghawi' | 'muyassar';
+export type Madhab = 'shafi' | 'hanafi';
 
 // Quran reader display ranges (shared by Settings UI + reader)
 export const QURAN_FONT_SIZE_MIN = 18;
@@ -39,6 +40,7 @@ export function clampQuranLineHeight(value: number): number {
 
 export interface AppSettings {
   methodId: number;
+  madhab: Madhab;
   timeFormat: TimeFormat;
   locationMode: LocationMode;
   manualLocation: Location;
@@ -67,6 +69,7 @@ export interface AppSettings {
 interface SettingsContextValue {
   settings: AppSettings;
   setMethod: (id: number) => void;
+  setMadhab: (m: Madhab) => void;
   setTimeFormat: (f: TimeFormat) => void;
   setLocationMode: (m: LocationMode) => void;
   setManualLocation: (loc: Location) => void;
@@ -95,6 +98,7 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 const DEFAULTS: AppSettings = {
   methodId: 8,
+  madhab: 'shafi',
   timeFormat: '12h',
   locationMode: 'auto',
   manualLocation: { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' },
@@ -166,6 +170,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         const parsed: Partial<AppSettings> = raw ? JSON.parse(raw) : {};
         const next: AppSettings = { ...DEFAULTS, ...parsed };
 
+        if (next.madhab !== 'shafi' && next.madhab !== 'hanafi') {
+          next.madhab = DEFAULTS.madhab;
+        }
         if (next.quranArabicFont !== 'amiri' && next.quranArabicFont !== 'notonaskh') {
           next.quranArabicFont = DEFAULTS.quranArabicFont;
         }
@@ -223,6 +230,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const value: SettingsContextValue = {
     settings,
     setMethod: (methodId) => setSettings((prev) => persist({ ...prev, methodId })),
+    setMadhab: (madhab) => setSettings((prev) => persist({ ...prev, madhab })),
     setTimeFormat: (timeFormat) => setSettings((prev) => persist({ ...prev, timeFormat })),
     setLocationMode: (locationMode) => setSettings((prev) => persist({ ...prev, locationMode })),
     setManualLocation: (manualLocation) => setSettings((prev) => persist({ ...prev, manualLocation })),

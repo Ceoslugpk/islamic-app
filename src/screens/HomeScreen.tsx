@@ -18,7 +18,7 @@ import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { useHaptics } from '../lib/haptics';
 import { useLocation } from '../lib/useLocation';
-import { fetchPrayerTimes, DayTimings, getNextPrayer } from '../lib/prayerTimes';
+import { fetchPrayerTimes, getCachedPrayerTimes, todayDdmmyyyy, DayTimings, getNextPrayer } from '../lib/prayerTimes';
 import { formatTime, formatCountdown } from '../lib/timeFormat';
 import { usePrayerWatcher } from '../lib/usePrayerWatcher';
 import { configureAudio } from '../lib/audio';
@@ -42,7 +42,7 @@ import { GeometricPattern } from '../components/GeometricPattern';
 import { ArabicText } from '../components/ArabicText';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
-import { useConnectivity } from '../lib/useConnectivity';
+import { useConnectivity, isAppOnline } from '../lib/useConnectivity';
 import { useQuranPreload } from '../lib/quranPreloader';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import {
@@ -205,41 +205,104 @@ export default function HomeScreen({
     return settings.manualLocation;
   }, [settings.locationMode, gpsLocation, settings.manualLocation]);
 
-  useEffect(() => {
-    if (refreshKey > 0) {
-      load(false, true);
+  const lastDateStrRef = useRef<string>(todayDdmmyyyy(new Date()));
+
+  const load = useCallback(async (showSpinner = false, force = false) => {
+    const today = new Date();
+    // 1. Fast cache check: if not forcing, check if today's schedule is already cached for current config
+    if (!force) {
+      const cached = getCachedPrayerTimes(
+        effectiveLocation,
+        settings.methodId,
+        today,
+        settings.madhab
+      );
+      if (cached) {
+        setData(cached);
+        setLoading(false);
+        setError(null);
+        return; // Valid cache exists for today's config; skip network entirely!
+      }
     }
-  }, [refreshKey, effectiveLocation.latitude, effectiveLocation.longitude, settings.methodId]);
+
+    // 2. Fast offline check: if offline and not forcing, check cache or show offline state immediately (0ms)
+    if (!force && !isAppOnline()) {
+      setLoading(false);
+      if (!data) {
+        setError('Prayer times unavailable offline');
+      }
+      return;
+    }
+
+    // 3. Needs fetch: only show spinner if we don't already have data to display
+    if (showSpinner && !data) {
+      setLoading(true);
+    }
+    setError(null);
+
+    try {
+      const result = await Promise.race([
+        fetchPrayerTimes(effectiveLocation, settings.methodId, today, {
+          force,
+          madhab: settings.madhab,
+        }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Prayer times load timed out')), 6000)
+        ),
+      ]);
+      setData(result);
+      setError(null);
+    } catch (err: any) {
+      // Check cache one more time in case it exists
+      const fallbackCached = getCachedPrayerTimes(
+        effectiveLocation,
+        settings.methodId,
+        today,
+        settings.madhab
+      );
+      if (fallbackCached) {
+        setData(fallbackCached);
+        setError(null);
+      } else if (!data) {
+        setError('Prayer times unavailable offline');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [effectiveLocation, settings.methodId, settings.madhab, data]);
+
+  // Initial mount & config change effect: fetch only when config changed or cache missing
+  useEffect(() => {
+    load(true, false);
+  }, [
+    effectiveLocation.latitude,
+    effectiveLocation.longitude,
+    effectiveLocation.label,
+    settings.methodId,
+    settings.madhab,
+  ]);
+
+  // Calendar date rollover effect: when midnight passes, load new day's schedule
+  useEffect(() => {
+    const todayStr = todayDdmmyyyy(now);
+    if (lastDateStrRef.current !== todayStr) {
+      lastDateStrRef.current = todayStr;
+      load(false, false);
+    }
+  }, [now, load]);
+
+  // Connectivity restored effect: if we were offline without data, fetch now
+  useEffect(() => {
+    if (refreshKey > 0 && !data) {
+      load(true, false);
+    }
+  }, [refreshKey, data, load]);
 
   usePrayerWatcher(data, settings.remindersEnabled);
 
   useEffect(() => {
     configureAudio();
   }, []);
-
-  async function load(showSpinner = false, force = false) {
-    if (showSpinner) setLoading(true);
-    setError(null);
-    try {
-      const result = await Promise.race([
-        fetchPrayerTimes(effectiveLocation, settings.methodId, new Date(), force),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Prayer times load timed out')), 15000)
-        ),
-      ]);
-      setData(result);
-    } catch (err: any) {
-      if (!data) {
-        setError('Could not load prayer times. Check your connection.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load(true);
-  }, [effectiveLocation.latitude, effectiveLocation.longitude, settings.methodId]);
 
   const next = useMemo(() => (data ? getNextPrayer(data.timings, now) : null), [data, now]);
 
@@ -507,10 +570,30 @@ export default function HomeScreen({
 
   if (!data) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-          {error || 'No data available.'}
+      <View style={[styles.center, { backgroundColor: colors.bgBase, padding: 24 }]}>
+        <Ionicons name="cloud-offline-outline" size={48} color={colors.textMuted} style={{ marginBottom: 16 }} />
+        <Text style={[styles.errorText, { color: colors.textPrimary, textAlign: 'center', marginBottom: 8, fontSize: 16, fontWeight: '600' }]}>
+          {error || 'Prayer times unavailable offline'}
         </Text>
+        <Text style={{ color: colors.textMuted, textAlign: 'center', marginBottom: 20, fontSize: 14 }}>
+          Connect to the internet to fetch the authoritative prayer schedule for your location.
+        </Text>
+        <TouchableOpacity
+          style={{
+            backgroundColor: colors.accent,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            borderRadius: 8,
+          }}
+          onPress={() => {
+            haptic('light');
+            load(true, true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Retry loading prayer times"
+        >
+          <Text style={{ color: colors.bgBase, fontWeight: '600', fontSize: 14 }}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }

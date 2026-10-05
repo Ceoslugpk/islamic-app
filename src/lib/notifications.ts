@@ -23,6 +23,7 @@ export interface NotificationFingerprint {
   remindersEnabled: boolean;
   reminderOffsetMinutes: number;
   quranReminderEnabled: boolean;
+  madhab?: string;
 }
 
 export interface NotificationHealth {
@@ -89,7 +90,8 @@ function computeFingerprint(
   methodId: number,
   remindersEnabled: boolean,
   reminderOffsetMinutes: number,
-  quranReminderEnabled: boolean
+  quranReminderEnabled: boolean,
+  madhab: string = 'shafi'
 ): NotificationFingerprint {
   return {
     location: { latitude: location.latitude, longitude: location.longitude, label: location.label },
@@ -97,11 +99,12 @@ function computeFingerprint(
     remindersEnabled,
     reminderOffsetMinutes,
     quranReminderEnabled,
+    madhab,
   };
 }
 
 function fingerprintToString(fp: NotificationFingerprint): string {
-  return `${fp.location.latitude.toFixed(4)},${fp.location.longitude.toFixed(4)}|${fp.methodId}|${fp.remindersEnabled ? 1 : 0}|${fp.reminderOffsetMinutes}|${fp.quranReminderEnabled ? 1 : 0}`;
+  return `${fp.location.latitude.toFixed(4)},${fp.location.longitude.toFixed(4)}|${fp.methodId}|${fp.remindersEnabled ? 1 : 0}|${fp.reminderOffsetMinutes}|${fp.quranReminderEnabled ? 1 : 0}|${fp.madhab || 'shafi'}`;
 }
 
 export async function getStoredFingerprint(): Promise<string | null> {
@@ -256,7 +259,8 @@ export async function rescheduleIfNeeded(
   methodId: number,
   remindersEnabled: boolean,
   reminderOffsetMinutes: number,
-  quranReminderEnabled: boolean
+  quranReminderEnabled: boolean,
+  madhab: string = 'shafi'
 ): Promise<boolean> {
   if (!remindersEnabled && !quranReminderEnabled) {
     await cancelPrayerNotifications();
@@ -270,7 +274,7 @@ export async function rescheduleIfNeeded(
     return false;
   }
 
-  const currentFp = computeFingerprint(location, methodId, remindersEnabled, reminderOffsetMinutes, quranReminderEnabled);
+  const currentFp = computeFingerprint(location, methodId, remindersEnabled, reminderOffsetMinutes, quranReminderEnabled, madhab);
   const currentFpStr = fingerprintToString(currentFp);
   const storedFpStr = await getStoredFingerprint();
 
@@ -292,7 +296,7 @@ export async function rescheduleIfNeeded(
   await configureNotifications();
   try {
     const { fetchPrayerTimes } = await import('./prayerTimes');
-    const data = await fetchPrayerTimes(location, methodId);
+    const data = await fetchPrayerTimes(location, methodId, new Date(), { madhab: madhab as any });
     await cancelPrayerNotifications();
     await cancelQuranReminder();
     if (remindersEnabled) {
@@ -538,7 +542,18 @@ export async function getNotificationHealth(
   let fingerprint: NotificationFingerprint | null = null;
   if (storedFpStr) {
     const parts = storedFpStr.split('|');
-    if (parts.length === 5) {
+    if (parts.length === 6) {
+      const [latLon, methodStr, remindersStr, offsetStr, quranStr, madhabStr] = parts;
+      const [lat, lon] = latLon.split(',').map(Number);
+      fingerprint = {
+        location: { latitude: lat, longitude: lon, label: '' },
+        methodId: parseInt(methodStr, 10),
+        remindersEnabled: remindersStr === '1',
+        reminderOffsetMinutes: parseInt(offsetStr, 10),
+        quranReminderEnabled: quranStr === '1',
+        madhab: madhabStr || 'shafi',
+      };
+    } else if (parts.length === 5) {
       const [latLon, methodStr, remindersStr, offsetStr, quranStr] = parts;
       const [lat, lon] = latLon.split(',').map(Number);
       fingerprint = {
@@ -547,6 +562,7 @@ export async function getNotificationHealth(
         remindersEnabled: remindersStr === '1',
         reminderOffsetMinutes: parseInt(offsetStr, 10),
         quranReminderEnabled: quranStr === '1',
+        madhab: 'shafi',
       };
     } else if (parts.length === 3) {
       // Legacy format support
@@ -558,6 +574,7 @@ export async function getNotificationHealth(
         remindersEnabled: remindersStr === '1',
         reminderOffsetMinutes: 15,
         quranReminderEnabled: false,
+        madhab: 'shafi',
       };
     }
   }

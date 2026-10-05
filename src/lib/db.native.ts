@@ -16,14 +16,28 @@ function getDb(): SQLite.SQLiteDatabase {
 }
 
 function migrate(database: SQLite.SQLiteDatabase) {
+  let hasCacheKey = false;
+  try {
+    const cols = database.getAllSync<{ name: string }>('PRAGMA table_info(prayer_cache)');
+    hasCacheKey = cols.some((c) => c.name === 'cache_key');
+  } catch {}
+
+  if (!hasCacheKey) {
+    database.execSync('DROP TABLE IF EXISTS prayer_cache');
+    database.execSync(`
+      CREATE TABLE prayer_cache (
+        cache_key TEXT PRIMARY KEY,
+        date TEXT NOT NULL,
+        location TEXT NOT NULL,
+        method INTEGER NOT NULL,
+        madhab TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        cached_at INTEGER NOT NULL
+      );
+    `);
+  }
+
   database.execSync(`
-    CREATE TABLE IF NOT EXISTS prayer_cache (
-      date TEXT PRIMARY KEY,
-      location TEXT,
-      method INTEGER,
-      payload TEXT,
-      cached_at INTEGER
-    );
     CREATE TABLE IF NOT EXISTS salah_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT NOT NULL,
@@ -136,20 +150,78 @@ interface PrayerCacheRow { payload: string }
 interface SalahRow { date: string; prayer: string; completed: number }
 interface QuranCacheRow { payload: string }
 
-export function savePrayerCache(date: string, location: string, method: number, payload: object) {
+export interface PrayerCacheMeta {
+  date?: string;
+  location?: string;
+  method?: number;
+  madhab?: string;
+}
+
+export function savePrayerCache(
+  cacheKeyOrDate: string,
+  payloadOrLocation: any,
+  metaOrMethod?: any,
+  maybePayload?: any,
+  maybeMadhab?: string
+) {
   try {
+    let cacheKey: string;
+    let payload: object;
+    let date = '';
+    let location = '';
+    let method = 0;
+    let madhab = 'shafi';
+
+    if (typeof payloadOrLocation === 'object' && payloadOrLocation !== null && !Array.isArray(payloadOrLocation)) {
+      cacheKey = cacheKeyOrDate;
+      payload = payloadOrLocation;
+      if (metaOrMethod && typeof metaOrMethod === 'object') {
+        date = metaOrMethod.date || '';
+        location = metaOrMethod.location || '';
+        method = metaOrMethod.method ?? 0;
+        madhab = metaOrMethod.madhab || 'shafi';
+      }
+    } else {
+      date = cacheKeyOrDate;
+      location = String(payloadOrLocation || '');
+      method = Number(metaOrMethod || 0);
+      payload = maybePayload || {};
+      madhab = maybeMadhab || 'shafi';
+      cacheKey = `prayer:${date}:${location}:${method}:${madhab}`;
+    }
+
     getDb().runSync(
-      'INSERT OR REPLACE INTO prayer_cache (date, location, method, payload, cached_at) VALUES (?, ?, ?, ?, ?)',
-      date, location, method, JSON.stringify(payload), Date.now()
+      `INSERT OR REPLACE INTO prayer_cache (cache_key, date, location, method, madhab, payload, cached_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      cacheKey, date, location, method, madhab, JSON.stringify(payload), Date.now()
     );
   } catch { /* non-fatal */ }
 }
 
-export function loadPrayerCache(date: string, location: string, method: number): { payload: string } | null {
+export function loadPrayerCache(
+  cacheKeyOrDate: string,
+  location?: string,
+  method?: number,
+  madhab?: string
+): { payload: string } | null {
   try {
+    if (location === undefined && method === undefined) {
+      const row = getDb().getFirstSync<PrayerCacheRow>(
+        'SELECT payload FROM prayer_cache WHERE cache_key = ?',
+        cacheKeyOrDate
+      );
+      return row ? { payload: row.payload } : null;
+    }
+
+    const loc = location ?? '';
+    const meth = method ?? 0;
     const row = getDb().getFirstSync<PrayerCacheRow>(
-      'SELECT payload FROM prayer_cache WHERE date = ? AND location = ? AND method = ?',
-      date, location, method
+      'SELECT payload FROM prayer_cache WHERE date = ? AND (location = ? OR location LIKE ?) AND method = ?' +
+        (madhab ? ' AND madhab = ?' : '') +
+        ' ORDER BY cached_at DESC LIMIT 1',
+      ...(madhab
+        ? [cacheKeyOrDate, loc, `%${loc}%`, meth, madhab]
+        : [cacheKeyOrDate, loc, `%${loc}%`, meth])
     );
     return row ? { payload: row.payload } : null;
   } catch {
@@ -157,12 +229,29 @@ export function loadPrayerCache(date: string, location: string, method: number):
   }
 }
 
-export function loadLatestPrayerCache(location: string, method: number): { payload: string } | null {
+export function loadLatestPrayerCache(location?: string, method?: number, madhab?: string): { payload: string } | null {
   try {
-    const row = getDb().getFirstSync<PrayerCacheRow>(
-      'SELECT payload FROM prayer_cache WHERE location = ? AND method = ? ORDER BY cached_at DESC LIMIT 1',
-      location, method
-    );
+    let query = 'SELECT payload FROM prayer_cache';
+    const params: any[] = [];
+    const conditions: string[] = [];
+    if (location) {
+      conditions.push('(location = ? OR location LIKE ?)');
+      params.push(location, `%${location}%`);
+    }
+    if (method !== undefined) {
+      conditions.push('method = ?');
+      params.push(method);
+    }
+    if (madhab) {
+      conditions.push('madhab = ?');
+      params.push(madhab);
+    }
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+    query += ' ORDER BY cached_at DESC LIMIT 1';
+
+    const row = getDb().getFirstSync<PrayerCacheRow>(query, ...params);
     return row ? { payload: row.payload } : null;
   } catch {
     return null;

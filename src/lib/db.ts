@@ -5,35 +5,127 @@
  */
 import { webKV } from './webStorage';
 
-export function savePrayerCache(date: string, location: string, method: number, payload: object) {
-  webKV.set(`prayer:${date}:${location}:${method}`, JSON.stringify({ payload, cached_at: Date.now() }));
+export interface PrayerCacheMeta {
+  date?: string;
+  location?: string;
+  method?: number;
+  madhab?: string;
 }
 
-export function loadPrayerCache(date: string, location: string, method: number): { payload: string } | null {
-  const raw = webKV.get(`prayer:${date}:${location}:${method}`);
-  if (!raw) return null;
-  try {
-    return { payload: JSON.parse(raw).payload };
-  } catch {
-    return null;
+export function savePrayerCache(
+  cacheKeyOrDate: string,
+  payloadOrLocation: any,
+  metaOrMethod?: any,
+  maybePayload?: any,
+  maybeMadhab?: string
+) {
+  let cacheKey: string;
+  let payload: object;
+  let date = '';
+  let location = '';
+  let method = 0;
+  let madhab = 'shafi';
+
+  if (typeof payloadOrLocation === 'object' && payloadOrLocation !== null && !Array.isArray(payloadOrLocation)) {
+    cacheKey = cacheKeyOrDate;
+    payload = payloadOrLocation;
+    if (metaOrMethod && typeof metaOrMethod === 'object') {
+      date = metaOrMethod.date || '';
+      location = metaOrMethod.location || '';
+      method = metaOrMethod.method ?? 0;
+      madhab = metaOrMethod.madhab || 'shafi';
+    }
+  } else {
+    date = cacheKeyOrDate;
+    location = String(payloadOrLocation || '');
+    method = Number(metaOrMethod || 0);
+    payload = maybePayload || {};
+    madhab = maybeMadhab || 'shafi';
+    cacheKey = `prayer:${date}:${location}:${method}:${madhab}`;
   }
+
+  const storageKey = cacheKey.startsWith('prayer:') ? cacheKey : `prayer:${cacheKey}`;
+  webKV.set(
+    storageKey,
+    JSON.stringify({
+      payload: typeof payload === 'string' ? payload : JSON.stringify(payload),
+      date,
+      location,
+      method,
+      madhab,
+      cached_at: Date.now(),
+    })
+  );
 }
 
-export function loadLatestPrayerCache(location: string, method: number): { payload: string } | null {
+export function loadPrayerCache(
+  cacheKeyOrDate: string,
+  location?: string,
+  method?: number,
+  madhab?: string
+): { payload: string } | null {
+  if (location === undefined && method === undefined) {
+    const storageKey = cacheKeyOrDate.startsWith('prayer:') ? cacheKeyOrDate : `prayer:${cacheKeyOrDate}`;
+    const raw = webKV.get(storageKey);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      return { payload: typeof parsed.payload === 'string' ? parsed.payload : JSON.stringify(parsed.payload) };
+    } catch {
+      return null;
+    }
+  }
+
   const rows = webKV.getAll('prayer:');
   let best: { payload: string; cached_at: number } | null = null;
-  for (const { key, value } of rows) {
-    const parts = key.split(':');
-    if (parts[2] === location && Number(parts[3]) === method) {
-      try {
-        const parsed = JSON.parse(value);
+  for (const { value } of rows) {
+    try {
+      const parsed = JSON.parse(value);
+      const locMatch =
+        parsed.location === location ||
+        (parsed.location && parsed.location.includes(location));
+      const methodMatch = Number(parsed.method) === Number(method);
+      const dateMatch = parsed.date === cacheKeyOrDate;
+      const madhabMatch = !madhab || parsed.madhab === madhab;
+
+      if (dateMatch && locMatch && methodMatch && madhabMatch) {
         if (!best || parsed.cached_at > best.cached_at) {
           best = parsed;
         }
-      } catch {}
-    }
+      }
+    } catch {}
   }
-  return best ? { payload: typeof best.payload === 'string' ? best.payload : JSON.stringify(best.payload) } : null;
+  return best
+    ? { payload: typeof best.payload === 'string' ? best.payload : JSON.stringify(best.payload) }
+    : null;
+}
+
+export function loadLatestPrayerCache(
+  location?: string,
+  method?: number,
+  madhab?: string
+): { payload: string } | null {
+  const rows = webKV.getAll('prayer:');
+  let best: { payload: string; cached_at: number } | null = null;
+  for (const { value } of rows) {
+    try {
+      const parsed = JSON.parse(value);
+      const locMatch =
+        !location ||
+        parsed.location === location ||
+        (parsed.location && parsed.location.includes(location));
+      const methodMatch = method === undefined || Number(parsed.method) === Number(method);
+      const madhabMatch = !madhab || parsed.madhab === madhab;
+      if (locMatch && methodMatch && madhabMatch) {
+        if (!best || parsed.cached_at > best.cached_at) {
+          best = parsed;
+        }
+      }
+    } catch {}
+  }
+  return best
+    ? { payload: typeof best.payload === 'string' ? best.payload : JSON.stringify(best.payload) }
+    : null;
 }
 
 export function markSalahCompleted(date: string, prayer: string, completed: boolean) {

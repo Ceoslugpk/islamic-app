@@ -1,10 +1,13 @@
 /**
- * Prayer times via islamic.app (primary) → AlAdhan (fallback) → SQLite cache → local astronomical.
- * Verified: islamic.app city=Dubai&method=2 → Fajr 05:09, Dhuhr 12:09, Isha 19:06
+ * Prayer times via Islamic.app (authoritative single provider) → SQLite cache (offline fallback).
+ * NO AlAdhan for prayer times. NO local astronomical fallback in production.
  */
 
-import { savePrayerCache, loadPrayerCache, loadLatestPrayerCache } from './db';
+import { savePrayerCache, loadPrayerCache } from './db';
 import { isAppOnline } from './useConnectivity';
+import type { Madhab } from './settings';
+
+export { Madhab };
 
 export interface PrayerTimes {
   Fajr: string;
@@ -49,17 +52,126 @@ export const CALC_METHODS = [
   { id: 13, name: 'Diyanet (Turkey)', region: 'Turkey' },
 ] as const;
 
-const DEFAULT_LOCATION: Location = { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' };
+export const DEFAULT_LOCATION: Location = { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' };
 
-function pad2(n: number): string {
+export function pad2(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-function todayDdmmyyyy(d = new Date()): string {
+export function todayDdmmyyyy(d = new Date()): string {
   return `${pad2(d.getDate())}-${pad2(d.getMonth() + 1)}-${d.getFullYear()}`;
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 4000): Promise<Response> {
+export function buildPrayerCacheKey(
+  dateStr: string,
+  loc: Location,
+  method: number,
+  madhab: Madhab = 'shafi',
+  adjustments?: Record<string, number> | string
+): string {
+  const latStr = Number(loc.latitude).toFixed(4);
+  const lngStr = Number(loc.longitude).toFixed(4);
+  const labelStr = (loc.label || '').trim().toLowerCase();
+  const madhabStr = (madhab || 'shafi').toLowerCase();
+  const adjStr = typeof adjustments === 'string'
+    ? adjustments
+    : adjustments ? JSON.stringify(adjustments) : '';
+  return `prayer:${dateStr}:${labelStr}:${latStr},${lngStr}:${method}:${madhabStr}:${adjStr}`;
+}
+
+function getDeviceTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+function isValidTime(t: any): boolean {
+  if (typeof t !== 'string') return false;
+  return /^\d{1,2}:\d{2}/.test(t.trim());
+}
+
+function cleanTime(t: string): string {
+  const match = t.trim().match(/^(\d{1,2}:\d{2})/);
+  return match ? match[1] : t.trim();
+}
+
+/** Normalize and strictly validate Islamic.app payload or cached DayTimings into DayTimings. */
+export function normalizePayload(data: any, methodName = 'Islamic.app'): DayTimings | null {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  // 1. If data is already a normalized DayTimings object (e.g. loaded from cache)
+  if (data.timings && data.hijri && (data.hijri.day !== undefined || data.hijri.monthEn !== undefined)) {
+    const t = data.timings;
+    if (isValidTime(t.Fajr) && isValidTime(t.Dhuhr) && isValidTime(t.Asr) && isValidTime(t.Maghrib) && isValidTime(t.Isha)) {
+      return {
+        timings: {
+          Fajr: cleanTime(t.Fajr),
+          Sunrise: cleanTime(t.Sunrise || '06:00'),
+          Dhuhr: cleanTime(t.Dhuhr),
+          Asr: cleanTime(t.Asr),
+          Maghrib: cleanTime(t.Maghrib),
+          Isha: cleanTime(t.Isha),
+          Imsak: t.Imsak ? cleanTime(t.Imsak) : undefined,
+          Midnight: t.Midnight ? cleanTime(t.Midnight) : undefined,
+        },
+        hijri: {
+          day: String(data.hijri.day ?? ''),
+          month: String(data.hijri.month?.number ?? data.hijri.month ?? ''),
+          monthEn: String(data.hijri.month?.en ?? data.hijri.monthEn ?? ''),
+          year: String(data.hijri.year ?? ''),
+        },
+        gregorian: String(data.gregorian || data.readable || ''),
+        readable: String(data.readable || data.gregorian || ''),
+        method: String(data.method || methodName),
+        timezone: String(data.timezone || 'UTC'),
+      };
+    }
+    return null;
+  }
+
+  // 2. Raw islamic.app API payload
+  const root = data.data ? data.data : data;
+  const t = root.timings;
+  if (!t || !isValidTime(t.Fajr) || !isValidTime(t.Dhuhr) || !isValidTime(t.Asr) || !isValidTime(t.Maghrib) || !isValidTime(t.Isha)) {
+    return null;
+  }
+
+  const h = root.date?.hijri || root.hijri || {};
+  const dayVal = h.day !== undefined ? String(h.day) : '';
+  const monthNum = h.month ? String(h.month.number ?? h.month) : '';
+  const monthEn = h.month?.en ? String(h.month.en) : typeof h.month === 'string' ? h.month : '';
+  const yearVal = h.year !== undefined ? String(h.year) : '';
+  const greg = root.date?.readable || root.date?.gregorian?.date || root.gregorian || '';
+
+  return {
+    timings: {
+      Fajr: cleanTime(t.Fajr),
+      Sunrise: cleanTime(t.Sunrise || '06:00'),
+      Dhuhr: cleanTime(t.Dhuhr),
+      Asr: cleanTime(t.Asr),
+      Maghrib: cleanTime(t.Maghrib),
+      Isha: cleanTime(t.Isha),
+      Imsak: t.Imsak ? cleanTime(t.Imsak) : undefined,
+      Midnight: t.Midnight ? cleanTime(t.Midnight) : undefined,
+    },
+    hijri: {
+      day: dayVal,
+      month: monthNum,
+      monthEn: monthEn,
+      year: yearVal,
+    },
+    gregorian: String(greg),
+    readable: String(root.date?.readable || greg || ''),
+    method: String(root.meta?.school ? `Islamic.app (${root.meta.school})` : methodName),
+    timezone: String(root.meta?.timezone || 'UTC'),
+  };
+}
+
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 5000): Promise<Response> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout>;
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -79,258 +191,127 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
   }
 }
 
+/** Check SQLite/local cache for the exact day's schedule matching config */
+export function getCachedPrayerTimes(
+  loc: Location = DEFAULT_LOCATION,
+  method: number = 8,
+  date: Date = new Date(),
+  madhab: Madhab = 'shafi',
+  adjustments?: Record<string, number>
+): DayTimings | null {
+  const dateStr = todayDdmmyyyy(date);
+  const cacheKey = buildPrayerCacheKey(dateStr, loc, method, madhab, adjustments);
+  const cached = loadPrayerCache(cacheKey);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached.payload);
+      const normalized = normalizePayload(parsed, parsed.method || 'Islamic.app');
+      if (normalized && normalized.timings?.Fajr) {
+        return normalized;
+      }
+    } catch {
+      // corrupted entry
+    }
+  }
+
+  // Backwards compatibility for legacy cache format
+  const locKey = `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`;
+  const legacyCached = loadPrayerCache(dateStr, locKey, method, madhab);
+  if (legacyCached) {
+    try {
+      const parsed = JSON.parse(legacyCached.payload);
+      const normalized = normalizePayload(parsed, parsed.method || 'Islamic.app');
+      if (normalized && normalized.timings?.Fajr) {
+        return normalized;
+      }
+    } catch {}
+  }
+  return null;
+}
+
+export interface FetchPrayerTimesOptions {
+  madhab?: Madhab;
+  adjustments?: Record<string, number>;
+  force?: boolean;
+}
+
+/**
+ * Fetch prayer times from Islamic.app (ONLY authoritative remote provider) with SQLite offline cache.
+ * NO AlAdhan. NO local astronomical fallback in production.
+ */
 export async function fetchPrayerTimes(
   loc: Location = DEFAULT_LOCATION,
   method: number = 8,
   date: Date = new Date(),
-  force = false
+  forceOrOptions: boolean | FetchPrayerTimesOptions = false
 ): Promise<DayTimings> {
+  const force = typeof forceOrOptions === 'boolean' ? forceOrOptions : !!forceOrOptions.force;
+  const madhab: Madhab = typeof forceOrOptions === 'object' && forceOrOptions.madhab ? forceOrOptions.madhab : 'shafi';
+  const adjustments = typeof forceOrOptions === 'object' ? forceOrOptions.adjustments : undefined;
+
   const dateStr = todayDdmmyyyy(date);
-  const locKey = `${loc.latitude.toFixed(2)},${loc.longitude.toFixed(2)}`;
+  const cacheKey = buildPrayerCacheKey(dateStr, loc, method, madhab, adjustments);
+  const locKey = `${loc.latitude.toFixed(4)},${loc.longitude.toFixed(4)}`;
 
   // 1. Try cache first (offline / fast path) — unless forced
   if (!force) {
-    const cached = loadPrayerCache(dateStr, locKey, method);
+    const cached = getCachedPrayerTimes(loc, method, date, madhab, adjustments);
     if (cached) {
-      try {
-        const parsed = JSON.parse(cached.payload);
-        const normalized = normalizePayload(parsed, 'Cache');
-        if (normalized && normalized.timings?.Fajr) {
-          return normalized;
-        }
-      } catch {
-        // corrupted cache; fall through
-      }
+      return cached;
     }
   }
 
-  // 2. Fast offline shortcut: if device is offline and not forced, return cached/local immediately (0ms)
+  // 2. Fast offline shortcut: if device is offline and not forced, return cached if exists, else error immediately (0ms)
   if (!force && !isAppOnline()) {
-    const latest = loadLatestPrayerCache(locKey, method);
-    if (latest) {
-      try {
-        const parsed = JSON.parse(latest.payload);
-        const normalized = normalizePayload(parsed, 'Cache');
-        if (normalized && normalized.timings?.Fajr) {
-          return normalized;
-        }
-      } catch {
-        // fall through to local fallback
-      }
+    const cached = getCachedPrayerTimes(loc, method, date, madhab, adjustments);
+    if (cached) {
+      return cached;
     }
-    const fallback = localFallback(loc, method, date);
-    savePrayerCache(dateStr, locKey, method, fallback);
-    return fallback;
+    throw new Error('Prayer times unavailable offline');
   }
 
-  // 3. Primary: islamic.app
+  // 3. Primary & ONLY remote provider: Islamic.app
   try {
-    const rawCity = loc.label ? loc.label.split(',')[0].trim() : '';
-    const isCoordinateLabel = rawCity.includes('°') || !rawCity;
-    const islamicUrl = !isCoordinateLabel
-      ? `https://api.islamic.app/v1/timings/today?city=${encodeURIComponent(rawCity)}&method=${method}`
-      : `https://api.islamic.app/v1/timings/today?latitude=${loc.latitude}&longitude=${loc.longitude}&method=${method}`;
+    const tz = getDeviceTimezone();
+    const schoolParam = madhab === 'hanafi' ? 1 : 0;
+    const islamicUrl = `https://api.islamic.app/v1/timings/${dateStr}?latitude=${loc.latitude}&longitude=${loc.longitude}&method=${method}&timezone=${encodeURIComponent(tz)}&school=${schoolParam}`;
 
-    const res = await fetchWithTimeout(islamicUrl, {}, 4000);
+    const res = await fetchWithTimeout(islamicUrl, {}, 5000);
     if (res.ok) {
       const json = await res.json();
       if (json.code === 200 && json.data?.timings) {
-        const normalized = normalizePayload(json.data, json.data.meta?.method?.name || 'islamic.app');
-        savePrayerCache(dateStr, locKey, method, normalized);
-        return normalized;
-      }
-    }
-  } catch (err: any) {
-    // fall through to AlAdhan
-  }
-
-  // 4. Fallback: AlAdhan
-  try {
-    const url =
-      `https://api.aladhan.com/v1/timings/${dateStr}` +
-      `?latitude=${loc.latitude}&longitude=${loc.longitude}&method=${method}`;
-    const res = await fetchWithTimeout(url, {}, 4000);
-    if (!res.ok) throw new Error(`Aladhan HTTP ${res.status}`);
-    const json = await res.json();
-    if (json.code !== 200 || !json.data) throw new Error('Aladhan non-200 code');
-
-    const normalized = normalizePayload(json.data, json.data.meta?.method?.name || 'AlAdhan');
-    savePrayerCache(dateStr, locKey, method, normalized);
-    return normalized;
-  } catch (err: any) {
-    // fall through to cache / localFallback
-  }
-
-  // 5. Offline cache fallback (stale cache from any date for this location is better than math fallback)
-  try {
-    const cached = loadPrayerCache(dateStr, locKey, method) || loadLatestPrayerCache(locKey, method);
-    if (cached) {
-      const parsed = JSON.parse(cached.payload);
-      const normalized = normalizePayload(parsed, 'Cache');
-      if (normalized && normalized.timings?.Fajr) {
-        return normalized;
+        const normalized = normalizePayload(
+          json.data,
+          json.data.meta?.school ? `Islamic.app (${json.data.meta.school})` : 'Islamic.app'
+        );
+        if (normalized) {
+          savePrayerCache(cacheKey, normalized, {
+            date: dateStr,
+            location: locKey,
+            method,
+            madhab,
+          });
+          return normalized;
+        }
       }
     }
   } catch {
-    // ignore
+    // Network failure: fall through to cache
   }
 
-  // 6. Final: local astronomical calculation (always available, saves to cache)
-  const fallback = localFallback(loc, method, date);
-  savePrayerCache(dateStr, locKey, method, fallback);
-  return fallback;
+  // 4. On failure: check today's cache immediately
+  const fallbackCached = getCachedPrayerTimes(loc, method, date, madhab, adjustments);
+  if (fallbackCached) {
+    return fallbackCached;
+  }
+
+  // 5. No cache available -> unavailable offline error. Never substitute another provider.
+  throw new Error('Prayer times unavailable offline');
 }
 
-/** Normalize islamic.app payload, AlAdhan payload, or cached DayTimings into DayTimings. */
-function normalizePayload(data: any, methodName: string): DayTimings {
-  if (!data) {
-    return localFallback(DEFAULT_LOCATION, 8, new Date());
-  }
-
-  // 1. If data is already a normalized DayTimings object (e.g. loaded from cache)
-  if (data.timings && data.hijri && (data.hijri.day !== undefined || data.hijri.monthEn !== undefined)) {
-    return {
-      timings: {
-        Fajr: data.timings.Fajr || '05:00',
-        Sunrise: data.timings.Sunrise || '06:15',
-        Dhuhr: data.timings.Dhuhr || '12:15',
-        Asr: data.timings.Asr || '15:30',
-        Maghrib: data.timings.Maghrib || '18:15',
-        Isha: data.timings.Isha || '19:30',
-        Imsak: data.timings.Imsak,
-        Midnight: data.timings.Midnight,
-      },
-      hijri: {
-        day: String(data.hijri.day ?? ''),
-        month: String(data.hijri.month?.number ?? data.hijri.month ?? ''),
-        monthEn: String(data.hijri.month?.en ?? data.hijri.monthEn ?? ''),
-        year: String(data.hijri.year ?? ''),
-      },
-      gregorian: data.gregorian || data.readable || '',
-      readable: data.readable || data.gregorian || '',
-      method: data.method || methodName,
-      timezone: data.timezone || 'UTC',
-    };
-  }
-
-  // 2. Raw API payload (islamic.app or AlAdhan format)
-  const t = data.timings || {};
-  const h = data.date?.hijri || {};
-  const timings: PrayerTimes = {
-    Fajr: t.Fajr || '05:00',
-    Sunrise: t.Sunrise || '06:15',
-    Dhuhr: t.Dhuhr || '12:15',
-    Asr: t.Asr || '15:30',
-    Maghrib: t.Maghrib || '18:15',
-    Isha: t.Isha || '19:30',
-    Imsak: t.Imsak,
-    Midnight: t.Midnight,
-  };
-
-  const dayVal = h.day ? String(h.day) : '';
-  const monthNum = h.month ? String(h.month.number ?? h.month) : '';
-  const monthEn = h.month?.en ? String(h.month.en) : typeof h.month === 'string' ? h.month : '';
-  const yearVal = h.year ? String(h.year) : '';
-
-  return {
-    timings,
-    hijri: {
-      day: dayVal,
-      month: monthNum,
-      monthEn: monthEn,
-      year: yearVal,
-    },
-    gregorian: data.date?.gregorian?.date || data.date?.readable || data.gregorian || '',
-    readable: data.date?.readable || data.gregorian || '',
-    method: methodName,
-    timezone: data.meta?.timezone || data.timezone || 'UTC',
-  };
-}
-
-/**
- * Local astronomical fallback - computes prayer times from solar geometry.
- * Accurate to within ~2 minutes for most latitudes; used only when API is down.
- */
-function localFallback(loc: Location, method: number, date: Date): DayTimings {
-  const methodParams: Record<number, { fajr: number; isha: number }> = {
-    4: { fajr: 18.5, isha: 90 },   // Umm al-Qura: Isha = 90 min after Maghrib (handled below)
-    8: { fajr: 18.5, isha: 90 },
-    3: { fajr: 18, isha: 17 },
-    2: { fajr: 15, isha: 15 },
-    1: { fajr: 18, isha: 18 },
-    5: { fajr: 19.5, isha: 17.5 },
-    13: { fajr: 18, isha: 17 },
-  };
-  const p = methodParams[method] || { fajr: 18, isha: 17 };
-
-  const d = new Date(date);
-  const dayOfYear = Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000);
-  const decl = 23.44 * Math.sin((2 * Math.PI * (284 + dayOfYear)) / 365);
-  const latRad = (loc.latitude * Math.PI) / 180;
-  const declRad = (decl * Math.PI) / 180;
-
-  // Solar noon in minutes UTC
-  const lon = loc.longitude;
-  const equationOfTime = 229.18 * (0.000075 + 0.001868 * Math.cos((2 * Math.PI * dayOfYear) / 365)
-    - 0.032077 * Math.sin((2 * Math.PI * dayOfYear) / 365)
-    - 0.014615 * Math.cos((4 * Math.PI * dayOfYear) / 365)
-    - 0.040849 * Math.sin((4 * Math.PI * dayOfYear) / 365));
-  const noonUTC = 12 + (equationOfTime - 4 * lon) / 60;
-  const tzOffset = date.getTimezoneOffset() / -60;
-
-  function timeForAngle(angle: number): string {
-    const cosH = (Math.sin(angle * Math.PI / 180) - Math.sin(latRad) * Math.sin(declRad))
-      / (Math.cos(latRad) * Math.cos(declRad));
-    let hourAngle = 0;
-    if (cosH > 1) hourAngle = 0;
-    else if (cosH < -1) hourAngle = 12;
-    else hourAngle = (Math.acos(cosH) * 180 / Math.PI) / 15;
-    return minutesToHm(noonUTC * 60 + tzOffset * 60 - hourAngle * 60);
-  }
-
-  function minutesToHm(minutes: number): string {
-    const m = Math.round(minutes);
-    return `${pad2(((m % 1440) + 1440) % 1440 / 60 | 0)}:${pad2(((m % 1440) + 1440) % 1440 % 60)}`;
-  }
-
-  const dhuhr = minutesToHm(noonUTC * 60 + tzOffset * 60);
-  const asrFactor = 1 / Math.tan(latRad + declRad) > 1 ? 1 : 1 / Math.tan(latRad + declRad);
-  const asrOffset = (Math.acos(Math.min(1, Math.max(-1,
-    (Math.sin(Math.atan(asrFactor)) - Math.sin(latRad) * Math.sin(declRad))
-    / (Math.cos(latRad) * Math.cos(declRad))))) * 180 / Math.PI) / 15;
-
-  const fajr = timeForAngle(p.fajr);
-  const sunrise = timeForAngle(90.833);
-  const dhuhrTime = dhuhr;
-  const asrTime = minutesToHm(noonUTC * 60 + tzOffset * 60 + asrOffset * 60);
-  const maghrib = timeForAngle(90.833); // sunset
-  const ishaTime = p.isha >= 89
-    ? minutesToHm((noonUTC * 60 + tzOffset * 60) + 90)
-    : timeForAngle(p.isha);
-
-  const timings: PrayerTimes = {
-    Fajr: fajr,
-    Sunrise: sunrise,
-    Dhuhr: dhuhrTime,
-    Asr: asrTime,
-    Maghrib: maghrib,
-    Isha: ishaTime,
-    Imsak: minutesToHm((parseHm(fajr) - 10 + 1440) % 1440),
-  };
-
-  return {
-    timings,
-    hijri: { day: String(date.getDate()), month: 'unknown', monthEn: 'Offline mode', year: '1448' },
-    gregorian: todayDdmmyyyy(date),
-    readable: date.toDateString(),
-    method: 'Local astronomical fallback',
-    timezone: 'device',
-  };
-}
-
-function parseHm(hm: string): number {
+export function parseHm(hm: string): number {
   const [h, m] = hm.split(':').map(Number);
-  return h * 60 + m;
+  return (h || 0) * 60 + (m || 0);
 }
 
 /** Current + next prayer index for countdown */

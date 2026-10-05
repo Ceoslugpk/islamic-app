@@ -65,7 +65,7 @@ import {
 
 const ABOUT_ROWS: { title: string; subtitle: string }[] = [
   { title: 'Islamic · v1.0.0', subtitle: 'Version 1.0.0' },
-  { title: 'Prayer times', subtitle: 'AlAdhan + islamic.app' },
+  { title: 'Prayer times', subtitle: 'Islamic.app' },
   { title: 'Hijri calendar', subtitle: 'AlAdhan (Umm al-Qura)' },
   { title: 'Quran text', subtitle: 'AlQuran Cloud' },
   { title: 'Quran audio', subtitle: 'islamic.network CDN + EveryAyah' },
@@ -1431,7 +1431,7 @@ export default function SettingsScreen({ onClose, onOpenWidgets }: SettingsScree
         </Text>
 
         <Text style={[styles.footer, { color: colors.textMuted }]}>
-          Prayer times by Aladhan API · Islamic v1.0
+          Prayer times by Islamic.app · Islamic v1.0
         </Text>
 
         <QuranLanguageModal
