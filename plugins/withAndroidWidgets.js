@@ -197,7 +197,9 @@ function withWidgetNativeFiles(config) {
     );
 
     // 3. Provider info XMLs (Sensible min/max resize limits + picker polish)
-    const writeInfoXml = (fileName, minWidth, minHeight, targetW, targetH, minResizeW, minResizeH, maxResizeW, maxResizeH, initialLayout, label, desc) => {
+    // label/description must be STRING RESOURCE references (AAPT rejects
+    // raw literals on appwidget-provider attributes).
+    const writeInfoXml = (fileName, minWidth, minHeight, targetW, targetH, minResizeW, minResizeH, maxResizeW, maxResizeH, initialLayout, labelRes, descRes) => {
       fs.writeFileSync(
         path.join(resDir, 'xml', fileName),
         `<?xml version="1.0" encoding="utf-8"?>
@@ -215,17 +217,51 @@ function withWidgetNativeFiles(config) {
     android:previewImage="@drawable/widget_preview_${initialLayout.replace('widget_', '').replace('_layout', '')}"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:label="${label}"
-    android:description="${desc}" />`
+    android:label="@string/${labelRes}"
+    android:description="@string/${descRes}" />`
       );
     };
 
-    writeInfoXml('widget_prayer_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '420dp', '180dp', 'widget_prayer_small', 'Prayer Times', 'Next prayer time and countdown for your location');
-    writeInfoXml('widget_quran_info.xml', '240dp', '90dp', '4', '2', '220dp', '80dp', '420dp', '180dp', 'widget_quran', 'Quran Verse', 'A verse of the Quran with translation — tap to read');
-    writeInfoXml('widget_continue_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '320dp', '180dp', 'widget_continue', 'Continue Reading', 'Jump back to your exact Quran reading position');
-    writeInfoXml('widget_qibla_info.xml', '150dp', '90dp', '2', '2', '140dp', '80dp', '320dp', '180dp', 'widget_qibla', 'Qibla Direction', 'Qibla direction and degrees for your location');
-    writeInfoXml('widget_dua_info.xml', '240dp', '90dp', '4', '2', '220dp', '80dp', '420dp', '180dp', 'widget_dua', 'Dua &amp; Remembrance', 'Daily duas and adhkar with translations');
-    writeInfoXml('islamic_widget_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '420dp', '180dp', 'widget_prayer_small', 'Prayer Times', 'Next prayer time and countdown for your location');
+    // Widget picker strings (used by label + description above).
+    const widgetStrings = {
+      widget_label_prayer: 'Prayer Times',
+      widget_desc_prayer: 'Next prayer time and countdown for your location',
+      widget_label_quran: 'Quran Verse',
+      widget_desc_quran: 'A verse of the Quran with translation - tap to read',
+      widget_label_continue: 'Continue Reading',
+      widget_desc_continue: 'Jump back to your exact Quran reading position',
+      widget_label_qibla: 'Qibla Direction',
+      widget_desc_qibla: 'Qibla direction and degrees for your location',
+      widget_label_dua: 'Dua & Remembrance',
+      widget_desc_dua: 'Daily duas and adhkar with translations',
+    };
+    const stringsPath = path.join(resDir, 'values', 'strings.xml');
+    let stringsXml = '';
+    try {
+      stringsXml = fs.readFileSync(stringsPath, 'utf8');
+    } catch {
+      stringsXml = '';
+    }
+    const existing = new Set([...stringsXml.matchAll(/name="([^"]+)"/g)].map((m) => m[1]));
+    const additions = Object.entries(widgetStrings)
+      .filter(([k]) => !existing.has(k))
+      .map(([k, v]) => `    <string name="${k}">${v.replace(/&/g, '&amp;')}</string>`)
+      .join('\n');
+    if (additions) {
+      if (stringsXml.includes('<resources>')) {
+        stringsXml = stringsXml.replace('<resources>', '<resources>\n' + additions);
+      } else {
+        stringsXml = `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n${additions}\n</resources>\n`;
+      }
+      fs.writeFileSync(stringsPath, stringsXml);
+    }
+
+    writeInfoXml('widget_prayer_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '420dp', '180dp', 'widget_prayer_small', 'widget_label_prayer', 'widget_desc_prayer');
+    writeInfoXml('widget_quran_info.xml', '240dp', '90dp', '4', '2', '220dp', '80dp', '420dp', '180dp', 'widget_quran', 'widget_label_quran', 'widget_desc_quran');
+    writeInfoXml('widget_continue_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '320dp', '180dp', 'widget_continue', 'widget_label_continue', 'widget_desc_continue');
+    writeInfoXml('widget_qibla_info.xml', '150dp', '90dp', '2', '2', '140dp', '80dp', '320dp', '180dp', 'widget_qibla', 'widget_label_qibla', 'widget_desc_qibla');
+    writeInfoXml('widget_dua_info.xml', '240dp', '90dp', '4', '2', '220dp', '80dp', '420dp', '180dp', 'widget_dua', 'widget_label_dua', 'widget_desc_dua');
+    writeInfoXml('islamic_widget_info.xml', '150dp', '90dp', '3', '2', '140dp', '80dp', '420dp', '180dp', 'widget_prayer_small', 'widget_label_prayer', 'widget_desc_prayer');
 
     // 4. RemoteViews Layouts (Compact glanceable redesign)
     const layoutPrayerSmall = `<?xml version="1.0" encoding="utf-8"?>
