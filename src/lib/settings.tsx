@@ -70,6 +70,7 @@ export const DEFAULT_QURAN_GOAL: QuranGoalConfig = {
 };
 
 export interface AppSettings {
+  settingsVersion?: number;
   methodId: number;
   madhab: Madhab;
   timeFormat: TimeFormat;
@@ -135,8 +136,11 @@ interface SettingsContextValue {
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
 
+export const SETTINGS_VERSION = 2;
+
 const DEFAULTS: AppSettings = {
-  methodId: 8,
+  settingsVersion: SETTINGS_VERSION,
+  methodId: 16,
   madhab: 'shafi',
   timeFormat: '12h',
   locationMode: 'auto',
@@ -167,6 +171,7 @@ const DEFAULTS: AppSettings = {
 };
 
 const STORAGE_KEY = 'islamic-settings';
+export const METHOD_MIGRATION_KEY = 'islamic-settings-method-migrated-v16';
 
 /**
  * In-memory mirror of `quranPreloadRequested` so non-React callers (background
@@ -205,10 +210,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       try {
-        const [raw, legacyFontSize, legacyShowTranslation] = await Promise.all([
+        const [raw, legacyFontSize, legacyShowTranslation, methodMigrated] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEY),
           AsyncStorage.getItem(LEGACY_QURAN_FONT_SIZE),
           AsyncStorage.getItem(LEGACY_QURAN_SHOW_TRANSLATION),
+          AsyncStorage.getItem(METHOD_MIGRATION_KEY),
         ]);
         const parsed: Partial<AppSettings> = raw ? JSON.parse(raw) : {};
         const next: AppSettings = { ...DEFAULTS, ...parsed };
@@ -247,6 +253,20 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         // Adopt legacy QuranReaderScreen AsyncStorage values once, when settings
         // don't own them yet — settings become the source of truth from here on.
         let migrated = false;
+
+        // One-time migration: bump persisted methodId to 16 (Dubai official calculation)
+        // if still on the legacy default (8). Does not touch custom methods or other user settings.
+        if (!methodMigrated && (!parsed.settingsVersion || parsed.settingsVersion < SETTINGS_VERSION)) {
+          if (parsed.methodId === 8) {
+            next.methodId = 16;
+            migrated = true;
+          }
+          next.settingsVersion = SETTINGS_VERSION;
+          migrated = true;
+          AsyncStorage.setItem(METHOD_MIGRATION_KEY, 'true').catch(() => {});
+        } else if (!methodMigrated) {
+          AsyncStorage.setItem(METHOD_MIGRATION_KEY, 'true').catch(() => {});
+        }
         if (typeof parsed.quranFontSize !== 'number' && legacyFontSize) {
           const legacy = parseInt(legacyFontSize, 10);
           if (!isNaN(legacy)) {

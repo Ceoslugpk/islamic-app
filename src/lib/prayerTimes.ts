@@ -43,6 +43,7 @@ export interface Location {
 }
 
 export const CALC_METHODS = [
+  { id: 16, name: 'Dubai', region: 'UAE' },
   { id: 4, name: 'Umm al-Qura (Makkah)', region: 'Saudi Arabia, Gulf' },
   { id: 8, name: 'Gulf Region (UAE, Qatar, Kuwait)', region: 'UAE / Qatar / Kuwait' },
   { id: 3, name: 'Muslim World League', region: 'Europe, Far East' },
@@ -194,7 +195,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 /** Check SQLite/local cache for the exact day's schedule matching config */
 export function getCachedPrayerTimes(
   loc: Location = DEFAULT_LOCATION,
-  method: number = 8,
+  method: number = 16,
   date: Date = new Date(),
   madhab: Madhab = 'shafi',
   adjustments?: Record<string, number>
@@ -241,7 +242,7 @@ export interface FetchPrayerTimesOptions {
  */
 export async function fetchPrayerTimes(
   loc: Location = DEFAULT_LOCATION,
-  method: number = 8,
+  method: number = 16,
   date: Date = new Date(),
   forceOrOptions: boolean | FetchPrayerTimesOptions = false
 ): Promise<DayTimings> {

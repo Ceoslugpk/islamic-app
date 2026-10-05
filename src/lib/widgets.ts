@@ -210,7 +210,7 @@ export async function getNextPrayerWidgetData(
   const now = options.now || new Date();
   const dateStr = todayDdmmyyyy(now);
 
-  let method = options.method ?? 8;
+  let method = options.method ?? 16;
   let loc = options.location || DEFAULT_LOCATION;
   let timeFormat = options.timeFormat ?? '12h';
 
@@ -246,7 +246,7 @@ export async function getNextPrayerWidgetData(
 
     // Fallback: try default Dubai coordinates if custom location is not cached
     if (!cached && locKey !== '25.20,55.27') {
-      cached = loadPrayerCache(dateStr, '25.20,55.27', method) || loadPrayerCache(dateStr, '25.20,55.27', 8);
+      cached = loadPrayerCache(dateStr, '25.20,55.27', method) || loadPrayerCache(dateStr, '25.20,55.27', 16);
     }
 
     if (cached) {

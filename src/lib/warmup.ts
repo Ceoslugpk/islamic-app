@@ -558,7 +558,7 @@ export async function runFirstLaunchWarmup(options?: {
   if (!isAppOnline()) {
     try {
       const loc = options?.location || { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' };
-      const method = options?.methodId || 8;
+      const method = options?.methodId || 16;
       await fetchPrayerTimes(loc, method, new Date(), false);
       await fetchSurahList();
       await markWarmupDone();
@@ -619,7 +619,7 @@ export async function runFirstLaunchWarmup(options?: {
     updateProgress(0, steps[0].label);
     try {
       const loc = options?.location || { latitude: 21.4225, longitude: 39.8262, label: 'Makkah, Saudi Arabia' };
-      const method = options?.methodId || 8;
+      const method = options?.methodId || 16;
       await fetchPrayerTimes(loc, method, new Date(), false);
       completed.push(steps[0].key);
     } catch {
