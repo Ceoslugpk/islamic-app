@@ -26,6 +26,7 @@ import {
   getAudioQueue,
   getAudioTranslationLangName,
   getQueueIndex,
+  getRate,
   NON_ARABIC_AUDIO_EDITIONS,
   PlaybackSegmentType,
   playNext,
@@ -33,6 +34,7 @@ import {
   playQueueItem,
   PlaylistItem,
   safeLoadSettings,
+  setRate,
   switchToLanguageSegment,
   updateAudioSettings,
   useAudioTranslation,
@@ -72,6 +74,54 @@ export function AudioPlayerModal({
   const [touchX, setTouchX] = useState<number | null>(null);
   const [dragRatio, setDragRatio] = useState<number | null>(null);
   const progressWidth = useRef<number>(0);
+
+  // Fine playback speed + sleep timer (Niro: feature #3 + #4)
+  const SPEED_OPTIONS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
+  const [playbackRate, setPlaybackRateState] = useState<number>(getRate());
+  const [sleepMin, setSleepMin] = useState<number | null>(null);
+  const [sleepRemaining, setSleepRemaining] = useState<number | null>(null);
+  const sleepEndRef = useRef<number | null>(null);
+  const sleepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const cycleSpeed = async () => {
+    const next = SPEED_OPTIONS[(SPEED_OPTIONS.indexOf(playbackRate) + 1) % SPEED_OPTIONS.length];
+    await setRate(next);
+    setPlaybackRateState(next);
+  };
+
+  const startSleepTimer = (minutes: number) => {
+    if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
+    sleepEndRef.current = Date.now() + minutes * 60_000;
+    setSleepMin(minutes);
+    setSleepRemaining(minutes * 60);
+    sleepTimerRef.current = setInterval(() => {
+      const left = Math.max(0, Math.round(((sleepEndRef.current ?? 0) - Date.now()) / 1000));
+      setSleepRemaining(left);
+      if (left <= 0) {
+        clearInterval(sleepTimerRef.current!);
+        sleepTimerRef.current = null;
+        sleepEndRef.current = null;
+        setSleepMin(null);
+        setSleepRemaining(null);
+        onStop();
+      }
+    }, 1000);
+  };
+
+  const cancelSleepTimer = () => {
+    if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
+    sleepTimerRef.current = null;
+    sleepEndRef.current = null;
+    setSleepMin(null);
+    setSleepRemaining(null);
+  };
+
+  // Clear the sleep timer on unmount (never fires after modal closes).
+  useEffect(() => {
+    return () => {
+      if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
+    };
+  }, []);
 
   const handleSwitchSegment = async (target: PlaybackSegmentType) => {
     if (switchingSegment) return;
@@ -723,6 +773,58 @@ export function AudioPlayerModal({
                 </TouchableOpacity>
               </View>
 
+              {/* Speed + Sleep Timer Row */}
+              <View style={styles.speedSleepRow}>
+                <TouchableOpacity
+                  onPress={cycleSpeed}
+                  style={[
+                    styles.speedBtn,
+                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Playback speed ${playbackRate}x. Tap to cycle.`}
+                >
+                  <Ionicons name="speedometer-outline" size={15} color={colors.accent} />
+                  <Text style={[styles.speedBtnText, { color: colors.textSecondary }]}>
+                    {playbackRate.toFixed(2).replace(/\.?0+$/, '')}×
+                  </Text>
+                </TouchableOpacity>
+
+                {sleepMin === null ? (
+                  <TouchableOpacity
+                    onPress={() => startSleepTimer(10)}
+                    style={[
+                      styles.sleepBtn,
+                      { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Start a 10 minute sleep timer. Tap again for more options."
+                  >
+                    <Ionicons name="moon-outline" size={15} color={colors.accent} />
+                    <Text style={[styles.sleepBtnText, { color: colors.textSecondary }]}>
+                      Sleep 10m
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={cancelSleepTimer}
+                    style={[
+                      styles.sleepBtn,
+                      { backgroundColor: colors.accentDim, borderColor: colors.accent },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Sleep timer active, ${sleepRemaining} seconds remaining. Tap to cancel.`}
+                  >
+                    <Ionicons name="moon" size={15} color={colors.accent} />
+                    <Text style={[styles.sleepBtnText, { color: colors.accent }]}>
+                      {sleepRemaining !== null && sleepRemaining > 60
+                        ? `${Math.round(sleepRemaining / 60)}m`
+                        : `${sleepRemaining ?? 0}s`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
               {/* Queue peek if queue exists */}
               {queue.length > 0 && (
                 <View style={[styles.queueSection, { borderTopColor: colors.borderSubtle }]}>
@@ -1144,6 +1246,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+  },
+  speedSleepRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+    marginTop: 14,
+    marginBottom: 2,
+  },
+  speedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    minHeight: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  speedBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+  },
+  sleepBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    minHeight: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  sleepBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
   },
   repeatBadgeText: {
     position: 'absolute',

@@ -17,6 +17,7 @@ import { ArabicText } from '../components/ArabicText';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { HifzStatus, saveHifzStatus, loadHifzStatuses } from '../lib/db';
 import { EmptyState } from '../components/EmptyState';
+import { HifzPracticeScreen } from './HifzPracticeScreen';
 
 type FilterTab = 'All' | 'Memorized' | 'Revising' | 'Not started';
 
@@ -37,6 +38,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
   const [statuses, setStatuses] = useState<Record<number, HifzStatus>>({});
   const [activeFilter, setActiveFilter] = useState<FilterTab>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [practiceSurah, setPracticeSurah] = useState<number | null>(null);
 
   useEffect(() => {
     const loaded = loadHifzStatuses();
@@ -189,16 +191,36 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           <ArabicText size={20} align="right" style={styles.arabicName}>
             {item.name}
           </ArabicText>
-          <Text style={[styles.tapHint, { color: colors.textMuted }]}>
-            Tap to cycle
-          </Text>
+          <View style={styles.rowActions}>
+            <TouchableOpacity
+              onPress={() => setPracticeSurah(item.number)}
+              style={[styles.practiceBtn, { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle }]}
+              accessibilityRole="button"
+              accessibilityLabel={`Practice ${item.englishName} with hide and peek`}
+            >
+              <Ionicons name="eye-outline" size={12} color={colors.accent} />
+              <Text style={[styles.practiceText, { color: colors.accent }]}>Practice</Text>
+            </TouchableOpacity>
+            <Text style={[styles.tapHint, { color: colors.textMuted }]}>
+              Tap to cycle
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     );
   };
 
+  if (practiceSurah !== null) {
+    return (
+      <HifzPracticeScreen
+        surahNumber={practiceSurah}
+        onBack={() => setPracticeSurah(null)}
+      />
+    );
+  }
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
+    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
         {onBack && (
           <TouchableOpacity
@@ -493,5 +515,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 10,
     marginTop: 2,
+  },
+  rowActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  practiceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  practiceText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
   },
 });

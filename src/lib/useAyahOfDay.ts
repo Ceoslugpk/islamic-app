@@ -9,6 +9,8 @@ export interface AyahOfDay {
   reference: string;
   surahNumber: number;
   ayahNumber: number;
+  /** Short reflective note shown under the verse. */
+  reflection?: string;
 }
 
 const CACHE_PREFIX = 'ayah-of-the-day-';
@@ -21,6 +23,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Al-Baqarah 2:255',
     surahNumber: 2,
     ayahNumber: 255,
+    reflection: 'The One who sustains all of existence never tires — no worry is too heavy to bring to Him.',
   },
   {
     arabic: 'الَّذِينَ آمَنُوا وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ اللَّهِ ۗ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ',
@@ -29,6 +32,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Ar-Ra\'d 13:28',
     surahNumber: 13,
     ayahNumber: 28,
+    reflection: 'Peace of heart is found in remembrance — turn to Allah when your mind will not settle.',
   },
   {
     arabic: 'فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۝ إِنَّ مَعَ الْعُسْرِ يُسْرًا',
@@ -37,6 +41,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Ash-Sharh 94:5-6',
     surahNumber: 94,
     ayahNumber: 5,
+    reflection: 'Ease is promised — not only after hardship, but with it. Patience is never wasted.',
   },
   {
     arabic: 'فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ',
@@ -45,6 +50,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Al-Baqarah 2:152',
     surahNumber: 2,
     ayahNumber: 152,
+    reflection: 'You are never forgotten — remembering Allah brings His remembrance of you.',
   },
   {
     arabic: 'وَلَا تَهِنُوا وَلَا تَحْزَنُوا وَأَنتُمُ الْأَعْلَوْنَ إِن كُنتُم مُّؤْمِنِينَ',
@@ -53,6 +59,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Ali \'Imran 3:139',
     surahNumber: 3,
     ayahNumber: 139,
+    reflection: 'Faith lifts you higher — do not let weariness or grief lower your conviction.',
   },
   {
     arabic: 'وَيَرْزُقْهُ مِنْ حَيْثُ لَا يَحْتَسِبُ ۚ وَمَن يَتَوَكَّلْ عَلَى اللَّهِ فَهُوَ حَسْبُهُ',
@@ -61,6 +68,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'At-Talaq 65:3',
     surahNumber: 65,
     ayahNumber: 3,
+    reflection: 'Provision can arrive from where you least expect — trust in Allah covers what planning cannot.',
   },
   {
     arabic: 'وَإِذَا سَأَلَكَ عِبَادِي عَنِّي فَإِنِّي قَرِيبٌ ۖ أُجِيبُ دَعْوَةَ الدَّاعِ إِذَا دَعَانِ',
@@ -69,6 +77,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Al-Baqarah 2:186',
     surahNumber: 2,
     ayahNumber: 186,
+    reflection: 'He is near — closer than the distance between a du\'a and its answer. Call on Him directly.',
   },
   {
     arabic: 'فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ',
@@ -77,6 +86,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Ar-Rahman 55:13',
     surahNumber: 55,
     ayahNumber: 13,
+    reflection: 'Count the favors, not the lacks — gratitude multiplies what you already have.',
   },
   {
     arabic: 'وَلَسَوْفَ يُعْطِيكَ رَبُّكَ فَتَرْضَىٰ',
@@ -85,6 +95,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Ad-Duhaa 93:5',
     surahNumber: 93,
     ayahNumber: 5,
+    reflection: 'The future holds goodness for you — keep your hope in the Giver, not in the gift.',
   },
   {
     arabic: 'لَئِن شَكَرْتُمْ لَأَزِيدَنَّكُمْ ۖ وَلَئِن كَفَرْتُمْ إِنَّ عَذَابِي لَشَدِيدٌ',
@@ -93,6 +104,7 @@ const STATIC_FALLBACK_VERSES: AyahOfDay[] = [
     reference: 'Ibrahim 14:7',
     surahNumber: 14,
     ayahNumber: 7,
+    reflection: 'Gratitude is the door to increase — the more you thank, the more you receive.',
   },
 ];
 

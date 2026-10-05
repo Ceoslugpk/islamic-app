@@ -233,6 +233,14 @@ export function DailyContentRail({
                         >
                           {ayah.translation}
                         </Text>
+                        {ayah.reflection ? (
+                          <View style={styles.reflectionRow}>
+                            <Ionicons name="sparkles-outline" size={12} color={colors.accent} />
+                            <Text style={[styles.reflectionText, { color: colors.textMuted }]}>
+                              {ayah.reflection}
+                            </Text>
+                          </View>
+                        ) : null}
                         <View style={styles.footerRow}>
                           <Text style={[styles.referenceText, { color: colors.textSecondary }]}>
                             {ayah.reference}
@@ -428,6 +436,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     marginBottom: 10,
+  },
+  reflectionRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginBottom: 8,
+  },
+  reflectionText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
+    lineHeight: 17,
+    fontStyle: 'italic',
+    flex: 1,
   },
   footerRow: {
     flexDirection: 'row',
