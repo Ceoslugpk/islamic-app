@@ -845,12 +845,6 @@ function Root({ splashDone }: { splashDone: boolean }) {
               setLibrary({ screen: 'duas' });
               setTab('library');
             }}
-            onOpenAdhkar={() => {
-              setQuran({ screen: 'home' });
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'duas' });
-              setTab('library');
-            }}
             onOpenTasbih={() => {
               setQuran({ screen: 'home' });
               setTools({ screen: 'hub' });

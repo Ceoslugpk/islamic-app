@@ -109,7 +109,6 @@ export interface HomeScreenProps {
   onOpenHadith?: () => void;
   onOpenQibla?: () => void;
   onOpenDuas?: () => void;
-  onOpenAdhkar?: () => void;
   onOpenTasbih?: () => void;
   onOpenCities?: () => void;
 }
@@ -122,7 +121,6 @@ export default function HomeScreen({
   onOpenHadith,
   onOpenQibla,
   onOpenDuas,
-  onOpenAdhkar,
   onOpenTasbih,
   onOpenCities,
 }: HomeScreenProps) {
@@ -848,7 +846,7 @@ export default function HomeScreen({
         <QuickActionsStrip
           onOpenQibla={onOpenQibla}
           onOpenDuas={onOpenDuas}
-          onOpenAdhkar={onOpenAdhkar}
+          onOpenHadith={onOpenHadith}
           onOpenTasbih={onOpenTasbih}
         />
 

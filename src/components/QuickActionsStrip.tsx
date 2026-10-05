@@ -17,7 +17,7 @@ const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 export interface QuickActionsStripProps {
   onOpenQibla?: () => void;
   onOpenDuas?: () => void;
-  onOpenAdhkar?: () => void;
+  onOpenHadith?: () => void;
   onOpenTasbih?: () => void;
   style?: any;
 }
@@ -89,7 +89,7 @@ function ActionButton({ icon, label, onPress }: ActionItemProps) {
 export function QuickActionsStrip({
   onOpenQibla,
   onOpenDuas,
-  onOpenAdhkar,
+  onOpenHadith,
   onOpenTasbih,
   style,
 }: QuickActionsStripProps) {
@@ -105,9 +105,9 @@ export function QuickActionsStrip({
       onPress: onOpenDuas,
     },
     {
-      icon: 'moon-outline',
-      label: 'Adhkar',
-      onPress: onOpenAdhkar,
+      icon: 'library-outline',
+      label: 'Hadith',
+      onPress: onOpenHadith,
     },
     {
       icon: 'repeat-outline',

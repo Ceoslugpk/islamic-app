@@ -7,7 +7,6 @@ import {
   FlatList,
   Modal,
   Platform,
-  RefreshControl,
   ScrollView,
   Share,
   StyleSheet,
@@ -197,7 +196,6 @@ export default function QuranReaderScreen({
   const cacheKey = `surah:${surahNumber}:${edition.editionIdentifier}`;
   const [surah, setSurah] = useState<SurahDetail | null>(() => loadQuranCache<SurahDetail>(cacheKey));
   const [loading, setLoading] = useState<boolean>(() => !loadQuranCache<SurahDetail>(cacheKey));
-  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const fontSize = settings.quranFontSize;
   const showTranslation = settings.quranShowTranslation;
@@ -384,7 +382,6 @@ export default function QuranReaderScreen({
       }
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [surahNumber, initialAyah, edition.editionIdentifier]);
 
@@ -961,16 +958,6 @@ export default function QuranReaderScreen({
         contentContainerStyle={styles.mushafScrollContent}
         onScroll={handleReaderScroll}
         scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
-              setRefreshing(true);
-              loadSurah(true);
-            }}
-            tintColor={colors.accent}
-          />
-        }
       >
         {renderSurahHeader()}
 
@@ -1340,16 +1327,6 @@ export default function QuranReaderScreen({
           scrollEventThrottle={16}
           viewabilityConfig={VIEWABILITY_CONFIG}
           onViewableItemsChanged={handleViewableItemsChanged}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => {
-                setRefreshing(true);
-                loadSurah(true);
-              }}
-              tintColor={colors.accent}
-            />
-          }
         />
       )}
 
