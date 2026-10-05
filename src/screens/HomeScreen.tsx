@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text,
   View,
-  RefreshControl,
   TouchableOpacity,
   useWindowDimensions,
   Animated,
@@ -40,7 +39,6 @@ import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { SectionHeader } from '../components/SectionHeader';
 import { GeometricPattern } from '../components/GeometricPattern';
-import { AnimatedPattern, IslamicPullToRefreshIndicator } from '../components/AnimatedPattern';
 import { ArabicText } from '../components/ArabicText';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
@@ -88,7 +86,6 @@ function parseHm(hm: string): number {
 }
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
-const REFRESH_CONTROL_COLORS: string[] = ['transparent'];
 
 function checkReducedMotion(cb: (reduced: boolean) => void) {
   if (Platform.OS === 'web') {
@@ -155,7 +152,6 @@ export default function HomeScreen({
   const { progress: preloadProgress } = useQuranPreload();
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
@@ -238,7 +234,6 @@ export default function HomeScreen({
       }
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }
 
@@ -584,36 +579,7 @@ export default function HomeScreen({
             listener: handleScroll,
           }
         )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => {
-              setRefreshing(true);
-              try {
-                if (settings.locationMode === 'auto' && (locStatus === 'denied' || locStatus === 'pending')) {
-                  try {
-                    await requestLocation(true);
-                  } catch {
-                    // Location failure must never block data refresh
-                  }
-                }
-                await Promise.allSettled([
-                  load(false, true),
-                  refreshAyah ? refreshAyah() : Promise.resolve(),
-                  refreshHadith ? refreshHadith() : Promise.resolve(),
-                ]);
-              } finally {
-                setRefreshing(false);
-              }
-            }}
-            tintColor="transparent"
-            colors={['transparent']}
-            progressBackgroundColor="transparent"
-          />
-        }
       >
-        <IslamicPullToRefreshIndicator refreshing={refreshing} />
-
         {/* Section Header: Eyebrow Today + Greeting (animates on scroll) */}
         <Animated.View
           style={{
