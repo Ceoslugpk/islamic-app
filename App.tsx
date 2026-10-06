@@ -47,6 +47,7 @@ import CalendarScreen from './src/screens/CalendarScreen';
 import LibraryScreen, { LibraryItemKey } from './src/screens/LibraryScreen';
 import { VocabTrainerScreen } from './src/screens/VocabTrainerScreen';
 import { WeeklySummaryScreen } from './src/screens/WeeklySummaryScreen';
+import { TajweedScreen } from './src/screens/TajweedScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import TasbihScreen from './src/screens/TasbihScreen';
 import NamesScreen from './src/screens/NamesScreen';
@@ -333,7 +334,8 @@ type LibraryView =
   | { screen: 'shahada' }
   | { screen: 'downloads' }
   | { screen: 'vocab' }
-  | { screen: 'summary' };
+  | { screen: 'summary' }
+  | { screen: 'tajweed' };
 
 type QuranView =
   | { screen: 'home' }
@@ -905,6 +907,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     else if (key === 'downloads') setLibrary({ screen: 'downloads' });
     else if (key === 'vocab') setLibrary({ screen: 'vocab' });
     else if (key === 'summary') setLibrary({ screen: 'summary' });
+    else if (key === 'tajweed') setLibrary({ screen: 'tajweed' });
   }
 
   return (
@@ -1077,6 +1080,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
         {tab === 'library' && library.screen === 'summary' && (
           <WeeklySummaryScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+
+        {tab === 'library' && library.screen === 'tajweed' && (
+          <TajweedScreen onBack={() => setLibrary({ screen: 'hub' })} />
         )}
 
 

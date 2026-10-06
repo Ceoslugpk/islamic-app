@@ -52,7 +52,7 @@
     "test:prayer": "node tests/test_prayer_architecture.mjs",
     "test:widgets": "node tests/test_widgets.mjs",
     "test:media": "node tests/test_system_media.mjs",
-    "test": "node tests/test_prayer_architecture.mjs && node tests/test_widgets.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs"
+    "test": "node tests/test_prayer_architecture.mjs && node tests/test_widgets.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs"
   },
   "private": true
 }

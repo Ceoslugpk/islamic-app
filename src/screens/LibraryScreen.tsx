@@ -23,7 +23,8 @@ export type LibraryItemKey =
   | 'shahada'
   | 'downloads'
   | 'vocab'
-  | 'summary';
+  | 'summary'
+  | 'tajweed';
 
 /* ─── Item model ──────────────────────────────────────────────── */
 
@@ -45,6 +46,7 @@ const ICONS: Record<LibraryItemKey, keyof typeof Ionicons.glyphMap> = {
   downloads: 'cloud-download-outline',
   vocab: 'language',
   summary: 'pulse',
+  tajweed: 'color-palette',
 };
 
 /* ─── Grouped layout ──────────────────────────────────────────── */
@@ -76,6 +78,7 @@ const GROUPS: LibraryGroup[] = [
     items: [
       { key: 'vocab', title: 'Quran Vocabulary', subtitle: 'Flashcards of the most frequent Quranic words' },
       { key: 'summary', title: 'Weekly Summary', subtitle: 'Your past 7 days of reading, salah & Hifz' },
+      { key: 'tajweed', title: 'Tajweed Colors', subtitle: 'Color-coded reading rules for the most-recited surahs' },
     ],
   },
   {
