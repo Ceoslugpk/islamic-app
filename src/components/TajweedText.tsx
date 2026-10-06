@@ -11,14 +11,24 @@ export function TajweedText({
   text,
   size = 24,
   lineHeight,
+  fontFamily,
+  numberInSurah,
 }: {
   text: string;
   size?: number;
   lineHeight?: number;
+  fontFamily?: string;
+  numberInSurah?: number;
 }) {
   const { colors } = useTheme();
-  const spans: TajweedSpan[] = parseTajweedHtml(text);
+  // Strip end marker tag if numberInSurah is provided so we can append standard ۝{numberInSurah}
+  const cleanText =
+    numberInSurah != null
+      ? text.replace(/<span class=end>[^<]*<\/span>/g, '').replace(/<end[^>]*\/?>/g, '').trim()
+      : text;
+  const spans: TajweedSpan[] = parseTajweedHtml(cleanText);
   const resolvedLineHeight = lineHeight ?? Math.round(size * 1.6);
+  const resolvedFamily = fontFamily ?? 'Amiri_400Regular';
 
   return (
     <Text
@@ -26,6 +36,7 @@ export function TajweedText({
         styles.base,
         {
           fontSize: size,
+          fontFamily: resolvedFamily,
           lineHeight: resolvedLineHeight,
           color: colors.textPrimary,
           writingDirection: 'rtl',
@@ -38,16 +49,36 @@ export function TajweedText({
         span.rule ? (
           <Text
             key={i}
-            style={{ color: TAJWEED_RULES[span.rule].color, fontSize: size }}
+            style={{
+              color: TAJWEED_RULES[span.rule].color,
+              fontSize: size,
+              fontFamily: resolvedFamily,
+            }}
           >
             {span.text}
           </Text>
         ) : (
-          <Text key={i} style={{ color: colors.textPrimary }}>
+          <Text
+            key={i}
+            style={{
+              color: colors.textPrimary,
+              fontFamily: resolvedFamily,
+            }}
+          >
             {span.text}
           </Text>
         )
       )}
+      {numberInSurah != null ? (
+        <Text
+          style={[
+            styles.ayahMarker,
+            { color: colors.accent, fontFamily: resolvedFamily },
+          ]}
+        >
+          {' '}۝{numberInSurah}
+        </Text>
+      ) : null}
     </Text>
   );
 }
@@ -84,4 +115,8 @@ const styles = StyleSheet.create({
   legendDot: { width: 14, height: 14, borderRadius: 7 },
   legendLabel: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   legendHint: { fontFamily: 'Manrope_400Regular', fontSize: 11, lineHeight: 15, marginTop: 1 },
+  ayahMarker: {
+    fontSize: 18,
+    opacity: 0.85,
+  },
 });

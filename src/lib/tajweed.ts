@@ -60,7 +60,11 @@ export function parseTajweedHtml(text: string): TajweedSpan[] {
 
 /** Strip all tajweed tags to plain Uthmani text. */
 export function stripTajweedHtml(text: string): string {
-  return text.replace(/<tajweed class=[a-z_]+>([^<]*)<\/tajweed>/g, '$1').replace(/<end[^>]*\/?>/g, '');
+  return text
+    .replace(/<tajweed class=[a-z_]+>([^<]*)<\/tajweed>/g, '$1')
+    .replace(/<span class=end>[^<]*<\/span>/g, '')
+    .replace(/<end[^>]*\/?>/g, '')
+    .trim();
 }
 
 const BASE = 'https://api.islamic.app/v1/verses';
@@ -95,11 +99,15 @@ export async function fetchTajweedSurah(surah: number): Promise<TajweedAyah[]> {
 
   const out: TajweedAyah[] = verses
     .filter((v: { text_uthmani_tajweed?: string }) => v.text_uthmani_tajweed)
-    .map((v: { verse_key: string; verse_number: number; text_uthmani_tajweed: string }) => ({
-      numberInSurah: v.verse_number,
-      verseKey: v.verse_key,
-      html: v.text_uthmani_tajweed,
-    }));
+    .map((v: { verse_key: string; verse_number: number; text_uthmani_tajweed: string }) => {
+      const parts = (v.verse_key || '').split(':');
+      const numInSurah = parts.length > 1 ? parseInt(parts[1], 10) : v.verse_number;
+      return {
+        numberInSurah: !isNaN(numInSurah) ? numInSurah : v.verse_number,
+        verseKey: v.verse_key,
+        html: v.text_uthmani_tajweed,
+      };
+    });
 
   saveQuranCache(key, out);
   return out;

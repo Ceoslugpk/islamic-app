@@ -52,7 +52,7 @@ function fetchAyahTafsir(surah, ayah, identifier) {
   // (cache miss simulation)
   if (isIslamicIdentifier(identifier)) {
     // islamic.app path — real language text (simulated)
-    return { text: 'اردو تفسیر متن', edition: 'Tafsir Ibn Kathir' };
+    return { text: `اردو تفسیر متن: ${identifier}`, edition: identifier };
   }
   // AlQuran Cloud path failed for a non-default identifier → must NOT
   // fall back to Arabic.

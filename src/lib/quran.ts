@@ -568,3 +568,11 @@ export async function fetchAyahEditions(
   saveQuranCache(key, out);
   return out;
 }
+
+export {
+  fetchSurahWithScript,
+  QURAN_SCRIPTS,
+  getScriptCacheKey,
+  SCRIPT_FIELD_MAP,
+} from './quranScripts';
+export type { QuranScript, ScriptOption, ScriptAyahMap } from './quranScripts';

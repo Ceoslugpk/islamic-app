@@ -11,6 +11,7 @@ export type TimeFormat = '12h' | '24h';
 export type LocationMode = 'auto' | 'manual';
 export type ThemeMode = 'system' | 'ink' | 'paper';
 export type QuranArabicFont = 'amiri' | 'notonaskh';
+export type QuranScript = 'uthmani' | 'imlaei' | 'indopak' | 'tajweed';
 export type TafsirSourceId = 'jalalayn' | 'qurtubi' | 'miqbas' | 'waseet' | 'baghawi' | 'muyassar';
 export type Madhab = 'shafi' | 'hanafi';
 
@@ -94,6 +95,7 @@ export interface AppSettings {
   womenLockEnabled: boolean;
   hapticsEnabled: boolean;
   quranArabicFont: QuranArabicFont;
+  quranScript: QuranScript;
   quranFontSize: number;
   quranLineHeight: number;
   quranShowTranslation: boolean;
@@ -127,6 +129,7 @@ interface SettingsContextValue {
   setWomenLockEnabled: (enabled: boolean) => void;
   setHapticsEnabled: (enabled: boolean) => void;
   setQuranArabicFont: (font: QuranArabicFont) => void;
+  setQuranScript: (script: QuranScript) => void;
   setQuranFontSize: (size: number) => void;
   setQuranLineHeight: (multiplier: number) => void;
   setQuranShowTranslation: (enabled: boolean) => void;
@@ -163,6 +166,7 @@ const DEFAULTS: AppSettings = {
   womenLockEnabled: false,
   hapticsEnabled: true,
   quranArabicFont: 'amiri',
+  quranScript: 'uthmani',
   quranFontSize: QURAN_FONT_SIZE_DEFAULT,
   quranLineHeight: QURAN_LINE_HEIGHT_DEFAULT,
   quranShowTranslation: true,
@@ -224,6 +228,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         }
         if (next.quranArabicFont !== 'amiri' && next.quranArabicFont !== 'notonaskh') {
           next.quranArabicFont = DEFAULTS.quranArabicFont;
+        }
+        if (
+          next.quranScript !== 'uthmani' &&
+          next.quranScript !== 'imlaei' &&
+          next.quranScript !== 'indopak' &&
+          next.quranScript !== 'tajweed'
+        ) {
+          next.quranScript = DEFAULTS.quranScript;
         }
         next.quranFontSize = clampQuranFontSize(next.quranFontSize);
         next.quranLineHeight = clampQuranLineHeight(next.quranLineHeight);
@@ -360,6 +372,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setWomenLockEnabled: (womenLockEnabled) => setSettings((prev) => persist({ ...prev, womenLockEnabled })),
     setHapticsEnabled: (hapticsEnabled) => setSettings((prev) => persist({ ...prev, hapticsEnabled })),
     setQuranArabicFont: (quranArabicFont) => setSettings((prev) => persist({ ...prev, quranArabicFont })),
+    setQuranScript: (quranScript) => setSettings((prev) => persist({ ...prev, quranScript })),
     setQuranFontSize: (quranFontSize) =>
       setSettings((prev) => persist({ ...prev, quranFontSize: clampQuranFontSize(quranFontSize) })),
     setQuranLineHeight: (quranLineHeight) =>
