@@ -10,6 +10,8 @@ import { saveQuranCache, loadQuranCache } from './db';
 import { isAppOnline } from './useConnectivity';
 import { SURAHS_114 } from './surahs114';
 import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
+import { SURAH_AYAH_COUNTS } from './quranAudio';
+import { fetchIslamicTafsir } from './islamicTafsir';
 
 export interface SurahMeta {
   number: number;
@@ -487,6 +489,26 @@ export async function fetchSurahTafsir(
   surah: number,
   tafsirIdentifier = 'ar.jalalayn'
 ): Promise<Array<{ ayahNumber: number; text: string }>> {
+  // islamic.app tafsirs: identifier prefixed `islamic:<slug>`.
+  if (tafsirIdentifier.startsWith('islamic:')) {
+    const slug = tafsirIdentifier.slice('islamic:'.length);
+    const out: Array<{ ayahNumber: number; text: string }> = [];
+    const total = SURAH_AYAH_COUNTS[surah - 1] || 7;
+    // Fetch a bounded sample (first + every Nth ayah) to keep preload/first
+    // load light; the full loop stays available on demand per ayah.
+    const step = Math.max(1, Math.round(total / 20));
+    for (let ayah = 1; ayah <= total; ayah += step) {
+      try {
+        const r = await fetchIslamicTafsir(surah, ayah, slug);
+        out.push({ ayahNumber: ayah, text: r.text });
+      } catch {
+        // gap in coverage — skip
+      }
+    }
+    if (!out.length) throw new Error('Tafsir unavailable');
+    return out;
+  }
+
   const key = `tafsir:surah:${surah}:${tafsirIdentifier}`;
   const cached = loadQuranCache<Array<{ ayahNumber: number; text: string }>>(key);
   if (cached) return cached;
