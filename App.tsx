@@ -988,7 +988,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
             surahNumber={quran.surah || 1}
             initialAyah={quran.initialAyah}
             onBack={() => setQuran({ screen: 'home' })}
-            onNavigateSurah={(s) => setQuran({ screen: 'reader', surah: s })}
+            onNavigateSurah={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
           />
         )}
         {tab === 'quran' && quran.screen === 'audio' && (

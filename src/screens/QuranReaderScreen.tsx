@@ -106,7 +106,7 @@ interface QuranReaderScreenProps {
   surahNumber: number;
   initialAyah?: number;
   onBack: () => void;
-  onNavigateSurah?: (surah: number) => void;
+  onNavigateSurah?: (surah: number, initialAyah?: number) => void;
 }
 
 type ReadingMode = 'cards' | 'mushaf';
@@ -2074,7 +2074,8 @@ export default function QuranReaderScreen({
                         // Find the index in the current surah's ayahs
                         // If the juz starts in a different surah, navigate to that surah
                         if (juzStart.surah !== surahNumber) {
-                          onNavigateSurah?.(juzStart.surah);
+                          // Navigate to the juz's starting surah AND ayah.
+                          if (onNavigateSurah) onNavigateSurah(juzStart.surah, juzStart.ayah);
                         } else {
                           // Same surah, scroll to the ayah
                           setTimeout(() => {
