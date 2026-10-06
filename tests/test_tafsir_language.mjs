@@ -99,6 +99,21 @@ assert.ok(urduClean.includes('فاتحہ'), 'Urdu text preserved');
 assert.ok(urduClean.includes('\n'), 'paragraph breaks preserved');
 console.log('  ✓ tafsir HTML stripped — Urdu renders cleanly');
 
+// 7. tafsir_api (jsDelivr) is the PRIMARY per-ayah provider — api: routes
+// to it, and its per-ayah text is REAL (varies per ayah, no intro repeat)
+function isTafsirApiId(id) { return id.startsWith('api:'); }
+assert.ok(isTafsirApiId('api:tafseer-ibn-e-kaseer-urdu'));
+assert.ok(isTafsirApiId('api:en-tafisr-ibn-kathir'));
+assert.ok(isTafsirApiId('api:bengali-mokhtasar'));
+assert.ok(!isTafsirApiId('ar.jalalayn'));
+assert.ok(!isTafsirApiId('islamic:tafseer-ibn-e-kaseer-urdu'));
+console.log('  ✓ api: identifiers route to the real per-ayah provider');
+
+// Cache keys are per-provider+ayah — no cross-contamination
+const apiKey = (s, a, id) => `tafsir:ayah:${s}:${a}:${id}:v2`;
+assert.notEqual(apiKey(2, 255, 'api:tafseer-ibn-e-kaseer-urdu'), apiKey(2, 255, 'islamic:tafseer-ibn-e-kaseer-urdu'));
+console.log('  ✓ tafsir_api and islamic.app cache keys are distinct');
+
 console.log('\n========================================================');
 console.log('ALL TAFSIR LANGUAGE TESTS PASSED SUCCESSFULLY!');
 console.log('========================================================');

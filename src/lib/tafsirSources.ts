@@ -82,6 +82,16 @@ export const TAFSIR_SOURCES: TafsirSource[] = [
   { id: 'islamic-muyassar-ar', name: 'Tafsir al-Muyassar (Arabic)', identifier: 'islamic:ar-tafsir-muyassar', language: 'Arabic', languageCode: 'ar', author: 'King Fahad Complex', note: 'Simplified modern Arabic tafsir' },
   { id: 'islamic-tabari-ar', name: 'Tafsir al-Tabari (Arabic)', identifier: 'islamic:ar-tafsir-al-tabari', language: 'Arabic', languageCode: 'ar', author: 'Al-Tabari', note: 'The foundational classical Arabic tafsir' },
   { id: 'islamic-saddi-ar', name: "Tafsir al-Sa'di (Arabic)", identifier: 'islamic:ar-tafseer-al-saddi', language: 'Arabic', languageCode: 'ar', author: "Al-Sa'di", note: 'Modern concise Arabic tafsir' },
+  // ── tafsir_api (jsDelivr, pinned v1.2.2) — REAL per-ayah tafsir in 6 languages ──
+  { id: 'api-ibn-kathir-en', name: 'Tafsir Ibn Kathir (English)', identifier: 'api:en-tafisr-ibn-kathir', language: 'English', languageCode: 'en', author: 'Ibn Kathir', note: 'Classic commentary, real per-ayah text' },
+  { id: 'api-jalalayn-en', name: 'Tafsir al-Jalalayn (English)', identifier: 'api:tafsir-al-jalalayn', language: 'English', languageCode: 'en', author: 'Al-Jalalayn', note: 'Concise classic tafsir in English' },
+  { id: 'api-ibn-kathir-urdu', name: 'Tafsir Ibn Kathir (Urdu)', identifier: 'api:tafseer-ibn-e-kaseer-urdu', language: 'Urdu', languageCode: 'ur', author: 'Ibn Kathir', note: 'Real per-ayah Urdu tafsir' },
+  { id: 'api-saadi-urdu', name: "Tafsir As-Sa'di (Urdu)", identifier: 'api:ur-tafsir-as-saadi-urdu', language: 'Urdu', languageCode: 'ur', author: "As-Sa'di", note: 'Urdu tafsir by As-Sa\'di' },
+  { id: 'api-tazkirul-urdu', name: 'Tazkirul Quran (Urdu)', identifier: 'api:tazkiru-quran-ur', language: 'Urdu', languageCode: 'ur', author: 'Maulana Wahiduddin Khan', note: 'Contemporary Urdu tafsir' },
+  { id: 'api-mokhtasar-bn', name: 'Bengali Mokhtasar', identifier: 'api:bengali-mokhtasar', language: 'Bengali', languageCode: 'bn', author: 'Mokhtasar', note: 'Bengali abridged tafsir' },
+  { id: 'api-ibn-kathir-ar', name: 'Tafsir Ibn Kathir (Arabic)', identifier: 'api:tafsir-ibn-kathir', language: 'Arabic', languageCode: 'ar', author: 'Ibn Kathir', note: 'The classic Arabic tafsir, per ayah' },
+  { id: 'api-tabari-ar', name: 'Tafsir al-Tabari (Arabic)', identifier: 'api:tafsir-al-tabari', language: 'Arabic', languageCode: 'ar', author: 'Al-Tabari', note: 'Foundational classical Arabic tafsir' },
+  { id: 'api-qurtubi-ar', name: 'Tafsir al-Qurtubi (Arabic)', identifier: 'api:tafsir-al-qurtubi', language: 'Arabic', languageCode: 'ar', author: 'Al-Qurtubi', note: 'Classic legal-focused Arabic tafsir' },
 ];
 
 export function getTafsirSourceById(id: string): TafsirSource | undefined {

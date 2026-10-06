@@ -12,6 +12,7 @@ import { SURAHS_114 } from './surahs114';
 import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
 import { fetchIslamicTafsir } from './islamicTafsir';
+import { fetchTafsirApi } from './tafsirApi';
 
 export interface SurahMeta {
   number: number;
@@ -458,6 +459,16 @@ export async function fetchAyahTafsir(
   const cached = loadQuranCache<{ text: string; edition: string }>(key);
   if (cached) return cached;
 
+  // PRIMARY tafsir source: tafsir_api (jsDelivr, pinned) — REAL per-ayah text
+  // in English/Urdu/Bengali/Arabic. Identifier prefixed `api:<slug>`.
+  if (tafsirIdentifier.startsWith('api:')) {
+    const slug = tafsirIdentifier.slice('api:'.length);
+    const r = await fetchTafsirApi(surah, ayah, slug);
+    const result = { text: r.text, edition: r.author };
+    saveQuranCache(key, result);
+    return result;
+  }
+
   // islamic.app tafsirs: identifier prefixed `islamic:<slug>` — fetch from
   // islamic.app, which serves the 18 tafsirs across 6 languages.
   if (tafsirIdentifier.startsWith('islamic:')) {
@@ -506,6 +517,23 @@ export async function fetchSurahTafsir(
   surah: number,
   tafsirIdentifier = 'ar.jalalayn'
 ): Promise<Array<{ ayahNumber: number; text: string }>> {
+  // tafsir_api (jsDelivr, pinned): REAL per-ayah text — fetch the full surah.
+  if (tafsirIdentifier.startsWith('api:')) {
+    const slug = tafsirIdentifier.slice('api:'.length);
+    const out: Array<{ ayahNumber: number; text: string }> = [];
+    const total = SURAH_AYAH_COUNTS[surah - 1] || 7;
+    for (let ayah = 1; ayah <= total; ayah++) {
+      try {
+        const r = await fetchTafsirApi(surah, ayah, slug);
+        out.push({ ayahNumber: ayah, text: r.text });
+      } catch {
+        // gap — skip
+      }
+    }
+    if (!out.length) throw new Error('Tafsir unavailable');
+    return out;
+  }
+
   // islamic.app tafsirs: identifier prefixed `islamic:<slug>`.
   if (tafsirIdentifier.startsWith('islamic:')) {
     const slug = tafsirIdentifier.slice('islamic:'.length);
