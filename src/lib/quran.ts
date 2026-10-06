@@ -458,6 +458,16 @@ export async function fetchAyahTafsir(
   const cached = loadQuranCache<{ text: string; edition: string }>(key);
   if (cached) return cached;
 
+  // islamic.app tafsirs: identifier prefixed `islamic:<slug>` — fetch from
+  // islamic.app, which serves the 18 tafsirs across 6 languages.
+  if (tafsirIdentifier.startsWith('islamic:')) {
+    const slug = tafsirIdentifier.slice('islamic:'.length);
+    const r = await fetchIslamicTafsir(surah, ayah, slug);
+    const result = { text: r.text, edition: r.editionName };
+    saveQuranCache(key, result);
+    return result;
+  }
+
   try {
     const res = await fetchWithTimeout(`${BASE}/ayah/${surah}:${ayah}/${tafsirIdentifier}`, {}, 4000);
     if (res.ok) {
@@ -470,6 +480,13 @@ export async function fetchAyahTafsir(
     }
   } catch {
     // fallback below
+  }
+
+  // Never silently substitute a different-language tafsir (e.g. Arabic) for
+  // a requested non-Arabic edition. If the requested identifier is not the
+  // default Arabic one, surface unavailability instead of fake content.
+  if (tafsirIdentifier !== 'ar.jalalayn') {
+    throw new Error('Tafsir unavailable for the selected language');
   }
 
   const res2 = await fetchWithTimeout(`${BASE}/ayah/${surah}:${ayah}/ar.jalalayn`, {}, 4000);
