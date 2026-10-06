@@ -43,7 +43,6 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "./plugins/withAndroidWidgets",
       "expo-font",
       [
         "expo-notifications",

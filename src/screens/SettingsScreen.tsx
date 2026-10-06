@@ -19,7 +19,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { getForwardIcon, iconSizes } from '../lib/iconMap';
-import WidgetPreviewScreen from './WidgetPreviewScreen';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import {
@@ -458,12 +457,11 @@ function AdjustRow({
 
 export interface SettingsScreenProps {
   onClose?: () => void;
-  onOpenWidgets?: () => void;
   onBackRef?: React.MutableRefObject<(() => boolean) | null>;
   onOpenToolsItem?: (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => void;
 }
 
-export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOpenToolsItem }: SettingsScreenProps) {
+export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, mode, accentKey, setAccent } = useTheme();
   const {
@@ -492,7 +490,6 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
   const [verifyingText, setVerifyingText] = useState(false);
   const [quranLangModalOpen, setQuranLangModalOpen] = useState(false);
   const [adhanModalOpen, setAdhanModalOpen] = useState(false);
-  const [widgetsModalOpen, setWidgetsModalOpen] = useState(false);
   const [isPlayingAdhan, setIsPlayingAdhan] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'verifyDisableLock' | 'set' | 'change' | null>(null);
@@ -825,24 +822,6 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
                 label="Haptics"
               />
             }
-          />
-        </Section>
-
-        {/* Home Screen Widgets */}
-        <Section label="Home Screen">
-          <Row
-            title="Home Screen Widgets"
-            desc="Add the real Next Prayer widget to your home screen (long-press home → Widgets → Islamic). Tap it to open the app."
-            onPress={() => {
-              haptic('light');
-              if (onOpenWidgets) {
-                onOpenWidgets();
-              } else {
-                setWidgetsModalOpen(true);
-              }
-            }}
-            accessibilityLabel="Home Screen Widgets — add the Next Prayer widget to your home screen"
-            right={<Ionicons name="chevron-forward" size={18} color={colors.accent} />}
           />
         </Section>
 
@@ -1827,15 +1806,6 @@ export default function SettingsScreen({ onClose, onOpenWidgets, onBackRef, onOp
           }}
         />
 
-        <Modal
-          visible={widgetsModalOpen}
-          animationType="slide"
-          onRequestClose={() => setWidgetsModalOpen(false)}
-        >
-          <SafeAreaView style={{ flex: 1, backgroundColor: colors.bgBase }}>
-            <WidgetPreviewScreen onClose={() => setWidgetsModalOpen(false)} />
-          </SafeAreaView>
-        </Modal>
       </View>
     </ScrollView>
   );

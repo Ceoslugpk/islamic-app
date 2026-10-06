@@ -94,7 +94,6 @@ import {
 } from './src/lib/firstLaunchPermissions';
 import { LocationSetupModal } from './src/components/LocationSetupModal';
 import { useLocation, refreshLocationSilently, computeDistanceKm } from './src/lib/useLocation';
-import { updateWidgetSnapshot } from './src/lib/widgetBridge';
 import { registerBackgroundPreload } from './src/lib/backgroundPreload';
 
 type TabKey = 'home' | 'quran' | 'library' | 'tools';
@@ -767,13 +766,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
       subscription.remove();
     };
   }, [splashDone, routeDeepLinkUrl]);
-  // Sync the home-screen widget snapshot: on mount, when the app returns to
-  // foreground, and after prayer data loads (data changes → widget refresh).
+  // Re-schedule prayer notifications when the app returns to the foreground.
   useEffect(() => {
-    updateWidgetSnapshot();
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
-        updateWidgetSnapshot();
         const activeLoc = settings.locationMode === 'auto'
           ? (settings.autoLocation || settings.manualLocation)
           : settings.manualLocation;

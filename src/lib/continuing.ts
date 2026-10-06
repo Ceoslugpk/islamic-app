@@ -15,12 +15,6 @@ export function saveReadingPosition(surah: number, ayah: number): void {
     savedAt: Date.now(),
   };
   AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(position))
-    .then(async () => {
-      try {
-        const { updateWidgetSnapshot } = await import('./widgetBridge');
-        await updateWidgetSnapshot();
-      } catch {}
-    })
     .catch(() => {});
 }
 
