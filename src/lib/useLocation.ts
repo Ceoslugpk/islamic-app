@@ -265,9 +265,15 @@ export function useLocation(askOnMount = false): UseLocationResult {
           accuracy: Location.Accuracy.Balanced,
         });
         const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Location request timed out')), 5000)
+          setTimeout(() => reject(new Error('Location request timed out')), 8000)
         );
-        const pos = await Promise.race([posPromise, timeoutPromise]);
+        // Robust: try last-known first (fast, works indoors), then current.
+        const lastKnown = await Location.getLastKnownPositionAsync().catch(() => null);
+        let pos = lastKnown;
+        if (!pos || Date.now() - pos.timestamp > 3600000) {
+          pos = await Promise.race([posPromise, timeoutPromise]);
+        }
+        if (!pos) return null;
 
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
