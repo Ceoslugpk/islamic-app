@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { Platform, Linking } from 'react-native';
 import {
   pause,
   resume,
@@ -164,6 +164,15 @@ function setupResponseHandler(): void {
     const actionId = response.actionIdentifier;
 
     switch (actionId) {
+      case 'default':
+      case Notifications.DEFAULT_ACTION_IDENTIFIER: {
+        const playback = getCurrentPlayback();
+        if (playback?.surah) {
+          const ayah = playback.ayah || 1;
+          Linking.openURL(`salah://quran/${playback.surah}/${ayah}`).catch(() => {});
+        }
+        break;
+      }
       case ACTION_PLAY_PAUSE: {
         const status = getPlaybackStatus();
         if (status.isPlaying) {
@@ -238,22 +247,32 @@ function buildNotificationContent(
     sound: false,
     priority: Platform.OS === 'android' ? Notifications.AndroidNotificationPriority.DEFAULT : undefined,
     color: '#0F5A4A',
-    data: { nowPlaying: true },
+    data: {
+      nowPlaying: true,
+      url: playback?.surah ? `salah://quran/${playback.surah}/${playback.ayah || 1}` : undefined,
+    },
   };
 }
 
 export async function startNowPlayingNotification(): Promise<void> {
+  // Ensure notification response actions are hooked
+  setupResponseHandler();
+
   // Drive native lock screen / Control Center / Dynamic Island / MediaSession
   syncNowPlaying().catch(() => {});
 
   // iOS: the native MPNowPlayingInfoCenter lock-screen media controls (via
   // syncNowPlaying → player.setActiveForLockScreen) ARE the proper media
-  // notification with play/pause/next/prev/seek. Posting an additional
-  // expo-notifications banner here creates a NEW notification on every ayah
-  // change — skip the banner on iOS entirely.
+  // controls with play/pause/next/prev/seek.
   // Android: expo-audio AudioControlsService posts the native MediaStyle
-  // notification; scheduling a second one causes duplicate banners.
-  if (Platform.OS !== 'android') {
+  // notification (via setActiveForLockScreen).
+  // On both native platforms, scheduling an additional expo-notifications
+  // banner creates a duplicate notification. We explicitly dismiss any legacy/duplicate
+  // banner and never schedule a banner on native.
+  if (Platform.OS === 'android' || Platform.OS === 'ios') {
+    try {
+      await Notifications.dismissNotificationAsync(NOW_PLAYING_NOTIFICATION_ID);
+    } catch {}
     return;
   }
 
@@ -285,9 +304,8 @@ export async function updateNowPlayingNotification(): Promise<void> {
   // Drive native lock screen / Control Center / Dynamic Island / MediaSession
   syncNowPlaying().catch(() => {});
 
-  // iOS: native Now Playing handles everything — no banner updates.
-  // Android: native MediaStyle notification — no banner updates.
-  if (Platform.OS !== 'android') {
+  // iOS & Android: native Now Playing and MediaStyle handle controls and progress — no banner updates.
+  if (Platform.OS === 'android' || Platform.OS === 'ios') {
     return;
   }
 

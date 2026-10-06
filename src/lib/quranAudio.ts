@@ -26,6 +26,7 @@ import { isSurahDownloaded, resolveAudioUri } from './surahDownloads';
 export { resolveAudioUri };
 import { fetchWithTimeout } from './quran';
 import { isAppOnline } from './useConnectivity';
+import { ensureNotificationPermissionForPlayback } from './notifications';
 export {
 
   clearAudioPreloadCache,
@@ -922,7 +923,7 @@ export function addSleepTimerListener(
   };
 }
 
-function cleanupCurrentSound(): void {
+function cleanupCurrentSound(clearLockScreen: boolean = false): void {
   if (currentSoundSubscription) {
     try {
       currentSoundSubscription.remove();
@@ -930,9 +931,11 @@ function cleanupCurrentSound(): void {
     currentSoundSubscription = null;
   }
   if (currentSound) {
-    try {
-      currentSound.clearLockScreenControls();
-    } catch {}
+    if (clearLockScreen) {
+      try {
+        currentSound.clearLockScreenControls();
+      } catch {}
+    }
     try {
       currentSound.pause();
       currentSound.remove();
@@ -1573,7 +1576,18 @@ async function playAudioUrl(url: string): Promise<void> {
     shouldRouteThroughEarpiece: false,
   }).catch(() => {});
 
-  if (currentSound && currentPlaybackUrl === url) {
+  // Resolve local offline audio URI if surah mode is active and downloaded
+  const targetUri =
+    currentPlayback?.type === 'surah' && currentPlayback.surah && currentPlayback.identifier
+      ? resolveAudioUri(
+          currentPlayback.identifier,
+          currentPlayback.surah,
+          getSurahBitrate(currentPlayback.identifier),
+          url
+        )
+      : url;
+
+  if (currentSound && currentPlaybackUrl === targetUri) {
     try {
       await currentSound.seekTo(0);
       currentSound.play();
@@ -1584,11 +1598,38 @@ async function playAudioUrl(url: string): Promise<void> {
       });
       return;
     } catch {
-      cleanupCurrentSound();
+      cleanupCurrentSound(false);
     }
   }
 
-  cleanupCurrentSound();
+  // Reuse existing AudioPlayer instance via replace() if available to preserve the exact same
+  // native MediaSession / notification ID without creating multiple notifications on Ayah
+  // transitions or Arabic<->Translation switches.
+  if (currentSound && typeof currentSound.replace === 'function') {
+    try {
+      currentPlaybackUrl = targetUri;
+      currentSound.replace({ uri: targetUri });
+      if (currentPlaybackRate !== 1.0) {
+        try {
+          currentSound.setPlaybackRate(currentPlaybackRate);
+        } catch {}
+      }
+      currentSound.play();
+      notifySoundCreated(currentSound);
+      if (currentPlayback) currentPlayback.isPlaying = true;
+      notifyStatusListeners({
+        ...currentStatus,
+        isPlaying: true,
+        isLoaded: true,
+        isBuffering: false,
+      });
+      return;
+    } catch {
+      cleanupCurrentSound(false);
+    }
+  }
+
+  cleanupCurrentSound(false);
 
   // Attempt instant buffer-free playback from preloaded sound cache
   const preloaded = await takePreloadedSound(url);
@@ -1613,7 +1654,7 @@ async function playAudioUrl(url: string): Promise<void> {
       });
       return;
     } catch {
-      cleanupCurrentSound();
+      cleanupCurrentSound(false);
     }
   }
 
@@ -1626,17 +1667,6 @@ async function playAudioUrl(url: string): Promise<void> {
     isBuffering: true,
     didJustFinish: false,
   });
-
-  // Resolve local offline audio URI if surah mode is active and downloaded
-  const targetUri =
-    currentPlayback?.type === 'surah' && currentPlayback.surah && currentPlayback.identifier
-      ? resolveAudioUri(
-          currentPlayback.identifier,
-          currentPlayback.surah,
-          getSurahBitrate(currentPlayback.identifier),
-          url
-        )
-      : url;
 
   try {
     const player = createAudioPlayer({ uri: targetUri }, { updateInterval: 250 });
@@ -1723,6 +1753,9 @@ export async function playAyah(
   ayah?: number,
   isSurahMode = false
 ): Promise<void> {
+  if (!isInternalQueuePlay) {
+    ensureNotificationPermissionForPlayback().catch(() => {});
+  }
   const resolvedId = ALIAS_MAP[identifier] || identifier;
   let resolvedSurah = surah;
   let resolvedAyah = ayah;
@@ -1917,6 +1950,7 @@ export async function playSurah(
   reciterName?: string,
   surah?: number
 ): Promise<void> {
+  ensureNotificationPermissionForPlayback().catch(() => {});
   const resolvedId = ALIAS_MAP[identifier] || identifier;
   const targetSurah = surah || 1;
   const bitrate = getSurahBitrate(resolvedId);
@@ -2265,6 +2299,9 @@ export async function pause(): Promise<void> {
 /** Resume playback or replay current URL. */
 export async function resume(): Promise<void> {
   resumeAudioPreloading();
+  if (!currentPlayback?.isPlaying) {
+    ensureNotificationPermissionForPlayback().catch(() => {});
+  }
   try {
     if (currentSound) {
       currentSound.play();
@@ -2290,7 +2327,7 @@ export function getCurrentPlaybackUrl(): string | null {
 export async function stop(clearSession = false): Promise<void> {
   await stopAudioPreloading();
   try {
-    cleanupCurrentSound();
+    cleanupCurrentSound(true);
   } catch {
     currentSound = null;
     currentPlaybackUrl = null;
@@ -2316,7 +2353,7 @@ export async function stop(clearSession = false): Promise<void> {
 export async function unload(): Promise<void> {
   await stopAudioPreloading();
   try {
-    cleanupCurrentSound();
+    cleanupCurrentSound(true);
   } catch {
     currentSound = null;
     currentPlaybackUrl = null;
@@ -2337,6 +2374,7 @@ export async function unload(): Promise<void> {
 
 /** Convenient helper to play a specific surah and ayah. */
 export async function playSurahAyah(surah: number, ayah: number, reciter?: string): Promise<void> {
+  ensureNotificationPermissionForPlayback().catch(() => {});
   const activeReciter = reciter || getActiveArabicReciter();
   const reciterName = resolveReciterName(activeReciter);
   await playAyah(activeReciter, undefined, undefined, reciterName, surah, ayah, true);

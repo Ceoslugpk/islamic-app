@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   FlatList,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -55,6 +56,7 @@ import {
   VERIFIED_NON_ARABIC_EDITIONS,
 } from '../lib/quranAudio';
 import { useSettings } from '../lib/settings';
+import { checkNotificationPermission, requestNotificationPermission } from '../lib/notifications';
 import { getLanguageFlag } from '../lib/quranLanguages';
 import {
   AudioSettings,
@@ -136,6 +138,13 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   const { settings: appSettings, setTranslationAudioEnabled: setGlobalTranslationAudio } = useSettings();
   const { audioEdition, audioLanguage, audioLangName, setAudioTranslation } = useAudioTranslation();
   const [transAudioEnabled, setTransAudioEnabled] = useState<boolean>(isAudioTranslationEnabled());
+
+  // Media notification permission status
+  const [mediaNotifStatus, setMediaNotifStatus] = useState<'granted' | 'denied' | 'undetermined'>('granted');
+
+  useEffect(() => {
+    checkNotificationPermission().then(setMediaNotifStatus).catch(() => {});
+  }, [activeTab]);
 
   useEffect(() => {
     setTransAudioEnabled(appSettings.translationAudioEnabled);
@@ -1612,6 +1621,55 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   );
                 })}
               </View>
+            </View>
+
+            {/* Lock Screen & Notification Controls */}
+            <View
+              style={[
+                styles.settingRowCard,
+                {
+                  backgroundColor: colors.bgSurface,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <View style={{ flex: 1, marginRight: 12 }}>
+                <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
+                  Lock Screen & Notification Controls
+                </Text>
+                <Text style={[styles.settingSub, { color: colors.textMuted }]}>
+                  {mediaNotifStatus === 'granted'
+                    ? 'Active — media controls appear on your lock screen and notification shade'
+                    : 'Show media playback controls on your lock screen and notification shade while playing'}
+                </Text>
+              </View>
+              {mediaNotifStatus === 'granted' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
+                  <Text style={[styles.settingSub, { color: colors.accent, fontFamily: 'Manrope_600SemiBold' }]}>
+                    Enabled
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={async () => {
+                    if (Platform.OS === 'android' && mediaNotifStatus === 'undetermined') {
+                      const granted = await requestNotificationPermission();
+                      setMediaNotifStatus(granted ? 'granted' : 'denied');
+                    } else {
+                      Linking.openSettings().catch(() => {});
+                    }
+                  }}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  style={[styles.changeReciterBtn, { backgroundColor: colors.accentDim }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Enable notification controls in settings"
+                >
+                  <Text style={[styles.changeReciterText, { color: colors.accent }]}>
+                    {mediaNotifStatus === 'undetermined' ? 'Enable' : 'Settings'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
         )}

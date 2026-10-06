@@ -663,16 +663,22 @@ function Root({ splashDone }: { splashDone: boolean }) {
   useEffect(() => {
     let isMounted = true;
 
-    const handleStatusChange = async (newStatus: { isPlaying: boolean }) => {
+    const handleStatusChange = async (newStatus: { isPlaying: boolean; didJustFinish?: boolean }) => {
       if (!isMounted) return;
 
       const currentPlayback = getCurrentPlayback();
       const fullStatus = getPlaybackStatus();
 
-      if (currentPlayback && (newStatus.isPlaying || fullStatus.isLoaded || fullStatus.isBuffering)) {
+      if (currentPlayback && (newStatus.isPlaying || fullStatus.isBuffering)) {
         await updateNowPlayingNotification();
-      } else if (!currentPlayback || (!newStatus.isPlaying && !fullStatus.isLoaded && !fullStatus.isBuffering)) {
-        await stopNowPlayingNotification();
+      } else if (!currentPlayback || (!newStatus.isPlaying && !fullStatus.isBuffering)) {
+        if (!newStatus.isPlaying && fullStatus.isLoaded && currentPlayback?.isPlaying) {
+          // Track is paused, keep notification updated in place with paused state
+          await updateNowPlayingNotification();
+        } else if (!currentPlayback || !currentPlayback.isPlaying || fullStatus.didJustFinish) {
+          // Playback fully stopped or finished queue
+          await stopNowPlayingNotification();
+        }
       }
     };
 
@@ -681,7 +687,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     // Initial check
     const initialPlayback = getCurrentPlayback();
     const initialStatus = getPlaybackStatus();
-    if (initialPlayback && (initialStatus.isLoaded || initialStatus.isPlaying || initialStatus.isBuffering)) {
+    if (initialPlayback && (initialStatus.isPlaying || initialStatus.isBuffering)) {
       startNowPlayingNotification();
     }
 

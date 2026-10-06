@@ -1,4 +1,4 @@
-import { Appearance, Platform } from 'react-native';
+import { Appearance, Platform, Linking } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Notifications from 'expo-notifications';
 import type { AudioMetadata, AudioLockScreenOptions } from 'expo-audio';
@@ -325,17 +325,22 @@ export async function syncNowPlaying(meta?: Partial<SystemMediaMetadata>): Promi
         showSeekBackward: true,
       };
 
-      const isSamePlayer = player.id && player.id === lastActivePlayerId;
+      const isSamePlayer = Boolean(player.id && player.id === lastActivePlayerId);
       const isMetadataSame =
         lastSyncedTitle === title &&
         lastSyncedArtist === artist &&
         lastSyncedArtwork === (artworkUri || null);
 
-      if (isSamePlayer && isMetadataSame) {
-        // Player already active and metadata identical — updateLockScreenMetadata or let status tick sync
-        player.updateLockScreenMetadata(audioMetadata);
+      if (isSamePlayer) {
+        // Player already active — update metadata in place on existing session without recreating!
+        if (!isMetadataSame) {
+          player.updateLockScreenMetadata(audioMetadata);
+          lastSyncedTitle = title;
+          lastSyncedArtist = artist;
+          lastSyncedArtwork = artworkUri || null;
+        }
       } else {
-        // New player or metadata changed — activate lock screen controls
+        // New player or first activation — activate lock screen controls
         player.setActiveForLockScreen(true, audioMetadata, options);
         lastActivePlayerId = player.id || 'active';
         lastSyncedTitle = title;
@@ -358,6 +363,10 @@ export async function clearNowPlaying(): Promise<void> {
   lastSyncedTitle = null;
   lastSyncedArtist = null;
   lastSyncedArtwork = null;
+
+  try {
+    await Notifications.dismissNotificationAsync('quran-now-playing');
+  } catch {}
 
   if (Platform.OS === 'web') {
     if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
@@ -539,6 +548,12 @@ function setupNotificationResponseHandler(): () => void {
         handleRemoteCommand('previous').catch(() => {});
       } else if (actionId === 'stop') {
         handleRemoteCommand('stop').catch(() => {});
+      } else if (actionId === 'default' || actionId === Notifications.DEFAULT_ACTION_IDENTIFIER) {
+        const playback = getCurrentPlayback();
+        if (playback?.surah) {
+          const ayah = playback.ayah || 1;
+          Linking.openURL(`salah://quran/${playback.surah}/${ayah}`).catch(() => {});
+        }
       }
     });
     return () => sub.remove();
@@ -608,7 +623,7 @@ export function initSystemMediaAdapter(): () => void {
   // 2. Listen for playback status changes (250ms ticks, play, pause, seek, completion)
   const unsubStatus = addPlaybackStatusListener((status) => {
     const current = getCurrentPlayback();
-    if (!current) {
+    if (!current || (!status.isPlaying && !status.isBuffering && status.didJustFinish)) {
       clearNowPlaying().catch(() => {});
       return;
     }

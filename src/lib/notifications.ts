@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { Platform, Linking } from 'react-native';
+import { Platform, Linking, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DayTimings, Location } from './prayerTimes';
 import { markSalahCompleted } from './db';
@@ -443,6 +443,111 @@ export async function checkNotificationPermission(): Promise<'granted' | 'denied
     return status;
   } catch {
     return 'undetermined';
+  }
+}
+
+export const MEDIA_NOTIFICATION_PERMISSION_ASKED_KEY = 'media-notification-permission-asked-v1';
+
+let isMediaPermissionRequestInFlight = false;
+
+/**
+ * Checks if media notification permission was previously asked for Quran audio.
+ */
+export async function hasAskedMediaNotificationPermission(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(MEDIA_NOTIFICATION_PERMISSION_ASKED_KEY);
+    return raw === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Resets media notification permission asked state (for testing).
+ */
+export async function resetMediaNotificationPermissionAsked(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(MEDIA_NOTIFICATION_PERMISSION_ASKED_KEY);
+  } catch {}
+}
+
+/**
+ * Ensures notification permission for Quran audio playback / lock-screen controls.
+ * - Only prompts on platforms where notification permission is required for media controls (Android 13+).
+ * - On iOS and web, native lock-screen / Control Center / MediaSession work without notification permission.
+ * - If permission is undetermined and not previously asked:
+ *     Shows a clear rationale Alert explaining that it is needed for lock-screen & background playback controls.
+ *     If user accepts, requests permission.
+ *     If user declines or dismisses, marks asked so they are NEVER repeatedly prompted.
+ * - If previously denied, does NOT prompt with system dialog (Settings UI provides a link to app settings).
+ * - Fire-and-forget safe: will never block playback start.
+ */
+export async function ensureNotificationPermissionForPlayback(): Promise<boolean> {
+  if (Platform.OS !== 'android') {
+    return true;
+  }
+
+  if (isMediaPermissionRequestInFlight) {
+    return false;
+  }
+
+  try {
+    isMediaPermissionRequestInFlight = true;
+
+    const alreadyAsked = await hasAskedMediaNotificationPermission();
+    if (alreadyAsked) {
+      const current = await checkNotificationPermission();
+      return current === 'granted';
+    }
+
+    const currentStatus = await checkNotificationPermission();
+    if (currentStatus === 'granted') {
+      await AsyncStorage.setItem(MEDIA_NOTIFICATION_PERMISSION_ASKED_KEY, 'true').catch(() => {});
+      return true;
+    }
+
+    if (currentStatus === 'denied') {
+      // Previously denied in OS: never repeatedly prompt
+      await AsyncStorage.setItem(MEDIA_NOTIFICATION_PERMISSION_ASKED_KEY, 'true').catch(() => {});
+      return false;
+    }
+
+    // Undetermined: show rationale alert explaining background & lock-screen media controls
+    const proceed = await new Promise<boolean>((resolve) => {
+      Alert.alert(
+        'Playback & Lock Screen Controls',
+        'Enable notifications to control Quran recitation from your lock screen, notification shade, and headphones while listening in the background.',
+        [
+          {
+            text: 'Not now',
+            style: 'cancel',
+            onPress: () => resolve(false),
+          },
+          {
+            text: 'Enable controls',
+            onPress: () => resolve(true),
+          },
+        ],
+        { cancelable: true, onDismiss: () => resolve(false) }
+      );
+    });
+
+    // Mark that we have prompted, regardless of user choice (do not badger)
+    await AsyncStorage.setItem(MEDIA_NOTIFICATION_PERMISSION_ASKED_KEY, 'true').catch(() => {});
+
+    if (!proceed) {
+      return false;
+    }
+
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      await configureNotifications().catch(() => {});
+    }
+    return granted;
+  } catch {
+    return false;
+  } finally {
+    isMediaPermissionRequestInFlight = false;
   }
 }
 
