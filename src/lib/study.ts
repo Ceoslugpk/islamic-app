@@ -40,26 +40,37 @@ export interface Note {
 export type { StudyTag, VerseHighlight };
 
 function dedupeBookmarks(existing: VerseRef[], newRef: VerseRef): VerseRef[] {
+  if (!newRef) return Array.isArray(existing) ? existing : [];
+  const list = Array.isArray(existing) ? existing : [];
   const key = `${newRef.surah}:${newRef.ayah}`;
-  const already = existing.find((b) => `${b.surah}:${b.ayah}` === key);
-  if (already) return existing;
-  return [...existing, newRef];
+  const already = list.find((b) => b && `${b.surah}:${b.ayah}` === key);
+  if (already) return list;
+  return [...list, newRef];
 }
 
 export function getBookmarks(): VerseRef[] {
-  const raw = loadQuranCache<VerseRef[]>(BOOKMARKS_KEY);
-  return raw ?? [];
+  try {
+    const raw = loadQuranCache<VerseRef[]>(BOOKMARKS_KEY);
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
 }
 
 export function isBookmarked(surah: number, ayah: number): boolean {
-  const bookmarks = getBookmarks();
-  return bookmarks.some((b) => b.surah === surah && b.ayah === ayah);
+  try {
+    const bookmarks = getBookmarks();
+    return bookmarks.some((b) => b && b.surah === surah && b.ayah === ayah);
+  } catch {
+    return false;
+  }
 }
 
 export function addBookmark(ref: VerseRef): boolean {
-  const bookmarks = getBookmarks();
-  const updated = dedupeBookmarks(bookmarks, ref);
+  if (!ref) return false;
   try {
+    const bookmarks = getBookmarks();
+    const updated = dedupeBookmarks(bookmarks, ref);
     saveQuranCache(BOOKMARKS_KEY, updated);
     return true;
   } catch {
@@ -68,10 +79,10 @@ export function addBookmark(ref: VerseRef): boolean {
 }
 
 export function removeBookmark(surah: number, ayah: number): boolean {
-  const bookmarks = getBookmarks();
-  const updated = bookmarks.filter((b) => !(b.surah === surah && b.ayah === ayah));
-  if (updated.length === bookmarks.length) return false;
   try {
+    const bookmarks = getBookmarks();
+    const updated = bookmarks.filter((b) => !(b && b.surah === surah && b.ayah === ayah));
+    if (updated.length === bookmarks.length) return false;
     saveQuranCache(BOOKMARKS_KEY, updated);
     return true;
   } catch {
@@ -80,16 +91,20 @@ export function removeBookmark(surah: number, ayah: number): boolean {
 }
 
 export function getNotes(): Note[] {
-  const raw = loadQuranCache<Note[]>(NOTES_KEY);
-  return raw ?? [];
+  try {
+    const raw = loadQuranCache<Note[]>(NOTES_KEY);
+    return Array.isArray(raw) ? raw : [];
+  } catch {
+    return [];
+  }
 }
 
 export function addNote(surah: number, ayah: number, body: string): Note | false {
-  const notes = getNotes();
-  const id = `${surah}:${ayah}:${Date.now()}`;
-  const newNote: Note = { id, surah, ayah, body, createdAt: Date.now() };
-  const updated = [...notes, newNote];
   try {
+    const notes = getNotes();
+    const id = `${surah}:${ayah}:${Date.now()}`;
+    const newNote: Note = { id, surah, ayah, body, createdAt: Date.now() };
+    const updated = [...notes, newNote];
     saveQuranCache(NOTES_KEY, updated);
     return newNote;
   } catch {
@@ -98,11 +113,11 @@ export function addNote(surah: number, ayah: number, body: string): Note | false
 }
 
 export function deleteNote(id: string): boolean {
-  const notes = getNotes();
-  const before = notes.length;
-  const updated = notes.filter((n) => n.id !== id);
-  if (updated.length >= before) return false;
   try {
+    const notes = getNotes();
+    const before = notes.length;
+    const updated = notes.filter((n) => n && n.id !== id);
+    if (updated.length >= before) return false;
     saveQuranCache(NOTES_KEY, updated);
     return true;
   } catch {
@@ -112,34 +127,69 @@ export function deleteNote(id: string): boolean {
 
 // Study Tags
 export function addStudyTagFn(surah: number, ayah: number, tag: string): StudyTag | false {
-  return addStudyTag(surah, ayah, tag);
+  try {
+    return addStudyTag(surah, ayah, tag);
+  } catch {
+    return false;
+  }
 }
 
 export function removeStudyTagFn(id: string): boolean {
-  return removeStudyTag(id);
+  try {
+    return removeStudyTag(id);
+  } catch {
+    return false;
+  }
 }
 
 export function getStudyTagsForAyahFn(surah: number, ayah: number): StudyTag[] {
-  return getStudyTagsForAyah(surah, ayah);
+  try {
+    const tags = getStudyTagsForAyah(surah, ayah);
+    return Array.isArray(tags) ? tags : [];
+  } catch {
+    return [];
+  }
 }
 
 export function getAllStudyTagsFn(): StudyTag[] {
-  return getAllStudyTags();
+  try {
+    const tags = getAllStudyTags();
+    return Array.isArray(tags) ? tags : [];
+  } catch {
+    return [];
+  }
 }
 
 // Verse Highlights
 export function addVerseHighlightFn(surah: number, ayah: number, color: string): VerseHighlight | false {
-  return addVerseHighlight(surah, ayah, color);
+  try {
+    return addVerseHighlight(surah, ayah, color);
+  } catch {
+    return false;
+  }
 }
 
 export function removeVerseHighlightFn(surah: number, ayah: number): boolean {
-  return removeVerseHighlight(surah, ayah);
+  try {
+    return removeVerseHighlight(surah, ayah);
+  } catch {
+    return false;
+  }
 }
 
 export function getVerseHighlightFn(surah: number, ayah: number): VerseHighlight | null {
-  return getVerseHighlight(surah, ayah);
+  try {
+    return getVerseHighlight(surah, ayah);
+  } catch {
+    return null;
+  }
 }
 
 export function getAllVerseHighlightsFn(): VerseHighlight[] {
-  return getAllVerseHighlights();
+  try {
+    const highlights = getAllVerseHighlights();
+    return Array.isArray(highlights) ? highlights : [];
+  } catch {
+    return [];
+  }
 }

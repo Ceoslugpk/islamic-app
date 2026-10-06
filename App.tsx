@@ -985,7 +985,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         )}
         {tab === 'quran' && quran.screen === 'reader' && (
           <QuranReaderScreen
-            surahNumber={quran.surah}
+            surahNumber={quran.surah || 1}
             initialAyah={quran.initialAyah}
             onBack={() => setQuran({ screen: 'home' })}
             onNavigateSurah={(s) => setQuran({ screen: 'reader', surah: s })}
@@ -996,7 +996,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         )}
         {tab === 'quran' && quran.screen === 'tafsir' && (
           <TafsirScreen
-            surahNumber={quran.surah}
+            surahNumber={quran.surah || 1}
             onBack={() => setQuran({ screen: 'home' })}
             onOpenReader={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
           />

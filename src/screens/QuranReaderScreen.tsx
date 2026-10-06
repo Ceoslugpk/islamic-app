@@ -50,6 +50,7 @@ import {
   getStudyTagsForAyahFn,
   StudyTag,
 } from '../lib/study';
+import { SURAH_AYAH_COUNTS } from '../lib/surahAyahCounts';
 import {
   addPlaybackListener,
   addPlaybackStatusListener,
@@ -63,7 +64,6 @@ import {
   playSurah,
   Reciter,
   stop,
-  SURAH_AYAH_COUNTS,
 } from '../lib/quranAudio';
 import {
   downloadSurah,
@@ -155,15 +155,17 @@ Object.keys(JUZ_STARTS).forEach((j) => {
 // Approximate: page = (globalAyahIndex / 6236) * 604
 function getGlobalAyahIndex(surah: number, ayah: number): number {
   let idx = 0;
-  for (let i = 0; i < surah - 1; i++) {
+  const safeSurah = Math.max(1, Math.min(114, surah || 1));
+  const safeAyah = Math.max(1, ayah || 1);
+  for (let i = 0; i < safeSurah - 1; i++) {
     idx += SURAH_AYAH_COUNTS[i] || 0;
   }
-  return idx + ayah;
+  return idx + safeAyah;
 }
 
 function getApproxPage(surah: number, ayah: number): number {
   const globalIdx = getGlobalAyahIndex(surah, ayah);
-  return Math.max(1, Math.round((globalIdx / 6236) * 604));
+  return Math.max(1, Math.min(604, Math.round((globalIdx / 6236) * 604) || 1));
 }
 
 /**
@@ -270,17 +272,43 @@ export default function QuranReaderScreen({
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
   const [toolsMenuOpen, setToolsMenuOpen] = useState<boolean>(false);
   const [tafsirSourcePickerOpen, setTafsirSourcePickerOpen] = useState<boolean>(false);
-  const cacheKey = `surah:${surahNumber}:${edition.editionIdentifier}`;
-  const [surah, setSurah] = useState<SurahDetail | null>(() => loadQuranCache<SurahDetail>(cacheKey));
-  const [loading, setLoading] = useState<boolean>(() => !loadQuranCache<SurahDetail>(cacheKey));
+  const safeSurahNumber = Math.max(1, Math.min(114, surahNumber || 1));
+  const cacheKey = `surah:${safeSurahNumber}:${edition?.editionIdentifier || 'en.sahih'}`;
+  const [surah, setSurah] = useState<SurahDetail | null>(() => {
+    try {
+      const cached = loadQuranCache<SurahDetail>(cacheKey);
+      return cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0 ? cached : null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    try {
+      const cached = loadQuranCache<SurahDetail>(cacheKey);
+      return !(cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0);
+    } catch {
+      return true;
+    }
+  });
   const [error, setError] = useState<string | null>(null);
-  const fontSize = settings.quranFontSize;
-  const showTranslation = settings.quranShowTranslation;
-  const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
-  const arabicFamilies = QURAN_FONT_FAMILIES[settings.quranArabicFont];
-  const ayahLineHeight = Math.round(fontSize * settings.quranLineHeight);
+  const fontSize = typeof settings?.quranFontSize === 'number' && settings.quranFontSize > 0 ? settings.quranFontSize : 28;
+  const showTranslation = Boolean(settings?.quranShowTranslation);
+  const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings?.tafsirSourceId) || TAFSIR_SOURCES[0];
+  const arabicFamilies = (settings?.quranArabicFont && QURAN_FONT_FAMILIES[settings.quranArabicFont]) || QURAN_FONT_FAMILIES.amiri;
+  const ayahLineHeight = Math.round(fontSize * (settings?.quranLineHeight || 1.6));
   const [readingMode, setReadingMode] = useState<ReadingMode>('cards');
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
+
+  // Continue Reading tracking refs (MUST be declared before any memo/effects)
+  const surahNumberRef = useRef<number>(safeSurahNumber);
+  const lastSavedAyahRef = useRef<number>(initialAyah || 1);
+  const trackingReadyRef = useRef<boolean>(!initialAyah || initialAyah <= 1);
+
+  useEffect(() => {
+    surahNumberRef.current = safeSurahNumber;
+    lastSavedAyahRef.current = initialAyah || 1;
+    trackingReadyRef.current = !initialAyah || initialAyah <= 1;
+  }, [safeSurahNumber, initialAyah]);
 
 // Reading experience state
   const [keepAwake, setKeepAwake] = useState<boolean>(false);
@@ -409,15 +437,17 @@ export default function QuranReaderScreen({
     
     const sortedAyahs = Array.from(selectedAyahs).sort((a, b) => a - b);
     const verses = sortedAyahs.map((ayahNum) => {
-      const ayah = surah.ayahs.find((a) => a.numberInSurah === ayahNum);
+      const ayah = Array.isArray(surah.ayahs) ? surah.ayahs.find((a) => a && a.numberInSurah === ayahNum) : null;
       if (!ayah) return '';
-      return `"${ayah.text}"\n${ayah.translation || ''}\n— Quran ${surahNumber}:${ayahNum}`;
+      return `"${ayah.text || ''}"\n${ayah.translation || ''}\n— Quran ${safeSurahNumber}:${ayahNum}`;
     }).filter(Boolean).join('\n\n');
 
-    const fullText = `${verses}\n\n— Surah ${surah.englishName} (${surahNumber})`;
+    const fullText = `${verses}\n\n— Surah ${surah.englishName || safeSurahNumber} (${safeSurahNumber})`;
     
-    Clipboard.setString(fullText);
-    haptic('success');
+    try {
+      Clipboard.setString(fullText);
+      haptic('success');
+    } catch {}
     exitSelectionMode();
   };
 
@@ -427,7 +457,7 @@ export default function QuranReaderScreen({
     
     const trimmedTag = tagInput.trim();
     for (const ayahNum of selectedAyahs) {
-      await addStudyTagFn(surahNumber, ayahNum, trimmedTag);
+      await addStudyTagFn(safeSurahNumber, ayahNum, trimmedTag);
     }
     setTagInput('');
     setShowTagInput(false);
@@ -441,9 +471,9 @@ export default function QuranReaderScreen({
     
     for (const ayahNum of selectedAyahs) {
       if (color === 'transparent') {
-        removeVerseHighlightFn(surahNumber, ayahNum);
+        removeVerseHighlightFn(safeSurahNumber, ayahNum);
       } else {
-        addVerseHighlightFn(surahNumber, ayahNum, color);
+        addVerseHighlightFn(safeSurahNumber, ayahNum, color);
       }
     }
     haptic('success');
@@ -454,12 +484,7 @@ export default function QuranReaderScreen({
   // Add note to selected verses (uses first selected ayah)
   const addNoteToSelected = () => {
     if (selectedAyahs.size === 0) return;
-    const firstAyah = Math.min(...Array.from(selectedAyahs));
-    // The note modal will be handled by the existing long-press flow
-    // For now, just exit selection mode
     exitSelectionMode();
-    // Trigger the existing note flow via long press on the first ayah
-    // This would need integration with the existing note system
   };
 
   // Add bookmark to selected verses
@@ -467,12 +492,12 @@ export default function QuranReaderScreen({
     if (!surah || selectedAyahs.size === 0) return;
     
     for (const ayahNum of selectedAyahs) {
-      const ayah = surah.ayahs.find((a) => a.numberInSurah === ayahNum);
+      const ayah = Array.isArray(surah.ayahs) ? surah.ayahs.find((a) => a && a.numberInSurah === ayahNum) : null;
       if (ayah) {
         addBookmark({
-          surah: surahNumber,
+          surah: safeSurahNumber,
           ayah: ayahNum,
-          surahName: surah.englishName,
+          surahName: surah.englishName || `Surah ${safeSurahNumber}`,
           text: (ayah.text || '').slice(0, 100),
           translation: (ayah.translation || '').slice(0, 120),
         });
@@ -485,31 +510,40 @@ export default function QuranReaderScreen({
 
   // Get highlight color for an ayah
   const getAyahHighlightColor = (ayahNumber: number): string => {
-    const highlight = getVerseHighlightFn(surahNumber, ayahNumber);
-    return highlight?.color || 'transparent';
+    try {
+      const highlight = getVerseHighlightFn(safeSurahNumber, ayahNumber);
+      return highlight?.color || 'transparent';
+    } catch {
+      return 'transparent';
+    }
   };
 
   // Get tags for an ayah
   const getAyahTags = (ayahNumber: number): StudyTag[] => {
-    return getStudyTagsForAyahFn(surahNumber, ayahNumber);
+    try {
+      return getStudyTagsForAyahFn(safeSurahNumber, ayahNumber);
+    } catch {
+      return [];
+    }
   };
 
   // Reading progress calculation
   const readingProgress = useMemo(() => {
-    if (!surah) return { percent: 0, currentAyah: 1, totalAyahs: SURAH_AYAH_COUNTS[surahNumber - 1] || 7 };
-    const totalAyahs = surah.numberOfAyahs || SURAH_AYAH_COUNTS[surahNumber - 1] || 7;
-    const currentAyah = lastSavedAyahRef.current;
+    const fallbackCount = SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7;
+    const currentAyah = lastSavedAyahRef?.current ?? initialAyah ?? 1;
+    if (!surah) return { percent: 0, currentAyah, totalAyahs: fallbackCount };
+    const totalAyahs = surah.numberOfAyahs || fallbackCount;
     const percent = Math.min(100, Math.round((currentAyah / totalAyahs) * 100));
     return { percent, currentAyah, totalAyahs };
-  }, [surah]);
+  }, [surah, safeSurahNumber, initialAyah]);
 
   // Current position indicator
   const currentPosition = useMemo(() => {
+    const currentAyah = lastSavedAyahRef?.current ?? initialAyah ?? 1;
     if (!surah) return { ayah: '—', page: '—' };
-    const ayah = lastSavedAyahRef.current;
-    const page = getApproxPage(surahNumber, ayah);
-    return { ayah, page };
-  }, [surah]);
+    const page = getApproxPage(safeSurahNumber, currentAyah);
+    return { ayah: currentAyah, page };
+  }, [surah, safeSurahNumber, initialAyah]);
 
   // Auto-hide top nav while scrolling down; reappear on scroll up / back to top
   const navOpacity = useRef(new Animated.Value(1)).current;
@@ -581,10 +615,7 @@ export default function QuranReaderScreen({
 
   const listRef = useRef<FlatList<Ayah>>(null);
 
-  // Continue Reading tracking refs (handler must stay stable across renders)
-  const surahNumberRef = useRef<number>(surahNumber);
-  const lastSavedAyahRef = useRef<number>(initialAyah || 1);
-  const trackingReadyRef = useRef<boolean>(!initialAyah || initialAyah <= 1);
+  // Continue Reading tracking (handler must stay stable across renders)
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken<Ayah>[]; changed: ViewToken<Ayah>[] }) => {
       if (!trackingReadyRef.current) return;
@@ -646,9 +677,9 @@ export default function QuranReaderScreen({
 
   // Fetch Surah data (cache-first: instant display from cache, graceful background refresh if forced)
   const loadSurah = useCallback(async (force = false) => {
-    const key = `surah:${surahNumber}:${edition.editionIdentifier}`;
+    const key = `surah:${safeSurahNumber}:${edition?.editionIdentifier || 'en.sahih'}`;
     const cached = !force ? loadQuranCache<SurahDetail>(key) : null;
-    const isCached = Boolean(cached && cached.ayahs && cached.ayahs.length > 0);
+    const isCached = Boolean(cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0);
     if (isCached && cached) {
       setSurah(cached);
       setLoading(false);
@@ -657,30 +688,34 @@ export default function QuranReaderScreen({
     }
     setError(null);
     try {
-      const data = await fetchSurah(surahNumber, true, edition.editionIdentifier, force);
-      setSurah(data);
+      const data = await fetchSurah(safeSurahNumber, true, edition?.editionIdentifier || 'en.sahih', force);
+      if (data && Array.isArray(data.ayahs) && data.ayahs.length > 0) {
+        setSurah(data);
+      }
 
       // Save last read position
       const startAyah = initialAyah && initialAyah > 1 ? initialAyah : 1;
-      saveLastReadPosition(surahNumber, startAyah, data.englishName);
+      saveLastReadPosition(safeSurahNumber, startAyah, data?.englishName);
 
       // Continue Reading position + Recently Read entry
-      surahNumberRef.current = surahNumber;
+      surahNumberRef.current = safeSurahNumber;
       lastSavedAyahRef.current = startAyah;
       trackingReadyRef.current = startAyah <= 1;
-      saveReadingPosition(surahNumber, startAyah);
-      recordSurahVisit(surahNumber, data.englishName, data.name);
+      saveReadingPosition(safeSurahNumber, startAyah);
+      if (data) {
+        recordSurahVisit(safeSurahNumber, data.englishName || `Surah ${safeSurahNumber}`, data.name || '');
+      }
 
       // Auto-fetch on open: if this translation edition was NOT cached,
       // trigger background preload of the remaining surahs for this edition
-      if (!isCached) {
-        preloadRemainingSurahsForEdition(surahNumber, edition.editionIdentifier);
+      if (!isCached && edition?.editionIdentifier) {
+        preloadRemainingSurahsForEdition(safeSurahNumber, edition.editionIdentifier);
       }
     } catch {
       if (!isCached) {
         // Fallback: if Arabic text is available offline, display it so the user never sees "no data"
-        const arCached = loadQuranCache<SurahDetail>(`surah:${surahNumber}:ar`);
-        if (arCached && arCached.ayahs && arCached.ayahs.length > 0) {
+        const arCached = loadQuranCache<SurahDetail>(`surah:${safeSurahNumber}:ar`);
+        if (arCached && Array.isArray(arCached.ayahs) && arCached.ayahs.length > 0) {
           setSurah(arCached);
           return;
         }
@@ -689,17 +724,17 @@ export default function QuranReaderScreen({
     } finally {
       setLoading(false);
     }
-  }, [surahNumber, initialAyah, edition.editionIdentifier]);
+  }, [safeSurahNumber, initialAyah, edition?.editionIdentifier]);
 
   // Synchronously update surah from cache on param/edition change to avoid unrendered frames
   useEffect(() => {
-    const key = `surah:${surahNumber}:${edition.editionIdentifier}`;
+    const key = `surah:${safeSurahNumber}:${edition?.editionIdentifier || 'en.sahih'}`;
     const cached = loadQuranCache<SurahDetail>(key);
-    if (cached) {
+    if (cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
       setSurah(cached);
       setLoading(false);
     }
-  }, [surahNumber, edition.editionIdentifier]);
+  }, [safeSurahNumber, edition?.editionIdentifier]);
 
   useEffect(() => {
     loadSurah();
@@ -737,15 +772,16 @@ export default function QuranReaderScreen({
   };
 
   const handleToggleBookmark = (ayahItem: Ayah) => {
-    const bookmarked = isBookmarked(surahNumber, ayahItem.numberInSurah);
+    if (!ayahItem) return;
+    const bookmarked = isBookmarked(safeSurahNumber, ayahItem.numberInSurah);
     if (bookmarked) {
-      removeBookmark(surahNumber, ayahItem.numberInSurah);
+      removeBookmark(safeSurahNumber, ayahItem.numberInSurah);
       haptic('light');
     } else {
       addBookmark({
-        surah: surahNumber,
+        surah: safeSurahNumber,
         ayah: ayahItem.numberInSurah,
-        surahName: surah?.englishName,
+        surahName: surah?.englishName || `Surah ${safeSurahNumber}`,
         text: (ayahItem.text || '').slice(0, 100),
         translation: (ayahItem.translation || '').slice(0, 120),
       });
@@ -756,13 +792,15 @@ export default function QuranReaderScreen({
 
   const bookmarkedSet = useMemo(() => {
     const set = new Set<number>();
-    for (const b of bookmarks) {
-      if (b.surah === surahNumber) {
-        set.add(b.ayah);
+    if (Array.isArray(bookmarks)) {
+      for (const b of bookmarks) {
+        if (b && b.surah === safeSurahNumber) {
+          set.add(b.ayah);
+        }
       }
     }
     return set;
-  }, [bookmarks, surahNumber]);
+  }, [bookmarks, safeSurahNumber]);
 
   // Audio Playback
   const currentReciterObj = reciters.find((r) => r.identifier === selectedReciter);
@@ -873,25 +911,31 @@ export default function QuranReaderScreen({
   };
 
   // Surah Download (Save for Offline) — from the ⋯ menu
-  const [surahDownloaded, setSurahDownloaded] = useState(() =>
-    isSurahDownloaded(selectedReciter, surahNumber, getSurahBitrate(selectedReciter))
-  );
+  const [surahDownloaded, setSurahDownloaded] = useState(() => {
+    try {
+      return isSurahDownloaded(selectedReciter, safeSurahNumber, getSurahBitrate(selectedReciter));
+    } catch {
+      return false;
+    }
+  });
   const [surahDownloading, setSurahDownloading] = useState(false);
   const [surahDownloadProgress, setSurahDownloadProgress] = useState<number | null>(null);
   const [surahDownloadSize, setSurahDownloadSize] = useState<string>('');
 
   const refreshDownloadState = useCallback(() => {
-    const bitrate = getSurahBitrate(selectedReciter);
-    setSurahDownloaded(isSurahDownloaded(selectedReciter, surahNumber, bitrate));
-    const meta = getDownloadedSurahs().find(
-      (d) => d.edition === selectedReciter && d.surah === surahNumber && d.bitrate === bitrate
-    );
-    setSurahDownloadSize(meta?.size ? formatBytes(meta.size) : '');
-  }, [selectedReciter, surahNumber]);
+    try {
+      const bitrate = getSurahBitrate(selectedReciter);
+      setSurahDownloaded(isSurahDownloaded(selectedReciter, safeSurahNumber, bitrate));
+      const meta = getDownloadedSurahs().find(
+        (d) => d && d.edition === selectedReciter && d.surah === safeSurahNumber && d.bitrate === bitrate
+      );
+      setSurahDownloadSize(meta?.size ? formatBytes(meta.size) : '');
+    } catch {}
+  }, [selectedReciter, safeSurahNumber]);
 
   useEffect(() => {
     refreshDownloadState();
-  }, [refreshDownloadState, surahNumber, selectedReciter]);
+  }, [refreshDownloadState, safeSurahNumber, selectedReciter]);
 
   const handleSaveOffline = async () => {
     const bitrate = getSurahBitrate(selectedReciter);
@@ -936,10 +980,11 @@ export default function QuranReaderScreen({
 
   // Share
   const handleShareAyah = async (item: Ayah) => {
+    if (!item) return;
     // Share as image: render a clean verse card, capture to PNG, share.
     if (Platform.OS === 'web') {
       // Web has no view-shot/PNG share — fall back to text share.
-      const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+      const textToShare = `"${item.text || ''}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
       Share.share({ message: textToShare }).catch(() => {});
       return;
     }
@@ -951,8 +996,11 @@ export default function QuranReaderScreen({
       const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
       setShareAyahItem(null);
       setIsSharingImage(false);
-      const Sharing = require('expo-sharing');
-      if (await Sharing.isAvailableAsync()) {
+      let Sharing: any = null;
+      try {
+        Sharing = require('expo-sharing');
+      } catch {}
+      if (Sharing && (await Sharing.isAvailableAsync())) {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share verse' });
       } else {
         Share.share({ url: uri }).catch(() => {});
@@ -961,14 +1009,15 @@ export default function QuranReaderScreen({
       setShareAyahItem(null);
       setIsSharingImage(false);
       // Fall back to text share on any capture failure.
-      const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+      const textToShare = `"${item.text || ''}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
       Share.share({ message: textToShare }).catch(() => {});
     }
   };
 
   // Copy
   const handleCopyAyah = (item: Ayah) => {
-    const textToCopy = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+    if (!item) return;
+    const textToCopy = `"${item.text || ''}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
     try {
       Clipboard.setString(textToCopy);
       haptic('selection');
@@ -995,14 +1044,15 @@ export default function QuranReaderScreen({
     const titleFontSize = isCompact ? 24 : 28;
     const translationFontSize = isCompact ? 12 : 13;
     const arabicSize = isCompact ? 34 : 40;
+    const totalAyahs = surah.numberOfAyahs || (Array.isArray(surah.ayahs) ? surah.ayahs.length : (SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7));
     return (
       <View style={styles.surahHeader}>
         <View style={styles.surahEyebrowRow}>
           <Text style={[styles.surahEyebrow, { color: colors.accent }]}>
-            SURAH {surah.number}
+            SURAH {surah.number || safeSurahNumber}
           </Text>
           <Text style={[styles.surahAyahCount, { color: colors.textMuted }]}>
-            {surah.numberOfAyahs} AYAHS
+            {totalAyahs} AYAHS
           </Text>
         </View>
 
@@ -1013,19 +1063,23 @@ export default function QuranReaderScreen({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {surah.englishName}
+              {surah.englishName || `Surah ${safeSurahNumber}`}
             </Text>
-            <Text
-              style={[styles.englishTranslation, { color: colors.textSecondary, fontSize: translationFontSize }]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {surah.englishNameTranslation}
-            </Text>
+            {surah.englishNameTranslation ? (
+              <Text
+                style={[styles.englishTranslation, { color: colors.textSecondary, fontSize: translationFontSize }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {surah.englishNameTranslation}
+              </Text>
+            ) : null}
           </View>
-          <ArabicText size={arabicSize} fontFamily={arabicFamilies.regular} style={styles.arabicSurahName}>
-            {surah.name}
-          </ArabicText>
+          {surah.name ? (
+            <ArabicText size={arabicSize} fontFamily={arabicFamilies.regular} style={styles.arabicSurahName}>
+              {surah.name}
+            </ArabicText>
+          ) : null}
         </View>
 
         {/* Audio Bar */}
@@ -1092,6 +1146,7 @@ export default function QuranReaderScreen({
   };
 
   const renderAyahItem = ({ item }: { item: Ayah }) => {
+    if (!item) return null;
     const isBookmarked = bookmarkedSet.has(item.numberInSurah);
     const isAyahPlaying = isPlayingAudio && playingAyahNumber === item.numberInSurah;
     const isTafsirOpen = activeTafsirAyah === item.numberInSurah;
@@ -1119,18 +1174,20 @@ export default function QuranReaderScreen({
           {
             text: copy,
             onPress: () => {
-              const textToCopy = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
-              Clipboard.setString(textToCopy);
-              haptic('selection');
-              setCopiedAyah(item.numberInSurah);
-              if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
-              copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 1500);
+              const textToCopy = `"${item.text || ''}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
+              try {
+                Clipboard.setString(textToCopy);
+                haptic('selection');
+                setCopiedAyah(item.numberInSurah);
+                if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+                copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 1500);
+              } catch {}
             },
           },
           {
             text: share,
             onPress: () => {
-              const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+              const textToShare = `"${item.text || ''}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
               Share.share({ message: textToShare }).catch(() => {});
             },
           },
@@ -1231,7 +1288,7 @@ export default function QuranReaderScreen({
 
         {/* Arabic Text */}
         <AyahText
-          text={getDisplayedAyahText(surahNumber, item.numberInSurah, item.text)}
+          text={getDisplayedAyahText(safeSurahNumber, item.numberInSurah, item.text)}
           numberInSurah={item.numberInSurah}
           size={fontSize}
           fontFamily={arabicFamilies.regular}
@@ -1242,7 +1299,7 @@ export default function QuranReaderScreen({
         {showTranslation && item.translation && (
           <View style={styles.translationWrap}>
             <Text style={[styles.translationTag, { color: colors.textMuted }]}>
-              {flag} {edition.name}
+              {flag} {edition?.name || ''}
             </Text>
             <Text style={[styles.translationText, { color: colors.textSecondary }]}>
               {item.translation}
@@ -1284,7 +1341,7 @@ export default function QuranReaderScreen({
 
   // Mushaf continuous text view
   const renderMushafMode = () => {
-    if (!surah) return null;
+    if (!surah || !Array.isArray(surah.ayahs) || surah.ayahs.length === 0) return null;
     return (
       <ScrollView
         contentContainerStyle={styles.mushafScrollContent}
@@ -1307,7 +1364,7 @@ export default function QuranReaderScreen({
                     fontFamily: arabicFamilies.regular,
                     fontSize: fontSize + 2,
                     color: colors.textPrimary,
-                    lineHeight: Math.round((fontSize + 2) * settings.quranLineHeight),
+                    lineHeight: Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6)),
                     writingDirection: 'rtl',
                   }}
                 >
@@ -1330,7 +1387,7 @@ export default function QuranReaderScreen({
         {showTranslation && (
           <View style={styles.mushafTranslationsWrap}>
             <Text style={[styles.mushafTranslationsHeading, { color: colors.accent }]}>
-              TRANSLATION ({flag} {edition.name.toUpperCase()})
+              TRANSLATION ({flag} {(edition?.name || '').toUpperCase()})
             </Text>
             {surah.ayahs.map((a) => (
               <View key={`tr-${a.numberInSurah}`} style={styles.mushafTranslationRow}>
@@ -1338,7 +1395,7 @@ export default function QuranReaderScreen({
                   {a.numberInSurah}
                 </Text>
                 <Text style={[styles.mushafTranslationText, { color: colors.textSecondary }]}>
-                  {a.translation}
+                  {a.translation || ''}
                 </Text>
               </View>
             ))}
@@ -2171,6 +2228,7 @@ export default function QuranReaderScreen({
 }
 
 function toArabicNumerals(num: number): string {
+  if (typeof num !== 'number' || isNaN(num)) return '';
   const digits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
   return String(num)
     .split('')
