@@ -21,7 +21,9 @@ export type LibraryItemKey =
   | 'ramadan-guide'
   | 'prayer-guide'
   | 'shahada'
-  | 'downloads';
+  | 'downloads'
+  | 'vocab'
+  | 'summary';
 
 /* ─── Item model ──────────────────────────────────────────────── */
 
@@ -41,6 +43,8 @@ const ICONS: Record<LibraryItemKey, keyof typeof Ionicons.glyphMap> = {
   'prayer-guide': 'hand-left',
   shahada: 'shield-checkmark',
   downloads: 'cloud-download-outline',
+  vocab: 'language',
+  summary: 'pulse',
 };
 
 /* ─── Grouped layout ──────────────────────────────────────────── */
@@ -65,6 +69,13 @@ const GROUPS: LibraryGroup[] = [
       { key: 'tasbih', title: 'Tasbih', subtitle: 'Digital dhikr counter' },
       { key: 'names', title: '99 Names of Allah', subtitle: 'Asma ul-Husna with meanings' },
       { key: 'names-prophet', title: '99 Names of the Prophet ﷺ', subtitle: 'His ﷺ noble names & attributes' },
+    ],
+  },
+  {
+    label: 'Learn',
+    items: [
+      { key: 'vocab', title: 'Quran Vocabulary', subtitle: 'Flashcards of the most frequent Quranic words' },
+      { key: 'summary', title: 'Weekly Summary', subtitle: 'Your past 7 days of reading, salah & Hifz' },
     ],
   },
   {

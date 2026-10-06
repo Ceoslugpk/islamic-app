@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import type { NativeScrollEvent, NativeSyntheticEvent, ViewabilityConfig, ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { captureRef } from 'react-native-view-shot';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -345,6 +346,10 @@ export default function QuranReaderScreen({
   // Study Tools: Selection Mode State
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
   const [selectedAyahs, setSelectedAyahs] = useState<Set<number>>(new Set());
+  // Share-as-image: the ayah being shared renders a clean card, captured to PNG.
+  const shareCardRef = useRef<View>(null);
+  const [shareAyahItem, setShareAyahItem] = useState<Ayah | null>(null);
+  const [isSharingImage, setIsSharingImage] = useState(false);
   const [selectionActionBarVisible, setSelectionActionBarVisible] = useState<boolean>(false);
   const [showTagInput, setShowTagInput] = useState<boolean>(false);
   const [tagInput, setTagInput] = useState<string>('');
@@ -930,9 +935,35 @@ export default function QuranReaderScreen({
   };
 
   // Share
-  const handleShareAyah = (item: Ayah) => {
-    const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
-    Share.share({ message: textToShare }).catch(() => {});
+  const handleShareAyah = async (item: Ayah) => {
+    // Share as image: render a clean verse card, capture to PNG, share.
+    if (Platform.OS === 'web') {
+      // Web has no view-shot/PNG share — fall back to text share.
+      const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+      Share.share({ message: textToShare }).catch(() => {});
+      return;
+    }
+    try {
+      setIsSharingImage(true);
+      setShareAyahItem(item);
+      // Wait a frame for the card to render off-screen.
+      await new Promise((r) => setTimeout(r, 80));
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+      setShareAyahItem(null);
+      setIsSharingImage(false);
+      const Sharing = require('expo-sharing');
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share verse' });
+      } else {
+        Share.share({ url: uri }).catch(() => {});
+      }
+    } catch {
+      setShareAyahItem(null);
+      setIsSharingImage(false);
+      // Fall back to text share on any capture failure.
+      const textToShare = `"${item.text}"\n\n${item.translation || ''}\n\n— Quran ${surahNumber}:${item.numberInSurah}`;
+      Share.share({ message: textToShare }).catch(() => {});
+    }
   };
 
   // Copy
@@ -2110,6 +2141,31 @@ export default function QuranReaderScreen({
         </View>
       </Modal>
 
+      {/* Share-as-image capture card (rendered off-screen while sharing) */}
+      {shareAyahItem && (
+        <View style={styles.shareCardWrap} pointerEvents="none">
+          <View
+            ref={shareCardRef}
+            collapsable={false}
+            style={[styles.shareCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+          >
+            <Text style={[styles.shareCardEyebrow, { color: colors.accent }]}>القرآن الكريم</Text>
+            <Text style={[styles.shareCardArabic, { color: colors.textPrimary }]}>
+              {shareAyahItem.text}
+            </Text>
+            <View style={[styles.shareCardRule, { backgroundColor: colors.accent }]} />
+            {shareAyahItem.translation ? (
+              <Text style={[styles.shareCardTrans, { color: colors.textSecondary }]}>
+                {shareAyahItem.translation}
+              </Text>
+            ) : null}
+            <Text style={[styles.shareCardRef, { color: colors.textMuted }]}>
+              Quran {surahNumber}:{shareAyahItem.numberInSurah}
+            </Text>
+          </View>
+        </View>
+      )}
+
     </View>
   );
 }
@@ -2682,5 +2738,54 @@ const styles = StyleSheet.create({
   reciterLangBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 9,
+  },
+  shareCardWrap: {
+    position: 'absolute',
+    left: -2000,
+    top: 0,
+    width: 360,
+    padding: 20,
+    backgroundColor: '#F8FAF9',
+  },
+  shareCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'stretch',
+  },
+  shareCardEyebrow: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  shareCardArabic: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 26,
+    lineHeight: 44,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    includeFontPadding: false,
+    marginBottom: 14,
+  },
+  shareCardRule: {
+    height: 2,
+    borderRadius: 1,
+    marginBottom: 14,
+    width: '40%',
+    alignSelf: 'center',
+  },
+  shareCardTrans: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  shareCardRef: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    textAlign: 'center',
+    letterSpacing: 0.3,
   },
 });

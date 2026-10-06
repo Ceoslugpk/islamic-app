@@ -45,6 +45,8 @@ import BookmarksScreen from './src/screens/BookmarksScreen';
 import NotesScreen from './src/screens/NotesScreen';
 import CalendarScreen from './src/screens/CalendarScreen';
 import LibraryScreen, { LibraryItemKey } from './src/screens/LibraryScreen';
+import { VocabTrainerScreen } from './src/screens/VocabTrainerScreen';
+import { WeeklySummaryScreen } from './src/screens/WeeklySummaryScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import TasbihScreen from './src/screens/TasbihScreen';
 import NamesScreen from './src/screens/NamesScreen';
@@ -329,7 +331,9 @@ type LibraryView =
   | { screen: 'ramadan-guide' }
   | { screen: 'prayer-guide' }
   | { screen: 'shahada' }
-  | { screen: 'downloads' };
+  | { screen: 'downloads' }
+  | { screen: 'vocab' }
+  | { screen: 'summary' };
 
 type QuranView =
   | { screen: 'home' }
@@ -899,6 +903,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
     else if (key === 'prayer-guide') setLibrary({ screen: 'prayer-guide' });
     else if (key === 'shahada') setLibrary({ screen: 'shahada' });
     else if (key === 'downloads') setLibrary({ screen: 'downloads' });
+    else if (key === 'vocab') setLibrary({ screen: 'vocab' });
+    else if (key === 'summary') setLibrary({ screen: 'summary' });
   }
 
   return (
@@ -1063,6 +1069,14 @@ function Root({ splashDone }: { splashDone: boolean }) {
               setTab('quran');
             }}
           />
+        )}
+
+        {tab === 'library' && library.screen === 'vocab' && (
+          <VocabTrainerScreen onBack={() => setLibrary({ screen: 'hub' })} />
+        )}
+
+        {tab === 'library' && library.screen === 'summary' && (
+          <WeeklySummaryScreen onBack={() => setLibrary({ screen: 'hub' })} />
         )}
 
 
