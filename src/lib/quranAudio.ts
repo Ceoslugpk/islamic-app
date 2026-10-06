@@ -789,7 +789,7 @@ export async function configureAudioMode(): Promise<void> {
   await setAudioModeAsync({
     playsInSilentMode: true,
     shouldPlayInBackground: true,
-    interruptionMode: 'duckOthers',
+    interruptionMode: 'doNotMix',
     shouldRouteThroughEarpiece: false,
   }).catch(() => {});
 }
@@ -1569,7 +1569,7 @@ async function playAudioUrl(url: string): Promise<void> {
   await setAudioModeAsync({
     playsInSilentMode: true,
     shouldPlayInBackground: true,
-    interruptionMode: 'duckOthers',
+    interruptionMode: 'doNotMix',
     shouldRouteThroughEarpiece: false,
   }).catch(() => {});
 

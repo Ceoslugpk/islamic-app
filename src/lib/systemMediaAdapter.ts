@@ -55,6 +55,39 @@ let cachedArtworkLightUri: string | null = null;
 let cachedArtworkDarkUri: string | null = null;
 let isArtworkPreparing = false;
 
+// Quran ayah artwork from AlQuran Cloud CDN (already the app's audio source).
+// Real page images make the lock screen + vivo OriginOS Origin/Atomic Island
+// media card render rich artwork (the island themes itself around artwork).
+const QURAN_IMAGE_CDN = 'https://cdn.islamic.network/quran/images';
+
+/**
+ * Resolves a stable local file:// URI for the CURRENT playing ayah's Quran
+ * page image (e.g. 2_255.png). Downloads once, caches on disk, falls back
+ * to the embedded logo when offline / the CDN is unreachable.
+ */
+export async function getOrPrepareQuranArtworkUri(
+  playback?: { surah?: number; ayah?: number } | null
+): Promise<string | null> {
+  const surah = playback?.surah;
+  const ayah = playback?.ayah;
+  if (!surah || !ayah) return null;
+
+  const filename = `quran_artwork_${surah}_${ayah}.png`;
+  const fileUri = `${FileSystem.cacheDirectory}${filename}`;
+
+  try {
+    const info = await FileSystem.getInfoAsync(fileUri);
+    if (info.exists && info.size > 0) return fileUri;
+
+    const remote = `${QURAN_IMAGE_CDN}/${surah}_${ayah}.png`;
+    const dl = await FileSystem.downloadAsync(remote, fileUri);
+    if (dl.status === 200) return fileUri;
+    return null;
+  } catch {
+    return null; // offline / blocked — caller falls back to the logo
+  }
+}
+
 /**
  * Prepares and resolves a stable local offline file:// URI for artwork.
  * Both Android ExoPlayer / MediaSession and iOS MPNowPlayingInfoCenter
@@ -204,7 +237,10 @@ export async function syncNowPlaying(meta?: Partial<SystemMediaMetadata>): Promi
   const artist = meta?.reciter || formatted.artist;
   const albumTitle = meta?.arabicTitle || formatted.albumTitle;
   const isPlaying = meta?.isPlaying ?? status.isPlaying;
-  const artworkUri = meta?.artworkUrl || (await getOrPrepareArtworkUri());
+  // Prefer the real Quran page image for the current ayah (lights up the
+  // lock screen + Origin Island); fall back to the embedded logo.
+  const quranArtwork = await getOrPrepareQuranArtworkUri(playback).catch(() => null);
+  const artworkUri = meta?.artworkUrl || quranArtwork || (await getOrPrepareArtworkUri());
 
   // Web platform
   if (Platform.OS === 'web') {
