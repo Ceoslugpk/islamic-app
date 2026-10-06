@@ -57,6 +57,8 @@ export interface IslamicTafsirResult {
   text: string;
   editionName: string;
   language: string;
+  /** True when the provider served the surah intro instead of the requested ayah. */
+  introOnly?: boolean;
 }
 
 const BASE = 'https://api.islamic.app/v1/quran/tafsirs';
@@ -92,10 +94,19 @@ export async function fetchIslamicTafsir(
     throw new Error('Tafsir not available for this ayah');
   }
 
+  // islamic.app's tafsir endpoint serves the SURAH INTRO (1:1) for every
+  // requested ayah (verified live: verse_key always 1:1). Detect that and
+  // mark it so the UI can say "surah introduction" instead of showing the
+  // same block on every ayah.
+  const servedKey = ayahs[0].verse_key || '';
+  const servedAyah = servedKey.includes(':') ? parseInt(servedKey.split(':')[1], 10) : NaN;
+  const isIntroOnly = !isNaN(servedAyah) && servedAyah !== ayah;
+
   const result: IslamicTafsirResult = {
     text: stripTafsirHtml(ayahs[0].text),
     editionName: json?.data?.edition?.englishName || json?.data?.edition?.name || meta?.author || 'Tafsir',
     language: meta?.language || json?.data?.edition?.language || 'en',
+    introOnly: isIntroOnly,
   };
   saveQuranCache(key, result);
   return result;

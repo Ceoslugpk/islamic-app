@@ -989,8 +989,17 @@ export default function QuranReaderScreen({
     try {
       const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
       const res = await fetchAyahTafsir(surahNumber, ayahNumber, currentTafsirSource.identifier);
-      setTafsirText(res.text);
-      setTafsirEdition(res.edition);
+      // islamic.app serves the surah intro for every ayah (introOnly). Show
+      // it only on ayah 1; other ayahs get an honest "not available" note
+      // instead of the same intro repeated on every ayah.
+      const isIntroRepeat = (res as { introOnly?: boolean }).introOnly === true && ayahNumber !== 1;
+      if (isIntroRepeat) {
+        setTafsirText('Tafsir for this ayah is not available — the introduction is shown on Ayah 1.');
+        setTafsirEdition(currentTafsirSource.name);
+      } else {
+        setTafsirText(res.text);
+        setTafsirEdition(res.edition);
+      }
     } catch {
       setTafsirText(tafsirLoadFailed);
     } finally {
@@ -1718,6 +1727,16 @@ export default function QuranReaderScreen({
                   {selectedJuz ? `Juz ${selectedJuz}` : '—'}
                 </Text>
               </View>
+              {/* Explicit close button — the drag pill is not a tap target */}
+              <TouchableOpacity
+                onPress={() => setToolsMenuOpen(false)}
+                style={styles.toolsMenuCloseBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close reading tools"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="remove" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
 
             {/* 3px Progress Bar */}
@@ -2980,6 +2999,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingTop: 4,
     paddingBottom: 10,
+  },
+  toolsMenuCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
   },
   toolsMenuHeaderLeft: {
     flex: 1,

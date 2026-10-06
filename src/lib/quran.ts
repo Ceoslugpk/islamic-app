@@ -463,7 +463,7 @@ export async function fetchAyahTafsir(
   if (tafsirIdentifier.startsWith('islamic:')) {
     const slug = tafsirIdentifier.slice('islamic:'.length);
     const r = await fetchIslamicTafsir(surah, ayah, slug);
-    const result = { text: r.text, edition: r.editionName };
+    const result = { text: r.text, edition: r.editionName, introOnly: r.introOnly === true };
     saveQuranCache(key, result);
     return result;
   }
@@ -510,17 +510,14 @@ export async function fetchSurahTafsir(
   if (tafsirIdentifier.startsWith('islamic:')) {
     const slug = tafsirIdentifier.slice('islamic:'.length);
     const out: Array<{ ayahNumber: number; text: string }> = [];
-    const total = SURAH_AYAH_COUNTS[surah - 1] || 7;
-    // Fetch a bounded sample (first + every Nth ayah) to keep preload/first
-    // load light; the full loop stays available on demand per ayah.
-    const step = Math.max(1, Math.round(total / 20));
-    for (let ayah = 1; ayah <= total; ayah += step) {
-      try {
-        const r = await fetchIslamicTafsir(surah, ayah, slug);
-        out.push({ ayahNumber: ayah, text: r.text });
-      } catch {
-        // gap in coverage — skip
-      }
+    // islamic.app serves the SURAH INTRO (1:1) for every ayah — so the only
+    // meaningful per-surah entry is ayah 1. Fetching the rest returns the
+    // same intro (the per-ayah duplication bug); avoid it.
+    try {
+      const r = await fetchIslamicTafsir(surah, 1, slug);
+      out.push({ ayahNumber: 1, text: r.text });
+    } catch {
+      // intro unavailable — no entries
     }
     if (!out.length) throw new Error('Tafsir unavailable');
     return out;
