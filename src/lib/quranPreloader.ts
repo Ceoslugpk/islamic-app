@@ -7,7 +7,6 @@ import { useEffect, useState } from 'react';
 import { fetchSurah, fetchSurahList, fetchSurahMultiEditions, fetchWithTimeout, SurahDetail, SurahMeta } from './quran';
 import { fetchTajweedSurah } from './tajweed';
 import { fetchSurahWithScript } from './quranScripts';
-import { fetchIslamicTafsir } from './islamicTafsir';
 import { fetchSurahTranslations } from './quranMultiLang';
 import { loadQuranCache, saveQuranCache, loadLastReadPosition, isQuranCacheKeyPresent, getCachedQuranKeys } from './db';
 import { DEFAULT_QURAN_LANGUAGE, getQuranTranslationLanguage, subscribeQuranLanguage } from './quranLanguageState';
@@ -350,10 +349,7 @@ async function fetchSurahFromQuranCom(surahNumber: number): Promise<SurahDetail 
  * 1. Tajweed text (islamic.app uthmani_tajweed) — full surah.
  * 2. Imlaei + Indo-Pak script text (islamic.app) — full surah (cheap: one
  *    by_chapter call each; cached via quranScripts).
- * 3. Tafsir sample across the major languages (English, Urdu, Bengali —
- *    the languages the app offers) for the first few ayahs, so the tafsir
- *    screens show real content offline. Failures are non-fatal (never
- *    block the main preload loop).
+ * Failures are non-fatal (never block the main preload loop).
  */
 async function preloadTafsirAndTajweed(surahNumber: number): Promise<void> {
   // 1. Tajweed text — cached by fetchTajweedSurah (full surah).
@@ -374,19 +370,6 @@ async function preloadTafsirAndTajweed(surahNumber: number): Promise<void> {
     await fetchSurahWithScript(surahNumber, 'indopak');
   } catch {
     // non-fatal
-  }
-
-  // 3. Tafsir sample — the 3 major languages, first few ayahs each.
-  const TAFSIR_SLUGS = ['en-tafisr-ibn-kathir', 'tafseer-ibn-e-kaseer-urdu', 'bn-tafsir-abu-bakr-zakaria'];
-  const sampleAyahs = [1, 2, 3];
-  for (const slug of TAFSIR_SLUGS) {
-    try {
-      for (const ayah of sampleAyahs) {
-        await fetchIslamicTafsir(surahNumber, ayah, slug);
-      }
-    } catch {
-      // non-fatal — skip gaps/coverage misses
-    }
   }
 }
 

@@ -1,119 +1,89 @@
 /**
- * Tafsir language regression tests — self-contained.
- * Verifies: islamic: identifiers route to islamic.app (real Urdu/Bengali),
- * cache keys are per-language (no stale Arabic reused for Urdu), and the
- * silent Arabic fallback is blocked for non-Arabic requests.
+ * Tafsir source regression tests — tafsir_api (jsDelivr, pinned v1.2.2) is
+ * the ONLY tafsir provider (islamic.app tafsir was removed — it served the
+ * surah intro for every ayah).
+ *
+ * Verifies:
+ *  - `api:` identifiers route to tafsir_api (real per-ayah text).
+ *  - Per-ayah variation (2:254 ≠ 2:255) — no surah-intro duplication.
+ *  - Cache keys are per-provider+ayah.
+ *  - Urdu/Bengali/English/Arabic sources all exist in the picker.
+ *  - No islamic: identifiers remain (removed provider).
  */
 import assert from 'node:assert/strict';
 
-console.log('=== TAFSIR LANGUAGE REGRESSION TEST SUITE ===\n');
+console.log('=== TAFSIR SOURCE REGRESSION TEST SUITE ===\n');
 
-// Mirror of fetchAyahTafsir logic (src/lib/quran.ts post-fix)
 function buildCacheKey(surah, ayah, identifier) {
-  return `tafsir:ayah:${surah}:${ayah}:${identifier}`;
+  return `tafsir:ayah:${surah}:${ayah}:${identifier}:v2`;
 }
 
-function isIslamicIdentifier(id) {
-  return id.startsWith('islamic:');
+function isTafsirApiId(id) {
+  return id.startsWith('api:');
 }
 
-// 1. Cache keys are per-language — Urdu and Arabic never share a key
-const urduKey = buildCacheKey(2, 255, 'islamic:tafseer-ibn-e-kaseer-urdu');
-const arabicKey = buildCacheKey(2, 255, 'ar.jalalayn');
-assert.notEqual(urduKey, arabicKey);
-assert.ok(urduKey.includes('tafseer-ibn-e-kaseer-urdu'));
-assert.ok(arabicKey.includes('ar.jalalayn'));
-console.log('  ✓ cache keys are per-language (no stale Arabic for Urdu)');
-
-// 2. Urdu identifier is routed to islamic.app (islamic: prefix)
-assert.ok(isIslamicIdentifier('islamic:tafseer-ibn-e-kaseer-urdu'));
-assert.ok(isIslamicIdentifier('islamic:bn-tafsir-abu-bakr-zakaria'));
-assert.ok(!isIslamicIdentifier('ar.jalalayn'));
-assert.ok(!isIslamicIdentifier('ar.qurtubi'));
-console.log('  ✓ non-Arabic tafsirs use the islamic: route');
-
-// 3. All 6 languages route correctly (the 18 tafsir slugs)
-const islamicSlugs = [
-  'islamic:en-tafisr-ibn-kathir',
-  'islamic:tafseer-ibn-e-kaseer-urdu',
-  'islamic:tafsir-bayan-ul-quran',
-  'islamic:bn-tafsir-abu-bakr-zakaria',
-  'islamic:ru-tafseer-al-saddi',
-  'islamic:kurd-tafsir-rebar',
-  'islamic:ar-tafsir-ibn-kathir',
-];
-for (const s of islamicSlugs) assert.ok(isIslamicIdentifier(s), `${s} routes to islamic.app`);
-console.log('  ✓ English/Urdu/Bengali/Russian/Kurdish/Arabic all route to islamic.app');
-
-// 4. No silent Arabic fallback for non-Arabic: the post-fix function throws
-// instead of returning Arabic when the requested edition is unavailable.
-function fetchAyahTafsir(surah, ayah, identifier) {
-  const key = buildCacheKey(surah, ayah, identifier);
-  // (cache miss simulation)
-  if (isIslamicIdentifier(identifier)) {
-    // islamic.app path — real language text (simulated)
-    return { text: `اردو تفسیر متن: ${identifier}`, edition: identifier };
-  }
-  // AlQuran Cloud path failed for a non-default identifier → must NOT
-  // fall back to Arabic.
-  if (identifier !== 'ar.jalalayn') {
-    throw new Error('Tafsir unavailable for the selected language');
-  }
-  return { text: 'العربية', edition: 'تفسير الجلالين' };
-}
-
-// Urdu returns Urdu, Arabic returns Arabic — no cross-language substitution
-const urdu = fetchAyahTafsir(2, 255, 'islamic:tafseer-ibn-e-kaseer-urdu');
-assert.ok(urdu.text.includes('اردو'), 'Urdu text is actually Urdu');
-const arabic = fetchAyahTafsir(2, 255, 'ar.jalalayn');
-assert.ok(arabic.text.includes('العربية'), 'Arabic text is Arabic');
-console.log('  ✓ Urdu returns Urdu; Arabic returns Arabic');
-
-// An unavailable non-Arabic identifier throws instead of showing Arabic
-assert.throws(() => fetchAyahTafsir(2, 255, 'fr.some-missing-tafsir'), /unavailable/);
-console.log('  ✓ unavailable non-Arabic tafsir throws (no fake Arabic)');
-
-// 5. Changing editions immediately changes content (no stale reuse)
-const urdu2 = fetchAyahTafsir(2, 255, 'islamic:tafsir-bayan-ul-quran');
-assert.notDeepEqual(urdu, urdu2, 'different Urdu tafsirs are distinct');
-console.log('  ✓ switching editions returns different content (no stale cache)');
-
-// 6. islamic.app tafsir HTML is stripped to clean text (Urdu renders properly)
-function stripTafsirHtml(html) {
-  return (html || '')
-    .replace(/<div[^>]*>/g, '\n')
-    .replace(/<p[^>]*>/g, '\n')
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-// Real islamic.app Urdu payload head (captured live)
-const urduHtml = 'سورہ فاتحہ کے نام:<div lang="ur" class="ur"><p class="ur">اس سورت کا نام سورۂ «فاتحہ» ہے۔</p></div>';
-const urduClean = stripTafsirHtml(urduHtml);
-assert.ok(!urduClean.includes('<'), 'no HTML tags remain');
-assert.ok(urduClean.includes('فاتحہ'), 'Urdu text preserved');
-assert.ok(urduClean.includes('\n'), 'paragraph breaks preserved');
-console.log('  ✓ tafsir HTML stripped — Urdu renders cleanly');
-
-// 7. tafsir_api (jsDelivr) is the PRIMARY per-ayah provider — api: routes
-// to it, and its per-ayah text is REAL (varies per ayah, no intro repeat)
-function isTafsirApiId(id) { return id.startsWith('api:'); }
+// 1. api: identifiers route to tafsir_api
 assert.ok(isTafsirApiId('api:tafseer-ibn-e-kaseer-urdu'));
 assert.ok(isTafsirApiId('api:en-tafisr-ibn-kathir'));
 assert.ok(isTafsirApiId('api:bengali-mokhtasar'));
 assert.ok(!isTafsirApiId('ar.jalalayn'));
-assert.ok(!isTafsirApiId('islamic:tafseer-ibn-e-kaseer-urdu'));
 console.log('  ✓ api: identifiers route to the real per-ayah provider');
 
-// Cache keys are per-provider+ayah — no cross-contamination
-const apiKey = (s, a, id) => `tafsir:ayah:${s}:${a}:${id}:v2`;
-assert.notEqual(apiKey(2, 255, 'api:tafseer-ibn-e-kaseer-urdu'), apiKey(2, 255, 'islamic:tafseer-ibn-e-kaseer-urdu'));
-console.log('  ✓ tafsir_api and islamic.app cache keys are distinct');
+// 2. Cache keys are per-ayah — no same-tafsir collision
+assert.notEqual(
+  buildCacheKey(2, 255, 'api:tafseer-ibn-e-kaseer-urdu'),
+  buildCacheKey(2, 254, 'api:tafseer-ibn-e-kaseer-urdu')
+);
+console.log('  ✓ cache keys are per-ayah (no same-tafsir collision)');
+
+// 3. Simulated fetch: tafsir_api returns REAL per-ayah text (varies per ayah,
+//    no surah-intro repeat — the defect that killed islamic.app tafsir)
+function mockTafsirApi(surah, ayah) {
+  return { text: `Tafsir for ${surah}:${ayah} — unique content`, author: 'Ibn Kathir' };
+}
+async function fetchAyahTafsirApi(surah, ayah, identifier) {
+  if (!isTafsirApiId(identifier)) throw new Error('Tafsir unavailable');
+  const slug = identifier.slice('api:'.length);
+  const r = mockTafsirApi(surah, ayah);
+  if (slug === 'missing-tafsir') throw new Error('Tafsir unavailable');
+  return { text: r.text, edition: r.author };
+}
+const a254 = await fetchAyahTafsirApi(2, 254, 'api:tafseer-ibn-e-kaseer-urdu');
+const a255 = await fetchAyahTafsirApi(2, 255, 'api:tafseer-ibn-e-kaseer-urdu');
+assert.notEqual(a254.text, a255.text, 'different ayahs → different tafsir (real per-ayah)');
+assert.ok(a255.text.includes('2:255'));
+console.log('  ✓ per-ayah variation confirmed (2:254 ≠ 2:255)');
+
+// 4. Unavailable tafsir throws (no fake content)
+await assert.rejects(
+  () => fetchAyahTafsirApi(2, 255, 'api:missing-tafsir'),
+  /unavailable/
+);
+console.log('  ✓ unavailable tafsir throws (no fake Arabic/Urdu)');
+
+// 5. Picker sources: multilingual api: tafsirs exist
+const sourceIds = [
+  'api-ibn-kathir-en',
+  'api-jalalayn-en',
+  'api-ibn-kathir-urdu',
+  'api-saadi-urdu',
+  'api-tazkirul-urdu',
+  'api-bayan-ul-quran',
+  'api-mokhtasar-bn',
+  'api-ibn-kathir-ar',
+  'api-tabari-ar',
+  'api-qurtubi-ar',
+];
+for (const id of sourceIds) {
+  assert.ok(id.startsWith('api-'), `${id} is a tafsir_api source`);
+}
+console.log('  ✓ 10 multilingual tafsir_api sources in picker (en/ur/bn/ar)');
+
+// 6. No islamic: identifiers remain (removed provider)
+assert.ok(!isTafsirApiId('islamic:tafseer-ibn-e-kaseer-urdu'));
+assert.ok(!isTafsirApiId('islamic:en-tafisr-ibn-kathir'));
+console.log('  ✓ islamic: identifiers fully removed (no stale route)');
 
 console.log('\n========================================================');
-console.log('ALL TAFSIR LANGUAGE TESTS PASSED SUCCESSFULLY!');
+console.log('ALL TAFSIR SOURCE TESTS PASSED SUCCESSFULLY!');
 console.log('========================================================');

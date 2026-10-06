@@ -11,7 +11,6 @@ import { isAppOnline } from './useConnectivity';
 import { SURAHS_114 } from './surahs114';
 import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
-import { fetchIslamicTafsir } from './islamicTafsir';
 import { fetchTafsirApi } from './tafsirApi';
 
 export interface SurahMeta {
@@ -469,15 +468,8 @@ export async function fetchAyahTafsir(
     return result;
   }
 
-  // islamic.app tafsirs: identifier prefixed `islamic:<slug>` — fetch from
-  // islamic.app, which serves the 18 tafsirs across 6 languages.
-  if (tafsirIdentifier.startsWith('islamic:')) {
-    const slug = tafsirIdentifier.slice('islamic:'.length);
-    const r = await fetchIslamicTafsir(surah, ayah, slug);
-    const result = { text: r.text, edition: r.editionName, introOnly: r.introOnly === true };
-    saveQuranCache(key, result);
-    return result;
-  }
+  // islamic.app tafsir removed — the API served the surah intro for every
+  // ayah (defective). tafsir_api (`api:` prefix) is the tafsir provider now.
 
   try {
     const res = await fetchWithTimeout(`${BASE}/ayah/${surah}:${ayah}/${tafsirIdentifier}`, {}, 4000);
@@ -534,22 +526,7 @@ export async function fetchSurahTafsir(
     return out;
   }
 
-  // islamic.app tafsirs: identifier prefixed `islamic:<slug>`.
-  if (tafsirIdentifier.startsWith('islamic:')) {
-    const slug = tafsirIdentifier.slice('islamic:'.length);
-    const out: Array<{ ayahNumber: number; text: string }> = [];
-    // islamic.app serves the SURAH INTRO (1:1) for every ayah — so the only
-    // meaningful per-surah entry is ayah 1. Fetching the rest returns the
-    // same intro (the per-ayah duplication bug); avoid it.
-    try {
-      const r = await fetchIslamicTafsir(surah, 1, slug);
-      out.push({ ayahNumber: 1, text: r.text });
-    } catch {
-      // intro unavailable — no entries
-    }
-    if (!out.length) throw new Error('Tafsir unavailable');
-    return out;
-  }
+  // islamic.app tafsir removed (served surah intro for every ayah).
 
   const key = `tafsir:surah:${surah}:${tafsirIdentifier}`;
   const cached = loadQuranCache<Array<{ ayahNumber: number; text: string }>>(key);
