@@ -854,43 +854,6 @@ export default function QuranHomeScreen({
             })}
           </View>
 
-          {/* Search Input */}
-          <View
-            style={[
-              styles.searchBar,
-              {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
-              },
-            ]}
-          >
-            <Ionicons name="search" size={16} color={colors.textMuted} />
-            <TextInput
-              style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 12.5 : 13 }]}
-              placeholder={
-                verseRef
-                  ? `Jumping to ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || 'Surah'} ${verseRef?.ayah}…`
-                  : searchFilter === 'name'
-                  ? 'Search surah name…'
-                  : searchFilter === 'meaning'
-                  ? 'Search meaning…'
-                  : 'Search surah name or meaning…'
-              }
-              placeholderTextColor={colors.textMuted}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="search"
-              onSubmitEditing={submitSearch}
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-            )}
-          </View>
-
           {/* Verse Reference Hint */}
           {verseRef && (
             <View
@@ -1125,6 +1088,45 @@ export default function QuranHomeScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+      {/* Fixed search bar — OUTSIDE the FlatList header so the TextInput
+          never remounts on keystroke (which was dropping keyboard focus). */}
+      <View
+        style={[
+          styles.searchBar,
+          styles.searchBarFixed,
+          {
+            backgroundColor: colors.bgSurface,
+            borderColor: colors.borderSubtle,
+          },
+        ]}
+      >
+        <Ionicons name="search" size={16} color={colors.textMuted} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 12.5 : 13 }]}
+          placeholder={
+            verseRef
+              ? `Jumping to ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || 'Surah'} ${verseRef?.ayah}…`
+              : searchFilter === 'name'
+              ? 'Search surah name…'
+              : searchFilter === 'meaning'
+              ? 'Search meaning…'
+              : 'Search surah name or meaning…'
+          }
+          placeholderTextColor={colors.textMuted}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          returnKeyType="search"
+          onSubmitEditing={submitSearch}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
       <FlatList
         ref={listRef}
         data={filteredSurahs}
@@ -1440,6 +1442,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     marginBottom: 12,
+  },
+  searchBarFixed: {
+    marginHorizontal: 20,
+    marginTop: 12,
   },
   searchInput: {
     flex: 1,

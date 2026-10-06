@@ -42,18 +42,26 @@ export interface TajweedSpan {
   rule?: TajweedRule;
 }
 
-/** Parse islamic.app tajweed HTML into renderable spans. */
+/** Parse islamic.app tajweed HTML into renderable spans.
+ * Handles: <tajweed class=...>…</tajweed> spans, <span class=end>…</span>
+ * ayah-end markers (dropped — the app renders ۝N separately), and plain text.
+ */
 export function parseTajweedHtml(text: string): TajweedSpan[] {
   const spans: TajweedSpan[] = [];
-  const regex = /<tajweed class=([a-z_]+)>([^<]*)<\/tajweed>|([^<]+)/g;
+  // Match tajweed spans first; end-markers and all other tags are skipped;
+  // plain text (anything not inside a tag) is captured.
+  const regex = /<tajweed class=([a-z_]+)>([^<]*)<\/tajweed>|<\/?span class=end>|<\/?end[^>]*>|<[^>]+>|([^<]+)/g;
   let m: RegExpExecArray | null;
   while ((m = regex.exec(text)) !== null) {
     if (m[1]) {
       const rule = CLASS_MAP[m[1]];
       spans.push(rule ? { text: m[2] || '', rule } : { text: m[2] || '' });
     } else if (m[3]) {
-      spans.push({ text: m[3] });
+      // Plain text: trim the ayah-end marker digits if they slipped here
+      const clean = m[3].replace(/[\u0660-\u0669]+$/g, '').trim();
+      if (clean) spans.push({ text: clean });
     }
+    // m[2] (end marker contents) is intentionally dropped
   }
   return spans.length ? spans : [{ text }];
 }
