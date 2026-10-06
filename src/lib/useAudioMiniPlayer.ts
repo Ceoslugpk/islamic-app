@@ -27,7 +27,11 @@ export function useAudioMiniPlayer(): UseAudioMiniPlayerReturn {
     return () => {
       unsub();
     };
-  }, [playback]);
+    // Subscribe once on mount only. `playback`/`status` are intentionally NOT
+    // deps — including them would re-run this effect on every update and
+    // cause an infinite setState loop (the object identity changes each time).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const visible = playback !== null;
 

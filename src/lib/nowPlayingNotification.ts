@@ -224,9 +224,14 @@ export async function startNowPlayingNotification(): Promise<void> {
   // Drive native lock screen / Control Center / Dynamic Island / MediaSession
   syncNowPlaying().catch(() => {});
 
-  // On Android, expo-audio AudioControlsService posts the native MediaStyle notification;
-  // scheduling a second notification via expo-notifications causes duplicate alert banners.
-  if (Platform.OS === 'android') {
+  // iOS: the native MPNowPlayingInfoCenter lock-screen media controls (via
+  // syncNowPlaying → player.setActiveForLockScreen) ARE the proper media
+  // notification with play/pause/next/prev/seek. Posting an additional
+  // expo-notifications banner here creates a NEW notification on every ayah
+  // change — skip the banner on iOS entirely.
+  // Android: expo-audio AudioControlsService posts the native MediaStyle
+  // notification; scheduling a second one causes duplicate banners.
+  if (Platform.OS !== 'android') {
     return;
   }
 
@@ -258,7 +263,9 @@ export async function updateNowPlayingNotification(): Promise<void> {
   // Drive native lock screen / Control Center / Dynamic Island / MediaSession
   syncNowPlaying().catch(() => {});
 
-  if (Platform.OS === 'android') {
+  // iOS: native Now Playing handles everything — no banner updates.
+  // Android: native MediaStyle notification — no banner updates.
+  if (Platform.OS !== 'android') {
     return;
   }
 
