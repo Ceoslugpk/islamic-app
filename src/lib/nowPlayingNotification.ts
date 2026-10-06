@@ -1,7 +1,22 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-import { pause, resume, stop, playNext, playPrevious, getCurrentPlayback, getPlaybackStatus } from './quranAudio';
-import { syncNowPlaying, clearNowPlaying } from './systemMediaAdapter';
+import {
+  pause,
+  resume,
+  stop,
+  playNext,
+  playPrevious,
+  seekTo,
+  getCurrentPlayback,
+  getPlaybackStatus,
+  CurrentPlayback,
+} from './quranAudio';
+import {
+  syncNowPlaying,
+  clearNowPlaying,
+  formatNowPlayingMetadata,
+  ensureSystemMediaNotificationChannels,
+} from './systemMediaAdapter';
 
 const NOW_PLAYING_CHANNEL_ID = 'now-playing';
 const NOW_PLAYING_CATEGORY_ID = 'now-playing-media';
@@ -121,14 +136,17 @@ async function ensureChannelConfigured(): Promise<void> {
   if (isChannelConfigured || Platform.OS !== 'android') return;
 
   try {
+    // Pre-warm expo-audio channel with DEFAULT importance for OriginOS/HyperOS Island
+    await ensureSystemMediaNotificationChannels();
+
     await Notifications.setNotificationChannelAsync(NOW_PLAYING_CHANNEL_ID, {
       name: 'Now Playing',
       description: 'Media playback controls for Quran audio',
-      importance: Notifications.AndroidImportance.LOW,
+      importance: Notifications.AndroidImportance.DEFAULT,
       sound: null,
       enableVibrate: false,
       vibrationPattern: [],
-      lightColor: '#121110',
+      lightColor: '#0F5A4A',
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       bypassDnd: false,
       showBadge: false,
@@ -167,6 +185,18 @@ function setupResponseHandler(): void {
         stop(true);
         break;
       }
+      case 'skipForward':
+      case 'skip-forward': {
+        const status = getPlaybackStatus();
+        seekTo(status.positionMillis + 10000);
+        break;
+      }
+      case 'skipBackward':
+      case 'skip-backward': {
+        const status = getPlaybackStatus();
+        seekTo(Math.max(0, status.positionMillis - 10000));
+        break;
+      }
       default:
         break;
     }
@@ -185,20 +215,12 @@ async function ensureSetup(): Promise<boolean> {
 }
 
 function buildNotificationContent(
-  playback: { title: string; reciterName: string; surah?: number; ayah?: number } | null,
+  playback: CurrentPlayback | null,
   status: { isPlaying: boolean; positionMillis: number; durationMillis: number }
 ): Notifications.NotificationContentInput {
-  const title = playback?.title || 'Quran Playback';
-  const reciter = playback?.reciterName || 'Unknown Reciter';
-  const surah = playback?.surah;
-  const ayah = playback?.ayah;
-
-  let body = reciter;
-  if (surah && ayah) {
-    body += ` · Surah ${surah}:${ayah}`;
-  } else if (surah) {
-    body += ` · Surah ${surah}`;
-  }
+  const formatted = formatNowPlayingMetadata(playback, status as any);
+  const title = formatted.title;
+  const reciter = formatted.artist;
 
   const progressPercent = status.durationMillis > 0
     ? Math.round((status.positionMillis / status.durationMillis) * 100)
@@ -209,13 +231,13 @@ function buildNotificationContent(
   return {
     title,
     subtitle: reciter,
-    body: `${body}\n${progressText}`,
+    body: `${reciter}\n${progressText}`,
     categoryIdentifier: status.isPlaying ? NOW_PLAYING_CATEGORY_ID : NOW_PLAYING_PAUSED_CATEGORY_ID,
     sticky: true,
     autoDismiss: false,
     sound: false,
-    priority: Platform.OS === 'android' ? Notifications.AndroidNotificationPriority.LOW : undefined,
-    color: '#121110',
+    priority: Platform.OS === 'android' ? Notifications.AndroidNotificationPriority.DEFAULT : undefined,
+    color: '#0F5A4A',
     data: { nowPlaying: true },
   };
 }

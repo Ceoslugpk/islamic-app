@@ -21,6 +21,17 @@ let cachedTimestamp: number | null = null;
 let cachedStatus: LocationPermissionStatus | null = null;
 let inFlightRequest: Promise<Loc | null> | null = null;
 
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+function notifyListeners() {
+  listeners.forEach((l) => {
+    try {
+      l();
+    } catch {}
+  });
+}
+
 export function getCachedLocation(): Loc | null {
   return cachedLocation;
 }
@@ -36,9 +47,10 @@ export function getCachedLocationTimestamp(): number | null {
 export function setCachedLocation(loc: Loc | null, timestamp?: number): void {
   cachedLocation = loc;
   cachedTimestamp = timestamp ?? (loc ? Date.now() : null);
-  if (loc && cachedStatus !== 'denied') {
+  if (loc) {
     cachedStatus = 'granted';
   }
+  notifyListeners();
 }
 
 export function computeDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -58,19 +70,22 @@ export function computeDistanceKm(lat1: number, lon1: number, lat2: number, lon2
 export async function getPermissionStatus(): Promise<LocationPermissionStatus> {
   if (Platform.OS === 'web') {
     cachedStatus = 'unavailable';
+    notifyListeners();
     return 'unavailable';
   }
   try {
     const perm = await Location.getForegroundPermissionsAsync();
     const status: LocationPermissionStatus = perm.granted
       ? 'granted'
-      : perm.status === 'denied'
+      : perm.status === 'denied' && !perm.canAskAgain
       ? 'denied'
       : 'pending';
     cachedStatus = status;
+    notifyListeners();
     return status;
   } catch {
     cachedStatus = 'unavailable';
+    notifyListeners();
     return 'unavailable';
   }
 }
@@ -85,8 +100,9 @@ export async function refreshLocationSilently(): Promise<Loc | null> {
   try {
     const perm = await Location.getForegroundPermissionsAsync();
     if (!perm.granted) {
-      if (perm.status === 'denied') {
+      if (perm.status === 'denied' && !perm.canAskAgain) {
         cachedStatus = 'denied';
+        notifyListeners();
       }
       return null;
     }
@@ -120,6 +136,7 @@ export async function refreshLocationSilently(): Promise<Loc | null> {
     cachedLocation = newLoc;
     cachedTimestamp = Date.now();
     cachedStatus = 'granted';
+    notifyListeners();
     return newLoc;
   } catch {
     return null;
@@ -199,12 +216,14 @@ export function useLocation(askOnMount = false): UseLocationResult {
             cachedStatus = 'granted';
             setLocation(newLoc);
             setStatus('granted');
+            notifyListeners();
             setLoading(false);
             resolve(newLoc);
           },
           (err) => {
             setStatus(err?.code === 1 ? 'denied' : 'unavailable');
             cachedStatus = err?.code === 1 ? 'denied' : 'unavailable';
+            notifyListeners();
             setLoading(false);
             resolve(null);
           },
@@ -220,18 +239,35 @@ export function useLocation(askOnMount = false): UseLocationResult {
       return cachedLocation;
     }
 
-    // Reuse in-flight promise to avoid duplicate concurrent calls
+    // Handle in-flight request:
+    // If NOT forcing, reuse in-flight promise to avoid duplicate concurrent calls.
+    // If FORCING, await existing in-flight first; if it yielded a valid location, return it,
+    // but if it returned null (e.g. from an unprompted background check), DO NOT give up —
+    // proceed to run our own forced request with explicit prompt!
     if (inFlightRequest) {
-      setLoading(true);
-      try {
-        const res = await inFlightRequest;
-        if (res) {
-          setLocation(res);
-          setStatus('granted');
+      if (!force) {
+        setLoading(true);
+        try {
+          const res = await inFlightRequest;
+          if (res) {
+            setLocation(res);
+            setStatus('granted');
+          }
+          return res;
+        } finally {
+          setLoading(false);
         }
-        return res;
-      } finally {
-        setLoading(false);
+      } else {
+        try {
+          const res = await inFlightRequest;
+          if (res) {
+            setLocation(res);
+            setStatus('granted');
+            return res;
+          }
+        } catch {
+          // ignore and proceed with force request
+        }
       }
     }
 
@@ -239,23 +275,25 @@ export function useLocation(askOnMount = false): UseLocationResult {
 
     const exec = async (): Promise<Loc | null> => {
       try {
-        // Already permanently denied: don't re-prompt — the only path back is
-        // the OS settings screen (see LocationPermissionNote "Device Settings").
-        if (cachedStatus === 'denied') {
-          setStatus('denied');
-          return null;
-        }
-
         // Query permission silently first without prompting
         const currentPerm = await Location.getForegroundPermissionsAsync();
         let isGranted = currentPerm.granted;
 
         if (!isGranted) {
-          // Explicit prompt only if not already granted
-          const { status: permStatus } = await Location.requestForegroundPermissionsAsync();
-          if (permStatus !== 'granted') {
+          // If NOT forcing, do not prompt if permanently denied
+          if (!force && (cachedStatus === 'denied' || !currentPerm.canAskAgain)) {
             setStatus('denied');
             cachedStatus = 'denied';
+            notifyListeners();
+            return null;
+          }
+
+          // Explicit prompt for user
+          const { status: permStatus, granted } = await Location.requestForegroundPermissionsAsync();
+          if (!granted && permStatus !== 'granted') {
+            setStatus('denied');
+            cachedStatus = 'denied';
+            notifyListeners();
             return null;
           }
           isGranted = true;
@@ -271,7 +309,15 @@ export function useLocation(askOnMount = false): UseLocationResult {
         const lastKnown = await Location.getLastKnownPositionAsync().catch(() => null);
         let pos = lastKnown;
         if (!pos || Date.now() - pos.timestamp > 3600000) {
-          pos = await Promise.race([posPromise, timeoutPromise]);
+          try {
+            pos = await Promise.race([posPromise, timeoutPromise]);
+          } catch {
+            if (lastKnown) {
+              pos = lastKnown;
+            } else {
+              throw new Error('Location request timed out');
+            }
+          }
         }
         if (!pos) return null;
 
@@ -290,6 +336,7 @@ export function useLocation(askOnMount = false): UseLocationResult {
         cachedStatus = 'granted';
         setLocation(newLoc);
         setStatus('granted');
+        notifyListeners();
         return newLoc;
       } catch (err: any) {
         const msg = String(err?.message || '').toLowerCase();
@@ -300,6 +347,7 @@ export function useLocation(askOnMount = false): UseLocationResult {
           setStatus('unavailable');
           cachedStatus = 'unavailable';
         }
+        notifyListeners();
         return null;
       } finally {
         setLoading(false);
@@ -319,6 +367,20 @@ export function useLocation(askOnMount = false): UseLocationResult {
   const refresh = useCallback(() => {
     return performRequest(true);
   }, [performRequest]);
+
+  // Multi-hook instance synchronization: listen for module cache updates
+  useEffect(() => {
+    const onChange = () => {
+      setLocation(cachedLocation);
+      if (Platform.OS !== 'web') {
+        setStatus(cachedStatus || 'pending');
+      }
+    };
+    listeners.add(onChange);
+    return () => {
+      listeners.delete(onChange);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;

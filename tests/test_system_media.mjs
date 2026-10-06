@@ -43,6 +43,38 @@ const SURAHS_114 = [
   { number: 114, name: 'النَّاس', englishName: 'An-Nas', numberOfAyahs: 6, revelationType: 'Meccan' },
 ];
 
+function getShortReciterName(reciterName, identifier) {
+  if (identifier) {
+    const idLower = identifier.toLowerCase();
+    if (idLower.includes('alafasy') || idLower.includes('afasy')) return 'Alafasy';
+    if (idLower.includes('minshawi')) return 'Al-Minshawi';
+    if (idLower.includes('husary') || idLower.includes('hussary')) return 'Al-Husary';
+    if (idLower.includes('abdulbasit') || idLower.includes('abdul_basit') || idLower.includes('basit')) return 'Abdul Basit';
+    if (idLower.includes('ghamadi')) return 'Al-Ghamadi';
+    if (idLower.includes('shuraym') || idLower.includes('shuraim')) return 'Al-Shuraym';
+    if (idLower.includes('sudais')) return 'Al-Sudais';
+    if (idLower.includes('ajamy') || idLower.includes('ajmi')) return 'Al-Ajamy';
+    if (idLower.includes('rifai')) return 'Al-Rifai';
+  }
+  if (!reciterName) return 'Arabic';
+  const nameLower = reciterName.toLowerCase();
+  if (nameLower.includes('alafasy') || nameLower.includes('al-afasy')) return 'Alafasy';
+  if (nameLower.includes('minshawi')) return 'Al-Minshawi';
+  if (nameLower.includes('husary') || nameLower.includes('hussary')) return 'Al-Husary';
+  if (nameLower.includes('abdulbasit') || nameLower.includes('abdul basit')) return 'Abdul Basit';
+  if (nameLower.includes('ghamadi')) return 'Al-Ghamadi';
+  if (nameLower.includes('shuraym') || nameLower.includes('shuraim')) return 'Al-Shuraym';
+  if (nameLower.includes('sudais')) return 'Al-Sudais';
+  if (nameLower.includes('ajamy') || nameLower.includes('ajmi')) return 'Al-Ajamy';
+  if (nameLower.includes('rifai')) return 'Al-Rifai';
+
+  const parts = reciterName.trim().split(/\s+/);
+  if (parts.length > 2) {
+    return parts[parts.length - 1];
+  }
+  return reciterName;
+}
+
 function formatNowPlayingMetadata(playback, status) {
   if (!playback) {
     return {
@@ -65,13 +97,14 @@ function formatNowPlayingMetadata(playback, status) {
     };
     const engName = surahMeta?.englishName || `Surah ${surahNum}`;
     const arName = surahMeta?.name || '';
+    const baseSurah = arName ? `Surah ${engName} · ${arName}` : `Surah ${engName}`;
 
     // Translation segment
     if (playback.segmentType === 'translation') {
-      const lang = playback.translationLang || 'Translation';
-      const ayahLabel = ayahNum ? ` ${surahNum}:${ayahNum}` : '';
+      const lang = playback.translationLang || 'English';
+      const ayahBadge = ayahNum ? ` · Ayah ${ayahNum}` : '';
       return {
-        title: `Translation (${lang}) · ${engName}${ayahLabel}`,
+        title: `${baseSurah} — Translation (${lang})${ayahBadge}`,
         artist: reciter,
         albumTitle: arName ? `سُورَةُ ${arName} · Surah ${engName}` : `Surah ${engName}`,
         surahEnglishName: engName,
@@ -80,10 +113,9 @@ function formatNowPlayingMetadata(playback, status) {
     }
 
     // Ayah playback
-    if (ayahNum) {
-      const totalAyahs = surahMeta?.numberOfAyahs ? `/${surahMeta.numberOfAyahs}` : '';
+    if (playback.type === 'ayah' && ayahNum) {
       return {
-        title: `${engName} · ${arName} (${ayahNum}${totalAyahs})`,
+        title: `${baseSurah} — Ayah ${ayahNum} (Arabic)`,
         artist: reciter,
         albumTitle: `سُورَةُ ${arName} · Surah ${engName}`,
         surahEnglishName: engName,
@@ -92,8 +124,9 @@ function formatNowPlayingMetadata(playback, status) {
     }
 
     // Full Surah playback
+    const shortReciter = getShortReciterName(reciter, playback.identifier);
     return {
-      title: `Surah ${engName} · سُورَةُ ${arName}`,
+      title: `${baseSurah} — Arabic (${shortReciter})`,
       artist: reciter,
       albumTitle: 'The Noble Quran · القران الكريم',
       surahEnglishName: engName,
@@ -127,7 +160,7 @@ console.log('Test 1: Arabic Ayah metadata formatting (Al-Fatihah 1:1)...');
   };
 
   const meta = formatNowPlayingMetadata(playback);
-  assert.equal(meta.title, 'Al-Fatihah · الفَاتِحة (1/7)');
+  assert.equal(meta.title, 'Surah Al-Fatihah · الفَاتِحة — Ayah 1 (Arabic)');
   assert.equal(meta.artist, 'Mishari Rashid al-Afasy');
   assert.equal(meta.albumTitle, 'سُورَةُ الفَاتِحة · Surah Al-Fatihah');
   assert.equal(meta.surahEnglishName, 'Al-Fatihah');
@@ -154,16 +187,16 @@ console.log('Test 2: Translation segment metadata formatting...');
   };
 
   const meta = formatNowPlayingMetadata(playback);
-  assert.equal(meta.title, 'Translation (English) · Al-Fatihah 1:1');
+  assert.equal(meta.title, 'Surah Al-Fatihah · الفَاتِحة — Translation (English) · Ayah 1');
   assert.equal(meta.artist, 'Sahih International (Ibrahim Walk)');
   assert.equal(meta.albumTitle, 'سُورَةُ الفَاتِحة · Surah Al-Fatihah');
   console.log('  ✓ PASSED');
 }
 
 // -------------------------------------------------------------
-// Test 3: Full Surah metadata mapping
+// Test 3: Full Surah metadata mapping (Arabic vs Translation)
 // -------------------------------------------------------------
-console.log('Test 3: Full Surah playback metadata formatting...');
+console.log('Test 3: Full Surah playback metadata formatting (Arabic & Translation)...');
 {
   const playback = {
     identifier: 'ar.alafasy',
@@ -176,9 +209,25 @@ console.log('Test 3: Full Surah playback metadata formatting...');
   };
 
   const meta = formatNowPlayingMetadata(playback);
-  assert.equal(meta.title, 'Surah Al-Ikhlas · سُورَةُ الإخْلَاص');
+  assert.equal(meta.title, 'Surah Al-Ikhlas · الإخْلَاص — Arabic (Alafasy)');
   assert.equal(meta.artist, 'Mishari Rashid al-Afasy');
   assert.equal(meta.albumTitle, 'The Noble Quran · القران الكريم');
+
+  // Also test full surah translation mode
+  const playbackTrans = {
+    identifier: 'en.walk',
+    reciterName: 'Sahih International',
+    title: 'Surah 1',
+    isPlaying: true,
+    type: 'surah',
+    surah: 1,
+    segmentType: 'translation',
+    translationLang: 'English',
+  };
+  const metaTrans = formatNowPlayingMetadata(playbackTrans);
+  assert.equal(metaTrans.title, 'Surah Al-Fatihah · الفَاتِحة — Translation (English)');
+  assert.equal(metaTrans.artist, 'Sahih International');
+  assert.equal(metaTrans.albumTitle, 'سُورَةُ الفَاتِحة · Surah Al-Fatihah');
   console.log('  ✓ PASSED');
 }
 

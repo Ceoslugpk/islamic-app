@@ -302,6 +302,7 @@ export default function HomeScreen({
     effectiveLocation.label,
     settings.methodId,
     settings.madhab,
+    settings.locationMode,
   ]);
 
   // Calendar date rollover effect: when midnight passes, load new day's schedule

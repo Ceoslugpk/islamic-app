@@ -69,8 +69,8 @@ export async function getOrPrepareQuranArtworkUri(
   playback?: { surah?: number; ayah?: number } | null
 ): Promise<string | null> {
   const surah = playback?.surah;
-  const ayah = playback?.ayah;
-  if (!surah || !ayah) return null;
+  const ayah = playback?.ayah || 1; // Support full surah mode too by using ayah 1
+  if (!surah) return null;
 
   const filename = `quran_artwork_${surah}_${ayah}.png`;
   const fileUri = `${FileSystem.cacheDirectory}${filename}`;
@@ -133,11 +133,44 @@ export async function getOrPrepareArtworkUri(preferredDark?: boolean): Promise<s
   }
 }
 
+export function getShortReciterName(reciterName?: string, identifier?: string): string {
+  if (identifier) {
+    const idLower = identifier.toLowerCase();
+    if (idLower.includes('alafasy') || idLower.includes('afasy')) return 'Alafasy';
+    if (idLower.includes('minshawi')) return 'Al-Minshawi';
+    if (idLower.includes('husary') || idLower.includes('hussary')) return 'Al-Husary';
+    if (idLower.includes('abdulbasit') || idLower.includes('abdul_basit') || idLower.includes('basit')) return 'Abdul Basit';
+    if (idLower.includes('ghamadi')) return 'Al-Ghamadi';
+    if (idLower.includes('shuraym') || idLower.includes('shuraim')) return 'Al-Shuraym';
+    if (idLower.includes('sudais')) return 'Al-Sudais';
+    if (idLower.includes('ajamy') || idLower.includes('ajmi')) return 'Al-Ajamy';
+    if (idLower.includes('rifai')) return 'Al-Rifai';
+  }
+  if (!reciterName) return 'Arabic';
+  const nameLower = reciterName.toLowerCase();
+  if (nameLower.includes('alafasy') || nameLower.includes('al-afasy')) return 'Alafasy';
+  if (nameLower.includes('minshawi')) return 'Al-Minshawi';
+  if (nameLower.includes('husary') || nameLower.includes('hussary')) return 'Al-Husary';
+  if (nameLower.includes('abdulbasit') || nameLower.includes('abdul basit')) return 'Abdul Basit';
+  if (nameLower.includes('ghamadi')) return 'Al-Ghamadi';
+  if (nameLower.includes('shuraym') || nameLower.includes('shuraim')) return 'Al-Shuraym';
+  if (nameLower.includes('sudais')) return 'Al-Sudais';
+  if (nameLower.includes('ajamy') || nameLower.includes('ajmi')) return 'Al-Ajamy';
+  if (nameLower.includes('rifai')) return 'Al-Rifai';
+
+  const parts = reciterName.trim().split(/\s+/);
+  if (parts.length > 2) {
+    return parts[parts.length - 1];
+  }
+  return reciterName;
+}
+
 /**
  * Formats Quran playback metadata honoring both English and Arabic titles:
- * - Ayah: "Al-Fatihah · الفَاتِحة (1/7)", artist: reciter, album: "سُورَةُ الفَاتِحة · Surah Al-Fatihah"
- * - Translation: "Translation (English) · Al-Fatihah 1:1"
- * - Surah: "Surah Al-Fatihah · سُورَةُ الفَاتِحة", album: "The Noble Quran · القران الكريم"
+ * - Ayah Arabic: "Surah Al-Fatihah · الفَاتِحة — Ayah 1 (Arabic)", artist: reciter, album: "سُورَةُ الفَاتِحة · Surah Al-Fatihah"
+ * - Ayah Translation: "Surah Al-Fatihah · الفَاتِحة — Translation (English) · Ayah 1", artist: reciter
+ * - Surah Arabic: "Surah Al-Fatihah · الفَاتِحة — Arabic (Alafasy)", album: "The Noble Quran · القران الكريم"
+ * - Surah Translation: "Surah Al-Fatihah · الفَاتِحة — Translation (English)"
  * - Custom: preserves title from CurrentPlayback
  */
 export function formatNowPlayingMetadata(
@@ -166,13 +199,14 @@ export function formatNowPlayingMetadata(
     const surahMeta = SURAHS_114[surahNum - 1];
     const engName = surahMeta?.englishName || `Surah ${surahNum}`;
     const arName = surahMeta?.name || '';
+    const baseSurah = arName ? `Surah ${engName} · ${arName}` : `Surah ${engName}`;
 
-    // Translation segment
+    // Translation segment (either single ayah or whole surah)
     if (playback.segmentType === 'translation') {
-      const lang = playback.translationLang || 'Translation';
-      const ayahLabel = ayahNum ? ` ${surahNum}:${ayahNum}` : '';
+      const lang = playback.translationLang || 'English';
+      const ayahBadge = ayahNum ? ` · Ayah ${ayahNum}` : '';
       return {
-        title: `Translation (${lang}) · ${engName}${ayahLabel}`,
+        title: `${baseSurah} — Translation (${lang})${ayahBadge}`,
         artist: reciter,
         albumTitle: arName ? `سُورَةُ ${arName} · Surah ${engName}` : `Surah ${engName}`,
         surahEnglishName: engName,
@@ -180,21 +214,21 @@ export function formatNowPlayingMetadata(
       };
     }
 
-    // Ayah playback
-    if (ayahNum) {
-      const totalAyahs = surahMeta?.numberOfAyahs ? `/${surahMeta.numberOfAyahs}` : '';
+    // Ayah playback (Arabic)
+    if (playback.type === 'ayah' && ayahNum) {
       return {
-        title: `${engName} · ${arName} (${ayahNum}${totalAyahs})`,
+        title: `${baseSurah} — Ayah ${ayahNum} (Arabic)`,
         artist: reciter,
-        albumTitle: `سُورَةُ ${arName} · Surah ${engName}`,
+        albumTitle: arName ? `سُورَةُ ${arName} · Surah ${engName}` : `Surah ${engName}`,
         surahEnglishName: engName,
         surahArabicName: arName,
       };
     }
 
-    // Full Surah playback
+    // Full Surah playback (Arabic)
+    const shortReciter = getShortReciterName(reciter, playback.identifier);
     return {
-      title: `Surah ${engName} · سُورَةُ ${arName}`,
+      title: `${baseSurah} — Arabic (${shortReciter})`,
       artist: reciter,
       albumTitle: 'The Noble Quran · القران الكريم',
       surahEnglishName: engName,
@@ -237,10 +271,20 @@ export async function syncNowPlaying(meta?: Partial<SystemMediaMetadata>): Promi
   const artist = meta?.reciter || formatted.artist;
   const albumTitle = meta?.arabicTitle || formatted.albumTitle;
   const isPlaying = meta?.isPlaying ?? status.isPlaying;
-  // Prefer the real Quran page image for the current ayah (lights up the
-  // lock screen + Origin Island); fall back to the embedded logo.
-  const quranArtwork = await getOrPrepareQuranArtworkUri(playback).catch(() => null);
-  const artworkUri = meta?.artworkUrl || quranArtwork || (await getOrPrepareArtworkUri());
+  // For external surfaces like OriginOS Island / SystemUI that cannot read app internal file:// URIs,
+  // we pass the public HTTPS CDN URL so the system can resolve the image directly.
+  // We also trigger local background caching via getOrPrepareQuranArtworkUri so offline fallback works.
+  const surah = playback.surah;
+  const ayah = playback.ayah || 1;
+  const cdnArtworkUrl = surah ? `${QURAN_IMAGE_CDN}/${surah}_${ayah}.png` : null;
+
+  // Background warm local file cache
+  getOrPrepareQuranArtworkUri(playback).catch(() => null);
+
+  const localArtworkUri = await getOrPrepareQuranArtworkUri(playback).catch(() => null);
+  const fallbackLogoUri = await getOrPrepareArtworkUri();
+
+  const artworkUri = meta?.artworkUrl || cdnArtworkUrl || localArtworkUri || fallbackLogoUri;
 
   // Web platform
   if (Platform.OS === 'web') {
@@ -507,6 +551,44 @@ let isAdapterInitialized = false;
 let adapterCleanup: (() => void) | null = null;
 
 /**
+ * Ensures system media notification channels are pre-configured on Android with DEFAULT
+ * importance so vivo OriginOS Origin/Atomic Island, HyperOS Island, and Android MediaStyle
+ * treat the session as active foreground media (not filtered as silent LOW importance).
+ */
+export async function ensureSystemMediaNotificationChannels(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  try {
+    await Notifications.setNotificationChannelAsync('expo_audio_channel', {
+      name: 'Quran Audio Player',
+      description: 'Media playback and lock screen controls',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: null,
+      enableVibrate: false,
+      vibrationPattern: [],
+      lightColor: '#0F5A4A',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: false,
+      showBadge: false,
+    });
+
+    await Notifications.setNotificationChannelAsync('now-playing', {
+      name: 'Now Playing',
+      description: 'Media playback controls for Quran audio',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: null,
+      enableVibrate: false,
+      vibrationPattern: [],
+      lightColor: '#0F5A4A',
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: false,
+      showBadge: false,
+    });
+  } catch {
+    // Non-fatal
+  }
+}
+
+/**
  * Subscribes ONCE to quranAudio singleton state so the adapter tracks
  * play/pause/stop/seek/rate/surah-change automatically. Safe for initial bundle evaluation
  * (no native module calls during module evaluation).
@@ -541,11 +623,14 @@ export function initSystemMediaAdapter(): () => void {
   // 4. Notification response listener
   const unsubNotifications = setupNotificationResponseHandler();
 
-  // 5. Pre-warm artwork in cache asynchronously
+  // 5. Pre-warm media notification channels for OriginOS / lock screen integration
+  ensureSystemMediaNotificationChannels().catch(() => {});
+
+  // 6. Pre-warm artwork in cache asynchronously
   getOrPrepareArtworkUri(false).catch(() => {});
   getOrPrepareArtworkUri(true).catch(() => {});
 
-  // 6. If playback is already active at call time, sync immediately
+  // 7. If playback is already active at call time, sync immediately
   const existingPlayback = getCurrentPlayback();
   if (existingPlayback) {
     syncNowPlaying().catch(() => {});
