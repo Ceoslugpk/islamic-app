@@ -28,6 +28,7 @@ export const TAFSIR_API_TAFSIRS: TafsirApiEntry[] = [
   { slug: 'tafseer-ibn-e-kaseer-urdu', language: 'Urdu', languageCode: 'ur', author: 'Ibn Kathir (Urdu)', direction: 'rtl' },
   { slug: 'ur-tafsir-as-saadi-urdu', language: 'Urdu', languageCode: 'ur', author: "As-Sa'di (Urdu)", direction: 'rtl' },
   { slug: 'tazkiru-quran-ur', language: 'Urdu', languageCode: 'ur', author: 'Tazkirul Quran (Urdu)', direction: 'rtl' },
+  { slug: 'ur-tafsir-bayan-ul-quran', language: 'Urdu', languageCode: 'ur', author: 'Dr. Israr Ahmad', direction: 'rtl' },
   // Bengali
   { slug: 'bengali-mokhtasar', language: 'Bengali', languageCode: 'bn', author: 'Bengali Mokhtasar', direction: 'ltr' },
   // Arabic

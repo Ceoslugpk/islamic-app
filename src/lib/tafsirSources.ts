@@ -88,6 +88,7 @@ export const TAFSIR_SOURCES: TafsirSource[] = [
   { id: 'api-ibn-kathir-urdu', name: 'Tafsir Ibn Kathir (Urdu)', identifier: 'api:tafseer-ibn-e-kaseer-urdu', language: 'Urdu', languageCode: 'ur', author: 'Ibn Kathir', note: 'Real per-ayah Urdu tafsir' },
   { id: 'api-saadi-urdu', name: "Tafsir As-Sa'di (Urdu)", identifier: 'api:ur-tafsir-as-saadi-urdu', language: 'Urdu', languageCode: 'ur', author: "As-Sa'di", note: 'Urdu tafsir by As-Sa\'di' },
   { id: 'api-tazkirul-urdu', name: 'Tazkirul Quran (Urdu)', identifier: 'api:tazkiru-quran-ur', language: 'Urdu', languageCode: 'ur', author: 'Maulana Wahiduddin Khan', note: 'Contemporary Urdu tafsir' },
+  { id: 'api-bayan-ul-quran', name: 'Tafsir Bayan-ul-Quran (Dr. Israr Ahmad)', identifier: 'api:ur-tafsir-bayan-ul-quran', language: 'Urdu', languageCode: 'ur', author: 'Dr. Israr Ahmad', note: 'Urdu tafsir by Dr. Israr Ahmad, per ayah' },
   { id: 'api-mokhtasar-bn', name: 'Bengali Mokhtasar', identifier: 'api:bengali-mokhtasar', language: 'Bengali', languageCode: 'bn', author: 'Mokhtasar', note: 'Bengali abridged tafsir' },
   { id: 'api-ibn-kathir-ar', name: 'Tafsir Ibn Kathir (Arabic)', identifier: 'api:tafsir-ibn-kathir', language: 'Arabic', languageCode: 'ar', author: 'Ibn Kathir', note: 'The classic Arabic tafsir, per ayah' },
   { id: 'api-tabari-ar', name: 'Tafsir al-Tabari (Arabic)', identifier: 'api:tafsir-al-tabari', language: 'Arabic', languageCode: 'ar', author: 'Al-Tabari', note: 'Foundational classical Arabic tafsir' },
