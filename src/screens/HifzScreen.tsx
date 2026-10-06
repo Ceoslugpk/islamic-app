@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
+  BackHandler,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -44,6 +45,16 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
     const loaded = loadHifzStatuses();
     setStatuses(loaded);
   }, []);
+
+  // Return from practice sub-screen on Android hardware back
+  useEffect(() => {
+    if (practiceSurah === null) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setPracticeSurah(null);
+      return true;
+    });
+    return () => sub.remove();
+  }, [practiceSurah]);
 
   const handleCycleStatus = useCallback(async (surahNumber: number) => {
     try {

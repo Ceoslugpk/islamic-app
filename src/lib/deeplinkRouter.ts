@@ -3,9 +3,56 @@ import { getReadingPosition } from './continuing';
 
 export type NavigationSetters = {
   setTab: (tab: 'home' | 'quran' | 'library' | 'tools') => void;
-  setQuran: (view: { screen: 'home' } | { screen: 'reader'; surah: number; initialAyah?: number } | { screen: 'audio' } | { screen: 'tafsir'; surah?: number } | { screen: 'topics' } | { screen: 'compare'; surah?: number; ayah?: number } | { screen: 'bookmarks' } | { screen: 'notes' } | { screen: 'plans' } | { screen: 'hifz' }) => void;
-  setLibrary: (view: { screen: 'hub' } | { screen: 'tasbih' } | { screen: 'names' } | { screen: 'duas' } | { screen: 'hadith' }) => void;
-  setTools: (view: { screen: 'hub' } | { screen: 'qibla' } | { screen: 'tracker' } | { screen: 'location' } | { screen: 'cities' } | { screen: 'notifications' } | { screen: 'prayer-reminders' } | { screen: 'fasting' } | { screen: 'zakat' } | { screen: 'calendar' } | { screen: 'mosque' } | { screen: 'women-cycle' } | { screen: 'women-purity' } | { screen: 'women-guidance' } | { screen: 'women-qada' }) => void;
+  setQuran: (view:
+    | { screen: 'home' }
+    | { screen: 'reader'; surah: number; initialAyah?: number }
+    | { screen: 'audio' }
+    | { screen: 'tafsir'; surah?: number }
+    | { screen: 'topics' }
+    | { screen: 'compare'; surah?: number; ayah?: number }
+    | { screen: 'bookmarks' }
+    | { screen: 'notes' }
+    | { screen: 'plans' }
+    | { screen: 'hifz' }
+  ) => void;
+  setLibrary: (view:
+    | { screen: 'hub' }
+    | { screen: 'tasbih' }
+    | { screen: 'names' }
+    | { screen: 'names-prophet' }
+    | { screen: 'duas' }
+    | { screen: 'hadith' }
+    | { screen: 'ramadan-guide' }
+    | { screen: 'prayer-guide' }
+    | { screen: 'shahada' }
+    | { screen: 'downloads' }
+    | { screen: 'vocab' }
+    | { screen: 'summary' }
+    | { screen: 'tajweed' }
+  ) => void;
+  setTools: (view:
+    | { screen: 'hub' }
+    | { screen: 'qibla' }
+    | { screen: 'tracker' }
+    | { screen: 'location' }
+    | { screen: 'cities' }
+    | { screen: 'notifications' }
+    | { screen: 'prayer-reminders' }
+    | { screen: 'fasting' }
+    | { screen: 'zakat' }
+    | { screen: 'calendar' }
+    | { screen: 'mosque' }
+    | { screen: 'women-cycle' }
+    | { screen: 'women-purity' }
+    | { screen: 'women-guidance' }
+    | { screen: 'women-qada' }
+    | { screen: 'umrah-guide' }
+    | { screen: 'umrah-resources' }
+    | { screen: 'hajj-journey' }
+    | { screen: 'makkah-live' }
+    | { screen: 'madinah-live' }
+    | { screen: 'hajj-live' }
+  ) => void;
   setSettingsOpen: (open: boolean) => void;
 };
 
@@ -50,6 +97,70 @@ export async function handleDeepLink(
       break;
     }
 
+    case 'quran-audio': {
+      setTab('quran');
+      setQuran({ screen: 'audio' });
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'tafsir': {
+      setTab('quran');
+      setQuran({ screen: 'tafsir', surah: target.surah });
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'topics': {
+      setTab('quran');
+      setQuran({ screen: 'topics' });
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'compare': {
+      setTab('quran');
+      setQuran({ screen: 'compare', surah: target.surah, ayah: target.ayah });
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'bookmarks': {
+      setTab('quran');
+      setQuran({ screen: 'bookmarks' });
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'notes': {
+      setTab('quran');
+      setQuran({ screen: 'notes' });
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'plans': {
+      setTab('quran');
+      setQuran({ screen: 'plans' });
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'hifz': {
+      setTab('quran');
+      setQuran({ screen: 'hifz' });
+      setLibrary({ screen: 'hub' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
     case 'hadith': {
       setTab('library');
       setLibrary({ screen: 'hadith' });
@@ -58,9 +169,67 @@ export async function handleDeepLink(
       break;
     }
 
+    case 'tajweed': {
+      setTab('library');
+      setLibrary({ screen: 'tajweed' });
+      setQuran({ screen: 'home' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'ramadan-guide': {
+      setTab('library');
+      setLibrary({ screen: 'ramadan-guide' });
+      setQuran({ screen: 'home' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'prayer-guide': {
+      setTab('library');
+      setLibrary({ screen: 'prayer-guide' });
+      setQuran({ screen: 'home' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'shahada': {
+      setTab('library');
+      setLibrary({ screen: 'shahada' });
+      setQuran({ screen: 'home' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'downloads': {
+      setTab('library');
+      setLibrary({ screen: 'downloads' });
+      setQuran({ screen: 'home' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'vocab': {
+      setTab('library');
+      setLibrary({ screen: 'vocab' });
+      setQuran({ screen: 'home' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
+    case 'summary': {
+      setTab('library');
+      setLibrary({ screen: 'summary' });
+      setQuran({ screen: 'home' });
+      setTools({ screen: 'hub' });
+      break;
+    }
+
     case 'live': {
       setTab('tools');
-      setTools({ screen: 'hub' });
+      if (target.channel === 'madinah') setTools({ screen: 'madinah-live' });
+      else if (target.channel === 'hajj') setTools({ screen: 'hajj-live' });
+      else setTools({ screen: 'makkah-live' });
       setQuran({ screen: 'home' });
       setLibrary({ screen: 'hub' });
       break;
@@ -129,7 +298,11 @@ export async function handleDeepLink(
 
     case 'names': {
       setTab('library');
-      setLibrary({ screen: 'names' });
+      if (target.variant === 'prophet') {
+        setLibrary({ screen: 'names-prophet' });
+      } else {
+        setLibrary({ screen: 'names' });
+      }
       setQuran({ screen: 'home' });
       setTools({ screen: 'hub' });
       break;
@@ -155,6 +328,86 @@ export async function handleDeepLink(
     case 'calendar': {
       setTab('tools');
       setTools({ screen: 'calendar' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'cities': {
+      setTab('tools');
+      setTools({ screen: 'cities' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'location': {
+      setTab('tools');
+      setTools({ screen: 'location' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'prayer-reminders': {
+      setTab('tools');
+      setTools({ screen: 'prayer-reminders' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'umrah-guide': {
+      setTab('tools');
+      setTools({ screen: 'umrah-guide' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'umrah-resources': {
+      setTab('tools');
+      setTools({ screen: 'umrah-resources' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'hajj-journey': {
+      setTab('tools');
+      setTools({ screen: 'hajj-journey' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'women-cycle': {
+      setTab('tools');
+      setTools({ screen: 'women-cycle' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'women-purity': {
+      setTab('tools');
+      setTools({ screen: 'women-purity' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'women-guidance': {
+      setTab('tools');
+      setTools({ screen: 'women-guidance' });
+      setQuran({ screen: 'home' });
+      setLibrary({ screen: 'hub' });
+      break;
+    }
+
+    case 'women-qada': {
+      setTab('tools');
+      setTools({ screen: 'women-qada' });
       setQuran({ screen: 'home' });
       setLibrary({ screen: 'hub' });
       break;

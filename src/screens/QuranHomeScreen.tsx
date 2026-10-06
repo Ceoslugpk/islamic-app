@@ -226,8 +226,7 @@ export default function QuranHomeScreen({
   }, [verseRef, searchQuery, onOpenSurah]);
 
   // Restore the surah list scroll position when the tab remounts
-  // (App.tsx unmounts tab screens on switch, so lists otherwise reset to top).
-  useFlatListRestore('quran-home-scroll', listRef);
+  const { onScroll: onSurahListScroll } = useFlatListRestore('quran-home-scroll', listRef);
 
   const handleSelectJuz = (j: number) => {
     const nextJuz = selectedJuz === j ? null : j;
@@ -469,6 +468,7 @@ export default function QuranHomeScreen({
             <Text style={[styles.recentHeading, { color: colors.textMuted }]}>RECENTLY READ</Text>
             <ScrollView
               horizontal
+              nestedScrollEnabled
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={[styles.recentScroll, { gap: isNarrow ? 8 : 10 }]}
             >
@@ -707,6 +707,7 @@ export default function QuranHomeScreen({
         <View style={styles.hubChipsRow}>
           <ScrollView
             horizontal
+            nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[styles.hubChipsScroll, { gap: isNarrow ? 6 : 8 }]}
           >
@@ -887,6 +888,7 @@ export default function QuranHomeScreen({
               </View>
               <ScrollView
                 horizontal
+                nestedScrollEnabled
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.searchRecentScroll}
               >
@@ -949,6 +951,7 @@ export default function QuranHomeScreen({
           <Text style={[styles.juzLabel, { color: colors.textMuted }]}>JUZ</Text>
           <ScrollView
             horizontal
+            nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[styles.juzScroll, { gap: isNarrow ? 5 : 6 }]}
           >
@@ -1134,6 +1137,8 @@ export default function QuranHomeScreen({
         renderItem={renderSurahRow}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={[styles.listContent, { paddingHorizontal: horizontalPadding }]}
+        onScroll={onSurahListScroll}
+        scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         initialNumToRender={20}

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   useWindowDimensions,
+  BackHandler,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -111,6 +112,16 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
     }
     setProgressMap(loaded);
   }, []);
+
+  // Return from plan detail to plan list on Android hardware back
+  useEffect(() => {
+    if (!selectedPlanId) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setSelectedPlanId(null);
+      return true;
+    });
+    return () => sub.remove();
+  }, [selectedPlanId]);
 
   const selectedPlan = useMemo(
     () => PLANS.find((p) => p.id === selectedPlanId) || null,

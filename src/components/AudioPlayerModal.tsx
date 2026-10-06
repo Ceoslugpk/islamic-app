@@ -38,6 +38,11 @@ import {
   switchToLanguageSegment,
   updateAudioSettings,
   useAudioTranslation,
+  startSleepTimer as startGlobalSleepTimer,
+  cancelSleepTimer as cancelGlobalSleepTimer,
+  addSleepTimerListener,
+  getSleepTimerRemaining,
+  getSleepTimerInitialMinutes,
 } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
 import { getLanguageFlag } from '../lib/quranLanguages';
@@ -78,10 +83,16 @@ export function AudioPlayerModal({
   // Fine playback speed + sleep timer (Niro: feature #3 + #4)
   const SPEED_OPTIONS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
   const [playbackRate, setPlaybackRateState] = useState<number>(getRate());
-  const [sleepMin, setSleepMin] = useState<number | null>(null);
-  const [sleepRemaining, setSleepRemaining] = useState<number | null>(null);
-  const sleepEndRef = useRef<number | null>(null);
-  const sleepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [sleepMin, setSleepMin] = useState<number | null>(getSleepTimerInitialMinutes());
+  const [sleepRemaining, setSleepRemaining] = useState<number | null>(getSleepTimerRemaining());
+
+  useEffect(() => {
+    const unsub = addSleepTimerListener((remaining, initial) => {
+      setSleepRemaining(remaining);
+      setSleepMin(initial);
+    });
+    return () => unsub();
+  }, []);
 
   const cycleSpeed = async () => {
     const next = SPEED_OPTIONS[(SPEED_OPTIONS.indexOf(playbackRate) + 1) % SPEED_OPTIONS.length];
@@ -90,38 +101,12 @@ export function AudioPlayerModal({
   };
 
   const startSleepTimer = (minutes: number) => {
-    if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
-    sleepEndRef.current = Date.now() + minutes * 60_000;
-    setSleepMin(minutes);
-    setSleepRemaining(minutes * 60);
-    sleepTimerRef.current = setInterval(() => {
-      const left = Math.max(0, Math.round(((sleepEndRef.current ?? 0) - Date.now()) / 1000));
-      setSleepRemaining(left);
-      if (left <= 0) {
-        clearInterval(sleepTimerRef.current!);
-        sleepTimerRef.current = null;
-        sleepEndRef.current = null;
-        setSleepMin(null);
-        setSleepRemaining(null);
-        onStop();
-      }
-    }, 1000);
+    startGlobalSleepTimer(minutes);
   };
 
   const cancelSleepTimer = () => {
-    if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
-    sleepTimerRef.current = null;
-    sleepEndRef.current = null;
-    setSleepMin(null);
-    setSleepRemaining(null);
+    cancelGlobalSleepTimer();
   };
-
-  // Clear the sleep timer on unmount (never fires after modal closes).
-  useEffect(() => {
-    return () => {
-      if (sleepTimerRef.current) clearInterval(sleepTimerRef.current);
-    };
-  }, []);
 
   const handleSwitchSegment = async (target: PlaybackSegmentType) => {
     if (switchingSegment) return;

@@ -11,6 +11,7 @@ import {
   Share,
   RefreshControl,
   useWindowDimensions,
+  BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -421,6 +422,16 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
     onBack?.();
   };
+
+  // Hardware back press handler on Android for nested views
+  useEffect(() => {
+    if (activeTab === 'collections' && view.type === 'collections') return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      handleBack();
+      return true;
+    });
+    return () => sub.remove();
+  }, [activeTab, view, handleBack]);
 
   // Determine back button label
   const backLabel = useMemo(() => {

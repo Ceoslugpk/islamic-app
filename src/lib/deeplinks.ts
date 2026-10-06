@@ -16,21 +16,46 @@ export type DeepLinkTarget =
   | { type: 'prayer'; prayer?: PrayerNameTarget }
   | { type: 'quran'; surah: number; ayah?: number }
   | { type: 'quran-continue' }
+  | { type: 'quran-audio' }
+  | { type: 'tafsir'; surah?: number }
+  | { type: 'topics' }
+  | { type: 'compare'; surah?: number; ayah?: number }
+  | { type: 'bookmarks' }
+  | { type: 'notes' }
+  | { type: 'plans' }
+  | { type: 'hifz' }
+  | { type: 'tajweed' }
+  | { type: 'ramadan-guide' }
+  | { type: 'prayer-guide' }
+  | { type: 'shahada' }
+  | { type: 'downloads' }
+  | { type: 'vocab' }
+  | { type: 'summary' }
   | { type: 'qibla' }
   | { type: 'tracker' }
   | { type: 'hadith'; collectionSlug?: string }
-  | { type: 'live'; channel: 'makkah' }
+  | { type: 'live'; channel: 'makkah' | 'madinah' | 'hajj' }
   | { type: 'library' }
   | { type: 'tools' }
   | { type: 'settings' }
   | { type: 'mosque' }
   | { type: 'fasting' }
   | { type: 'zakat' }
-  | { type: 'names' }
+  | { type: 'names'; variant?: 'prophet' }
   | { type: 'tasbih' }
   | { type: 'duas'; id?: string }
   | { type: 'adhkar'; id?: string }
-  | { type: 'calendar' };
+  | { type: 'calendar' }
+  | { type: 'cities' }
+  | { type: 'location' }
+  | { type: 'prayer-reminders' }
+  | { type: 'umrah-guide' }
+  | { type: 'umrah-resources' }
+  | { type: 'hajj-journey' }
+  | { type: 'women-cycle' }
+  | { type: 'women-purity' }
+  | { type: 'women-guidance' }
+  | { type: 'women-qada' };
 
 function parseNumber(str: string | undefined): number | undefined {
   if (!str) return undefined;
@@ -118,6 +143,33 @@ export function parseDeepLink(url: string): DeepLinkTarget | null {
       if (second === 'continue') {
         return { type: 'quran-continue' };
       }
+      if (second === 'audio') {
+        return { type: 'quran-audio' };
+      }
+      if (second === 'tafsir') {
+        const surah = parseNumber(segments[2]);
+        return { type: 'tafsir', surah };
+      }
+      if (second === 'topics') {
+        return { type: 'topics' };
+      }
+      if (second === 'compare') {
+        const surah = parseNumber(segments[2]);
+        const ayah = parseNumber(segments[3]);
+        return { type: 'compare', surah, ayah };
+      }
+      if (second === 'bookmarks') {
+        return { type: 'bookmarks' };
+      }
+      if (second === 'notes') {
+        return { type: 'notes' };
+      }
+      if (second === 'plans') {
+        return { type: 'plans' };
+      }
+      if (second === 'hifz') {
+        return { type: 'hifz' };
+      }
       const surah = parseNumber(second);
       if (!surah || surah < 1 || surah > 114) {
         return { type: 'quran', surah: 1 };
@@ -128,6 +180,57 @@ export function parseDeepLink(url: string): DeepLinkTarget | null {
       }
       return { type: 'quran', surah, ayah };
     }
+
+    case 'audio':
+      return { type: 'quran-audio' };
+
+    case 'tafsir': {
+      const surah = parseNumber(segments[1]);
+      return { type: 'tafsir', surah };
+    }
+
+    case 'topics':
+      return { type: 'topics' };
+
+    case 'compare': {
+      const surah = parseNumber(segments[1]);
+      const ayah = parseNumber(segments[2]);
+      return { type: 'compare', surah, ayah };
+    }
+
+    case 'bookmarks':
+      return { type: 'bookmarks' };
+
+    case 'notes':
+      return { type: 'notes' };
+
+    case 'plans':
+      return { type: 'plans' };
+
+    case 'hifz':
+      return { type: 'hifz' };
+
+    case 'tajweed':
+      return { type: 'tajweed' };
+
+    case 'ramadan':
+    case 'ramadan-guide':
+      return { type: 'ramadan-guide' };
+
+    case 'prayer-guide':
+      return { type: 'prayer-guide' };
+
+    case 'shahada':
+      return { type: 'shahada' };
+
+    case 'downloads':
+      return { type: 'downloads' };
+
+    case 'vocab':
+      return { type: 'vocab' };
+
+    case 'summary':
+      return { type: 'summary' };
 
     case 'qibla':
       return { type: 'qibla' };
@@ -158,10 +261,9 @@ export function parseDeepLink(url: string): DeepLinkTarget | null {
 
     case 'live': {
       const channel = segments[1]?.toLowerCase();
-      if (channel === 'makkah') {
-        return { type: 'live', channel: 'makkah' };
-      }
-      return { type: 'home' };
+      if (channel === 'madinah') return { type: 'live', channel: 'madinah' };
+      if (channel === 'hajj') return { type: 'live', channel: 'hajj' };
+      return { type: 'live', channel: 'makkah' };
     }
 
     case 'library':
@@ -182,11 +284,47 @@ export function parseDeepLink(url: string): DeepLinkTarget | null {
     case 'zakat':
       return { type: 'zakat' };
 
-    case 'names':
-      return { type: 'names' };
+    case 'names': {
+      const variant = segments[1]?.toLowerCase();
+      return variant === 'prophet' ? { type: 'names', variant: 'prophet' } : { type: 'names' };
+    }
 
     case 'calendar':
       return { type: 'calendar' };
+
+    case 'cities':
+      return { type: 'cities' };
+
+    case 'location':
+      return { type: 'location' };
+
+    case 'reminders':
+    case 'prayer-reminders':
+    case 'notifications':
+      return { type: 'prayer-reminders' };
+
+    case 'umrah':
+    case 'umrah-guide':
+      return { type: 'umrah-guide' };
+
+    case 'umrah-resources':
+      return { type: 'umrah-resources' };
+
+    case 'hajj':
+    case 'hajj-journey':
+      return { type: 'hajj-journey' };
+
+    case 'women-cycle':
+      return { type: 'women-cycle' };
+
+    case 'women-purity':
+      return { type: 'women-purity' };
+
+    case 'women-guidance':
+      return { type: 'women-guidance' };
+
+    case 'women-qada':
+      return { type: 'women-qada' };
 
     default:
       // Unknown path -> graceful fallback to Home (never blank screen)
@@ -209,6 +347,36 @@ export function buildDeepLink(target: DeepLinkTarget): string {
         : `salah://quran/${target.surah}`;
     case 'quran-continue':
       return 'salah://quran/continue';
+    case 'quran-audio':
+      return 'salah://quran/audio';
+    case 'tafsir':
+      return target.surah ? `salah://tafsir/${target.surah}` : 'salah://tafsir';
+    case 'topics':
+      return 'salah://topics';
+    case 'compare':
+      return target.surah ? `salah://compare/${target.surah}/${target.ayah || 1}` : 'salah://compare';
+    case 'bookmarks':
+      return 'salah://bookmarks';
+    case 'notes':
+      return 'salah://notes';
+    case 'plans':
+      return 'salah://plans';
+    case 'hifz':
+      return 'salah://hifz';
+    case 'tajweed':
+      return 'salah://tajweed';
+    case 'ramadan-guide':
+      return 'salah://ramadan-guide';
+    case 'prayer-guide':
+      return 'salah://prayer-guide';
+    case 'shahada':
+      return 'salah://shahada';
+    case 'downloads':
+      return 'salah://downloads';
+    case 'vocab':
+      return 'salah://vocab';
+    case 'summary':
+      return 'salah://summary';
     case 'hadith':
       return target.collectionSlug
         ? `salah://hadith/${target.collectionSlug}`
@@ -232,7 +400,7 @@ export function buildDeepLink(target: DeepLinkTarget): string {
     case 'zakat':
       return 'salah://zakat';
     case 'names':
-      return 'salah://names';
+      return target.variant ? `salah://names/${target.variant}` : 'salah://names';
     case 'tasbih':
       return 'salah://tasbih';
     case 'duas':
@@ -241,5 +409,25 @@ export function buildDeepLink(target: DeepLinkTarget): string {
       return target.id ? `salah://adhkar/${target.id}` : 'salah://adhkar';
     case 'calendar':
       return 'salah://calendar';
+    case 'cities':
+      return 'salah://cities';
+    case 'location':
+      return 'salah://location';
+    case 'prayer-reminders':
+      return 'salah://prayer-reminders';
+    case 'umrah-guide':
+      return 'salah://umrah-guide';
+    case 'umrah-resources':
+      return 'salah://umrah-resources';
+    case 'hajj-journey':
+      return 'salah://hajj-journey';
+    case 'women-cycle':
+      return 'salah://women-cycle';
+    case 'women-purity':
+      return 'salah://women-purity';
+    case 'women-guidance':
+      return 'salah://women-guidance';
+    case 'women-qada':
+      return 'salah://women-qada';
   }
 }

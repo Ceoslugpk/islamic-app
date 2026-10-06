@@ -398,6 +398,144 @@ export default function MosqueFinderScreen({
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.bgBase }]}>
+      <View style={{ maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH, paddingTop: 10 }}>
+        <View style={styles.headerWrap}>
+          {onBack && (
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={onBack}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Tools"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
+            </TouchableOpacity>
+          )}
+
+          <SectionHeader
+            compact
+            eyebrow="Tools"
+            title="Mosque Finder"
+          />
+
+          {/* Area Search Input Bar */}
+          <View
+            style={[
+              styles.searchWrap,
+              {
+                backgroundColor: colors.bgSurface,
+                borderColor: colors.borderSubtle,
+              },
+            ]}
+          >
+            <Ionicons
+              name="search"
+              size={17}
+              color={colors.textMuted}
+              style={styles.searchIcon}
+            />
+            <TextInput
+              style={[styles.searchInput, { color: colors.textPrimary }]}
+              placeholder="Search area or city, e.g. 'Dubai Marina' or 'Lahore'..."
+              placeholderTextColor={colors.textMuted}
+              value={areaInput}
+              onChangeText={setAreaInput}
+              autoCorrect={false}
+              returnKeyType="search"
+              onSubmitEditing={() => handleSearchArea(areaInput)}
+            />
+            {areaInput.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setAreaInput('')}
+                style={styles.clearBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search input"
+              >
+                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity
+              style={[
+                styles.searchSubmitBtn,
+                { backgroundColor: colors.accent },
+                (!areaInput.trim() || searchingArea) && styles.searchSubmitBtnDisabled,
+              ]}
+              onPress={() => handleSearchArea(areaInput)}
+              disabled={searchingArea || !areaInput.trim()}
+              accessibilityRole="button"
+              accessibilityLabel="Search area"
+            >
+              {searchingArea ? (
+                <ActivityIndicator size="small" color={colors.bgBase} />
+              ) : (
+                <>
+                  <Ionicons name="search" size={14} color={colors.bgBase} style={{ marginRight: 4 }} />
+                  <Text style={[styles.searchSubmitText, { color: colors.bgBase }]}>
+                    Find
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Recent Area Searches */}
+          {areaHistory.length > 0 && !areaSearchCenter && (
+            <View style={styles.recentWrap}>
+              <View style={styles.recentHeader}>
+                <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                <TouchableOpacity
+                  onPress={clearAreaHistory}
+                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear area search history"
+                >
+                  <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.recentChipsScroll}
+              >
+                {areaHistory.map((item) => (
+                  <View
+                    key={item}
+                    style={[
+                      styles.recentChip,
+                      { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    ]}
+                  >
+                    <TouchableOpacity
+                      onPress={() => {
+                        setAreaInput(item);
+                        handleSearchArea(item);
+                      }}
+                      style={styles.recentChipBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Search for mosques near ${item}`}
+                    >
+                      <Ionicons name="time-outline" size={13} color={colors.accent} />
+                      <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                        {item}
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => removeAreaQuery(item)}
+                      style={styles.recentChipRemove}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Remove ${item} from search history`}
+                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
+                    >
+                      <Ionicons name="close" size={12} color={colors.textMuted} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      </View>
+
       <FlatList
         key={isWide ? 'mosques-grid' : 'mosques-list'}
         numColumns={isWide ? 2 : 1}
@@ -428,140 +566,6 @@ export default function MosqueFinderScreen({
         }
         ListHeaderComponent={
           <View style={styles.headerWrap}>
-            {onBack && (
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={onBack}
-                accessibilityRole="button"
-                accessibilityLabel="Back to Tools"
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
-              </TouchableOpacity>
-            )}
-
-            <SectionHeader
-              compact
-              eyebrow="Tools"
-              title="Mosque Finder"
-            />
-
-            {/* Area Search Input Bar */}
-            <View
-              style={[
-                styles.searchWrap,
-                {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
-                },
-              ]}
-            >
-              <Ionicons
-                name="search"
-                size={17}
-                color={colors.textMuted}
-                style={styles.searchIcon}
-              />
-              <TextInput
-                style={[styles.searchInput, { color: colors.textPrimary }]}
-                placeholder="Search area or city, e.g. 'Dubai Marina' or 'Lahore'..."
-                placeholderTextColor={colors.textMuted}
-                value={areaInput}
-                onChangeText={setAreaInput}
-                autoCorrect={false}
-                returnKeyType="search"
-                onSubmitEditing={() => handleSearchArea(areaInput)}
-              />
-              {areaInput.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => setAreaInput('')}
-                  style={styles.clearBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear search input"
-                >
-                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={[
-                  styles.searchSubmitBtn,
-                  { backgroundColor: colors.accent },
-                  (!areaInput.trim() || searchingArea) && styles.searchSubmitBtnDisabled,
-                ]}
-                onPress={() => handleSearchArea(areaInput)}
-                disabled={searchingArea || !areaInput.trim()}
-                accessibilityRole="button"
-                accessibilityLabel="Search area"
-              >
-                {searchingArea ? (
-                  <ActivityIndicator size="small" color={colors.bgBase} />
-                ) : (
-                  <>
-                    <Ionicons name="search" size={14} color={colors.bgBase} style={{ marginRight: 4 }} />
-                    <Text style={[styles.searchSubmitText, { color: colors.bgBase }]}>
-                      Find
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {/* Recent Area Searches */}
-            {areaHistory.length > 0 && !areaSearchCenter && (
-              <View style={styles.recentWrap}>
-                <View style={styles.recentHeader}>
-                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
-                  <TouchableOpacity
-                    onPress={clearAreaHistory}
-                    hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear area search history"
-                  >
-                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
-                  </TouchableOpacity>
-                </View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.recentChipsScroll}
-                >
-                  {areaHistory.map((item) => (
-                    <View
-                      key={item}
-                      style={[
-                        styles.recentChip,
-                        { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-                      ]}
-                    >
-                      <TouchableOpacity
-                        onPress={() => {
-                          setAreaInput(item);
-                          handleSearchArea(item);
-                        }}
-                        style={styles.recentChipBtn}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Search for mosques near ${item}`}
-                      >
-                        <Ionicons name="time-outline" size={13} color={colors.accent} />
-                        <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
-                          {item}
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => removeAreaQuery(item)}
-                        style={styles.recentChipRemove}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Remove ${item} from search history`}
-                        hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
-                      >
-                        <Ionicons name="close" size={12} color={colors.textMuted} />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
-
             {/* Location & Radius Control Card */}
             <Card style={styles.controlCard} padded>
               <View style={styles.locationHeaderRow}>

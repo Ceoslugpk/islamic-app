@@ -821,6 +821,9 @@ export default function QuranReaderScreen({
     if (cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
       setSurah(cached);
       setLoading(false);
+    } else {
+      setSurah(null);
+      setLoading(true);
     }
   }, [safeSurahNumber, edition?.editionIdentifier]);
 
@@ -842,6 +845,23 @@ export default function QuranReaderScreen({
       }, 300);
     }
   }, [surah, initialAyah]);
+
+  const handleScrollToIndexFailed = useCallback(
+    (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
+      listRef.current?.scrollToOffset({
+        offset: Math.max(0, info.averageItemLength * info.index),
+        animated: false,
+      });
+      setTimeout(() => {
+        try {
+          listRef.current?.scrollToIndex({ index: info.index, animated: true });
+        } catch {
+          // non-fatal measurement retry
+        }
+      }, 100);
+    },
+    []
+  );
 
   const handleAdjustFontSize = (delta: number) => {
     setQuranFontSize(fontSize + delta);
@@ -2297,7 +2317,7 @@ export default function QuranReaderScreen({
           initialNumToRender={15}
           maxToRenderPerBatch={15}
           windowSize={7}
-          onScrollToIndexFailed={() => {}}
+          onScrollToIndexFailed={handleScrollToIndexFailed}
           onScroll={handleReaderScroll}
           scrollEventThrottle={16}
           viewabilityConfig={VIEWABILITY_CONFIG}

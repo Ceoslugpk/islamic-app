@@ -796,7 +796,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
   }, []);
 
   // Android hardware back: go back through screens instead of exiting.
-  // Priority: PIN modal → settings modal → audio player modal → sub-screen → tab hub → default (exit).
+  // Priority: PIN modal → settings modal → audio player modal → active tab sub-screen → tab hub → default (exit).
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (womenPinModalOpen) {
@@ -819,18 +819,25 @@ function Root({ splashDone }: { splashDone: boolean }) {
         handleDismissLocationSetup();
         return true;
       }
-      if (library.screen !== 'hub') {
-        setLibrary({ screen: 'hub' });
-        return true;
-      }
-      if (quran.screen !== 'home') {
+      // Check active tab sub-screen first so back navigates within the current tab
+      if (tab === 'quran' && quran.screen !== 'home') {
         setQuran({ screen: 'home' });
         return true;
       }
-      if (tools.screen !== 'hub') {
+      if (tab === 'library' && library.screen !== 'hub') {
+        setLibrary({ screen: 'hub' });
+        return true;
+      }
+      if (tab === 'tools' && tools.screen !== 'hub') {
+        if (tools.screen === 'cities' && citiesReturnTab === 'home') {
+          setTools({ screen: 'hub' });
+          setTab('home');
+          return true;
+        }
         setTools({ screen: 'hub' });
         return true;
       }
+      // If at root hub of a tab other than Home, back returns to Home
       if (tab !== 'home') {
         setTab('home');
         return true;
@@ -838,24 +845,32 @@ function Root({ splashDone }: { splashDone: boolean }) {
       return false; // let default back behavior exit the app
     });
     return () => sub.remove();
-  }, [settingsOpen, audioModalOpen, showLocationSetup, library, quran, tools, tab]);
+  }, [womenPinModalOpen, settingsOpen, audioModalOpen, showLocationSetup, tab, quran, library, tools, citiesReturnTab]);
 
   const isAudioCenter = tab === 'quran' && quran.screen === 'audio';
   const showMiniPlayer = visible && playback !== null && !isAudioCenter;
 
   const handleOpenAudio = () => {
-    setLibrary({ screen: 'hub' });
-    setTools({ screen: 'hub' });
     setQuran({ screen: 'audio' });
     setTab('quran');
   };
 
   function switchTab(next: TabKey) {
-    // Reset sub-views when switching away
-    if (next !== 'library') setLibrary({ screen: 'hub' });
-    if (next !== 'quran') setQuran({ screen: 'home' });
-    if (next !== 'tools') setTools({ screen: 'hub' });
-    if (next === 'quran' && getQuranPreloadRequested()) startQuranPreload();
+    if (next === tab) {
+      // Tap on currently active tab returns to root hub if inside a subscreen
+      if (next === 'library' && library.screen !== 'hub') {
+        setLibrary({ screen: 'hub' });
+      } else if (next === 'quran' && quran.screen !== 'home') {
+        setQuran({ screen: 'home' });
+      } else if (next === 'tools' && tools.screen !== 'hub') {
+        setTools({ screen: 'hub' });
+      }
+      return;
+    }
+    // Switching to another tab preserves sub-screen navigation state
+    if (next === 'quran' && getQuranPreloadRequested()) {
+      startQuranPreload();
+    }
     setTab(next);
   }
 
@@ -915,292 +930,283 @@ function Root({ splashDone }: { splashDone: boolean }) {
         />
         {!isOnline && <OfflineBanner />}
         <View style={styles.screenWrap}>
-        {tab === 'home' && (
-          <HomeScreen
-            onOpenNames={() => {
-              setQuran({ screen: 'home' });
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'names' });
-              setTab('library');
-            }}
-            onOpenQuran={(surah, ayah) => {
-              setLibrary({ screen: 'hub' });
-              setTools({ screen: 'hub' });
-              if (surah) {
-                setQuran({ screen: 'reader', surah, initialAyah: ayah });
-              } else {
-                setQuran({ screen: 'home' });
-              }
-              setTab('quran');
-            }}
-            onOpenHadith={() => {
-              setQuran({ screen: 'home' });
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'hadith' });
-              setTab('library');
-            }}
-            onOpenQibla={() => {
-              setQuran({ screen: 'home' });
-              setLibrary({ screen: 'hub' });
-              setTools({ screen: 'qibla' });
-              setTab('tools');
-            }}
-            onOpenDuas={() => {
-              setQuran({ screen: 'home' });
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'duas' });
-              setTab('library');
-            }}
-            onOpenTasbih={() => {
-              setQuran({ screen: 'home' });
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'tasbih' });
-              setTab('library');
-            }}
-            onOpenCities={() => {
-              setCitiesReturnTab('home');
-              setTools({ screen: 'cities' });
-              setTab('tools');
-            }}
-          />
-        )}
+          {/* Home Tab */}
+          <View style={[styles.tabPane, tab === 'home' ? styles.paneVisible : styles.paneHidden]}>
+            <HomeScreen
+              onOpenNames={() => {
+                setLibrary({ screen: 'names' });
+                setTab('library');
+              }}
+              onOpenQuran={(surah, ayah) => {
+                if (surah) {
+                  setQuran({ screen: 'reader', surah, initialAyah: ayah });
+                } else {
+                  setQuran({ screen: 'home' });
+                }
+                setTab('quran');
+              }}
+              onOpenHadith={() => {
+                setLibrary({ screen: 'hadith' });
+                setTab('library');
+              }}
+              onOpenQibla={() => {
+                setTools({ screen: 'qibla' });
+                setTab('tools');
+              }}
+              onOpenDuas={() => {
+                setLibrary({ screen: 'duas' });
+                setTab('library');
+              }}
+              onOpenTasbih={() => {
+                setLibrary({ screen: 'tasbih' });
+                setTab('library');
+              }}
+              onOpenCities={() => {
+                setCitiesReturnTab('home');
+                setTools({ screen: 'cities' });
+                setTab('tools');
+              }}
+            />
+          </View>
 
-        {/* Quran Tab Views */}
-        {tab === 'quran' && quran.screen === 'home' && (
-          <QuranHomeScreen
-            onOpenSurah={(n, a) => setQuran({ screen: 'reader', surah: n, initialAyah: a })}
-            onOpenAudio={() => setQuran({ screen: 'audio' })}
-            onOpenTafsir={() => setQuran({ screen: 'tafsir' })}
-            onOpenTopics={() => setQuran({ screen: 'topics' })}
-            onOpenCompare={() => setQuran({ screen: 'compare' })}
-            onOpenBookmarks={() => setQuran({ screen: 'bookmarks' })}
-            onOpenNotes={() => setQuran({ screen: 'notes' })}
-            onOpenPlans={() => setQuran({ screen: 'plans' })}
-            onOpenHifz={() => setQuran({ screen: 'hifz' })}
-          />
-        )}
-        {tab === 'quran' && quran.screen === 'reader' && (
-          <QuranReaderScreen
-            surahNumber={quran.surah || 1}
-            initialAyah={quran.initialAyah}
-            onBack={() => setQuran({ screen: 'home' })}
-            onNavigateSurah={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
-          />
-        )}
-        {tab === 'quran' && quran.screen === 'audio' && (
-          <QuranAudioScreen onBack={() => setQuran({ screen: 'home' })} />
-        )}
-        {tab === 'quran' && quran.screen === 'tafsir' && (
-          <TafsirScreen
-            surahNumber={quran.surah || 1}
-            onBack={() => setQuran({ screen: 'home' })}
-            onOpenReader={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
-          />
-        )}
-        {tab === 'quran' && quran.screen === 'topics' && (
-          <QuranTopicsScreen
-            onBack={() => setQuran({ screen: 'home' })}
-            onOpenSurah={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
-          />
-        )}
-        {tab === 'quran' && quran.screen === 'compare' && (
-          <TranslationCompareScreen
-            initialSurah={quran.surah}
-            initialAyah={quran.ayah}
-            onBack={() => setQuran({ screen: 'home' })}
-            onOpenReader={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
-          />
-        )}
-        {tab === 'quran' && quran.screen === 'bookmarks' && (
-          <BookmarksScreen
-            backLabel="Quran"
-            onBack={() => setQuran({ screen: 'home' })}
-            onOpenVerse={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
-          />
-        )}
-        {tab === 'quran' && quran.screen === 'notes' && (
-          <NotesScreen
-            backLabel="Quran"
-            onBack={() => setQuran({ screen: 'home' })}
-            onOpenVerse={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
-          />
-        )}
-        {tab === 'quran' && quran.screen === 'plans' && (
-          <ReadingPlansScreen onBack={() => setQuran({ screen: 'home' })} />
-        )}
-        {tab === 'quran' && quran.screen === 'hifz' && (
-          <HifzScreen onBack={() => setQuran({ screen: 'home' })} />
-        )}
-
-        {/* Library Tab Views */}
-        {tab === 'library' && library.screen === 'hub' && (
-          <LibraryScreen onOpen={openLibraryItem} />
-        )}
-        {tab === 'library' && library.screen === 'tasbih' && (
-          <TasbihScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'names' && (
-          <NamesScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'names-prophet' && (
-          <NamesScreen variant="prophet" onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'duas' && (
-          <DuasScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'hadith' && (
-          <HadithLibraryScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'ramadan-guide' && (
-          <RamadanGuideScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'prayer-guide' && (
-          <PrayerGuideScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'shahada' && (
-          <ShahadaScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-        {tab === 'library' && library.screen === 'downloads' && (
-          <DownloadsScreen
-            onBack={() => setLibrary({ screen: 'hub' })}
-            onOpenSurah={(surah) => {
-              setQuran({ screen: 'reader', surah });
-              setTab('quran');
-            }}
-          />
-        )}
-
-        {tab === 'library' && library.screen === 'vocab' && (
-          <VocabTrainerScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-
-        {tab === 'library' && library.screen === 'summary' && (
-          <WeeklySummaryScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-
-        {tab === 'library' && library.screen === 'tajweed' && (
-          <TajweedScreen onBack={() => setLibrary({ screen: 'hub' })} />
-        )}
-
-
-        {/* Tools Tab Views */}
-        {tab === 'tools' && tools.screen === 'hub' && (
-          <ToolsScreen onOpen={openToolsItem} />
-        )}
-        {tab === 'tools' && tools.screen === 'qibla' && (
-          <QiblaScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenCities={() => setTools({ screen: 'cities' })}
-          />
-        )}
-        {tab === 'tools' && tools.screen === 'tracker' && (
-          <SalahTrackerScreen onBack={() => setTools({ screen: 'hub' })} />
-        )}
-        {tab === 'tools' && tools.screen === 'location' && (
-          <LocationScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenCities={() => setTools({ screen: 'cities' })}
-          />
-        )}
-        {tab === 'tools' && tools.screen === 'cities' && (
-          <CitiesScreen
-            onBack={() => {
-              setTools({ screen: 'hub' });
-              setTab(citiesReturnTab);
-            }}
-          />
-        )}
-        {tab === 'tools' && (tools.screen === 'prayer-reminders' || tools.screen === 'notifications') && (
-          <PrayerRemindersScreen onBack={() => setTools({ screen: 'hub' })} />
-        )}
-        {tab === 'tools' && tools.screen === 'fasting' && (
-          <FastingScreen onBack={() => setTools({ screen: 'hub' })} />
-        )}
-        {tab === 'tools' && tools.screen === 'zakat' && (
-          <ZakatScreen onBack={() => setTools({ screen: 'hub' })} />
-        )}
-        {tab === 'tools' && tools.screen === 'calendar' && (
-          <CalendarScreen onBack={() => setTools({ screen: 'hub' })} />
-        )}
-        {tab === 'tools' && tools.screen === 'mosque' && (
-          <MosqueFinderScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenCities={() => setTools({ screen: 'cities' })}
-          />
-        )}
-
-        {/* Women's Worship Views — gated by optional system-auth lock */}
-        {tab === 'tools' && settings.womenWorshipEnabled && (tools.screen === 'women-cycle' || tools.screen === 'women-purity' || tools.screen === 'women-guidance' || tools.screen === 'women-qada') && (
-          <WomenLockGate>
-            {tools.screen === 'women-cycle' && (
-              <WomenCycleScreen
-                onBack={() => setTools({ screen: 'hub' })}
-                onOpenPurity={() => setTools({ screen: 'women-purity' })}
+          {/* Quran Tab */}
+          <View style={[styles.tabPane, tab === 'quran' ? styles.paneVisible : styles.paneHidden]}>
+            <View style={[styles.tabPane, quran.screen === 'home' ? styles.paneVisible : styles.paneHidden]}>
+              <QuranHomeScreen
+                onOpenSurah={(n, a) => setQuran({ screen: 'reader', surah: n, initialAyah: a })}
+                onOpenAudio={() => setQuran({ screen: 'audio' })}
+                onOpenTafsir={() => setQuran({ screen: 'tafsir' })}
+                onOpenTopics={() => setQuran({ screen: 'topics' })}
+                onOpenCompare={() => setQuran({ screen: 'compare' })}
+                onOpenBookmarks={() => setQuran({ screen: 'bookmarks' })}
+                onOpenNotes={() => setQuran({ screen: 'notes' })}
+                onOpenPlans={() => setQuran({ screen: 'plans' })}
+                onOpenHifz={() => setQuran({ screen: 'hifz' })}
+              />
+            </View>
+            {quran.screen === 'reader' && (
+              <QuranReaderScreen
+                surahNumber={quran.surah || 1}
+                initialAyah={quran.initialAyah}
+                onBack={() => setQuran({ screen: 'home' })}
+                onNavigateSurah={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
               />
             )}
-            {tools.screen === 'women-purity' && (
-              <WomenPurityScreen
-                onBack={() => setTools({ screen: 'hub' })}
-                onOpenQada={() => setTools({ screen: 'women-qada' })}
-                onOpenGuidance={() => setTools({ screen: 'women-guidance' })}
+            {quran.screen === 'audio' && (
+              <QuranAudioScreen onBack={() => setQuran({ screen: 'home' })} />
+            )}
+            {quran.screen === 'tafsir' && (
+              <TafsirScreen
+                surahNumber={quran.surah || 1}
+                onBack={() => setQuran({ screen: 'home' })}
+                onOpenReader={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
               />
             )}
-            {tools.screen === 'women-guidance' && (
-              <WomenGuidanceScreen
-                onBack={() => setTools({ screen: 'hub' })}
-                onOpenPurity={() => setTools({ screen: 'women-purity' })}
+            {quran.screen === 'topics' && (
+              <QuranTopicsScreen
+                onBack={() => setQuran({ screen: 'home' })}
+                onOpenSurah={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
               />
             )}
-            {tools.screen === 'women-qada' && (
-              <WomenQadaScreen
-                onBack={() => setTools({ screen: 'hub' })}
-                onOpenCycle={() => setTools({ screen: 'women-cycle' })}
+            {quran.screen === 'compare' && (
+              <TranslationCompareScreen
+                initialSurah={quran.surah}
+                initialAyah={quran.ayah}
+                onBack={() => setQuran({ screen: 'home' })}
+                onOpenReader={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
               />
             )}
-          </WomenLockGate>
-        )}
+            {quran.screen === 'bookmarks' && (
+              <BookmarksScreen
+                backLabel="Quran"
+                onBack={() => setQuran({ screen: 'home' })}
+                onOpenVerse={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
+              />
+            )}
+            {quran.screen === 'notes' && (
+              <NotesScreen
+                backLabel="Quran"
+                onBack={() => setQuran({ screen: 'home' })}
+                onOpenVerse={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
+              />
+            )}
+            {quran.screen === 'plans' && (
+              <ReadingPlansScreen onBack={() => setQuran({ screen: 'home' })} />
+            )}
+            {quran.screen === 'hifz' && (
+              <HifzScreen onBack={() => setQuran({ screen: 'home' })} />
+            )}
+          </View>
 
-        {/* Hajj & Umrah Views */}
-        {tab === 'tools' && tools.screen === 'umrah-guide' && (
-          <UmrahGuideScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenDuas={() => {
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'duas' });
-              setTab('library');
-            }}
-          />
-        )}
-        {tab === 'tools' && tools.screen === 'umrah-resources' && (
-          <UmrahResourcesScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenDuas={() => {
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'duas' });
-              setTab('library');
-            }}
-          />
-        )}
-        {tab === 'tools' && tools.screen === 'hajj-journey' && (
-          <HajjJourneyScreen
-            onBack={() => setTools({ screen: 'hub' })}
-            onOpenDuas={() => {
-              setTools({ screen: 'hub' });
-              setLibrary({ screen: 'duas' });
-              setTab('library');
-            }}
-          />
-        )}
-        {tab === 'tools' && tools.screen === 'makkah-live' && (
-          <MakkahLiveScreen onBack={() => setTools({ screen: 'hub' })} />
-        )}
-        {tab === 'tools' && tools.screen === 'madinah-live' && (
-          <MadinahLiveScreen onBack={() => setTools({ screen: 'hub' })} />
-        )}
-        {tab === 'tools' && tools.screen === 'hajj-live' && (
-          <HajjLiveScreen onBack={() => setTools({ screen: 'hub' })} />
-        )}
-      </View>
+          {/* Library Tab */}
+          <View style={[styles.tabPane, tab === 'library' ? styles.paneVisible : styles.paneHidden]}>
+            <View style={[styles.tabPane, library.screen === 'hub' ? styles.paneVisible : styles.paneHidden]}>
+              <LibraryScreen onOpen={openLibraryItem} />
+            </View>
+            {library.screen === 'tasbih' && (
+              <TasbihScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'names' && (
+              <NamesScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'names-prophet' && (
+              <NamesScreen variant="prophet" onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'duas' && (
+              <DuasScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'hadith' && (
+              <HadithLibraryScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'ramadan-guide' && (
+              <RamadanGuideScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'prayer-guide' && (
+              <PrayerGuideScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'shahada' && (
+              <ShahadaScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'downloads' && (
+              <DownloadsScreen
+                onBack={() => setLibrary({ screen: 'hub' })}
+                onOpenSurah={(surah) => {
+                  setQuran({ screen: 'reader', surah });
+                  setTab('quran');
+                }}
+              />
+            )}
+            {library.screen === 'vocab' && (
+              <VocabTrainerScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'summary' && (
+              <WeeklySummaryScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+            {library.screen === 'tajweed' && (
+              <TajweedScreen onBack={() => setLibrary({ screen: 'hub' })} />
+            )}
+          </View>
+
+          {/* Tools Tab */}
+          <View style={[styles.tabPane, tab === 'tools' ? styles.paneVisible : styles.paneHidden]}>
+            <View style={[styles.tabPane, tools.screen === 'hub' ? styles.paneVisible : styles.paneHidden]}>
+              <ToolsScreen onOpen={openToolsItem} />
+            </View>
+            {tools.screen === 'qibla' && (
+              <QiblaScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenCities={() => setTools({ screen: 'cities' })}
+              />
+            )}
+            {tools.screen === 'tracker' && (
+              <SalahTrackerScreen onBack={() => setTools({ screen: 'hub' })} />
+            )}
+            {tools.screen === 'location' && (
+              <LocationScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenCities={() => setTools({ screen: 'cities' })}
+              />
+            )}
+            {tools.screen === 'cities' && (
+              <CitiesScreen
+                onBack={() => {
+                  setTools({ screen: 'hub' });
+                  setTab(citiesReturnTab);
+                }}
+              />
+            )}
+            {(tools.screen === 'prayer-reminders' || tools.screen === 'notifications') && (
+              <PrayerRemindersScreen onBack={() => setTools({ screen: 'hub' })} />
+            )}
+            {tools.screen === 'fasting' && (
+              <FastingScreen onBack={() => setTools({ screen: 'hub' })} />
+            )}
+            {tools.screen === 'zakat' && (
+              <ZakatScreen onBack={() => setTools({ screen: 'hub' })} />
+            )}
+            {tools.screen === 'calendar' && (
+              <CalendarScreen onBack={() => setTools({ screen: 'hub' })} />
+            )}
+            {tools.screen === 'mosque' && (
+              <MosqueFinderScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenCities={() => setTools({ screen: 'cities' })}
+              />
+            )}
+
+            {/* Women's Worship Views */}
+            {settings.womenWorshipEnabled && (tools.screen === 'women-cycle' || tools.screen === 'women-purity' || tools.screen === 'women-guidance' || tools.screen === 'women-qada') && (
+              <WomenLockGate>
+                {tools.screen === 'women-cycle' && (
+                  <WomenCycleScreen
+                    onBack={() => setTools({ screen: 'hub' })}
+                    onOpenPurity={() => setTools({ screen: 'women-purity' })}
+                  />
+                )}
+                {tools.screen === 'women-purity' && (
+                  <WomenPurityScreen
+                    onBack={() => setTools({ screen: 'hub' })}
+                    onOpenQada={() => setTools({ screen: 'women-qada' })}
+                    onOpenGuidance={() => setTools({ screen: 'women-guidance' })}
+                  />
+                )}
+                {tools.screen === 'women-guidance' && (
+                  <WomenGuidanceScreen
+                    onBack={() => setTools({ screen: 'hub' })}
+                    onOpenPurity={() => setTools({ screen: 'women-purity' })}
+                  />
+                )}
+                {tools.screen === 'women-qada' && (
+                  <WomenQadaScreen
+                    onBack={() => setTools({ screen: 'hub' })}
+                    onOpenCycle={() => setTools({ screen: 'women-cycle' })}
+                  />
+                )}
+              </WomenLockGate>
+            )}
+
+            {/* Hajj & Umrah Views */}
+            {tools.screen === 'umrah-guide' && (
+              <UmrahGuideScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenDuas={() => {
+                  setTools({ screen: 'hub' });
+                  setLibrary({ screen: 'duas' });
+                  setTab('library');
+                }}
+              />
+            )}
+            {tools.screen === 'umrah-resources' && (
+              <UmrahResourcesScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenDuas={() => {
+                  setTools({ screen: 'hub' });
+                  setLibrary({ screen: 'duas' });
+                  setTab('library');
+                }}
+              />
+            )}
+            {tools.screen === 'hajj-journey' && (
+              <HajjJourneyScreen
+                onBack={() => setTools({ screen: 'hub' })}
+                onOpenDuas={() => {
+                  setTools({ screen: 'hub' });
+                  setLibrary({ screen: 'duas' });
+                  setTab('library');
+                }}
+              />
+            )}
+            {tools.screen === 'makkah-live' && (
+              <MakkahLiveScreen onBack={() => setTools({ screen: 'hub' })} />
+            )}
+            {tools.screen === 'madinah-live' && (
+              <MadinahLiveScreen onBack={() => setTools({ screen: 'hub' })} />
+            )}
+            {tools.screen === 'hajj-live' && (
+              <HajjLiveScreen onBack={() => setTools({ screen: 'hub' })} />
+            )}
+          </View>
+        </View>
       {showMiniPlayer && playback && (
         <AudioMiniPlayer
           playback={playback}
@@ -1374,6 +1380,9 @@ export default function App() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   screenWrap: { flex: 1 },
+  tabPane: { flex: 1 },
+  paneVisible: { display: 'flex' },
+  paneHidden: { display: 'none' },
   loading: { flex: 1, backgroundColor: '#121110' },
   appHeader: {
     flexDirection: 'row',

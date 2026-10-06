@@ -56,12 +56,20 @@ export default function TafsirScreen({
   const tafsirIdentifier = currentTafsirSource.identifier;
 
   useEffect(() => {
+    if (surahNumber) {
+      setCurrentSurah((prev) => (prev !== surahNumber ? surahNumber : prev));
+    }
+  }, [surahNumber]);
+
+  useEffect(() => {
     fetchSurahList().then(setSurahs).catch(() => {});
   }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSurahDetail(null);
+    setTafsirList([]);
     try {
       const [detail, tafsirs] = await Promise.all([
         fetchSurah(currentSurah, false),

@@ -166,33 +166,44 @@ function NotesScreen({
           backLabel={backLabel}
         />
 
-        <FlatList
-          data={notes}
-          keyExtractor={(item) => item.id}
-          renderItem={renderNote}
-          contentContainerStyle={[styles.listContent, { paddingHorizontal: paddingH }]}
-        ListHeaderComponent={
-          <View
+        <View
+          style={[
+            styles.inputCard,
+            {
+              backgroundColor: colors.bgSurface,
+              borderColor: colors.borderSubtle,
+              marginHorizontal: paddingH,
+              marginBottom: 12,
+            },
+          ]}
+        >
+          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
+            Add New Reflection
+          </Text>
+          <TextInput
+            placeholder="Write your thoughts or lessons from this verse..."
+            placeholderTextColor={colors.textMuted}
+            multiline
+            numberOfLines={3}
+            value={input}
+            onChangeText={setInput}
             style={[
-              styles.inputCard,
+              styles.textArea,
               {
-                backgroundColor: colors.bgSurface,
+                color: colors.textPrimary,
                 borderColor: colors.borderSubtle,
+                backgroundColor: colors.bgBase,
               },
             ]}
-          >
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-              Add New Reflection
-            </Text>
+          />
+          <View style={styles.inputRow}>
             <TextInput
-              placeholder="Write your thoughts or lessons from this verse..."
+              placeholder="Verse: e.g. 2:255"
               placeholderTextColor={colors.textMuted}
-              multiline
-              numberOfLines={3}
-              value={input}
-              onChangeText={setInput}
+              value={refInput}
+              onChangeText={setRefInput}
               style={[
-                styles.textArea,
+                styles.refInput,
                 {
                   color: colors.textPrimary,
                   borderColor: colors.borderSubtle,
@@ -200,50 +211,42 @@ function NotesScreen({
                 },
               ]}
             />
-            <View style={styles.inputRow}>
-              <TextInput
-                placeholder="Verse: e.g. 2:255"
-                placeholderTextColor={colors.textMuted}
-                value={refInput}
-                onChangeText={setRefInput}
-                style={[
-                  styles.refInput,
-                  {
-                    color: colors.textPrimary,
-                    borderColor: colors.borderSubtle,
-                    backgroundColor: colors.bgBase,
-                  },
-                ]}
-              />
-              <TouchableOpacity
-                style={[
-                  styles.saveBtn,
-                  { backgroundColor: justSaved ? colors.accent : colors.accent },
-                ]}
-                onPress={onSave}
-                accessibilityRole="button"
-                accessibilityLabel={justSaved ? 'Reflection saved' : 'Save reflection'}
-              >
-                <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>
-                  {justSaved ? 'Saved ✓' : 'Save'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            {error && (
-              <Text style={[styles.errorText, { color: colors.accent }]}>
-                {error}
+            <TouchableOpacity
+              style={[
+                styles.saveBtn,
+                { backgroundColor: justSaved ? colors.accent : colors.accent },
+              ]}
+              onPress={onSave}
+              accessibilityRole="button"
+              accessibilityLabel={justSaved ? 'Reflection saved' : 'Save reflection'}
+            >
+              <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>
+                {justSaved ? 'Saved ✓' : 'Save'}
               </Text>
-            )}
+            </TouchableOpacity>
           </View>
-        }
-        ListEmptyComponent={
-          <EmptyState
-            icon="create-outline"
-            title="No reflections yet"
-            subtitle="Add thoughts and reflections on verses as you read the Quran — or write your first one above."
-          />
-        }
-      />
+          {error && (
+            <Text style={[styles.errorText, { color: colors.accent }]}>
+              {error}
+            </Text>
+          )}
+        </View>
+
+        <FlatList
+          data={notes}
+          keyExtractor={(item) => item.id}
+          renderItem={renderNote}
+          contentContainerStyle={[styles.listContent, { paddingHorizontal: paddingH }]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          ListEmptyComponent={
+            <EmptyState
+              icon="create-outline"
+              title="No reflections yet"
+              subtitle="Add thoughts and reflections on verses as you read the Quran — or write your first one above."
+            />
+          }
+        />
       </View>
     </View>
   );

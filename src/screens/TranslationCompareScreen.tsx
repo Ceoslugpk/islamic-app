@@ -67,6 +67,18 @@ export default function TranslationCompareScreen({
   const [trans3Text, setTrans3Text] = useState<string>('');
 
   useEffect(() => {
+    if (initialSurah) {
+      setCurrentSurah((prev) => (prev !== initialSurah ? initialSurah : prev));
+    }
+  }, [initialSurah]);
+
+  useEffect(() => {
+    if (initialAyah) {
+      setCurrentAyah((prev) => (prev !== initialAyah ? initialAyah : prev));
+    }
+  }, [initialAyah]);
+
+  useEffect(() => {
     fetchSurahList().then(setSurahs).catch(() => {});
   }, []);
 
@@ -84,6 +96,10 @@ export default function TranslationCompareScreen({
   const loadAyah = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setArabicText('');
+    setTrans1Text('');
+    setTrans2Text('');
+    setTrans3Text('');
     try {
       const editions = [
         'quran-uthmani',

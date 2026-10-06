@@ -857,6 +857,71 @@ export function getRate(): number {
 export const setPlaybackRate = setRate;
 export const getPlaybackRate = getRate;
 
+// ---------------------------------------------------------------------------
+// Sleep Timer Singleton (persists across modal minimize/close)
+// ---------------------------------------------------------------------------
+let sleepTimerId: ReturnType<typeof setInterval> | null = null;
+let sleepEndTime: number | null = null;
+let sleepInitialMinutes: number | null = null;
+const sleepListeners = new Set<(remainingSeconds: number | null, initialMinutes: number | null) => void>();
+
+function notifySleepListeners(): void {
+  const remaining = getSleepTimerRemaining();
+  for (const listener of sleepListeners) {
+    try {
+      listener(remaining, sleepInitialMinutes);
+    } catch {}
+  }
+}
+
+export function startSleepTimer(minutes: number): void {
+  cancelSleepTimer();
+  if (minutes <= 0) return;
+
+  sleepInitialMinutes = minutes;
+  sleepEndTime = Date.now() + minutes * 60_000;
+  notifySleepListeners();
+
+  sleepTimerId = setInterval(() => {
+    const left = getSleepTimerRemaining();
+    notifySleepListeners();
+    if (left !== null && left <= 0) {
+      cancelSleepTimer();
+      stop(true).catch(() => {});
+    }
+  }, 1000);
+}
+
+export function cancelSleepTimer(): void {
+  if (sleepTimerId) {
+    clearInterval(sleepTimerId);
+    sleepTimerId = null;
+  }
+  sleepEndTime = null;
+  sleepInitialMinutes = null;
+  notifySleepListeners();
+}
+
+export function getSleepTimerRemaining(): number | null {
+  if (!sleepEndTime) return null;
+  const left = Math.round((sleepEndTime - Date.now()) / 1000);
+  return Math.max(0, left);
+}
+
+export function getSleepTimerInitialMinutes(): number | null {
+  return sleepInitialMinutes;
+}
+
+export function addSleepTimerListener(
+  listener: (remainingSeconds: number | null, initialMinutes: number | null) => void
+): () => void {
+  sleepListeners.add(listener);
+  listener(getSleepTimerRemaining(), sleepInitialMinutes);
+  return () => {
+    sleepListeners.delete(listener);
+  };
+}
+
 function cleanupCurrentSound(): void {
   if (currentSoundSubscription) {
     try {
