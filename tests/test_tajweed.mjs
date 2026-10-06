@@ -72,6 +72,36 @@ console.log('  ✓ every class maps to a display rule');
 assert.deepEqual(parseTajweedHtml(''), [{ text: '' }]);
 console.log('  ✓ empty text handled');
 
+// 7. QuranHub bracket tajweed parses to the same rules (side-by-side provider)
+const qhMarkers = { h: 'silent', l: 'silent', q: 'qalqalah', n: 'madd', p: 'madd', g: 'ghunnah', i: 'ikhfa', d: 'idgham' };
+function parseQuranhub(text) {
+  const spans = [];
+  const regex = /\[([a-z])(?::[0-9]+)?\[([^]]*)\]|([^\[]+)/g;
+  let m;
+  while ((m = regex.exec(text)) !== null) {
+    if (m[1]) spans.push({ text: m[2] || '', rule: qhMarkers[m[1]] });
+    else if (m[3]) spans.push({ text: m[3] });
+  }
+  return spans.length ? spans : [{ text }];
+}
+// Real QuranHub 112:1 payload
+const QH_112_1 = 'قُلْ هُوَ [h:8078[ٱ]للَّهُ أَحَ[q[د]ٌ';
+const qhSpans = parseQuranhub(QH_112_1);
+assert.ok(qhSpans.some((x) => x.rule === 'silent' && x.text === 'ٱ'), 'QuranHub [h → silent');
+assert.ok(qhSpans.some((x) => x.rule === 'qalqalah' && x.text === 'د'), 'QuranHub [q → qalqalah');
+console.log('  ✓ QuranHub bracket tajweed parses to rules');
+
+// 8. Auto-detect routes each source correctly
+function parseAny(text) {
+  if (text.includes('<tajweed')) return parseTajweedHtml(text);
+  if (/\[[a-z](?::[0-9]+)?\[/.test(text)) return parseQuranhub(text);
+  return [{ text }];
+}
+assert.equal(parseAny(REAL_1_1)[0].text, 'بِسْمِ ');
+assert.ok(parseAny(QH_112_1).some((x) => x.rule === 'qalqalah'));
+assert.deepEqual(parseAny('قُلْ'), [{ text: 'قُلْ' }]);
+console.log('  ✓ auto-detect handles islamic.app HTML + QuranHub brackets + plain');
+
 console.log('\n========================================================');
-console.log('ALL 6 TAJWEED TESTS PASSED SUCCESSFULLY!');
+console.log('ALL 8 TAJWEED TESTS PASSED SUCCESSFULLY!');
 console.log('========================================================');

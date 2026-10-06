@@ -58,6 +58,41 @@ export function parseTajweedHtml(text: string): TajweedSpan[] {
   return spans.length ? spans : [{ text }];
 }
 
+/** QuranHub (Qurani.ai) tajweed marker codes → our rules. */
+const QURANHUB_CLASS_MAP: Record<string, TajweedRule> = {
+  h: 'silent', // ham_wasl
+  l: 'silent', // laam shamsiyah
+  q: 'qalqalah',
+  n: 'madd', // madda normal
+  p: 'madd', // madda permissible
+  g: 'ghunnah',
+  i: 'ikhfa',
+  d: 'idgham',
+};
+
+/** Parse QuranHub bracket tajweed (`[h:8078[ٱ]`) into renderable spans. */
+export function parseQuranhubTajweed(text: string): TajweedSpan[] {
+  const spans: TajweedSpan[] = [];
+  const regex = /\[([a-z])(?::[0-9]+)?\[([^]]*)\]|([^\[]+)/g;
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    if (m[1]) {
+      const rule = QURANHUB_CLASS_MAP[m[1]];
+      spans.push(rule ? { text: m[2] || '', rule } : { text: m[2] || '' });
+    } else if (m[3]) {
+      spans.push({ text: m[3] });
+    }
+  }
+  return spans.length ? spans : [{ text }];
+}
+
+/** Auto-detect + parse either islamic.app HTML or QuranHub bracket tajweed. */
+export function parseTajweedAny(text: string): TajweedSpan[] {
+  if (text.includes('<tajweed')) return parseTajweedHtml(text);
+  if (/\[[a-z](?::[0-9]+)?\[/.test(text)) return parseQuranhubTajweed(text);
+  return [{ text }];
+}
+
 /** Strip all tajweed tags to plain Uthmani text. */
 export function stripTajweedHtml(text: string): string {
   return text

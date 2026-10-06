@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../lib/theme';
-import { parseTajweedHtml, TajweedRule, TAJWEED_RULES, TajweedSpan } from '../lib/tajweed';
+import { parseTajweedAny, TajweedRule, TAJWEED_RULES, TajweedSpan } from '../lib/tajweed';
 
 /**
  * Renders islamic.app tajweed HTML with rule colors.
@@ -26,7 +26,7 @@ export function TajweedText({
     numberInSurah != null
       ? text.replace(/<span class=end>[^<]*<\/span>/g, '').replace(/<end[^>]*\/?>/g, '').trim()
       : text;
-  const spans: TajweedSpan[] = parseTajweedHtml(cleanText);
+  const spans: TajweedSpan[] = parseTajweedAny(cleanText);
   const resolvedLineHeight = lineHeight ?? Math.round(size * 1.6);
   const resolvedFamily = fontFamily ?? 'Amiri_400Regular';
 
