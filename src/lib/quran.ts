@@ -10,7 +10,7 @@ import { saveQuranCache, loadQuranCache } from './db';
 import { isAppOnline } from './useConnectivity';
 import { SURAHS_114 } from './surahs114';
 import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
-import { SURAH_AYAH_COUNTS } from './quranAudio';
+import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
 import { fetchIslamicTafsir } from './islamicTafsir';
 
 export interface SurahMeta {
