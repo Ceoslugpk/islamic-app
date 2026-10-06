@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  FlatList,
+  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -124,35 +126,37 @@ export function TajweedScreen({ onBack }: Props) {
           )}
         </ScrollView>
       ) : (
-        <ScrollView contentContainerStyle={styles.content} style={{ flex: 1 }}>
-          <View style={styles.surahHeader}>
-            <TouchableOpacity
-              onPress={() => setOpenSurah(null)}
-              style={[styles.backChip, { borderColor: colors.borderSubtle }]}
-              accessibilityRole="button"
-              accessibilityLabel="Back to tajweed surah list"
-            >
-              <Ionicons name="chevron-back" size={15} color={colors.textSecondary} />
-              <Text style={[styles.backChipText, { color: colors.textSecondary }]}>All surahs</Text>
-            </TouchableOpacity>
-            <Text style={[styles.surahTitle, { color: colors.textPrimary }]}>
-              {openMeta?.englishName || openSurah}
-            </Text>
-            <TouchableOpacity
-              onPress={() => setShowLegend((v) => !v)}
-              style={[styles.backChip, { borderColor: colors.borderSubtle }]}
-              accessibilityRole="button"
-            >
-              <Ionicons name="color-palette-outline" size={15} color={colors.accent} />
-              <Text style={[styles.backChipText, { color: colors.accent }]}>Legend</Text>
-            </TouchableOpacity>
-          </View>
-
-          {showLegend && (
-            <View style={[styles.legendCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-              <TajweedLegend compact />
+        <View style={{ flex: 1 }}>
+          <View style={[styles.content, { paddingBottom: 0 }]}>
+            <View style={styles.surahHeader}>
+              <TouchableOpacity
+                onPress={() => setOpenSurah(null)}
+                style={[styles.backChip, { borderColor: colors.borderSubtle }]}
+                accessibilityRole="button"
+                accessibilityLabel="Back to tajweed surah list"
+              >
+                <Ionicons name="chevron-back" size={15} color={colors.textSecondary} />
+                <Text style={[styles.backChipText, { color: colors.textSecondary }]}>All surahs</Text>
+              </TouchableOpacity>
+              <Text style={[styles.surahTitle, { color: colors.textPrimary }]}>
+                {openMeta?.englishName || openSurah}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowLegend((v) => !v)}
+                style={[styles.backChip, { borderColor: colors.borderSubtle }]}
+                accessibilityRole="button"
+              >
+                <Ionicons name="color-palette-outline" size={15} color={colors.accent} />
+                <Text style={[styles.backChipText, { color: colors.accent }]}>Legend</Text>
+              </TouchableOpacity>
             </View>
-          )}
+
+            {showLegend && (
+              <View style={[styles.legendCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                <TajweedLegend compact />
+              </View>
+            )}
+          </View>
 
           {loading ? (
             <View style={styles.center}>
@@ -172,16 +176,28 @@ export function TajweedScreen({ onBack }: Props) {
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={[styles.ayahCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-              {ayahs?.map((a) => (
-                <View key={a.verseKey} style={styles.ayahBlock}>
-                  <Text style={[styles.ayahNum, { color: colors.textMuted }]}>{a.verseKey}</Text>
-                  <TajweedText text={a.html} size={isCompact ? 22 : 25} />
+            <FlatList
+              data={ayahs || []}
+              keyExtractor={(a) => a.verseKey}
+              contentContainerStyle={styles.ayahCard}
+              initialNumToRender={12}
+              maxToRenderPerBatch={12}
+              windowSize={7}
+              removeClippedSubviews={Platform.OS !== 'web'}
+              ListHeaderComponent={
+                <Text style={[styles.listHint, { color: colors.textMuted }]}>
+                  {ayahs?.length || 0} ayahs · tajweed colors
+                </Text>
+              }
+              renderItem={({ item }: { item: TajweedAyah }) => (
+                <View style={styles.ayahBlock}>
+                  <Text style={[styles.ayahNum, { color: colors.textMuted }]}>{item.verseKey}</Text>
+                  <TajweedText text={item.html} size={isCompact ? 22 : 25} />
                 </View>
-              ))}
-            </View>
+              )}
+            />
           )}
-        </ScrollView>
+        </View>
       )}
     </View>
   );
@@ -244,7 +260,8 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   retryBtn: { paddingHorizontal: 22, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   retryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
-  ayahCard: { borderRadius: 16, borderWidth: 1, padding: 18 },
+  ayahCard: { borderRadius: 16, borderWidth: 1, padding: 18, backgroundColor: 'transparent' },
+  listHint: { fontFamily: 'Manrope_500Medium', fontSize: 11, color: '#8C8474', marginBottom: 10 },
   ayahBlock: { marginBottom: 16 },
   ayahNum: { fontFamily: 'Manrope_500Medium', fontSize: 11, letterSpacing: 0.4, marginBottom: 6 },
 });
