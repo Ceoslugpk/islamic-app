@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
+  TextInput,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +14,8 @@ import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { TajweedText, TajweedLegend } from '../components/TajweedText';
-import { TAJWEED_SURAHS, TajweedSurah } from '../lib/tajweed';
+import { fetchTajweedSurah, TajweedAyah } from '../lib/tajweed';
+import { SURAHS_114 } from '../lib/surahs114';
 
 interface Props {
   onBack: () => void;
@@ -22,42 +25,83 @@ export function TajweedScreen({ onBack }: Props) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
-  const [open, setOpen] = useState<TajweedSurah | null>(null);
+  const [openSurah, setOpenSurah] = useState<number | null>(null);
   const [showLegend, setShowLegend] = useState(false);
+  const [ayahs, setAyahs] = useState<TajweedAyah[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+
+  const loadSurah = useCallback(async (surah: number) => {
+    setLoading(true);
+    setError(null);
+    setAyahs(null);
+    try {
+      const data = await fetchTajweedSurah(surah);
+      setAyahs(data);
+    } catch {
+      setError('Could not load tajweed text. Check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (openSurah !== null) loadSurah(openSurah);
+  }, [openSurah, loadSurah]);
+
+  const filtered = SURAHS_114.filter(
+    (s) =>
+      s.englishName.toLowerCase().includes(query.toLowerCase()) ||
+      s.number.toString().includes(query)
+  );
+
+  const openMeta = openSurah !== null ? SURAHS_114.find((s) => s.number === openSurah) : null;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
         title="Tajweed Colors"
-        subtitle="Color-coded Quran reading · curated surahs"
+        subtitle="Full Quran · color-coded recitation rules"
         onBack={onBack}
       />
 
-      {open === null ? (
+      {openSurah === null ? (
         <ScrollView contentContainerStyle={styles.content} style={{ flex: 1 }}>
           <View style={[styles.infoCard, { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle }]}>
             <Ionicons name="information-circle-outline" size={18} color={colors.accent} />
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              Read with the standard tajweed color rules — ghunnah, idgham, qalqalah, ikhfa, madd and silent letters. Tap a surah to read it in color.
+              Every surah of the Quran in standard tajweed colors — ghunnah, idgham, qalqalah, ikhfa, madd and silent letters. Data from islamic.app (uthmani tajweed edition).
             </Text>
           </View>
 
-          {TAJWEED_SURAHS.map((s) => (
+          <View style={[styles.searchBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+            <Ionicons name="search" size={16} color={colors.textMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search surah..."
+              placeholderTextColor={colors.textMuted}
+              style={[styles.searchInput, { color: colors.textPrimary }]}
+            />
+          </View>
+
+          {filtered.map((s) => (
             <TouchableOpacity
               key={s.number}
-              onPress={() => setOpen(s)}
+              onPress={() => setOpenSurah(s.number)}
               style={[styles.row, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
               accessibilityRole="button"
-              accessibilityLabel={`Read ${s.nameEn} with tajweed colors`}
+              accessibilityLabel={`Read ${s.englishName} with tajweed colors`}
             >
               <View style={[styles.numBox, { backgroundColor: colors.accentDim }]}>
                 <Text style={[styles.numText, { color: colors.accent }]}>{s.number}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.rowName, { color: colors.textPrimary }]}>{s.nameEn}</Text>
-                <Text style={[styles.rowCount, { color: colors.textMuted }]}>{s.ayahs.length} ayahs</Text>
+                <Text style={[styles.rowName, { color: colors.textPrimary }]}>{s.englishName}</Text>
+                <Text style={[styles.rowCount, { color: colors.textMuted }]}>{s.numberOfAyahs} ayahs</Text>
               </View>
-              <ArabicText size={18}>{s.nameAr}</ArabicText>
+              <ArabicText size={18}>{s.name}</ArabicText>
               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginLeft: 8 }} />
             </TouchableOpacity>
           ))}
@@ -83,7 +127,7 @@ export function TajweedScreen({ onBack }: Props) {
         <ScrollView contentContainerStyle={styles.content} style={{ flex: 1 }}>
           <View style={styles.surahHeader}>
             <TouchableOpacity
-              onPress={() => setOpen(null)}
+              onPress={() => setOpenSurah(null)}
               style={[styles.backChip, { borderColor: colors.borderSubtle }]}
               accessibilityRole="button"
               accessibilityLabel="Back to tajweed surah list"
@@ -91,7 +135,9 @@ export function TajweedScreen({ onBack }: Props) {
               <Ionicons name="chevron-back" size={15} color={colors.textSecondary} />
               <Text style={[styles.backChipText, { color: colors.textSecondary }]}>All surahs</Text>
             </TouchableOpacity>
-            <Text style={[styles.surahTitle, { color: colors.textPrimary }]}>{open.nameEn}</Text>
+            <Text style={[styles.surahTitle, { color: colors.textPrimary }]}>
+              {openMeta?.englishName || openSurah}
+            </Text>
             <TouchableOpacity
               onPress={() => setShowLegend((v) => !v)}
               style={[styles.backChip, { borderColor: colors.borderSubtle }]}
@@ -108,16 +154,33 @@ export function TajweedScreen({ onBack }: Props) {
             </View>
           )}
 
-          <View style={[styles.ayahCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            {open.ayahs.map((a, i) => (
-              <View key={i} style={styles.ayahBlock}>
-                <Text style={[styles.ayahNum, { color: colors.textMuted }]}>
-                  {open.number}:{i + 1}
-                </Text>
-                <TajweedText text={a} size={isCompact ? 22 : 25} />
-              </View>
-            ))}
-          </View>
+          {loading ? (
+            <View style={styles.center}>
+              <ActivityIndicator color={colors.accent} size="large" />
+              <Text style={[styles.hint, { color: colors.textMuted }]}>Loading tajweed text...</Text>
+            </View>
+          ) : error ? (
+            <View style={styles.center}>
+              <Ionicons name="cloud-offline-outline" size={40} color={colors.textMuted} />
+              <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
+              <TouchableOpacity
+                style={[styles.retryBtn, { backgroundColor: colors.accent }]}
+                onPress={() => loadSurah(openSurah)}
+                accessibilityRole="button"
+              >
+                <Text style={styles.retryText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={[styles.ayahCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+              {ayahs?.map((a) => (
+                <View key={a.verseKey} style={styles.ayahBlock}>
+                  <Text style={[styles.ayahNum, { color: colors.textMuted }]}>{a.verseKey}</Text>
+                  <TajweedText text={a.html} size={isCompact ? 22 : 25} />
+                </View>
+              ))}
+            </View>
+          )}
         </ScrollView>
       )}
     </View>
@@ -129,6 +192,16 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   infoCard: { flexDirection: 'row', gap: 10, borderRadius: 12, borderWidth: 1, padding: 14, marginBottom: 16 },
   infoText: { fontFamily: 'Manrope_400Regular', fontSize: 12.5, lineHeight: 18, flex: 1 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    marginBottom: 14,
+  },
+  searchInput: { flex: 1, fontFamily: 'Manrope_400Regular', fontSize: 14, paddingVertical: 10 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -165,7 +238,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   backChipText: { fontFamily: 'Manrope_500Medium', fontSize: 12 },
-  surahTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 22 },
+  surahTitle: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 22, flex: 1, textAlign: 'center' },
+  center: { alignItems: 'center', paddingVertical: 40, gap: 12 },
+  hint: { fontFamily: 'Manrope_400Regular', fontSize: 13 },
+  errorText: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  retryBtn: { paddingHorizontal: 22, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  retryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
   ayahCard: { borderRadius: 16, borderWidth: 1, padding: 18 },
   ayahBlock: { marginBottom: 16 },
   ayahNum: { fontFamily: 'Manrope_500Medium', fontSize: 11, letterSpacing: 0.4, marginBottom: 6 },

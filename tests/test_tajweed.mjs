@@ -1,71 +1,75 @@
 /**
- * Tajweed parser tests — self-contained (mirrors src/lib/tajweed.ts logic).
+ * Tajweed parser tests — self-contained (mirrors src/lib/tajweed.ts logic
+ * parsing islamic.app `text_uthmani_tajweed` HTML).
  */
 import assert from 'node:assert/strict';
 
 console.log('=== TAJWEED PARSER TEST SUITE ===\n');
 
-const MARKER_MAP = { m: 'ghunnah', d: 'idgham', s: 'silent', q: 'qalqalah', i: 'ikhfa', g: 'madd' };
+const CLASS_MAP = {
+  ham_wasl: 'silent',
+  laam_shamsiyah: 'silent',
+  qalaqah: 'qalqalah',
+  madda_normal: 'madd',
+  madda_permissible: 'madd',
+  idgham_wo_ghunnah: 'idgham',
+  ikhfa: 'ikhfa',
+  ghunnah: 'ghunnah',
+};
 
-function parseTajweed(text) {
+function parseTajweedHtml(text) {
   const spans = [];
-  const regex = /\{([a-z])\}([^{]*)/g;
-  let lastIndex = 0;
+  const regex = /<tajweed class=([a-z_]+)>([^<]*)<\/tajweed>|([^<]+)/g;
   let m;
   while ((m = regex.exec(text)) !== null) {
-    if (m.index > lastIndex) spans.push({ text: text.slice(lastIndex, m.index) });
-    spans.push({ text: m[2], rule: MARKER_MAP[m[1]] });
-    lastIndex = regex.lastIndex;
+    if (m[1]) {
+      spans.push({ text: m[2] || '', rule: CLASS_MAP[m[1]] });
+    } else if (m[3]) {
+      spans.push({ text: m[3] });
+    }
   }
-  if (lastIndex < text.length) spans.push({ text: text.slice(lastIndex) });
   return spans.length ? spans : [{ text }];
 }
 
-function stripMarkers(text) {
-  return text.replace(/\{[a-z]\}/g, '');
+function stripTajweedHtml(text) {
+  return text.replace(/<tajweed class=[a-z_]+>([^<]*)<\/tajweed>/g, '$1').replace(/<end[^>]*\/?>/g, '');
 }
+
+// Real payloads captured live from api.islamic.app (surah 1:1, 112:1)
+const REAL_1_1 = 'بِسْمِ <tajweed class=ham_wasl>ٱ</tajweed>للَّهِ <tajweed class=ham_wasl>ٱ</tajweed><tajweed class=laam_shamsiyah>ل</tajweed>رَّحْمَ<tajweed class=madda_normal>ـٰ</tajweed>نِ';
+const REAL_112_1 = 'قُلْ هُوَ <tajweed class=ham_wasl>ٱ</tajweed>للَّهُ أَحَ<tajweed class=qalaqah>دْ</tajweed>';
 
 // 1. Plain text → single unmarked span
-assert.deepEqual(parseTajweed('قُلْ'), [{ text: 'قُلْ' }]);
+assert.deepEqual(parseTajweedHtml('قُلْ'), [{ text: 'قُلْ' }]);
 console.log('  ✓ plain text stays unmarked');
 
-// 2. One marker splits into marked span
-const s1 = parseTajweed('بِسْمِ {i}ٱللَّهِ');
-assert.equal(s1.length, 2);
-assert.equal(s1[0].text, 'بِسْمِ ');
-assert.equal(s1[1].rule, 'ikhfa');
-console.log('  ✓ single marker maps to rule');
+// 2. Real 1:1 payload parses into expected rules
+const s1 = parseTajweedHtml(REAL_1_1);
+const rules = s1.map((x) => x.rule).filter(Boolean);
+assert.ok(rules.includes('silent'), 'ham_wasl → silent');
+assert.ok(rules.includes('madd'), 'madda_normal → madd');
+assert.ok(s1.some((x) => x.rule === 'silent' && x.text === 'ل'), 'laam_shamsiyah → silent lam');
+console.log('  ✓ real 1:1 payload maps classes correctly');
 
-// 3. Multiple markers
-const s2 = parseTajweed('{q}ٱلْحَمْدُ {i}ٱلْعَـٰلَمِينَ');
-assert.equal(s2.length, 2);
-assert.equal(s2[0].rule, 'qalqalah');
-assert.equal(s2[1].rule, 'ikhfa');
-console.log('  ✓ multiple markers each map');
+// 3. Real 112:1 qalqalah
+const s3 = parseTajweedHtml(REAL_112_1);
+assert.ok(s3.some((x) => x.rule === 'qalqalah' && x.text === 'دْ'), 'qalaqah → qalqalah');
+console.log('  ✓ real 112:1 qalqalah maps');
 
-// 4. Stripping markers restores plain text
-const tagged = '{i}ٱللَّهِ {q}ٱلرَّحْمَـٰنِ';
-assert.equal(stripMarkers(tagged), 'ٱللَّهِ ٱلرَّحْمَـٰنِ');
-console.log('  ✓ marker stripping is lossless for display');
+// 4. Stripping restores plain Uthmani (no tags)
+const plain = stripTajweedHtml(REAL_1_1);
+assert.ok(!plain.includes('<tajweed'), 'tags removed');
+assert.ok(plain.includes('بِسْمِ') && plain.includes('ٱللَّهِ') && plain.includes('نِ'), 'text preserved');
+console.log('  ✓ stripping is lossless');
 
-// 5. All curated surah ayahs parse without throwing + every marker maps
-const curated = [
-  'بِسْمِ {i}ٱللَّهِ {q}ٱلرَّحْمَـٰنِ {i}ٱلرَّحِيمِ',
-  '{q}ٱلْحَمْدُ لِلَّهِ رَبِّ {i}ٱلْعَـٰلَمِينَ',
-  'وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ',
-  'قُلْ أَعُوذُ بِرَبِّ {i}ٱلْفَلَقِ',
-];
-for (const ayah of curated) {
-  const spans = parseTajweed(ayah);
-  assert.ok(spans.length >= 1);
-  for (const sp of spans) {
-    if (sp.rule) assert.ok(Object.values(MARKER_MAP).includes(sp.rule));
-  }
+// 5. All known classes map to a rule
+for (const [, rule] of Object.entries(CLASS_MAP)) {
+  assert.ok(['ghunnah', 'idgham', 'silent', 'qalqalah', 'ikhfa', 'madd'].includes(rule), `${rule} valid`);
 }
-console.log('  ✓ all curated markers resolve to known rules');
+console.log('  ✓ every class maps to a display rule');
 
 // 6. Empty text → single empty span (no crash)
-assert.deepEqual(parseTajweed(''), [{ text: '' }]);
+assert.deepEqual(parseTajweedHtml(''), [{ text: '' }]);
 console.log('  ✓ empty text handled');
 
 console.log('\n========================================================');

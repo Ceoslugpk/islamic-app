@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '../lib/theme';
-import { parseTajweed, TajweedRule, TAJWEED_RULES, TajweedSpan } from '../lib/tajweed';
+import { parseTajweedHtml, TajweedRule, TAJWEED_RULES, TajweedSpan } from '../lib/tajweed';
 
 /**
- * Renders marker-tagged Uthmani text with tajweed rule colors.
+ * Renders islamic.app tajweed HTML with rule colors.
  * Each rule's color is applied per span; unmarked text uses the theme color.
  */
 export function TajweedText({
@@ -17,7 +17,7 @@ export function TajweedText({
   lineHeight?: number;
 }) {
   const { colors } = useTheme();
-  const spans: TajweedSpan[] = parseTajweed(text);
+  const spans: TajweedSpan[] = parseTajweedHtml(text);
   const resolvedLineHeight = lineHeight ?? Math.round(size * 1.6);
 
   return (
