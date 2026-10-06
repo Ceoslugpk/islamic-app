@@ -1451,10 +1451,11 @@ const styles = StyleSheet.create({
   },
   gearBtn: {
     padding: 8,
-    // fixed width — equal to the brand side — keeps the middle truly centered
-    width: 110,
+    // Content-width (no fixed 110) so the gear hugs the screen edge and
+    // the Bismillah sits immediately to its left — no dead gap.
     flexShrink: 0,
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gear: {
     fontSize: 20,
