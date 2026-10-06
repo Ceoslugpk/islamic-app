@@ -454,7 +454,7 @@ export async function fetchAyahTafsir(
   ayah: number,
   tafsirIdentifier = 'ar.jalalayn'
 ): Promise<{ text: string; edition: string }> {
-  const key = `tafsir:ayah:${surah}:${ayah}:${tafsirIdentifier}`;
+  const key = `tafsir:ayah:${surah}:${ayah}:${tafsirIdentifier}:v2`;
   const cached = loadQuranCache<{ text: string; edition: string }>(key);
   if (cached) return cached;
 

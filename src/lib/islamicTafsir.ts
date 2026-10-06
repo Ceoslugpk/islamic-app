@@ -79,7 +79,10 @@ export async function fetchIslamicTafsir(
   ayah: number,
   slug: string
 ): Promise<IslamicTafsirResult> {
-  const key = `islamic-tafsir:${surah}:${ayah}:${slug}`;
+  // v2: bumped so pre-introOnly cache entries (serving the surah intro for
+  // every ayah) are invalidated — otherwise stale entries lack introOnly
+  // and the reader repeats the intro on every ayah.
+  const key = `islamic-tafsir-v2:${surah}:${ayah}:${slug}`;
   const cached = loadQuranCache<IslamicTafsirResult>(key);
   if (cached) return cached;
 
