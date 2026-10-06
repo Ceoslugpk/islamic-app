@@ -104,6 +104,29 @@ function validateBackup(payload) {
     }
   }
 
+const STORAGE_PREFIXES = [
+  'islamic-settings',
+  'settings',
+  'quran-',
+  'audio-',
+  'hifz-',
+  'playlist-',
+  'tafsir-',
+  'vocab-',
+  '@search_history_',
+];
+
+const EXCLUDED_STORAGE_KEYS = [
+  'quran-audio-downloads',
+  'quran_audio_arabic_reciters_cache',
+];
+
+function isAllowedStorageKey(key) {
+  if (typeof key !== 'string' || !key) return false;
+  if (EXCLUDED_STORAGE_KEYS.some((ex) => key === ex || key.includes(ex))) return false;
+  return STORAGE_PREFIXES.some((p) => key.startsWith(p));
+}
+
   if (payload.data.storage !== undefined) {
     if (!payload.data.storage || typeof payload.data.storage !== 'object' || Array.isArray(payload.data.storage)) {
       throw new Error('Backup storage data is corrupted: expected key-value object.');
@@ -111,6 +134,19 @@ function validateBackup(payload) {
     for (const [k, v] of Object.entries(payload.data.storage)) {
       if (typeof v !== 'string') {
         throw new Error(`Invalid storage entry for key "${k}": value must be a string.`);
+      }
+      if (!isAllowedStorageKey(k)) {
+        throw new Error(`Unauthorized storage key "${k}" in backup.`);
+      }
+      if (k === 'islamic-settings') {
+        try {
+          const parsed = JSON.parse(v);
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error('Malformed islamic-settings');
+          }
+        } catch {
+          throw new Error('Backup contains invalid or unparseable islamic-settings JSON.');
+        }
       }
     }
   }
@@ -320,6 +356,54 @@ assert.equal(
 assert.equal(multiDesc.totalRecords, 21);
 console.log('  ✓ detailed singular/plural counts summary verified ("12 salah entries, 5 bookmarks, 3 notes…")');
 
+// 17. Storage key allowlist: unauthorized storage keys rejected
+const unauthorizedKeyPayload = makePayload({
+  data: {
+    tables: {},
+    storage: {
+      'arbitrary_injected_key': 'malicious_value',
+    },
+  },
+});
+assert.throws(() => validateBackup(unauthorizedKeyPayload), /Unauthorized storage key/);
+console.log('  ✓ arbitrary/unauthorized storage keys rejected');
+
+// 18. Excluded storage keys rejected even if matching prefix
+const excludedKeyPayload = makePayload({
+  data: {
+    tables: {},
+    storage: {
+      'quran-audio-downloads': 'disposable_data',
+    },
+  },
+});
+assert.throws(() => validateBackup(excludedKeyPayload), /Unauthorized storage key/);
+console.log('  ✓ excluded storage keys rejected');
+
+// 19. Malformed islamic-settings rejected
+const malformedSettingsPayload = makePayload({
+  data: {
+    tables: {},
+    storage: {
+      'islamic-settings': 'not valid json {{{',
+    },
+  },
+});
+assert.throws(() => validateBackup(malformedSettingsPayload), /unparseable islamic-settings/);
+console.log('  ✓ malformed islamic-settings JSON rejected');
+
+// 20. Non-object islamic-settings rejected
+const primitiveSettingsPayload = makePayload({
+  data: {
+    tables: {},
+    storage: {
+      'islamic-settings': '"just a string"',
+    },
+  },
+});
+assert.throws(() => validateBackup(primitiveSettingsPayload), /unparseable islamic-settings/);
+console.log('  ✓ non-object islamic-settings rejected');
+
 console.log('\n========================================================');
-console.log('ALL 16 BACKUP TESTS PASSED SUCCESSFULLY!');
+console.log('ALL 20 BACKUP TESTS PASSED SUCCESSFULLY!');
 console.log('========================================================');

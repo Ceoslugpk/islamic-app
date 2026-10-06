@@ -314,12 +314,30 @@ export function saveQuranCache(key: string, payload: object) {
   } catch { /* non-fatal */ }
 }
 
-export function loadQuranCache<T>(key: string): T | null {
+export function loadQuranCache<T>(key: string, validator?: (val: unknown) => val is T): T | null {
   try {
     const row = getDb().getFirstSync<QuranCacheRow>('SELECT payload FROM quran_cache WHERE key = ?', key);
-    return row ? (JSON.parse(row.payload) as T) : null;
+    if (!row) return null;
+    const parsed = JSON.parse(row.payload) as unknown;
+    if (validator && !validator(parsed)) {
+      return null;
+    }
+    return parsed as T;
   } catch {
     return null;
+  }
+}
+
+export function loadQuranCacheArray<T>(key: string, itemValidator?: (item: unknown) => boolean): T[] {
+  try {
+    const loaded = loadQuranCache<unknown[]>(key, (val): val is unknown[] => Array.isArray(val));
+    if (!loaded) return [];
+    if (itemValidator) {
+      return loaded.filter(itemValidator) as T[];
+    }
+    return loaded as T[];
+  } catch {
+    return [];
   }
 }
 
@@ -427,7 +445,15 @@ export function saveRecentlyPlayed(item: Omit<RecentlyPlayedItem, 'id' | 'timest
 }
 
 export function loadRecentlyPlayed(): RecentlyPlayedItem[] {
-  return loadQuranCache<RecentlyPlayedItem[]>('recent-audio') ?? [];
+  return loadQuranCacheArray<RecentlyPlayedItem>('recent-audio', (item) => {
+    return Boolean(
+      item &&
+      typeof item === 'object' &&
+      typeof (item as Record<string, unknown>).id === 'string' &&
+      typeof (item as Record<string, unknown>).identifier === 'string' &&
+      typeof (item as Record<string, unknown>).surah === 'number'
+    );
+  });
 }
 
 export function savePlaylist(playlist: Playlist): void {
@@ -438,7 +464,15 @@ export function savePlaylist(playlist: Playlist): void {
 }
 
 export function loadPlaylists(): Playlist[] {
-  return loadQuranCache<Playlist[]>('playlists') ?? [];
+  return loadQuranCacheArray<Playlist>('playlists', (p) => {
+    return Boolean(
+      p &&
+      typeof p === 'object' &&
+      typeof (p as Record<string, unknown>).id === 'string' &&
+      typeof (p as Record<string, unknown>).name === 'string' &&
+      Array.isArray((p as Record<string, unknown>).items)
+    );
+  });
 }
 
 export function deletePlaylist(id: string): void {
@@ -452,7 +486,14 @@ export function saveAudioQueue(queue: PlaylistItem[]): void {
 }
 
 export function loadAudioQueue(): PlaylistItem[] {
-  return loadQuranCache<PlaylistItem[]>('audio-queue') ?? [];
+  return loadQuranCacheArray<PlaylistItem>('audio-queue', (item) => {
+    return Boolean(
+      item &&
+      typeof item === 'object' &&
+      typeof (item as Record<string, unknown>).id === 'string' &&
+      typeof (item as Record<string, unknown>).surah === 'number'
+    );
+  });
 }
 
 const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -466,8 +507,25 @@ export function saveAudioSettings(settings: AudioSettings): void {
 }
 
 export function loadAudioSettings(): AudioSettings {
-  const loaded = loadQuranCache<AudioSettings>('audio-settings');
-  return loaded ? { ...DEFAULT_AUDIO_SETTINGS, ...loaded } : DEFAULT_AUDIO_SETTINGS;
+  const loaded = loadQuranCache<Record<string, unknown>>('audio-settings', (val): val is Record<string, unknown> => {
+    return Boolean(val && typeof val === 'object' && !Array.isArray(val));
+  });
+  if (!loaded) return DEFAULT_AUDIO_SETTINGS;
+
+  const reciter =
+    typeof loaded.reciter === 'string' && loaded.reciter.length > 0
+      ? loaded.reciter
+      : DEFAULT_AUDIO_SETTINGS.reciter;
+  const autoplayNext =
+    typeof loaded.autoplayNext === 'boolean'
+      ? loaded.autoplayNext
+      : DEFAULT_AUDIO_SETTINGS.autoplayNext;
+  const repeatMode =
+    loaded.repeatMode === 'none' || loaded.repeatMode === 'one' || loaded.repeatMode === 'all'
+      ? loaded.repeatMode
+      : DEFAULT_AUDIO_SETTINGS.repeatMode;
+
+  return { reciter, autoplayNext, repeatMode };
 }
 
 interface TasbihRow { id: string; count: number }

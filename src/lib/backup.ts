@@ -91,6 +91,66 @@ export const EXCLUDED_STORAGE_KEYS = [
   'quran_audio_arabic_reciters_cache',
 ] as const;
 
+/** Test whether a storage key is on the allowed list for export and import. */
+export function isAllowedStorageKey(key: string): boolean {
+  if (typeof key !== 'string' || !key) return false;
+  if (EXCLUDED_STORAGE_KEYS.some((ex) => key === ex || key.includes(ex))) return false;
+  return STORAGE_PREFIXES.some((p) => key.startsWith(p));
+}
+
+/**
+ * Sanitize export storage: strip womenPinHash and womenLockEnabled from islamic-settings.
+ * The PIN must never leave the device.
+ */
+export function sanitizeExportStorage(storage: Record<string, string>): Record<string, string> {
+  const out = { ...storage };
+  if (typeof out['islamic-settings'] === 'string') {
+    try {
+      const parsed = JSON.parse(out['islamic-settings']);
+      if (parsed && typeof parsed === 'object') {
+        delete parsed.womenPinHash;
+        delete parsed.womenLockEnabled;
+        out['islamic-settings'] = JSON.stringify(parsed);
+      }
+    } catch {
+      // non-fatal
+    }
+  }
+  return out;
+}
+
+/**
+ * Filter and validate storage keys on import.
+ * Only allows keys that match STORAGE_PREFIXES and are not in EXCLUDED_STORAGE_KEYS.
+ * Also validates that islamic-settings (if present) is parseable JSON object,
+ * and strips any womenPinHash / womenLockEnabled as defense-in-depth.
+ */
+export function filterAllowedStorage(storage: Record<string, string>): Record<string, string> {
+  const filtered: Record<string, string> = {};
+  for (const [key, val] of Object.entries(storage)) {
+    if (!isAllowedStorageKey(key) || typeof val !== 'string') {
+      continue;
+    }
+    if (key === 'islamic-settings') {
+      try {
+        const parsed = JSON.parse(val);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          continue; // reject malformed settings blob
+        }
+        delete parsed.womenPinHash;
+        delete parsed.womenLockEnabled;
+        filtered[key] = JSON.stringify(parsed);
+      } catch {
+        // reject malformed JSON
+        continue;
+      }
+    } else {
+      filtered[key] = val;
+    }
+  }
+  return filtered;
+}
+
 /** User-friendly singular/plural labels for table summary output. */
 export const TABLE_DISPLAY_NAMES: Record<string, { singular: string; plural: string }> = {
   salah_entries: { singular: 'salah entry', plural: 'salah entries' },
@@ -288,18 +348,18 @@ async function exportWebStorage(): Promise<Record<string, string>> {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
     if (!key) continue;
-    if (EXCLUDED_STORAGE_KEYS.some((ex) => key === ex || key.includes(ex))) continue;
-    if (STORAGE_PREFIXES.some((p) => key.startsWith(p))) {
+    if (isAllowedStorageKey(key)) {
       const val = localStorage.getItem(key);
       if (val !== null) out[key] = val;
     }
   }
-  return out;
+  return sanitizeExportStorage(out);
 }
 
 async function importWebStorage(storage: Record<string, string>): Promise<void> {
   if (typeof localStorage === 'undefined') return;
-  for (const [key, val] of Object.entries(storage)) {
+  const filtered = filterAllowedStorage(storage);
+  for (const [key, val] of Object.entries(filtered)) {
     try {
       localStorage.setItem(key, val);
     } catch {
@@ -311,20 +371,20 @@ async function importWebStorage(storage: Record<string, string>): Promise<void> 
 async function exportNativeStorage(): Promise<Record<string, string>> {
   const AsyncStorage = require('@react-native-async-storage/async-storage');
   const keys: string[] = await AsyncStorage.getAllKeys();
-  const wanted = keys.filter(
-    (k: string) =>
-      !EXCLUDED_STORAGE_KEYS.some((ex) => k === ex || k.includes(ex)) &&
-      STORAGE_PREFIXES.some((p) => k.startsWith(p))
-  );
+  const wanted = keys.filter((k: string) => isAllowedStorageKey(k));
   const entries: [string, string | null][] = await AsyncStorage.multiGet(wanted);
   const out: Record<string, string> = {};
   for (const [k, v] of entries) if (v !== null) out[k] = v;
-  return out;
+  return sanitizeExportStorage(out);
 }
 
 async function importNativeStorage(storage: Record<string, string>): Promise<void> {
   const AsyncStorage = require('@react-native-async-storage/async-storage');
-  await AsyncStorage.multiSet(Object.entries(storage));
+  const filtered = filterAllowedStorage(storage);
+  const entries = Object.entries(filtered);
+  if (entries.length > 0) {
+    await AsyncStorage.multiSet(entries);
+  }
 }
 
 async function exportWebTables(): Promise<Record<string, unknown[]>> {
@@ -889,6 +949,19 @@ export function validateBackup(payload: unknown): payload is BackupPayload {
     for (const [k, v] of Object.entries(p.data.storage)) {
       if (typeof v !== 'string') {
         throw new Error(`Invalid storage entry for key "${k}": value must be a string.`);
+      }
+      if (!isAllowedStorageKey(k)) {
+        throw new Error(`Unauthorized storage key "${k}" in backup.`);
+      }
+      if (k === 'islamic-settings') {
+        try {
+          const parsed = JSON.parse(v);
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error('Malformed islamic-settings');
+          }
+        } catch {
+          throw new Error('Backup contains invalid or unparseable islamic-settings JSON.');
+        }
       }
     }
   }

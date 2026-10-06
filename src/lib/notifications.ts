@@ -4,7 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DayTimings, Location } from './prayerTimes';
 import { markSalahCompleted } from './db';
 import * as Haptics from 'expo-haptics';
-import { buildDeepLink } from './deeplinks';
+import { buildDeepLink, parseDeepLink } from './deeplinks';
+import { sanitizeLocationLabel } from './useLocation';
 import {
   PrayerConfigs,
   DEFAULT_PRAYER_CONFIGS,
@@ -657,7 +658,7 @@ export async function schedulePrayerNotifications(
     { name: 'Isha', time: timings.timings.Isha },
   ];
 
-  const label = locationLabel || 'Your Location';
+  const label = sanitizeLocationLabel(locationLabel) || 'Your Location';
 
   for (const p of prayers) {
     if (!p.time || !p.time.includes(':')) continue;
@@ -836,6 +837,27 @@ export async function cancelQuranReminder() {
   }
 }
 
+/**
+ * Validate that an incoming notification URL is a safe, valid app deep link.
+ * Rejects tel:, file:, intent:, javascript:, data:, and custom unknown schemes.
+ * Only allows salah://, islamic://, or relative paths that parse to a valid DeepLinkTarget.
+ */
+export function isValidNotificationUrl(url: unknown): boolean {
+  if (typeof url !== 'string' || !url) return false;
+  const trimmed = url.trim();
+  // Reject dangerous or external schemes
+  if (/^(javascript|tel|sms|mailto|file|intent|content|data|blob):/i.test(trimmed)) {
+    return false;
+  }
+  // Must be salah:, islamic:, or an app-relative path / route
+  const isAllowedScheme = /^(salah:\/\/|salah:|islamic:\/\/|islamic:|\/)/i.test(trimmed);
+  if (!isAllowedScheme) {
+    return false;
+  }
+  const target = parseDeepLink(trimmed);
+  return target !== null;
+}
+
 /** Notification response listener setup - call once at app startup. */
 export function setupNotificationResponseHandler() {
   Notifications.addNotificationResponseReceivedListener((response) => {
@@ -846,7 +868,7 @@ export function setupNotificationResponseHandler() {
 
     // Handle deep link from notification tap (when user taps notification body)
     if (actionIdentifier === 'default') {
-      if (data?.url) {
+      if (data?.url && isValidNotificationUrl(data.url)) {
         Linking.openURL(data.url).catch(() => {});
       }
       return;

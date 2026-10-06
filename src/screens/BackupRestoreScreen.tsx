@@ -165,7 +165,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
       const confirmRestore = () => {
         Alert.alert(
           'Confirm restore',
-          `Backup from: ${info.exportedAt}\nApp version: ${info.appVersion}\n\nIncludes:\n${info.tables}\n\nThis will OVERWRITE your current local data. This cannot be undone.`,
+          `Backup from: ${info.exportedAt}\nApp version: ${info.appVersion}\n\nIncludes:\n${info.tables}\n\nNote: For your privacy, Women's Worship PIN is never included in backups and must be configured on this device.\n\nThis will OVERWRITE your current local data. This cannot be undone.`,
           [
             { text: 'Cancel', style: 'cancel' },
             {

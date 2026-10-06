@@ -177,6 +177,280 @@ const DEFAULTS: AppSettings = {
 const STORAGE_KEY = 'islamic-settings';
 export const METHOD_MIGRATION_KEY = 'islamic-settings-method-migrated-v16';
 
+const VALID_ACCENTS: Set<string> = new Set([
+  'amber',
+  'rose',
+  'emerald',
+  'sapphire',
+  'ruby',
+  'gold',
+  'amethyst',
+  'teal',
+  'bronze',
+  'slate',
+]);
+
+const VALID_NAMES_LANGS: Set<string> = new Set(['en', 'fr', 'tr', 'es', 'de', 'id', 'bn', 'ru', 'ur']);
+
+const VALID_TAFSIR_SOURCES: Set<string> = new Set([
+  'jalalayn',
+  'qurtubi',
+  'miqbas',
+  'waseet',
+  'baghawi',
+  'muyassar',
+]);
+
+/**
+ * Validates, clamps, and sanitizes every settings field against schema constraints.
+ * Strips unknown keys from arbitrary or untrusted inputs (e.g. backup imports).
+ */
+export function sanitizeSettings(raw: unknown): AppSettings {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return { ...DEFAULTS };
+  }
+  const p = raw as Record<string, unknown>;
+
+  // 1. settingsVersion
+  const settingsVersion =
+    typeof p.settingsVersion === 'number' && Number.isFinite(p.settingsVersion)
+      ? p.settingsVersion
+      : DEFAULTS.settingsVersion;
+
+  // 2. methodId (range 1-21)
+  const methodId =
+    typeof p.methodId === 'number' && Number.isInteger(p.methodId) && p.methodId >= 1 && p.methodId <= 21
+      ? p.methodId
+      : DEFAULTS.methodId;
+
+  // 3. madhab ('shafi' | 'hanafi')
+  const madhab: Madhab =
+    p.madhab === 'shafi' || p.madhab === 'hanafi' ? p.madhab : DEFAULTS.madhab;
+
+  // 4. timeFormat ('12h' | '24h')
+  const timeFormat: TimeFormat =
+    p.timeFormat === '12h' || p.timeFormat === '24h' ? p.timeFormat : DEFAULTS.timeFormat;
+
+  // 5. locationMode ('auto' | 'manual')
+  const locationMode: LocationMode =
+    p.locationMode === 'auto' || p.locationMode === 'manual' ? p.locationMode : DEFAULTS.locationMode;
+
+  // 6. manualLocation ({ latitude, longitude, label })
+  let manualLocation = DEFAULTS.manualLocation;
+  if (p.manualLocation && typeof p.manualLocation === 'object' && !Array.isArray(p.manualLocation)) {
+    const ml = p.manualLocation as Record<string, unknown>;
+    if (
+      typeof ml.latitude === 'number' &&
+      Number.isFinite(ml.latitude) &&
+      typeof ml.longitude === 'number' &&
+      Number.isFinite(ml.longitude)
+    ) {
+      const lat = Math.max(-90, Math.min(90, ml.latitude));
+      const lng = Math.max(-180, Math.min(180, ml.longitude));
+      const lbl = typeof ml.label === 'string' ? ml.label.slice(0, 120) : 'Custom Location';
+      manualLocation = { latitude: lat, longitude: lng, label: lbl };
+    }
+  }
+
+  // 7. autoLocation ({ latitude, longitude, label } | null)
+  let autoLocation: Location | null = null;
+  if (p.autoLocation && typeof p.autoLocation === 'object' && !Array.isArray(p.autoLocation)) {
+    const al = p.autoLocation as Record<string, unknown>;
+    if (
+      typeof al.latitude === 'number' &&
+      Number.isFinite(al.latitude) &&
+      typeof al.longitude === 'number' &&
+      Number.isFinite(al.longitude)
+    ) {
+      const lat = Math.max(-90, Math.min(90, al.latitude));
+      const lng = Math.max(-180, Math.min(180, al.longitude));
+      const lbl = typeof al.label === 'string' ? al.label.slice(0, 120) : `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+      autoLocation = { latitude: lat, longitude: lng, label: lbl };
+    }
+  }
+
+  // 8. autoLocationTimestamp
+  let autoLocationTimestamp: number | null = null;
+  if (typeof p.autoLocationTimestamp === 'number' && Number.isFinite(p.autoLocationTimestamp) && p.autoLocationTimestamp > 0) {
+    autoLocationTimestamp = p.autoLocationTimestamp;
+  } else if (autoLocation) {
+    autoLocationTimestamp = Date.now();
+  }
+
+  // 9. remindersEnabled
+  const remindersEnabled =
+    typeof p.remindersEnabled === 'boolean' ? p.remindersEnabled : DEFAULTS.remindersEnabled;
+
+  // 10. reminderOffsetMinutes
+  const reminderOffsetMinutes =
+    typeof p.reminderOffsetMinutes === 'number' && Number.isFinite(p.reminderOffsetMinutes)
+      ? Math.max(0, Math.min(120, Math.round(p.reminderOffsetMinutes)))
+      : DEFAULTS.reminderOffsetMinutes;
+
+  // 11. prayerConfigs
+  const prayerConfigs: PrayerConfigs = { ...DEFAULT_PRAYER_CONFIGS };
+  if (p.prayerConfigs && typeof p.prayerConfigs === 'object' && !Array.isArray(p.prayerConfigs)) {
+    const pc = p.prayerConfigs as Record<string, unknown>;
+    const prayers: PrayerNameKey[] = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    for (const prayer of prayers) {
+      if (pc[prayer] && typeof pc[prayer] === 'object') {
+        const item = pc[prayer] as Record<string, unknown>;
+        prayerConfigs[prayer] = {
+          enabled: typeof item.enabled === 'boolean' ? item.enabled : DEFAULT_PRAYER_CONFIGS[prayer].enabled,
+          adhan: typeof item.adhan === 'boolean' ? item.adhan : DEFAULT_PRAYER_CONFIGS[prayer].adhan,
+          vibration: typeof item.vibration === 'boolean' ? item.vibration : DEFAULT_PRAYER_CONFIGS[prayer].vibration,
+        };
+      }
+    }
+  }
+
+  // 12. quranReminderEnabled
+  const quranReminderEnabled =
+    typeof p.quranReminderEnabled === 'boolean' ? p.quranReminderEnabled : DEFAULTS.quranReminderEnabled;
+
+  // 13. quranReminderTime (strict HH:MM format)
+  const quranReminderTime =
+    typeof p.quranReminderTime === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(p.quranReminderTime.trim())
+      ? p.quranReminderTime.trim()
+      : DEFAULTS.quranReminderTime;
+
+  // 14. quranGoal ({ type, target })
+  let quranGoal = DEFAULT_QURAN_GOAL;
+  if (p.quranGoal && typeof p.quranGoal === 'object' && !Array.isArray(p.quranGoal)) {
+    const qg = p.quranGoal as Record<string, unknown>;
+    const type: QuranGoalType =
+      qg.type === 'minutes' || qg.type === 'pages' || qg.type === 'custom' ? qg.type : DEFAULT_QURAN_GOAL.type;
+    const target =
+      typeof qg.target === 'number' && Number.isFinite(qg.target)
+        ? Math.max(1, Math.min(1000, Math.round(qg.target)))
+        : DEFAULT_QURAN_GOAL.target;
+    quranGoal = { type, target };
+  }
+
+  // 15. adhanReciterId
+  const adhanReciterId =
+    typeof p.adhanReciterId === 'string' && /^[a-zA-Z0-9._-]{1,64}$/.test(p.adhanReciterId.trim())
+      ? p.adhanReciterId.trim()
+      : DEFAULTS.adhanReciterId;
+
+  // 16. themeMode
+  const themeMode: ThemeMode =
+    p.themeMode === 'system' || p.themeMode === 'ink' || p.themeMode === 'paper'
+      ? p.themeMode
+      : DEFAULTS.themeMode;
+
+  // 17. accentKey
+  const accentKey: AccentKey =
+    typeof p.accentKey === 'string' && VALID_ACCENTS.has(p.accentKey)
+      ? (p.accentKey as AccentKey)
+      : DEFAULTS.accentKey;
+
+  // 18. translationAudioEnabled
+  const translationAudioEnabled =
+    typeof p.translationAudioEnabled === 'boolean'
+      ? p.translationAudioEnabled
+      : DEFAULTS.translationAudioEnabled;
+
+  // 19. namesLanguage
+  const namesLanguage: NamesLanguage =
+    typeof p.namesLanguage === 'string' && VALID_NAMES_LANGS.has(p.namesLanguage)
+      ? (p.namesLanguage as NamesLanguage)
+      : DEFAULTS.namesLanguage;
+
+  // 20. womenWorshipEnabled
+  const womenWorshipEnabled =
+    typeof p.womenWorshipEnabled === 'boolean' ? p.womenWorshipEnabled : DEFAULTS.womenWorshipEnabled;
+
+  // 21. womenPinHash (must be string of valid hash format or null; reject arbitrary objects)
+  let womenPinHash: string | null = null;
+  if (
+    typeof p.womenPinHash === 'string' &&
+    /^[a-zA-Z0-9_$-]{6,128}$/.test(p.womenPinHash.trim())
+  ) {
+    womenPinHash = p.womenPinHash.trim();
+  }
+
+  // 22. womenLockEnabled
+  const womenLockEnabled =
+    typeof p.womenLockEnabled === 'boolean' ? p.womenLockEnabled : DEFAULTS.womenLockEnabled;
+
+  // 23. hapticsEnabled
+  const hapticsEnabled =
+    typeof p.hapticsEnabled === 'boolean' ? p.hapticsEnabled : DEFAULTS.hapticsEnabled;
+
+  // 24. quranArabicFont
+  const quranArabicFont: QuranArabicFont =
+    p.quranArabicFont === 'amiri' || p.quranArabicFont === 'notonaskh'
+      ? p.quranArabicFont
+      : DEFAULTS.quranArabicFont;
+
+  // 25. quranScript
+  const quranScript: QuranScript =
+    p.quranScript === 'uthmani' ||
+    p.quranScript === 'imlaei' ||
+    p.quranScript === 'indopak' ||
+    p.quranScript === 'tajweed'
+      ? p.quranScript
+      : DEFAULTS.quranScript;
+
+  // 26. quranFontSize
+  const quranFontSize = clampQuranFontSize(
+    typeof p.quranFontSize === 'number' ? p.quranFontSize : DEFAULTS.quranFontSize
+  );
+
+  // 27. quranLineHeight
+  const quranLineHeight = clampQuranLineHeight(
+    typeof p.quranLineHeight === 'number' ? p.quranLineHeight : DEFAULTS.quranLineHeight
+  );
+
+  // 28. quranShowTranslation
+  const quranShowTranslation =
+    typeof p.quranShowTranslation === 'boolean' ? p.quranShowTranslation : DEFAULTS.quranShowTranslation;
+
+  // 29. tafsirSourceId
+  const tafsirSourceId: TafsirSourceId =
+    typeof p.tafsirSourceId === 'string' && VALID_TAFSIR_SOURCES.has(p.tafsirSourceId)
+      ? (p.tafsirSourceId as TafsirSourceId)
+      : DEFAULTS.tafsirSourceId;
+
+  // 30. quranPreloadRequested
+  const quranPreloadRequested =
+    typeof p.quranPreloadRequested === 'boolean' ? p.quranPreloadRequested : DEFAULTS.quranPreloadRequested;
+
+  return {
+    settingsVersion,
+    methodId,
+    madhab,
+    timeFormat,
+    locationMode,
+    manualLocation,
+    autoLocation,
+    autoLocationTimestamp,
+    remindersEnabled,
+    reminderOffsetMinutes,
+    prayerConfigs,
+    quranReminderEnabled,
+    quranReminderTime,
+    quranGoal,
+    adhanReciterId,
+    themeMode,
+    accentKey,
+    translationAudioEnabled,
+    namesLanguage,
+    womenWorshipEnabled,
+    womenPinHash,
+    womenLockEnabled,
+    hapticsEnabled,
+    quranArabicFont,
+    quranScript,
+    quranFontSize,
+    quranLineHeight,
+    quranShowTranslation,
+    tafsirSourceId,
+    quranPreloadRequested,
+  };
+}
+
 /**
  * In-memory mirror of `quranPreloadRequested` so non-React callers (background
  * preloader, warmup, app bootstrap) can honour the user's choice synchronously.
@@ -220,47 +494,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           AsyncStorage.getItem(LEGACY_QURAN_SHOW_TRANSLATION),
           AsyncStorage.getItem(METHOD_MIGRATION_KEY),
         ]);
-        const parsed: Partial<AppSettings> = raw ? JSON.parse(raw) : {};
-        const next: AppSettings = { ...DEFAULTS, ...parsed };
+        const parsedRaw = raw ? JSON.parse(raw) : {};
+        const next: AppSettings = sanitizeSettings(parsedRaw);
+        const parsed = (parsedRaw && typeof parsedRaw === 'object' && !Array.isArray(parsedRaw))
+          ? (parsedRaw as Record<string, unknown>)
+          : {};
 
-        if (next.madhab !== 'shafi' && next.madhab !== 'hanafi') {
-          next.madhab = DEFAULTS.madhab;
-        }
-        if (next.quranArabicFont !== 'amiri' && next.quranArabicFont !== 'notonaskh') {
-          next.quranArabicFont = DEFAULTS.quranArabicFont;
-        }
-        if (
-          next.quranScript !== 'uthmani' &&
-          next.quranScript !== 'imlaei' &&
-          next.quranScript !== 'indopak' &&
-          next.quranScript !== 'tajweed'
-        ) {
-          next.quranScript = DEFAULTS.quranScript;
-        }
-        next.quranFontSize = clampQuranFontSize(next.quranFontSize);
-        next.quranLineHeight = clampQuranLineHeight(next.quranLineHeight);
-        next.quranShowTranslation =
-          typeof next.quranShowTranslation === 'boolean'
-            ? next.quranShowTranslation
-            : DEFAULTS.quranShowTranslation;
-        next.quranPreloadRequested =
-          typeof next.quranPreloadRequested === 'boolean'
-            ? next.quranPreloadRequested
-            : DEFAULTS.quranPreloadRequested;
         preloadRequestedMem = next.quranPreloadRequested;
-
-        next.prayerConfigs = {
-          ...DEFAULT_PRAYER_CONFIGS,
-          ...(parsed.prayerConfigs || {}),
-        };
-        next.quranReminderTime =
-          typeof parsed.quranReminderTime === 'string' && parsed.quranReminderTime.includes(':')
-            ? parsed.quranReminderTime
-            : DEFAULTS.quranReminderTime;
-        next.quranGoal = {
-          ...DEFAULT_QURAN_GOAL,
-          ...(parsed.quranGoal || {}),
-        };
 
         // Adopt legacy QuranReaderScreen AsyncStorage values once, when settings
         // don't own them yet — settings become the source of truth from here on.
@@ -268,7 +508,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
         // One-time migration: bump persisted methodId to 16 (Dubai official calculation)
         // if still on the legacy default (8). Does not touch custom methods or other user settings.
-        if (!methodMigrated && (!parsed.settingsVersion || parsed.settingsVersion < SETTINGS_VERSION)) {
+        if (!methodMigrated && (!parsed.settingsVersion || Number(parsed.settingsVersion) < SETTINGS_VERSION)) {
           if (parsed.methodId === 8) {
             next.methodId = 16;
             migrated = true;
@@ -290,13 +530,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           next.quranShowTranslation = legacyShowTranslation === 'true';
           migrated = true;
         }
-
-        next.autoLocationTimestamp =
-          typeof parsed.autoLocationTimestamp === 'number'
-            ? parsed.autoLocationTimestamp
-            : parsed.autoLocation
-            ? Date.now()
-            : null;
 
         if (next.autoLocation) {
           setCachedLocation(next.autoLocation, next.autoLocationTimestamp ?? Date.now());
@@ -320,10 +553,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   function persist(next: AppSettings) {
-    preloadRequestedMem = next.quranPreloadRequested;
-    setSettings(next);
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
-    return next;
+    const clean = sanitizeSettings(next);
+    preloadRequestedMem = clean.quranPreloadRequested;
+    setSettings(clean);
+    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(clean)).catch(() => {});
+    return clean;
   }
 
   const value: SettingsContextValue = {

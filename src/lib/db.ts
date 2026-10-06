@@ -341,7 +341,22 @@ export function loadAudioSettings(): AudioSettings {
   if (!raw) return DEFAULT_AUDIO_SETTINGS;
   try {
     const parsed = JSON.parse(raw);
-    return { ...DEFAULT_AUDIO_SETTINGS, ...parsed };
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const reciter =
+        typeof parsed.reciter === 'string' && parsed.reciter.length > 0
+          ? parsed.reciter
+          : DEFAULT_AUDIO_SETTINGS.reciter;
+      const autoplayNext =
+        typeof parsed.autoplayNext === 'boolean'
+          ? parsed.autoplayNext
+          : DEFAULT_AUDIO_SETTINGS.autoplayNext;
+      const repeatMode =
+        parsed.repeatMode === 'none' || parsed.repeatMode === 'one' || parsed.repeatMode === 'all'
+          ? parsed.repeatMode
+          : DEFAULT_AUDIO_SETTINGS.repeatMode;
+      return { reciter, autoplayNext, repeatMode };
+    }
+    return DEFAULT_AUDIO_SETTINGS;
   } catch {
     return DEFAULT_AUDIO_SETTINGS;
   }

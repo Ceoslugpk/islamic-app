@@ -374,7 +374,7 @@ type ToolsView =
 function Root({ splashDone }: { splashDone: boolean }) {
   const { colors, mode } = useTheme();
   const { isOnline } = useConnectivity();
-  const { settings, setAutoLocation, setLocationMode } = useSettings();
+  const { settings, setAutoLocation, setLocationMode, setWomenPinHash } = useSettings();
   const { request: requestLocation, status: locStatus } = useLocation();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -396,7 +396,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
       if (nextState.match(/inactive|background/)) {
-        if (settings.womenLockEnabled) {
+        if (settings.womenLockEnabled || (settings.womenWorshipEnabled && settings.womenPinHash)) {
           setWomenUnlocked(false);
           setTools((prev) => {
             if (prev.screen.startsWith('women-')) {
@@ -408,20 +408,24 @@ function Root({ splashDone }: { splashDone: boolean }) {
       }
     });
     return () => sub.remove();
-  }, [settings.womenLockEnabled]);
+  }, [settings.womenLockEnabled, settings.womenWorshipEnabled, settings.womenPinHash]);
 
   const handleOpenWomenFromSettings = useCallback(
     (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => {
       setSettingsOpen(false);
       setTab('tools');
-      if (settings.womenLockEnabled && settings.womenPinHash && !womenUnlocked) {
+      const isLocked =
+        Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
+        Boolean(settings.womenPinHash) &&
+        !womenUnlocked;
+      if (isLocked) {
         setPendingWomenScreen({ screen: key });
         setWomenPinModalOpen(true);
         return;
       }
       setTools({ screen: key });
     },
-    [settings.womenLockEnabled, settings.womenPinHash, womenUnlocked]
+    [settings.womenLockEnabled, settings.womenWorshipEnabled, settings.womenPinHash, womenUnlocked]
   );
 
   // Global Audio Mini Player state
@@ -714,6 +718,13 @@ function Root({ splashDone }: { splashDone: boolean }) {
     setLibrary,
     setTools,
     setSettingsOpen,
+    setPendingWomenScreen,
+    openWomenPinModal: () => setWomenPinModalOpen(true),
+    isWomenLocked: () => {
+      const pinRequired = Boolean(settings.womenPinHash);
+      const lockedBySetting = Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled);
+      return lockedBySetting && pinRequired && !womenUnlocked;
+    },
   };
 
   const pendingDeepLinkRef = useRef<string | null>(null);
@@ -882,7 +893,11 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
   function openToolsItem(key: ToolsItemKey) {
     if (key.startsWith('women-')) {
-      if (settings.womenLockEnabled && settings.womenPinHash && !womenUnlocked) {
+      const isLocked =
+        Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
+        Boolean(settings.womenPinHash) &&
+        !womenUnlocked;
+      if (isLocked) {
         setPendingWomenScreen({ screen: key as any });
         setWomenPinModalOpen(true);
         return;
@@ -1125,7 +1140,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
               <PrayerRemindersScreen onBack={() => setTools({ screen: 'hub' })} />
             )}
             {tools.screen === 'fasting' && (
-              <FastingScreen onBack={() => setTools({ screen: 'hub' })} />
+              <FastingScreen onBack={() => setTools({ screen: 'hub' })} womenUnlocked={womenUnlocked} />
             )}
             {tools.screen === 'zakat' && (
               <ZakatScreen onBack={() => setTools({ screen: 'hub' })} />
@@ -1246,6 +1261,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         visible={womenPinModalOpen}
         currentHash={settings.womenPinHash}
         mode="verify"
+        onSetPin={setWomenPinHash}
         onSuccess={() => {
           setWomenUnlocked(true);
           setWomenPinModalOpen(false);

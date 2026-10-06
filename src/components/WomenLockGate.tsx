@@ -30,7 +30,7 @@ const LOCK_TIMEOUT_MS = 45000;
 export function WomenLockGate({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
   const { settings } = useSettings();
-  const lockEnabled = settings.womenLockEnabled;
+  const lockEnabled = settings.womenLockEnabled || Boolean(settings.womenWorshipEnabled && settings.womenPinHash);
 
   const [unlocked, setUnlocked] = useState(false);
   const [checking, setChecking] = useState(true);

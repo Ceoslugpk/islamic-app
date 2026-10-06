@@ -53,7 +53,25 @@ const MISSED_REASONS = [
   'Other',
 ];
 
-function FastingScreen({ onBack }: { onBack?: () => void }) {
+export function isWomenSpecificReason(reason: string | undefined): boolean {
+  if (!reason || typeof reason !== 'string') return false;
+  const r = reason.toLowerCase();
+  return (
+    r.includes('menstru') ||
+    r.includes('period') ||
+    r.includes('post-natal') ||
+    r.includes('postnatal') ||
+    r.includes('nifas') ||
+    r.includes('haidh')
+  );
+}
+
+interface FastingScreenProps {
+  onBack?: () => void;
+  womenUnlocked?: boolean;
+}
+
+function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
   const { colors } = useTheme();
   const { settings } = useSettings();
   const { width } = useWindowDimensions();
@@ -243,18 +261,13 @@ function FastingScreen({ onBack }: { onBack?: () => void }) {
   );
 
   const availableMissedReasons = useMemo(() => {
-    if (settings.womenWorshipEnabled) return MISSED_REASONS;
-    return MISSED_REASONS.filter(
-      (r) => !r.toLowerCase().includes('menstru') && !r.toLowerCase().includes('post-natal')
-    );
-  }, [settings.womenWorshipEnabled]);
+    if (settings.womenWorshipEnabled && womenUnlocked) return MISSED_REASONS;
+    return MISSED_REASONS.filter((r) => !isWomenSpecificReason(r));
+  }, [settings.womenWorshipEnabled, womenUnlocked]);
 
   const visibleMissedList = useMemo(() => {
     if (settings.womenWorshipEnabled) return missedList;
-    return missedList.filter((m) => {
-      const r = (m.reason || '').toLowerCase();
-      return !r.includes('menstru') && !r.includes('post-natal') && !r.includes('postnatal');
-    });
+    return missedList.filter((m) => !isWomenSpecificReason(m.reason));
   }, [missedList, settings.womenWorshipEnabled]);
 
   const qadaPendingCount = useMemo(() => visibleMissedList.filter((m) => !m.madeUp).length, [visibleMissedList]);
@@ -741,7 +754,10 @@ function FastingScreen({ onBack }: { onBack?: () => void }) {
                         {item.date}
                       </Text>
                       <Text style={[styles.missedReason, { color: colors.textMuted }]}>
-                        {item.reason} {item.madeUp && item.madeUpDate ? `• Made up on ${item.madeUpDate}` : ''}
+                        {(!womenUnlocked && isWomenSpecificReason(item.reason))
+                          ? 'Excused (Private)'
+                          : item.reason}{' '}
+                        {item.madeUp && item.madeUpDate ? `• Made up on ${item.madeUpDate}` : ''}
                       </Text>
                     </View>
                   </View>

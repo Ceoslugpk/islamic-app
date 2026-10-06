@@ -44,8 +44,25 @@ export function getCachedLocationTimestamp(): number | null {
   return cachedTimestamp;
 }
 
+/**
+ * Sanitizes and caps a location label:
+ * - Strips control characters (including \x00-\x1F, \x7F-\x9F).
+ * - Collapses repeated whitespace.
+ * - Caps length at 120 characters.
+ */
+export function sanitizeLocationLabel(raw: string | undefined | null): string {
+  if (typeof raw !== 'string' || !raw) return '';
+  const cleaned = raw.replace(/[\x00-\x1F\x7F-\x9F]/g, ' ').replace(/\s+/g, ' ').trim();
+  return cleaned.slice(0, 120);
+}
+
 export function setCachedLocation(loc: Loc | null, timestamp?: number): void {
-  cachedLocation = loc;
+  cachedLocation = loc
+    ? {
+        ...loc,
+        label: sanitizeLocationLabel(loc.label) || `${loc.latitude.toFixed(2)}°, ${loc.longitude.toFixed(2)}°`,
+      }
+    : null;
   cachedTimestamp = timestamp ?? (loc ? Date.now() : null);
   if (loc) {
     cachedStatus = 'granted';
@@ -154,7 +171,8 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string> 
       const g = geo[0];
       const city = g.city || g.subregion || g.district;
       const parts = [city, g.region, g.country].filter(Boolean);
-      return parts.join(', ') || `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
+      const joined = parts.join(', ');
+      return sanitizeLocationLabel(joined) || `${lat.toFixed(2)}°, ${lng.toFixed(2)}°`;
     }
   } catch {
     // fall through to coordinate string
@@ -205,7 +223,7 @@ export function useLocation(askOnMount = false): UseLocationResult {
                 const region = g.address?.state || '';
                 const country = g.address?.country || '';
                 const parts = [city, region, country].filter(Boolean);
-                if (parts.length > 0) label = parts.join(', ');
+                if (parts.length > 0) label = sanitizeLocationLabel(parts.join(', ')) || label;
               }
             } catch {
               // keep coordinate label

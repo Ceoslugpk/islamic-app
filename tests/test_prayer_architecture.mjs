@@ -56,12 +56,11 @@ function loadPrayerCache(cacheKeyOrDate, location, method, madhab) {
 function buildPrayerCacheKey(dateStr, loc, method, madhab = 'shafi', adjustments) {
   const latStr = Number(loc.latitude).toFixed(4);
   const lngStr = Number(loc.longitude).toFixed(4);
-  const labelStr = (loc.label || '').trim().toLowerCase();
   const madhabStr = (madhab || 'shafi').toLowerCase();
   const adjStr = typeof adjustments === 'string'
     ? adjustments
     : adjustments ? JSON.stringify(adjustments) : '';
-  return `prayer:${dateStr}:${labelStr}:${latStr},${lngStr}:${method}:${madhabStr}:${adjStr}`;
+  return `prayer:${dateStr}:${latStr},${lngStr}:${method}:${madhabStr}:${adjStr}`;
 }
 
 function isValidTime(t) {

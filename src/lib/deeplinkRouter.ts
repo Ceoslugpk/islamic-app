@@ -54,6 +54,11 @@ export type NavigationSetters = {
     | { screen: 'hajj-live' }
   ) => void;
   setSettingsOpen: (open: boolean) => void;
+  setPendingWomenScreen?: (
+    view: { screen: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada' } | null
+  ) => void;
+  openWomenPinModal?: () => void;
+  isWomenLocked?: () => boolean;
 };
 
 export async function handleDeepLink(
@@ -381,35 +386,24 @@ export async function handleDeepLink(
       break;
     }
 
-    case 'women-cycle': {
-      setTab('tools');
-      setTools({ screen: 'women-cycle' });
-      setQuran({ screen: 'home' });
-      setLibrary({ screen: 'hub' });
-      break;
-    }
-
-    case 'women-purity': {
-      setTab('tools');
-      setTools({ screen: 'women-purity' });
-      setQuran({ screen: 'home' });
-      setLibrary({ screen: 'hub' });
-      break;
-    }
-
-    case 'women-guidance': {
-      setTab('tools');
-      setTools({ screen: 'women-guidance' });
-      setQuran({ screen: 'home' });
-      setLibrary({ screen: 'hub' });
-      break;
-    }
-
+    case 'women-cycle':
+    case 'women-purity':
+    case 'women-guidance':
     case 'women-qada': {
       setTab('tools');
-      setTools({ screen: 'women-qada' });
       setQuran({ screen: 'home' });
       setLibrary({ screen: 'hub' });
+      const targetScreen = target.type;
+      if (setters.isWomenLocked && setters.isWomenLocked()) {
+        if (setters.setPendingWomenScreen) {
+          setters.setPendingWomenScreen({ screen: targetScreen });
+        }
+        if (setters.openWomenPinModal) {
+          setters.openWomenPinModal();
+        }
+      } else {
+        setTools({ screen: targetScreen });
+      }
       break;
     }
   }
