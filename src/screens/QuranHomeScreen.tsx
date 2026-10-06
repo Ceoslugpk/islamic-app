@@ -277,7 +277,7 @@ export default function QuranHomeScreen({
     if (q.length >= 2) addQuery(q);
   };
 
-  const renderHeader = () => {
+  const renderHeader = useCallback(() => {
     return (
       <View style={styles.headerArea}>
         <SectionHeader compact eyebrow="The Holy Quran" title="Quran" />
@@ -1023,7 +1023,13 @@ export default function QuranHomeScreen({
         </View>
       </View>
     );
-  };
+  }, [
+    colors, isCompact, isNarrow, horizontalPadding,
+    recentSurahs, searchHistory, selectedJuz, searchQuery, searchFilter, verseRef,
+    bookmarkCount, noteCount, translatedNames, filteredSurahs,
+    onOpenSurah, onOpenBookmarks, onOpenNotes, onOpenPlans, onOpenHifz,
+    handleSelectJuz, setSearchFilter, setSearchQuery, addQuery, removeSearchHistoryQuery,
+  ]);
 
   const renderSurahRow = ({ item }: { item: SurahMeta }) => {
     const trName = translatedNames?.[item.number];

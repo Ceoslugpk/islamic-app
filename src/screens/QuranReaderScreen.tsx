@@ -1514,18 +1514,27 @@ export default function QuranReaderScreen({
         <TouchableOpacity
           style={[
             styles.dotsButton,
-            { width: dotsBtnSize, height: dotsBtnSize },
+            {
+              backgroundColor: toolsMenuOpen ? colors.accentDim : colors.bgSurface,
+              borderColor: toolsMenuOpen ? colors.accent : colors.borderSubtle,
+            },
           ]}
           onPress={() => setToolsMenuOpen(true)}
           accessibilityRole="button"
           accessibilityLabel="Reading tools"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          accessibilityState={{ expanded: toolsMenuOpen }}
+          activeOpacity={0.7}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
-          <Ionicons name="ellipsis-horizontal" size={dotsIconSize} color={colors.textSecondary} />
+          <Ionicons
+            name="ellipsis-horizontal"
+            size={dotsIconSize}
+            color={toolsMenuOpen ? colors.accent : colors.textSecondary}
+          />
         </TouchableOpacity>
       </Animated.View>
 
-      {/* Dots Menu Modal */}
+      {/* Reading Tools Menu Modal */}
       <Modal
         visible={toolsMenuOpen}
         animationType="fade"
@@ -1537,246 +1546,542 @@ export default function QuranReaderScreen({
           <TouchableWithoutFeedback onPress={() => setToolsMenuOpen(false)}>
             <View style={styles.toolsMenuBackdrop} />
           </TouchableWithoutFeedback>
-          <View style={[styles.toolsMenuPanel, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+
+          <View
+            style={[
+              styles.toolsMenuPanel,
+              { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+            ]}
+          >
             {/* Drag Pill */}
-            <View style={[styles.toolsMenuDragPill, { backgroundColor: colors.borderSubtle }]} />
-            {/* Reading Mode */}
-            <TouchableOpacity
-              style={styles.toolsMenuItem}
-              onPress={() => { handleToggleReadingMode(); setToolsMenuOpen(false); }}
-              accessibilityRole="button"
-              accessibilityLabel={`Reading mode: ${readingMode}. Tap to toggle.`}
+            <View style={[styles.toolsMenuDragPill, { backgroundColor: colors.borderStrong }]} />
+
+            {/* Header Strip */}
+            <View style={styles.toolsMenuHeader}>
+              <View style={styles.toolsMenuHeaderLeft}>
+                <Text
+                  style={[styles.toolsMenuSurahTitle, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                >
+                  {surah?.englishName || `Surah ${safeSurahNumber}`}
+                </Text>
+                <Text style={[styles.toolsMenuSubtitle, { color: colors.textMuted }]}>
+                  {readingProgress.percent}% · Ayah {readingProgress.currentAyah} of {readingProgress.totalAyahs}
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.toolsMenuJuzChip,
+                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                ]}
+              >
+                <Text style={[styles.toolsMenuJuzText, { color: colors.accent }]}>
+                  {selectedJuz ? `Juz ${selectedJuz}` : '—'}
+                </Text>
+              </View>
+            </View>
+
+            {/* 3px Progress Bar */}
+            <View
+              style={[
+                styles.toolsMenuProgressBarTrack,
+                { backgroundColor: colors.borderSubtle },
+              ]}
             >
-              <View style={[styles.toolsMenuIcon, { backgroundColor: readingMode === 'mushaf' ? colors.accentDim : 'transparent' }]}>
-                <Ionicons name={readingMode === 'mushaf' ? 'book' : 'list'} size={20} color={readingMode === 'mushaf' ? colors.accent : colors.textSecondary} />
-              </View>
-              <View style={styles.toolsMenuTextGroup}>
-                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Reading Mode</Text>
-                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>{readingMode === 'mushaf' ? 'Mushaf (continuous)' : 'Cards (per ayah)'}</Text>
-              </View>
-              <View style={[styles.toolsMenuIndicator, { backgroundColor: readingMode === 'mushaf' ? colors.accent : 'transparent' }]} />
-            </TouchableOpacity>
+              <View
+                style={[
+                  styles.toolsMenuProgressBarFill,
+                  {
+                    backgroundColor: colors.accent,
+                    width: `${Math.min(100, Math.max(0, readingProgress.percent))}%`,
+                  },
+                ]}
+              />
+            </View>
 
-            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
-
-            {/* Translation Language */}
-            <TouchableOpacity
-              style={styles.toolsMenuItem}
-              onPress={() => { setLangPickerOpen(true); setToolsMenuOpen(false); }}
-              accessibilityRole="button"
-              accessibilityLabel={`Translation language: ${language} ${flag}. Tap to change.`}
+            {/* Scrollable Grouped Content */}
+            <ScrollView
+              style={styles.toolsMenuScroll}
+              contentContainerStyle={[
+                styles.toolsMenuScrollContent,
+                { paddingBottom: Math.max(insets.bottom, 16) + 12 },
+              ]}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
             >
-              <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
-                <Ionicons name="globe-outline" size={20} color={colors.accent} />
-              </View>
-              <View style={styles.toolsMenuTextGroup}>
-                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Translation Language</Text>
-                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>{flag} {language.toUpperCase()} — {edition.name}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
+              {/* DISPLAY */}
+              <View style={styles.toolsMenuGroup}>
+                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                  DISPLAY
+                </Text>
+                <View
+                  style={[
+                    styles.toolsMenuGroupCard,
+                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  {/* Reading Mode */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      handleToggleReadingMode();
+                      setToolsMenuOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Reading mode: ${readingMode}. Tap to toggle.`}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        {
+                          backgroundColor:
+                            readingMode === 'mushaf' ? colors.accentDim : colors.bgBase,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={readingMode === 'mushaf' ? 'book' : 'list'}
+                        size={20}
+                        color={readingMode === 'mushaf' ? colors.accent : colors.textSecondary}
+                      />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        Reading Mode
+                      </Text>
+                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                        {readingMode === 'mushaf'
+                          ? 'Mushaf (continuous)'
+                          : 'Cards (per ayah)'}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.toolsMenuIndicator,
+                        {
+                          backgroundColor:
+                            readingMode === 'mushaf' ? colors.accent : 'transparent',
+                          borderColor:
+                            readingMode === 'mushaf' ? colors.accent : colors.borderSubtle,
+                        },
+                      ]}
+                    />
+                  </TouchableOpacity>
 
-            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
-
-            {/* Show/Hide Translation */}
-            <TouchableOpacity
-              style={styles.toolsMenuItem}
-              onPress={() => { handleToggleTranslation(); setToolsMenuOpen(false); }}
-              accessibilityRole="button"
-              accessibilityLabel={showTranslation ? 'Hide translation' : 'Show translation'}
-            >
-              <View style={[styles.toolsMenuIcon, { backgroundColor: showTranslation ? colors.accentDim : 'transparent' }]}>
-                <Ionicons name={showTranslation ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline'} size={20} color={showTranslation ? colors.accent : colors.textSecondary} />
-              </View>
-              <View style={styles.toolsMenuTextGroup}>
-                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Translation</Text>
-                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>{showTranslation ? 'Shown' : 'Hidden'}</Text>
-              </View>
-              <View style={[styles.toolsMenuIndicator, { backgroundColor: showTranslation ? colors.accent : 'transparent' }]} />
-            </TouchableOpacity>
-
-            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
-
-            {/* Tafsir Source */}
-            <TouchableOpacity
-              style={styles.toolsMenuItem}
-              onPress={() => { setTafsirSourcePickerOpen(true); setToolsMenuOpen(false); }}
-              accessibilityRole="button"
-              accessibilityLabel={`Tafsir source: ${currentTafsirSource.name}. Tap to change.`}
-            >
-              <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
-                <Ionicons name="book-outline" size={20} color={colors.accent} />
-              </View>
-              <View style={styles.toolsMenuTextGroup}>
-                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Tafsir Source</Text>
-                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>{currentTafsirSource.name} ({currentTafsirSource.language})</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-
-            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
-
-            {/* Save for Offline (Surah Download) */}
-            <TouchableOpacity
-              style={styles.toolsMenuItem}
-              onPress={handleSaveOffline}
-              accessibilityRole="button"
-              accessibilityLabel={surahDownloaded ? `Remove offline audio for Surah ${surah?.englishName ?? surahNumber}` : `Download Surah ${surah?.englishName ?? surahNumber} audio for offline`}
-            >
-              <View style={[styles.toolsMenuIcon, { backgroundColor: surahDownloaded ? colors.accentDim : 'transparent' }]}>
-                {surahDownloading ? (
-                  <ActivityIndicator size="small" color={colors.accent} />
-                ) : (
-                  <Ionicons
-                    name={surahDownloaded ? 'checkmark-circle' : 'cloud-download-outline'}
-                    size={20}
-                    color={surahDownloaded ? colors.accent : colors.textSecondary}
+                  <View
+                    style={[
+                      styles.toolsMenuInnerDivider,
+                      { backgroundColor: colors.borderSubtle },
+                    ]}
                   />
-                )}
-              </View>
-              <View style={styles.toolsMenuTextGroup}>
-                <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                  {surahDownloaded ? 'Available Offline' : 'Save for Offline'}
-                </Text>
-                <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
-                  {surahDownloading
-                    ? `${surahDownloadProgress ?? 0}%`
-                    : surahDownloaded
-                    ? surahDownloadSize || 'Full Surah audio'
-                    : 'Download this surah'}
-                </Text>
-              </View>
-              {surahDownloaded ? (
-                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-              ) : null}
-            </TouchableOpacity>
 
-            <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
+                  {/* Font Size */}
+                  <View style={styles.toolsMenuFontRow}>
+                    <View style={styles.toolsMenuFontLabel}>
+                      <View
+                        style={[
+                          styles.toolsMenuIcon,
+                          { backgroundColor: colors.accentDim },
+                        ]}
+                      >
+                        <Ionicons name="text-outline" size={20} color={colors.accent} />
+                      </View>
+                      <View style={styles.toolsMenuTextGroup}>
+                        <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                          Font Size
+                        </Text>
+                        <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
+                          {fontSize}pt
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.toolsMenuFontControls}>
+                      <TouchableOpacity
+                        style={[
+                          styles.toolsMenuFontBtn,
+                          {
+                            backgroundColor: colors.bgBase,
+                            borderColor: colors.borderSubtle,
+                            opacity: fontSize <= QURAN_FONT_SIZE_MIN ? 0.35 : 1,
+                          },
+                        ]}
+                        onPress={() => handleAdjustFontSize(-QURAN_FONT_SIZE_STEP)}
+                        disabled={fontSize <= QURAN_FONT_SIZE_MIN}
+                        accessibilityRole="button"
+                        accessibilityLabel="Decrease font size"
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      >
+                        <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
+                          A−
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.toolsMenuFontBtn,
+                          {
+                            backgroundColor: colors.bgBase,
+                            borderColor: colors.borderSubtle,
+                            opacity: fontSize >= QURAN_FONT_SIZE_MAX ? 0.35 : 1,
+                          },
+                        ]}
+                        onPress={() => handleAdjustFontSize(QURAN_FONT_SIZE_STEP)}
+                        disabled={fontSize >= QURAN_FONT_SIZE_MAX}
+                        accessibilityRole="button"
+                        accessibilityLabel="Increase font size"
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      >
+                        <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
+                          A+
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
 
-            {/* Font Size */}
-            <View style={styles.toolsMenuFontRow}>
-              <View style={styles.toolsMenuFontLabel}>
-                <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
-                  <Ionicons name="text-outline" size={20} color={colors.accent} />
+                  <View
+                    style={[
+                      styles.toolsMenuInnerDivider,
+                      { backgroundColor: colors.borderSubtle },
+                    ]}
+                  />
+
+                  {/* Keep Awake */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      const next = !keepAwake;
+                      setKeepAwake(next);
+                      AsyncStorage.setItem(STORAGE_KEY_KEEP_AWAKE, String(next)).catch(() => {});
+                      setToolsMenuOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={keepAwake ? 'Disable keep awake' : 'Enable keep awake'}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        {
+                          backgroundColor: keepAwake ? colors.accentDim : colors.bgBase,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={keepAwake ? 'sunny' : 'moon-outline'}
+                        size={20}
+                        color={keepAwake ? colors.accent : colors.textSecondary}
+                      />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        Keep Screen Awake
+                      </Text>
+                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                        {keepAwake ? 'Screen stays on while reading' : 'Screen may dim'}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.toolsMenuIndicator,
+                        {
+                          backgroundColor: keepAwake ? colors.accent : 'transparent',
+                          borderColor: keepAwake ? colors.accent : colors.borderSubtle,
+                        },
+                      ]}
+                    />
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.toolsMenuTextGroup}>
-                  <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Font Size</Text>
-                  <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>{fontSize}pt</Text>
+              </View>
+
+              {/* LANGUAGE & TAFSIR */}
+              <View style={styles.toolsMenuGroup}>
+                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                  LANGUAGE & TAFSIR
+                </Text>
+                <View
+                  style={[
+                    styles.toolsMenuGroupCard,
+                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  {/* Translation Language */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      setLangPickerOpen(true);
+                      setToolsMenuOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Translation language: ${language} ${flag}. Tap to change.`}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        { backgroundColor: colors.accentDim },
+                      ]}
+                    >
+                      <Ionicons name="globe-outline" size={20} color={colors.accent} />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        Translation Language
+                      </Text>
+                      <Text
+                        style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
+                        numberOfLines={1}
+                      >
+                        {flag} {language.toUpperCase()} — {edition.name}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
+
+                  <View
+                    style={[
+                      styles.toolsMenuInnerDivider,
+                      { backgroundColor: colors.borderSubtle },
+                    ]}
+                  />
+
+                  {/* Show/Hide Translation */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      handleToggleTranslation();
+                      setToolsMenuOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={showTranslation ? 'Hide translation' : 'Show translation'}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        {
+                          backgroundColor: showTranslation ? colors.accentDim : colors.bgBase,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={
+                          showTranslation
+                            ? 'chatbubble-ellipses'
+                            : 'chatbubble-ellipses-outline'
+                        }
+                        size={20}
+                        color={showTranslation ? colors.accent : colors.textSecondary}
+                      />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        Translation
+                      </Text>
+                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                        {showTranslation ? 'Shown' : 'Hidden'}
+                      </Text>
+                    </View>
+                    <View
+                      style={[
+                        styles.toolsMenuIndicator,
+                        {
+                          backgroundColor: showTranslation ? colors.accent : 'transparent',
+                          borderColor: showTranslation ? colors.accent : colors.borderSubtle,
+                        },
+                      ]}
+                    />
+                  </TouchableOpacity>
+
+                  <View
+                    style={[
+                      styles.toolsMenuInnerDivider,
+                      { backgroundColor: colors.borderSubtle },
+                    ]}
+                  />
+
+                  {/* Tafsir Source */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      setTafsirSourcePickerOpen(true);
+                      setToolsMenuOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Tafsir source: ${currentTafsirSource.name}. Tap to change.`}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        { backgroundColor: colors.accentDim },
+                      ]}
+                    >
+                      <Ionicons name="book-outline" size={20} color={colors.accent} />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        Tafsir Source
+                      </Text>
+                      <Text
+                        style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
+                        numberOfLines={1}
+                      >
+                        {currentTafsirSource.name} ({currentTafsirSource.language})
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
                 </View>
               </View>
-              <View style={styles.toolsMenuFontControls}>
-                <TouchableOpacity
+
+              {/* NAVIGATE */}
+              <View style={styles.toolsMenuGroup}>
+                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                  NAVIGATE
+                </Text>
+                <View
                   style={[
-                    styles.toolsMenuFontBtn,
-                    { borderColor: colors.borderSubtle, opacity: fontSize <= QURAN_FONT_SIZE_MIN ? 0.4 : 1 },
+                    styles.toolsMenuGroupCard,
+                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
                   ]}
-                  onPress={() => handleAdjustFontSize(-QURAN_FONT_SIZE_STEP)}
-                  disabled={fontSize <= QURAN_FONT_SIZE_MIN}
-                  accessibilityRole="button"
-                  accessibilityLabel="Decrease font size"
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 >
-                  <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>A−</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.toolsMenuFontBtn,
-                    { borderColor: colors.borderSubtle, opacity: fontSize >= QURAN_FONT_SIZE_MAX ? 0.4 : 1 },
-                  ]}
-                  onPress={() => handleAdjustFontSize(QURAN_FONT_SIZE_STEP)}
-                  disabled={fontSize >= QURAN_FONT_SIZE_MAX}
-                  accessibilityRole="button"
-                  accessibilityLabel="Increase font size"
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                >
-                  <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>A+</Text>
-                </TouchableOpacity>
+                  {/* Jump to Juz */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      setJuzPickerOpen(true);
+                      setToolsMenuOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Jump to Juz"
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        { backgroundColor: colors.accentDim },
+                      ]}
+                    >
+                      <Ionicons name="grid-outline" size={20} color={colors.accent} />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        Jump to Juz
+                      </Text>
+                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
+                        {selectedJuz ? `Juz ${selectedJuz} selected` : 'Select a Juz to jump'}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
+
+                  <View
+                    style={[
+                      styles.toolsMenuInnerDivider,
+                      { backgroundColor: colors.borderSubtle },
+                    ]}
+                  />
+
+                  {/* Jump to Hizb */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      setHizbPickerOpen(true);
+                      setToolsMenuOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Jump to Hizb"
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        { backgroundColor: colors.accentDim },
+                      ]}
+                    >
+                      <Ionicons name="apps-outline" size={20} color={colors.accent} />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        Jump to Hizb
+                      </Text>
+                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                        {selectedHizb ? `Hizb ${selectedHizb} selected` : 'Select a Hizb to jump'}
+                      </Text>
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </View>
               </View>
-</View>
-            </View>
-          
-          <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
 
-          {/* Keep Awake Toggle */}
-          <TouchableOpacity
-            style={styles.toolsMenuItem}
-            onPress={() => { setKeepAwake(!keepAwake); setToolsMenuOpen(false); }}
-            accessibilityRole="button"
-            accessibilityLabel={keepAwake ? 'Disable keep awake' : 'Enable keep awake'}
-          >
-            <View style={[styles.toolsMenuIcon, { backgroundColor: keepAwake ? colors.accentDim : 'transparent' }]}>
-              <Ionicons name={keepAwake ? 'sunny' : 'moon-outline'} size={20} color={keepAwake ? colors.accent : colors.textSecondary} />
-            </View>
-            <View style={styles.toolsMenuTextGroup}>
-              <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Keep Screen Awake</Text>
-              <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>{keepAwake ? 'Screen stays on while reading' : 'Screen may dim'}</Text>
-            </View>
-            <View style={[styles.toolsMenuIndicator, { backgroundColor: keepAwake ? colors.accent : 'transparent' }]} />
-          </TouchableOpacity>
-
-          <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
-
-          {/* Reading Progress */}
-          <TouchableOpacity
-            style={styles.toolsMenuItem}
-            onPress={() => { setToolsMenuOpen(false); }}
-            accessibilityRole="button"
-            accessibilityLabel={`Reading progress: ${readingProgress.percent}%`}
-          >
-            <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
-              <Ionicons name="pie-chart-outline" size={20} color={colors.accent} />
-            </View>
-            <View style={styles.toolsMenuTextGroup}>
-              <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Reading Progress</Text>
-              <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
-                {readingProgress.percent}% · Ayah {readingProgress.currentAyah} of {readingProgress.totalAyahs}
-              </Text>
-            </View>
-            <View style={[styles.toolsMenuIndicator, { backgroundColor: colors.accent }]} />
-          </TouchableOpacity>
-
-          <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
-
-          {/* Jump to Juz */}
-          <TouchableOpacity
-            style={styles.toolsMenuItem}
-            onPress={() => { setJuzPickerOpen(true); setToolsMenuOpen(false); }}
-            accessibilityRole="button"
-            accessibilityLabel="Jump to Juz"
-          >
-            <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
-              <Ionicons name="grid-outline" size={20} color={colors.accent} />
-            </View>
-            <View style={styles.toolsMenuTextGroup}>
-              <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Jump to Juz</Text>
-              <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
-                {selectedJuz ? `Juz ${selectedJuz} selected` : 'Select a Juz to jump'}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-
-          <View style={[styles.toolsMenuDivider, { backgroundColor: colors.borderSubtle }]} />
-
-          {/* Jump to Hizb */}
-          <TouchableOpacity
-            style={styles.toolsMenuItem}
-            onPress={() => { setHizbPickerOpen(true); setToolsMenuOpen(false); }}
-            accessibilityRole="button"
-            accessibilityLabel="Jump to Hizb"
-          >
-            <View style={[styles.toolsMenuIcon, { backgroundColor: colors.accentDim }]}>
-              <Ionicons name="apps-outline" size={20} color={colors.accent} />
-            </View>
-            <View style={styles.toolsMenuTextGroup}>
-              <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>Jump to Hizb</Text>
-              <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
-                {selectedHizb ? `Hizb ${selectedHizb} selected` : 'Select a Hizb to jump'}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-
+              {/* OFFLINE */}
+              <View style={styles.toolsMenuGroup}>
+                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                  OFFLINE
+                </Text>
+                <View
+                  style={[
+                    styles.toolsMenuGroupCard,
+                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  {/* Save for Offline */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={handleSaveOffline}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      surahDownloaded
+                        ? `Remove offline audio for Surah ${surah?.englishName ?? surahNumber}`
+                        : `Download Surah ${surah?.englishName ?? surahNumber} audio for offline`
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        {
+                          backgroundColor:
+                            surahDownloaded ? colors.accentDim : colors.bgBase,
+                        },
+                      ]}
+                    >
+                      {surahDownloading ? (
+                        <ActivityIndicator size="small" color={colors.accent} />
+                      ) : (
+                        <Ionicons
+                          name={
+                            surahDownloaded
+                              ? 'checkmark-circle'
+                              : 'cloud-download-outline'
+                          }
+                          size={20}
+                          color={
+                            surahDownloaded ? colors.accent : colors.textSecondary
+                          }
+                        />
+                      )}
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        {surahDownloaded ? 'Available Offline' : 'Save for Offline'}
+                      </Text>
+                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                        {surahDownloading
+                          ? `${surahDownloadProgress ?? 0}%`
+                          : surahDownloaded
+                          ? surahDownloadSize || 'Full Surah audio'
+                          : 'Download this surah'}
+                      </Text>
+                    </View>
+                    {surahDownloaded ? (
+                      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    ) : null}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
         </View>
       </Modal>
 
