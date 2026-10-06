@@ -5,6 +5,8 @@
  */
 import { useEffect, useState } from 'react';
 import { fetchSurah, fetchSurahList, fetchSurahMultiEditions, fetchWithTimeout, SurahDetail, SurahMeta } from './quran';
+import { fetchTajweedSurah } from './tajweed';
+import { fetchIslamicTafsir } from './islamicTafsir';
 import { fetchSurahTranslations } from './quranMultiLang';
 import { loadQuranCache, saveQuranCache, loadLastReadPosition, isQuranCacheKeyPresent, getCachedQuranKeys } from './db';
 import { DEFAULT_QURAN_LANGUAGE, getQuranTranslationLanguage, subscribeQuranLanguage } from './quranLanguageState';
@@ -342,6 +344,32 @@ async function fetchSurahFromQuranCom(surahNumber: number): Promise<SurahDetail 
   };
 }
 
+/**
+ * Preload tafsir + tajweed text for a surah into the quran cache so the
+ * Tafsir and Tajweed screens work fully offline. Uses the default tafsir
+ * per language (English default) + the islamic.app tajweed edition.
+ * Failures are non-fatal (never block the main preload loop).
+ */
+async function preloadTafsirAndTajweed(surahNumber: number): Promise<void> {
+  // 1. Tajweed text (islamic.app uthmani_tajweed) — cached by fetchTajweedSurah.
+  try {
+    await fetchTajweedSurah(surahNumber);
+  } catch {
+    // non-fatal
+  }
+
+  // 2. Default English tafsir (islamic.app) — cached by fetchIslamicTafsir.
+  try {
+    const DEFAULT_SLUG = 'en-tafisr-ibn-kathir';
+    // Cache at least the first ayah so the tafsir screen shows data offline;
+    // a full-surah loop is bounded per-ayah and too heavy for preload — the
+    // tafsir screen fetches the rest on demand (same cache).
+    await fetchIslamicTafsir(surahNumber, 1, DEFAULT_SLUG);
+  } catch {
+    // non-fatal
+  }
+}
+
 export async function preloadSingleSurah(
   surahNumber: number,
   editionIdentifier?: string,
@@ -583,6 +611,9 @@ export async function startQuranPreload(options?: QuranPreloadOptions): Promise<
     const success = await preloadSingleSurah(surahNum, editionIdentifier, options?.force);
     if (success) {
       consecutiveFailures = 0;
+      // Also preload tafsir + tajweed text for this surah so Tafsir and
+      // Tajweed screens work fully offline (cached via quranCache).
+      await preloadTafsirAndTajweed(surahNum);
       cachedCount = getCachedSurahsCount(editionIdentifier);
       emitProgress({
         cached: cachedCount,
