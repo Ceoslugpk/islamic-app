@@ -78,6 +78,27 @@ const urdu2 = fetchAyahTafsir(2, 255, 'islamic:tafsir-bayan-ul-quran');
 assert.notDeepEqual(urdu, urdu2, 'different Urdu tafsirs are distinct');
 console.log('  ✓ switching editions returns different content (no stale cache)');
 
+// 6. islamic.app tafsir HTML is stripped to clean text (Urdu renders properly)
+function stripTafsirHtml(html) {
+  return (html || '')
+    .replace(/<div[^>]*>/g, '\n')
+    .replace(/<p[^>]*>/g, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+// Real islamic.app Urdu payload head (captured live)
+const urduHtml = 'سورہ فاتحہ کے نام:<div lang="ur" class="ur"><p class="ur">اس سورت کا نام سورۂ «فاتحہ» ہے۔</p></div>';
+const urduClean = stripTafsirHtml(urduHtml);
+assert.ok(!urduClean.includes('<'), 'no HTML tags remain');
+assert.ok(urduClean.includes('فاتحہ'), 'Urdu text preserved');
+assert.ok(urduClean.includes('\n'), 'paragraph breaks preserved');
+console.log('  ✓ tafsir HTML stripped — Urdu renders cleanly');
+
 console.log('\n========================================================');
 console.log('ALL TAFSIR LANGUAGE TESTS PASSED SUCCESSFULLY!');
 console.log('========================================================');

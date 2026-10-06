@@ -38,6 +38,21 @@ export const ISLAMIC_TAFSIRS: IslamicTafsir[] = [
   { slug: 'kurd-tafsir-rebar', language: 'Kurdish', languageCode: 'ku', author: 'Rebar', direction: 'rtl' },
 ];
 
+/** Strip HTML tags from tafsir text (islamic.app tafsirs are HTML-formatted). */
+export function stripTafsirHtml(html: string): string {
+  return (html || '')
+    .replace(/<div[^>]*>/g, '\n')
+    .replace(/<p[^>]*>/g, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#\d+;/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 export interface IslamicTafsirResult {
   text: string;
   editionName: string;
@@ -78,7 +93,7 @@ export async function fetchIslamicTafsir(
   }
 
   const result: IslamicTafsirResult = {
-    text: ayahs[0].text,
+    text: stripTafsirHtml(ayahs[0].text),
     editionName: json?.data?.edition?.englishName || json?.data?.edition?.name || meta?.author || 'Tafsir',
     language: meta?.language || json?.data?.edition?.language || 'en',
   };
