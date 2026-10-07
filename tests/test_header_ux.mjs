@@ -25,10 +25,31 @@ assert.ok(
 assert.ok(
   appCode.includes('{isTopLevel ? (') &&
   appCode.includes('<AppHeader') &&
-  appCode.includes('<View style={{ paddingTop: insets.top }} />'),
+  appCode.includes('<View style={{ paddingTop: insets.top + HEADER_TOP_INSET_EXTRA }} />'),
   'AppHeader must be gated by isTopLevel, with top inset spacer on detail screens'
 );
 console.log('  ✓ Central isTopLevel predicate and AppHeader conditional gating verified in App.tsx');
+
+// Verify shared header geometry tokens module and consumption
+const tokensCode = fs.readFileSync('src/lib/headerTokens.ts', 'utf8');
+assert.ok(tokensCode.includes('HEADER_TOP_INSET_EXTRA'), 'headerTokens must export HEADER_TOP_INSET_EXTRA');
+assert.ok(tokensCode.includes('HEADER_HORIZONTAL_PADDING'), 'headerTokens must export HEADER_HORIZONTAL_PADDING');
+assert.ok(tokensCode.includes('HEADER_MAX_WIDTH'), 'headerTokens must export HEADER_MAX_WIDTH');
+assert.ok(tokensCode.includes('HEADER_HEIGHT'), 'headerTokens must export HEADER_HEIGHT');
+assert.ok(tokensCode.includes('HEADER_PADDING_VERTICAL'), 'headerTokens must export HEADER_PADDING_VERTICAL');
+assert.ok(tokensCode.includes('HEADER_SEPARATOR'), 'headerTokens must export HEADER_SEPARATOR');
+
+const screenHeaderCode = fs.readFileSync('src/components/ScreenHeader.tsx', 'utf8');
+assert.ok(screenHeaderCode.includes('HEADER_HORIZONTAL_PADDING'), 'ScreenHeader must consume HEADER_HORIZONTAL_PADDING');
+assert.ok(screenHeaderCode.includes('HEADER_MAX_WIDTH'), 'ScreenHeader must consume HEADER_MAX_WIDTH');
+assert.ok(screenHeaderCode.includes('HEADER_HEIGHT'), 'ScreenHeader must consume HEADER_HEIGHT');
+assert.ok(screenHeaderCode.includes('HEADER_PADDING_VERTICAL'), 'ScreenHeader must consume HEADER_PADDING_VERTICAL');
+assert.ok(appCode.includes('HEADER_TOP_INSET_EXTRA'), 'App.tsx must consume HEADER_TOP_INSET_EXTRA');
+assert.ok(appCode.includes('HEADER_HORIZONTAL_PADDING'), 'App.tsx must consume HEADER_HORIZONTAL_PADDING');
+assert.ok(appCode.includes('HEADER_MAX_WIDTH'), 'App.tsx must consume HEADER_MAX_WIDTH');
+assert.ok(appCode.includes('HEADER_HEIGHT'), 'App.tsx must consume HEADER_HEIGHT');
+assert.ok(appCode.includes('HEADER_PADDING_VERTICAL'), 'App.tsx must consume HEADER_PADDING_VERTICAL');
+console.log('  ✓ Shared header geometry tokens defined and consumed by both AppHeader and ScreenHeader');
 
 // Test isTopLevelScreen logic directly
 function isTopLevelScreen(tab, quran, library, tools) {

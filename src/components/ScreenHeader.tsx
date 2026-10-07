@@ -11,6 +11,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { getBackIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
+import {
+  HEADER_HORIZONTAL_PADDING,
+  HEADER_MAX_WIDTH,
+  HEADER_HEIGHT,
+  HEADER_PADDING_VERTICAL,
+  HEADER_SEPARATOR,
+} from '../lib/headerTokens';
 
 export interface ScreenHeaderProps {
   /** Main screen title in Instrument Serif (display font) */
@@ -27,7 +34,7 @@ export interface ScreenHeaderProps {
   rightAction?: React.ReactNode;
   /** Custom container style override */
   style?: ViewStyle;
-  /** Whether to show a hairline bottom border. Defaults to false. */
+  /** Whether to show a hairline bottom border. Defaults to HEADER_SEPARATOR (false). */
   borderBottom?: boolean;
 }
 
@@ -44,12 +51,12 @@ export function ScreenHeader({
   backLabel,
   rightAction,
   style,
-  borderBottom = false,
+  borderBottom = HEADER_SEPARATOR,
 }: ScreenHeaderProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
-  const paddingH = isCompact ? 16 : 20;
+  const paddingH = HEADER_HORIZONTAL_PADDING;
 
   const backIconName = getBackIcon('chevron');
 
@@ -151,12 +158,12 @@ export function ScreenHeader({
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 54,
+    minHeight: HEADER_HEIGHT,
     justifyContent: 'center',
     width: '100%',
-    maxWidth: 680,
+    maxWidth: HEADER_MAX_WIDTH,
     alignSelf: 'center',
-    paddingVertical: 6,
+    paddingVertical: HEADER_PADDING_VERTICAL,
   },
   innerRow: {
     flexDirection: 'row',

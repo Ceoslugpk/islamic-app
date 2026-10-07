@@ -32,6 +32,14 @@ import { useConnectivity } from './src/lib/useConnectivity';
 import { OfflineBanner } from './src/components/OfflineBanner';
 import { parseDeepLink } from './src/lib/deeplinks';
 import { handleDeepLink, NavigationSetters } from './src/lib/deeplinkRouter';
+import {
+  HEADER_TOP_INSET_EXTRA,
+  HEADER_HORIZONTAL_PADDING,
+  HEADER_MAX_WIDTH,
+  HEADER_HEIGHT,
+  HEADER_PADDING_VERTICAL,
+  HEADER_SEPARATOR,
+} from './src/lib/headerTokens';
 
 import HomeScreen from './src/screens/HomeScreen';
 import QiblaScreen from './src/screens/QiblaScreen';
@@ -233,14 +241,16 @@ function AppHeader({
   return (
     <View
       style={[
-        styles.appHeader,
+        styles.appHeaderWrap,
         {
+          paddingTop: insets.top + HEADER_TOP_INSET_EXTRA,
           borderBottomColor: colors.borderSubtle,
-          paddingTop: insets.top + 10,
+          borderBottomWidth: HEADER_SEPARATOR ? 1 : 0,
         },
       ]}
     >
-      <View style={styles.headerBrand}>
+      <View style={styles.appHeader}>
+        <View style={styles.headerBrand}>
         <Image
           source={
             mode === 'paper'
@@ -319,6 +329,7 @@ function AppHeader({
       >
         <Text style={[styles.gear, { color: colors.textSecondary }]}>⚙︎</Text>
       </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -976,7 +987,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
             showBismillah={tab === 'home'}
           />
         ) : (
-          <View style={{ paddingTop: insets.top }} />
+          <View style={{ paddingTop: insets.top + HEADER_TOP_INSET_EXTRA }} />
         )}
         {!isOnline && <OfflineBanner />}
         <View style={styles.screenWrap}>
@@ -1445,13 +1456,19 @@ const styles = StyleSheet.create({
   paneVisible: { display: 'flex' },
   paneHidden: { display: 'none' },
   loading: { flex: 1, backgroundColor: '#121110' },
+  appHeaderWrap: {
+    width: '100%',
+  },
   appHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
+    paddingHorizontal: HEADER_HORIZONTAL_PADDING,
+    paddingVertical: HEADER_PADDING_VERTICAL,
+    minHeight: HEADER_HEIGHT,
+    maxWidth: HEADER_MAX_WIDTH,
+    alignSelf: 'center',
+    width: '100%',
   },
   bismillahWrap: {
     flex: 1,
@@ -1516,6 +1533,8 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
   },
   gearBtn: {
+    minWidth: 40,
+    minHeight: 40,
     padding: 8,
     // Content-width (no fixed 110) so the gear hugs the screen edge and
     // the Bismillah sits immediately to its left — no dead gap.
