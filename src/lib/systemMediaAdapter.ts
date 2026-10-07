@@ -250,6 +250,24 @@ let lastSyncedArtist: string | null = null;
 let lastSyncedArtwork: string | null = null;
 
 /**
+ * The AudioPlayer instance whose lock-screen controls / MediaStyle notification
+ * are currently active. Guarding on the INSTANCE (not just the id) prevents
+ * `setActiveForLockScreen(true, ...)` from being re-invoked on every status
+ * tick after a metadata-only re-sync — which would re-post the native MediaStyle
+ * notification repeatedly (blinking) and eventually crash the MediaSession.
+ */
+let lastActivePlayer: { id: string } | null = null;
+
+/**
+ * Whether the native lock-screen controls / MediaStyle notification are
+ * currently SHOWN. `clearNowPlaying()` removes the notification, so this goes
+ * false and the next sync MUST re-activate (updateLockScreenMetadata is a
+ * no-op on a cleared notification). Only differs from lastActivePlayer when
+ * the notification was dismissed but the player instance survives.
+ */
+let isLockScreenActive = false;
+
+/**
  * Pushes Now Playing metadata (title, reciter, artwork, duration, position, playing)
  * to the platform's native surface:
  * - iOS: AVPlayer -> MPNowPlayingInfoCenter + MPRemoteCommandCenter (Lock screen, Control Center, Dynamic Island)
@@ -325,14 +343,19 @@ export async function syncNowPlaying(meta?: Partial<SystemMediaMetadata>): Promi
         showSeekBackward: true,
       };
 
-      const isSamePlayer = Boolean(player.id && player.id === lastActivePlayerId);
-      const isMetadataSame =
-        lastSyncedTitle === title &&
-        lastSyncedArtist === artist &&
-        lastSyncedArtwork === (artworkUri || null);
+      const isSamePlayer = Boolean(
+        player.id &&
+        lastActivePlayer &&
+        player.id === lastActivePlayer.id &&
+        player === lastActivePlayer
+      );
 
-      if (isSamePlayer) {
-        // Player already active — update metadata in place on existing session without recreating!
+      if (isSamePlayer && isLockScreenActive) {
+        // Player already active AND notification currently shown — update metadata in place
+        const isMetadataSame =
+          lastSyncedTitle === title &&
+          lastSyncedArtist === artist &&
+          lastSyncedArtwork === (artworkUri || null);
         if (!isMetadataSame) {
           player.updateLockScreenMetadata(audioMetadata);
           lastSyncedTitle = title;
@@ -340,9 +363,12 @@ export async function syncNowPlaying(meta?: Partial<SystemMediaMetadata>): Promi
           lastSyncedArtwork = artworkUri || null;
         }
       } else {
-        // New player or first activation — activate lock screen controls
+        // New player, or the notification was dismissed (pause/finish) —
+        // (re)activate lock screen controls and re-post the notification once.
         player.setActiveForLockScreen(true, audioMetadata, options);
         lastActivePlayerId = player.id || 'active';
+        lastActivePlayer = player;
+        isLockScreenActive = true;
         lastSyncedTitle = title;
         lastSyncedArtist = artist;
         lastSyncedArtwork = artworkUri || null;
@@ -359,7 +385,12 @@ export async function syncNowPlaying(meta?: Partial<SystemMediaMetadata>): Promi
  */
 export async function clearNowPlaying(): Promise<void> {
   const player = getCurrentAudioPlayer();
-  lastActivePlayerId = null;
+  // The notification/now-playing is being removed — mark inactive so the next
+  // sync re-activates (updateLockScreenMetadata is a no-op on a cleared
+  // notification). Keep lastActivePlayer so a SAME-instance metadata re-sync
+  // (e.g. an unrelated status tick) does NOT re-post while the notification
+  // is still up — that re-post storm is the blink/crash bug.
+  isLockScreenActive = false;
   lastSyncedTitle = null;
   lastSyncedArtist = null;
   lastSyncedArtwork = null;

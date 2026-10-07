@@ -552,10 +552,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  function persist(next: AppSettings) {
+  function persist(next: AppSettings): AppSettings {
     const clean = sanitizeSettings(next);
     preloadRequestedMem = clean.quranPreloadRequested;
-    setSettings(clean);
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(clean)).catch(() => {});
     return clean;
   }

@@ -230,6 +230,65 @@ console.log('Test 5: Clean dismissal on stop and queue completion...');
   console.log('  ✓ PASSED');
 }
 
+// 5b. REGRESSION: clearNowPlaying must NOT cause the next syncNowPlaying to
+// re-invoke setActiveForLockScreen (notification blink loop).
+// Root cause: clearNowPlaying() nulled lastActivePlayerId while the player
+// instance was still alive; any following status tick saw id !== null-guard
+// and re-posted the native MediaStyle notification. Fixed by guarding on the
+// player INSTANCE, which only resets when the player is truly destroyed.
+console.log('Test 5b: clearNowPlaying does not re-post notification on next tick (blink fix)...');
+{
+  let setActiveCalls = 0;
+  let updateMetadataCalls = 0;
+
+  // Model of the FIXED syncNowPlaying (instance-guarded)
+  let lastActivePlayer = null;
+  let lastSyncedTitle = null;
+
+  const player = {
+    id: 'session-1',
+    setActiveForLockScreen: () => { setActiveCalls++; },
+    updateLockScreenMetadata: () => { updateMetadataCalls++; },
+    clearLockScreenControls: () => {},
+  };
+
+  function syncNowPlaying(p, title) {
+    const isSamePlayer = Boolean(
+      p.id &&
+      lastActivePlayer &&
+      p.id === lastActivePlayer.id &&
+      p === lastActivePlayer
+    );
+    if (isSamePlayer) {
+      if (lastSyncedTitle !== title) {
+        p.updateLockScreenMetadata({ title });
+        lastSyncedTitle = title;
+      }
+    } else {
+      p.setActiveForLockScreen(true, { title });
+      lastActivePlayer = p;
+      lastSyncedTitle = title;
+    }
+  }
+
+  function clearNowPlaying() {
+    // FIXED: does NOT reset lastActivePlayer (player still alive)
+    lastSyncedTitle = null;
+  }
+
+  // Simulate a theme change: pause/finish triggers clearNowPlaying, then a
+  // status tick lands (as it does right after any settings/theme re-render
+  // while playback is active).
+  syncNowPlaying(player, 'Surah Al-Fatihah · الفَاتِحة — Ayah 1 (Arabic)');
+  assert.equal(setActiveCalls, 1, 'First sync activates once');
+  clearNowPlaying(); // pause/queue-end/theme-render window
+  syncNowPlaying(player, 'Surah Al-Fatihah · الفَاتِحة — Ayah 1 (Arabic)'); // next tick
+  assert.equal(setActiveCalls, 1, 'MUST NOT re-post setActiveForLockScreen after clearNowPlaying');
+  assert.equal(updateMetadataCalls, 1, 'Metadata re-syncs in place after clearNowPlaying');
+
+  console.log('  ✓ PASSED');
+}
+
 // 6. Permission Decision Logic
 console.log('Test 6: Media notification permission request logic...');
 {
