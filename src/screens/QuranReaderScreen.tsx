@@ -7,6 +7,7 @@ import {
   Clipboard,
   FlatList,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -471,6 +472,23 @@ export default function QuranReaderScreen({
   // Note composer state for ayah reflections
   const [noteComposerAyah, setNoteComposerAyah] = useState<number | null>(null);
   const [noteComposerText, setNoteComposerText] = useState<string>('');
+  // Dynamic keyboard height tracking for Android edge-to-edge modal adjustment
+  const [keyboardHeight, setKeyboardHeight] = useState<number>(0);
+
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   // Share-as-image: the ayah being shared renders a clean card, captured to PNG.
   const shareCardRef = useRef<View>(null);
   const [shareAyahItem, setShareAyahItem] = useState<Ayah | null>(null);
@@ -486,8 +504,10 @@ export default function QuranReaderScreen({
   };
 
   const closeNoteComposer = () => {
+    Keyboard.dismiss();
     setNoteComposerAyah(null);
     setNoteComposerText('');
+    setKeyboardHeight(0);
   };
 
   const handleSaveNote = () => {
@@ -2873,7 +2893,10 @@ export default function QuranReaderScreen({
               {
                 backgroundColor: colors.bgSurface,
                 borderColor: colors.borderSubtle,
-                paddingBottom: Math.max(insets.bottom, 16) + 12,
+                paddingBottom:
+                  (Platform.OS === 'android' ? keyboardHeight : 0) +
+                  Math.max(insets.bottom, 16) +
+                  12,
               },
             ]}
           >
@@ -2916,10 +2939,11 @@ export default function QuranReaderScreen({
                 placeholder="Write your reflection, thoughts, or lessons from this verse..."
                 placeholderTextColor={colors.textMuted}
                 multiline
-                numberOfLines={5}
+                numberOfLines={4}
                 value={noteComposerText}
                 onChangeText={setNoteComposerText}
                 autoFocus
+                scrollEnabled
                 textAlignVertical="top"
                 style={[
                   styles.noteModalInput,

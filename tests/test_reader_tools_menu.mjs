@@ -80,6 +80,16 @@ assert.ok(code.includes('noteModalSheet'), 'Note composer must use noteModalShee
 assert.ok(code.includes('isNoteComposerActive'), 'Selected ayah must be highlighted while note composer is open');
 console.log('  ✓ T8: Ayah long press Add Note composer, bottom sheet & highlight verified');
 
+// Test 9: Android edge-to-edge keyboard tracking on Note composer bottom sheet
+assert.ok(code.includes('Keyboard,') || code.includes(', Keyboard'), 'Keyboard must be imported from react-native');
+assert.ok(code.includes('keyboardHeight'), 'keyboardHeight state must exist');
+assert.ok(code.includes("Keyboard.addListener('keyboardDidShow'"), 'keyboardDidShow listener must be registered');
+assert.ok(code.includes("Keyboard.addListener('keyboardDidHide'"), 'keyboardDidHide listener must be registered');
+assert.ok(code.includes('showSub.remove()') && code.includes('hideSub.remove()'), 'keyboard listeners must be cleaned up on unmount');
+assert.ok(code.includes('keyboardHeight') && code.includes('paddingBottom:'), 'noteModalSheet must dynamically add keyboardHeight to paddingBottom');
+assert.ok(code.includes('scrollEnabled'), 'note composer input must have scrollEnabled');
+console.log('  ✓ T9: Android edge-to-edge dynamic keyboard tracking & note scrollability verified');
+
 console.log('\n========================================================');
 console.log('ALL TOOLS MENU & READER ENHANCEMENT TESTS PASSED!');
 console.log('========================================================\n');
