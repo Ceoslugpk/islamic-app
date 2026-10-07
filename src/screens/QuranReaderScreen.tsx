@@ -1386,10 +1386,10 @@ export default function QuranReaderScreen({
           },
         ]}
         onLongPress={handleLongPress}
-        delayLongPress={2000}
+        delayLongPress={1000}
         accessibilityRole="button"
         accessibilityLabel={`Ayah ${item.numberInSurah}. Long press to add note`}
-        accessibilityHint="Long press ~2 seconds to add a reflection note"
+        accessibilityHint="Long press ~1 second to add a reflection note"
       >
         {/* Action Header */}
         <View style={styles.ayahActionBar}>
