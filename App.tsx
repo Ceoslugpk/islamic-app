@@ -98,7 +98,7 @@ import { LocationSetupModal } from './src/components/LocationSetupModal';
 import { useLocation, refreshLocationSilently, computeDistanceKm } from './src/lib/useLocation';
 import { registerBackgroundPreload } from './src/lib/backgroundPreload';
 
-type TabKey = 'home' | 'quran' | 'library' | 'tools';
+export type TabKey = 'home' | 'quran' | 'library' | 'tools';
 
 interface TabItemConfig {
   key: TabKey;
@@ -323,7 +323,7 @@ function AppHeader({
   );
 }
 
-type LibraryView =
+export type LibraryView =
   | { screen: 'hub' }
   | { screen: 'tasbih' }
   | { screen: 'names' }
@@ -338,7 +338,7 @@ type LibraryView =
   | { screen: 'summary' }
   | { screen: 'tajweed' };
 
-type QuranView =
+export type QuranView =
   | { screen: 'home' }
   | { screen: 'reader'; surah: number; initialAyah?: number }
   | { screen: 'audio' }
@@ -350,7 +350,7 @@ type QuranView =
   | { screen: 'plans' }
   | { screen: 'hifz' };
 
-type ToolsView =
+export type ToolsView =
   | { screen: 'hub' }
   | { screen: 'qibla' }
   | { screen: 'tracker' }
@@ -373,8 +373,23 @@ type ToolsView =
   | { screen: 'madinah-live' }
   | { screen: 'hajj-live' };
 
+export function isTopLevelScreen(
+  tab: TabKey,
+  quran: QuranView,
+  library: LibraryView,
+  tools: ToolsView
+): boolean {
+  return (
+    tab === 'home' ||
+    (tab === 'quran' && quran.screen === 'home') ||
+    (tab === 'library' && library.screen === 'hub') ||
+    (tab === 'tools' && tools.screen === 'hub')
+  );
+}
+
 function Root({ splashDone }: { splashDone: boolean }) {
   const { colors, mode } = useTheme();
+  const insets = useSafeAreaInsets();
   const { isOnline } = useConnectivity();
   const { settings, setAutoLocation, setLocationMode, setWomenPinHash } = useSettings();
   const { request: requestLocation, status: locStatus } = useLocation();
@@ -950,13 +965,19 @@ function Root({ splashDone }: { splashDone: boolean }) {
     else if (key === 'tajweed') setLibrary({ screen: 'tajweed' });
   }
 
-  return (
-    <View style={[styles.safe, { backgroundColor: colors.bgBase }]}>
+    const isTopLevel = isTopLevelScreen(tab, quran, library, tools);
+
+    return (
+      <View style={[styles.safe, { backgroundColor: colors.bgBase }]}>
         <StatusBar style={mode === 'ink' ? 'light' : 'dark'} />
-        <AppHeader
-          onOpenSettings={() => setSettingsOpen(true)}
-          showBismillah={tab === 'home'}
-        />
+        {isTopLevel ? (
+          <AppHeader
+            onOpenSettings={() => setSettingsOpen(true)}
+            showBismillah={tab === 'home'}
+          />
+        ) : (
+          <View style={{ paddingTop: insets.top }} />
+        )}
         {!isOnline && <OfflineBanner />}
         <View style={styles.screenWrap}>
           {/* Home Tab */}

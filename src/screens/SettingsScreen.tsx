@@ -18,7 +18,8 @@ import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } fro
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
-import { getForwardIcon, iconSizes } from '../lib/iconMap';
+import { getForwardIcon, getBackIcon, iconSizes } from '../lib/iconMap';
+import { touchTargetTokens } from '../lib/buttonTokens';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import {
@@ -741,10 +742,12 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             onPress={onClose}
             accessibilityRole="button"
             accessibilityLabel="Close settings"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            hitSlop={touchTargetTokens.hitSlop8}
+            activeOpacity={0.7}
           >
+            <Ionicons name={getBackIcon('chevron')} size={iconSizes.header} color={colors.accent} />
             <Text style={[styles.closeText, { color: colors.accent, fontSize: layout.isCompact ? 13 : 14 }]}>
-              ← Done
+              Done
             </Text>
           </TouchableOpacity>
         )}
@@ -1819,15 +1822,20 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
+    minWidth: 40,
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    gap: 2,
     paddingVertical: 3,
     paddingRight: 10,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   closeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
+    letterSpacing: 0.1,
   },
   groupLabel: {
     fontFamily: 'Manrope_600SemiBold',

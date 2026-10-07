@@ -29,7 +29,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHaptics } from '../lib/haptics';
-import { iconSizes } from '../lib/iconMap';
+import { getBackIcon, iconSizes } from '../lib/iconMap';
 import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
 import { ArabicText, AyahText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { TajweedText } from '../components/TajweedText';
@@ -1681,7 +1681,7 @@ export default function QuranReaderScreen({
           accessibilityRole="button"
           accessibilityLabel="Back to Quran"
         >
-          <Ionicons name="arrow-back" size={backIconSize} color={colors.accent} />
+          <Ionicons name={getBackIcon('chevron')} size={backIconSize} color={colors.accent} />
           <Text style={[styles.backText, { color: colors.accent, fontSize: backTextSize }]}>Quran</Text>
         </TouchableOpacity>
 

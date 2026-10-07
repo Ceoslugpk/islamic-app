@@ -53,7 +53,8 @@
     "test:prayer": "node tests/test_prayer_architecture.mjs",
     "test:media": "node tests/test_system_media.mjs",
     "test:security": "node tests/test_security_audit_regressions.mjs",
-    "test": "node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs"
+    "test:header": "node tests/test_header_ux.mjs",
+    "test": "node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs && node tests/test_header_ux.mjs"
   },
   "private": true
 }
