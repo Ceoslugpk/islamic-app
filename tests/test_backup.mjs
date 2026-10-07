@@ -417,6 +417,34 @@ assert.ok(
 );
 console.log('  ✓ SDK 57 FileSystem legacy import verified in BackupRestoreScreen');
 
+// 22. Native module import safety & render-path require elimination check
+const livePlayerSource = fs.readFileSync('src/components/LiveVideoPlayer.tsx', 'utf8');
+assert.ok(
+  !livePlayerSource.includes("require('expo-video')"),
+  'LiveVideoPlayer must not use inline require("expo-video")'
+);
+assert.ok(
+  livePlayerSource.includes("import { useVideoPlayer, VideoView } from 'expo-video'") ||
+  livePlayerSource.includes("import { VideoView, useVideoPlayer } from 'expo-video'"),
+  'LiveVideoPlayer must statically import useVideoPlayer and VideoView from expo-video'
+);
+
+const quranReaderSource = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
+assert.ok(
+  !quranReaderSource.includes("require('expo-sharing')"),
+  'QuranReaderScreen must not use require("expo-sharing")'
+);
+assert.ok(
+  !backupScreenSource.includes("require('expo-sharing')"),
+  'BackupRestoreScreen must not use require("expo-sharing")'
+);
+assert.ok(
+  !backupScreenSource.includes("require('expo-document-picker')"),
+  'BackupRestoreScreen must not use require("expo-document-picker")'
+);
+console.log('  ✓ Native module static imports & render-path safety verified');
+
 console.log('\n========================================================');
-console.log('ALL 21 BACKUP TESTS PASSED SUCCESSFULLY!');
+console.log('ALL 22 BACKUP & NATIVE IMPORT TESTS PASSED SUCCESSFULLY!');
 console.log('========================================================');
+

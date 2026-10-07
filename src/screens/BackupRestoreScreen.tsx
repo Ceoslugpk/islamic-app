@@ -10,6 +10,8 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import {
@@ -69,14 +71,13 @@ export function BackupRestoreScreen({ onBack }: Props) {
         );
       } else {
         const FileSystem = require('expo-file-system/legacy');
-        const Sharing = require('expo-sharing');
-        const isSharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
+        const isSharingAvailable = Sharing?.isAvailableAsync ? await Sharing.isAvailableAsync().catch(() => false) : false;
 
-        if (isSharingAvailable) {
-          const cacheDir = (FileSystem.cacheDirectory || FileSystem.documentDirectory || '') + 'islamic-backup/';
-          await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true }).catch(() => {});
+        if (isSharingAvailable && Sharing?.shareAsync) {
+          const cacheDir = (FileSystem?.cacheDirectory || FileSystem?.documentDirectory || '') + 'islamic-backup/';
+          await FileSystem?.makeDirectoryAsync?.(cacheDir, { intermediates: true })?.catch?.(() => {});
           const path = cacheDir + fileName;
-          await FileSystem.writeAsStringAsync(path, JSON.stringify(payload, null, 2));
+          await FileSystem?.writeAsStringAsync?.(path, JSON.stringify(payload, null, 2));
           destinationPath = path;
 
           await Sharing.shareAsync(path, {
@@ -140,8 +141,10 @@ export function BackupRestoreScreen({ onBack }: Props) {
         }
         text = await picked.text();
       } else {
-        const DocumentPicker = require('expo-document-picker');
         const FileSystem = require('expo-file-system/legacy');
+        if (!DocumentPicker?.getDocumentAsync) {
+          throw new Error('Document picker is unavailable on this device.');
+        }
         const res = await DocumentPicker.getDocumentAsync({
           type: ['application/json', 'text/json', '*/*'],
           copyToCacheDirectory: true,

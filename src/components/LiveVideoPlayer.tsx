@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTheme } from '../lib/theme';
 import { Card } from './Card';
 import { LiveStreamId, setActiveLiveStream } from '../lib/liveStream';
@@ -62,7 +63,6 @@ export function LiveVideoPlayer({
     }
   }, [id, title, subtitle, embedUrl, watchUrl, hlsUrl]);
 
-  const useVideoPlayer = require('expo-video').useVideoPlayer;
   const player = useVideoPlayer(hlsUrl ?? '', (p: any) => {
     if (hlsUrl) {
       p.loop = true;
@@ -101,7 +101,6 @@ export function LiveVideoPlayer({
 
   // 1. Native HLS available (.m3u8) → native VideoView
   if (hlsUrl && Platform.OS !== 'web') {
-    const VideoView = require('expo-video').VideoView;
     return (
       <View
         style={[styles.playerContainer, { backgroundColor: '#000', borderColor: colors.borderSubtle }]}

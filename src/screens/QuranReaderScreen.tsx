@@ -25,6 +25,7 @@ import {
 import type { NativeScrollEvent, NativeSyntheticEvent, ViewabilityConfig, ViewToken } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -1189,11 +1190,8 @@ export default function QuranReaderScreen({
       const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
       setShareAyahItem(null);
       setIsSharingImage(false);
-      let Sharing: any = null;
-      try {
-        Sharing = require('expo-sharing');
-      } catch {}
-      if (Sharing && (await Sharing.isAvailableAsync())) {
+      const isSharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
+      if (isSharingAvailable) {
         await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share verse' });
       } else {
         Share.share({ url: uri }).catch(() => {});

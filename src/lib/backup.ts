@@ -238,6 +238,9 @@ export function formatTableSummary(tableCounts: Record<string, number>): string 
 
 async function exportNativeTables(): Promise<Record<string, unknown[]>> {
   const SQLite = require('expo-sqlite');
+  if (!SQLite?.openDatabaseSync) {
+    throw new Error('SQLite database is unavailable on this platform.');
+  }
   const db = SQLite.openDatabaseSync('salah.db');
   const out: Record<string, unknown[]> = {};
 
@@ -278,6 +281,9 @@ async function exportNativeTables(): Promise<Record<string, unknown[]>> {
 
 async function importNativeTables(tables: Record<string, unknown[]>): Promise<void> {
   const SQLite = require('expo-sqlite');
+  if (!SQLite?.openDatabaseSync) {
+    throw new Error('SQLite database is unavailable on this platform.');
+  }
   const db = SQLite.openDatabaseSync('salah.db');
 
   // Wipe user tables, then re-insert inside a single transaction for atomicity & integrity.
