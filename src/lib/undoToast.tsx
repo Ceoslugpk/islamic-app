@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 
 export interface UndoToastSaveParams {
@@ -84,29 +84,9 @@ const UndoToast: React.FC<{
   actionDescription: string;
   onUndo: () => void;
   onClose: () => void;
-  duration?: number;
-}> = ({
-  actionDescription,
-  onUndo,
-  onClose,
-  duration = 4000,
-}) => {
+}> = ({ actionDescription, onUndo, onClose }) => {
   const { visible, pendingUndo } = useContext(UndoToastContext);
   const { colors } = useTheme();
-  const [internalTimeoutId, setInternalTimeoutId] = useState<number | null>(null);
-
-  useEffect(() => {
-    if (visible) {
-      if (internalTimeoutId !== null) clearTimeout(internalTimeoutId);
-      const t = setTimeout(() => {
-        onClose();
-      }, duration);
-      setInternalTimeoutId(t);
-    }
-    return () => {
-      if (internalTimeoutId !== null) clearTimeout(internalTimeoutId);
-    };
-  }, [visible, duration, onClose, internalTimeoutId]);
 
   return visible ? (
     <View
