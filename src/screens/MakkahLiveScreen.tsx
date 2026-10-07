@@ -81,6 +81,7 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
 
       {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
       <LiveVideoPlayer
+        id="makkah"
         embedUrl={MAKKAH_EMBED_URL}
         watchUrl={MAKKAH_LIVE_URL}
         title="Live Stream from Makkah"

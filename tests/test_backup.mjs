@@ -404,6 +404,19 @@ const primitiveSettingsPayload = makePayload({
 assert.throws(() => validateBackup(primitiveSettingsPayload), /unparseable islamic-settings/);
 console.log('  ✓ non-object islamic-settings rejected');
 
+// 21. SDK 57 FileSystem legacy import regression check
+import fs from 'node:fs';
+const backupScreenSource = fs.readFileSync('src/screens/BackupRestoreScreen.tsx', 'utf8');
+assert.ok(
+  !backupScreenSource.includes("require('expo-file-system')"),
+  'BackupRestoreScreen must not use bare require("expo-file-system") due to SDK 57 split'
+);
+assert.ok(
+  backupScreenSource.includes("require('expo-file-system/legacy')"),
+  'BackupRestoreScreen must use require("expo-file-system/legacy") for document/cacheDirectory support'
+);
+console.log('  ✓ SDK 57 FileSystem legacy import verified in BackupRestoreScreen');
+
 console.log('\n========================================================');
-console.log('ALL 20 BACKUP TESTS PASSED SUCCESSFULLY!');
+console.log('ALL 21 BACKUP TESTS PASSED SUCCESSFULLY!');
 console.log('========================================================');

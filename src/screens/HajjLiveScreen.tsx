@@ -170,6 +170,7 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
 
       {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
       <LiveVideoPlayer
+        id="hajj"
         embedUrl={embedUrl}
         watchUrl={liveUrl}
         title={selectedChannel === 'ekhbariya' ? 'Al Ekhbariya Official Feed' : 'Ministry of Hajj & Umrah'}

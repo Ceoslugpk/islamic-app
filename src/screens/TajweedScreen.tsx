@@ -10,6 +10,7 @@ import {
   FlatList,
   Platform,
   useWindowDimensions,
+  BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -21,13 +22,23 @@ import { SURAHS_114 } from '../lib/surahs114';
 
 interface Props {
   onBack: () => void;
+  backLabel?: string;
 }
 
-export function TajweedScreen({ onBack }: Props) {
+export function TajweedScreen({ onBack, backLabel }: Props) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const [openSurah, setOpenSurah] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (openSurah === null) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setOpenSurah(null);
+      return true;
+    });
+    return () => sub.remove();
+  }, [openSurah]);
   const [showLegend, setShowLegend] = useState(false);
   const [ayahs, setAyahs] = useState<TajweedAyah[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -63,9 +74,28 @@ export function TajweedScreen({ onBack }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        title="Tajweed Colors"
-        subtitle="Full Quran · color-coded recitation rules"
-        onBack={onBack}
+        title={openSurah === null ? 'Tajweed Colors' : (openMeta?.englishName || `Surah ${openSurah}`)}
+        subtitle={
+          openSurah === null
+            ? 'Full Quran · color-coded recitation rules'
+            : `${openMeta?.name || ''} · ${openMeta?.numberOfAyahs || ayahs?.length || 0} ayahs`
+        }
+        eyebrow={openSurah === null ? 'Learn' : `Surah ${openSurah}`}
+        backLabel={openSurah === null ? (backLabel || 'Library') : 'Tajweed'}
+        onBack={openSurah === null ? onBack : () => setOpenSurah(null)}
+        rightAction={
+          openSurah !== null ? (
+            <TouchableOpacity
+              onPress={() => setShowLegend((v) => !v)}
+              style={[styles.backChip, { borderColor: colors.borderSubtle }]}
+              accessibilityRole="button"
+              accessibilityLabel={showLegend ? 'Hide color legend' : 'Show color legend'}
+            >
+              <Ionicons name="color-palette-outline" size={15} color={colors.accent} />
+              <Text style={[styles.backChipText, { color: colors.accent }]}>Legend</Text>
+            </TouchableOpacity>
+          ) : undefined
+        }
       />
 
       {openSurah === null ? (
@@ -127,36 +157,13 @@ export function TajweedScreen({ onBack }: Props) {
         </ScrollView>
       ) : (
         <View style={{ flex: 1 }}>
-          <View style={[styles.content, { paddingBottom: 0 }]}>
-            <View style={styles.surahHeader}>
-              <TouchableOpacity
-                onPress={() => setOpenSurah(null)}
-                style={[styles.backChip, { borderColor: colors.borderSubtle }]}
-                accessibilityRole="button"
-                accessibilityLabel="Back to tajweed surah list"
-              >
-                <Ionicons name="chevron-back" size={15} color={colors.textSecondary} />
-                <Text style={[styles.backChipText, { color: colors.textSecondary }]}>All surahs</Text>
-              </TouchableOpacity>
-              <Text style={[styles.surahTitle, { color: colors.textPrimary }]}>
-                {openMeta?.englishName || openSurah}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowLegend((v) => !v)}
-                style={[styles.backChip, { borderColor: colors.borderSubtle }]}
-                accessibilityRole="button"
-              >
-                <Ionicons name="color-palette-outline" size={15} color={colors.accent} />
-                <Text style={[styles.backChipText, { color: colors.accent }]}>Legend</Text>
-              </TouchableOpacity>
-            </View>
-
-            {showLegend && (
+          {showLegend && (
+            <View style={[styles.content, { paddingBottom: 8 }]}>
               <View style={[styles.legendCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
                 <TajweedLegend compact />
               </View>
-            )}
-          </View>
+            </View>
+          )}
 
           {loading ? (
             <View style={styles.center}>

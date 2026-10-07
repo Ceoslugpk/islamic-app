@@ -32,9 +32,10 @@ function loadProgress(): Progress {
 
 interface Props {
   onBack: () => void;
+  backLabel?: string;
 }
 
-export function VocabTrainerScreen({ onBack }: Props) {
+export function VocabTrainerScreen({ onBack, backLabel }: Props) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -105,7 +106,13 @@ export function VocabTrainerScreen({ onBack }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader title="Quran Vocabulary" subtitle="Most frequent words of the Quran" onBack={onBack} />
+      <ScreenHeader
+        title="Quran Vocabulary"
+        subtitle="Most frequent words of the Quran"
+        eyebrow="Learn"
+        backLabel={backLabel || 'Library'}
+        onBack={onBack}
+      />
 
       <ScrollView contentContainerStyle={styles.content} style={{ flex: 1 }}>
         {/* Progress */}

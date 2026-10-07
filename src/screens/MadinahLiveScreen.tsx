@@ -80,6 +80,7 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
 
       {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
       <LiveVideoPlayer
+        id="madinah"
         embedUrl={MADINAH_EMBED_URL}
         watchUrl={MADINAH_LIVE_URL}
         title="Live Stream from Madinah"

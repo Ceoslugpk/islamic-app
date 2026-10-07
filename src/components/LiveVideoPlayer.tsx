@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,34 +7,33 @@ import {
   TouchableOpacity,
   Linking,
   useWindowDimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 import { useTheme } from '../lib/theme';
 import { Card } from './Card';
+import { LiveStreamId, setActiveLiveStream } from '../lib/liveStream';
 
 /**
- * Mini live video player for Makkah / Madinah / Hajj live screens.
+ * In-app live video player for Makkah / Madinah / Hajj live screens.
  *
  * Playback strategy (honest + robust):
  * - HLS (.m3u8): played natively via expo-video (VideoView) — Android + iOS + web.
- * - YouTube: cannot be embedded natively (YouTube restricts third-party
- *   playback + ToS). On web we render the official YouTube iframe embed;
- *   on native we show a clean "Watch Live on YouTube" action that opens
- *   the official stream in the YouTube app/browser.
- *
- * Props:
- * - hlsUrl?: string      — native HLS stream (if available)
- * - embedUrl?: string    — YouTube embed URL (web)
- * - watchUrl?: string    — YouTube watch URL (native fallback action)
- * - title / subtitle     — card copy
+ * - YouTube on Web: rendered via official YouTube iframe embed.
+ * - YouTube on Native: rendered in-app via WebView embed (youtube-nocookie with playsinline).
+ *   Falls back to clean "Watch Live on YouTube" card if WebView encounters an error.
+ * - Collapses into a floating mini player bar above TabBar when navigating away.
  */
 export function LiveVideoPlayer({
+  id,
   hlsUrl,
   embedUrl,
   watchUrl,
   title,
   subtitle,
 }: {
+  id?: LiveStreamId;
   hlsUrl?: string;
   embedUrl?: string;
   watchUrl?: string;
@@ -44,8 +43,26 @@ export function LiveVideoPlayer({
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
+  const [webViewFailed, setWebViewFailed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Register active stream for mini-player tracking
+  useEffect(() => {
+    if (id) {
+      setActiveLiveStream({
+        id,
+        title,
+        subtitle,
+        embedUrl,
+        watchUrl,
+        hlsUrl,
+        isPlaying: true,
+      });
+    }
+  }, [id, title, subtitle, embedUrl, watchUrl, hlsUrl]);
+
   const useVideoPlayer = require('expo-video').useVideoPlayer;
-  // Hooks must be unconditional: create the player for the HLS URL (no-op when absent).
   const player = useVideoPlayer(hlsUrl ?? '', (p: any) => {
     if (hlsUrl) {
       p.loop = true;
@@ -57,7 +74,32 @@ export function LiveVideoPlayer({
     if (watchUrl) Linking.openURL(watchUrl).catch(() => {});
   };
 
-  // 1. HLS available (native) → real in-app mini player
+  const webViewHtml = useMemo(() => {
+    if (!embedUrl) return '';
+    const safeUrl = embedUrl.includes('?')
+      ? `${embedUrl}&playsinline=1&enablejsapi=1`
+      : `${embedUrl}?playsinline=1&enablejsapi=1`;
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
+<body>
+  <iframe
+    src="${safeUrl}"
+    frameborder="0"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen
+  ></iframe>
+</body>
+</html>`;
+  }, [embedUrl]);
+
+  // 1. Native HLS available (.m3u8) → native VideoView
   if (hlsUrl && Platform.OS !== 'web') {
     const VideoView = require('expo-video').VideoView;
     return (
@@ -69,7 +111,7 @@ export function LiveVideoPlayer({
     );
   }
 
-  // 2. Web → official YouTube iframe embed
+  // 2. Web → YouTube iframe embed
   if (Platform.OS === 'web' && embedUrl) {
     return (
       <View
@@ -87,7 +129,62 @@ export function LiveVideoPlayer({
     );
   }
 
-  // 3. Native without HLS (or no stream) → clean YouTube fallback card
+  // 3. Native YouTube via WebView (in-app playback)
+  if (embedUrl && !webViewFailed) {
+    return (
+      <View style={styles.wrapper}>
+        <View
+          key={`webview-${reloadKey}`}
+          style={[styles.playerContainer, { backgroundColor: '#000', borderColor: colors.borderSubtle }]}
+        >
+          <WebView
+            source={{ html: webViewHtml, baseUrl: 'https://www.youtube-nocookie.com' }}
+            style={styles.webView}
+            allowsInlineMediaPlayback={true}
+            mediaPlaybackRequiresUserAction={false}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            onLoadEnd={() => setLoading(false)}
+            onError={() => setWebViewFailed(true)}
+            onHttpError={() => setWebViewFailed(true)}
+          />
+          {loading && (
+            <View style={styles.loaderOverlay}>
+              <ActivityIndicator color={colors.accent} size="small" />
+            </View>
+          )}
+        </View>
+
+        {/* Quick controls underneath native player */}
+        <View style={styles.quickControls}>
+          <TouchableOpacity
+            style={[styles.quickBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
+            onPress={() => {
+              setLoading(true);
+              setReloadKey((k) => k + 1);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Reload live stream"
+          >
+            <Ionicons name="refresh" size={14} color={colors.accent} />
+            <Text style={[styles.quickBtnText, { color: colors.textSecondary }]}>Reload</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.quickBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
+            onPress={openYouTube}
+            accessibilityRole="button"
+            accessibilityLabel="Open in YouTube app"
+          >
+            <Ionicons name="open-outline" size={14} color={colors.accent} />
+            <Text style={[styles.quickBtnText, { color: colors.textSecondary }]}>YouTube App</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // 4. Fallback card (when WebView is unavailable or failed)
   return (
     <Card style={{ marginBottom: 18, padding: 18 }}>
       <View style={styles.nativeCardHeader}>
@@ -124,17 +221,53 @@ export function LiveVideoPlayer({
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    marginBottom: 18,
+  },
   playerContainer: {
     width: '100%',
     aspectRatio: 16 / 9,
     borderRadius: 14,
     overflow: 'hidden',
     borderWidth: 1,
-    marginBottom: 18,
+    position: 'relative',
   },
   videoView: {
     width: '100%',
     height: '100%',
+  },
+  webView: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#000000',
+  },
+  loaderOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickControls: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 8,
+  },
+  quickBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  quickBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
   },
   nativeCardHeader: {
     flexDirection: 'row',

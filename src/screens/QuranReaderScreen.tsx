@@ -3,8 +3,10 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  BackHandler,
   Clipboard,
   FlatList,
+  Image,
   Modal,
   Platform,
   ScrollView,
@@ -46,6 +48,7 @@ import {
   isBookmarked,
   removeBookmark,
   VerseRef,
+  addNote,
   addStudyTagFn,
   removeVerseHighlightFn,
   addVerseHighlightFn,
@@ -265,7 +268,7 @@ export default function QuranReaderScreen({
   onBack,
   onNavigateSurah,
 }: QuranReaderScreenProps) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const { haptic } = useHaptics();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
   const { settings, setQuranFontSize, setQuranShowTranslation, setTafsirSourceId, setQuranScript } = useSettings();
@@ -320,10 +323,12 @@ export default function QuranReaderScreen({
   const surahNumberRef = useRef<number>(safeSurahNumber);
   const lastSavedAyahRef = useRef<number>(initialAyah || 1);
   const trackingReadyRef = useRef<boolean>(!initialAyah || initialAyah <= 1);
+  const [currentVisibleAyah, setCurrentVisibleAyah] = useState<number>(initialAyah || 1);
 
   useEffect(() => {
     surahNumberRef.current = safeSurahNumber;
     lastSavedAyahRef.current = initialAyah || 1;
+    setCurrentVisibleAyah(initialAyah || 1);
     trackingReadyRef.current = !initialAyah || initialAyah <= 1;
   }, [safeSurahNumber, initialAyah]);
 
@@ -461,6 +466,9 @@ export default function QuranReaderScreen({
   // Study Tools: Selection Mode State
   const [selectionMode, setSelectionMode] = useState<boolean>(false);
   const [selectedAyahs, setSelectedAyahs] = useState<Set<number>>(new Set());
+  // Note composer state for ayah reflections
+  const [noteComposerAyah, setNoteComposerAyah] = useState<number | null>(null);
+  const [noteComposerText, setNoteComposerText] = useState<string>('');
   // Share-as-image: the ayah being shared renders a clean card, captured to PNG.
   const shareCardRef = useRef<View>(null);
   const [shareAyahItem, setShareAyahItem] = useState<Ayah | null>(null);
@@ -469,6 +477,25 @@ export default function QuranReaderScreen({
   const [showTagInput, setShowTagInput] = useState<boolean>(false);
   const [tagInput, setTagInput] = useState<string>('');
   const [highlightColorPickerOpen, setHighlightColorPickerOpen] = useState<boolean>(false);
+
+  const openNoteComposer = (ayahNumber: number) => {
+    setNoteComposerAyah(ayahNumber);
+    setNoteComposerText('');
+  };
+
+  const handleSaveNote = () => {
+    if (!noteComposerAyah) return;
+    const trimmed = noteComposerText.trim();
+    if (!trimmed) {
+      setNoteComposerAyah(null);
+      setNoteComposerText('');
+      return;
+    }
+    addNote(safeSurahNumber, noteComposerAyah, trimmed);
+    haptic('success');
+    setNoteComposerAyah(null);
+    setNoteComposerText('');
+  };
 
   // Highlight color palette
   const HIGHLIGHT_COLORS = [
@@ -572,7 +599,11 @@ export default function QuranReaderScreen({
   // Add note to selected verses (uses first selected ayah)
   const addNoteToSelected = () => {
     if (selectedAyahs.size === 0) return;
+    const firstAyah = Array.from(selectedAyahs).sort((a, b) => a - b)[0];
     exitSelectionMode();
+    if (typeof firstAyah === 'number') {
+      openNoteComposer(firstAyah);
+    }
   };
 
   // Add bookmark to selected verses
@@ -618,20 +649,20 @@ export default function QuranReaderScreen({
   // Reading progress calculation
   const readingProgress = useMemo(() => {
     const fallbackCount = SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7;
-    const currentAyah = lastSavedAyahRef?.current ?? initialAyah ?? 1;
+    const currentAyah = currentVisibleAyah || lastSavedAyahRef?.current || initialAyah || 1;
     if (!surah) return { percent: 0, currentAyah, totalAyahs: fallbackCount };
     const totalAyahs = surah.numberOfAyahs || fallbackCount;
     const percent = Math.min(100, Math.round((currentAyah / totalAyahs) * 100));
     return { percent, currentAyah, totalAyahs };
-  }, [surah, safeSurahNumber, initialAyah]);
+  }, [surah, safeSurahNumber, initialAyah, currentVisibleAyah]);
 
   // Current position indicator
   const currentPosition = useMemo(() => {
-    const currentAyah = lastSavedAyahRef?.current ?? initialAyah ?? 1;
+    const currentAyah = currentVisibleAyah || lastSavedAyahRef?.current || initialAyah || 1;
     if (!surah) return { ayah: '—', page: '—' };
     const page = getApproxPage(safeSurahNumber, currentAyah);
     return { ayah: currentAyah, page };
-  }, [surah, safeSurahNumber, initialAyah]);
+  }, [surah, safeSurahNumber, initialAyah, currentVisibleAyah]);
 
   // Auto-hide top nav while scrolling down; reappear on scroll up / back to top
   const navOpacity = useRef(new Animated.Value(1)).current;
@@ -706,11 +737,13 @@ export default function QuranReaderScreen({
   // Continue Reading tracking (handler must stay stable across renders)
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken<Ayah>[]; changed: ViewToken<Ayah>[] }) => {
-      if (!trackingReadyRef.current) return;
       const first = viewableItems[0];
       if (!first || !first.item) return;
       const ayahNumber = first.item.numberInSurah;
-      if (typeof ayahNumber !== 'number' || ayahNumber === lastSavedAyahRef.current) return;
+      if (typeof ayahNumber !== 'number') return;
+      setCurrentVisibleAyah(ayahNumber);
+      if (!trackingReadyRef.current) return;
+      if (ayahNumber === lastSavedAyahRef.current) return;
       lastSavedAyahRef.current = ayahNumber;
       saveReadingPosition(surahNumberRef.current, ayahNumber);
     },
@@ -742,6 +775,16 @@ export default function QuranReaderScreen({
       }
     })();
   }, []);
+
+  // Android hardware back button handler to dismiss tools menu if open
+  useEffect(() => {
+    if (!toolsMenuOpen) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setToolsMenuOpen(false);
+      return true;
+    });
+    return () => sub.remove();
+  }, [toolsMenuOpen]);
 
   // Listen to audio status and synchronize with active ayah / surah playback
   useEffect(() => {
@@ -1306,6 +1349,12 @@ export default function QuranReaderScreen({
             },
           },
           {
+            text: 'Add Note',
+            onPress: () => {
+              openNoteComposer(item.numberInSurah);
+            },
+          },
+          {
             text: copy,
             onPress: () => {
               const textToCopy = `"${item.text || ''}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
@@ -1722,7 +1771,15 @@ export default function QuranReaderScreen({
             ]}
           >
             {/* Drag Pill */}
-            <View style={[styles.toolsMenuDragPill, { backgroundColor: colors.borderStrong }]} />
+            <TouchableOpacity
+              onPress={() => setToolsMenuOpen(false)}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss reading tools"
+              hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
+            >
+              <View style={[styles.toolsMenuDragPill, { backgroundColor: colors.borderStrong }]} />
+            </TouchableOpacity>
 
             {/* Header Strip */}
             <View style={styles.toolsMenuHeader}>
@@ -2813,6 +2870,87 @@ export default function QuranReaderScreen({
         </View>
       </Modal>
 
+      {/* Note Composer Modal for Ayah Reflections */}
+      <Modal
+        visible={noteComposerAyah !== null}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setNoteComposerAyah(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setNoteComposerAyah(null)}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+          <View
+            style={[
+              styles.noteModalPanel,
+              { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+            ]}
+          >
+            <View style={styles.noteModalHeader}>
+              <View>
+                <Text style={[styles.noteModalEyebrow, { color: colors.accent }]}>REFLECTIONS</Text>
+                <Text style={[styles.noteModalTitle, { color: colors.textPrimary }]}>
+                  {surah?.englishName || `Surah ${safeSurahNumber}`} · Ayah {noteComposerAyah}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setNoteComposerAyah(null)}
+                style={styles.closeBtn}
+                accessibilityRole="button"
+                accessibilityLabel="Close note composer"
+              >
+                <Ionicons name="close" size={22} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              placeholder="Write your reflection, thoughts, or lessons from this verse..."
+              placeholderTextColor={colors.textMuted}
+              multiline
+              numberOfLines={4}
+              value={noteComposerText}
+              onChangeText={setNoteComposerText}
+              autoFocus
+              style={[
+                styles.noteModalInput,
+                {
+                  color: colors.textPrimary,
+                  borderColor: colors.borderSubtle,
+                  backgroundColor: colors.bgBase,
+                },
+              ]}
+            />
+
+            <View style={styles.noteModalFooter}>
+              <TouchableOpacity
+                onPress={() => setNoteComposerAyah(null)}
+                style={[
+                  styles.noteModalBtnCancel,
+                  { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel note"
+              >
+                <Text style={[styles.noteModalBtnCancelText, { color: colors.textSecondary }]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSaveNote}
+                style={[styles.noteModalBtnSave, { backgroundColor: colors.accent }]}
+                accessibilityRole="button"
+                accessibilityLabel="Save note"
+              >
+                <Text style={[styles.noteModalBtnSaveText, { color: colors.onAccent }]}>
+                  Save Note
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       {/* Share-as-image capture card (rendered off-screen while sharing) */}
       {shareAyahItem && (
         <View style={styles.shareCardWrap} pointerEvents="none">
@@ -2834,6 +2972,27 @@ export default function QuranReaderScreen({
             <Text style={[styles.shareCardRef, { color: colors.textMuted }]}>
               Quran {surahNumber}:{shareAyahItem.numberInSurah}
             </Text>
+
+            {/* App Brand Footer: Logo + ISLAMIC wordmark */}
+            <View style={styles.shareCardBrandFooter}>
+              <Image
+                source={
+                  mode === 'paper'
+                    ? require('../../assets/logo-small-black.png')
+                    : require('../../assets/logo-small-ivory.png')
+                }
+                style={styles.shareCardLogo}
+                resizeMode="contain"
+              />
+              <Text
+                style={[
+                  styles.shareCardBrandWordmark,
+                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                ]}
+              >
+                ISLAMIC
+              </Text>
+            </View>
           </View>
         </View>
       )}
@@ -3549,6 +3708,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.3,
   },
+  shareCardBrandFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E2E8F0',
+    gap: 8,
+  },
+  shareCardLogo: {
+    width: 22,
+    height: 22,
+  },
+  shareCardBrandWordmark: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
   mushafTajweedList: {
     width: '100%',
   },
@@ -3571,5 +3750,73 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     flex: 1,
+  },
+  noteModalPanel: {
+    width: '90%',
+    maxWidth: 440,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  noteModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  noteModalEyebrow: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 1,
+    marginBottom: 2,
+  },
+  noteModalTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 20,
+    lineHeight: 24,
+  },
+  noteModalInput: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    minHeight: 110,
+    textAlignVertical: 'top',
+    marginBottom: 16,
+  },
+  noteModalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  noteModalBtnCancel: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteModalBtnCancelText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 13,
+  },
+  noteModalBtnSave: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noteModalBtnSaveText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
   },
 });

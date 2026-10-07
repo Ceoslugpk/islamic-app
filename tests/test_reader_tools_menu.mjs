@@ -56,6 +56,27 @@ assert.ok(code.includes('toolsMenuInnerDivider'), 'toolsMenuInnerDivider must be
 assert.ok(!code.includes('Reading Progress</Text>'), 'Standalone Reading Progress row removed in favor of header strip');
 console.log('  ✓ Polish: inner hairline dividers inside groups and redundant progress row removed');
 
+// Test 6: T5 regressions — Live progress state, interactive drag pill, BackHandler
+assert.ok(code.includes('currentVisibleAyah'), 'currentVisibleAyah state must be used to drive live reading progress');
+assert.ok(code.includes('setCurrentVisibleAyah(ayahNumber)'), 'handleViewableItemsChanged must update currentVisibleAyah');
+assert.ok(code.includes('Dismiss reading tools'), 'Drag pill must be an interactive button to dismiss tools menu');
+assert.ok(code.includes("addEventListener('hardwareBackPress'") && code.includes('setToolsMenuOpen(false)'), 'BackHandler must dismiss tools menu on Android back');
+console.log('  ✓ T5: Live progress state, interactive drag pill, and BackHandler verified');
+
+// Test 7: T6 regressions — Share card brand footer with logo and ISLAMIC wordmark
+assert.ok(code.includes('shareCardBrandFooter'), 'Share card must include brand footer');
+assert.ok(code.includes('logo-small-black.png') && code.includes('logo-small-ivory.png'), 'Share card must include light and dark app logo');
+assert.ok(code.includes('shareCardBrandWordmark') && code.includes('ISLAMIC'), 'Share card must include ISLAMIC wordmark');
+console.log('  ✓ T6: Share card logo and ISLAMIC wordmark verified');
+
+// Test 8: T8 regressions — Note composer modal and addNote wiring
+assert.ok(code.includes('noteComposerAyah'), 'noteComposerAyah state must exist');
+assert.ok(code.includes('openNoteComposer'), 'openNoteComposer handler must exist');
+assert.ok(code.includes('handleSaveNote'), 'handleSaveNote handler must exist');
+assert.ok(code.includes('addNote(safeSurahNumber'), 'addNote must be called with safeSurahNumber and noteComposerAyah');
+assert.ok(code.includes("text: 'Add Note'"), 'Ayah long press alert must offer Add Note action');
+console.log('  ✓ T8: Ayah long press Add Note composer and storage verified');
+
 console.log('\n========================================================');
-console.log('ALL TOOLS MENU REDESIGN TESTS PASSED!');
+console.log('ALL TOOLS MENU & READER ENHANCEMENT TESTS PASSED!');
 console.log('========================================================\n');

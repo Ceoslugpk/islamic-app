@@ -68,7 +68,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
           `File: ${fileName}\n\nIncluded in backup:\n${summaryText}`
         );
       } else {
-        const FileSystem = require('expo-file-system');
+        const FileSystem = require('expo-file-system/legacy');
         const Sharing = require('expo-sharing');
         const isSharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
 
@@ -141,7 +141,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
         text = await picked.text();
       } else {
         const DocumentPicker = require('expo-document-picker');
-        const FileSystem = require('expo-file-system');
+        const FileSystem = require('expo-file-system/legacy');
         const res = await DocumentPicker.getDocumentAsync({
           type: ['application/json', 'text/json', '*/*'],
           copyToCacheDirectory: true,

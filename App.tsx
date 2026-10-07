@@ -80,6 +80,8 @@ import PrayerGuideScreen from './src/screens/PrayerGuideScreen';
 import ShahadaScreen from './src/screens/ShahadaScreen';
 import DownloadsScreen from './src/screens/DownloadsScreen';
 import { AudioMiniPlayer } from './src/components/AudioMiniPlayer';
+import { LiveMiniPlayer } from './src/components/LiveMiniPlayer';
+import { ActiveLiveStream, setActiveLiveStream, subscribeLiveStream } from './src/lib/liveStream';
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
 import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayingNotification, cleanupNowPlayingNotification } from './src/lib/nowPlayingNotification';
@@ -430,6 +432,12 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
   // Global Audio Mini Player state
   const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
+
+  // Global Live Video Mini Player state
+  const [activeLiveStream, setActiveLiveStreamState] = useState<ActiveLiveStream | null>(null);
+  useEffect(() => {
+    return subscribeLiveStream(setActiveLiveStreamState);
+  }, []);
 
   // First-launch notifications onboarding (runs once after splash: only when reminders enabled)
   // Location permission is decoupled from this and never uses a vague "OK" blocking alert
@@ -1228,6 +1236,16 @@ function Root({ splashDone }: { splashDone: boolean }) {
             )}
           </View>
         </View>
+      {Boolean(activeLiveStream && !(tab === 'tools' && tools.screen === `${activeLiveStream.id}-live`)) && activeLiveStream && (
+        <LiveMiniPlayer
+          stream={activeLiveStream}
+          onClose={() => setActiveLiveStream(null)}
+          onExpand={() => {
+            setTab('tools');
+            setTools({ screen: `${activeLiveStream.id}-live` as any });
+          }}
+        />
+      )}
       {showMiniPlayer && playback && (
         <AudioMiniPlayer
           playback={playback}

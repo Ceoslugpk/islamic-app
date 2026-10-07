@@ -273,6 +273,29 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
   const qadaPendingCount = useMemo(() => visibleMissedList.filter((m) => !m.madeUp).length, [visibleMissedList]);
   const qadaMadeUpCount = useMemo(() => visibleMissedList.filter((m) => m.madeUp).length, [visibleMissedList]);
 
+  const daysFastedThisMonth = useMemo(() => {
+    const currentMonthPrefix = todayStr.slice(0, 7);
+    const pastThisMonth = history.filter((h) => h.fasting && h.date.startsWith(currentMonthPrefix)).length;
+    const todayInHistory = history.some((h) => h.date === todayStr && h.fasting);
+    return pastThisMonth + (todayEntry.fasting && !todayInHistory ? 1 : 0);
+  }, [history, todayStr, todayEntry.fasting]);
+
+  const handleQuickRemoveMissed = useCallback(() => {
+    const pending = visibleMissedList.filter((m) => !m.madeUp);
+    if (pending.length === 0) return;
+    const target = pending[0];
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch { /* ignore */ }
+    toggleMissedFastMadeUp(target.id, true);
+    setMissedList(loadMissedFasts());
+  }, [visibleMissedList]);
+
+  const handleQuickAddMissed = useCallback(() => {
+    setShowAddMissed(true);
+    setActiveTab('qada');
+  }, []);
+
   // Countdown & times
   const suhoorTimeRaw = timings?.timings?.Fajr || '';
   const iftarTimeRaw = timings?.timings?.Maghrib || '';
@@ -348,12 +371,154 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
         {/* ─── TAB 1: TODAY TRACKER ───────────────────────────────── */}
         {activeTab === 'tracker' && (
           <View style={styles.tabContent}>
-            {/* Suhoor & Iftar Times Hero */}
+            {/* Small Stats Row */}
+            <View style={styles.statsRow}>
+              <View style={[styles.statBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                <Text style={[styles.statNumber, { color: colors.accent }]}>
+                  {daysFastedThisMonth}
+                </Text>
+                <Text style={[styles.statText, { color: colors.textMuted }]}>
+                  This Month
+                </Text>
+              </View>
+              <View style={[styles.statBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                <Text style={[styles.statNumber, { color: colors.textPrimary }]}>
+                  {streak}d
+                </Text>
+                <Text style={[styles.statText, { color: colors.textMuted }]}>
+                  Streak
+                </Text>
+              </View>
+              <View style={[styles.statBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+                <Text style={[styles.statNumber, { color: qadaPendingCount > 0 ? colors.accent : colors.textPrimary }]}>
+                  {qadaPendingCount}
+                </Text>
+                <Text style={[styles.statText, { color: colors.textMuted }]}>
+                  Qada Left
+                </Text>
+              </View>
+            </View>
+
+            {/* Clear TODAY Card */}
+            <Card style={styles.todayCard}>
+              <View style={styles.todayCardHeader}>
+                <View>
+                  <Text style={[styles.todayCardEyebrow, { color: colors.accent }]}>
+                    {todayHijri.day} {HIJRI_MONTH_NAMES[todayHijri.month - 1]} {todayHijri.year} AH
+                  </Text>
+                  <Text style={[styles.todayCardTitle, { color: colors.textPrimary }]}>
+                    Today's Fast
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor: todayEntry.fasting ? colors.accentDim : colors.bgBase,
+                      borderColor: todayEntry.fasting ? colors.accent : colors.borderSubtle,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={todayEntry.fasting ? 'checkmark-circle' : 'moon-outline'}
+                    size={14}
+                    color={todayEntry.fasting ? colors.accent : colors.textMuted}
+                  />
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      { color: todayEntry.fasting ? colors.accent : colors.textMuted },
+                    ]}
+                  >
+                    {todayEntry.fasting ? 'Fasting Active' : 'Not Fasting'}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.todayStatusBox}>
+                <Text style={[styles.todayStatusMessage, { color: colors.textSecondary }]}>
+                  {todayEntry.fasting
+                    ? 'Alhamdulillah, your fast is recorded for today.'
+                    : 'Tap below to record your fast and track your habit.'}
+                </Text>
+
+                {todayEntry.fasting ? (
+                  <View style={styles.fastTypeContainer}>
+                    <Text style={[styles.typeSelectLabel, { color: colors.textSecondary }]}>
+                      Intention / Category:
+                    </Text>
+                    <View style={styles.typeButtonsRow}>
+                      {(['ramadan', 'voluntary', 'qada'] as FastingType[]).map((type) => {
+                        const isChosen = todayEntry.type === type;
+                        const typeLabels: Record<FastingType, string> = {
+                          ramadan: 'Ramadan',
+                          voluntary: 'Sunnah',
+                          qada: 'Qada (Makeup)',
+                        };
+                        return (
+                          <TouchableOpacity
+                            key={type}
+                            style={[
+                              styles.typeBtn,
+                              {
+                                backgroundColor: isChosen ? colors.accent : colors.bgBase,
+                                borderColor: isChosen ? colors.accent : colors.borderSubtle,
+                              },
+                            ]}
+                            onPress={() => handleChangeType(type)}
+                            accessibilityRole="button"
+                            accessibilityState={{ selected: isChosen }}
+                          >
+                            <Text
+                              style={[
+                                styles.typeBtnText,
+                                { color: isChosen ? '#FFFFFF' : colors.textPrimary },
+                              ]}
+                            >
+                              {typeLabels[type]}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+
+                <TouchableOpacity
+                  style={[
+                    styles.primaryCtaBtn,
+                    {
+                      backgroundColor: todayEntry.fasting ? 'transparent' : colors.accent,
+                      borderColor: todayEntry.fasting ? colors.borderSubtle : colors.accent,
+                    },
+                  ]}
+                  onPress={handleToggleFasting}
+                  accessibilityRole="button"
+                  accessibilityLabel={todayEntry.fasting ? 'Mark as not fasting' : 'Mark as fasting today'}
+                >
+                  <Ionicons
+                    name={todayEntry.fasting ? 'close-circle-outline' : 'checkmark-circle'}
+                    size={18}
+                    color={todayEntry.fasting ? colors.textMuted : '#FFFFFF'}
+                  />
+                  <Text
+                    style={[
+                      styles.primaryCtaBtnText,
+                      { color: todayEntry.fasting ? colors.textSecondary : '#FFFFFF' },
+                    ]}
+                  >
+                    {todayEntry.fasting ? 'Cancel / Not Fasting Today' : 'I am Fasting Today'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Card>
+
+            {/* Suhoor & Iftar Times Card */}
             <Card style={styles.heroCard}>
               <View style={styles.heroHeader}>
                 <View>
                   <Text style={[styles.heroEyebrow, { color: colors.accent }]}>
-                    {todayHijri.day} {HIJRI_MONTH_NAMES[todayHijri.month - 1]} {todayHijri.year} AH
+                    Today's Prayer Schedule
                   </Text>
                   <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
                     Suhoor & Iftar Timings
@@ -396,131 +561,106 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
               </View>
             </Card>
 
-            {/* Daily Fasting Toggle */}
-            <Card style={styles.toggleCard}>
-              <View style={styles.toggleRow}>
-                <View style={styles.toggleTextWrap}>
-                  <Text style={[styles.toggleTitle, { color: colors.textPrimary }]}>
-                    Are you fasting today?
+            {/* Missed Fasts (Qada) Section */}
+            <Card style={styles.qadaOverviewCard}>
+              <View style={styles.qadaSectionHeader}>
+                <View>
+                  <Text style={[styles.qadaSectionEyebrow, { color: colors.accent }]}>
+                    Obligatory Makeup
                   </Text>
-                  <Text style={[styles.toggleSub, { color: colors.textMuted }]}>
-                    {todayEntry.fasting ? 'Marked as fasting today' : 'Tap switch to record today’s fast'}
+                  <Text style={[styles.qadaSectionTitle, { color: colors.textPrimary }]}>
+                    Missed Fasts (Qada)
                   </Text>
                 </View>
-                <TouchableOpacity
-                  style={[
-                    styles.toggleSwitch,
-                    {
-                      backgroundColor: todayEntry.fasting ? colors.accent : colors.borderSubtle,
-                    },
-                  ]}
-                  onPress={handleToggleFasting}
-                  activeOpacity={0.8}
-                  accessibilityRole="switch"
-                  accessibilityState={{ checked: todayEntry.fasting }}
-                  accessibilityLabel="Toggle fasting today"
-                >
-                  <View
-                    style={[
-                      styles.toggleKnob,
-                      todayEntry.fasting ? styles.toggleKnobActive : styles.toggleKnobInactive,
-                      { backgroundColor: '#FFFFFF' },
-                    ]}
-                  />
-                </TouchableOpacity>
+                <View style={styles.qadaActionBtnsRow}>
+                  <TouchableOpacity
+                    style={[styles.stepperBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
+                    onPress={handleQuickAddMissed}
+                    accessibilityRole="button"
+                    accessibilityLabel="Add missed fast"
+                  >
+                    <Ionicons name="add" size={15} color={colors.accent} />
+                    <Text style={[styles.stepperBtnText, { color: colors.accent }]}>Add</Text>
+                  </TouchableOpacity>
+                  {qadaPendingCount > 0 ? (
+                    <TouchableOpacity
+                      style={[styles.stepperBtn, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}
+                      onPress={handleQuickRemoveMissed}
+                      accessibilityRole="button"
+                      accessibilityLabel="Make up one missed fast"
+                    >
+                      <Ionicons name="checkmark" size={14} color={colors.textPrimary} />
+                      <Text style={[styles.stepperBtnText, { color: colors.textPrimary }]}>-1 Made Up</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
               </View>
 
-              {todayEntry.fasting && (
-                <View style={styles.fastTypeContainer}>
-                  <Hairline style={styles.cardHairline} />
-                  <Text style={[styles.typeSelectLabel, { color: colors.textSecondary }]}>
-                    Fasting Intention / Category:
-                  </Text>
-                  <View style={styles.typeButtonsRow}>
-                    {(['ramadan', 'voluntary', 'qada'] as FastingType[]).map((type) => {
-                      const isChosen = todayEntry.type === type;
-                      const typeLabels: Record<FastingType, string> = {
-                        ramadan: 'Ramadan',
-                        voluntary: 'Sunnah',
-                        qada: 'Qada (Makeup)',
-                      };
-                      return (
-                        <TouchableOpacity
-                          key={type}
+              {visibleMissedList.length === 0 ? (
+                <EmptyState
+                  icon="checkmark-done-circle-outline"
+                  title="All caught up!"
+                  subtitle="No missed fasts recorded in your ledger."
+                />
+              ) : (
+                <View style={styles.qadaQuickList}>
+                  {visibleMissedList.slice(0, 3).map((item) => (
+                    <View
+                      key={item.id}
+                      style={[
+                        styles.missedQuickRow,
+                        { borderColor: colors.borderSubtle },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={[
+                          styles.checkbox,
+                          {
+                            backgroundColor: item.madeUp ? colors.accent : 'transparent',
+                            borderColor: item.madeUp ? colors.accent : colors.borderSubtle,
+                          },
+                        ]}
+                        onPress={() => handleToggleMadeUp(item.id, item.madeUp)}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: item.madeUp }}
+                      >
+                        {item.madeUp && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                      </TouchableOpacity>
+                      <View style={{ flex: 1 }}>
+                        <Text
                           style={[
-                            styles.typeBtn,
+                            styles.missedDate,
                             {
-                              backgroundColor: isChosen ? colors.accent : colors.bgBase,
-                              borderColor: isChosen ? colors.accent : colors.borderSubtle,
+                              color: colors.textPrimary,
+                              textDecorationLine: item.madeUp ? 'line-through' : 'none',
                             },
                           ]}
-                          onPress={() => handleChangeType(type)}
-                          accessibilityRole="button"
-                          accessibilityState={{ selected: isChosen }}
                         >
-                          <Text
-                            style={[
-                              styles.typeBtnText,
-                              { color: isChosen ? '#FFFFFF' : colors.textPrimary },
-                            ]}
-                          >
-                            {typeLabels[type]}
-                          </Text>
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
+                          {item.date}
+                        </Text>
+                        <Text style={[styles.missedReason, { color: colors.textMuted }]}>
+                          {(!womenUnlocked && isWomenSpecificReason(item.reason))
+                            ? 'Excused (Private)'
+                            : item.reason}{' '}
+                          {item.madeUp && item.madeUpDate ? `• Made up on ${item.madeUpDate}` : ''}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+
+                  <TouchableOpacity
+                    style={[styles.viewAllLedgerBtn, { borderColor: colors.borderSubtle }]}
+                    onPress={() => setActiveTab('qada')}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.viewAllLedgerText, { color: colors.accent }]}>
+                      {visibleMissedList.length > 3
+                        ? `View all ${visibleMissedList.length} records in Qada ledger →`
+                        : 'Open full Qada ledger →'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
-            </Card>
-
-            {/* Ramadan Progress Card */}
-            <Card style={styles.ramadanCard}>
-              <View style={styles.ramadanHeader}>
-                <View>
-                  <Text style={[styles.ramadanEyebrow, { color: colors.accent }]}>
-                    Ramadan {todayHijri.year} AH
-                  </Text>
-                  <Text style={[styles.ramadanTitle, { color: colors.textPrimary }]}>
-                    {todayHijri.month === 9
-                      ? `Ramadan Active — Day ${todayHijri.day} of 30`
-                      : 'Ramadan Overview'}
-                  </Text>
-                </View>
-                <View style={[styles.streakBadge, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
-                  <Ionicons name="flame" size={14} color={colors.accent} />
-                  <Text style={[styles.streakBadgeText, { color: colors.accent }]}>
-                    {streak} Day Streak
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.ramadanStatsRow}>
-                <View style={styles.ramadanStat}>
-                  <Text style={[styles.ramadanStatValue, { color: colors.textPrimary }]}>
-                    {ramadanFastsCount}
-                  </Text>
-                  <Text style={[styles.ramadanStatLabel, { color: colors.textMuted }]}>
-                    Ramadan Fasts
-                  </Text>
-                </View>
-                <View style={styles.ramadanStat}>
-                  <Text style={[styles.ramadanStatValue, { color: colors.textPrimary }]}>
-                    {totalFastedDays}
-                  </Text>
-                  <Text style={[styles.ramadanStatLabel, { color: colors.textMuted }]}>
-                    Total Recorded
-                  </Text>
-                </View>
-                <View style={styles.ramadanStat}>
-                  <Text style={[styles.ramadanStatValue, { color: colors.accent }]}>
-                    {qadaPendingCount}
-                  </Text>
-                  <Text style={[styles.ramadanStatLabel, { color: colors.textMuted }]}>
-                    Qada Pending
-                  </Text>
-                </View>
-              </View>
             </Card>
           </View>
         )}
@@ -787,7 +927,7 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
           <View style={styles.tabContent}>
             {/* Streak & Aggregate Scorecard */}
             <Card style={styles.statsCard}>
-              <View style={styles.statsRow}>
+              <View style={styles.historyStatsRow}>
                 <View style={styles.statCol}>
                   <Text style={[styles.statBig, { color: colors.accent }]}>{streak}</Text>
                   <Text style={[styles.statLabel, { color: colors.textMuted }]}>Current Streak</Text>
@@ -983,51 +1123,93 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /* Toggle Card */
-  toggleCard: {
-    padding: 18,
-  },
-  toggleRow: {
+  /* Stats Row */
+  statsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 14,
+    gap: 8,
   },
-  toggleTextWrap: {
+  statBox: {
     flex: 1,
-  },
-  toggleTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 16,
-  },
-  toggleSub: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  toggleSwitch: {
-    width: 48,
-    height: 28,
-    borderRadius: 14,
-    padding: 2,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  toggleKnob: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  statNumber: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 24,
+    lineHeight: 28,
   },
-  toggleKnobActive: {
-    alignSelf: 'flex-end',
+  statText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 2,
+    textAlign: 'center',
   },
-  toggleKnobInactive: {
-    alignSelf: 'flex-start',
+
+  /* Today Card */
+  todayCard: {
+    padding: 18,
+    gap: 14,
+  },
+  todayCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  todayCardEyebrow: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  todayCardTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 24,
+    marginTop: 2,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  statusBadgeText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+  },
+  todayStatusBox: {
+    gap: 12,
+  },
+  todayStatusMessage: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  primaryCtaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    minHeight: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+  },
+  primaryCtaBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 14,
   },
   fastTypeContainer: {
-    marginTop: 14,
-  },
-  cardHairline: {
-    marginBottom: 12,
+    marginTop: 6,
   },
   typeSelectLabel: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1052,55 +1234,65 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  /* Ramadan Card */
-  ramadanCard: {
+  /* Qada Overview Card (Today tab) */
+  qadaOverviewCard: {
     padding: 18,
     gap: 14,
   },
-  ramadanHeader: {
+  qadaSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  ramadanEyebrow: {
+  qadaSectionEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
-  ramadanTitle: {
+  qadaSectionTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 20,
+    fontSize: 22,
     marginTop: 2,
   },
-  streakBadge: {
+  qadaActionBtnsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  stepperBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
     borderWidth: 1,
   },
-  streakBadgeText: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 11,
+  stepperBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
   },
-  ramadanStatsRow: {
+  qadaQuickList: {
+    gap: 6,
+  },
+  missedQuickRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  ramadanStat: {
     alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
   },
-  ramadanStatValue: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 20,
+  viewAllLedgerBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 6,
   },
-  ramadanStatLabel: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
-    marginTop: 2,
+  viewAllLedgerText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
   },
 
   /* Voluntary Fasts */
@@ -1299,7 +1491,7 @@ const styles = StyleSheet.create({
   statsCard: {
     padding: 18,
   },
-  statsRow: {
+  historyStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },

@@ -7,9 +7,10 @@ import { buildWeeklySummary, WeeklySummary } from '../lib/weeklySummary';
 
 interface Props {
   onBack: () => void;
+  backLabel?: string;
 }
 
-export function WeeklySummaryScreen({ onBack }: Props) {
+export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
   const { colors } = useTheme();
   const [summary, setSummary] = useState<WeeklySummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +36,13 @@ export function WeeklySummaryScreen({ onBack }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader title="Weekly Summary" subtitle="Your past 7 days, at a glance" onBack={onBack} />
+      <ScreenHeader
+        title="Weekly Summary"
+        subtitle="Your past 7 days, at a glance"
+        eyebrow="Learn"
+        backLabel={backLabel || 'Library'}
+        onBack={onBack}
+      />
 
       <ScrollView contentContainerStyle={styles.content} style={{ flex: 1 }}>
         {loading ? (
