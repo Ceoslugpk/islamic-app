@@ -286,6 +286,40 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                   We do not collect usage statistics, screen view counts, or interaction events.
                 </Text>
               </LegalSection>
+
+              <LegalSection title="Women's Worship Data" badge="On-Device & Private">
+                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                  The optional Women's Worship feature may store the following records locally on
+                  your device: menstrual/period start and end dates, post-natal (nifas) start and
+                  end dates, user-entered private notes associated with those records, purity-day
+                  information, and missed-fasting records where the recorded reason relates to
+                  menstruation or post-natal status.
+                </Text>
+                <BulletItem
+                  title="Stored locally only"
+                  text="These records are kept exclusively in the app's on-device SQLite database. They are never transmitted to our servers, Islamic.app, AlAdhan, Nominatim, Quran providers, or any analytics, advertising, or crash-reporting service."
+                />
+                <BulletItem
+                  title="No Health Connect"
+                  text="The app does not integrate with Android Health Connect and does not read or write menstrual or reproductive-health data through Health Connect."
+                />
+                <BulletItem
+                  title="No advertising or sale"
+                  text="Women's Worship data is never used for advertising and is never sold."
+                />
+                <BulletItem
+                  title="Deletion"
+                  text="You can delete all Women's Worship records at any time via Settings → Women's Worship → 'Delete women's data', which erases cycle, purity, nifas, and related qada records."
+                />
+                <BulletItem
+                  title="Backup & export"
+                  text="Women's Worship records are included in a user-created backup via Backup & Restore. The exported backup file is not automatically uploaded by the app; if you choose to share it using your device's share or document tools, you control where it goes. Because the exported file itself is not encrypted by the app, store any backup that contains Women's Worship data securely."
+                />
+                <BulletItem
+                  title="Privacy lock"
+                  text="The optional privacy lock protects access to the Women's Worship screens using your device's supported authentication mechanisms (biometrics, PIN, pattern, or password). It does not transmit or store any Women's Worship data elsewhere."
+                />
+              </LegalSection>
             </>
           )}
 
