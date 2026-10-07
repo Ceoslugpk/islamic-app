@@ -7,6 +7,7 @@ import {
   Clipboard,
   FlatList,
   Image,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -33,7 +34,7 @@ import { ArabicText, AyahText, QURAN_FONT_FAMILIES } from '../components/ArabicT
 import { TajweedText } from '../components/TajweedText';
 import { stripTajweedHtml } from '../lib/tajweed';
 import { QuranScript, QURAN_SCRIPTS, fetchSurahWithScript, getScriptCacheKey } from '../lib/quranScripts';
-import { retry, cancel, remove, copy, share, play, bookmark, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
+import { retry, cancel, remove, copy, share, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
 import { useSettings, QURAN_FONT_SIZE_MIN, QURAN_FONT_SIZE_MAX, QURAN_FONT_SIZE_STEP } from '../lib/settings';
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
@@ -484,18 +485,21 @@ export default function QuranReaderScreen({
     setNoteComposerText('');
   };
 
+  const closeNoteComposer = () => {
+    setNoteComposerAyah(null);
+    setNoteComposerText('');
+  };
+
   const handleSaveNote = () => {
     if (!noteComposerAyah) return;
     const trimmed = noteComposerText.trim();
     if (!trimmed) {
-      setNoteComposerAyah(null);
-      setNoteComposerText('');
+      closeNoteComposer();
       return;
     }
     addNote(safeSurahNumber, noteComposerAyah, trimmed);
     haptic('success');
-    setNoteComposerAyah(null);
-    setNoteComposerText('');
+    closeNoteComposer();
   };
 
   // Highlight color palette
@@ -777,15 +781,22 @@ export default function QuranReaderScreen({
     })();
   }, []);
 
-  // Android hardware back button handler to dismiss tools menu if open
+  // Android hardware back button handler to dismiss tools menu or note composer if open
   useEffect(() => {
-    if (!toolsMenuOpen) return;
+    if (!toolsMenuOpen && noteComposerAyah === null) return;
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      setToolsMenuOpen(false);
-      return true;
+      if (noteComposerAyah !== null) {
+        closeNoteComposer();
+        return true;
+      }
+      if (toolsMenuOpen) {
+        setToolsMenuOpen(false);
+        return true;
+      }
+      return false;
     });
     return () => sub.remove();
-  }, [toolsMenuOpen]);
+  }, [toolsMenuOpen, noteComposerAyah]);
 
   // Listen to audio status and synchronize with active ayah / surah playback
   useEffect(() => {
@@ -1331,53 +1342,11 @@ export default function QuranReaderScreen({
     // Actions stay muted except on the active ayah (playing / tafsir open / just copied)
     const isActiveAyah = isAyahPlaying || isTafsirOpen || copiedAyah === item.numberInSurah;
     const actionColor = isActiveAyah ? colors.accent : colors.textMuted;
+    const isNoteComposerActive = noteComposerAyah === item.numberInSurah;
 
     const handleLongPress = () => {
-      Alert.alert(
-        `Ayah ${item.numberInSurah}`,
-        undefined,
-        [
-          {
-            text: play,
-            onPress: () => {
-              handlePlayAyahToggle(item.numberInSurah);
-            },
-          },
-          {
-            text: bookmark,
-            onPress: () => {
-              handleToggleBookmark(item);
-            },
-          },
-          {
-            text: 'Add Note',
-            onPress: () => {
-              openNoteComposer(item.numberInSurah);
-            },
-          },
-          {
-            text: copy,
-            onPress: () => {
-              const textToCopy = `"${item.text || ''}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
-              try {
-                Clipboard.setString(textToCopy);
-                haptic('selection');
-                setCopiedAyah(item.numberInSurah);
-                if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
-                copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 1500);
-              } catch {}
-            },
-          },
-          {
-            text: share,
-            onPress: () => {
-              const textToShare = `"${item.text || ''}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
-              Share.share({ message: textToShare }).catch(() => {});
-            },
-          },
-        ],
-        { cancelable: true }
-      );
+      haptic('light');
+      openNoteComposer(item.numberInSurah);
     };
 
     return (
@@ -1385,15 +1354,24 @@ export default function QuranReaderScreen({
         style={[
           styles.ayahCard,
           {
-            backgroundColor: isAyahPlaying ? colors.accentDim : 'transparent',
-            borderColor: isAyahPlaying ? colors.accent : 'transparent',
+            backgroundColor: isAyahPlaying
+              ? colors.accentDim
+              : isNoteComposerActive
+              ? colors.accentDim
+              : 'transparent',
+            borderColor: isAyahPlaying
+              ? colors.accent
+              : isNoteComposerActive
+              ? colors.accent
+              : 'transparent',
+            borderLeftWidth: isNoteComposerActive ? 3 : 1,
           },
         ]}
         onLongPress={handleLongPress}
         delayLongPress={2000}
         accessibilityRole="button"
-        accessibilityLabel={`Ayah ${item.numberInSurah}. Long press for options`}
-        accessibilityHint="Long press to play, bookmark, add note, copy, or share"
+        accessibilityLabel={`Ayah ${item.numberInSurah}. Long press to add note`}
+        accessibilityHint="Long press ~2 seconds to add a reflection note"
       >
         {/* Action Header */}
         <View style={styles.ayahActionBar}>
@@ -2874,85 +2852,113 @@ export default function QuranReaderScreen({
         </View>
       </Modal>
 
-      {/* Note Composer Modal for Ayah Reflections */}
+      {/* Note Composer Bottom Sheet for Ayah Reflections */}
       <Modal
         visible={noteComposerAyah !== null}
-        animationType="fade"
+        animationType="slide"
         transparent={true}
-        onRequestClose={() => setNoteComposerAyah(null)}
+        onRequestClose={closeNoteComposer}
+        statusBarTranslucent
       >
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={() => setNoteComposerAyah(null)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <TouchableWithoutFeedback onPress={closeNoteComposer}>
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
           <View
             style={[
-              styles.noteModalPanel,
-              { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+              styles.noteModalSheet,
+              {
+                backgroundColor: colors.bgSurface,
+                borderColor: colors.borderSubtle,
+                paddingBottom: Math.max(insets.bottom, 16) + 12,
+              },
             ]}
           >
-            <View style={styles.noteModalHeader}>
-              <View>
+            {/* Drag Pill */}
+            <TouchableOpacity
+              onPress={closeNoteComposer}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss note composer"
+              hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
+            >
+              <View style={[styles.modalDragPill, { backgroundColor: colors.borderStrong }]} />
+            </TouchableOpacity>
+
+            {/* Header */}
+            <View style={[styles.noteModalHeader, { borderBottomColor: colors.borderSubtle }]}>
+              <View style={styles.noteModalHeaderLeft}>
                 <Text style={[styles.noteModalEyebrow, { color: colors.accent }]}>REFLECTIONS</Text>
-                <Text style={[styles.noteModalTitle, { color: colors.textPrimary }]}>
+                <Text
+                  style={[styles.noteModalTitle, { color: colors.textPrimary }]}
+                  numberOfLines={1}
+                >
                   {surah?.englishName || `Surah ${safeSurahNumber}`} · Ayah {noteComposerAyah}
                 </Text>
               </View>
               <TouchableOpacity
-                onPress={() => setNoteComposerAyah(null)}
+                onPress={closeNoteComposer}
                 style={styles.closeBtn}
                 accessibilityRole="button"
                 accessibilityLabel="Close note composer"
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="close" size={22} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
 
-            <TextInput
-              placeholder="Write your reflection, thoughts, or lessons from this verse..."
-              placeholderTextColor={colors.textMuted}
-              multiline
-              numberOfLines={4}
-              value={noteComposerText}
-              onChangeText={setNoteComposerText}
-              autoFocus
-              style={[
-                styles.noteModalInput,
-                {
-                  color: colors.textPrimary,
-                  borderColor: colors.borderSubtle,
-                  backgroundColor: colors.bgBase,
-                },
-              ]}
-            />
-
-            <View style={styles.noteModalFooter}>
-              <TouchableOpacity
-                onPress={() => setNoteComposerAyah(null)}
+            {/* Content Body */}
+            <View style={styles.noteModalBody}>
+              <TextInput
+                placeholder="Write your reflection, thoughts, or lessons from this verse..."
+                placeholderTextColor={colors.textMuted}
+                multiline
+                numberOfLines={5}
+                value={noteComposerText}
+                onChangeText={setNoteComposerText}
+                autoFocus
+                textAlignVertical="top"
                 style={[
-                  styles.noteModalBtnCancel,
-                  { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
+                  styles.noteModalInput,
+                  {
+                    color: colors.textPrimary,
+                    borderColor: colors.borderSubtle,
+                    backgroundColor: colors.bgBase,
+                  },
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel="Cancel note"
-              >
-                <Text style={[styles.noteModalBtnCancelText, { color: colors.textSecondary }]}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleSaveNote}
-                style={[styles.noteModalBtnSave, { backgroundColor: colors.accent }]}
-                accessibilityRole="button"
-                accessibilityLabel="Save note"
-              >
-                <Text style={[styles.noteModalBtnSaveText, { color: colors.onAccent }]}>
-                  Save Note
-                </Text>
-              </TouchableOpacity>
+              />
+
+              <View style={styles.noteModalFooter}>
+                <TouchableOpacity
+                  onPress={closeNoteComposer}
+                  style={[
+                    styles.noteModalBtnCancel,
+                    { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Cancel note"
+                >
+                  <Text style={[styles.noteModalBtnCancelText, { color: colors.textSecondary }]}>
+                    Cancel
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSaveNote}
+                  style={[styles.noteModalBtnSave, { backgroundColor: colors.accent }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Save note"
+                >
+                  <Text style={[styles.noteModalBtnSaveText, { color: colors.onAccent }]}>
+                    Save Note
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Share-as-image capture card (rendered off-screen while sharing) */}
@@ -3755,43 +3761,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     flex: 1,
   },
-  noteModalPanel: {
-    width: '90%',
-    maxWidth: 440,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 20,
+  noteModalSheet: {
+    width: '100%',
+    maxWidth: 640,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 1,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.2,
     shadowRadius: 20,
-    elevation: 12,
+    elevation: 20,
   },
   noteModalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 14,
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  noteModalHeaderLeft: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 12,
   },
   noteModalEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
     marginBottom: 2,
   },
   noteModalTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 20,
-    lineHeight: 24,
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  noteModalBody: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
   },
   noteModalInput: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
+    lineHeight: 22,
     borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    minHeight: 110,
+    borderRadius: 14,
+    padding: 14,
+    minHeight: 120,
+    maxHeight: 200,
     textAlignVertical: 'top',
     marginBottom: 16,
   },
@@ -3801,8 +3824,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   noteModalBtnCancel: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 11,
+    paddingHorizontal: 18,
     borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
@@ -3813,8 +3836,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   noteModalBtnSave: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
+    paddingVertical: 11,
+    paddingHorizontal: 20,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',

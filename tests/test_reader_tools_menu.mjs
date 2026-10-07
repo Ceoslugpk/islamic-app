@@ -69,13 +69,16 @@ assert.ok(code.includes('logo-small-black.png') && code.includes('logo-small-ivo
 assert.ok(code.includes('shareCardBrandWordmark') && code.includes('ISLAMIC'), 'Share card must include ISLAMIC wordmark');
 console.log('  ✓ T6: Share card logo and ISLAMIC wordmark verified');
 
-// Test 8: T8 regressions — Note composer modal and addNote wiring
+// Test 8: Ayah long-press directly opens Note composer bottom sheet
 assert.ok(code.includes('noteComposerAyah'), 'noteComposerAyah state must exist');
 assert.ok(code.includes('openNoteComposer'), 'openNoteComposer handler must exist');
 assert.ok(code.includes('handleSaveNote'), 'handleSaveNote handler must exist');
 assert.ok(code.includes('addNote(safeSurahNumber'), 'addNote must be called with safeSurahNumber and noteComposerAyah');
-assert.ok(code.includes("text: 'Add Note'"), 'Ayah long press alert must offer Add Note action');
-console.log('  ✓ T8: Ayah long press Add Note composer and storage verified');
+assert.ok(code.includes('openNoteComposer(item.numberInSurah)'), 'Ayah long press must directly open note composer');
+assert.ok(!code.includes("Alert.alert(\n        `Ayah ${item.numberInSurah}`") && !code.includes("text: 'Add Note'"), 'Ayah long press alert dialog must be removed');
+assert.ok(code.includes('noteModalSheet'), 'Note composer must use noteModalSheet bottom sheet layout');
+assert.ok(code.includes('isNoteComposerActive'), 'Selected ayah must be highlighted while note composer is open');
+console.log('  ✓ T8: Ayah long press Add Note composer, bottom sheet & highlight verified');
 
 console.log('\n========================================================');
 console.log('ALL TOOLS MENU & READER ENHANCEMENT TESTS PASSED!');
