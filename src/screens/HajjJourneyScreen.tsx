@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -306,23 +306,12 @@ export default function HajjJourneyScreen({
         { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
       ]}
     >
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Tools"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
-        </TouchableOpacity>
-      )}
-
-      <SectionHeader
-        compact
+      <ScreenHeader
         eyebrow="Hajj & Umrah"
         title="Hajj Journey"
         subtitle="The day-by-day pilgrimage chronicle: from Yawm al-Tarwiyah to the Farewell Tawaf."
+        onBack={onBack}
+        backLabel="Tools"
       />
 
       {/* Quick Day Chips */}
@@ -550,15 +539,6 @@ export default function HajjJourneyScreen({
 
 const styles = StyleSheet.create({
   content: { paddingVertical: 10, paddingBottom: 40 },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   chipsScroll: {
     flexDirection: 'row',
     gap: 6,

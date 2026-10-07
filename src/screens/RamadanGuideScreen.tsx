@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -140,25 +140,12 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
         { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
       ]}
     >
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Library"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>
-            ← Library
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      <SectionHeader
-        compact
-        eyebrow="Guides"
+      <ScreenHeader
         title="Ramadan & Eid Guide"
+        eyebrow="Guides"
         subtitle="Fasting, Laylatul Qadr, Itikaf, Zakat al-Fitr, Eid and Tashriq — every narration verified with its collection, number and grade."
+        onBack={onBack}
+        backLabel="Library"
       />
 
       {banner && bannerTitle ? (
@@ -247,15 +234,6 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
 
 const styles = StyleSheet.create({
   content: { paddingVertical: 10, paddingBottom: 40 },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
   bannerCard: { marginBottom: 16, padding: 14 },
   bannerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bannerIcon: {

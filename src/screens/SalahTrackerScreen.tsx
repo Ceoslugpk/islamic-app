@@ -20,7 +20,7 @@ import {
   computeStreak,
   getSalahHistory,
 } from '../lib/db';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { EmptyState } from '../components/EmptyState';
@@ -125,23 +125,12 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
       contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
     >
       <View style={styles.contentWrap}>
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Tools"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
-          </TouchableOpacity>
-        )}
-
-        <SectionHeader
-          compact
+        <ScreenHeader
           eyebrow="Daily Obligations"
           title="Salah Tracker"
           subtitle="Track your daily 5 prayers and build a consistent habit"
+          onBack={onBack}
+          backLabel="Tools"
         />
 
       {/* Summary Scorecard */}
@@ -308,18 +297,6 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
   },
   statsRow: {
     flexDirection: 'row',

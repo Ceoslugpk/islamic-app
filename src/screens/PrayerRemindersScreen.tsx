@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings, PrayerNameKey, QuranGoalType } from '../lib/settings';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
 import {
@@ -415,25 +415,12 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
       contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
     >
       <View style={styles.contentWrap}>
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Tools"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>
-              ← Tools
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        <SectionHeader
-          compact
-          eyebrow="Tools"
+        <ScreenHeader
           title="Prayer Reminders"
+          eyebrow="Tools"
           subtitle="Manage daily prayer alarms, adhan voices & Quran reading habit"
+          onBack={onBack}
+          backLabel="Tools"
         />
 
         {testStatusMessage && (
@@ -1177,18 +1164,6 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
   },
   groupLabel: {
     fontFamily: 'Manrope_600SemiBold',

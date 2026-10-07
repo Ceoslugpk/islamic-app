@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { CITIES, City } from '../lib/cities';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 
 export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
@@ -179,26 +179,15 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
         </Animated.View>
       )}
 
-      <View style={[styles.headerArea, { paddingHorizontal: paddingH }]}>
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Tools"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
-          </TouchableOpacity>
-        )}
+      <ScreenHeader
+        eyebrow="Directory"
+        title="Cities"
+        subtitle="Pick a city to set your location"
+        onBack={onBack}
+        backLabel="Tools"
+      />
 
-        <SectionHeader
-          compact
-          eyebrow="Directory"
-          title="Cities"
-          subtitle="Pick a city to set your location"
-        />
-
+      <View style={[styles.searchArea, { paddingHorizontal: paddingH }]}>
         {/* Search Bar */}
         <View
           style={[
@@ -256,25 +245,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  headerArea: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+  searchArea: {
+    paddingTop: 4,
     paddingBottom: 4,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
   },
   searchWrap: {
     flexDirection: 'row',

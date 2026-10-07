@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
@@ -147,24 +147,12 @@ function WomenQadaScreen({ onBack, onOpenCycle }: WomenQadaScreenProps) {
       contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
       keyboardShouldPersistTaps="handled"
     >
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Tools"
-          hitSlop={touchTargetTokens.hitSlop8}
-        >
-          <Ionicons name={getBackIcon()} size={18} color={colors.accent} />
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>Tools</Text>
-        </TouchableOpacity>
-      )}
-
-      <SectionHeader
-        compact
+      <ScreenHeader
         eyebrow="Women's Worship"
         title="Qada Fasts"
         subtitle="Track and make up missed Ramadan fasts due to menstruation or postpartum."
+        onBack={onBack}
+        backLabel="Tools"
       />
 
       {/* Discreet Privacy Note */}

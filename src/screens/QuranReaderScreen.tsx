@@ -9,6 +9,7 @@ import {
   Image,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   Share,
   StyleSheet,
@@ -1380,7 +1381,7 @@ export default function QuranReaderScreen({
     };
 
     return (
-      <View
+      <Pressable
         style={[
           styles.ayahCard,
           {
@@ -1388,8 +1389,11 @@ export default function QuranReaderScreen({
             borderColor: isAyahPlaying ? colors.accent : 'transparent',
           },
         ]}
-        // @ts-ignore - onLongPress not in strict TS types for View
         onLongPress={handleLongPress}
+        delayLongPress={2000}
+        accessibilityRole="button"
+        accessibilityLabel={`Ayah ${item.numberInSurah}. Long press for options`}
+        accessibilityHint="Long press to play, bookmark, add note, copy, or share"
       >
         {/* Action Header */}
         <View style={styles.ayahActionBar}>
@@ -1532,7 +1536,7 @@ export default function QuranReaderScreen({
             )}
           </View>
         )}
-      </View>
+      </Pressable>
     );
   };
 

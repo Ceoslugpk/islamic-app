@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
@@ -460,17 +461,13 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       {/* Top Header Row with Back Button */}
-      <View style={[styles.headerRow, { borderBottomColor: colors.borderSubtle, paddingHorizontal: paddingH }]}>
-        <TouchableOpacity
-          onPress={handleBack}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel={`Back to ${backLabel}`}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← {backLabel}</Text>
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader
+        eyebrow="Library"
+        title="Hadith Library"
+        backLabel={backLabel}
+        onBack={handleBack}
+        borderBottom
+      />
 
       {/* Main Tabs (Collections | Saved | Recent | Progress) */}
       <View style={[styles.tabsWrap, { borderBottomColor: colors.borderSubtle }]}>

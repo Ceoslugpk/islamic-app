@@ -29,7 +29,7 @@ import {
   getCalibrationGuidance,
   CalibrationGuidance,
 } from '../lib/qibla';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { GeometricPattern } from '../components/GeometricPattern';
@@ -463,24 +463,12 @@ export default function QiblaScreen({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Back navigation */}
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Tools"
-            activeOpacity={0.7}
-          >
-            <Ionicons name="arrow-back" size={16} color={colors.accent} />
-            <Text style={[styles.backText, { color: colors.accent }]}>Tools</Text>
-          </TouchableOpacity>
-        )}
-
-        <SectionHeader
+        <ScreenHeader
           eyebrow="Direct Line of Prayer"
           title="Qibla Compass"
           subtitle="True bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas."
+          onBack={onBack}
+          backLabel="Tools"
         />
 
         {/* Error / Compass Notice Banner */}
@@ -826,19 +814,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 48,
-  },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    alignSelf: 'flex-start',
-    paddingVertical: 8,
-    paddingRight: 14,
-    marginBottom: 8,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
   },
   statusRow: {
     flexDirection: 'row',

@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import {
@@ -168,25 +168,12 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
     <View style={[styles.wrap, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
         {/* Header */}
-        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
-          <TouchableOpacity
-            style={styles.backBtn}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Library"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isNarrow ? 13 : 14 }]}>
-              ← Library
-            </Text>
-          </TouchableOpacity>
-          <SectionHeader
-            compact
-            eyebrow="Offline"
-            title="Downloads"
-            style={styles.sectionHeader}
-          />
-        </View>
+        <ScreenHeader
+          eyebrow="Offline"
+          title="Downloads"
+          onBack={onBack}
+          backLabel="Library"
+        />
 
         {/* Quran Text Preload — offline reading data (NOT audio) */}
         <View
@@ -538,25 +525,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
-  },
-  header: {
-    paddingTop: 10,
-    paddingBottom: 4,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 12,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
-  },
-  sectionHeader: {
-    marginBottom: 8,
   },
   textCard: {
     padding: 14,

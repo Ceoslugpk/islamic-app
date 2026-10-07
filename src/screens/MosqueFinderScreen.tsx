@@ -19,7 +19,7 @@ import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { Location as Loc } from '../lib/prayerTimes';
 import { distanceKm } from '../lib/qibla';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
@@ -398,26 +398,14 @@ export default function MosqueFinderScreen({
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.bgBase }]}>
-      <View style={{ maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH, paddingTop: 10 }}>
+      <ScreenHeader
+        eyebrow="Tools"
+        title="Mosque Finder"
+        onBack={onBack}
+        backLabel="Tools"
+      />
+      <View style={{ maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH, paddingTop: 4 }}>
         <View style={styles.headerWrap}>
-          {onBack && (
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={onBack}
-              accessibilityRole="button"
-              accessibilityLabel="Back to Tools"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
-            </TouchableOpacity>
-          )}
-
-          <SectionHeader
-            compact
-            eyebrow="Tools"
-            title="Mosque Finder"
-          />
-
           {/* Area Search Input Bar */}
           <View
             style={[
@@ -914,18 +902,6 @@ const styles = StyleSheet.create({
   },
   headerWrap: {
     marginBottom: 6,
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
   },
   searchWrap: {
     flexDirection: 'row',

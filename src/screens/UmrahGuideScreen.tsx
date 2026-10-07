@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -210,23 +210,12 @@ export default function UmrahGuideScreen({
         { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
       ]}
     >
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Tools"
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
-        </TouchableOpacity>
-      )}
-
-      <SectionHeader
-        compact
+      <ScreenHeader
         eyebrow="Hajj & Umrah"
         title="Umrah Guide"
         subtitle="Step-by-step rituals of the sacred pilgrimage: Ihram, Tawaf, Sa'i, and Halq."
+        onBack={onBack}
+        backLabel="Tools"
       />
 
       {/* Quick Stage Pills */}

@@ -15,6 +15,7 @@ import { useTheme } from '../lib/theme';
 import { fetchHijriMonth, HijriMonthData, gregorianToHijriString, HIJRI_MONTHS } from '../lib/hijri';
 import { ISLAMIC_EVENTS, IslamicEvent, getEventsForMonth, getNextEvent, formatHijriDate, HIJRI_MONTH_NAMES } from '../lib/islamicEvents';
 import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
 import { CalendarGridSkeleton } from '../components/Skeleton';
@@ -171,21 +172,13 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
         />
       }
     >
+      <ScreenHeader
+        eyebrow="Hijri Calendar"
+        title="Islamic Dates"
+        onBack={onBack}
+        backLabel="Tools"
+      />
       <View style={styles.contentWrap}>
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Tools"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Tools</Text>
-          </TouchableOpacity>
-        )}
-
-        <SectionHeader compact eyebrow="Hijri Calendar" title="Islamic Dates" />
-
         {/* NEW: Today Panel */}
         <Card style={styles.todayCard} padded>
           <View style={styles.todayRow}>
@@ -450,18 +443,6 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
   },
   center: { paddingVertical: 60, alignItems: 'center' },
 

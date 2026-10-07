@@ -16,7 +16,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { EmptyState } from '../components/EmptyState';
 import {
@@ -320,22 +320,11 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
       <View style={styles.contentWrap}>
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Library"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Library</Text>
-          </TouchableOpacity>
-        )}
-
-        <SectionHeader
-          compact
+        <ScreenHeader
           eyebrow={isProphet ? 'Asma un-Nabi' : 'Asma ul-Husna'}
           title={isProphet ? '99 Names of the Prophet ﷺ' : '99 Names'}
+          onBack={onBack}
+          backLabel="Library"
         />
 
         {/* Language chips (Allah variant only) — single horizontally-scrollable row */}
@@ -576,18 +565,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 4,
-    paddingRight: 12,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
   },
   chipRowWrap: {
     position: 'relative',

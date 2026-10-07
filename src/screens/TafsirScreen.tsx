@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { SkeletonCard } from '../components/Skeleton';
@@ -166,22 +166,14 @@ export default function TafsirScreen({
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
-        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
-          {onBack && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Back to Quran"
-              onPress={onBack}
-              style={styles.backBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>
-                ← Quran
-              </Text>
-            </TouchableOpacity>
-          )}
-          <SectionHeader compact eyebrow="Exegesis & Commentary" title={currentTafsirSource.name} />
+        <ScreenHeader
+          eyebrow="Exegesis & Commentary"
+          title={currentTafsirSource.name}
+          onBack={onBack}
+          backLabel="Quran"
+        />
 
+        <View style={{ paddingHorizontal: paddingH }}>
           {/* Surah Selector Trigger */}
           <TouchableOpacity
             style={[
@@ -495,18 +487,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 4,
-  },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
   },
   selectorBtn: {
     flexDirection: 'row',

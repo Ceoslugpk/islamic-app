@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
@@ -186,24 +186,12 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
       contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
       keyboardShouldPersistTaps="handled"
     >
-      {onBack && (
-        <TouchableOpacity
-          style={styles.backBtn}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel="Back to Tools"
-          hitSlop={touchTargetTokens.hitSlop8}
-        >
-          <Ionicons name={getBackIcon()} size={18} color={colors.accent} />
-          <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>Tools</Text>
-        </TouchableOpacity>
-      )}
-
-      <SectionHeader
-        compact
+      <ScreenHeader
         eyebrow="Women's Worship"
         title="Purity & Ghusl"
         subtitle="Step-by-step ghusl guide, signs of tuhr, and postpartum (nifas) tracker."
+        onBack={onBack}
+        backLabel="Tools"
       />
 
       {/* Discreet Privacy Note */}

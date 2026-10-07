@@ -10,7 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { saveTasbihCount, loadTasbihCounts, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
@@ -134,19 +134,12 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
       contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
     >
       <View style={styles.contentWrap}>
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Library"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Library</Text>
-          </TouchableOpacity>
-        )}
-
-        <SectionHeader compact eyebrow="Dhikr & Remembrance" title="Tasbih" />
+        <ScreenHeader
+          eyebrow="Dhikr & Remembrance"
+          title="Tasbih"
+          onBack={onBack}
+          backLabel="Library"
+        />
 
       {/* Dhikr Selector Tabs */}
       <ScrollView

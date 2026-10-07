@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { fetchAyahEditions, fetchSurahList, SurahMeta } from '../lib/quran';
 import {
@@ -155,23 +155,12 @@ export default function TranslationCompareScreen({
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <View style={styles.contentWrap}>
-        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
-          {onBack && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Back to Quran"
-              onPress={onBack}
-              style={styles.backBtn}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>
-                ← Quran
-              </Text>
-            </TouchableOpacity>
-          )}
-          <SectionHeader compact eyebrow="Comparative Study" title="Translation Compare" />
-        </View>
+      <ScreenHeader
+        eyebrow="Comparative Study"
+        title="Translation Compare"
+        onBack={onBack}
+        backLabel="Quran"
+      />
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Navigation & Surah Picker Row */}
@@ -568,7 +557,6 @@ export default function TranslationCompareScreen({
             </View>
           )}
         </ScrollView>
-      </View>
 
       {/* Language Picker Modal for slot A, B, or C */}
       <QuranLanguageModal

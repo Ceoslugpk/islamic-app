@@ -16,6 +16,7 @@ import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
 import { fetchSurahList, fetchSurahListForLanguage, SurahMeta } from '../lib/quran';
 import { ArabicText } from '../components/ArabicText';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
@@ -240,26 +241,14 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
   return (
     <View style={[styles.wrap, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
-        <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
-          {onBack && (
-            <TouchableOpacity
-              style={styles.backBtn}
-              onPress={onBack}
-              accessibilityRole="button"
-              accessibilityLabel="Back to Library"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={[styles.backText, { color: colors.accent, fontSize: isNarrow ? 13 : 14 }]}>← Library</Text>
-            </TouchableOpacity>
-          )}
-          <SectionHeader
-            compact
-            eyebrow="The Holy Quran"
-            title="Surahs"
-            style={styles.sectionHeader}
-          />
+        <ScreenHeader
+          eyebrow="The Holy Quran"
+          title="Surahs"
+          onBack={onBack}
+          backLabel="Library"
+        />
 
-          {/* Translation Language Selector Banner */}
+        {/* Translation Language Selector Banner */}
           <View
             style={[
               styles.langBar,
@@ -534,7 +523,6 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
             </View>
           }
         />
-      </View>
 
       <QuranLanguageModal
         visible={langPickerOpen}

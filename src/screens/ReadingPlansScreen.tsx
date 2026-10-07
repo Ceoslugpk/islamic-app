@@ -12,7 +12,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { savePlanDay, loadPlanProgress } from '../lib/db';
 
@@ -168,17 +168,12 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
     return (
       <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
         <View style={styles.contentWrap}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => setSelectedPlanId(null)}
-            accessibilityRole="button"
-            accessibilityLabel="Back to all plans"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← All Plans</Text>
-          </TouchableOpacity>
-
-          <SectionHeader eyebrow={selectedPlan.pace} title={selectedPlan.title} />
+          <ScreenHeader
+            eyebrow={selectedPlan.pace}
+            title={selectedPlan.title}
+            onBack={() => setSelectedPlanId(null)}
+            backLabel="All Plans"
+          />
 
         {/* Progress Card */}
         <View
@@ -284,19 +279,12 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
       contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
     >
       <View style={styles.contentWrap}>
-        {onBack && (
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            accessibilityRole="button"
-            accessibilityLabel="Back to Library"
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Text style={[styles.backText, { color: colors.accent, fontSize: isCompact ? 13 : 14 }]}>← Library</Text>
-          </TouchableOpacity>
-        )}
-
-        <SectionHeader compact eyebrow="Khatmah" title="Reading Plans" />
+        <ScreenHeader
+          eyebrow="Khatmah"
+          title="Reading Plans"
+          onBack={onBack}
+          backLabel="Quran"
+        />
 
       <Text style={[styles.introText, { color: colors.textSecondary }]}>
         Choose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.
@@ -390,18 +378,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
-  },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
   },
   introText: {
     fontFamily: 'Manrope_400Regular',
