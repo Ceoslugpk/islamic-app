@@ -199,7 +199,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         </View>
 
         <View style={styles.rightCol}>
-          <ArabicText size={20} align="right" style={styles.arabicName}>
+          <ArabicText size={20} align="right" style={styles.arabicName} numberOfLines={1}>
             {item.name}
           </ArabicText>
           <View style={styles.rowActions}>
@@ -232,7 +232,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <View style={styles.contentWrap}>
+      <View style={[styles.contentWrap, { paddingHorizontal: paddingH }]}>
         <ScreenHeader
           eyebrow="Memorization"
           title="Hifz Tracker"
@@ -461,6 +461,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   numberText: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -499,6 +500,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'center',
     minWidth: 70,
+    flexShrink: 1,
   },
   arabicName: {
     lineHeight: 28,
@@ -511,7 +513,10 @@ const styles = StyleSheet.create({
   rowActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: 4,
+    rowGap: 4,
     marginTop: 4,
   },
   practiceBtn: {
