@@ -195,15 +195,23 @@ export default function QuranHomeScreen({
   // Reader via Back). The pane stays mounted, so without this the Continue
   // Reading card would show stale data until an app restart.
   const wasActiveRef = useRef<boolean>(!!isActive);
+  // Generation guard: a stale in-flight mount fetch must never land AFTER a
+  // fresher focus refresh and overwrite it with the pre-back value.
+  const refreshGenRef = useRef(0);
   useEffect(() => {
     if (!isActive || wasActiveRef.current) return;
     wasActiveRef.current = true;
+    const gen = ++refreshGenRef.current;
     setLastRead(loadLastReadPosition());
     getContinueReadingPosition()
-      .then((pos) => setReadingPosition(pos))
+      .then((pos) => {
+        if (gen === refreshGenRef.current) setReadingPosition(pos);
+      })
       .catch(() => {});
     getRecentSurahs()
-      .then((list) => setRecentSurahs(list))
+      .then((list) => {
+        if (gen === refreshGenRef.current) setRecentSurahs(list);
+      })
       .catch(() => {});
   }, [isActive]);
   useEffect(() => {
@@ -501,7 +509,13 @@ export default function QuranHomeScreen({
                 <TouchableOpacity
                   key={recent.surah}
                   activeOpacity={0.7}
-                  onPress={() => onOpenSurah(recent.surah)}
+                  onPress={() => {
+                    // Reopen at the saved reading position for this surah (the
+                    // reader restores from surah-last-ayah cache, but passing it
+                    // explicitly is robust even if that cache is stale).
+                    const cached = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${recent.surah}`);
+                    onOpenSurah(recent.surah, cached && typeof cached.ayah === 'number' ? cached.ayah : undefined);
+                  }}
             pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
                   accessibilityRole="button"
                   accessibilityLabel={`${t('Open Surah')} ${recent.name}`}

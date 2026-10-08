@@ -678,6 +678,26 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             await setAudioTranslationEdition('ur.everyayah-shamshad');
           }
         } catch {}
+      } else {
+        // Switching back to English: restore the English content defaults that
+        // the ur branch auto-linked (quran translation, tafsir, audio edition).
+        try {
+          const currentQuranLang = getQuranTranslationLanguage();
+          if (currentQuranLang === 'ur') {
+            await setQuranTranslationLanguage('en');
+          }
+        } catch {}
+
+        if (settings.tafsirSourceId === 'api-ibn-kathir-urdu') {
+          nextTafsir = 'jalalayn';
+        }
+
+        try {
+          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+          if (savedAudioEdition === 'ur.everyayah-shamshad') {
+            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
+          }
+        } catch {}
       }
 
       if (nextTafsir) {

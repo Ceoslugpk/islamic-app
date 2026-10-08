@@ -53,7 +53,7 @@ import {
   setQuranDailyGoalCompleted,
   QuranDailyProgress,
 } from '../lib/quranProgress';
-import { getReadingPosition } from '../lib/continuing';
+import { getContinueReadingPosition } from '../lib/continuing';
 import { buildDeepLink } from '../lib/deeplinks';
 import { getForwardIcon, getBackIcon } from '../lib/iconMap';
 
@@ -384,7 +384,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
 
   async function onOpenQuranReaderNow() {
     try {
-      const pos = await getReadingPosition();
+      const pos = await getContinueReadingPosition();
       const link = buildDeepLink(
         pos ? { type: 'quran', surah: pos.surah, ayah: pos.ayah } : { type: 'quran', surah: 1 }
       );

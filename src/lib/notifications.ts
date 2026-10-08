@@ -781,10 +781,10 @@ export async function scheduleQuranReminder(
       }
     }
 
-    const { getReadingPosition } = await import('./continuing');
+    const { getContinueReadingPosition } = await import('./continuing');
     const { SURAHS_114 } = await import('./surahs114');
 
-    const position = await getReadingPosition();
+    const position = await getContinueReadingPosition();
     const surah = position ? SURAHS_114.find((s) => s.number === position.surah) : undefined;
     const title = '📖 Continue your Quran';
     const body =
@@ -1042,9 +1042,9 @@ export async function sendTestQuranNotification(): Promise<string | null> {
   const permission = await checkNotificationPermission();
   if (permission !== 'granted') return null;
   await configureNotifications();
-  const { getReadingPosition } = await import('./continuing');
+  const { getContinueReadingPosition } = await import('./continuing');
   const { SURAHS_114 } = await import('./surahs114');
-  const position = await getReadingPosition();
+  const position = await getContinueReadingPosition();
   const surah = position ? SURAHS_114.find((s) => s.number === position.surah) : undefined;
   const body =
     position && surah

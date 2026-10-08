@@ -59,7 +59,7 @@
     "test:security": "node tests/test_security_audit_regressions.mjs",
     "test:header": "node tests/test_header_ux.mjs",
     "test:i18n": "node tests/test_i18n_urdu.mjs",
-    "test": "node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_reading_marker.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs && node tests/test_header_ux.mjs && node tests/test_i18n_urdu.mjs && node tests/test_global_fix_pass.mjs"
+    "test": "node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_reading_marker.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs && node tests/test_header_ux.mjs && node tests/test_i18n_urdu.mjs && node tests/test_global_fix_pass.mjs && node tests/test_recovery_mission.mjs"
   },
   "private": true
 }

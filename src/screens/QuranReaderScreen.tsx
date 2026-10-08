@@ -43,7 +43,7 @@ import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
-import { getReadingMarker, saveReadingMarker, saveReadingPosition, ReadingPosition } from '../lib/continuing';
+import { clearReadingMarker, getReadingMarker, getReadingPosition, saveReadingMarker, saveReadingPosition, ReadingPosition } from '../lib/continuing';
 import { recordQuranReadingSession } from '../lib/quranProgress';
 import { recordSurahVisit } from '../lib/recentSurahs';
 import { preloadRemainingSurahsForEdition } from '../lib/quranPreloader';
@@ -334,6 +334,10 @@ export default function QuranReaderScreen({
   // frame janks the list). Nav-hide logic stays frame-accurate — only the
   // position tracking is throttled.
   const lastPositionSaveRef = useRef<number>(0);
+  // True while the user is actively scrolling — positioning (effect jump +
+  // failed-retry) must not fire mid-scroll and yank the list.
+  const userScrollingRef = useRef<boolean>(false);
+  const userScrollClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Guard: positioning (jump to saved/initial ayah) happens exactly once per mount
   const positionedRef = useRef<boolean>(false);
   const [currentVisibleAyah, setCurrentVisibleAyah] = useState<number>(() => {
@@ -345,18 +349,24 @@ export default function QuranReaderScreen({
   const mushafContentHeightRef = useRef<number>(0);
   const pendingScrollAyahRef = useRef<number | null>(null);
 
-  // Direct-positioning: render the FlatList already scrolled to the target ayah
-  // instead of traversing from index 0 (avoids the visible scroll-through-surah).
+  // Direct-positioning: compute the target ayah (clamped to the surah's real
+  // ayah count so a corrupt/stale saved value can never target an out-of-range
+  // index, which FlatList can't scroll to).
   const targetAyahForPosition = useMemo(() => {
-    if (initialAyah && initialAyah > 1) return initialAyah;
-    const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
-    return saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1;
+    let target = 1;
+    if (initialAyah && initialAyah > 1) target = initialAyah;
+    else {
+      const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
+      if (saved && typeof saved.ayah === 'number' && saved.ayah > 1) target = saved.ayah;
+    }
+    const maxAyah = SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7;
+    return Math.min(target, maxAyah);
   }, [safeSurahNumber, initialAyah]);
   const initialListIndex = Math.max(0, targetAyahForPosition - 1);
   // NOTE: no getItemLayout — ayah rows are variable-height (Arabic + translation
   // + tafsir + font size + width), so a fixed estimate corrupts cell offsets and
-  // causes fast-scroll glitches. initialScrollIndex + onScrollToIndexFailed
-  // (measured fallback) handle direct positioning without a height assumption.
+  // causes fast-scroll glitches. Positioning uses the effect's scrollToIndex +
+  // onScrollToIndexFailed measured retry (no fixed-height assumption).
 
   useEffect(() => {
     surahNumberRef.current = safeSurahNumber;
@@ -734,6 +744,15 @@ export default function QuranReaderScreen({
       const y = event.nativeEvent.contentOffset.y;
       const dy = y - lastScrollYRef.current;
       lastScrollYRef.current = y;
+      // User-scroll guard: any real movement marks the user as actively
+      // scrolling so positioning jumps never yank the list mid-gesture.
+      if (Math.abs(dy) > 2) {
+        userScrollingRef.current = true;
+        if (userScrollClearTimerRef.current) clearTimeout(userScrollClearTimerRef.current);
+        userScrollClearTimerRef.current = setTimeout(() => {
+          userScrollingRef.current = false;
+        }, 150);
+      }
       if (dy > 2 && y > 90 && !navHiddenRef.current) {
         navHiddenRef.current = true;
         setNavHidden(true);
@@ -814,14 +833,21 @@ export default function QuranReaderScreen({
     };
   }, []);
 
-  /** Per-ayah marker setter (from the ayah action-row flag button). */
+  /** Per-ayah marker setter (from the ayah action-row flag button). Toggles:
+   *  tap on the marked ayah clears the marker; tap on another ayah moves it. */
   const handleSetReadingMarkerAt = useCallback(
     (ayah: number) => {
-      saveReadingMarker(safeSurahNumber, ayah);
-      setActiveMarker({ surah: safeSurahNumber, ayah, savedAt: Date.now() });
+      const isCurrent = activeMarker?.surah === safeSurahNumber && activeMarker.ayah === ayah;
+      if (isCurrent) {
+        clearReadingMarker();
+        setActiveMarker(null);
+      } else {
+        saveReadingMarker(safeSurahNumber, ayah);
+        setActiveMarker({ surah: safeSurahNumber, ayah, savedAt: Date.now() });
+      }
       haptic('selection');
     },
-    [safeSurahNumber]
+    [safeSurahNumber, activeMarker]
   );
 
   /** True when the given ayah (in this surah) is the active reading marker. */
@@ -836,6 +862,13 @@ export default function QuranReaderScreen({
   useEffect(() => {
     return () => {
       if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+      if (userScrollClearTimerRef.current) clearTimeout(userScrollClearTimerRef.current);
+      // Flush the last known reading position on unmount. The scroll handlers
+      // throttle saves to 400ms, so a quick Back right after scrolling could
+      // otherwise leave the stored position one screen behind.
+      const ayah = lastSavedAyahRef.current || 1;
+      saveReadingPosition(surahNumberRef.current, ayah);
+      saveQuranCache(`surah-last-ayah:${surahNumberRef.current}`, { ayah });
     };
   }, []);
 
@@ -864,8 +897,11 @@ export default function QuranReaderScreen({
       const now = Date.now();
       if (now - lastPositionSaveRef.current < 400) return;
       lastPositionSaveRef.current = now;
-      setCurrentVisibleAyah(ayahNumber);
+      // Gate BEFORE updating the display: during the initial positioning jump
+      // (trackingReadyRef false), the first viewability event must not override
+      // the target ayah shown in the header.
       if (!trackingReadyRef.current) return;
+      setCurrentVisibleAyah(ayahNumber);
       if (ayahNumber === lastSavedAyahRef.current) return;
       lastSavedAyahRef.current = ayahNumber;
       saveQuranCache(`surah-last-ayah:${surahNumberRef.current}`, { ayah: ayahNumber });
@@ -968,7 +1004,14 @@ export default function QuranReaderScreen({
       lastSavedAyahRef.current = startAyah;
       setCurrentVisibleAyah(startAyah);
       trackingReadyRef.current = startAyah <= 1;
-      saveReadingPosition(safeSurahNumber, startAyah);
+      // Do NOT unconditionally overwrite the auto position with the ENTERED
+      // ayah on every open — that moves Continue Reading backward when the
+      // user resumes at a saved position then backs out before scrolling.
+      // Only advance it when the entered ayah is genuinely ahead.
+      const prevPos = await getReadingPosition();
+      if (!prevPos || startAyah > prevPos.ayah) {
+        saveReadingPosition(safeSurahNumber, startAyah);
+      }
       if (data) {
         recordSurahVisit(safeSurahNumber, data.englishName || `Surah ${safeSurahNumber}`, data.name || '');
       }
@@ -1010,12 +1053,25 @@ export default function QuranReaderScreen({
     loadSurah();
   }, [loadSurah]);
 
+  // Reset positioning context whenever the target surah/ayah/mode changes.
+  // QuranReaderScreen stays mounted across in-reader navigation (App.tsx
+  // changes props on the same instance), so without this reset a second
+  // navigation to the same surah with a different target ayah never
+  // re-positions — positionedRef stays true forever.
+  useEffect(() => {
+    positionedRef.current = false;
+    pendingScrollAyahRef.current = null;
+  }, [safeSurahNumber, initialAyah, readingMode]);
+
   // Handle auto-scroll to initialAyah or restored ayah
   useEffect(() => {
     if (!surah) return;
-    // If we've already positioned (initialScrollIndex worked on first data
-    // render), don't scroll again — never hijack normal scrolling.
+    // If we've already positioned for THIS context, don't scroll again —
+    // never hijack normal scrolling (e.g. a surah refetch changing object
+    // identity must not yank the user back to the target).
     if (positionedRef.current) return;
+    // Never jump while the user is actively scrolling.
+    if (userScrollingRef.current) return;
 
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
     const targetAyah = initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
@@ -1031,34 +1087,38 @@ export default function QuranReaderScreen({
         }
       } else {
         const targetIndex = targetAyah - 1;
-        // If data arrived after mount, initialScrollIndex was a no-op — jump now.
-        setTimeout(() => {
-          if (positionedRef.current) return;
-          try {
-            listRef.current?.scrollToIndex({ index: targetIndex, animated: false });
-          } catch {
-            // ignore measurement miss
-          }
+        // Single direct positioning path: synchronous scrollToIndex. Do NOT set
+        // positionedRef in a catch — if the index isn't measured yet,
+        // onScrollToIndexFailed (wired on the FlatList) owns retries and marks
+        // positioned after the first successful retry. This avoids the previous
+        // bug where a swallowed throw left positionedRef=true and never retried.
+        trackingReadyRef.current = true;
+        try {
+          listRef.current?.scrollToIndex({ index: targetIndex, animated: false });
           positionedRef.current = true;
-          trackingReadyRef.current = true;
-        }, 50);
+        } catch {
+          // leave positionedRef false — onScrollToIndexFailed retries
+        }
       }
     }
   }, [surah, safeSurahNumber, initialAyah, readingMode, initialListIndex]);
 
   const handleScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
-      listRef.current?.scrollToOffset({
-        offset: Math.max(0, info.averageItemLength * info.index),
-        animated: false,
-      });
+      // Do NOT jump to averageItemLength * index — ayah rows are variable-height,
+      // so that offset is wrong and lands off-target. Retry scrollToIndex instead:
+      // VirtualizedList re-invokes this handler per failed scrollToIndex, so the
+      // loop converges as more rows measure (initialNumToRender=15 renders the
+      // first batch; each retry gives the list more measured frames).
       setTimeout(() => {
+        if (userScrollingRef.current) return;
         try {
-          listRef.current?.scrollToIndex({ index: info.index, animated: true });
+          listRef.current?.scrollToIndex({ index: info.index, animated: false });
+          positionedRef.current = true;
         } catch {
-          // non-fatal measurement retry
+          // non-fatal measurement retry — leave positionedRef false
         }
-      }, 100);
+      }, 80);
     },
     []
   );
@@ -1214,7 +1274,7 @@ export default function QuranReaderScreen({
       // instead of the same intro repeated on every ayah.
       const isIntroRepeat = (res as { introOnly?: boolean }).introOnly === true && ayahNumber !== 1;
       if (isIntroRepeat) {
-        setTafsirText('Tafsir for this ayah is not available — the introduction is shown on Ayah 1.');
+        setTafsirText(t('Tafsir for this ayah is not available — the introduction is shown on Ayah 1.'));
         setTafsirEdition(currentTafsirSource.name);
       } else {
         setTafsirText(res.text);
@@ -1387,10 +1447,10 @@ export default function QuranReaderScreen({
       <View style={styles.surahHeader}>
         <View style={styles.surahEyebrowRow}>
           <Text style={[styles.surahEyebrow, { color: colors.accent }]}>
-            SURAH {surah.number || safeSurahNumber}
+            {t('SURAH')} {surah.number || safeSurahNumber}
           </Text>
           <Text style={[styles.surahAyahCount, { color: colors.textMuted }]}>
-            {totalAyahs} AYAHS
+            {totalAyahs} {t('AYAHS')}
           </Text>
         </View>
 
@@ -1434,7 +1494,7 @@ export default function QuranReaderScreen({
             ]}
             onPress={handlePlaySurahToggle}
             accessibilityRole="button"
-            accessibilityLabel={isPlayingSurah ? 'Pause Surah Audio' : 'Play Surah Audio'}
+            accessibilityLabel={isPlayingSurah ? t('Pause Surah Audio') : t('Play Surah Audio')}
           >
             <Ionicons
               name={isPlayingSurah ? 'pause' : 'play'}
@@ -1447,7 +1507,7 @@ export default function QuranReaderScreen({
                 { color: isPlayingSurah ? colors.onAccent : colors.accent },
               ]}
             >
-              {isPlayingSurah ? 'Playing Surah' : 'Play Full Surah'}
+              {isPlayingSurah ? t('Playing Surah') : t('Play Full Surah')}
             </Text>
           </TouchableOpacity>
 
@@ -1778,7 +1838,7 @@ export default function QuranReaderScreen({
         {showTranslation && (
           <View style={styles.mushafTranslationsWrap}>
             <Text style={[styles.mushafTranslationsHeading, { color: colors.accent }]}>
-              TRANSLATION ({flag} {(edition?.name || '').toUpperCase()})
+              {t('TRANSLATION')} ({flag} {(edition?.name || '').toUpperCase()})
             </Text>
             {surah.ayahs.map((a) => (
               <View key={`tr-${a.numberInSurah}`} style={styles.mushafTranslationRow}>
@@ -2418,7 +2478,7 @@ export default function QuranReaderScreen({
                         {t('Jump to Juz')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
-                        {selectedJuz ? `Juz ${selectedJuz} selected` : 'Select a Juz to jump'}
+                        {selectedJuz ? t('Juz {n} selected', { n: selectedJuz }) : t('Select a Juz to jump')}
                       </Text>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
@@ -2455,7 +2515,7 @@ export default function QuranReaderScreen({
                         {t('Jump to Hizb')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
-                        {selectedHizb ? `Hizb ${selectedHizb} selected` : 'Select a Hizb to jump'}
+                        {selectedHizb ? t('Hizb {n} selected', { n: selectedHizb }) : t('Select a Hizb to jump')}
                       </Text>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
@@ -2548,7 +2608,6 @@ export default function QuranReaderScreen({
           initialNumToRender={15}
           maxToRenderPerBatch={15}
           windowSize={7}
-          initialScrollIndex={initialListIndex}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           onScroll={handleReaderScroll}
           scrollEventThrottle={16}
@@ -2577,9 +2636,9 @@ export default function QuranReaderScreen({
             {/* Header: compact eyebrow + title + close */}
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <View style={styles.modalHeaderLeft}>
-                <Text style={[styles.modalEyebrow, { color: colors.accent }]}>AUDIO RECITER</Text>
+                <Text style={[styles.modalEyebrow, { color: colors.accent }]}>{t('AUDIO RECITER')}</Text>
                 <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                  Select Reciter
+                  {t('Select Reciter')}
                 </Text>
               </View>
               <TouchableOpacity
@@ -3025,7 +3084,7 @@ export default function QuranReaderScreen({
                             ]}
                           >
                             <Text style={[styles.reciterLangBadgeText, { color: colors.textMuted }]}>
-                              DEFAULT
+                              {t('DEFAULT')}
                             </Text>
                           </View>
                         ) : null}
@@ -3087,7 +3146,7 @@ export default function QuranReaderScreen({
             {/* Header */}
             <View style={[styles.noteModalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <View style={styles.noteModalHeaderLeft}>
-                <Text style={[styles.noteModalEyebrow, { color: colors.accent }]}>REFLECTIONS</Text>
+                <Text style={[styles.noteModalEyebrow, { color: colors.accent }]}>{t('REFLECTIONS')}</Text>
                 <Text
                   style={[styles.noteModalTitle, { color: colors.textPrimary }]}
                   numberOfLines={1}
