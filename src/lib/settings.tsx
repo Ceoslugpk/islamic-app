@@ -535,7 +535,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           setCachedLocation(next.autoLocation, next.autoLocationTimestamp ?? Date.now());
         }
 
-        setSettings(next);
+        // Guard the hydration-vs-grant race: if the user already changed settings
+        // during hydration (e.g. granted location via the setup popup), keep their
+        // live changes. On a fresh install the storage snapshot can be empty
+        // (DEFAULTS), and a blind setSettings(next) would clobber the just-saved
+        // autoLocation/locationMode back to manual — "allowed but nothing changed".
+        setSettings((prev) => {
+          const userChangedDuringHydration = prev !== DEFAULTS;
+          return userChangedDuringHydration ? { ...next, ...prev } : next;
+        });
         setAudioTranslationEnabled(next.translationAudioEnabled);
         setActiveAdhanReciterId(next.adhanReciterId || 'alafasy');
         if (migrated) {
