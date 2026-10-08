@@ -85,3 +85,46 @@ export const TIER_LABELS: Record<number, string> = {
   2: 'Very common',
   3: 'Common',
 };
+
+/**
+ * Deterministic hash function for date strings (e.g. YYYY-MM-DD).
+ */
+export function hashDateString(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) + hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+/**
+ * Deterministically select words for a given day (YYYY-MM-DD hash).
+ * Changes daily at midnight, but remains completely stable within the same day.
+ */
+export function getDailyWords(count: number = 5, date: Date = new Date()): VocabWord[] {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const dateStr = `${y}-${m}-${d}`;
+  const baseSeed = hashDateString(dateStr);
+  const result: VocabWord[] = [];
+  const total = VOCAB_WORDS.length;
+  const pickedIndices = new Set<number>();
+
+  for (let i = 0; i < total && result.length < count; i++) {
+    const idx = (baseSeed + i * 17) % total;
+    if (!pickedIndices.has(idx)) {
+      pickedIndices.add(idx);
+      result.push(VOCAB_WORDS[idx]);
+    }
+  }
+  return result;
+}
+
+/**
+ * Returns today's featured Quran vocabulary word.
+ */
+export function getDailyWord(date: Date = new Date()): VocabWord {
+  return getDailyWords(1, date)[0] ?? VOCAB_WORDS[0];
+}

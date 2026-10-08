@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
-import { VOCAB_WORDS, VocabWord, TIER_LABELS } from '../lib/vocab';
+import { VOCAB_WORDS, VocabWord, TIER_LABELS, getDailyWord, getDailyWords } from '../lib/vocab';
 
 const PROGRESS_KEY = 'vocab-trainer-progress-v1';
 
@@ -43,8 +43,11 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
   const [known, setKnown] = useState<Record<string, boolean>>({});
   const [revealed, setRevealed] = useState(false);
   const [index, setIndex] = useState(0);
-  const [tierFilter, setTierFilter] = useState<number | null>(null);
+  const [tierFilter, setTierFilter] = useState<number | 'daily' | null>(null);
   const [sessionKnown, setSessionKnown] = useState(0);
+
+  const dailyWord = useMemo(() => getDailyWord(), []);
+  const dailyWords = useMemo(() => getDailyWords(5), []);
 
   // Load progress on mount
   useEffect(() => {
@@ -62,10 +65,11 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
     })();
   }, []);
 
-  const words = useMemo(
-    () => (tierFilter === null ? VOCAB_WORDS : VOCAB_WORDS.filter((w) => w.tier === tierFilter)),
-    [tierFilter]
-  );
+  const words = useMemo(() => {
+    if (tierFilter === 'daily') return dailyWords;
+    if (tierFilter === null) return VOCAB_WORDS;
+    return VOCAB_WORDS.filter((w) => w.tier === tierFilter);
+  }, [tierFilter, dailyWords]);
 
   const current: VocabWord | undefined = words[index % words.length] ?? words[0];
 
@@ -129,21 +133,121 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
           </View>
         </View>
 
+        {/* Today's Word Card (Prominently featured Quranic word of the day) */}
+        <View
+          style={[
+            styles.dailyCard,
+            {
+              backgroundColor: colors.bgSurface,
+              borderColor: colors.borderSubtle,
+            },
+          ]}
+        >
+          <View style={styles.dailyTopRow}>
+            <View style={[styles.dailyBadge, { backgroundColor: colors.accentDim }]}>
+              <Ionicons name="sparkles" size={12} color={colors.accent} />
+              <Text style={[styles.dailyBadgeText, { color: colors.accent }]}>TODAY'S WORD</Text>
+            </View>
+            <View style={[styles.tierBadge, { backgroundColor: colors.accentDim }]}>
+              <Text style={[styles.tierText, { color: colors.accent }]}>
+                {TIER_LABELS[dailyWord.tier]}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.dailyBody}>
+            <ArabicText size={34} align="center" style={styles.dailyArabic}>
+              {dailyWord.arabic}
+            </ArabicText>
+            <Text style={[styles.dailyTranslit, { color: colors.textSecondary }]}>
+              {dailyWord.transliteration}
+            </Text>
+            <Text style={[styles.dailyMeaning, { color: colors.textPrimary }]}>
+              "{dailyWord.meaning}"
+            </Text>
+            <Text style={[styles.dailyRef, { color: colors.textMuted }]}>
+              Quran {dailyWord.ref}
+            </Text>
+          </View>
+
+          <View style={styles.dailyFooter}>
+            <TouchableOpacity
+              onPress={() => {
+                setTierFilter(null);
+                const foundIdx = VOCAB_WORDS.findIndex((w) => w.arabic === dailyWord.arabic);
+                if (foundIdx >= 0) {
+                  setIndex(foundIdx);
+                  setRevealed(false);
+                }
+              }}
+              style={[
+                styles.dailyActionBtn,
+                { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Practice ${dailyWord.transliteration} in flashcards`}
+            >
+              <Ionicons name="school-outline" size={14} color={colors.accent} />
+              <Text style={[styles.dailyActionBtnText, { color: colors.accent }]}>
+                Practice in Trainer
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                const isK = !!known[dailyWord.arabic];
+                const nextK = { ...known, [dailyWord.arabic]: !isK };
+                setKnown(nextK);
+                await persist(nextK, index);
+              }}
+              style={[
+                styles.dailyActionBtn,
+                {
+                  backgroundColor: known[dailyWord.arabic] ? colors.accentDim : colors.bgBase,
+                  borderColor: known[dailyWord.arabic] ? colors.accent : colors.borderSubtle,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={known[dailyWord.arabic] ? 'Mark as unlearned' : 'Mark as known'}
+            >
+              <Ionicons
+                name={known[dailyWord.arabic] ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                size={14}
+                color={known[dailyWord.arabic] ? colors.accent : colors.textMuted}
+              />
+              <Text
+                style={[
+                  styles.dailyActionBtnText,
+                  { color: known[dailyWord.arabic] ? colors.accent : colors.textSecondary },
+                ]}
+              >
+                {known[dailyWord.arabic] ? 'Learned ✓' : 'Mark Known'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Tier filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
-          {[null, 1, 2, 3].map((t) => (
+          {[
+            { id: null, label: 'All' },
+            { id: 'daily' as const, label: "Today's Set" },
+            { id: 1, label: TIER_LABELS[1] },
+            { id: 2, label: TIER_LABELS[2] },
+            { id: 3, label: TIER_LABELS[3] },
+          ].map((item) => (
             <TouchableOpacity
-              key={String(t)}
+              key={String(item.id)}
               onPress={() => {
-                setTierFilter(t);
+                setTierFilter(item.id);
                 setIndex(0);
                 setRevealed(false);
               }}
               style={[
                 styles.filterChip,
                 {
-                  backgroundColor: tierFilter === t ? colors.accent : colors.bgSurface,
-                  borderColor: tierFilter === t ? colors.accent : colors.borderSubtle,
+                  backgroundColor: tierFilter === item.id ? colors.accent : colors.bgSurface,
+                  borderColor: tierFilter === item.id ? colors.accent : colors.borderSubtle,
                 },
               ]}
               accessibilityRole="button"
@@ -151,10 +255,10 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               <Text
                 style={[
                   styles.filterText,
-                  { color: tierFilter === t ? '#FFF' : colors.textSecondary },
+                  { color: tierFilter === item.id ? '#FFF' : colors.textSecondary },
                 ]}
               >
-                {t === null ? 'All' : TIER_LABELS[t]}
+                {item.label}
               </Text>
             </TouchableOpacity>
           ))}
@@ -307,4 +411,71 @@ const styles = StyleSheet.create({
   },
   knowBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
   sessionHint: { fontFamily: 'Manrope_400Regular', fontSize: 12, textAlign: 'center', marginTop: 14 },
+  dailyCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 18,
+    marginBottom: 16,
+  },
+  dailyTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  dailyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  dailyBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
+    letterSpacing: 0.8,
+  },
+  dailyBody: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  dailyArabic: {
+    marginBottom: 6,
+  },
+  dailyTranslit: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 15,
+    fontStyle: 'italic',
+    marginBottom: 4,
+  },
+  dailyMeaning: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 17,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  dailyRef: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
+  },
+  dailyFooter: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+    justifyContent: 'center',
+  },
+  dailyActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  dailyActionBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+  },
 });
