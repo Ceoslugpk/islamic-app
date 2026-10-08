@@ -15,7 +15,8 @@ assert.ok(!reader.includes('getItemLayout={'), 'getItemLayout prop must NOT be o
 assert.ok(!reader.includes('initialScrollIndex={'), 'initialScrollIndex prop must NOT be on the FlatList (dead no-op + races)');
 assert.ok(reader.includes('positionedRef.current = false'), 'positionedRef must be reset on context change');
 assert.ok(reader.includes('userScrollingRef'), 'user-scroll guard must exist');
-assert.ok(!reader.includes('info.averageItemLength * info.index'), 'failed-retry must NOT use average offset (wrong for variable height)');
+assert.ok(!reader.includes('info.averageItemLength * info.index'), 'failed-retry must NEVER jump to averageOffset × target index (wrong for variable height)');
+assert.ok(reader.includes('highestMeasuredFrameIndex + 1) * info.averageItemLength'), 'failed-retry must advance to the measured edge only (converging window)');
 console.log('  [ok] Scrolling: no fixed-height assumption, positionedRef reset, user-scroll guard, measured retry only');
 
 // 2. Reading position: flush on unmount + no open-save clobber

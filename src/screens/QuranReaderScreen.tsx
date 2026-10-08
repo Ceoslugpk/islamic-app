@@ -1105,20 +1105,23 @@ export default function QuranReaderScreen({
 
   const handleScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
-      // Do NOT jump to averageItemLength * index — ayah rows are variable-height,
-      // so that offset is wrong and lands off-target. Retry scrollToIndex instead:
-      // VirtualizedList re-invokes this handler per failed scrollToIndex, so the
-      // loop converges as more rows measure (initialNumToRender=15 renders the
-      // first batch; each retry gives the list more measured frames).
+      // scrollToIndex past the measured frame index does NOT render more cells
+      // by itself — the retry would re-fail forever. Advance the render window
+      // by scrolling to the last MEASURED frame first (never past it, so we
+      // never overshoot the target with a wrong average-based offset), which
+      // triggers progressive cell rendering; then retry scrollToIndex once the
+      // list has more frames to measure. This converges for variable-height rows.
+      const measuredOffset = Math.max(0, (info.highestMeasuredFrameIndex + 1) * info.averageItemLength);
+      listRef.current?.scrollToOffset({ offset: measuredOffset, animated: false });
       setTimeout(() => {
         if (userScrollingRef.current) return;
         try {
           listRef.current?.scrollToIndex({ index: info.index, animated: false });
           positionedRef.current = true;
         } catch {
-          // non-fatal measurement retry — leave positionedRef false
+          // re-invoked again with a higher measured frame — keep converging
         }
-      }, 80);
+      }, 100);
     },
     []
   );
