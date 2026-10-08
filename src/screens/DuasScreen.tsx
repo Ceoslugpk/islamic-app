@@ -8,7 +8,12 @@ import {
   FlatList,
   TextInput,
   useWindowDimensions,
+  Platform,
+  Image,
+  Share,
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -26,7 +31,7 @@ import {
 import { DuaCardSkeleton } from '../components/Skeleton';
 
 export default function DuasScreen({ onBack }: { onBack?: () => void }) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
@@ -36,6 +41,10 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   const [searchQuery, setSearchQuery] = useState('');
   const listRef = useRef<FlatList<DuaItem>>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const shareCardRef = useRef<View>(null);
+  const [shareDuaItem, setShareDuaItem] = useState<DuaItem | null>(null);
+  const [isSharingImage, setIsSharingImage] = useState(false);
 
   const {
     history: searchHistory,
@@ -90,6 +99,41 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
         // item not measured yet — onScrollToIndexFailed handles it
       }
     });
+  };
+
+  const handleShareDua = async (item: DuaItem) => {
+    const textToShare = `${item.title}\n\n${item.arabic}\n\n${item.transliteration}\n\n"${item.translation}"\n\n— Source: ${item.reference}`;
+    if (Platform.OS === 'web') {
+      try {
+        await Share.share({ message: textToShare });
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    try {
+      setIsSharingImage(true);
+      setShareDuaItem(item);
+      await new Promise((r) => setTimeout(r, 80));
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+      setShareDuaItem(null);
+      setIsSharingImage(false);
+      const isAvailable = await Sharing.isAvailableAsync().catch(() => false);
+      if (isAvailable) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share Dua' });
+      } else {
+        await Share.share({ url: uri });
+      }
+    } catch {
+      setShareDuaItem(null);
+      setIsSharingImage(false);
+      try {
+        await Share.share({ message: textToShare });
+      } catch {
+        // ignore
+      }
+    }
   };
 
   const renderItem = ({ item }: { item: DuaItem }) => {
@@ -150,11 +194,20 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           "{item.translation}"
         </Text>
 
-        {/* Reference Footnote */}
+        {/* Reference Footnote & Share Button */}
         <View style={styles.refRow}>
           <Text style={[styles.refText, { color: colors.textMuted }]}>
             Source: {item.reference}
           </Text>
+          <TouchableOpacity
+            onPress={() => handleShareDua(item)}
+            accessibilityRole="button"
+            accessibilityLabel={`Share ${item.title}`}
+            style={styles.shareBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="share-outline" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
         </View>
       </View>
     );
@@ -365,6 +418,60 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
         />
       )}
       </View>
+
+      {/* Share-as-image capture card (rendered off-screen while sharing) */}
+      {shareDuaItem && (
+        <View style={styles.shareCardWrap} pointerEvents="none">
+          <View
+            ref={shareCardRef}
+            collapsable={false}
+            style={[styles.shareCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+          >
+            <Text style={[styles.shareCardEyebrow, { color: colors.accent }]}>
+              {shareDuaItem.category} · Duas & Adhkar
+            </Text>
+            <Text style={[styles.shareCardTitle, { color: colors.textPrimary }]}>
+              {shareDuaItem.title}
+            </Text>
+            <Text style={[styles.shareCardArabic, { color: colors.textPrimary }]}>
+              {shareDuaItem.arabic}
+            </Text>
+            <View style={[styles.shareCardRule, { backgroundColor: colors.accent }]} />
+            {shareDuaItem.transliteration ? (
+              <Text style={[styles.shareCardTranslit, { color: colors.textSecondary }]}>
+                {shareDuaItem.transliteration}
+              </Text>
+            ) : null}
+            <Text style={[styles.shareCardTrans, { color: colors.textPrimary }]}>
+              "{shareDuaItem.translation}"
+            </Text>
+            <Text style={[styles.shareCardRef, { color: colors.textMuted }]}>
+              Source: {shareDuaItem.reference}
+            </Text>
+
+            {/* App Brand Footer: Logo + ISLAMIC wordmark */}
+            <View style={styles.shareCardBrandFooter}>
+              <Image
+                source={
+                  mode === 'paper'
+                    ? require('../../assets/logo-small-black.png')
+                    : require('../../assets/logo-small-ivory.png')
+                }
+                style={styles.shareCardLogo}
+                resizeMode="contain"
+              />
+              <Text
+                style={[
+                  styles.shareCardBrandWordmark,
+                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                ]}
+              >
+                ISLAMIC
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -542,10 +649,99 @@ const styles = StyleSheet.create({
   },
   refRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  shareBtn: {
+    padding: 4,
   },
   refText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
+    flex: 1,
+  },
+  shareCardWrap: {
+    position: 'absolute',
+    left: -2000,
+    top: 0,
+    width: 360,
+    padding: 20,
+    backgroundColor: '#F8FAF9',
+  },
+  shareCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'stretch',
+  },
+  shareCardEyebrow: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  shareCardTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 22,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  shareCardArabic: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 22,
+    lineHeight: 38,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    includeFontPadding: false,
+    marginBottom: 14,
+  },
+  shareCardRule: {
+    height: 2,
+    borderRadius: 1,
+    marginBottom: 14,
+    width: '40%',
+    alignSelf: 'center',
+  },
+  shareCardTranslit: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 13,
+    lineHeight: 20,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  shareCardTrans: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  shareCardRef: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  shareCardBrandFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E2E8F0',
+    gap: 8,
+  },
+  shareCardLogo: {
+    width: 22,
+    height: 22,
+  },
+  shareCardBrandWordmark: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
 });

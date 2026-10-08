@@ -12,7 +12,11 @@ import {
   Platform,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Image,
+  Share,
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -83,9 +87,13 @@ export default function NamesScreen({
   onBack?: () => void;
   variant?: NamesVariant;
 }) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const { settings, setNamesLanguage } = useSettings();
   const language: NamesLanguage = settings.namesLanguage;
+
+  const shareCardRef = useRef<View>(null);
+  const [shareNameItem, setShareNameItem] = useState<NameRow | null>(null);
+  const [isSharingImage, setIsSharingImage] = useState(false);
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
@@ -183,6 +191,44 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
     filteredNames.length === names.length
       ? `${names.length} Names`
       : `${filteredNames.length} of ${names.length} Names`;
+
+  const handleShareName = async (item: NameRow) => {
+    const title = isProphet ? 'Names of the Prophet ﷺ' : '99 Names of Allah';
+    const verseText = formatVerses(item.verses);
+    const textToShare = `${title}\n\n#${item.number} ${item.arabic}\n${item.transliteration}${item.name ? ` (${item.name})` : ''}\n\n${item.meaning}${item.note ? `\n\nNote: ${item.note}` : ''}${verseText ? `\n\n${verseText}` : ''}`;
+
+    if (Platform.OS === 'web') {
+      try {
+        await Share.share({ message: textToShare });
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
+    try {
+      setIsSharingImage(true);
+      setShareNameItem(item);
+      await new Promise((r) => setTimeout(r, 80));
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+      setShareNameItem(null);
+      setIsSharingImage(false);
+      const isAvailable = await Sharing.isAvailableAsync().catch(() => false);
+      if (isAvailable) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: `Share ${item.transliteration}` });
+      } else {
+        await Share.share({ url: uri });
+      }
+    } catch {
+      setShareNameItem(null);
+      setIsSharingImage(false);
+      try {
+        await Share.share({ message: textToShare });
+      } catch {
+        // ignore
+      }
+    }
+  };
 
   const renderItem = ({ item }: { item: NameRow }) => {
     const verseLabel = formatVerses(item.verses);
@@ -285,9 +331,9 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
           ) : null}
         </View>
 
-        {/* Verse Reference Footer Tag */}
-        {verseLabel ? (
-          <View style={styles.cardFooter}>
+        {/* Footer: Verse Reference Tag & Share Button */}
+        <View style={styles.cardFooter}>
+          {verseLabel ? (
             <View
               style={[
                 styles.verseTag,
@@ -311,8 +357,20 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                 {verseLabel}
               </Text>
             </View>
-          </View>
-        ) : null}
+          ) : (
+            <View />
+          )}
+
+          <TouchableOpacity
+            onPress={() => handleShareName(item)}
+            accessibilityRole="button"
+            accessibilityLabel={`Share ${item.transliteration}`}
+            style={styles.cardShareBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="share-outline" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -550,6 +608,63 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
           }
         />
       </View>
+
+      {/* Share-as-image capture card (rendered off-screen while sharing) */}
+      {shareNameItem && (
+        <View style={styles.shareCardWrap} pointerEvents="none">
+          <View
+            ref={shareCardRef}
+            collapsable={false}
+            style={[styles.shareCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+          >
+            <Text style={[styles.shareCardEyebrow, { color: colors.accent }]}>
+              {isProphet ? 'أسماء النبي ﷺ · Names of the Prophet' : 'أسماء الله الحسنى · The 99 Names of Allah'}
+            </Text>
+            <Text style={[styles.shareCardArabic, { color: colors.textPrimary }]}>
+              {shareNameItem.arabic}
+            </Text>
+            <View style={[styles.shareCardRule, { backgroundColor: colors.accent }]} />
+            <Text style={[styles.shareCardTranslit, { color: colors.textPrimary }]}>
+              #{shareNameItem.number} · {shareNameItem.transliteration}
+              {shareNameItem.name ? ` (${shareNameItem.name})` : ''}
+            </Text>
+            <Text style={[styles.shareCardTrans, { color: colors.textSecondary }]}>
+              {shareNameItem.meaning}
+            </Text>
+            {shareNameItem.note ? (
+              <Text style={[styles.shareCardNote, { color: colors.textMuted }]}>
+                {shareNameItem.note}
+              </Text>
+            ) : null}
+            {formatVerses(shareNameItem.verses) ? (
+              <Text style={[styles.shareCardRef, { color: colors.textMuted }]}>
+                {formatVerses(shareNameItem.verses)}
+              </Text>
+            ) : null}
+
+            {/* App Brand Footer: Logo + ISLAMIC wordmark */}
+            <View style={styles.shareCardBrandFooter}>
+              <Image
+                source={
+                  mode === 'paper'
+                    ? require('../../assets/logo-small-black.png')
+                    : require('../../assets/logo-small-ivory.png')
+                }
+                style={styles.shareCardLogo}
+                resizeMode="contain"
+              />
+              <Text
+                style={[
+                  styles.shareCardBrandWordmark,
+                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                ]}
+              >
+                ISLAMIC
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -709,6 +824,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardShareBtn: {
+    padding: 4,
   },
   verseTag: {
     flexDirection: 'row',
@@ -772,5 +891,86 @@ const styles = StyleSheet.create({
     marginLeft: 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  shareCardWrap: {
+    position: 'absolute',
+    left: -2000,
+    top: 0,
+    width: 360,
+    padding: 20,
+    backgroundColor: '#F8FAF9',
+  },
+  shareCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'stretch',
+  },
+  shareCardEyebrow: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  shareCardArabic: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 28,
+    lineHeight: 44,
+    textAlign: 'center',
+    includeFontPadding: false,
+    marginBottom: 12,
+  },
+  shareCardRule: {
+    height: 2,
+    borderRadius: 1,
+    marginBottom: 14,
+    width: '40%',
+    alignSelf: 'center',
+  },
+  shareCardTranslit: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  shareCardTrans: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  shareCardNote: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  shareCardRef: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  shareCardBrandFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E2E8F0',
+    gap: 8,
+  },
+  shareCardLogo: {
+    width: 22,
+    height: 22,
+  },
+  shareCardBrandWordmark: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
 });
