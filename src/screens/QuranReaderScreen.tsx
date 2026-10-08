@@ -88,6 +88,7 @@ import {
   loadQuranCache,
   saveAudioSettings,
   saveLastReadPosition,
+  saveQuranCache,
   saveRecentlyPlayed,
 } from '../lib/db';
 import { getBundledSurahs114, SurahMeta } from '../lib/quran';
@@ -327,13 +328,24 @@ export default function QuranReaderScreen({
   const surahNumberRef = useRef<number>(safeSurahNumber);
   const lastSavedAyahRef = useRef<number>(initialAyah || 1);
   const trackingReadyRef = useRef<boolean>(!initialAyah || initialAyah <= 1);
-  const [currentVisibleAyah, setCurrentVisibleAyah] = useState<number>(initialAyah || 1);
+  const [currentVisibleAyah, setCurrentVisibleAyah] = useState<number>(() => {
+    if (initialAyah && initialAyah > 1) return initialAyah;
+    const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
+    return saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : (initialAyah || 1);
+  });
+  const mushafScrollRef = useRef<ScrollView>(null);
+  const mushafContentHeightRef = useRef<number>(0);
+  const pendingScrollAyahRef = useRef<number | null>(null);
 
   useEffect(() => {
     surahNumberRef.current = safeSurahNumber;
-    lastSavedAyahRef.current = initialAyah || 1;
-    setCurrentVisibleAyah(initialAyah || 1);
-    trackingReadyRef.current = !initialAyah || initialAyah <= 1;
+    const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
+    const resolvedAyah = (initialAyah && initialAyah > 1)
+      ? initialAyah
+      : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
+    lastSavedAyahRef.current = resolvedAyah;
+    setCurrentVisibleAyah(resolvedAyah);
+    trackingReadyRef.current = resolvedAyah <= 1;
   }, [safeSurahNumber, initialAyah]);
 
   // Fetch / update script text when script or surah changes
@@ -718,8 +730,27 @@ export default function QuranReaderScreen({
           useNativeDriver: Platform.OS !== 'web',
         }).start();
       }
+
+      if (readingMode === 'mushaf') {
+        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+        const scrollable = contentSize.height - layoutMeasurement.height;
+        if (scrollable > 0) {
+          const progress = Math.max(0, Math.min(1, contentOffset.y / scrollable));
+          const totalAyahs = surah?.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7;
+          const approxAyah = Math.min(totalAyahs, Math.max(1, Math.round(progress * (totalAyahs - 1)) + 1));
+          if (approxAyah !== lastSavedAyahRef.current) {
+            setCurrentVisibleAyah(approxAyah);
+            lastSavedAyahRef.current = approxAyah;
+            saveQuranCache(`surah-last-ayah:${safeSurahNumber}`, { ayah: approxAyah });
+            saveReadingPosition(safeSurahNumber, approxAyah);
+            if (surah?.englishName) {
+              saveLastReadPosition(safeSurahNumber, approxAyah, surah.englishName);
+            }
+          }
+        }
+      }
     },
-    [navOpacity]
+    [navOpacity, readingMode, surah, safeSurahNumber]
   );
 
   // Audio state
@@ -771,9 +802,13 @@ export default function QuranReaderScreen({
       if (!trackingReadyRef.current) return;
       if (ayahNumber === lastSavedAyahRef.current) return;
       lastSavedAyahRef.current = ayahNumber;
+      saveQuranCache(`surah-last-ayah:${surahNumberRef.current}`, { ayah: ayahNumber });
       saveReadingPosition(surahNumberRef.current, ayahNumber);
+      if (surah?.englishName) {
+        saveLastReadPosition(surahNumberRef.current, ayahNumber, surah.englishName);
+      }
     },
-    []
+    [surah?.englishName]
   );
 
   // Load preferences and reciters
@@ -858,12 +893,14 @@ export default function QuranReaderScreen({
       }
 
       // Save last read position
-      const startAyah = initialAyah && initialAyah > 1 ? initialAyah : 1;
+      const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
+      const startAyah = initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
       saveLastReadPosition(safeSurahNumber, startAyah, data?.englishName);
 
       // Continue Reading position + Recently Read entry
       surahNumberRef.current = safeSurahNumber;
       lastSavedAyahRef.current = startAyah;
+      setCurrentVisibleAyah(startAyah);
       trackingReadyRef.current = startAyah <= 1;
       saveReadingPosition(safeSurahNumber, startAyah);
       if (data) {
@@ -907,20 +944,32 @@ export default function QuranReaderScreen({
     loadSurah();
   }, [loadSurah]);
 
-  // Handle auto-scroll to initialAyah if provided
+  // Handle auto-scroll to initialAyah or restored ayah
   useEffect(() => {
-    if (surah && initialAyah && initialAyah > 1) {
-      const targetIndex = initialAyah - 1;
-      setTimeout(() => {
-        try {
-          listRef.current?.scrollToIndex({ index: targetIndex, animated: true });
-        } catch {
-          // ignore measurement miss
+    const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
+    const targetAyah = initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
+    if (surah && targetAyah > 1) {
+      if (readingMode === 'mushaf') {
+        const total = surah.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
+        if (mushafContentHeightRef.current > 0) {
+          const y = Math.max(0, ((targetAyah - 1) / total) * mushafContentHeightRef.current);
+          mushafScrollRef.current?.scrollTo({ y, animated: true });
+        } else {
+          pendingScrollAyahRef.current = targetAyah;
         }
-        trackingReadyRef.current = true;
-      }, 300);
+      } else {
+        const targetIndex = targetAyah - 1;
+        setTimeout(() => {
+          try {
+            listRef.current?.scrollToIndex({ index: targetIndex, animated: true });
+          } catch {
+            // ignore measurement miss
+          }
+          trackingReadyRef.current = true;
+        }, 300);
+      }
     }
-  }, [surah, initialAyah]);
+  }, [surah, safeSurahNumber, initialAyah, readingMode]);
 
   const handleScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
@@ -1246,7 +1295,9 @@ export default function QuranReaderScreen({
       if (targetSurah < 1 || targetSurah > 114) return;
       if (!onNavigateSurah) return;
       saveReadingPosition(surahNumberRef.current, lastSavedAyahRef.current);
-      onNavigateSurah(targetSurah);
+      saveQuranCache(`surah-last-ayah:${surahNumberRef.current}`, { ayah: lastSavedAyahRef.current });
+      const savedTarget = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${targetSurah}`);
+      onNavigateSurah(targetSurah, savedTarget?.ayah);
     },
     [onNavigateSurah]
   );
@@ -1561,9 +1612,19 @@ export default function QuranReaderScreen({
     if (!surah || !Array.isArray(surah.ayahs) || surah.ayahs.length === 0) return null;
     return (
       <ScrollView
+        ref={mushafScrollRef}
         contentContainerStyle={styles.mushafScrollContent}
         onScroll={handleReaderScroll}
         scrollEventThrottle={16}
+        onContentSizeChange={(_w, h) => {
+          mushafContentHeightRef.current = h;
+          if (pendingScrollAyahRef.current && pendingScrollAyahRef.current > 1) {
+            const total = surah?.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
+            const y = Math.max(0, ((pendingScrollAyahRef.current - 1) / total) * h);
+            mushafScrollRef.current?.scrollTo({ y, animated: true });
+            pendingScrollAyahRef.current = null;
+          }
+        }}
       >
         {renderSurahHeader()}
 
