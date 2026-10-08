@@ -359,7 +359,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         source,
       });
       // Wait a frame for the card to render off-screen.
-      await new Promise((r) => setTimeout(r, 80));
+      await new Promise((r) => setTimeout(r, 250));
       const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
       setShareHadithData(null);
       setIsSharingImage(false);
@@ -1516,16 +1516,19 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             </Text>
 
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}
-            <View style={styles.shareCardBrandFooter}>
-              <Image
-                source={
-                  mode === 'paper'
-                    ? require('../../assets/logo-master-black.png')
-                    : require('../../assets/logo-master-ivory.png')
-                }
-                style={styles.shareCardLogo}
-                resizeMode="contain"
-              />
+            <View style={styles.shareCardBrandFooter} collapsable={false}>
+              <View collapsable={false} style={styles.shareCardLogoWrap}>
+                <Image
+                  source={
+                    mode === 'paper'
+                      ? require('../../assets/logo-master-black.png')
+                      : require('../../assets/logo-master-ivory.png')
+                  }
+                  style={styles.shareCardLogo}
+                  resizeMode="contain"
+                  fadeDuration={0}
+                />
+              </View>
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
@@ -2093,6 +2096,12 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: '#E2E8F0',
     gap: 8,
+  },
+  shareCardLogoWrap: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shareCardLogo: {
     width: 32,
