@@ -181,11 +181,11 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
       )}
 
       <ScreenHeader
-        eyebrow="Directory"
-        title="Cities"
-        subtitle="Pick a city to set your location"
+        eyebrow={t('Directory')}
+        title={t('Cities')}
+        subtitle={t('Pick a city to set your location')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
 
       <View style={[styles.searchArea, { paddingHorizontal: paddingH }]}>

@@ -311,10 +311,10 @@ export default function UmrahResourcesScreen({
                             },
                           ]}
                         >
-                          {item.item}
+                          {t(item.item)}
                         </Text>
                         <Text style={[styles.checkItemNote, { color: colors.textMuted }]}>
-                          {item.note}
+                          {t(item.note)}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -349,10 +349,10 @@ export default function UmrahResourcesScreen({
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.tipTitle, { color: colors.textPrimary }]}>
-                    {tip.title}
+                    {t(tip.title)}
                   </Text>
                   <Text style={[styles.tipDetail, { color: colors.textSecondary }]}>
-                    {tip.detail}
+                    {t(tip.detail)}
                   </Text>
                 </View>
               </View>
@@ -458,16 +458,16 @@ export default function UmrahResourcesScreen({
           {RECOMMENDED_BOOKS.map((book, idx) => (
             <Card key={idx} style={{ marginBottom: 12, padding: 16 }}>
               <Text style={[styles.bookFocus, { color: colors.accent }]}>
-                {book.focus.toUpperCase()}
+                {t(book.focus).toUpperCase()}
               </Text>
               <Text style={[styles.bookTitle, { color: colors.textPrimary }]}>
                 {book.title}
               </Text>
               <Text style={[styles.bookAuthor, { color: colors.textSecondary }]}>
-                By {book.author}
+                {t('By')} {book.author}
               </Text>
               <Text style={[styles.bookDesc, { color: colors.textMuted }]}>
-                {book.description}
+                {t(book.description)}
               </Text>
             </Card>
           ))}

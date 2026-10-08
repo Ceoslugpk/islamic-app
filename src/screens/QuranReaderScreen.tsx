@@ -353,17 +353,10 @@ export default function QuranReaderScreen({
     return saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1;
   }, [safeSurahNumber, initialAyah]);
   const initialListIndex = Math.max(0, targetAyahForPosition - 1);
-  // ponytail: estimated constant item height; exact enough for jump positioning,
-  // onScrollToIndexFailed corrects when measured heights diverge.
-  const AYAH_ITEM_ESTIMATE = 150;
-  const getAyahItemLayout = useCallback(
-    (_data: ArrayLike<unknown> | null | undefined, index: number) => ({
-      length: AYAH_ITEM_ESTIMATE,
-      offset: AYAH_ITEM_ESTIMATE * index,
-      index,
-    }),
-    []
-  );
+  // NOTE: no getItemLayout — ayah rows are variable-height (Arabic + translation
+  // + tafsir + font size + width), so a fixed estimate corrupts cell offsets and
+  // causes fast-scroll glitches. initialScrollIndex + onScrollToIndexFailed
+  // (measured fallback) handle direct positioning without a height assumption.
 
   useEffect(() => {
     surahNumberRef.current = safeSurahNumber;
@@ -804,9 +797,8 @@ export default function QuranReaderScreen({
   const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
   const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Reading marker state (user-set "I stopped here")
-  const [markerJustSet, setMarkerJustSet] = useState(false);
-  const markerResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Reading marker state (user-set "I stopped here") — one active marker,
+  // set per-ayah via the flag button in the ayah action row.
   const [activeMarker, setActiveMarker] = useState<ReadingPosition | null>(null);
 
   // Load the active marker on mount
@@ -822,24 +814,11 @@ export default function QuranReaderScreen({
     };
   }, []);
 
-  const handleSetReadingMarker = useCallback(() => {
-    const ayah = currentVisibleAyah || lastSavedAyahRef.current || 1;
-    saveReadingMarker(safeSurahNumber, ayah);
-    setActiveMarker({ surah: safeSurahNumber, ayah, savedAt: Date.now() });
-    setMarkerJustSet(true);
-    if (markerResetTimerRef.current) clearTimeout(markerResetTimerRef.current);
-    markerResetTimerRef.current = setTimeout(() => setMarkerJustSet(false), 1600);
-    haptic('selection');
-  }, [safeSurahNumber, currentVisibleAyah]);
-
   /** Per-ayah marker setter (from the ayah action-row flag button). */
   const handleSetReadingMarkerAt = useCallback(
     (ayah: number) => {
       saveReadingMarker(safeSurahNumber, ayah);
       setActiveMarker({ surah: safeSurahNumber, ayah, savedAt: Date.now() });
-      setMarkerJustSet(true);
-      if (markerResetTimerRef.current) clearTimeout(markerResetTimerRef.current);
-      markerResetTimerRef.current = setTimeout(() => setMarkerJustSet(false), 1600);
       haptic('selection');
     },
     [safeSurahNumber]
@@ -857,7 +836,6 @@ export default function QuranReaderScreen({
   useEffect(() => {
     return () => {
       if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
-      if (markerResetTimerRef.current) clearTimeout(markerResetTimerRef.current);
     };
   }, []);
 
@@ -2264,67 +2242,6 @@ export default function QuranReaderScreen({
                 </View>
               </View>
 
-              {/* READING — marker */}
-              <View style={styles.toolsMenuGroup}>
-                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
-                  {t('READING')}
-                </Text>
-                <View
-                  style={[
-                    styles.toolsMenuGroupCard,
-                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-                  ]}
-                >
-                  {/* Set Reading Marker */}
-                  <TouchableOpacity
-                    style={styles.toolsMenuItem}
-                    onPress={() => {
-                      handleSetReadingMarker();
-                      setToolsMenuOpen(false);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      markerJustSet
-                        ? t('Reading marker set')
-                        : t('Set reading marker')
-                    }
-                    accessibilityState={{ selected: !!activeMarker }}
-                    activeOpacity={0.7}
-                  >
-                    <View
-                      style={[
-                        styles.toolsMenuIcon,
-                        {
-                          backgroundColor: activeMarker
-                            ? colors.accentDim
-                            : colors.bgBase,
-                        },
-                      ]}
-                    >
-                      <Ionicons
-                        name={markerJustSet ? 'checkmark' : activeMarker ? 'bookmark' : 'bookmark-outline'}
-                        size={20}
-                        color={activeMarker ? colors.accent : colors.textSecondary}
-                      />
-                    </View>
-                    <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        {markerJustSet
-                          ? t('Reading marker set')
-                          : activeMarker
-                          ? t('Update reading marker')
-                          : t('Set reading marker')}
-                      </Text>
-                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
-                        {activeMarker
-                          ? `${t('Ayah')} ${activeMarker.ayah} · ${t('Surah')} ${activeMarker.surah}`
-                          : t('Mark where you stopped — Continue Reading will open here')}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
               {/* LANGUAGE & TAFSIR */}
               <View style={styles.toolsMenuGroup}>
                 <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
@@ -2632,7 +2549,6 @@ export default function QuranReaderScreen({
           maxToRenderPerBatch={15}
           windowSize={7}
           initialScrollIndex={initialListIndex}
-          getItemLayout={getAyahItemLayout}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           onScroll={handleReaderScroll}
           scrollEventThrottle={16}

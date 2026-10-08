@@ -41,6 +41,8 @@ interface QuranHomeScreenProps {
   onOpenNotes: () => void;
   onOpenPlans: () => void;
   onOpenHifz: () => void;
+  /** True when this screen's pane is the visible one (used to refresh state on focus). */
+  isActive?: boolean;
 }
 
 const JUZ_LIST = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -61,6 +63,7 @@ export default function QuranHomeScreen({
   onOpenNotes,
   onOpenPlans,
   onOpenHifz,
+  isActive,
 }: QuranHomeScreenProps) {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
@@ -187,6 +190,25 @@ export default function QuranHomeScreen({
       mounted = false;
     };
   }, []);
+
+  // Refresh when this screen becomes visible again (returning from the Surah
+  // Reader via Back). The pane stays mounted, so without this the Continue
+  // Reading card would show stale data until an app restart.
+  const wasActiveRef = useRef<boolean>(!!isActive);
+  useEffect(() => {
+    if (!isActive || wasActiveRef.current) return;
+    wasActiveRef.current = true;
+    setLastRead(loadLastReadPosition());
+    getContinueReadingPosition()
+      .then((pos) => setReadingPosition(pos))
+      .catch(() => {});
+    getRecentSurahs()
+      .then((list) => setRecentSurahs(list))
+      .catch(() => {});
+  }, [isActive]);
+  useEffect(() => {
+    if (!isActive) wasActiveRef.current = false;
+  }, [isActive]);
 
   const filteredSurahs = useMemo(() => {
     if (!surahs) return [];

@@ -41,7 +41,7 @@ import {
   HEADER_PADDING_VERTICAL,
   HEADER_SEPARATOR,
 } from './src/lib/headerTokens';
-import { t } from './src/lib/i18n';
+import { t, setAppLanguage, applyRTL, resolvePersistedLanguage } from './src/lib/i18n';
 
 import HomeScreen from './src/screens/HomeScreen';
 import QiblaScreen from './src/screens/QiblaScreen';
@@ -1036,6 +1036,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
           <View style={[styles.tabPane, tab === 'quran' ? styles.paneVisible : styles.paneHidden]}>
             <View style={[styles.tabPane, quran.screen === 'home' ? styles.paneVisible : styles.paneHidden]}>
               <QuranHomeScreen
+                isActive={quran.screen === 'home'}
                 onOpenSurah={(n, a) => setQuran({ screen: 'reader', surah: n, initialAyah: a })}
                 onOpenAudio={() => setQuran({ screen: 'audio' })}
                 onOpenTafsir={() => setQuran({ screen: 'tafsir' })}
@@ -1430,12 +1431,34 @@ function SettingsModal({
 export default function App() {
   const [fontsLoaded, fontError] = useEditorialFonts();
   const [splashDone, setSplashDone] = useState(false);
+  const [langReady, setLangReady] = useState(false);
+
+  // Resolve the persisted app language + native RTL direction BEFORE any UI
+  // mounts. Without this the app can boot with language=en but layout=RTL (or
+  // vice versa) when the persisted language differs from the device locale.
+  useEffect(() => {
+    let mounted = true;
+    resolvePersistedLanguage()
+      .then((lang) => {
+        if (!mounted) return;
+        setAppLanguage(lang);
+        applyRTL(lang === 'ur'); // pre-UI-mount: safe to force native direction
+        setLangReady(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setLangReady(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleSplashDone = useCallback(() => {
     setSplashDone(true);
   }, []);
 
-  if (!fontsLoaded && !fontError) {
+  if ((!fontsLoaded && !fontError) || !langReady) {
     return <View style={styles.loading} />;
   }
 
