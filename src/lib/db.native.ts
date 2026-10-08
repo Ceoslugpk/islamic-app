@@ -364,6 +364,38 @@ export function getCachedQuranKeys(): Set<string> {
   return set;
 }
 
+interface MosqueCacheItem {
+  mosques: import('../screens/MosqueFinderScreen').MosqueItem[];
+  centerLat: number;
+  centerLon: number;
+  radiusKm: number;
+  cachedAt: number;
+}
+
+/** Native (expo-sqlite) mirror of the web mosque cache — stored in quran_cache table. */
+export function saveMosqueCache(
+  centerLat: number,
+  centerLon: number,
+  radiusKm: number,
+  mosques: import('../screens/MosqueFinderScreen').MosqueItem[]
+): void {
+  const key = `mosque:${centerLat.toFixed(2)}:${centerLon.toFixed(2)}:${radiusKm}`;
+  saveQuranCache(key, { mosques, centerLat, centerLon, radiusKm, cachedAt: Date.now() });
+}
+
+export function loadMosqueCache(
+  centerLat: number,
+  centerLon: number,
+  radiusKm: number,
+  maxAgeMs = 24 * 60 * 60 * 1000
+): import('../screens/MosqueFinderScreen').MosqueItem[] | null {
+  const key = `mosque:${centerLat.toFixed(2)}:${centerLon.toFixed(2)}:${radiusKm}`;
+  const parsed = loadQuranCache<MosqueCacheItem>(key);
+  if (!parsed || !Array.isArray(parsed.mosques)) return null;
+  if (Date.now() - parsed.cachedAt > maxAgeMs) return null;
+  return parsed.mosques;
+}
+
 export function saveQuranAudioDownloads(payload: object) {
   saveQuranCache('quran-audio-downloads', payload);
 }
