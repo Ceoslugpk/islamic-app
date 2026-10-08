@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
   dismissBtn: {
     padding: 4,
-    marginLeft: 4,
+    marginStart: 4,
     alignSelf: 'flex-start',
   },
 });

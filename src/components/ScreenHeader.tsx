@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-start',
     gap: 2,
-    marginRight: 8,
+    marginEnd: 8,
   },
   backLabelText: {
     fontFamily: 'Manrope_600SemiBold',

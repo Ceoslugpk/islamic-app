@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
+    marginStart: 12,
   },
   searchWrap: {
     paddingHorizontal: 20,
@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rightAction: {
-    marginLeft: 10,
+    marginStart: 10,
     alignItems: 'center',
     justifyContent: 'center',
     width: 24,

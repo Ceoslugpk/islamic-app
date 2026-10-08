@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 12,
+    marginStart: 12,
   },
   infoBanner: {
     flexDirection: 'row',
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   rightAction: {
-    marginLeft: 10,
+    marginStart: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
