@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { LocationPermissionStatus } from '../lib/useLocation';
+import { t } from '../lib/i18n';
 
 export interface LocationPermissionNoteProps {
   status: LocationPermissionStatus;
@@ -49,12 +50,12 @@ export function LocationPermissionNote({
 
   const isDenied = status === 'denied';
   const title = isDenied
-    ? 'Location permission needed'
-    : 'Location detection unavailable';
+    ? t('Location permission needed')
+    : t('Location detection unavailable');
 
   const defaultDesc = isDenied
-    ? `Enable location access so prayer times and Qibla direction are calculated for where you are. Until then, the app uses the saved location (${fallbackCity}). You'll only be asked once on first launch.`
-    : `GPS is not available on this device or platform. Currently using saved location (${fallbackCity}).`;
+    ? t('Enable location access so prayer times and Qibla direction are calculated for where you are. Until then, the app uses the saved location ({{city}}). You\'ll only be asked once on first launch.', { city: fallbackCity })
+    : t('GPS is not available on this device or platform. Currently using saved location ({{city}}).', { city: fallbackCity });
 
   const description = customMessage || defaultDesc;
 
@@ -127,10 +128,10 @@ export function LocationPermissionNote({
               onPress={onChooseCity}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Choose city from world cities"
+              accessibilityLabel={t('Choose city from world cities')}
             >
               <Ionicons name="business-outline" size={14} color={colors.textPrimary} />
-              <Text style={[styles.cityBtnText, { color: colors.textPrimary }]}>Choose City</Text>
+              <Text style={[styles.cityBtnText, { color: colors.textPrimary }]}>{t('Choose City')}</Text>
             </TouchableOpacity>
           )}
 
@@ -146,7 +147,7 @@ export function LocationPermissionNote({
               disabled={loading}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel={isDenied ? 'Enable location' : 'Retry detection'}
+              accessibilityLabel={isDenied ? t('Enable Location') : t('Retry Detection')}
             >
               {loading ? (
                 <ActivityIndicator size="small" color={colors.onAccent} />
@@ -158,7 +159,7 @@ export function LocationPermissionNote({
                     color={colors.onAccent}
                   />
                   <Text style={[styles.enableBtnText, { color: colors.onAccent }]}>
-                    {isDenied ? 'Enable Location' : 'Retry Detection'}
+                    {isDenied ? t('Enable Location') : t('Retry Detection')}
                   </Text>
                 </>
               )}
@@ -177,10 +178,10 @@ export function LocationPermissionNote({
               onPress={openDeviceSettings}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Open device settings to enable location"
+              accessibilityLabel={t('Open device settings to enable location')}
             >
               <Ionicons name="settings-outline" size={14} color={colors.textPrimary} />
-              <Text style={[styles.cityBtnText, { color: colors.textPrimary }]}>Device Settings</Text>
+              <Text style={[styles.cityBtnText, { color: colors.textPrimary }]}>{t('Device Settings')}</Text>
             </TouchableOpacity>
           )}
         </View>

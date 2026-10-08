@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { getForwardIcon, getBackIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
+import { t } from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import {
@@ -154,7 +155,7 @@ function Section({ label, children }: SectionProps) {
   return (
     <View style={{ marginTop: layout.sectionGap }}>
       <Text style={[styles.groupLabel, { color: colors.textMuted, fontSize: layout.labelSize }]}>
-        {label}
+        {t(label)}
       </Text>
       <Card padded={false}>{children}</Card>
     </View>
@@ -218,10 +219,10 @@ function Row({
           titleFont ? { fontFamily: titleFont } : null,
         ]}
       >
-        {title}
+        {t(title)}
       </Text>
       {desc ? (
-        <Text style={[styles.rowDesc, { color: descColor, fontSize: layout.descSize }]}>{desc}</Text>
+        <Text style={[styles.rowDesc, { color: descColor, fontSize: layout.descSize }]}>{t(desc)}</Text>
       ) : null}
       {children}
     </View>
@@ -324,7 +325,7 @@ function Segmented<T extends string | number>({
             onPress={() => onChange(option.value)}
             disabled={disabled}
             accessibilityRole="radio"
-            accessibilityLabel={`${label}: ${option.label}`}
+            accessibilityLabel={`${t(label)}: ${t(option.label)}`}
             accessibilityState={{ selected, disabled }}
           >
             <Text
@@ -340,7 +341,7 @@ function Segmented<T extends string | number>({
                 },
               ]}
             >
-              {option.label}
+              {t(option.label)}
             </Text>
           </TouchableOpacity>
         );
@@ -467,6 +468,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
   const { colors, mode, accentKey, setAccent } = useTheme();
   const {
     settings,
+    setLanguage,
     setMethod,
     setTimeFormat,
     setReminders,
@@ -741,17 +743,38 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             style={styles.closeBtn}
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="Close settings"
+            accessibilityLabel={t('Close settings')}
             hitSlop={touchTargetTokens.hitSlop8}
             activeOpacity={0.7}
           >
             <Ionicons name={getBackIcon('chevron')} size={iconSizes.header} color={colors.accent} />
             <Text style={[styles.closeText, { color: colors.accent, fontSize: layout.isCompact ? 13 : 14 }]}>
-              Done
+              {t('Done')}
             </Text>
           </TouchableOpacity>
         )}
         <SectionHeader compact eyebrow="Preferences" title="Settings" />
+
+        {/* Language — English / اردو */}
+        <Section label="Language / زبان">
+          <Row
+            title="App Language"
+            desc={settings.language === 'ur' ? 'اردو (Urdu) · دائیں سے بائیں (RTL)' : 'English · Left to Right (LTR)'}
+            accessibilityRole="text"
+          />
+          <Segmented<'en' | 'ur'>
+            label="Language / زبان"
+            options={[
+              { value: 'en', label: 'English' },
+              { value: 'ur', label: 'اردو' },
+            ]}
+            value={settings.language}
+            onChange={(nextLang) => {
+              setLanguage(nextLang);
+              haptic('selection');
+            }}
+          />
+        </Section>
 
         {/* Appearance — theme, accent, haptics */}
         <Section label="Appearance">

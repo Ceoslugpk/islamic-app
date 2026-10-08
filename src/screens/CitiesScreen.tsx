@@ -16,6 +16,7 @@ import { useSettings } from '../lib/settings';
 import { CITIES, City } from '../lib/cities';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
+import { t } from '../lib/i18n';
 
 export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
@@ -134,7 +135,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
                 ]}
               >
                 <Text style={[styles.activeBadgeText, { color: colors.accent }]}>
-                  Active
+                  {t('Active')}
                 </Text>
               </View>
             )}
@@ -173,7 +174,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
           <View style={styles.successBannerContent}>
             <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
             <Text style={[styles.successBannerText, { color: colors.accent }]}>
-              Location set to {successCity.name}, {successCity.country}
+              {t('Location set to')} {successCity.name}, {successCity.country}
             </Text>
           </View>
         </Animated.View>
@@ -201,7 +202,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 13 : 14 }]}
-            placeholder="Search city or country…"
+            placeholder={t('Search city or country…')}
             placeholderTextColor={colors.textMuted}
             value={query}
             onChangeText={setQuery}
@@ -232,7 +233,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              No matches for &ldquo;{query}&rdquo;
+              {t('No matches for')} &ldquo;{query}&rdquo;
             </Text>
           </View>
         }

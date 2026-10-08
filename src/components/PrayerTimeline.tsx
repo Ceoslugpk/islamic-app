@@ -15,6 +15,7 @@ import { Card } from './Card';
 import { Hairline } from './Hairline';
 import { formatTime } from '../lib/timeFormat';
 import { DayTimings } from '../lib/prayerTimes';
+import { t } from '../lib/i18n';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -349,7 +350,7 @@ export function PrayerTimeline({
                           },
                         ]}
                       >
-                        {item.label}
+                        {t(item.label)}
                       </Text>
                       {isCurrent && (
                         <View
@@ -360,7 +361,7 @@ export function PrayerTimeline({
                             },
                           ]}
                         >
-                          <Text style={[styles.nowBadgeText, { color: colors.onAccent }]}>NOW</Text>
+                          <Text style={[styles.nowBadgeText, { color: colors.onAccent }]}>{t('NOW')}</Text>
                         </View>
                       )}
                     </View>
@@ -420,13 +421,13 @@ export function PrayerTimeline({
             <Text style={[styles.trackerBold, { color: colors.textPrimary }]}>
               {completedCount} / 5
             </Text>{' '}
-            Salah
+            {t('Salah')}
           </Text>
         </View>
 
         <View style={styles.trackerRight}>
           <Text style={[styles.trackerText, { color: colors.textSecondary }]}>
-            Streak{' '}
+            {t('Streak')}{' '}
             <Text style={[styles.trackerBold, { color: colors.accent }]}>
               {streak}
             </Text>

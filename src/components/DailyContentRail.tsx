@@ -17,6 +17,7 @@ import { ArabicText } from './ArabicText';
 import { AnimatedPattern } from './AnimatedPattern';
 import { AyahOfDay } from '../lib/useAyahOfDay';
 import { Hadith } from '../lib/hadith';
+import { t } from '../lib/i18n';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -130,7 +131,7 @@ export function DailyContentRail({
       {/* Header Row: TODAY Eyebrow + Paging Dots */}
       <View style={styles.headerRow}>
         <View style={styles.eyebrowWrap}>
-          <Text style={[styles.eyebrow, { color: colors.accent }]}>TODAY</Text>
+          <Text style={[styles.eyebrow, { color: colors.accent }]}>{t('TODAY')}</Text>
         </View>
 
         {/* Paging Indicators */}
@@ -212,7 +213,7 @@ export function DailyContentRail({
                       <View style={styles.tagBadge}>
                         <Ionicons name="book-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
-                          AYAH OF THE DAY
+                          {t('AYAH OF THE DAY')}
                         </Text>
                       </View>
                     </View>
@@ -249,7 +250,7 @@ export function DailyContentRail({
                       </>
                     ) : (
                       <Text style={[styles.placeholderText, { color: colors.textMuted }]}>
-                        Loading daily verse...
+                        {t('Loading daily verse...')}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -268,7 +269,7 @@ export function DailyContentRail({
                       <View style={styles.tagBadge}>
                         <Ionicons name="library-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
-                          HADITH OF THE DAY
+                          {t('HADITH OF THE DAY')}
                         </Text>
                       </View>
                     </View>
@@ -299,7 +300,7 @@ export function DailyContentRail({
                       </>
                     ) : (
                       <Text style={[styles.placeholderText, { color: colors.textMuted }]}>
-                        Loading daily hadith...
+                        {t('Loading daily hadith...')}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -318,7 +319,7 @@ export function DailyContentRail({
                       <View style={styles.tagBadge}>
                         <Ionicons name="sparkles-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
-                          NAME OF THE DAY · #{nameOfDay.number}
+                          {t('NAME OF THE DAY')} · #{nameOfDay.number}
                         </Text>
                       </View>
                     </View>

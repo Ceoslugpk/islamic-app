@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
+import { t } from '../lib/i18n';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -65,7 +66,7 @@ function ActionButton({ icon, label, onPress }: ActionItemProps) {
       onPressOut={handlePressOut}
       style={styles.actionCol}
       accessibilityRole="button"
-      accessibilityLabel={label}
+      accessibilityLabel={t(label)}
     >
       <Animated.View
         style={[
@@ -80,7 +81,7 @@ function ActionButton({ icon, label, onPress }: ActionItemProps) {
         <Ionicons name={icon} size={20} color={colors.accent} />
       </Animated.View>
       <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>
-        {label}
+        {t(label)}
       </Text>
     </TouchableOpacity>
   );

@@ -3,10 +3,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Location } from './prayerTimes';
 import { AccentKey } from './accents';
 import { NamesLanguage } from './names99';
-import { setAudioTranslationEnabled } from './quranAudio';
+import {
+  setAudioTranslationEnabled,
+  setAudioTranslationEdition,
+  DEFAULT_AUDIO_TRANSLATION_EDITION_ID,
+  AUDIO_TRANSLATION_EDITION_KEY,
+} from './quranAudio';
+import { getQuranTranslationLanguage, setQuranTranslationLanguage } from './quranLanguageState';
+import { AppLanguage, setAppLanguage } from './i18n';
 import { setActiveAdhanReciterId } from './audio';
 import { setCachedLocation } from './useLocation';
 import { TAFSIR_SOURCES } from './tafsirSources';
+
+export type { AppLanguage };
 
 export type TimeFormat = '12h' | '24h';
 export type LocationMode = 'auto' | 'manual';
@@ -103,6 +112,7 @@ export interface AppSettings {
   tafsirSourceId: TafsirSourceId;
   /** User wants Quran text/translation preloaded in the background (offline reading). */
   quranPreloadRequested: boolean;
+  language: AppLanguage;
 }
 
 interface SettingsContextValue {
@@ -136,6 +146,7 @@ interface SettingsContextValue {
   setQuranShowTranslation: (enabled: boolean) => void;
   setTafsirSourceId: (sourceId: TafsirSourceId) => void;
   setQuranPreloadRequested: (requested: boolean) => void;
+  setLanguage: (lang: AppLanguage) => Promise<void> | void;
 }
 
 const SettingsContext = createContext<SettingsContextValue | null>(null);
@@ -173,6 +184,7 @@ const DEFAULTS: AppSettings = {
   quranShowTranslation: true,
   tafsirSourceId: 'jalalayn',
   quranPreloadRequested: true,
+  language: 'en',
 };
 
 const STORAGE_KEY = 'islamic-settings';
@@ -411,6 +423,10 @@ export function sanitizeSettings(raw: unknown): AppSettings {
   const quranPreloadRequested =
     typeof p.quranPreloadRequested === 'boolean' ? p.quranPreloadRequested : DEFAULTS.quranPreloadRequested;
 
+  // 31. language ('en' | 'ur')
+  const language: AppLanguage =
+    p.language === 'ur' || p.language === 'en' ? p.language : DEFAULTS.language;
+
   return {
     settingsVersion,
     methodId,
@@ -442,6 +458,7 @@ export function sanitizeSettings(raw: unknown): AppSettings {
     quranShowTranslation,
     tafsirSourceId,
     quranPreloadRequested,
+    language,
   };
 }
 
@@ -549,6 +566,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         });
         setAudioTranslationEnabled(next.translationAudioEnabled);
         setActiveAdhanReciterId(next.adhanReciterId || 'alafasy');
+        setAppLanguage(next.language);
         if (migrated) {
           AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
         }
@@ -557,6 +575,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         preloadRequestedMem = DEFAULTS.quranPreloadRequested;
         setAudioTranslationEnabled(DEFAULTS.translationAudioEnabled);
         setActiveAdhanReciterId(DEFAULTS.adhanReciterId);
+        setAppLanguage(DEFAULTS.language);
       } finally {
         setReady(true);
       }
@@ -627,6 +646,37 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setSettings((prev) => persist({ ...prev, tafsirSourceId })),
     setQuranPreloadRequested: (quranPreloadRequested) =>
       setSettings((prev) => persist({ ...prev, quranPreloadRequested })),
+    setLanguage: async (nextLang: AppLanguage) => {
+      let nextTafsir: string | undefined;
+      if (nextLang === 'ur') {
+        try {
+          const currentQuranLang = getQuranTranslationLanguage();
+          if (currentQuranLang === 'en') {
+            await setQuranTranslationLanguage('ur');
+          }
+        } catch {}
+
+        if (settings.tafsirSourceId === 'jalalayn') {
+          nextTafsir = 'api-ibn-kathir-urdu';
+        }
+
+        try {
+          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+          if (!savedAudioEdition || savedAudioEdition === DEFAULT_AUDIO_TRANSLATION_EDITION_ID) {
+            await setAudioTranslationEdition('ur.everyayah-shamshad');
+          }
+        } catch {}
+      }
+
+      setAppLanguage(nextLang);
+      setSettings((prev) =>
+        persist({
+          ...prev,
+          language: nextLang,
+          ...(nextTafsir ? { tafsirSourceId: nextTafsir } : {}),
+        })
+      );
+    },
   };
 
   if (!ready) return null;

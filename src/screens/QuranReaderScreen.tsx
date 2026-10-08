@@ -37,6 +37,7 @@ import { TajweedText } from '../components/TajweedText';
 import { stripTajweedHtml } from '../lib/tajweed';
 import { QuranScript, QURAN_SCRIPTS, fetchSurahWithScript, getScriptCacheKey } from '../lib/quranScripts';
 import { retry, cancel, remove, copy, share, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
+import { t } from '../lib/i18n';
 import { useSettings, QURAN_FONT_SIZE_MIN, QURAN_FONT_SIZE_MAX, QURAN_FONT_SIZE_STEP } from '../lib/settings';
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
@@ -1928,7 +1929,7 @@ export default function QuranReaderScreen({
               {/* DISPLAY */}
               <View style={styles.toolsMenuGroup}>
                 <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
-                  DISPLAY
+                  {t('DISPLAY')}
                 </Text>
                 <View
                   style={[
@@ -1964,12 +1965,12 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        Reading Mode
+                        {t('Reading Mode')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
                         {readingMode === 'mushaf'
-                          ? 'Mushaf (continuous)'
-                          : 'Cards (per ayah)'}
+                          ? t('Mushaf (continuous)', 'Mushaf (continuous)')
+                          : t('Cards (per ayah)', 'Cards (per ayah)')}
                       </Text>
                     </View>
                     <View
@@ -2005,7 +2006,7 @@ export default function QuranReaderScreen({
                       </View>
                       <View style={styles.toolsMenuTextGroup}>
                         <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                          Font Size
+                          {t('Font Size')}
                         </Text>
                         <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
                           {fontSize}pt
@@ -2082,13 +2083,13 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        Script
+                        {t('Script')}
                       </Text>
                       <Text
                         style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
                         numberOfLines={1}
                       >
-                        {selectedScriptOption.label} — {selectedScriptOption.description}
+                        {t(selectedScriptOption.label)} — {t(selectedScriptOption.description)}
                       </Text>
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
@@ -2130,10 +2131,10 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        Keep Screen Awake
+                        {t('Keep Screen Awake')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
-                        {keepAwake ? 'Screen stays on while reading' : 'Screen may dim'}
+                        {keepAwake ? t('Screen stays on while reading', 'Screen stays on while reading') : t('Screen may dim', 'Screen may dim')}
                       </Text>
                     </View>
                     <View
@@ -2152,7 +2153,7 @@ export default function QuranReaderScreen({
               {/* LANGUAGE & TAFSIR */}
               <View style={styles.toolsMenuGroup}>
                 <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
-                  LANGUAGE & TAFSIR
+                  {t('LANGUAGE & TAFSIR')}
                 </Text>
                 <View
                   style={[
@@ -2181,7 +2182,7 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        Translation Language
+                        {t('Translation Language')}
                       </Text>
                       <Text
                         style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
@@ -2231,10 +2232,10 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        Translation
+                        {t('Translation')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
-                        {showTranslation ? 'Shown' : 'Hidden'}
+                        {showTranslation ? t('Shown', 'Shown') : t('Hidden', 'Hidden')}
                       </Text>
                     </View>
                     <View
@@ -2276,7 +2277,7 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        Tafsir Source
+                        {t('Tafsir Source')}
                       </Text>
                       <Text
                         style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
@@ -2293,7 +2294,7 @@ export default function QuranReaderScreen({
               {/* NAVIGATE */}
               <View style={styles.toolsMenuGroup}>
                 <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
-                  NAVIGATE
+                  {t('NAVIGATE')}
                 </Text>
                 <View
                   style={[
@@ -2322,7 +2323,7 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        Jump to Juz
+                        {t('Jump to Juz')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
                         {selectedJuz ? `Juz ${selectedJuz} selected` : 'Select a Juz to jump'}
@@ -2359,7 +2360,7 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        Jump to Hizb
+                        {t('Jump to Hizb')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
                         {selectedHizb ? `Hizb ${selectedHizb} selected` : 'Select a Hizb to jump'}
@@ -2373,7 +2374,7 @@ export default function QuranReaderScreen({
               {/* OFFLINE */}
               <View style={styles.toolsMenuGroup}>
                 <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
-                  OFFLINE
+                  {t('OFFLINE')}
                 </Text>
                 <View
                   style={[
@@ -2420,7 +2421,7 @@ export default function QuranReaderScreen({
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
                       <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
-                        {surahDownloaded ? 'Available Offline' : 'Save for Offline'}
+                        {surahDownloaded ? t('Available Offline') : t('Save for Offline')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
                         {surahDownloading
@@ -2877,7 +2878,7 @@ export default function QuranReaderScreen({
             <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                Select Quran Script
+                {t('Select Quran Script')}
               </Text>
               <TouchableOpacity
                 onPress={() => setScriptPickerOpen(false)}

@@ -40,6 +40,7 @@ import {
   HEADER_PADDING_VERTICAL,
   HEADER_SEPARATOR,
 } from './src/lib/headerTokens';
+import { t } from './src/lib/i18n';
 
 import HomeScreen from './src/screens/HomeScreen';
 import QiblaScreen from './src/screens/QiblaScreen';
@@ -162,7 +163,7 @@ function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) =>
             onPress={() => onChange(tab.key)}
             accessibilityRole="tab"
             accessibilityState={{ selected: isActive }}
-            accessibilityLabel={tab.label}
+            accessibilityLabel={t(tab.label)}
           >
             <Ionicons name={iconName} size={iconSize} color={iconColor} />
             <Text
@@ -177,7 +178,7 @@ function TabBar({ active, onChange }: { active: TabKey; onChange: (t: TabKey) =>
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {tab.label}
+              {t(tab.label)}
             </Text>
             <View
               style={[
@@ -324,7 +325,7 @@ function AppHeader({
       <TouchableOpacity
         onPress={onOpenSettings}
         accessibilityRole="button"
-        accessibilityLabel="Open settings"
+        accessibilityLabel={t('Open settings')}
         style={styles.gearBtn}
       >
         <Text style={[styles.gear, { color: colors.textSecondary }]}>⚙︎</Text>

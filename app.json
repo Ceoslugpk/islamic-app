@@ -76,7 +76,8 @@
       "expo-task-manager",
       "expo-video",
       "expo-sharing",
-      "./plugins/withRemoveActivityRecognition"
+      "./plugins/withRemoveActivityRecognition",
+      "expo-localization"
     ]
   }
 }

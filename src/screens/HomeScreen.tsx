@@ -41,6 +41,7 @@ import { GeometricPattern } from '../components/GeometricPattern';
 import { ArabicText } from '../components/ArabicText';
 import { iconSizes } from '../lib/iconMap';
 import { gettingPrayerTimes, preparingDashboard, retry, prayerTimesOfflineError, prayerTimesNeedsConnection } from '../lib/strings';
+import { t } from '../lib/i18n';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity, isAppOnline } from '../lib/useConnectivity';
@@ -596,10 +597,10 @@ export default function HomeScreen({
       <View style={[styles.center, { backgroundColor: colors.bgBase, padding: 24 }]}>
         <Ionicons name="cloud-offline-outline" size={iconSizes.emptyState} color={colors.textMuted} style={{ marginBottom: 16 }} />
         <Text style={[styles.errorText, { color: colors.textPrimary, textAlign: 'center', marginBottom: 8, fontSize: 16, fontWeight: '600' }]}>
-          {error || prayerTimesOfflineError}
+          {t(error || prayerTimesOfflineError)}
         </Text>
         <Text style={{ color: colors.textMuted, textAlign: 'center', marginBottom: 20, fontSize: 14 }}>
-          {prayerTimesNeedsConnection}
+          {t(prayerTimesNeedsConnection)}
         </Text>
         <TouchableOpacity
           style={{
@@ -615,7 +616,7 @@ export default function HomeScreen({
           accessibilityRole="button"
           accessibilityLabel="Retry loading prayer times"
         >
-          <Text style={{ color: colors.onAccent, fontWeight: '600', fontSize: 14 }}>{retry}</Text>
+          <Text style={{ color: colors.onAccent, fontWeight: '600', fontSize: 14 }}>{t(retry)}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -695,7 +696,7 @@ export default function HomeScreen({
             <Text style={[
               { fontFamily: 'Manrope_400Regular', fontSize: 14, color: colors.textSecondary, marginTop: 4 },
             ]}>
-              {timeGreeting}
+              {t(timeGreeting)}
             </Text>
         </Animated.View>
 
@@ -761,7 +762,7 @@ export default function HomeScreen({
                 }}
               >
                 <Text style={[styles.heroEnglishName, { color: colors.textPrimary }]}>
-                  {next ? next.name : 'Fajr'}
+                  {t(next ? next.name : 'Fajr')}
                 </Text>
               </Animated.View>
 
@@ -814,9 +815,9 @@ export default function HomeScreen({
                     style={[styles.heroDivider, { backgroundColor: colors.borderSubtle }]}
                   />
                   <Text style={[styles.heroTransitionText, { color: colors.textMuted }]}>
-                    {currentSegment}{' '}
+                    {t(currentSegment)}{' '}
                     <Text style={{ color: colors.accent }}>→</Text>{' '}
-                    {next ? next.name : 'Fajr'}
+                    {t(next ? next.name : 'Fajr')}
                   </Text>
                 </View>
               </Animated.View>
@@ -869,10 +870,10 @@ export default function HomeScreen({
           <View style={styles.duaRailHeaderRow}>
             <View style={styles.duaRailHeaderLeft}>
               <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent }]}>
-                Dua After Prayer
+                {t('Dua After Prayer')}
               </Text>
               <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted }]}>
-                {lastCompletedPrayer ? `For ${lastCompletedPrayer}` : 'Authentic Adhkar'}
+                {lastCompletedPrayer ? `${t('For')} ${t(lastCompletedPrayer)}` : t('Authentic Adhkar')}
               </Text>
             </View>
 
@@ -960,14 +961,14 @@ export default function HomeScreen({
                             ]}
                           >
                             <Text style={[styles.duaForPrayerTagText, { color: colors.accent }]}>
-                              For {lastCompletedPrayer}
+                              {t('For')} {t(lastCompletedPrayer)}
                             </Text>
                           </View>
                         )}
                       </View>
                       <View style={styles.duaExpandBtn}>
                         <Text style={[styles.duaExpandBtnText, { color: colors.textMuted }]}>
-                          {isExpanded ? 'Less' : 'More'}
+                          {isExpanded ? t('Less') : t('More')}
                         </Text>
                         <Ionicons
                           name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}

@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { getBackIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
+import { t } from '../lib/i18n';
 import {
   HEADER_HORIZONTAL_PADDING,
   HEADER_MAX_WIDTH,
@@ -79,7 +80,7 @@ export function ScreenHeader({
             style={styles.backButton}
             onPress={onBack}
             accessibilityRole="button"
-            accessibilityLabel={backLabel ? `Back to ${backLabel}` : 'Back'}
+            accessibilityLabel={backLabel ? `${t('Back')} ${t(backLabel)}` : t('Back')}
             hitSlop={touchTargetTokens.hitSlop8}
             activeOpacity={0.7}
           >
@@ -89,7 +90,7 @@ export function ScreenHeader({
                 style={[styles.backLabelText, { color: colors.accent }]}
                 numberOfLines={1}
               >
-                {backLabel}
+                {t(backLabel)}
               </Text>
             ) : null}
           </TouchableOpacity>
@@ -108,7 +109,7 @@ export function ScreenHeader({
               numberOfLines={1}
               maxFontSizeMultiplier={1.4}
             >
-              {eyebrow}
+              {t(eyebrow)}
             </Text>
           ) : null}
           <Text
@@ -125,7 +126,7 @@ export function ScreenHeader({
             accessibilityRole="header"
             maxFontSizeMultiplier={1.4}
           >
-            {title}
+            {t(title)}
           </Text>
           {subtitle ? (
             <Text
@@ -137,7 +138,7 @@ export function ScreenHeader({
               ellipsizeMode="tail"
               maxFontSizeMultiplier={1.4}
             >
-              {subtitle}
+              {t(subtitle)}
             </Text>
           ) : null}
         </View>

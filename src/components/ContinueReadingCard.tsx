@@ -15,6 +15,7 @@ import { getReadingPosition, ReadingPosition } from '../lib/continuing';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
+import { t } from '../lib/i18n';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -93,9 +94,9 @@ export function ContinueReadingCard({
     : 0;
   const progressPercent = Math.round(progressRatio * 100);
 
-  const eyebrowText = isResuming ? 'CONTINUE READING' : 'START READING';
+  const eyebrowText = isResuming ? t('CONTINUE READING') : t('START READING');
   const surahTitle = surahMeta?.englishName || (isResuming ? `Surah ${surahNum}` : 'Al-Fatihah');
-  const ayahSubtext = isResuming ? `Ayah ${surahNum}:${ayahNum}` : 'Ayah 1:1 · Begin recitation';
+  const ayahSubtext = isResuming ? `${t('Ayah')} ${surahNum}:${ayahNum}` : `${t('Ayah')} 1:1 · ${t('Begin recitation')}`;
 
   return (
     <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>

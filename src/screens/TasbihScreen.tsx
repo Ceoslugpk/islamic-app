@@ -15,6 +15,7 @@ import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { saveTasbihCount, loadTasbihCounts, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
+import { t } from '../lib/i18n';
 
 export interface DhikrItem {
   id: string;
@@ -179,7 +180,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
       {/* Target Selector & Round Meta */}
       <View style={[styles.metaBar, { borderColor: colors.borderSubtle }]}>
         <View style={styles.metaLeft}>
-          <Text style={[styles.metaLabel, { color: colors.textMuted }]}>TARGET</Text>
+          <Text style={[styles.metaLabel, { color: colors.textMuted }]}>{t('TARGET')}</Text>
           <View style={styles.targetRow}>
             {TARGET_OPTIONS.map((t) => {
               const active = target === t;
@@ -212,7 +213,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
         </View>
 
         <View style={styles.metaRight}>
-          <Text style={[styles.metaLabel, { color: colors.textMuted }]}>ROUNDS</Text>
+          <Text style={[styles.metaLabel, { color: colors.textMuted }]}>{t('ROUNDS')}</Text>
           <Text style={[styles.metaValue, { color: colors.accent }]}>
             {rounds} <Text style={{ color: colors.textMuted, fontSize: 13 }}>({progressInRound}/{target})</Text>
           </Text>
@@ -229,9 +230,9 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
           },
         ]}
       >
-        <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>Today</Text>
+        <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{t('Today')}</Text>
         <Text style={[styles.summaryValue, { color: colors.accent }]}>{todayTotal}</Text>
-        <Text style={[styles.summaryUnit, { color: colors.textMuted }]}>counts</Text>
+        <Text style={[styles.summaryUnit, { color: colors.textMuted }]}>{t('counts')}</Text>
       </View>
 
       {/* Current Dhikr Phrase Card */}
@@ -274,7 +275,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
             {currentCount}
           </Text>
           <Text style={[styles.tapLabel, { color: colors.accent }]}>
-            TAP TO COUNT
+            {t('TAP TO COUNT')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -319,7 +320,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
         >
           <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
           <Text style={[styles.resetText, { color: colors.textSecondary }]}>
-            Reset Count
+            {t('Reset Count')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -327,7 +328,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
       <Hairline style={{ marginTop: 24, marginBottom: 16 }} />
 
       <Text style={[styles.footnote, { color: colors.textMuted }]}>
-        Tap anywhere on the large dial to count. Your count for each phrase is automatically saved offline.
+        {t('Tap anywhere on the large dial to count. Your count for each phrase is automatically saved offline.')}
       </Text>
       </View>
     </ScrollView>

@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 
 export interface EmptyStateProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -19,17 +20,17 @@ export function EmptyState({ icon, title, subtitle, actionLabel, onAction, iconS
   return (
     <View style={styles.wrap}>
       <Ionicons name={icon} size={iconSize} color={colors.textSecondary} />
-      <Text style={[styles.title, { color: colors.textSecondary }]}>{title}</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+      <Text style={[styles.title, { color: colors.textSecondary }]}>{t(title)}</Text>
+      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t(subtitle)}</Text>
       {actionLabel && onAction ? (
         <TouchableOpacity
           onPress={onAction}
           style={[styles.actionBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
           accessibilityRole="button"
-          accessibilityLabel={actionLabel}
+          accessibilityLabel={t(actionLabel)}
           activeOpacity={0.75}
         >
-          <Text style={[styles.actionText, { color: colors.accent }]}>{actionLabel}</Text>
+          <Text style={[styles.actionText, { color: colors.accent }]}>{t(actionLabel)}</Text>
         </TouchableOpacity>
       ) : null}
     </View>

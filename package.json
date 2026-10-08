@@ -19,6 +19,7 @@
     "expo-haptics": "~57.0.3",
     "expo-linear-gradient": "~57.0.2",
     "expo-local-authentication": "~57.0.3",
+    "expo-localization": "~57.0.2",
     "expo-location": "~57.0.20",
     "expo-notifications": "~57.0.21",
     "expo-sensors": "~57.0.3",
@@ -29,8 +30,10 @@
     "expo-system-ui": "~57.0.4",
     "expo-task-manager": "~57.0.21",
     "expo-video": "~57.0.5",
+    "i18next": "^26.4.2",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-i18next": "^17.0.16",
     "react-native": "0.86.3",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-svg": "15.15.4",
@@ -54,7 +57,8 @@
     "test:media": "node tests/test_system_media.mjs",
     "test:security": "node tests/test_security_audit_regressions.mjs",
     "test:header": "node tests/test_header_ux.mjs",
-    "test": "node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs && node tests/test_header_ux.mjs"
+    "test:i18n": "node tests/test_i18n_urdu.mjs",
+    "test": "node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs && node tests/test_header_ux.mjs && node tests/test_i18n_urdu.mjs"
   },
   "private": true
 }

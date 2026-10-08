@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle, useWindowDimensions } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 
 interface SectionHeaderProps {
   eyebrow?: string;
@@ -35,7 +36,7 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
           numberOfLines={1}
           maxFontSizeMultiplier={1.4}
         >
-          {eyebrow}
+          {t(eyebrow)}
         </Text>
       ) : null}
       <Text
@@ -50,7 +51,7 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
         accessibilityRole="header"
         maxFontSizeMultiplier={1.4}
       >
-        {title}
+        {t(title)}
       </Text>
       {subtitle ? (
         <Text
@@ -65,7 +66,7 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
           ]}
           maxFontSizeMultiplier={1.4}
         >
-          {subtitle}
+          {t(subtitle)}
         </Text>
       ) : null}
     </View>

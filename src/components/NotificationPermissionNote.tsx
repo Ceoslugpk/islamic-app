@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 
 export interface NotificationPermissionNoteProps {
   status?: 'denied' | 'undetermined' | 'granted' | string | null;
@@ -49,12 +50,12 @@ export function NotificationPermissionNote({
   };
 
   const isUndetermined = status !== 'denied' && status !== 'granted' && status != null;
-  const title = customTitle || (isUndetermined ? 'Notifications not allowed yet' : 'Notifications are turned off');
+  const title = customTitle || (isUndetermined ? t('Notifications not allowed yet') : t('Notifications are turned off'));
   const description =
     customMessage ||
     (isUndetermined
-      ? 'Allow notifications so Islamic can play the Adhan at prayer time and remind you to read the Quran daily.'
-      : 'To receive Adhan calls, timely prayer alerts, and daily dhikr reminders, please enable notifications for Islamic in your device settings.');
+      ? t('Allow notifications so Islamic can play the Adhan at prayer time and remind you to read the Quran daily.')
+      : t('To receive Adhan calls, timely prayer alerts, and daily dhikr reminders, please enable notifications for Islamic in your device settings.'));
 
   return (
     <View
@@ -104,11 +105,11 @@ export function NotificationPermissionNote({
           onPress={handleOpenSettings}
           activeOpacity={0.8}
           accessibilityRole="button"
-          accessibilityLabel="Open device settings to enable notifications"
+          accessibilityLabel={t('Open device settings to enable notifications')}
         >
           <Ionicons name="settings-outline" size={14} color={colors.onAccent} />
           <Text style={[styles.settingsBtnText, { color: colors.onAccent }]}>
-            Open Settings
+            {t('Open Settings')}
           </Text>
         </TouchableOpacity>
       </View>
