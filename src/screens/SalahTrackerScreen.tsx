@@ -228,7 +228,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
                           isDone && { textDecorationLine: 'line-through', color: colors.textSecondary },
                         ]}
                       >
-                        {p.label}
+                        {t(p.label)}
                       </Text>
                       <Text style={[styles.prayerStatus, { color: isDone ? colors.accent : colors.textMuted }]}>
                         {isDone ? t('Completed') : t('Pending')}

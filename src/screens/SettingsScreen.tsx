@@ -13,6 +13,8 @@ import {
   SafeAreaView,
   Linking,
   BackHandler,
+  Platform,
+  DevSettings,
 } from 'react-native';
 import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -770,8 +772,18 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             ]}
             value={settings.language}
             onChange={(nextLang) => {
-              setLanguage(nextLang);
-              haptic('selection');
+              if (nextLang !== settings.language) {
+                setLanguage(nextLang);
+                haptic('selection');
+                // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
+                // after a reload on Android/iOS — trigger it automatically so the
+                // user doesn't have to restart manually.
+                if (Platform.OS !== 'web') {
+                  setTimeout(() => {
+                    DevSettings.reload();
+                  }, 350);
+                }
+              }
             }}
           />
         </Section>
