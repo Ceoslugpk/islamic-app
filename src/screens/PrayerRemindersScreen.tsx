@@ -25,6 +25,7 @@ import {
   notificationPermissionDenied,
   testAlertPermission,
 } from '../lib/strings';
+import { t } from '../lib/i18n';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
 import {
   configureNotifications,
@@ -221,10 +222,10 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
         await scheduleQuranReminder(quranReminderTime, quranGoal);
       }
       await loadHealth();
-      setTestStatusMessage(`✓ ${notificationsRescheduled}`);
+      setTestStatusMessage(`✓ ${t(notificationsRescheduled)}`);
       setTimeout(() => setTestStatusMessage(null), 3000);
     } catch {
-      setTestStatusMessage(notificationsRescheduleFailed);
+      setTestStatusMessage(t(notificationsRescheduleFailed));
     } finally {
       setIsRescheduling(false);
     }
@@ -236,7 +237,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
     if (next) {
       const granted = await requestNotificationPermission();
       if (!granted) {
-        setPermissionError(notificationPermissionDenied);
+        setPermissionError(t(notificationPermissionDenied));
         return;
       }
       await configureNotifications();
@@ -266,7 +267,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
     if (next) {
       const granted = await requestNotificationPermission();
       if (!granted) {
-        setPermissionError(notificationPermissionDenied);
+        setPermissionError(t(notificationPermissionDenied));
         return;
       }
       await configureNotifications();
@@ -333,16 +334,16 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
 
   async function onSnoozePress() {
     await snoozePrayer('Prayer', 10);
-    setTestStatusMessage(snoozedTenMinutes);
+    setTestStatusMessage(t(snoozedTenMinutes));
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
 
   async function onTestPrayerAlert(prayer: PrayerNameKey) {
     const id = await sendTestPrayerNotification(prayer, 'prayer-times-adhan');
     if (id) {
-      setTestStatusMessage(`✓ ${testAlertSent}`);
+      setTestStatusMessage(`✓ ${t(testAlertSent)}`);
     } else {
-      setTestStatusMessage(testAlertPermission);
+      setTestStatusMessage(t(testAlertPermission));
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -350,9 +351,9 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
   async function onTestPrePrayerAlert() {
     const id = await sendTestPrePrayerNotification('Maghrib', reminderOffsetMinutes || 15);
     if (id) {
-      setTestStatusMessage(`✓ ${testAlertSent}`);
+      setTestStatusMessage(`✓ ${t(testAlertSent)}`);
     } else {
-      setTestStatusMessage(testAlertPermission);
+      setTestStatusMessage(t(testAlertPermission));
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -360,9 +361,9 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
   async function onTestQuranAlert() {
     const id = await sendTestQuranNotification();
     if (id) {
-      setTestStatusMessage('✓ Quran reminder test sent — tap "Read Now" to try the reader link.');
+      setTestStatusMessage(t('✓ Quran reminder test sent — tap "Read Now" to try the reader link.'));
     } else {
-      setTestStatusMessage(testAlertPermission);
+      setTestStatusMessage(t(testAlertPermission));
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -373,9 +374,9 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
     const updated = await setQuranDailyGoalCompleted(nextCompleted);
     setQuranProgress(updated);
     if (nextCompleted) {
-      setTestStatusMessage(`✓ ${dailyGoalDone}`);
+      setTestStatusMessage(`✓ ${t(dailyGoalDone)}`);
     } else {
-      setTestStatusMessage(dailyGoalReopened);
+      setTestStatusMessage(t(dailyGoalReopened));
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -416,11 +417,11 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
     >
       <View style={styles.contentWrap}>
         <ScreenHeader
-          title="Prayer Reminders"
-          eyebrow="Tools"
-          subtitle="Manage daily prayer alarms, adhan voices & Quran reading habit"
+          title={t('Prayer Reminders')}
+          eyebrow={t('Tools')}
+          subtitle={t('Manage daily prayer alarms, adhan voices & Quran reading habit')}
           onBack={onBack}
-          backLabel="Tools"
+          backLabel={t('Tools')}
         />
 
         {testStatusMessage && (
@@ -431,13 +432,13 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
         )}
 
         {/* Master Reminder Card */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>Prayer reminders</Text>
+        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{t('Prayer reminders')}</Text>
         <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           <View style={styles.row}>
             <View style={styles.rowFlex}>
-              <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Prayer reminders</Text>
+              <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{t('Prayer reminders')}</Text>
               <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-                Alarms before and at each prayer time — on time even when the app is closed
+                {t('Alarms before and at each prayer time — on time even when the app is closed')}
               </Text>
             </View>
             <TouchableOpacity
@@ -467,10 +468,10 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                 style={[styles.errorAction, { borderColor: colors.accent }]}
                 activeOpacity={0.8}
                 accessibilityRole="button"
-                accessibilityLabel="Open device settings to enable notifications"
+                accessibilityLabel={t('Open device settings to enable notifications')}
               >
                 <Ionicons name="settings-outline" size={14} color={colors.accent} />
-                <Text style={[styles.errorActionText, { color: colors.accent }]}>Open Settings</Text>
+                <Text style={[styles.errorActionText, { color: colors.accent }]}>{t('Open Settings')}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -482,13 +483,13 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
             <View style={styles.healthLoading}>
               <ActivityIndicator size="small" color={colors.accent} />
               <Text style={[styles.healthLoadingText, { color: colors.textMuted }]}>
-                Checking your alarms…
+                {t('Checking your alarms…')}
               </Text>
             </View>
           ) : (
             <View style={styles.healthRow}>
               <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>Status</Text>
+                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Status')}</Text>
                 <View style={styles.healthStatusRow}>
                   <View
                     style={[
@@ -517,25 +518,25 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                     ]}
                   >
                     {health?.status === 'active'
-                      ? 'Active'
+                      ? t('Active')
                       : health?.status === 'permission-needed'
-                      ? 'Permission needed'
-                      : 'Paused'}
+                      ? t('Permission needed')
+                      : t('Paused')}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>Next prayer</Text>
+                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Next prayer')}</Text>
                 <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
                   {health?.nextPrayer ? `${health.nextPrayer.name} · ${health.nextPrayer.time}` : '—'}
                 </Text>
               </View>
 
               <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>Today</Text>
+                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Today')}</Text>
                 <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
-                  {health ? `${health.scheduledCounts.today} today` : '—'}
+                  {health ? `${health.scheduledCounts.today} ${t('today')}` : '—'}
                 </Text>
               </View>
             </View>
@@ -550,7 +551,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               disabled={isRescheduling}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel="Re-schedule alarms now"
+              accessibilityLabel={t('Re-schedule alarms now')}
             >
               {isRescheduling ? (
                 <ActivityIndicator size="small" color={colors.accent} />
@@ -558,7 +559,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                 <Ionicons name="refresh" size={16} color={colors.accent} />
               )}
               <Text style={[styles.rescheduleBtnText, { color: colors.accent }]}>
-                {isRescheduling ? 'Scheduling alarms…' : 'Re-schedule now'}
+                {isRescheduling ? t('Scheduling alarms…') : t('Re-schedule now')}
               </Text>
             </TouchableOpacity>
 
@@ -567,10 +568,10 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               onPress={onSnoozePress}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel="Snooze 10 minutes"
+              accessibilityLabel={t('Snooze 10 minutes')}
             >
               <Ionicons name="time-outline" size={16} color={colors.textPrimary} />
-              <Text style={[styles.snoozeBtnText, { color: colors.textPrimary }]}>Snooze 10m</Text>
+              <Text style={[styles.snoozeBtnText, { color: colors.textPrimary }]}>{t('Snooze 10m')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -581,7 +582,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
             <View style={styles.playingLeft}>
               <Ionicons name="musical-notes" size={20} color={colors.accent} />
               <View>
-                <Text style={[styles.playingTitle, { color: colors.textPrimary }]}>Adhan Playing</Text>
+                <Text style={[styles.playingTitle, { color: colors.textPrimary }]}>{t('Adhan Playing')}</Text>
                 <Text style={[styles.playingReciter, { color: colors.accent }]}>{currentReciter.name}</Text>
               </View>
             </View>
@@ -590,17 +591,17 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               onPress={() => stopAdhanPlayback()}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel="Stop adhan playback"
+              accessibilityLabel={t('Stop adhan playback')}
             >
               <Ionicons name="stop" size={16} color={colors.bgBase} />
-              <Text style={[styles.stopAdhanText, { color: colors.bgBase }]}>Stop Adhan</Text>
+              <Text style={[styles.stopAdhanText, { color: colors.bgBase }]}>{t('Stop Adhan')}</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Per-Prayer Controls (Fajr, Dhuhr, Asr, Maghrib, Isha) */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
-          Per-prayer alerts &amp; audio
+          {t('Per-prayer alerts & audio')}
         </Text>
         <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           {PRAYER_LIST.map((p, idx) => {
@@ -661,7 +662,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                             { color: config.adhan && config.enabled ? colors.accent : colors.textMuted },
                           ]}
                         >
-                          Adhan
+                          {t('Adhan')}
                         </Text>
                       </TouchableOpacity>
 
@@ -687,7 +688,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                             { color: config.vibration && config.enabled ? colors.accent : colors.textMuted },
                           ]}
                         >
-                          Vibrate
+                          {t('Vibrate')}
                         </Text>
                       </TouchableOpacity>
 
@@ -697,7 +698,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                         accessibilityLabel={`Test notification for ${p.key}`}
                       >
                         <Ionicons name="notifications-outline" size={13} color={colors.textSecondary} />
-                        <Text style={[styles.miniPillText, { color: colors.textSecondary }]}>Test</Text>
+                        <Text style={[styles.miniPillText, { color: colors.textSecondary }]}>{t('Test')}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -727,12 +728,11 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
 
         {/* Pre-Prayer Advance Notice Offset */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
-          Pre-prayer advance notice — {reminderOffsetMinutes === 0 ? 'off' : `${reminderOffsetMinutes} min before`}
+          {t('Pre-prayer advance notice')} — {reminderOffsetMinutes === 0 ? t('off') : `${reminderOffsetMinutes} ${t('min before')}`}
         </Text>
         <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>
-            Send an early heads-up before each prayer so you can prepare wudu. Choose "Off" for alerts
-            only at prayer time.
+            {t('Send an early heads-up before each prayer so you can prepare wudu. Choose "Off" for alerts only at prayer time.')}
           </Text>
           <View style={styles.segRow}>
             {REMINDER_OFFSETS.map((item) => {
@@ -748,7 +748,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   onPress={() => onSelectOffset(item.value)}
                   disabled={!remindersEnabled}
                   accessibilityRole="button"
-                  accessibilityLabel={item.value === 0 ? 'Off' : `${item.value} minutes before`}
+                  accessibilityLabel={item.value === 0 ? t('Off') : `${item.value} ${t('minutes before')}`}
                 >
                   <Text
                     style={[
@@ -762,7 +762,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                       },
                     ]}
                   >
-                    {item.label}
+                    {t(item.label)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -772,7 +772,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
 
         {/* Adhan Reciter Choice */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
-          Adhan reciter
+          {t('Adhan reciter')}
         </Text>
         <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           <TouchableOpacity
@@ -798,7 +798,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               </Text>
             </View>
             <View style={styles.chevronWrap}>
-              <Text style={[styles.changeText, { color: colors.accent }]}>Change</Text>
+              <Text style={[styles.changeText, { color: colors.accent }]}>{t('Change')}</Text>
               <Ionicons name="chevron-forward" size={16} color={colors.accent} />
             </View>
           </TouchableOpacity>
@@ -817,7 +817,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               ]}
               onPress={onTestAdhanSound}
               accessibilityRole="button"
-              accessibilityLabel={isPlayingAdhan ? 'Stop adhan sound' : 'Test adhan sound'}
+              accessibilityLabel={isPlayingAdhan ? t('Stop adhan playback') : t('Test adhan sound')}
             >
               <Ionicons
                 name={isPlayingAdhan ? 'stop' : 'volume-high'}
@@ -830,7 +830,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   { color: isPlayingAdhan ? colors.bgBase : colors.accent },
                 ]}
               >
-                {isPlayingAdhan ? 'Stop Playing' : `Preview ${currentReciter.name}`}
+                {isPlayingAdhan ? t('Stop Playing') : `${t('Preview')} ${currentReciter.name}`}
               </Text>
             </TouchableOpacity>
 
@@ -838,21 +838,21 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               style={[styles.stopIconBtn, { borderColor: colors.borderSubtle }]}
               onPress={() => stopAdhanPlayback()}
               accessibilityRole="button"
-              accessibilityLabel="Stop adhan"
+              accessibilityLabel={t('Stop adhan')}
             >
               <Ionicons name="stop-circle-outline" size={16} color={colors.textPrimary} />
-              <Text style={[styles.stopIconBtnText, { color: colors.textPrimary }]}>Stop Adhan</Text>
+              <Text style={[styles.stopIconBtnText, { color: colors.textPrimary }]}>{t('Stop Adhan')}</Text>
             </TouchableOpacity>
           </View>
         </View>
 
         {/* Test Notification Buttons */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
-          Test notifications
+          {t('Test notifications')}
         </Text>
         <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>
-            Send a test alert to try sounds, vibration, and notification buttons (Mark Prayed, Stop Adhan, Snooze 10m).
+            {t('Send a test alert to try sounds, vibration, and notification buttons (Mark Prayed, Stop Adhan, Snooze 10m).')}
           </Text>
 
           <View style={styles.testGrid}>
@@ -860,12 +860,12 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               style={[styles.testCardBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
               onPress={() => onTestPrayerAlert('Fajr')}
               accessibilityRole="button"
-              accessibilityLabel="Test at-prayer notification"
+              accessibilityLabel={t('Test at-prayer notification')}
             >
               <Ionicons name="notifications" size={20} color={colors.accent} />
-              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>Test at-prayer alert</Text>
+              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>{t('Test at-prayer alert')}</Text>
               <Text style={[styles.testCardDesc, { color: colors.textMuted }]}>
-                Includes Mark Prayed, Stop Adhan &amp; Snooze buttons
+                {t('Includes Mark Prayed, Stop Adhan & Snooze buttons')}
               </Text>
             </TouchableOpacity>
 
@@ -873,12 +873,12 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               style={[styles.testCardBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
               onPress={onTestPrePrayerAlert}
               accessibilityRole="button"
-              accessibilityLabel="Test pre-prayer countdown alert"
+              accessibilityLabel={t('Test pre-prayer countdown alert')}
             >
               <Ionicons name="hourglass-outline" size={20} color={colors.accent} />
-              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>Test pre-prayer alert</Text>
+              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>{t('Test pre-prayer alert')}</Text>
               <Text style={[styles.testCardDesc, { color: colors.textMuted }]}>
-                Includes Open Prayer &amp; Snooze buttons
+                {t('Includes Open Prayer & Snooze buttons')}
               </Text>
             </TouchableOpacity>
 
@@ -886,12 +886,12 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               style={[styles.testCardBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
               onPress={onTestQuranAlert}
               accessibilityRole="button"
-              accessibilityLabel="Test Quran reminder alert"
+              accessibilityLabel={t('Test Quran reminder alert')}
             >
               <Ionicons name="book-outline" size={20} color={colors.accent} />
-              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>Test Quran reminder</Text>
+              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>{t('Test Quran reminder')}</Text>
               <Text style={[styles.testCardDesc, { color: colors.textMuted }]}>
-                Includes Read Now, Snooze &amp; Dismiss buttons
+                {t('Includes Read Now, Snooze & Dismiss buttons')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -899,17 +899,17 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
 
         {/* Daily Quran Reminder & Reading Goal */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
-          Daily Quran reminder &amp; reading goal
+          {t('Daily Quran reminder & reading goal')}
         </Text>
         <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
           {/* Quran Reminder Master Toggle */}
           <View style={styles.row}>
             <View style={styles.rowFlex}>
-              <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>Quran reading reminder</Text>
+              <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{t('Quran reading reminder')}</Text>
               <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
                 {quranReminderEnabled
-                  ? `On · daily at ${quranReminderTime}`
-                  : 'Off — no daily reminder'}
+                  ? `${t('On')} · ${t('daily at')} ${quranReminderTime}`
+                  : t('Off — no daily reminder')}
               </Text>
             </View>
             <TouchableOpacity
@@ -934,30 +934,30 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
 
           {/* Configurable Reminder Time */}
           <View style={styles.sectionInner}>
-            <Text style={[styles.innerTitle, { color: colors.textPrimary }]}>Reminder time</Text>
+            <Text style={[styles.innerTitle, { color: colors.textPrimary }]}>{t('Reminder time')}</Text>
             <Text style={[styles.innerDesc, { color: colors.textMuted }]}>
-              Scheduled on your device — fires even without internet
+              {t('Scheduled on your device — fires even without internet')}
             </Text>
 
             <View style={styles.presetTimeRow}>
-              {QURAN_REMINDER_PRESETS.map((t) => {
-                const isSelected = quranReminderTime === t;
+              {QURAN_REMINDER_PRESETS.map((tVal) => {
+                const isSelected = quranReminderTime === tVal;
                 return (
                   <TouchableOpacity
-                    key={t}
+                    key={tVal}
                     style={[
                       styles.timePill,
                       { borderColor: colors.borderSubtle },
                       isSelected && { backgroundColor: colors.accentDim, borderColor: colors.accent },
                     ]}
                     onPress={() => {
-                      setQuranReminderTime(t);
+                      setQuranReminderTime(tVal);
                       if (quranReminderEnabled) {
-                        scheduleQuranReminder(t, quranGoal);
+                        scheduleQuranReminder(tVal, quranGoal);
                       }
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel={`Set Quran reminder to ${t}`}
+                    accessibilityLabel={`Set Quran reminder to ${tVal}`}
                   >
                     <Text
                       style={[
@@ -965,7 +965,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                         { color: isSelected ? colors.accent : colors.textSecondary },
                       ]}
                     >
-                      {t}
+                      {tVal}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -977,15 +977,15 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
 
           {/* Reading Goal Type & Target */}
           <View style={styles.sectionInner}>
-            <Text style={[styles.innerTitle, { color: colors.textPrimary }]}>Daily reading goal</Text>
+            <Text style={[styles.innerTitle, { color: colors.textPrimary }]}>{t('Daily reading goal')}</Text>
             <Text style={[styles.innerDesc, { color: colors.textMuted }]}>
-              The reminder pauses automatically once today&apos;s goal is met
+              {t("The reminder pauses automatically once today's goal is met")}
             </Text>
 
             <View style={styles.goalTypeRow}>
               {(['minutes', 'pages', 'custom'] as QuranGoalType[]).map((type) => {
                 const isSelected = quranGoal?.type === type;
-                const label = type === 'minutes' ? 'Minutes' : type === 'pages' ? 'Pages' : 'Ayahs';
+                const label = type === 'minutes' ? t('Minutes') : type === 'pages' ? t('Pages') : t('Ayahs');
                 return (
                   <TouchableOpacity
                     key={type}
@@ -1024,13 +1024,13 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   setQuranGoal({ type: goalType, target: nextTarget });
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Decrease target"
+                accessibilityLabel={t('Decrease target')}
               >
                 <Ionicons name="remove" size={18} color={colors.textPrimary} />
               </TouchableOpacity>
 
               <Text style={[styles.stepperVal, { color: colors.textPrimary }]}>
-                {goalTarget} {goalType === 'minutes' ? 'minutes / day' : goalType === 'pages' ? 'pages / day' : 'ayahs / day'}
+                {goalTarget} {goalType === 'minutes' ? t('minutes / day') : goalType === 'pages' ? t('pages / day') : t('ayahs / day')}
               </Text>
 
               <TouchableOpacity
@@ -1041,7 +1041,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   setQuranGoal({ type: goalType, target: nextTarget });
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Increase target"
+                accessibilityLabel={t('Increase target')}
               >
                 <Ionicons name="add" size={18} color={colors.textPrimary} />
               </TouchableOpacity>
@@ -1052,10 +1052,10 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               <View style={styles.goalProgressHeader}>
                 <View>
                   <Text style={[styles.goalProgressLabel, { color: colors.textMuted }]}>
-                    Today&apos;s progress
+                    {t("Today's progress")}
                   </Text>
                   <Text style={[styles.goalProgressValue, { color: colors.textPrimary }]}>
-                    {goalCurrent} / {goalTarget} {goalType === 'minutes' ? 'mins' : goalType === 'pages' ? 'pages' : 'ayahs'}
+                    {goalCurrent} / {goalTarget} {goalType === 'minutes' ? t('mins') : goalType === 'pages' ? t('pages') : t('ayahs')}
                   </Text>
                 </View>
                 <View
@@ -1073,7 +1073,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                       { color: isGoalMet ? '#10B981' : colors.accent },
                     ]}
                   >
-                    {isGoalMet ? '✓ Goal met' : 'In progress'}
+                    {isGoalMet ? t('✓ Goal met') : t('In progress')}
                   </Text>
                 </View>
               </View>
@@ -1102,7 +1102,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   ]}
                   onPress={onToggleQuranGoalToday}
                   accessibilityRole="button"
-                  accessibilityLabel="Toggle goal completed today"
+                  accessibilityLabel={t('Toggle goal completed today')}
                 >
                   <Ionicons
                     name={isGoalMet ? 'checkmark-circle' : 'checkmark-circle-outline'}
@@ -1110,7 +1110,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                     color={isGoalMet ? '#10B981' : colors.accent}
                   />
                   <Text style={[styles.markGoalText, { color: isGoalMet ? '#10B981' : colors.accent }]}>
-                    {isGoalMet ? 'Done for today' : 'Mark done for today'}
+                    {isGoalMet ? t('Done for today') : t('Mark done for today')}
                   </Text>
                 </TouchableOpacity>
 
@@ -1118,10 +1118,10 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   style={[styles.readNowBtn, { backgroundColor: colors.accent }]}
                   onPress={onOpenQuranReaderNow}
                   accessibilityRole="button"
-                  accessibilityLabel="Read Quran now at saved position"
+                  accessibilityLabel={t('Read Quran now at saved position')}
                 >
                   <Ionicons name="book" size={14} color={colors.bgBase} />
-                  <Text style={[styles.readNowText, { color: colors.bgBase }]}>Read Now</Text>
+                  <Text style={[styles.readNowText, { color: colors.bgBase }]}>{t('Read Now')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1131,19 +1131,14 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
         {/* Android Reliability Info Card */}
         <Card style={styles.infoCard} padded>
           <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>
-            How your reminders work
+            {t('How your reminders work')}
           </Text>
           <Text style={[styles.infoText, { color: colors.textMuted }]}>
-            • <Text style={{ color: colors.textPrimary }}>On time, even offline:</Text> Your alarms use the same prayer
-            schedule saved on your device, so they fire without an internet connection.{'\n\n'}
-            • <Text style={{ color: colors.textPrimary }}>Your preferences, honored:</Text> Dedicated alarm channels keep
-            adhan, sound, vibration, and silent alerts exactly as you set them.{'\n\n'}
-            • <Text style={{ color: colors.textPrimary }}>Handy notification buttons:</Text> Tap 'Mark Prayed' to log your
-            salah, 'Stop Adhan' to silence recitation, or 'Snooze' for 10 more minutes.{'\n\n'}
-            • <Text style={{ color: colors.textPrimary }}>Recovers on its own:</Text> Alarms come back after a device
-            restart and adjust automatically for timezone changes and new days.{'\n\n'}
-            • <Text style={{ color: colors.textPrimary }}>Goal-aware:</Text> Once you finish your daily reading goal
-            (minutes, pages, or ayahs), the Quran reminder stays quiet for the rest of the day.
+            • <Text style={{ color: colors.textPrimary }}>{t('On time, even offline:')}</Text> {t('Your alarms use the same prayer schedule saved on your device, so they fire without an internet connection.')}{'\n\n'}
+            • <Text style={{ color: colors.textPrimary }}>{t('Your preferences, honored:')}</Text> {t('Dedicated alarm channels keep adhan, sound, vibration, and silent alerts exactly as you set them.')}{'\n\n'}
+            • <Text style={{ color: colors.textPrimary }}>{t('Handy notification buttons:')}</Text> {t("Tap 'Mark Prayed' to log your salah, 'Stop Adhan' to silence recitation, or 'Snooze' for 10 more minutes.")}{'\n\n'}
+            • <Text style={{ color: colors.textPrimary }}>{t('Recovers on its own:')}</Text> {t('Alarms come back after a device restart and adjust automatically for timezone changes and new days.')}{'\n\n'}
+            • <Text style={{ color: colors.textPrimary }}>{t('Goal-aware:')}</Text> {t('Once you finish your daily reading goal (minutes, pages, or ayahs), the Quran reminder stays quiet for the rest of the day.')}
           </Text>
         </Card>
 

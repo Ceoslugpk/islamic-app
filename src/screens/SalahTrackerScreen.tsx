@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
@@ -126,11 +127,11 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
     >
       <View style={styles.contentWrap}>
         <ScreenHeader
-          eyebrow="Daily Obligations"
-          title="Salah Tracker"
-          subtitle="Track your daily 5 prayers and build a consistent habit"
+          eyebrow={t('Daily Obligations')}
+          title={t('Salah Tracker')}
+          subtitle={t('Track your daily 5 prayers and build a consistent habit')}
           onBack={onBack}
-          backLabel="Tools"
+          backLabel={t('Tools')}
         />
 
       {/* Summary Scorecard */}
@@ -139,7 +140,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
           <Text style={[styles.statValue, { color: colors.textPrimary }]}>
             {completedCount}<Text style={{ fontSize: 16, color: colors.textMuted }}>/5</Text>
           </Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Today's Prayers</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t("Today's Prayers")}</Text>
           <View style={[styles.progressBarTrack, { backgroundColor: colors.borderSubtle }]}>
             <View
               style={[
@@ -155,15 +156,15 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
             <Text style={[styles.statValue, { color: colors.accent }]}>{streak}</Text>
             <Ionicons name="flame" size={20} color={colors.accent} />
           </View>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>Day Streak</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('Day Streak')}</Text>
           <Text style={[styles.streakHint, { color: colors.textSecondary }]}>
-            {streak === 0 ? 'Start your streak today' : `${streak} continuous days`}
+            {streak === 0 ? t('Start your streak today') : `${streak} ${t('continuous days')}`}
           </Text>
         </Card>
       </View>
 
       {/* Today's Checklist */}
-      <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>TODAY'S PRAYERS</Text>
+      <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t("TODAY'S PRAYERS")}</Text>
       <View style={[styles.listContainer, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
         {loading && !data ? (
           <View style={styles.loadingWrap}>
@@ -172,9 +173,9 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
         ) : fetchFailed && !data ? (
           <EmptyState
             icon="cloud-offline-outline"
-            title="Prayer times unavailable"
-            subtitle="Couldn't load today's prayer times. Check your connection or location, then try again."
-            actionLabel="Retry"
+            title={t('Prayer times unavailable')}
+            subtitle={t("Couldn't load today's prayer times. Check your connection or location, then try again.")}
+            actionLabel={t('Retry')}
             onAction={() => {
               setLoading(true);
               setFetchFailed(false);
@@ -207,7 +208,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
                   activeOpacity={0.7}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: isDone }}
-                  accessibilityLabel={`${p.label} at ${formatted}, ${isDone ? 'completed' : 'not completed'}`}
+                  accessibilityLabel={`${p.label} at ${formatted}, ${isDone ? t('completed') : t('not completed')}`}
                 >
                   <View style={styles.rowLeft}>
                     <View
@@ -230,7 +231,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
                         {p.label}
                       </Text>
                       <Text style={[styles.prayerStatus, { color: isDone ? colors.accent : colors.textMuted }]}>
-                        {isDone ? 'Completed' : 'Pending'}
+                        {isDone ? t('Completed') : t('Pending')}
                       </Text>
                     </View>
                   </View>
@@ -249,7 +250,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
       {recentHistory.length > 0 && (
         <>
           <Text style={[styles.sectionTitle, { color: colors.textMuted, marginTop: 28 }]}>
-            RECENT DAYS HISTORY
+            {t('RECENT DAYS HISTORY')}
           </Text>
           <View style={[styles.historyContainer, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
             {recentHistory.map((item, idx) => {

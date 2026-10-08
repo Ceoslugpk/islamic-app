@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { iconSizes } from '../lib/iconMap';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
@@ -114,12 +115,12 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
   const handleClearAll = () => {
     if (downloadedSurahs.length === 0) return;
     Alert.alert(
-      'Clear All Downloads',
-      `Are you sure you want to remove all ${downloadedSurahs.length} downloaded surah audio files? This will free up ${formatBytes(totalStorageUsed)}.`,
+      t('Clear All Downloads'),
+      t('Are you sure you want to remove all downloaded surah audio files?'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Clear All',
+          text: t('Clear All'),
           style: 'destructive',
           onPress: () => {
             clearAllDownloads().catch(() => {});
@@ -135,7 +136,7 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
     removeSurahDownload(item.edition, item.surah, item.bitrate).catch(() => {});
     saveUndoState({
       id: `${item.edition}:${item.surah}:${item.bitrate}`,
-      action: 'Download removed',
+      action: t('Download removed'),
       revert: () => {
         downloadSurah(item.edition, item.surah, item.bitrate, {
           surahName: item.surahName,
@@ -169,10 +170,10 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
       <View style={styles.contentWrap}>
         {/* Header */}
         <ScreenHeader
-          eyebrow="Offline"
-          title="Downloads"
+          eyebrow={t('Offline')}
+          title={t('Downloads')}
           onBack={onBack}
-          backLabel="Library"
+          backLabel={t('Library')}
         />
 
         {/* Quran Text Preload — offline reading data (NOT audio) */}
@@ -215,10 +216,10 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
             </View>
             <View style={styles.textHeaderMain}>
               <Text style={[styles.textTitle, { color: colors.textPrimary }]}>
-                Quran Text & Translation
+                {t('Quran Text & Translation')}
               </Text>
               <Text style={[styles.textSubtitle, { color: colors.textMuted }]} numberOfLines={2}>
-                For offline reading (not audio) · {flag} {edition.name}
+                {t('For offline reading (not audio)')} · {flag} {edition.name}
               </Text>
             </View>
             <TouchableOpacity
@@ -233,10 +234,10 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
               accessibilityRole="button"
               accessibilityLabel={
                 preloadProgress.isRunning
-                  ? 'Pause Quran text download'
+                  ? t('Pause')
                   : preloadProgress.cached > 0
-                  ? 'Resume Quran text download'
-                  : 'Preload Quran text for offline reading'
+                  ? t('Resume')
+                  : t('Preload')
               }
             >
               <Text
@@ -246,10 +247,10 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
                 ]}
               >
                 {preloadProgress.isRunning
-                  ? 'Pause'
+                  ? t('Pause')
                   : preloadProgress.cached > 0
-                  ? 'Resume'
-                  : 'Preload'}
+                  ? t('Resume')
+                  : t('Preload')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -257,26 +258,26 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
           <View style={styles.textStatusRow}>
             <Text style={[styles.textStatus, { color: colors.textSecondary }]}>
               {preloadProgress.isRunning
-                ? `Downloading text… ${preloadProgress.cached}/114` +
+                ? `${t('Downloading text…')} ${preloadProgress.cached}/114` +
                   (preloadProgress.currentSurah
-                    ? ` · Surah ${preloadProgress.currentSurah}`
+                    ? ` · ${t('Surah')} ${preloadProgress.currentSurah}`
                     : '')
                 : preloadProgress.isComplete
-                ? 'All 114 surahs available offline'
-                : `${preloadProgress.cached}/114 surahs cached`}
+                ? t('All 114 surahs available offline')
+                : `${preloadProgress.cached}/114 ${t('surahs cached')}`}
             </Text>
             {!preloadProgress.isRunning && (
               <TouchableOpacity
                 onPress={handleVerifyText}
                 disabled={verifyingText}
                 accessibilityRole="button"
-                accessibilityLabel="Verify locally stored Quran text"
+                accessibilityLabel={t('Verify locally stored Quran text')}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 activeOpacity={0.75}
                 style={verifyingText ? { opacity: 0.6 } : undefined}
               >
                 <Text style={[styles.textVerifyBtn, { color: colors.accent }]}>
-                  {verifyingText ? 'Checking…' : 'Verify'}
+                  {verifyingText ? t('Checking…') : t('Verify')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -299,23 +300,23 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
           {textVerification && !textVerification.ok && (
             <View style={[styles.verifyNote, { borderColor: colors.borderSubtle }]}>
               <Text style={[styles.verifyNoteText, { color: colors.textMuted }]}>
-                {textVerification.valid + textVerification.invalidSurahs.length}/114 verified ·{' '}
-                {textVerification.missingSurahs.length} missing ·{' '}
-                {textVerification.invalidSurahs.length} incomplete
+                {textVerification.valid + textVerification.invalidSurahs.length}/114 {t('verified')} ·{' '}
+                {textVerification.missingSurahs.length} {t('missing')} ·{' '}
+                {textVerification.invalidSurahs.length} {t('incomplete')}
               </Text>
               <TouchableOpacity
                 style={[styles.repairBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
                 onPress={handleRepairText}
                 accessibilityRole="button"
-                accessibilityLabel="Re-download incomplete surahs"
+                accessibilityLabel={t('Re-download incomplete surahs')}
               >
-                <Text style={[styles.repairText, { color: colors.accent }]}>Repair</Text>
+                <Text style={[styles.repairText, { color: colors.accent }]}>{t('Repair')}</Text>
               </TouchableOpacity>
             </View>
           )}
           {textVerification && textVerification.ok && (
             <Text style={[styles.verifyOkText, { color: colors.accent }]}>
-              Verified offline · {textVerification.valid}/114 surahs valid
+              {t('Verified offline')} · {textVerification.valid}/114 {t('surahs valid')}
             </Text>
           )}
         </View>
@@ -335,12 +336,11 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
             <View style={styles.storageHeaderRow}>
               <Ionicons name="cloud-done-outline" size={16} color={colors.accent} />
               <Text style={[styles.storageTitle, { color: colors.textPrimary }]}>
-                Storage Used: {formatBytes(totalStorageUsed)}
+                {t('Storage Used')}: {formatBytes(totalStorageUsed)}
               </Text>
             </View>
             <Text style={[styles.storageSub, { color: colors.textMuted }]}>
-              {downloadedSurahs.length} {downloadedSurahs.length === 1 ? 'surah' : 'surahs'} saved
-              for offline playback
+              {downloadedSurahs.length} {t('surahs saved for offline playback')}
             </Text>
           </View>
           {downloadedSurahs.length > 0 && (
@@ -351,9 +351,9 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
               ]}
               onPress={handleClearAll}
               accessibilityRole="button"
-              accessibilityLabel="Clear all downloads"
+              accessibilityLabel={t('Clear all downloads')}
             >
-              <Text style={[styles.clearAllText, { color: colors.textSecondary }]}>Clear All</Text>
+              <Text style={[styles.clearAllText, { color: colors.textSecondary }]}>{t('Clear All')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -375,10 +375,10 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
                 <Ionicons name="cloud-download-outline" size={iconSizes.emptyState} color={colors.textMuted} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                No Downloads Yet
+                {t('No Downloads Yet')}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                You can download full surahs from the Quran screen to listen offline without internet.
+                {t('You can download full surahs from the Quran screen to listen offline without internet.')}
               </Text>
               {onOpenSurah && (
                 <TouchableOpacity
@@ -388,10 +388,10 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
                   ]}
                   onPress={() => onOpenSurah(1)}
                   accessibilityRole="button"
-                  accessibilityLabel="Browse Quran Surahs"
+                  accessibilityLabel={t('Browse Quran Surahs')}
                 >
                   <Text style={[styles.exploreBtnText, { color: colors.onAccent }]}>
-                    Browse Surahs
+                    {t('Browse Surahs')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -486,7 +486,7 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
                     ]}
                     onPress={() => handleTogglePlay(item)}
                     accessibilityRole="button"
-                    accessibilityLabel={isPlaying ? 'Pause audio' : 'Play audio'}
+                    accessibilityLabel={isPlaying ? t('Pause audio') : t('Play audio')}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
                     <Ionicons
@@ -503,7 +503,7 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
                     ]}
                     onPress={() => handleRemoveItem(item)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove Surah ${englishName} download`}
+                    accessibilityLabel={`${t('Remove')} ${englishName}`}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
                     <Ionicons name="trash-outline" size={iconSizes.small} color={colors.textMuted} />

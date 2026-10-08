@@ -24,6 +24,7 @@ import { AudioPlayerModal } from '../components/AudioPlayerModal';
 import { EmptyState } from '../components/EmptyState';
 import { SkeletonCard } from '../components/Skeleton';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
+import { t } from '../lib/i18n';
 import {
   addPlaybackStatusListener,
   addQueueListener,
@@ -188,7 +189,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
       );
       setSavedPresetIds(savedIds);
     } catch {
-      setError('Could not load reciters. Please check your connection.');
+      setError(t('Could not load reciters. Please check your connection.'));
     } finally {
       setLoading(false);
     }
@@ -358,7 +359,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
     if (!target) return;
     saveUndoState({
       id,
-      action: 'Playlist deleted',
+      action: t('Playlist deleted'),
       revert: () => {
         savePlaylist(target);
         setPlaylists(loadPlaylists());
@@ -441,17 +442,17 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   }, [reciters, reciterSearch]);
 
   const tabsConfig = [
-    { key: 'reciters', label: 'Reciters', icon: 'people-outline' },
-    { key: 'translations', label: 'Translation Audio', icon: 'language-outline' },
-    { key: 'recent', label: 'Recent', icon: 'time-outline' },
-    { key: 'playlists', label: 'Playlists', icon: 'list-outline' },
+    { key: 'reciters', label: t('Reciters'), icon: 'people-outline' },
+    { key: 'translations', label: t('Translation Audio'), icon: 'language-outline' },
+    { key: 'recent', label: t('Recent'), icon: 'time-outline' },
+    { key: 'playlists', label: t('Playlists'), icon: 'list-outline' },
     {
       key: 'queue',
-      label: 'Queue',
+      label: t('Queue'),
       icon: 'play-forward-outline',
       badge: queue.length > 0 ? String(queue.length) : undefined,
     },
-    { key: 'settings', label: 'Settings', icon: 'settings-outline' },
+    { key: 'settings', label: t('Settings'), icon: 'settings-outline' },
   ] as const;
 
   const paddingH = isNarrow ? 16 : 20;
@@ -462,10 +463,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
         {/* Header */}
         <View style={[styles.header, { paddingHorizontal: paddingH }]}>
           <ScreenHeader
-            eyebrow="Audio Center"
-            title="Quran Audio"
+            eyebrow={t('Audio Center')}
+            title={t('Quran Audio')}
             onBack={onBack}
-            backLabel="Quran"
+            backLabel={t('Quran')}
           />
         </View>
 
@@ -477,12 +478,12 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tabScroll}
           >
-            {tabsConfig.map((t) => {
-              const isTabActive = activeTab === t.key;
+            {tabsConfig.map((tItem) => {
+              const isTabActive = activeTab === tItem.key;
               return (
                 <TouchableOpacity
-                  key={t.key}
-                  onPress={() => setActiveTab(t.key)}
+                  key={tItem.key}
+                  onPress={() => setActiveTab(tItem.key)}
                   style={[
                     styles.tabItem,
                     {
@@ -493,7 +494,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   accessibilityState={{ selected: isTabActive }}
                 >
                   <Ionicons
-                    name={t.icon as any}
+                    name={tItem.icon as any}
                     size={15}
                     color={isTabActive ? colors.accent : colors.textMuted}
                   />
@@ -503,9 +504,9 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       { color: isTabActive ? colors.accent : colors.textMuted },
                     ]}
                   >
-                    {t.label}
+                    {tItem.label}
                   </Text>
-                  {'badge' in t && t.badge && (
+                  {'badge' in tItem && tItem.badge && (
                     <View
                       style={[
                         styles.tabBadge,
@@ -520,7 +521,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                           { color: isTabActive ? colors.onAccent : colors.textSecondary },
                         ]}
                       >
-                        {t.badge}
+                        {tItem.badge}
                       </Text>
                     </View>
                   )}
@@ -541,9 +542,9 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
         ) : error ? (
           <EmptyState
             icon="cloud-offline-outline"
-            title="Couldn't load reciters"
+            title={t("Couldn't load reciters")}
             subtitle={error}
-            actionLabel="Retry"
+            actionLabel={t('Retry')}
             onAction={loadAllData}
           />
         ) : activeTab === 'reciters' ? (
@@ -561,7 +562,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             >
               <Ionicons name="search" size={16} color={colors.textMuted} />
               <TextInput
-                placeholder="Search by reciter name or style..."
+                placeholder={t('Search by reciter name or style...')}
                 placeholderTextColor={colors.textMuted}
                 value={reciterSearch}
                 onChangeText={setReciterSearch}
@@ -577,10 +578,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             {/* Arabic Reciters Header Info */}
             <View style={styles.reciterHeaderRow}>
               <Text style={[styles.reciterHeaderTitle, { color: colors.textSecondary }]}>
-                Arabic Reciters ({filteredReciters.length})
+                {t('Arabic Reciters')} ({filteredReciters.length})
               </Text>
               <Text style={[styles.reciterHeaderSub, { color: colors.textMuted }]}>
-                Select default reciter or tap Sample
+                {t('Select default reciter or tap Sample')}
               </Text>
             </View>
 
@@ -682,7 +683,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                             { color: isSamplingThis ? colors.onAccent : colors.accent },
                           ]}
                         >
-                          {isSamplingThis ? 'Playing' : 'Sample'}
+                          {isSamplingThis ? t('Playing') : t('Sample')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -710,13 +711,13 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={[styles.translationStatusLabel, { color: colors.textMuted }]}>
-                    ACTIVE TRANSLATION AUDIO
+                    {t('ACTIVE TRANSLATION AUDIO')}
                   </Text>
                   <Text style={[styles.translationStatusName, { color: colors.textPrimary }]}>
                     {audioLangName} ({audioLanguage.toUpperCase()})
                   </Text>
                   <Text style={[styles.translationStatusVoice, { color: colors.accent }]}>
-                    Voice: {audioEdition.englishName || audioEdition.name}
+                    {t('Voice')}: {audioEdition.englishName || audioEdition.name}
                   </Text>
                 </View>
               </View>
@@ -724,10 +725,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               <View style={[styles.translationToggleRow, { borderTopColor: colors.borderSubtle }]}>
                 <View style={{ flex: 1, marginRight: 12 }}>
                   <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
-                    Play translation after Arabic
+                    {t('Play translation after Arabic')}
                   </Text>
                   <Text style={[styles.settingSub, { color: colors.textMuted }]}>
-                    Sequentially play translated audio after each Arabic ayah
+                    {t('Sequentially play translated audio after each Arabic ayah')}
                   </Text>
                 </View>
                 <Switch
@@ -743,10 +744,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             {/* Translation Audio Editions Directory */}
             <View style={styles.translationDirectoryHeader}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                Verified Non-Arabic Recitations
+                {t('Verified Non-Arabic Recitations')}
               </Text>
               <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
-                13 verse-by-verse translation editions across 11 languages
+                {t('13 verse-by-verse translation editions across 11 languages')}
               </Text>
             </View>
 
@@ -859,7 +860,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                             { color: isSamplingThis ? colors.onAccent : colors.accent },
                           ]}
                         >
-                          {isSamplingThis ? 'Playing' : 'Sample'}
+                          {isSamplingThis ? t('Playing') : t('Sample')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -878,9 +879,9 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               ListEmptyComponent={
                 <EmptyState
                   icon="musical-notes-outline"
-                  title="No recent audio"
-                  subtitle="Audio you play in the Quran reader or here will appear in this list."
-                  actionLabel="Open the Quran"
+                  title={t('No recent audio')}
+                  subtitle={t('Audio you play in the Quran reader or here will appear in this list.')}
+                  actionLabel={t('Open the Quran')}
                   onAction={onBack}
                 />
               }
@@ -947,10 +948,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     onPress={() => setSelectedPlaylist(null)}
                     style={styles.backToPlaylistsBtn}
                     accessibilityRole="button"
-                    accessibilityLabel="Back to all playlists"
+                    accessibilityLabel={t('Back to all playlists')}
                   >
                     <Text style={[styles.backToPlaylistsText, { color: colors.accent }]}>
-                      ← All Playlists
+                      ← {t('All Playlists')}
                     </Text>
                   </TouchableOpacity>
 
@@ -962,7 +963,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     accessibilityLabel={`Play all ${selectedPlaylist.items.length} tracks`}
                   >
                     <Ionicons name="play" size={14} color={colors.onAccent} />
-                    <Text style={[styles.playAllBtnText, { color: colors.onAccent }]}>Play All</Text>
+                    <Text style={[styles.playAllBtnText, { color: colors.onAccent }]}>{t('Play All')}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -971,7 +972,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 </Text>
                 <Text style={[styles.playlistHeaderMeta, { color: colors.textMuted }]}>
                   {selectedPlaylist.items.length}{' '}
-                  {selectedPlaylist.items.length === 1 ? 'track' : 'tracks'}
+                  {selectedPlaylist.items.length === 1 ? t('track') : t('tracks')}
                 </Text>
 
                 <FlatList
@@ -1009,10 +1010,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 {/* Section 1: Curated Presets */}
                 <View style={styles.playlistSectionHeaderRow}>
                   <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                    Curated Presets
+                    {t('Curated Presets')}
                   </Text>
                   <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
-                    Ready-to-listen devotional sets
+                    {t('Ready-to-listen devotional sets')}
                   </Text>
                 </View>
 
@@ -1053,7 +1054,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                             <Text
                               style={[styles.presetCountText, { color: colors.textSecondary }]}
                             >
-                              {preset.items.length} verses
+                              {preset.items.length} {t('verses')}
                             </Text>
                           </View>
 
@@ -1069,7 +1070,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                                 },
                               ]}
                               accessibilityRole="button"
-                              accessibilityLabel={isSaved ? 'Saved to playlists' : 'Save preset'}
+                              accessibilityLabel={isSaved ? t('Saved to playlists') : t('Save preset')}
                             >
                               <Ionicons
                                 name={isSaved ? 'checkmark' : 'bookmark-outline'}
@@ -1086,7 +1087,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               accessibilityLabel={`Play preset: ${preset.title}`}
                             >
                               <Ionicons name="play" size={14} color={colors.onAccent} />
-                              <Text style={[styles.presetPlayBtnText, { color: colors.onAccent }]}>Play</Text>
+                              <Text style={[styles.presetPlayBtnText, { color: colors.onAccent }]}>{t('Play')}</Text>
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -1099,10 +1100,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 <View style={[styles.playlistActionRow, { marginTop: 16 }]}>
                   <View>
                     <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                      Your Playlists
+                      {t('Your Playlists')}
                     </Text>
                     <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
-                      Custom compilations & saved sets
+                      {t('Custom compilations & saved sets')}
                     </Text>
                   </View>
                   <TouchableOpacity
@@ -1110,19 +1111,19 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     style={[styles.createBtn, { backgroundColor: colors.accent }]}
                     accessibilityRole="button"
-                    accessibilityLabel="Create a new playlist"
+                    accessibilityLabel={t('Create a new playlist')}
                   >
                     <Ionicons name="add" size={16} color={colors.onAccent} />
-                    <Text style={[styles.createBtnText, { color: colors.onAccent }]}>New</Text>
+                    <Text style={[styles.createBtnText, { color: colors.onAccent }]}>{t('New')}</Text>
                   </TouchableOpacity>
                 </View>
 
                 {playlists.length === 0 ? (
                   <EmptyState
                     icon="albums-outline"
-                    title="No playlists yet"
-                    subtitle="Create a playlist of your favorite surahs, or save one of the curated presets above."
-                    actionLabel="Create playlist"
+                    title={t('No playlists yet')}
+                    subtitle={t('Create a playlist of your favorite surahs, or save one of the curated presets above.')}
+                    actionLabel={t('Create playlist')}
                     onAction={() => setNewPlaylistModalOpen(true)}
                   />
                 ) : (
@@ -1148,7 +1149,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                             {item.name}
                           </Text>
                           <Text style={[styles.playlistItemCount, { color: colors.textMuted }]}>
-                            {item.items.length} {item.items.length === 1 ? 'track' : 'tracks'}
+                            {item.items.length} {item.items.length === 1 ? t('track') : t('tracks')}
                           </Text>
                         </TouchableOpacity>
 
@@ -1204,13 +1205,13 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
                   <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
                     <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                      New Playlist
+                      {t('New Playlist')}
                     </Text>
                     <TouchableOpacity
                       onPress={() => setNewPlaylistModalOpen(false)}
                       style={styles.modalCloseBtn}
                       accessibilityRole="button"
-                      accessibilityLabel="Close create playlist modal"
+                      accessibilityLabel={t('Close create playlist modal')}
                     >
                       <Ionicons name="close" size={20} color={colors.textPrimary} />
                     </TouchableOpacity>
@@ -1222,10 +1223,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   >
                     <View style={styles.modalBody}>
                       <Text style={[styles.formLabel, { color: colors.textSecondary }]}>
-                        Playlist Name
+                        {t('Playlist Name')}
                       </Text>
                       <TextInput
-                        placeholder="e.g. Daily Fajr, Heart Healing, Sleep"
+                        placeholder={t('e.g. Daily Fajr, Heart Healing, Sleep')}
                         placeholderTextColor={colors.textMuted}
                         value={newPlaylistName}
                         onChangeText={setNewPlaylistName}
@@ -1240,7 +1241,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       />
 
                     <Text style={[styles.formLabel, { color: colors.textSecondary, marginTop: 12 }]}>
-                      Select First Surah
+                      {t('Select First Surah')}
                     </Text>
                     <ScrollView style={styles.surahPickerScroll}>
                       {surahs.map((s) => {
@@ -1280,7 +1281,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         style={[styles.modalCancelBtn, { borderColor: colors.borderSubtle }]}
                       >
                         <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>
-                          Cancel
+                          {t('Cancel')}
                         </Text>
                       </TouchableOpacity>
 
@@ -1288,7 +1289,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         onPress={handleCreatePlaylist}
                         style={[styles.modalSubmitBtn, { backgroundColor: colors.accent }]}
                       >
-                        <Text style={styles.modalSubmitText}>Create Playlist</Text>
+                        <Text style={styles.modalSubmitText}>{t('Create Playlist')}</Text>
                       </TouchableOpacity>
                     </View>
                     </View>
@@ -1303,19 +1304,19 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <View style={styles.playlistActionRow}>
               <View>
                 <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                  Playback Queue ({queue.length})
+                  {t('Playback Queue')} ({queue.length})
                 </Text>
                 <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>
                   {queue.length > 0
                     ? queueIndex >= 0
-                      ? `Playing track ${queueIndex + 1} of ${queue.length}`
-                      : 'Tracks will play in order'
-                    : 'Add Surahs to queue for uninterrupted recitation'}
+                      ? `${t('Playing track')} ${queueIndex + 1} ${t('of')} ${queue.length}`
+                      : t('Tracks will play in order')
+                    : t('Add Surahs to queue for uninterrupted recitation')}
                 </Text>
               </View>
               {queue.length > 0 && (
                 <TouchableOpacity onPress={handleClearQueue} style={styles.clearBtn}>
-                  <Text style={[styles.clearBtnText, { color: colors.accent }]}>Clear</Text>
+                  <Text style={[styles.clearBtnText, { color: colors.accent }]}>{t('Clear')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -1328,10 +1329,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 <View style={styles.emptyBox}>
                   <Ionicons name="play-skip-forward-outline" size={40} color={colors.textMuted} />
                   <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                    Queue is empty
+                    {t('Queue is empty')}
                   </Text>
                   <Text style={[styles.emptyDesc, { color: colors.textMuted }]}>
-                    Tap below to quickly queue popular Surahs for sequential recitation.
+                    {t('Tap below to quickly queue popular Surahs for sequential recitation.')}
                   </Text>
                   <View style={styles.quickAddGrid}>
                     {[
@@ -1414,7 +1415,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       </Text>
                       {isCurrentQueueItem && (
                         <Text style={[styles.queuePlayingBadge, { color: colors.accent }]}>
-                          {isPlayingThis ? 'NOW PLAYING' : 'PAUSED'}
+                          {isPlayingThis ? t('NOW PLAYING') : t('PAUSED')}
                         </Text>
                       )}
                     </TouchableOpacity>
@@ -1458,7 +1459,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
           /* Settings Tab */
           <ScrollView contentContainerStyle={styles.settingsContent}>
             <Text style={[styles.settingsGroupTitle, { color: colors.accent }]}>
-              RECITER & PLAYBACK PREFERENCES
+              {t('RECITER & PLAYBACK PREFERENCES')}
             </Text>
 
             {/* Default Reciter Card */}
@@ -1473,7 +1474,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             >
               <View style={{ flex: 1, marginRight: 12 }}>
                 <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
-                  Default Reciter
+                  {t('Default Reciter')}
                 </Text>
                 <Text style={[styles.settingSub, { color: colors.textMuted }]} numberOfLines={1}>
                   {currentReciterName}
@@ -1484,9 +1485,9 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 style={[styles.changeReciterBtn, { backgroundColor: colors.accentDim }]}
                 accessibilityRole="button"
-                accessibilityLabel="Change default reciter"
+                accessibilityLabel={t('Change default reciter')}
               >
-                <Text style={[styles.changeReciterText, { color: colors.accent }]}>Change</Text>
+                <Text style={[styles.changeReciterText, { color: colors.accent }]}>{t('Change')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -1502,10 +1503,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             >
               <View style={{ flex: 1, marginRight: 12 }}>
                 <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
-                  Autoplay Next
+                  {t('Autoplay Next')}
                 </Text>
                 <Text style={[styles.settingSub, { color: colors.textMuted }]}>
-                  Automatically advance to next Ayah or queued Surah when track finishes
+                  {t('Automatically advance to next Ayah or queued Surah when track finishes')}
                 </Text>
               </View>
               <Switch
@@ -1513,7 +1514,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 onValueChange={handleToggleAutoplay}
                 trackColor={{ false: colors.borderSubtle, true: colors.accent }}
                 thumbColor="#FFFFFF"
-                accessibilityLabel="Toggle autoplay next track"
+                accessibilityLabel={t('Toggle autoplay next track')}
               />
             </View>
 
@@ -1529,10 +1530,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             >
               <View style={{ flex: 1, marginRight: 12 }}>
                 <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
-                  Play translation after Arabic
+                  {t('Play translation after Arabic')}
                 </Text>
                 <Text style={[styles.settingSub, { color: colors.textMuted }]}>
-                  Plays the same ayah in the selected translation language after the Arabic recitation
+                  {t('Plays the same ayah in the selected translation language after the Arabic recitation')}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 }}>
                   <Text style={{ fontSize: 13 }}>{getLanguageFlag(audioEdition.language)}</Text>
@@ -1541,16 +1542,16 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   </Text>
                 </View>
                 <Text style={[styles.settingSub, { color: colors.textSecondary, marginTop: 2, fontSize: 11 }]}>
-                  Audio edition: {audioEdition.englishName} ({audioEdition.language.toUpperCase()})
+                  {t('Audio edition')}: {audioEdition.englishName} ({audioEdition.language.toUpperCase()})
                 </Text>
                 <TouchableOpacity
                   onPress={() => setActiveTab('translations')}
                   style={[styles.settingsBrowseBtn, { backgroundColor: colors.accentDim, marginTop: 10 }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Browse non-Arabic translation audio editions"
+                  accessibilityLabel={t('Browse non-Arabic translation audio editions')}
                 >
                   <Text style={[styles.settingsBrowseBtnText, { color: colors.accent }]}>
-                    Browse Translation Editions ({NON_ARABIC_AUDIO_EDITIONS.length}) →
+                    {t('Browse Translation Editions')} ({NON_ARABIC_AUDIO_EDITIONS.length}) →
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1559,7 +1560,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 onValueChange={handleToggleTranslationAudio}
                 trackColor={{ false: colors.borderSubtle, true: colors.accent }}
                 thumbColor="#FFFFFF"
-                accessibilityLabel="Toggle play translation audio after Arabic"
+                accessibilityLabel={t('Toggle play translation audio after Arabic')}
               />
             </View>
 
@@ -1575,14 +1576,14 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             >
               <View style={{ width: '100%', marginBottom: 10 }}>
                 <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
-                  Repeat Mode
+                  {t('Repeat Mode')}
                 </Text>
                 <Text style={[styles.settingSub, { color: colors.textMuted }]}>
                   {settings.repeatMode === 'none'
-                    ? 'No repeat (stops at the end of queue or surah)'
+                    ? t('No repeat (stops at the end of queue or surah)')
                     : settings.repeatMode === 'one'
-                    ? 'Repeat current track continuously (ideal for memorization)'
-                    : 'Repeat all tracks in queue or loop full recitation'}
+                    ? t('Repeat current track continuously (ideal for memorization)')
+                    : t('Repeat all tracks in queue or loop full recitation')}
                 </Text>
               </View>
               <View style={styles.repeatButtons}>
@@ -1609,7 +1610,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                           { color: isSelected ? colors.onAccent : colors.textSecondary },
                         ]}
                       >
-                        {mode === 'none' ? 'OFF' : mode === 'all' ? 'ALL' : 'REPEAT 1'}
+                        {mode === 'none' ? t('OFF') : mode === 'all' ? t('ALL') : t('REPEAT 1')}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -1629,19 +1630,19 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             >
               <View style={{ flex: 1, marginRight: 12 }}>
                 <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
-                  Lock Screen & Notification Controls
+                  {t('Lock Screen & Notification Controls')}
                 </Text>
                 <Text style={[styles.settingSub, { color: colors.textMuted }]}>
                   {mediaNotifStatus === 'granted'
-                    ? 'Active — media controls appear on your lock screen and notification shade'
-                    : 'Show media playback controls on your lock screen and notification shade while playing'}
+                    ? t('Active — media controls appear on your lock screen and notification shade')
+                    : t('Show media playback controls on your lock screen and notification shade while playing')}
                 </Text>
               </View>
               {mediaNotifStatus === 'granted' ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Ionicons name="checkmark-circle" size={16} color={colors.accent} />
                   <Text style={[styles.settingSub, { color: colors.accent, fontFamily: 'Manrope_600SemiBold' }]}>
-                    Enabled
+                    {t('Enabled')}
                   </Text>
                 </View>
               ) : (
@@ -1657,10 +1658,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   style={[styles.changeReciterBtn, { backgroundColor: colors.accentDim }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Enable notification controls in settings"
+                  accessibilityLabel={t('Enable notification controls in settings')}
                 >
                   <Text style={[styles.changeReciterText, { color: colors.accent }]}>
-                    {mediaNotifStatus === 'undetermined' ? 'Enable' : 'Settings'}
+                    {mediaNotifStatus === 'undetermined' ? t('Enable') : t('Settings')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -1680,7 +1681,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             ]}
             onPress={() => setAudioModalOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel="Open audio player"
+            accessibilityLabel={t('Open audio player')}
           >
             <View style={[styles.floatingMiniIconWrap, { backgroundColor: colors.accentDim }]}>
               <Ionicons

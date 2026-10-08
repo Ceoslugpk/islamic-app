@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
@@ -54,7 +55,7 @@ export default function PrayerGuideScreen({ onBack }: { onBack?: () => void }) {
     const grades = update?.grades ?? item.grades;
     return (
       <Card key={item.id} style={styles.itemCard}>
-        <Text style={[styles.itemTitle, { color: colors.accent }]}>{item.title}</Text>
+        <Text style={[styles.itemTitle, { color: colors.accent }]}>{t(item.title)}</Text>
         {arabic ? (
           <ArabicText style={[styles.itemArabic, { color: colors.textPrimary }]}>
             {arabic}
@@ -66,13 +67,11 @@ export default function PrayerGuideScreen({ onBack }: { onBack?: () => void }) {
           </Text>
         ) : null}
         <Text style={[styles.itemTranslation, { color: colors.textSecondary }]}>
-          {translation}
+          {t(translation)}
         </Text>
         <View style={styles.refRow}>
           <Ionicons name="book-outline" size={12} color={colors.textMuted} />
-          <Text style={[styles.itemRef, { color: colors.textMuted }]} numberOfLines={2}>
-            {item.reference}
-          </Text>
+          <Text style={[styles.itemRef, { color: colors.textMuted }]}>{item.reference}</Text>
           {grades ? (
             <View
               style={[
@@ -97,11 +96,11 @@ export default function PrayerGuideScreen({ onBack }: { onBack?: () => void }) {
       ]}
     >
       <ScreenHeader
-        title="Prayer Guide (Fiqh)"
-        eyebrow="Guides"
-        subtitle="Wudu, Salah, praying in congregation, Janazah, Istikhara, Eid and Taraweeh — every narration verified with its collection, number and grade."
+        title={t('Prayer Guide (Fiqh)')}
+        eyebrow={t('Guides')}
+        subtitle={t('Wudu, Salah, praying in congregation, Janazah, Istikhara, Eid and Taraweeh — every narration verified with its collection, number and grade.')}
         onBack={onBack}
-        backLabel="Library"
+        backLabel={t('Library')}
       />
 
       {PRAYER_GUIDE_SECTIONS.map((section, si) => (
@@ -123,7 +122,7 @@ export default function PrayerGuideScreen({ onBack }: { onBack?: () => void }) {
             </View>
             <View style={styles.sectionTitleCol}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                {section.title}
+                {t(section.title)}
               </Text>
               {section.arabicTitle ? (
                 <ArabicText align="left" size={13} style={{ color: colors.textMuted }}>

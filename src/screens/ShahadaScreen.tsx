@@ -7,6 +7,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
@@ -27,9 +28,9 @@ export default function ShahadaScreen({ onBack }: { onBack?: () => void }) {
     >
       <View style={{ width: '100%', maxWidth: maxW, alignSelf: 'center', paddingHorizontal: paddingH }}>
         <ScreenHeader
-          eyebrow="Library · Knowledge"
-          title="The Shahada"
-          backLabel="Library"
+          eyebrow={t('Library · Knowledge')}
+          title={t('The Shahada')}
+          backLabel={t('Library')}
           onBack={onBack}
         />
 
@@ -39,9 +40,9 @@ export default function ShahadaScreen({ onBack }: { onBack?: () => void }) {
             {SHAHADA_VERSE.arabic}
           </ArabicText>
           <Text style={[styles.heroTranslation, { color: colors.textSecondary }]}>
-            {SHAHADA_VERSE.translation}
+            {t(SHAHADA_VERSE.translation)}
           </Text>
-          <Text style={[styles.source, { color: colors.textMuted }]}>{SHAHADA_VERSE.source}</Text>
+          <Text style={[styles.source, { color: colors.textMuted }]}>{t(SHAHADA_VERSE.source)}</Text>
         </Card>
 
         {/* The declaration */}
@@ -53,11 +54,10 @@ export default function ShahadaScreen({ onBack }: { onBack?: () => void }) {
             وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ ٱللَّٰهِ
           </ArabicText>
           <Text style={[styles.declarationTranslation, { color: colors.textPrimary }]}>
-            "I bear witness that there is no god but Allah, and I bear witness that Muhammad is the
-            Messenger of Allah."
+            {t('"I bear witness that there is no god but Allah, and I bear witness that Muhammad is the Messenger of Allah."')}
           </Text>
           <Text style={[styles.source, { color: colors.textMuted }]}>
-            The declaration of faith — the first pillar of Islam
+            {t('The declaration of faith — the first pillar of Islam')}
           </Text>
         </Card>
 
@@ -66,18 +66,18 @@ export default function ShahadaScreen({ onBack }: { onBack?: () => void }) {
           <View key={s.id}>
             {i > 0 && <Hairline />}
             <Card style={styles.itemCard}>
-              <Text style={[styles.itemTitle, { color: colors.accent }]}>{s.title}</Text>
+              <Text style={[styles.itemTitle, { color: colors.accent }]}>{t(s.title)}</Text>
               {s.arabic ? (
                 <ArabicText style={[styles.itemArabic, { color: colors.textPrimary }]}>
                   {s.arabic}
                 </ArabicText>
               ) : null}
               <Text style={[styles.itemTranslation, { color: colors.textPrimary }]}>
-                {s.translation}
+                {t(s.translation)}
               </Text>
-              <Text style={[styles.source, { color: colors.textMuted }]}>{s.source}</Text>
+              <Text style={[styles.source, { color: colors.textMuted }]}>{t(s.source)}</Text>
               {s.note ? (
-                <Text style={[styles.note, { color: colors.textSecondary }]}>{s.note}</Text>
+                <Text style={[styles.note, { color: colors.textSecondary }]}>{t(s.note)}</Text>
               ) : null}
             </Card>
           </View>
@@ -86,9 +86,7 @@ export default function ShahadaScreen({ onBack }: { onBack?: () => void }) {
         {/* Closing note */}
         <View style={styles.closingWrap}>
           <Text style={[styles.closing, { color: colors.textSecondary }]}>
-            Every source above is drawn from the Qur'an and authentic hadith (Sahih al-Bukhari, Sahih
-            Muslim). The classical conditions summary is an educational overview — for detailed study,
-            consult a qualified scholar.
+            {t("Every source above is drawn from the Qur'an and authentic hadith (Sahih al-Bukhari, Sahih Muslim). The classical conditions summary is an educational overview — for detailed study, consult a qualified scholar.")}
           </Text>
         </View>
       </View>

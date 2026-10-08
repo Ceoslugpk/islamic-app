@@ -37,6 +37,7 @@ import { QiblaCompass } from '../components/QiblaCompass';
 import { useLocation } from '../lib/useLocation';
 import { useSettings } from '../lib/settings';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
+import { t } from '../lib/i18n';
 
 const KAABA_LABEL = 'Holy Kaaba, Makkah';
 
@@ -82,7 +83,7 @@ export default function QiblaScreen({
   const [bearing, setBearing] = useState<number | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [declination, setDeclination] = useState<number>(0);
-  const [locLabel, setLocLabel] = useState<string>('Detecting location…');
+  const [locLabel, setLocLabel] = useState<string>(t('Detecting location…'));
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // Status & Provider states
@@ -157,7 +158,7 @@ export default function QiblaScreen({
     if (activeLoc) {
       setLocLabel(activeLoc.label);
     } else {
-      setLocLabel(`Using manual location (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`);
+      setLocLabel(`${t('Using manual location')} (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`);
     }
   }, [effectiveLocation, gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation.label]);
 
@@ -464,11 +465,11 @@ export default function QiblaScreen({
         showsVerticalScrollIndicator={false}
       >
         <ScreenHeader
-          eyebrow="Direct Line of Prayer"
-          title="Qibla Compass"
-          subtitle="True bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas."
+          eyebrow={t('Direct Line of Prayer')}
+          title={t('Qibla Compass')}
+          subtitle={t('True bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas.')}
           onBack={onBack}
-          backLabel="Tools"
+          backLabel={t('Tools')}
         />
 
         {/* Error / Compass Notice Banner */}
@@ -477,7 +478,7 @@ export default function QiblaScreen({
             <View style={styles.errorHeader}>
               <Ionicons name="warning-outline" size={20} color={colors.accent} />
               <Text style={[styles.errorTitle, { color: colors.textPrimary }]}>
-                Compass Notice
+                {t('Compass Notice')}
               </Text>
             </View>
             <Text style={[styles.errorDescription, { color: colors.textSecondary }]}>
@@ -531,16 +532,16 @@ export default function QiblaScreen({
             />
             <Text style={[styles.statusText, { color: colors.textSecondary }]}>
               {calibrating && heading === null
-                ? 'Calibrating compass…'
+                ? t('Calibrating compass…')
                 : isAligned
-                ? 'Aligned with Qibla'
+                ? t('Aligned with Qibla')
                 : heading === null
-                ? 'Rotate device to calibrate'
+                ? t('Rotate device to calibrate')
                 : source === 'expo-location'
-                ? `Live Compass (${accuracy})`
+                ? `${t('Live Compass')} (${t(accuracy)})`
                 : source === 'magnetometer'
-                ? 'Live Compass (Magnetometer)'
-                : 'Static Direction Mode'}
+                ? t('Live Compass (Magnetometer)')
+                : t('Static Direction Mode')}
             </Text>
           </View>
 
@@ -561,7 +562,7 @@ export default function QiblaScreen({
                 <>
                   <Ionicons name="refresh" size={13} color={colors.accent} />
                   <Text style={[styles.recalibrateText, { color: colors.accent }]}>
-                    Recalibrate
+                    {t('Recalibrate')}
                   </Text>
                 </>
               )}
@@ -579,7 +580,7 @@ export default function QiblaScreen({
           >
             <Ionicons name="infinite" size={18} color={colors.accent} />
             <Text style={[styles.figure8Text, { color: colors.textSecondary }]}>
-              Compass accuracy is low. Wave phone slowly in a figure-8 motion to calibrate.
+              {t('Compass accuracy is low. Wave phone slowly in a figure-8 motion to calibrate.')}
             </Text>
           </View>
         )}
@@ -594,11 +595,11 @@ export default function QiblaScreen({
           >
             <Ionicons name="compass-outline" size={18} color={colors.accent} />
             <Text style={[styles.figure8Text, { color: colors.textSecondary }]}>
-              Hardware compass is not available on this platform. Align the top of your device toward{' '}
+              {t('Hardware compass is not available on this platform. Align the top of your device toward')}{' '}
               <Text style={{ fontFamily: 'Manrope_700Bold', color: colors.textPrimary }}>
                 {bearing !== null ? `${Math.round(bearing)}°` : '--'}
               </Text>{' '}
-              relative to true north.
+              {t('relative to true north.')}
             </Text>
           </View>
         )}
@@ -616,10 +617,10 @@ export default function QiblaScreen({
               </View>
               <View style={styles.calibrationTextWrap}>
                 <Text style={[styles.calibrationTitle, { color: colors.textPrimary }]}>
-                  {calibrationGuidance.title}
+                  {t(calibrationGuidance.title)}
                 </Text>
                 <Text style={[styles.calibrationDescription, { color: colors.textSecondary }]}>
-                  {calibrationGuidance.description}
+                  {t(calibrationGuidance.description)}
                 </Text>
               </View>
             </View>
@@ -636,9 +637,9 @@ export default function QiblaScreen({
                 />
               </View>
               <Text style={[styles.calibrationStepText, { color: colors.textMuted }]}>
-                Step {['Hold Flat', 'Rotate Slowly', 'Align', 'Ready'].indexOf(
+                {t('Step')} {['Hold Flat', 'Rotate Slowly', 'Align', 'Ready'].indexOf(
                   calibrationGuidance.step.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                ) + 1} of 4
+                ) + 1} {t('of')} 4
               </Text>
             </View>
           </Card>
@@ -694,7 +695,7 @@ export default function QiblaScreen({
             <View style={[styles.loadingCompass, { height: compassSize }]}>
               <ActivityIndicator size="large" color={colors.accent} />
               <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-                Calibrating directional sensors…
+                {t('Calibrating directional sensors…')}
               </Text>
             </View>
           ) : (
@@ -715,7 +716,7 @@ export default function QiblaScreen({
             {bearing !== null ? `${Math.round(bearing)}°` : '--'}
           </Text>
           <Text style={[styles.bearingSubtitle, { color: colors.accent }]}>
-            Qibla Bearing
+            {t('Qibla Bearing')}
           </Text>
           {distance !== null && (
             <Text style={[styles.distanceHero, { color: colors.textSecondary }]}>
@@ -731,7 +732,7 @@ export default function QiblaScreen({
             <View style={styles.telemetryLabelWrap}>
               <Ionicons name="location-outline" size={16} color={colors.textMuted} />
               <Text style={[styles.telemetryLabel, { color: colors.textMuted }]}>
-                Location
+                {t('Location')}
               </Text>
             </View>
             <Text style={[styles.telemetryValue, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -746,13 +747,13 @@ export default function QiblaScreen({
             <View style={styles.telemetryLabelWrap}>
               <Ionicons name="navigate-outline" size={16} color={colors.textMuted} />
               <Text style={[styles.telemetryLabel, { color: colors.textMuted }]}>
-                Current Heading
+                {t('Current Heading')}
               </Text>
             </View>
             <Text style={[styles.telemetryValue, { color: colors.textPrimary }]}>
               {heading !== null
                 ? `${Math.round(heading)}° (${getCardinalDirection(heading)})`
-                : 'Unavailable (rotate device)'}
+                : t('Unavailable (rotate device)')}
             </Text>
           </View>
 
@@ -763,7 +764,7 @@ export default function QiblaScreen({
             <View style={styles.telemetryLabelWrap}>
               <Ionicons name="globe-outline" size={16} color={colors.textMuted} />
               <Text style={[styles.telemetryLabel, { color: colors.textMuted }]}>
-                Coordinates
+                {t('Coordinates')}
               </Text>
             </View>
             <Text style={[styles.telemetryValueSub, { color: colors.textSecondary }]}>
@@ -780,7 +781,7 @@ export default function QiblaScreen({
                 <View style={styles.telemetryLabelWrap}>
                   <Ionicons name="magnet-outline" size={16} color={colors.textMuted} />
                   <Text style={[styles.telemetryLabel, { color: colors.textMuted }]}>
-                    Magnetic Declination
+                    {t('Magnetic Declination')}
                   </Text>
                 </View>
                 <Text style={[styles.telemetryValueSub, { color: colors.textSecondary }]}>
@@ -794,7 +795,7 @@ export default function QiblaScreen({
         {/* Guidance Footer */}
         <View style={styles.footerNoteWrap}>
           <Text style={[styles.footerNote, { color: colors.textMuted }]}>
-            Hold phone level with the ground. Turn your body until the amber needle points straight forward into the top notch marker.
+            {t('Hold phone level with the ground. Turn your body until the amber needle points straight forward into the top notch marker.')}
           </Text>
         </View>
       </ScrollView>

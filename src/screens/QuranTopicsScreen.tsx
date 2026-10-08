@@ -13,6 +13,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { QURAN_TOPICS, QuranTopic, TopicVerse } from '../lib/quranTopics';
+import { t } from '../lib/i18n';
 
 interface QuranTopicsScreenProps {
   onBack?: () => void;
@@ -54,7 +55,7 @@ export default function QuranTopicsScreen({
             </Text>
           </View>
           <Text style={[styles.openLinkText, { color: colors.accent }]}>
-            Read in Surah →
+            {t('Read in Surah →')}
           </Text>
         </View>
 
@@ -86,7 +87,7 @@ export default function QuranTopicsScreen({
           onPress={() => toggleTopic(item.id)}
           style={styles.topicHeaderBtn}
           accessibilityRole="button"
-          accessibilityLabel={`Toggle topic ${item.title}`}
+          accessibilityLabel={`${t('Toggle topic')} ${t(item.title)}`}
         >
           <View style={styles.topicTitleRow}>
             <View
@@ -106,7 +107,7 @@ export default function QuranTopicsScreen({
             </View>
             <View style={styles.topicTextWrap}>
               <Text style={[styles.topicTitle, { color: colors.textPrimary }]}>
-                {item.title}
+                {t(item.title)}
               </Text>
               <ArabicText size={16} style={styles.topicArabicTitle}>
                 {item.arabicTitle}
@@ -116,7 +117,7 @@ export default function QuranTopicsScreen({
           <View style={styles.topicActionWrap}>
             <View style={[styles.countPill, { backgroundColor: colors.bgBase }]}>
               <Text style={[styles.countPillText, { color: colors.textMuted }]}>
-                {item.verses.length} verses
+                {item.verses.length} {t('verses')}
               </Text>
             </View>
             <Ionicons
@@ -131,7 +132,7 @@ export default function QuranTopicsScreen({
           <View style={styles.expandedContent}>
             <Hairline style={styles.divider} />
             <Text style={[styles.topicDesc, { color: colors.textSecondary }]}>
-              {item.description}
+              {t(item.description)}
             </Text>
             <View style={styles.versesList}>
               {item.verses.map((v, i) => renderVerseItem(v, i))}
@@ -147,11 +148,11 @@ export default function QuranTopicsScreen({
       <View style={styles.contentWrap}>
         <View style={[styles.header, { paddingHorizontal: paddingH }]}>
           <ScreenHeader
-            eyebrow="Thematic Quran"
-            title="Quran Topics"
-            subtitle="Curated Quranic passages arranged by core themes of life, faith, and spirituality."
+            eyebrow={t('Thematic Quran')}
+            title={t('Quran Topics')}
+            subtitle={t('Curated Quranic passages arranged by core themes of life, faith, and spirituality.')}
             onBack={onBack}
-            backLabel="Quran"
+            backLabel={t('Quran')}
           />
         </View>
 

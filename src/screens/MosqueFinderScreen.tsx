@@ -26,6 +26,7 @@ import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import { MosqueCardSkeleton } from '../components/Skeleton';
 import { loadMosqueCache, saveMosqueCache } from '../lib/db';
 import { useSearchHistory } from '../lib/searchHistory';
+import { t } from '../lib/i18n';
 
 export interface MosqueItem {
   id: string;
@@ -404,10 +405,10 @@ export default function MosqueFinderScreen({
 
   // Label for current center
   const centerTypeBadge = areaSearchCenter
-    ? 'AREA SEARCH'
+    ? t('AREA SEARCH')
     : isUsingGps
-    ? 'GPS AUTO'
-    : `MANUAL (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`;
+    ? t('GPS AUTO')
+    : `${t('MANUAL')} (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`;
 
   const isCompact = width < 380;
   const isWide = width >= 600;
@@ -416,10 +417,10 @@ export default function MosqueFinderScreen({
   return (
     <View style={[styles.screen, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        eyebrow="Tools"
-        title="Mosque Finder"
+        eyebrow={t('Tools')}
+        title={t('Mosque Finder')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
       <View style={{ maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH, paddingTop: 4 }}>
         <View style={styles.headerWrap}>
@@ -441,7 +442,7 @@ export default function MosqueFinderScreen({
             />
             <TextInput
               style={[styles.searchInput, { color: colors.textPrimary }]}
-              placeholder="Search area or city, e.g. 'Dubai Marina' or 'Lahore'..."
+              placeholder={t("Search area or city, e.g. 'Dubai Marina' or 'Lahore'...")}
               placeholderTextColor={colors.textMuted}
               value={areaInput}
               onChangeText={setAreaInput}
@@ -454,7 +455,7 @@ export default function MosqueFinderScreen({
                 onPress={() => setAreaInput('')}
                 style={styles.clearBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Clear search input"
+                accessibilityLabel={t('Clear search input')}
               >
                 <Ionicons name="close-circle" size={16} color={colors.textMuted} />
               </TouchableOpacity>
@@ -468,7 +469,7 @@ export default function MosqueFinderScreen({
               onPress={() => handleSearchArea(areaInput)}
               disabled={searchingArea || !areaInput.trim()}
               accessibilityRole="button"
-              accessibilityLabel="Search area"
+              accessibilityLabel={t('Search area')}
             >
               {searchingArea ? (
                 <ActivityIndicator size="small" color={colors.bgBase} />
@@ -476,7 +477,7 @@ export default function MosqueFinderScreen({
                 <>
                   <Ionicons name="search" size={14} color={colors.bgBase} style={{ marginRight: 4 }} />
                   <Text style={[styles.searchSubmitText, { color: colors.bgBase }]}>
-                    Find
+                    {t('Find')}
                   </Text>
                 </>
               )}
@@ -487,14 +488,14 @@ export default function MosqueFinderScreen({
           {areaHistory.length > 0 && !areaSearchCenter && (
             <View style={styles.recentWrap}>
               <View style={styles.recentHeader}>
-                <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
                 <TouchableOpacity
                   onPress={clearAreaHistory}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   accessibilityRole="button"
-                  accessibilityLabel="Clear area search history"
+                  accessibilityLabel={t('Clear area search history')}
                 >
-                  <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
+                  <Text style={[styles.recentClearText, { color: colors.textMuted }]}>{t('Clear')}</Text>
                 </TouchableOpacity>
               </View>
               <ScrollView
@@ -517,7 +518,7 @@ export default function MosqueFinderScreen({
                       }}
                       style={styles.recentChipBtn}
                       accessibilityRole="button"
-                      accessibilityLabel={`Search for mosques near ${item}`}
+                      accessibilityLabel={`${t('Search for mosques near')} ${item}`}
                     >
                       <Ionicons name="time-outline" size={13} color={colors.accent} />
                       <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -528,7 +529,7 @@ export default function MosqueFinderScreen({
                       onPress={() => removeAreaQuery(item)}
                       style={styles.recentChipRemove}
                       accessibilityRole="button"
-                      accessibilityLabel={`Remove ${item} from search history`}
+                      accessibilityLabel={`${t('Remove from search history')}: ${item}`}
                       hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
                     >
                       <Ionicons name="close" size={12} color={colors.textMuted} />
@@ -594,7 +595,7 @@ export default function MosqueFinderScreen({
 
                 <View style={styles.locationInfo}>
                   <Text style={[styles.locationLabel, { color: colors.textMuted }]}>
-                    SEARCH CENTER · {centerTypeBadge}
+                    {t('SEARCH CENTER')} · {centerTypeBadge}
                   </Text>
                   <Text
                     style={[styles.locationValue, { color: colors.textPrimary }]}
@@ -611,9 +612,9 @@ export default function MosqueFinderScreen({
                         style={[styles.gpsConfidenceText, { color: colors.textMuted }]}
                         numberOfLines={1}
                       >
-                        Using GPS location ({effectiveCenter.latitude.toFixed(2)}°,{' '}
+                        {t('Using GPS location')} ({effectiveCenter.latitude.toFixed(2)}°,{' '}
                         {effectiveCenter.longitude.toFixed(2)}°) ·{' '}
-                        {gpsTimestamp ? `last updated ${gpsTimestamp}` : 'active'}
+                        {gpsTimestamp ? `${t('last updated')} ${gpsTimestamp}` : t('active')}
                       </Text>
                     </View>
                   )}
@@ -632,7 +633,7 @@ export default function MosqueFinderScreen({
                 onPress={handleUseMyLocation}
                 disabled={isLocating}
                 accessibilityRole="button"
-                accessibilityLabel="Use my GPS location"
+                accessibilityLabel={t('Use my GPS location')}
               >
                 {isLocating ? (
                   <ActivityIndicator size="small" color={colors.accent} />
@@ -640,7 +641,7 @@ export default function MosqueFinderScreen({
                   <Ionicons name="locate" size={15} color={colors.accent} />
                 )}
                 <Text style={[styles.useLocationBtnText, { color: colors.accent }]}>
-                  {isLocating ? 'Acquiring GPS...' : 'USE MY LOCATION'}
+                  {isLocating ? t('Acquiring GPS...') : t('USE MY LOCATION')}
                 </Text>
               </TouchableOpacity>
 
@@ -671,7 +672,7 @@ export default function MosqueFinderScreen({
                     <Ionicons name="location" size={16} color={colors.accent} />
                     <View style={styles.areaBannerTextWrap}>
                       <Text style={[styles.areaBannerTitle, { color: colors.accent }]}>
-                        Showing mosques near '{areaSearchCenter.query}'
+                        {t('Showing mosques near')} '{areaSearchCenter.query}'
                       </Text>
                       <Text
                         style={[styles.areaBannerSubtitle, { color: colors.textSecondary }]}
@@ -691,11 +692,11 @@ export default function MosqueFinderScreen({
                     ]}
                     onPress={handleClearAreaSearch}
                     accessibilityRole="button"
-                    accessibilityLabel="Return to my location"
+                    accessibilityLabel={t('Return to my location')}
                   >
                     <Ionicons name="close" size={14} color={colors.accent} />
                     <Text style={[styles.areaBannerCloseText, { color: colors.accent }]}>
-                      My Location
+                      {t('My Location')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -705,7 +706,7 @@ export default function MosqueFinderScreen({
 
               <View style={styles.radiusRow}>
                 <Text style={[styles.radiusLabel, { color: colors.textSecondary }]}>
-                  Search Radius:
+                  {t('Search Radius:')}
                 </Text>
                 <View style={styles.radiusPills}>
                   {RADIUS_OPTIONS.map((r) => {
@@ -722,7 +723,7 @@ export default function MosqueFinderScreen({
                         ]}
                         onPress={() => setRadiusKm(r)}
                         accessibilityRole="button"
-                        accessibilityLabel={`${r} kilometers radius`}
+                        accessibilityLabel={`${r} ${t('kilometers radius')}`}
                       >
                         <Text
                           style={[
@@ -746,10 +747,8 @@ export default function MosqueFinderScreen({
               <View style={styles.resultsBanner}>
                 <Text style={[styles.resultsCount, { color: colors.textMuted }]}>
                   {mosques.length === 0
-                    ? `No mosques found within ${radiusKm} km`
-                    : `Found ${mosques.length} mosque${
-                        mosques.length === 1 ? '' : 's'
-                      } within ${radiusKm} km`}
+                    ? `${t('No mosques found within')} ${radiusKm} km`
+                    : `${t('Found')} ${mosques.length} ${t('mosques within')} ${radiusKm} km`}
                 </Text>
               </View>
             )}
@@ -798,11 +797,11 @@ export default function MosqueFinderScreen({
                 ]}
                 onPress={() => openInMaps(item)}
                 accessibilityRole="button"
-                accessibilityLabel={`Open ${item.name} in maps`}
+                accessibilityLabel={`${t('Open in Maps')} - ${item.name}`}
               >
                 <Ionicons name="map-outline" size={14} color={colors.accent} />
                 <Text style={[styles.mapButtonText, { color: colors.textPrimary }]}>
-                  Open in Maps
+                  {t('Open in Maps')}
                 </Text>
                 <Ionicons name="open-outline" size={12} color={colors.textMuted} />
               </TouchableOpacity>
@@ -820,21 +819,19 @@ export default function MosqueFinderScreen({
             <Card style={styles.emptyCard} padded>
               <Ionicons name="search-outline" size={36} color={colors.accent} />
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                Area Not Found
+                {t('Area Not Found')}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                No geographic location found for "{searchedQuery}". Try another city,
-                district, or landmark name (e.g. "Dubai Marina", "Lahore", or
-                "Istanbul").
+                {t('No geographic location found for')} "{searchedQuery}". {t('Try another city, district, or landmark name (e.g. "Dubai Marina", "Lahore", or "Istanbul").')}
               </Text>
               <TouchableOpacity
                 style={[styles.retryButton, { backgroundColor: colors.accent }]}
                 onPress={handleClearAreaSearch}
                 accessibilityRole="button"
-                accessibilityLabel="Return to my location"
+                accessibilityLabel={t('Return to my location')}
               >
                 <Text style={[styles.retryText, { color: colors.bgBase }]}>
-                  Return to My Location
+                  {t('Return to My Location')}
                 </Text>
               </TouchableOpacity>
             </Card>
@@ -842,7 +839,7 @@ export default function MosqueFinderScreen({
             <Card style={styles.errorCard} padded>
               <Ionicons name="alert-circle-outline" size={32} color={colors.accent} />
               <Text style={[styles.errorTitle, { color: colors.textPrimary }]}>
-                Unable to load mosques
+                {t('Unable to load mosques')}
               </Text>
               <Text style={[styles.errorSubtitle, { color: colors.textMuted }]}>{error}</Text>
               <TouchableOpacity
@@ -855,10 +852,10 @@ export default function MosqueFinderScreen({
                   )
                 }
                 accessibilityRole="button"
-                accessibilityLabel="Retry search"
+                accessibilityLabel={t('Retry search')}
               >
                 <Text style={[styles.retryText, { color: colors.bgBase }]}>
-                  Retry Search
+                  {t('Retry Search')}
                 </Text>
               </TouchableOpacity>
             </Card>
@@ -866,22 +863,21 @@ export default function MosqueFinderScreen({
             <Card style={styles.emptyCard} padded>
               <Ionicons name="compass-outline" size={36} color={colors.textMuted} />
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                No Mosques Found
+                {t('No Mosques Found')}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                No places of worship found within {radiusKm} km of{' '}
-                {effectiveCenter.label || 'this location'}. Try expanding the search radius
-                above or searching another area.
+                {t('No places of worship found within')} {radiusKm} km {t('of')}{' '}
+                {effectiveCenter.label || t('this location')}. {t('Try expanding the search radius above or searching another area.')}
               </Text>
               {areaSearchCenter && (
                 <TouchableOpacity
                   style={[styles.retryButton, { backgroundColor: colors.accent }]}
                   onPress={handleClearAreaSearch}
                   accessibilityRole="button"
-                  accessibilityLabel="Return to my location"
+                  accessibilityLabel={t('Return to my location')}
                 >
                   <Text style={[styles.retryText, { color: colors.bgBase }]}>
-                    Return to My Location
+                    {t('Return to My Location')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -892,7 +888,7 @@ export default function MosqueFinderScreen({
           mosques.length > 0 ? (
             <View style={styles.footerNote}>
               <Text style={[styles.footerText, { color: colors.textMuted }]}>
-                Place of worship data provided by OpenStreetMap contributors. Keyless Nominatim search.
+                {t('Place of worship data provided by OpenStreetMap contributors. Keyless Nominatim search.')}
               </Text>
             </View>
           ) : null

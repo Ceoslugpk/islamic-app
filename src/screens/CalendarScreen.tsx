@@ -19,6 +19,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
 import { CalendarGridSkeleton } from '../components/Skeleton';
+import { t } from '../lib/i18n';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const GREG_MONTHS = [
@@ -173,30 +174,30 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
       }
     >
       <ScreenHeader
-        eyebrow="Hijri Calendar"
-        title="Islamic Dates"
+        eyebrow={t('Hijri Calendar')}
+        title={t('Islamic Dates')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
       <View style={styles.contentWrap}>
         {/* NEW: Today Panel */}
         <Card style={styles.todayCard} padded>
           <View style={styles.todayRow}>
             <View style={styles.todayMain}>
-              <Text style={[styles.todayLabel, { color: colors.textMuted }]}>TODAY</Text>
+              <Text style={[styles.todayLabel, { color: colors.textMuted }]}>{t('TODAY')}</Text>
               {currentHijri ? (
                 <Text style={[styles.todayHijriDate, { color: colors.textPrimary }]}>
                   {formatHijriDate(currentHijri.day, HIJRI_MONTH_NAMES.indexOf(currentHijri.monthName) + 1, currentHijri.year)}
                 </Text>
               ) : (
-                <Text style={[styles.todayHijriDate, { color: colors.textPrimary }]}>Loading…</Text>
+                <Text style={[styles.todayHijriDate, { color: colors.textPrimary }]}>{t('Loading…')}</Text>
               )}
               <Text style={[styles.todayGregorian, { color: colors.textSecondary }]}>
-                {GREG_MONTHS[today.getMonth()]} {today.getDate()}, {today.getFullYear()}
+                {t(GREG_MONTHS[today.getMonth()])} {today.getDate()}, {today.getFullYear()}
               </Text>
               {data && (
                 <Text style={[styles.todayProgress, { color: colors.textMuted }]}>
-                  Day {data.days.find(d => d.gregorianDay === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear())?.hijriDay ?? '?'} of {data.days.length > 0 ? (data.days[data.days.length - 1].hijriDay) : '29/30'} in {data.hijriMonthName}
+                  {t('Day')} {data.days.find(d => d.gregorianDay === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear())?.hijriDay ?? '?'} {t('of')} {data.days.length > 0 ? (data.days[data.days.length - 1].hijriDay) : '29/30'} {t('in')} {data.hijriMonthName}
                 </Text>
               )}
             </View>
@@ -208,12 +209,12 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
             <View style={styles.nextEventRow}>
               <Hairline style={{ marginVertical: 12, backgroundColor: colors.borderSubtle }} />
               <View style={styles.nextEventContent}>
-                <Text style={[styles.nextEventLabel, { color: colors.textMuted }]}>Next event</Text>
+                <Text style={[styles.nextEventLabel, { color: colors.textMuted }]}>{t('Next event')}</Text>
                 <Text style={[styles.nextEventName, { color: colors.textPrimary }]}>
                   {nextEvent.event.name} {nextEvent.event.arabic ? `(${nextEvent.event.arabic})` : ''}
                 </Text>
                 <Text style={[styles.nextEventCountdown, { color: colors.accent }]}>
-                  {nextEvent.daysUntil === 0 ? 'Today' : nextEvent.daysUntil === 1 ? 'Tomorrow' : `in ${nextEvent.daysUntil} days`}
+                  {nextEvent.daysUntil === 0 ? t('Today') : nextEvent.daysUntil === 1 ? t('Tomorrow') : `${t('in')} ${nextEvent.daysUntil} ${t('days')}`}
                 </Text>
                 <Text style={[styles.nextEventSignificance, { color: colors.textSecondary }]}>
                   {nextEvent.event.significance}
@@ -225,30 +226,30 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
 
         {/* Month navigation */}
         <View style={[styles.navRow, { borderColor: colors.borderSubtle }]}>
-          <TouchableOpacity onPress={() => shift(-1)} accessibilityLabel="Previous month" style={styles.navBtn}>
+          <TouchableOpacity onPress={() => shift(-1)} accessibilityLabel={t('Previous month')} style={styles.navBtn}>
             <Text style={[styles.navArrow, { color: colors.accent }]}>‹</Text>
           </TouchableOpacity>
           <View style={styles.navTitle}>
             <Text style={[styles.monthName, { color: colors.textPrimary }]}>
-              {data ? data.hijriMonthName : 'Loading…'}
+              {data ? data.hijriMonthName : t('Loading…')}
             </Text>
             <Text style={[styles.monthMeta, { color: colors.textMuted }]}>
-              {data ? `${data.hijriYear} AH · ${GREG_MONTHS[month - 1]} ${year}` : '...'}
+              {data ? `${data.hijriYear} AH · ${t(GREG_MONTHS[month - 1])} ${year}` : '...'}
             </Text>
           </View>
-          <TouchableOpacity onPress={() => shift(1)} accessibilityLabel="Next month" style={styles.navBtn}>
+          <TouchableOpacity onPress={() => shift(1)} accessibilityLabel={t('Next month')} style={styles.navBtn}>
             <Text style={[styles.navArrow, { color: colors.accent }]}>›</Text>
           </TouchableOpacity>
         </View>
 
         {/* NEW: Today jump button */}
-        <TouchableOpacity onPress={jumpToToday} style={styles.todayJumpBtn} accessibilityLabel="Jump to today">
-          <Text style={[styles.todayJumpText, { color: colors.accent }]}>• Today</Text>
+        <TouchableOpacity onPress={jumpToToday} style={styles.todayJumpBtn} accessibilityLabel={t('Jump to today')}>
+          <Text style={[styles.todayJumpText, { color: colors.accent }]}>• {t('Today')}</Text>
         </TouchableOpacity>
 
         {/* NEW: Month overview strip - 12 Hijri months as chips */}
         <View style={styles.monthStripContainer}>
-          <Text style={[styles.monthStripLabel, { color: colors.textMuted }]}>Hijri months</Text>
+          <Text style={[styles.monthStripLabel, { color: colors.textMuted }]}>{t('Hijri months')}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -267,7 +268,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
                     { borderColor: isActive ? colors.accent : colors.borderSubtle },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel={`Jump to ${m}`}
+                  accessibilityLabel={`${t('Jump to')} ${m}`}
                   accessibilityState={{ selected: isActive ? true : undefined }}
                 >
                   <Text
@@ -295,7 +296,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
             <View style={styles.weekRow}>
               {WEEKDAYS.map((d) => (
                 <Text key={d} style={[styles.weekday, { color: colors.textMuted }]}>
-                  {d}
+                  {t(d)}
                 </Text>
               ))}
             </View>
@@ -353,14 +354,13 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
             </View>
 
             <Text style={[styles.legend, { color: colors.textMuted }]}>
-              Hijri date shown under each day
-              {'\n'}Amber = today · Orange = Friday · Amber dot + icon = Islamic event
+              {t('Hijri date shown under each day\nAmber = today · Orange = Friday · Amber dot + icon = Islamic event')}
             </Text>
 
             {/* NEW: Events list */}
             <View style={styles.eventsSection}>
               <Hairline style={{ marginVertical: 16, backgroundColor: colors.borderSubtle }} />
-              <SectionHeader eyebrow="Islamic Events" title="This Year" subtitle={`${ISLAMIC_EVENTS.length} major dates · by Hijri month`} compact={isCompact} />
+              <SectionHeader eyebrow={t('Islamic Events')} title={t('This Year')} subtitle={`${ISLAMIC_EVENTS.length} ${t('major dates · by Hijri month')}`} compact={isCompact} />
               <View style={styles.eventsList}>
                 {allEventsWithCountdown.map((event) => (
                   <TouchableOpacity
@@ -376,7 +376,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
                     onPress={() => {
                       // Could navigate to that month - for now just feedback
                     }}
-                    accessibilityLabel={`${event.name}, ${event.daysUntil} days away`}
+                    accessibilityLabel={`${event.name}, ${event.daysUntil} ${t('days')} ${t('away')}`}
                   >
                     <View style={[styles.eventIconWrapper, { backgroundColor: colors.bgRaised }]}>
                       <Ionicons name={getEventIcon(event)} size={20} color={event.inCurrentMonth ? colors.accent : colors.textMuted} />
@@ -385,7 +385,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
                       <View style={styles.eventHeader}>
                         <Text style={[styles.eventName, { color: colors.textPrimary }]}>{event.name}</Text>
                         {event.inCurrentMonth && (
-                          <Text style={styles.eventCurrentBadge}>This month</Text>
+                          <Text style={styles.eventCurrentBadge}>{t('This month')}</Text>
                         )}
                       </View>
                       <Text style={[styles.eventArabic, { color: colors.accent }]}>{event.arabic}</Text>
@@ -396,9 +396,9 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
                     </View>
                     <View style={styles.eventCountdown}>
                       <Text style={[styles.countdownValue, { color: colors.accent }]}>
-                        {event.daysUntil === 0 ? 'Today' : event.daysUntil === 1 ? 'Tomorrow' : `${event.daysUntil}d`}
+                        {event.daysUntil === 0 ? t('Today') : event.daysUntil === 1 ? t('Tomorrow') : `${event.daysUntil}d`}
                       </Text>
-                      <Text style={[styles.countdownLabel, { color: colors.textMuted }]}>{event.daysUntil === 0 ? '' : 'away'}</Text>
+                      <Text style={[styles.countdownLabel, { color: colors.textMuted }]}>{event.daysUntil === 0 ? '' : t('away')}</Text>
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -408,7 +408,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
         )}
 
         <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
-          Offline, dates follow the tabular Umm al-Qura calendar and may differ by a day from a sighting.
+          {t('Offline, dates follow the tabular Umm al-Qura calendar and may differ by a day from a sighting.')}
         </Text>
       </View>
     </ScrollView>

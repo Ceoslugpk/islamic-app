@@ -19,6 +19,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
@@ -142,7 +143,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
       setCollections(data);
     } catch {
       if (collections.length === 0) {
-        setCollectionsError('Unable to refresh collections. Showing offline list.');
+        setCollectionsError(t('Unable to refresh collections. Showing offline list.'));
       }
     } finally {
       setCollectionsLoading(false);
@@ -213,7 +214,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
       setBooks(data);
     } catch {
       if (books.length === 0) {
-        setBooksError('Failed to load books. Please check your connection and retry.');
+        setBooksError(t('Failed to load books. Please check your connection and retry.'));
       }
     } finally {
       setBooksLoading(false);
@@ -233,7 +234,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
       setHadithsTotal(data.total);
     } catch {
       if (hadiths.length === 0) {
-        setHadithsError('Failed to load hadiths. Please check your connection and retry.');
+        setHadithsError(t('Failed to load hadiths. Please check your connection and retry.'));
       }
     } finally {
       setHadithsLoading(false);
@@ -365,7 +366,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
       setIsSharingImage(false);
       const isSharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
       if (isSharingAvailable) {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share hadith' });
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('Share hadith') });
       } else {
         await Share.share({ url: uri });
       }
@@ -485,15 +486,15 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
   // Determine back button label
   const backLabel = useMemo(() => {
     if (activeTab !== 'collections') {
-      if (view.type === 'detail') return 'Back';
-      return 'Library';
+      if (view.type === 'detail') return t('Back');
+      return t('Library');
     }
     if (view.type === 'detail') {
-      return view.from === 'hadiths' ? 'Hadiths' : 'Back';
+      return view.from === 'hadiths' ? t('Hadiths') : t('Back');
     }
-    if (view.type === 'hadiths') return 'Books';
-    if (view.type === 'books') return 'Collections';
-    return 'Library';
+    if (view.type === 'hadiths') return t('Books');
+    if (view.type === 'books') return t('Collections');
+    return t('Library');
   }, [activeTab, view]);
 
   // Total read hadiths count
@@ -510,8 +511,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       {/* Top Header Row with Back Button */}
       <ScreenHeader
-        eyebrow="Library"
-        title="Hadith Library"
+        eyebrow={t('Library')}
+        title={t('Hadith Library')}
         backLabel={backLabel}
         onBack={handleBack}
         borderBottom
@@ -526,17 +527,17 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         >
           {(
             [
-              { key: 'collections', label: 'Collections', icon: 'albums' },
-              { key: 'saved', label: `Saved (${savedList.length})`, icon: 'bookmark' },
-              { key: 'recent', label: 'Recent', icon: 'time' },
-              { key: 'progress', label: 'Progress', icon: 'analytics' },
+              { key: 'collections', label: t('Collections'), icon: 'albums' },
+              { key: 'saved', label: `${t('Saved')} (${savedList.length})`, icon: 'bookmark' },
+              { key: 'recent', label: t('Recent'), icon: 'time' },
+              { key: 'progress', label: t('Progress'), icon: 'analytics' },
             ] as const
-          ).map((t) => {
-            const isActive = activeTab === t.key && (t.key !== 'collections' || view.type === 'collections');
+          ).map((tabItem) => {
+            const isActive = activeTab === tabItem.key && (tabItem.key !== 'collections' || view.type === 'collections');
             return (
               <TouchableOpacity
-                key={t.key}
-                onPress={() => handleTabChange(t.key)}
+                key={tabItem.key}
+                onPress={() => handleTabChange(tabItem.key)}
                 style={[
                   styles.tabChip,
                   {
@@ -548,7 +549,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 accessibilityState={{ selected: isActive }}
               >
                 <Ionicons
-                  name={t.icon as any}
+                  name={tabItem.icon as any}
                   size={14}
                   color={isActive ? colors.onAccent : colors.textMuted}
                 />
@@ -558,7 +559,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     { color: isActive ? colors.onAccent : colors.textPrimary },
                   ]}
                 >
-                  {t.label}
+                  {tabItem.label}
                 </Text>
               </TouchableOpacity>
             );
@@ -573,20 +574,20 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
               compact
-              eyebrow="Library"
-              title="Saved Hadith"
+              eyebrow={t('Library')}
+              title={t('Saved Hadith')}
               subtitle={
                 savedList.length === 0
-                  ? 'Bookmarks and saved prophetic traditions'
-                  : `${savedList.length} saved tradition${savedList.length > 1 ? 's' : ''}`
+                  ? t('Bookmarks and saved prophetic traditions')
+                  : `${savedList.length} ${savedList.length === 1 ? t('saved tradition') : t('saved traditions')}`
               }
             />
 
             {savedList.length === 0 ? (
               <EmptyState
                 icon="bookmark-outline"
-                title="No saved hadiths yet"
-                subtitle='While reading any hadith, tap the "Save" bookmark button to keep it here for quick access.'
+                title={t('No saved hadiths yet')}
+                subtitle={t('While reading any hadith, tap the "Save" bookmark button to keep it here for quick access.')}
               />
             ) : (
               <View style={[styles.gap12, isWide && styles.gridWide]}>
@@ -613,7 +614,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       <View style={styles.metaRow}>
                         <View style={[styles.badge, { backgroundColor: colors.accentDim }]}>
                           <Text style={[styles.badgeText, { color: colors.accent }]}>
-                            {item.collectionName || item.collection} · Book {item.bookNumber} : #
+                            {item.collectionName || item.collection} · {t('Book')} {item.bookNumber} : #
                             {item.hadithNumber}
                           </Text>
                         </View>
@@ -648,7 +649,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
                       <View style={styles.cardActionRow}>
                         <Text style={[styles.cardTapHint, { color: colors.accent }]}>
-                          Read full hadith →
+                          {t('Read full hadith')} →
                         </Text>
                         <TouchableOpacity
                           onPress={() => {
@@ -656,7 +657,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                             reloadStorageData();
                           }}
                           style={styles.unsaveBtn}
-                          accessibilityLabel="Remove from saved"
+                          accessibilityLabel={t('Remove from saved')}
                         >
                           <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
                         </TouchableOpacity>
@@ -675,16 +676,16 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
               compact
-              eyebrow="Library"
-              title="Recently Read"
-              subtitle="Prophetic traditions you recently viewed"
+              eyebrow={t('Library')}
+              title={t('Recently Read')}
+              subtitle={t('Prophetic traditions you recently viewed')}
             />
 
             {recentList.length === 0 ? (
               <EmptyState
                 icon="time-outline"
-                title="No reading history yet"
-                subtitle="As you browse collections and read hadith details, they will automatically appear here."
+                title={t('No reading history yet')}
+                subtitle={t('As you browse collections and read hadith details, they will automatically appear here.')}
               />
             ) : (
               <View style={[styles.gap12, isWide && styles.gridWide]}>
@@ -711,7 +712,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       <View style={styles.metaRow}>
                         <View style={[styles.badge, { backgroundColor: colors.accentDim }]}>
                           <Text style={[styles.badgeText, { color: colors.accent }]}>
-                            {item.collectionName || item.collection} · Book {item.bookNumber} : #
+                            {item.collectionName || item.collection} · {t('Book')} {item.bookNumber} : #
                             {item.hadithNumber}
                           </Text>
                         </View>
@@ -739,7 +740,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       ) : null}
 
                       <Text style={[styles.cardTapHint, { color: colors.accent, marginTop: 8 }]}>
-                        Read full hadith →
+                        {t('Read full hadith')} →
                       </Text>
                     </TouchableOpacity>
                   </Card>
@@ -755,33 +756,33 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
           <ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
               compact
-              eyebrow="Library"
-              title="Reading Progress"
-              subtitle="Track prophetic traditions completed per collection"
+              eyebrow={t('Library')}
+              title={t('Reading Progress')}
+              subtitle={t('Track prophetic traditions completed per collection')}
             />
 
             {/* Scorecard Header */}
             <View style={styles.scoreRow}>
               <Card padded style={styles.scoreCard}>
                 <Text style={[styles.scoreNumber, { color: colors.accent }]}>{totalRead}</Text>
-                <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>Hadiths Read</Text>
+                <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>{t('Hadiths Read')}</Text>
               </Card>
               <Card padded style={styles.scoreCard}>
                 <Text style={[styles.scoreNumber, { color: colors.textPrimary }]}>
                   {Object.keys(readCounts).length}
                 </Text>
                 <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>
-                  Collections Explored
+                  {t('Collections Explored')}
                 </Text>
               </Card>
             </View>
 
             <View style={styles.sectionDivider}>
               <Text style={[styles.sectionDividerTitle, { color: colors.textPrimary }]}>
-                Collections Breakdown
+                {t('Collections Breakdown')}
               </Text>
               <Text style={[styles.sectionDividerSub, { color: colors.textMuted }]}>
-                Tap any collection to jump directly to its books
+                {t('Tap any collection to jump directly to its books')}
               </Text>
             </View>
 
@@ -807,7 +808,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                             {col.name.en}
                           </Text>
                           <Text style={[styles.progressMeta, { color: colors.textMuted }]}>
-                            {count} of {total.toLocaleString()} read
+                            {count} {t('of')} {total.toLocaleString()} {t('read')}
                           </Text>
                         </View>
                         <View style={styles.pctBadge}>
@@ -860,9 +861,9 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
           >
             <SectionHeader
               compact
-              eyebrow="Library"
-              title="Hadith Library"
-              subtitle="Browse 17 canonical collections, books & authentic narrations"
+              eyebrow={t('Library')}
+              title={t('Hadith Library')}
+              subtitle={t('Browse 17 canonical collections, books & authentic narrations')}
             />
 
             {/* Search Filter */}
@@ -876,7 +877,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
               <TextInput
                 value={collectionFilter}
                 onChangeText={setCollectionFilter}
-                placeholder="Search collections..."
+                placeholder={t('Search collections...')}
                 placeholderTextColor={colors.textMuted}
                 style={[styles.searchInput, { color: colors.textPrimary }]}
                 clearButtonMode="while-editing"
@@ -897,14 +898,14 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {collectionHistory.length > 0 && !collectionFilter && (
               <View style={styles.recentWrap}>
                 <View style={styles.recentHeader}>
-                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
                   <TouchableOpacity
                     onPress={clearCollectionHistory}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     accessibilityRole="button"
-                    accessibilityLabel="Clear hadith collection search history"
+                    accessibilityLabel={t('Clear hadith collection search history')}
                   >
-                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
+                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>{t('Clear')}</Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView
@@ -938,7 +939,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                         onPress={() => removeCollectionQuery(item)}
                         style={styles.recentChipRemove}
                         accessibilityRole="button"
-                        accessibilityLabel={`Remove ${item} from search history`}
+                        accessibilityLabel={`${t('Remove')} ${item} ${t('from search history')}`}
                         hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
                       >
                         <Ionicons name="close" size={12} color={colors.textMuted} />
@@ -960,9 +961,9 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {collectionsError && (
               <EmptyState
                 icon="cloud-offline-outline"
-                title="You're offline"
+                title={t("You're offline")}
                 subtitle={collectionsError}
-                actionLabel="Retry"
+                actionLabel={t('Retry')}
                 onAction={loadCollections}
               />
             )}
@@ -989,8 +990,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                             {item.name.en}
                           </Text>
                           <Text style={[styles.colHadithCount, { color: colors.textMuted }]}>
-                            {total > 0 ? `${total.toLocaleString()} hadiths` : 'Collection'}
-                            {readCount > 0 ? ` · ${readCount} read` : ''}
+                            {total > 0 ? `${total.toLocaleString()} ${t('hadiths')}` : t('Collection')}
+                            {readCount > 0 ? ` · ${readCount} ${t('read')}` : ''}
                           </Text>
                         </View>
                         {item.name.ar ? (
@@ -1011,7 +1012,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
                       <View style={styles.colFooter}>
                         <Text style={[styles.browseBooksText, { color: colors.accent }]}>
-                          Browse Books →
+                          {t('Browse Books')} →
                         </Text>
                         <Text style={[styles.arrow, { color: colors.accent }]}>›</Text>
                       </View>
@@ -1025,9 +1026,9 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {collectionFilter.trim().length > 0 && filteredCollections.length === 0 && (
               <EmptyState
                 icon="search-outline"
-                title="No matches"
-                subtitle={`No collections match "${collectionFilter}"`}
-                actionLabel="Clear search"
+                title={t('No matches')}
+                subtitle={`${t('No collections match')} "${collectionFilter}"`}
+                actionLabel={t('Clear search')}
                 onAction={() => setCollectionFilter('')}
               />
             )}
