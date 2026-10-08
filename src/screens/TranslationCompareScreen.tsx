@@ -21,6 +21,7 @@ import {
   QURAN_LANGUAGE_EDITIONS,
 } from '../lib/quranLanguages';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 interface TranslationCompareScreenProps {
   initialSurah?: number;
@@ -237,7 +238,7 @@ export default function TranslationCompareScreen({
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.pillScroll}
+                contentContainerStyle={[styles.pillScroll, hScrollRTLStyle()]}
               >
                 {QUICK_LANGS.map((ql) => {
                   const isSelected = langA === ql.code;
@@ -290,7 +291,7 @@ export default function TranslationCompareScreen({
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.pillScroll}
+                contentContainerStyle={[styles.pillScroll, hScrollRTLStyle()]}
               >
                 {QUICK_LANGS.map((ql) => {
                   const isSelected = langB === ql.code;
@@ -344,7 +345,7 @@ export default function TranslationCompareScreen({
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.pillScroll}
+                  contentContainerStyle={[styles.pillScroll, hScrollRTLStyle()]}
                 >
                   {QUICK_LANGS.map((ql) => {
                     const isSelected = langC === ql.code;

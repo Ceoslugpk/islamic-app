@@ -14,6 +14,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 interface PackingItem {
   id: string;
@@ -192,7 +193,7 @@ export default function UmrahResourcesScreen({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.tabScroll}
+        contentContainerStyle={[styles.tabScroll, hScrollRTLStyle()]}
       >
         {[
           { key: 'checklist', label: 'Packing Checklist' },

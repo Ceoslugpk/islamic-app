@@ -93,6 +93,7 @@ import {
   saveRecentlyPlayed,
 } from '../lib/db';
 import { getBundledSurahs114, SurahMeta } from '../lib/quran';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 // Simple keep-awake implementation using a timer (fallback when expo-keep-awake not available)
 const keepAwakeTimers = new Map<number, ReturnType<typeof setInterval>>();

@@ -35,6 +35,7 @@ import {
   loadZakatCalculations,
   deleteZakatCalculation,
 } from '../lib/db';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 type ZakatSubTab = 'calculator' | 'history' | 'guide';
 

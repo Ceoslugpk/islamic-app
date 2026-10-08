@@ -62,6 +62,7 @@ import { ContinueReadingCard } from '../components/ContinueReadingCard';
 import { DailyContentRail } from '../components/DailyContentRail';
 import { QuickActionsStrip } from '../components/QuickActionsStrip';
 import { CompactPrayerBar } from '../components/CompactPrayerBar';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -910,7 +911,7 @@ export default function HomeScreen({
             snapToAlignment="center"
             decelerationRate="fast"
             nestedScrollEnabled
-            contentContainerStyle={styles.duaRailScrollContent}
+            contentContainerStyle={[styles.duaRailScrollContent, hScrollRTLStyle()]}
             onScroll={(event) => {
               const offsetX = event.nativeEvent.contentOffset.x;
               const index = Math.round(offsetX / duaSnapInterval);

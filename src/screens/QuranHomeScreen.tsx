@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { hScrollRTLStyle } from '../lib/rtl';
 import { fetchSurahList, fetchSurahListForLanguage, getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { ArabicText } from '../components/ArabicText';
 import { SectionHeader } from '../components/SectionHeader';
@@ -471,7 +472,7 @@ export default function QuranHomeScreen({
               horizontal
               nestedScrollEnabled
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={[styles.recentScroll, { gap: isNarrow ? 8 : 10 }]}
+              contentContainerStyle={[styles.recentScroll, { gap: isNarrow ? 8 : 10 }, hScrollRTLStyle()]}
             >
               {recentSurahs.map((recent) => (
                 <TouchableOpacity
@@ -710,7 +711,7 @@ export default function QuranHomeScreen({
             horizontal
             nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[styles.hubChipsScroll, { gap: isNarrow ? 6 : 8 }]}
+            contentContainerStyle={[styles.hubChipsScroll, { gap: isNarrow ? 6 : 8 }, hScrollRTLStyle()]}
           >
             <TouchableOpacity
               style={[
@@ -891,7 +892,7 @@ export default function QuranHomeScreen({
                 horizontal
                 nestedScrollEnabled
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.searchRecentScroll}
+                contentContainerStyle={[styles.searchRecentScroll, hScrollRTLStyle()]}
               >
                 {searchHistory.map((item) => (
                   <View
@@ -954,7 +955,11 @@ export default function QuranHomeScreen({
             horizontal
             nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[styles.juzScroll, { gap: isNarrow ? 5 : 6 }]}
+            contentContainerStyle={[
+              styles.juzScroll,
+              { gap: isNarrow ? 5 : 6 },
+              hScrollRTLStyle(),
+            ]}
           >
             {JUZ_LIST.map((j) => {
               const isSelected = selectedJuz === j;

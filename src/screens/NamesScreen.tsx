@@ -38,6 +38,7 @@ import { PROPHET_NAMES_99 } from '../lib/prophetNames';
 import { useSearchHistory } from '../lib/searchHistory';
 import { useSettings } from '../lib/settings';
 import { NameRowSkeleton } from '../components/Skeleton';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 type LoadState = 'loading' | 'online' | 'offline';
 
@@ -394,7 +395,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
               horizontal
               showsHorizontalScrollIndicator={false}
               style={styles.chipRow}
-              contentContainerStyle={styles.chipRowContent}
+              contentContainerStyle={[styles.chipRowContent, hScrollRTLStyle()]}
               onScroll={handleScroll}
               onContentSizeChange={handleContentSizeChange}
               scrollEventThrottle={16}
@@ -523,7 +524,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.recentChipsScroll}
+              contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
             >
               {searchHistory.map((item) => (
                 <View

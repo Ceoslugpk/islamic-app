@@ -14,6 +14,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 interface HajjDay {
   id: string;
@@ -320,7 +321,7 @@ export default function HajjJourneyScreen({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsScroll}
+        contentContainerStyle={[styles.chipsScroll, hScrollRTLStyle()]}
       >
         {HAJJ_DAYS.map((d) => {
           const isActive = d.id === selectedDayId;

@@ -27,6 +27,7 @@ import { MosqueCardSkeleton } from '../components/Skeleton';
 import { loadMosqueCache, saveMosqueCache } from '../lib/db';
 import { useSearchHistory } from '../lib/searchHistory';
 import { t } from '../lib/i18n';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 export interface MosqueItem {
   id: string;
@@ -501,7 +502,7 @@ export default function MosqueFinderScreen({
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.recentChipsScroll}
+                contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
               >
                 {areaHistory.map((item) => (
                   <View

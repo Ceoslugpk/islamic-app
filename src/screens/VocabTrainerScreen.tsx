@@ -14,6 +14,7 @@ import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { VOCAB_WORDS, VocabWord, TIER_LABELS, getDailyWord, getDailyWords } from '../lib/vocab';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 const PROGRESS_KEY = 'vocab-trainer-progress-v1';
 
@@ -230,7 +231,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
         </View>
 
         {/* Tier filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterRow, hScrollRTLStyle()]}>
           {[
             { id: null, label: t('All') },
             { id: 'daily' as const, label: t("Today's Set") },

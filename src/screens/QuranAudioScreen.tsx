@@ -73,6 +73,7 @@ import {
 } from '../lib/db';
 import { fetchSurahList, SurahMeta } from '../lib/quran';
 import { PRESET_PLAYLISTS, PresetPlaylist } from '../lib/audioPlaylists';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 type AudioTab =
   | 'reciters'
@@ -476,7 +477,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tabScroll}
+            contentContainerStyle={[styles.tabScroll, hScrollRTLStyle()]}
           >
             {tabsConfig.map((tItem) => {
               const isTabActive = activeTab === tItem.key;

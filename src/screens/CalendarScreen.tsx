@@ -20,6 +20,7 @@ import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
 import { CalendarGridSkeleton } from '../components/Skeleton';
 import { t } from '../lib/i18n';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const GREG_MONTHS = [
@@ -253,7 +254,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.monthStrip}
+            contentContainerStyle={[styles.monthStrip, hScrollRTLStyle()]}
           >
             {HIJRI_MONTH_NAMES.map((m, i) => {
               const hijriMonthNum = i + 1;

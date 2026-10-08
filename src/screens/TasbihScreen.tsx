@@ -16,6 +16,7 @@ import { ArabicText } from '../components/ArabicText';
 import { saveTasbihCount, loadTasbihCounts, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import { t } from '../lib/i18n';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 export interface DhikrItem {
   id: string;
@@ -146,7 +147,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.dhikrList}
+        contentContainerStyle={[styles.dhikrList, hScrollRTLStyle()]}
       >
         {DHIKR_PRESETS.map((d) => {
           const isSelected = d.id === selectedDhikr.id;

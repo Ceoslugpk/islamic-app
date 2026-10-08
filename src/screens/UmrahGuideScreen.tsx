@@ -14,6 +14,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 interface UmrahStep {
   id: string;
@@ -224,7 +225,7 @@ export default function UmrahGuideScreen({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.pillsContainer}
+        contentContainerStyle={[styles.pillsContainer, hScrollRTLStyle()]}
       >
         {UMRAH_STEPS.map((s) => {
           const isActive = s.id === activeStepId;

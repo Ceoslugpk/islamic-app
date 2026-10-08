@@ -30,6 +30,7 @@ import {
   DuaItem,
 } from '../lib/duas';
 import { DuaCardSkeleton } from '../components/Skeleton';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   const { colors, mode } = useTheme();
@@ -230,7 +231,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryScroll}
+            contentContainerStyle={[styles.categoryScroll, hScrollRTLStyle()]}
           >
             {DUA_CATEGORIES.map((cat) => {
               const isSelected = cat === selectedCategory;
@@ -332,7 +333,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.recentChipsScroll}
+            contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
           >
             {searchHistory.map((item) => (
               <View

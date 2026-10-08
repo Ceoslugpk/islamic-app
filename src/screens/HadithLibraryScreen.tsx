@@ -52,6 +52,7 @@ import {
 } from '../lib/db';
 import { useConnectivity } from '../lib/useConnectivity';
 import { useSearchHistory } from '../lib/searchHistory';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 type MainTab = 'collections' | 'saved' | 'recent' | 'progress';
 
@@ -523,7 +524,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabsScroll}
+          contentContainerStyle={[styles.tabsScroll, hScrollRTLStyle()]}
         >
           {(
             [
@@ -911,7 +912,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.recentChipsScroll}
+                  contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
                 >
                   {collectionHistory.map((item) => (
                     <View
@@ -1108,7 +1109,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.recentChipsScroll}
+                  contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
                 >
                   {bookHistory.map((item) => (
                     <View

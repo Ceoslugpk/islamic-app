@@ -24,6 +24,7 @@ import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { useConnectivity } from '../lib/useConnectivity';
 import { SurahSkeleton, Skeleton } from '../components/Skeleton';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 
 interface QuranScreenProps {
@@ -320,6 +321,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
               contentContainerStyle={[
                 styles.juzScroll,
                 { paddingHorizontal: horizontalPadding, gap: isCompact ? 6 : 8 },
+                hScrollRTLStyle(),
               ]}
             >
               {JUZ_LIST.map((j) => {
@@ -369,6 +371,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
               contentContainerStyle={[
                 styles.revelationScroll,
                 { paddingHorizontal: horizontalPadding, gap: isCompact ? 4 : 6 },
+                hScrollRTLStyle(),
               ]}
             >
               {REVELATION_OPTIONS.map((opt) => {
