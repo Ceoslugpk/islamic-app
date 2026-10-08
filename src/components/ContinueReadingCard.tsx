@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
-import { getReadingPosition, ReadingPosition } from '../lib/continuing';
+import { getContinueReadingPosition, ReadingPosition } from '../lib/continuing';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
@@ -39,7 +39,7 @@ export function ContinueReadingCard({
 
   const loadPosition = useCallback(async () => {
     try {
-      const pos = await getReadingPosition();
+      const pos = await getContinueReadingPosition();
       setPosition(pos);
     } catch {
       setPosition(null);

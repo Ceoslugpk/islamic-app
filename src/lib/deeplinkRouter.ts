@@ -1,5 +1,5 @@
 import { DeepLinkTarget } from './deeplinks';
-import { getReadingPosition } from './continuing';
+import { getContinueReadingPosition } from './continuing';
 
 export type NavigationSetters = {
   setTab: (tab: 'home' | 'quran' | 'library' | 'tools') => void;
@@ -82,7 +82,7 @@ export async function handleDeepLink(
       setLibrary({ screen: 'hub' });
       setTools({ screen: 'hub' });
       try {
-        const pos = await getReadingPosition();
+        const pos = await getContinueReadingPosition();
         if (pos && typeof pos.surah === 'number' && pos.surah >= 1 && pos.surah <= 114) {
           setQuran({ screen: 'reader', surah: pos.surah, initialAyah: pos.ayah });
         } else {

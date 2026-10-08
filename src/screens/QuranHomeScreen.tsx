@@ -19,7 +19,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { t } from '../lib/i18n';
 import { LastReadPosition, loadLastReadPosition, loadQuranCache } from '../lib/db';
-import { getReadingPosition, ReadingPosition } from '../lib/continuing';
+import { getContinueReadingPosition, ReadingPosition } from '../lib/continuing';
 import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { getBookmarks, getNotes } from '../lib/study';
@@ -173,7 +173,7 @@ export default function QuranHomeScreen({
   // Refresh continue-reading position + recently read surahs on mount
   useEffect(() => {
     let mounted = true;
-    getReadingPosition()
+    getContinueReadingPosition()
       .then((pos) => {
         if (mounted) setReadingPosition(pos);
       })

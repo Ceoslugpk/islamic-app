@@ -33,7 +33,7 @@ export const QURAN_FONT_SIZE_DEFAULT = 24;
 export const QURAN_LINE_HEIGHT_MIN = 1.4;
 export const QURAN_LINE_HEIGHT_MAX = 2.2;
 export const QURAN_LINE_HEIGHT_STEP = 0.1;
-export const QURAN_LINE_HEIGHT_DEFAULT = 1.6;
+export const QURAN_LINE_HEIGHT_DEFAULT = 1.8;
 
 // Legacy AsyncStorage keys used by QuranReaderScreen before settings owned them
 const LEGACY_QURAN_FONT_SIZE = 'quran-font-size';

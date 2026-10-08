@@ -43,7 +43,7 @@ import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
-import { saveReadingPosition } from '../lib/continuing';
+import { getReadingMarker, saveReadingMarker, saveReadingPosition, ReadingPosition } from '../lib/continuing';
 import { recordQuranReadingSession } from '../lib/quranProgress';
 import { recordSurahVisit } from '../lib/recentSurahs';
 import { preloadRemainingSurahsForEdition } from '../lib/quranPreloader';
@@ -338,6 +338,26 @@ export default function QuranReaderScreen({
   const mushafScrollRef = useRef<ScrollView>(null);
   const mushafContentHeightRef = useRef<number>(0);
   const pendingScrollAyahRef = useRef<number | null>(null);
+
+  // Direct-positioning: render the FlatList already scrolled to the target ayah
+  // instead of traversing from index 0 (avoids the visible scroll-through-surah).
+  const targetAyahForPosition = useMemo(() => {
+    if (initialAyah && initialAyah > 1) return initialAyah;
+    const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
+    return saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1;
+  }, [safeSurahNumber, initialAyah]);
+  const initialListIndex = Math.max(0, targetAyahForPosition - 1);
+  // ponytail: estimated constant item height; exact enough for jump positioning,
+  // onScrollToIndexFailed corrects when measured heights diverge.
+  const AYAH_ITEM_ESTIMATE = 150;
+  const getAyahItemLayout = useCallback(
+    (_data: ArrayLike<unknown> | null | undefined, index: number) => ({
+      length: AYAH_ITEM_ESTIMATE,
+      offset: AYAH_ITEM_ESTIMATE * index,
+      index,
+    }),
+    []
+  );
 
   useEffect(() => {
     surahNumberRef.current = safeSurahNumber;
@@ -774,9 +794,38 @@ export default function QuranReaderScreen({
   const [copiedAyah, setCopiedAyah] = useState<number | null>(null);
   const copyResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Reading marker state (user-set "I stopped here")
+  const [markerJustSet, setMarkerJustSet] = useState(false);
+  const markerResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [activeMarker, setActiveMarker] = useState<ReadingPosition | null>(null);
+
+  // Load the active marker on mount
+  useEffect(() => {
+    let mounted = true;
+    getReadingMarker()
+      .then((m) => {
+        if (mounted) setActiveMarker(m);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleSetReadingMarker = useCallback(() => {
+    const ayah = currentVisibleAyah || lastSavedAyahRef.current || 1;
+    saveReadingMarker(safeSurahNumber, ayah);
+    setActiveMarker({ surah: safeSurahNumber, ayah, savedAt: Date.now() });
+    setMarkerJustSet(true);
+    if (markerResetTimerRef.current) clearTimeout(markerResetTimerRef.current);
+    markerResetTimerRef.current = setTimeout(() => setMarkerJustSet(false), 1600);
+    haptic('selection');
+  }, [safeSurahNumber, currentVisibleAyah]);
+
   useEffect(() => {
     return () => {
       if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+      if (markerResetTimerRef.current) clearTimeout(markerResetTimerRef.current);
     };
   }, []);
 
@@ -948,6 +997,12 @@ export default function QuranReaderScreen({
 
   // Handle auto-scroll to initialAyah or restored ayah
   useEffect(() => {
+    // With initialScrollIndex the list already renders at the target — only
+    // scroll when we could not use it (e.g. data arrived after mount, or the
+    // target changed after the list mounted).
+    if (surah && initialListIndex > 0 && initialListIndex < (surah.ayahs?.length || 0)) {
+      return;
+    }
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
     const targetAyah = initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
     if (surah && targetAyah > 1) {
@@ -971,7 +1026,7 @@ export default function QuranReaderScreen({
         }, 300);
       }
     }
-  }, [surah, safeSurahNumber, initialAyah, readingMode]);
+  }, [surah, safeSurahNumber, initialAyah, readingMode, initialListIndex]);
 
   const handleScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
@@ -2151,6 +2206,67 @@ export default function QuranReaderScreen({
                 </View>
               </View>
 
+              {/* READING — marker */}
+              <View style={styles.toolsMenuGroup}>
+                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                  {t('READING')}
+                </Text>
+                <View
+                  style={[
+                    styles.toolsMenuGroupCard,
+                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  ]}
+                >
+                  {/* Set Reading Marker */}
+                  <TouchableOpacity
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      handleSetReadingMarker();
+                      setToolsMenuOpen(false);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      markerJustSet
+                        ? t('Reading marker set')
+                        : t('Set reading marker')
+                    }
+                    accessibilityState={{ selected: !!activeMarker }}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        {
+                          backgroundColor: activeMarker
+                            ? colors.accentDim
+                            : colors.bgBase,
+                        },
+                      ]}
+                    >
+                      <Ionicons
+                        name={markerJustSet ? 'checkmark' : activeMarker ? 'bookmark' : 'bookmark-outline'}
+                        size={20}
+                        color={activeMarker ? colors.accent : colors.textSecondary}
+                      />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        {markerJustSet
+                          ? t('Reading marker set')
+                          : activeMarker
+                          ? t('Update reading marker')
+                          : t('Set reading marker')}
+                      </Text>
+                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                        {activeMarker
+                          ? `${t('Ayah')} ${activeMarker.ayah} · ${t('Surah')} ${activeMarker.surah}`
+                          : t('Mark where you stopped — Continue Reading will open here')}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
               {/* LANGUAGE & TAFSIR */}
               <View style={styles.toolsMenuGroup}>
                 <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
@@ -2457,6 +2573,8 @@ export default function QuranReaderScreen({
           initialNumToRender={15}
           maxToRenderPerBatch={15}
           windowSize={7}
+          initialScrollIndex={initialListIndex}
+          getItemLayout={getAyahItemLayout}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           onScroll={handleReaderScroll}
           scrollEventThrottle={16}
