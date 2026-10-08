@@ -774,17 +774,19 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             value={settings.language}
             onChange={(nextLang) => {
               if (nextLang !== settings.language) {
-                setLanguage(nextLang);
                 haptic('selection');
                 // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
                 // after a reload on Android/iOS — trigger a native reload so the
-                // user doesn't have to restart manually. Works in dev (DevSettings)
-                // and release (expo-updates).
-                if (Platform.OS !== 'web') {
-                  setTimeout(() => {
-                    Updates.reloadAsync().catch(() => DevSettings.reload());
-                  }, 400);
-                }
+                // user doesn't have to restart manually. Await the persist so the
+                // reload boots in the NEW language (otherwise Urdu->English could
+                // reload stale). setLanguage is typed Promise<void>|void.
+                Promise.resolve(setLanguage(nextLang)).then(() => {
+                  if (Platform.OS !== 'web') {
+                    setTimeout(() => {
+                      Updates.reloadAsync().catch(() => DevSettings.reload());
+                    }, 400);
+                  }
+                });
               }
             }}
           />

@@ -5,6 +5,54 @@ export interface City {
   longitude: number;
 }
 
+export const COUNTRY_UR: Record<string, string> = {
+  "Afghanistan": "افغانستان",
+  "Algeria": "الجزائر",
+  "Australia": "آسٹریلیا",
+  "Bahrain": "بحرین",
+  "Bangladesh": "بنگلہ دیش",
+  "Canada": "کینیڈا",
+  "Egypt": "مصر",
+  "Ethiopia": "ایتھوپیا",
+  "France": "فرانس",
+  "Germany": "جرمنی",
+  "Ghana": "گھانا",
+  "India": "بھارت",
+  "Indonesia": "انڈونیشیا",
+  "Iran": "ایران",
+  "Iraq": "عراق",
+  "Jordan": "اردن",
+  "Kenya": "کینیا",
+  "Kuwait": "کویت",
+  "Lebanon": "لبنان",
+  "Malaysia": "ملائیشیا",
+  "Morocco": "مراکش",
+  "Nepal": "نیپال",
+  "Nigeria": "نائیجیریا",
+  "Oman": "عمان",
+  "Pakistan": "پاکستان",
+  "Palestine": "فلسطین",
+  "Philippines": "فلپائن",
+  "Qatar": "قطر",
+  "Saudi Arabia": "سعودی عرب",
+  "Senegal": "سینیگال",
+  "Singapore": "سنگاپور",
+  "Sri Lanka": "سری لنکا",
+  "Sudan": "سوڈان",
+  "Syria": "شام",
+  "Thailand": "تھائی لینڈ",
+  "Tunisia": "تیونس",
+  "Turkey": "ترکی",
+  "United Arab Emirates": "متحدہ عرب امارات",
+  "United Kingdom": "برطانیہ",
+  "United States": "امریکہ",
+  "Yemen": "یمن",
+};
+
+export function countryNameUr(country: string): string {
+  return COUNTRY_UR[country] || country;
+}
+
 export const CITIES: City[] = [
   { name: "Dubai", country: "United Arab Emirates", latitude: 25.20, longitude: 55.27 },
   { name: "Abu Dhabi", country: "United Arab Emirates", latitude: 24.45, longitude: 54.38 },

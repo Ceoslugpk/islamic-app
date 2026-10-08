@@ -34,7 +34,11 @@ applyRTL(initialLanguage === 'ur');
 export function applyRTL(isRTL: boolean): void {
   try {
     I18nManager.allowRTL(true);
-    I18nManager.forceRTL(isRTL);
+    // Only force when the current layout direction differs — re-forcing the
+    // same value is flaky on Android and can leave RTL stuck after a reload.
+    if (I18nManager.isRTL !== isRTL) {
+      I18nManager.forceRTL(isRTL);
+    }
   } catch {
     // Ignore native module errors in environments where not supported
   }

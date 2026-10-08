@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
-import { CITIES, City } from '../lib/cities';
+import { CITIES, City, countryNameUr } from '../lib/cities';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { t } from '../lib/i18n';
@@ -55,14 +55,14 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
   }, [query]);
 
   function handleSelectCity(city: City) {
-    const label = `${city.name}, ${city.country}`;
+    const label = `${city.name}, ${countryNameUr(city.country)}`;
     setManualLocation({
       latitude: city.latitude,
       longitude: city.longitude,
       label,
     });
     setLocationMode('manual');
-    setSuccessCity({ name: city.name, country: city.country });
+    setSuccessCity({ name: city.name, country: countryNameUr(city.country) });
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
@@ -94,7 +94,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
           ]}
           onPress={() => handleSelectCity(item)}
           accessibilityRole="button"
-          accessibilityLabel={`Select ${item.name}, ${item.country}`}
+          accessibilityLabel={`Select ${item.name}, ${countryNameUr(item.country)}`}
           accessibilityState={{ selected: isSelected }}
         >
           <View style={styles.rowLeft}>
@@ -118,7 +118,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
                 {item.name}
               </Text>
               <Text style={[styles.countryName, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
-                {item.country}
+                {countryNameUr(item.country)}
               </Text>
             </View>
           </View>

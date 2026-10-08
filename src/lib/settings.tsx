@@ -647,6 +647,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setQuranPreloadRequested: (quranPreloadRequested) =>
       setSettings((prev) => persist({ ...prev, quranPreloadRequested })),
     setLanguage: async (nextLang: AppLanguage) => {
+      // Persist + apply the language FIRST so a reload (triggered by the caller)
+      // always boots in the new language. Side-effects (quran lang / tafsir /
+      // audio edition) run after — they must never delay the persist, or the
+      // reload races ahead and the app comes back in the OLD language.
+      setAppLanguage(nextLang);
+      setSettings((prev) =>
+        persist({
+          ...prev,
+          language: nextLang,
+        })
+      );
+
       let nextTafsir: string | undefined;
       if (nextLang === 'ur') {
         try {
@@ -668,14 +680,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         } catch {}
       }
 
-      setAppLanguage(nextLang);
-      setSettings((prev) =>
-        persist({
-          ...prev,
-          language: nextLang,
-          ...(nextTafsir ? { tafsirSourceId: nextTafsir } : {}),
-        })
-      );
+      if (nextTafsir) {
+        setSettings((prev) => persist({ ...prev, tafsirSourceId: nextTafsir }));
+      }
     },
   };
 

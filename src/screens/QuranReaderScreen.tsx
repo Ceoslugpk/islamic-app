@@ -330,6 +330,12 @@ export default function QuranReaderScreen({
   const surahNumberRef = useRef<number>(safeSurahNumber);
   const lastSavedAyahRef = useRef<number>(initialAyah || 1);
   const trackingReadyRef = useRef<boolean>(!initialAyah || initialAyah <= 1);
+  // Throttle position saves during fast scroll (setState + 3 storage writes per
+  // frame janks the list). Nav-hide logic stays frame-accurate — only the
+  // position tracking is throttled.
+  const lastPositionSaveRef = useRef<number>(0);
+  // Guard: positioning (jump to saved/initial ayah) happens exactly once per mount
+  const positionedRef = useRef<boolean>(false);
   const [currentVisibleAyah, setCurrentVisibleAyah] = useState<number>(() => {
     if (initialAyah && initialAyah > 1) return initialAyah;
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
@@ -757,6 +763,10 @@ export default function QuranReaderScreen({
         const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
         const scrollable = contentSize.height - layoutMeasurement.height;
         if (scrollable > 0) {
+          // Throttle position tracking during fast scroll (same as cards mode).
+          const now = Date.now();
+          if (now - lastPositionSaveRef.current < 400) return;
+          lastPositionSaveRef.current = now;
           const progress = Math.max(0, Math.min(1, contentOffset.y / scrollable));
           const totalAyahs = surah?.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7;
           const approxAyah = Math.min(totalAyahs, Math.max(1, Math.round(progress * (totalAyahs - 1)) + 1));
@@ -822,6 +832,28 @@ export default function QuranReaderScreen({
     haptic('selection');
   }, [safeSurahNumber, currentVisibleAyah]);
 
+  /** Per-ayah marker setter (from the ayah action-row flag button). */
+  const handleSetReadingMarkerAt = useCallback(
+    (ayah: number) => {
+      saveReadingMarker(safeSurahNumber, ayah);
+      setActiveMarker({ surah: safeSurahNumber, ayah, savedAt: Date.now() });
+      setMarkerJustSet(true);
+      if (markerResetTimerRef.current) clearTimeout(markerResetTimerRef.current);
+      markerResetTimerRef.current = setTimeout(() => setMarkerJustSet(false), 1600);
+      haptic('selection');
+    },
+    [safeSurahNumber]
+  );
+
+  /** True when the given ayah (in this surah) is the active reading marker. */
+  const isMarkedAyah = useCallback(
+    (ayah: number) =>
+      !!activeMarker &&
+      activeMarker.surah === safeSurahNumber &&
+      activeMarker.ayah === ayah,
+    [activeMarker, safeSurahNumber]
+  );
+
   useEffect(() => {
     return () => {
       if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
@@ -849,6 +881,11 @@ export default function QuranReaderScreen({
       if (!first || !first.item) return;
       const ayahNumber = first.item.numberInSurah;
       if (typeof ayahNumber !== 'number') return;
+      // Throttle: fast scrolling fires viewability events per frame; updating
+      // state + 3 storage writes on every one re-renders the list and janks.
+      const now = Date.now();
+      if (now - lastPositionSaveRef.current < 400) return;
+      lastPositionSaveRef.current = now;
       setCurrentVisibleAyah(ayahNumber);
       if (!trackingReadyRef.current) return;
       if (ayahNumber === lastSavedAyahRef.current) return;
@@ -997,33 +1034,36 @@ export default function QuranReaderScreen({
 
   // Handle auto-scroll to initialAyah or restored ayah
   useEffect(() => {
-    // With initialScrollIndex the list already renders at the target — only
-    // scroll when we could not use it (e.g. data arrived after mount, or the
-    // target changed after the list mounted).
-    if (surah && initialListIndex > 0 && initialListIndex < (surah.ayahs?.length || 0)) {
-      return;
-    }
+    if (!surah) return;
+    // If we've already positioned (initialScrollIndex worked on first data
+    // render), don't scroll again — never hijack normal scrolling.
+    if (positionedRef.current) return;
+
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
     const targetAyah = initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
-    if (surah && targetAyah > 1) {
+    if (targetAyah > 1) {
       if (readingMode === 'mushaf') {
         const total = surah.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
         if (mushafContentHeightRef.current > 0) {
           const y = Math.max(0, ((targetAyah - 1) / total) * mushafContentHeightRef.current);
-          mushafScrollRef.current?.scrollTo({ y, animated: true });
+          mushafScrollRef.current?.scrollTo({ y, animated: false });
+          positionedRef.current = true;
         } else {
           pendingScrollAyahRef.current = targetAyah;
         }
       } else {
         const targetIndex = targetAyah - 1;
+        // If data arrived after mount, initialScrollIndex was a no-op — jump now.
         setTimeout(() => {
+          if (positionedRef.current) return;
           try {
-            listRef.current?.scrollToIndex({ index: targetIndex, animated: true });
+            listRef.current?.scrollToIndex({ index: targetIndex, animated: false });
           } catch {
             // ignore measurement miss
           }
+          positionedRef.current = true;
           trackingReadyRef.current = true;
-        }, 300);
+        }, 50);
       }
     }
   }, [surah, safeSurahNumber, initialAyah, readingMode, initialListIndex]);
@@ -1540,6 +1580,24 @@ export default function QuranReaderScreen({
                 name={isAyahPlaying ? 'pause-circle' : 'play-circle-outline'}
                 size={isAyahPlaying ? 22 : iconSizes.inlineLg}
                 color={isAyahPlaying ? colors.accent : actionColor}
+              />
+            </TouchableOpacity>
+
+            {/* Reading Marker — mark this ayah as where you stopped */}
+            <TouchableOpacity
+              onPress={() => handleSetReadingMarkerAt(item.numberInSurah)}
+              style={styles.actionBtn}
+              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={
+                isMarkedAyah(item.numberInSurah) ? t('Reading marker set') : t('Set reading marker')
+              }
+            >
+              <Ionicons
+                name={isMarkedAyah(item.numberInSurah) ? 'flag' : 'flag-outline'}
+                size={iconSizes.inlineLg}
+                color={isMarkedAyah(item.numberInSurah) ? colors.accent : actionColor}
               />
             </TouchableOpacity>
 
