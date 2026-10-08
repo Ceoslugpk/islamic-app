@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
+  I18nManager,
   Modal,
   Platform,
   StyleSheet,
@@ -237,7 +238,7 @@ export function QuranLanguageModal({
                     {isSelected ? (
                       <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
                     ) : (
-                      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                      <Ionicons name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textMuted} />
                     )}
                   </View>
                 </TouchableOpacity>

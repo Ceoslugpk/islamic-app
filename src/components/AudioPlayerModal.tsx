@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
+  I18nManager,
   Modal,
   PanResponder,
   Platform,
@@ -618,7 +619,7 @@ export function AudioPlayerModal({
                   <Text style={[styles.changeLangPillText, { color: colors.accent }]}>
                     Change Lang
                   </Text>
-                  <Ionicons name="chevron-forward" size={10} color={colors.accent} />
+                  <Ionicons name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'} size={10} color={colors.accent} />
                 </TouchableOpacity>
               </View>
 
@@ -913,7 +914,7 @@ export function AudioPlayerModal({
             <Text style={[styles.audioCenterBtnText, { color: colors.textPrimary }]}>
               Open Audio Center (Reciters, Playlists, Queue)
             </Text>
-            <Ionicons name="chevron-forward" size={14} color={colors.textMuted} />
+            <Ionicons name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'} size={14} color={colors.textMuted} />
           </TouchableOpacity>
         </Animated.View>
 

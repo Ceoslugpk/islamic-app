@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   FlatList,
+  I18nManager,
   Modal,
   StyleSheet,
   Text,
@@ -226,7 +227,7 @@ export function AdhanReciterModal({
                     {isSelected ? (
                       <Ionicons name="checkmark-circle" size={24} color={colors.accent} />
                     ) : (
-                      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                      <Ionicons name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textMuted} />
                     )}
                   </View>
                 </TouchableOpacity>

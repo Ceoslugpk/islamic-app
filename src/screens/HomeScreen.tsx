@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  I18nManager,
   ScrollView,
   StyleSheet,
   Text,
@@ -817,7 +818,7 @@ export default function HomeScreen({
                   />
                   <Text style={[styles.heroTransitionText, { color: colors.textMuted }]}>
                     {t(currentSegment)}{' '}
-                    <Text style={{ color: colors.accent }}>→</Text>{' '}
+                    <Text style={{ color: colors.accent }}>{I18nManager.isRTL ? '←' : '→'}</Text>{' '}
                     {t(next ? next.name : 'Fajr')}
                   </Text>
                 </View>

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
+  I18nManager,
   StyleSheet,
   Text,
   View,
@@ -150,7 +151,7 @@ export function ContinueReadingCard({
                 },
               ]}
             >
-              <Ionicons name="arrow-forward" size={16} color={colors.accent} />
+              <Ionicons name={I18nManager.isRTL ? 'arrow-back' : 'arrow-forward'} size={16} color={colors.accent} />
             </View>
           </View>
 
