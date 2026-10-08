@@ -1,33 +1,44 @@
 /**
- * Expo config plugin: remove android.permission.ACTIVITY_RECOGNITION from the
- * Android manifest at MERGE time. The permission is declared unconditionally
- * by expo-sensors' library manifest (Pedometer module) but the app only uses
- * Magnetometer (Qibla compass), which does not require it.
+ * Expo config plugin: remove unwanted Android permissions from the merged
+ * manifest at MERGE time:
+ *   - android.permission.ACTIVITY_RECOGNITION  (declared by expo-sensors'
+ *     Pedometer module; app only uses Magnetometer for Qibla — not required)
+ *   - android.permission.RECORD_AUDIO           (re-added by expo-audio's
+ *     library manifest; the app never records audio — it only plays)
+ *   - android.permission.SYSTEM_ALERT_WINDOW    (overlay permission; Play
+ *     restricts device availability when present — the app never draws
+ *     overlays)
  *
  * Uses tools:node="remove" so the manifest merger strips the library-declared
- * permission even though it is not present in the app's source manifest.
+ * permissions even though they are not present in the app's source manifest.
  */
 const { withAndroidManifest } = require('expo/config-plugins');
 
-const PERMISSION = 'android.permission.ACTIVITY_RECOGNITION';
+const PERMISSIONS = [
+  'android.permission.ACTIVITY_RECOGNITION',
+  'android.permission.RECORD_AUDIO',
+  'android.permission.SYSTEM_ALERT_WINDOW',
+];
 
-module.exports = function withRemoveActivityRecognition(config) {
+module.exports = function withRemoveUnusedPermissions(config) {
   return withAndroidManifest(config, (config) => {
     const manifest = config.modResults;
     const permissions = manifest.manifest['uses-permission'] || [];
     // 1. Drop any direct declaration (in case a future prebuild adds one).
     manifest.manifest['uses-permission'] = permissions.filter(
-      (p) => !(p.$ && p.$.name === PERMISSION)
+      (p) => !(p.$ && PERMISSIONS.includes(p.$.name))
     );
-    // 2. Add a merge-removal rule so the library-declared permission is
+    // 2. Add merge-removal rules so the library-declared permissions are
     //    stripped during manifest merging regardless of source.
-    manifest.manifest['uses-permission'].push({
-      $: {
-        'android:name': PERMISSION,
-        'tools:node': 'remove',
-        'xmlns:tools': 'http://schemas.android.com/tools',
-      },
-    });
+    for (const perm of PERMISSIONS) {
+      manifest.manifest['uses-permission'].push({
+        $: {
+          'android:name': perm,
+          'tools:node': 'remove',
+          'xmlns:tools': 'http://schemas.android.com/tools',
+        },
+      });
+    }
     return config;
   });
 };
