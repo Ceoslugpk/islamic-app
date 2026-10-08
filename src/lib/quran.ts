@@ -11,7 +11,7 @@ import { isAppOnline } from './useConnectivity';
 import { SURAHS_114 } from './surahs114';
 import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
-import { fetchTafsirApi } from './tafsirApi';
+import { fetchTafsirApi, getCanonicalTafsirSlug, TAFSIR_API_BASE } from './tafsirApi';
 
 export interface SurahMeta {
   number: number;
@@ -509,9 +509,52 @@ export async function fetchSurahTafsir(
   surah: number,
   tafsirIdentifier = 'ar.jalalayn'
 ): Promise<Array<{ ayahNumber: number; text: string }>> {
+  const key = `tafsir:surah:${surah}:${tafsirIdentifier}`;
+  const cached = loadQuranCache<Array<{ ayahNumber: number; text: string }>>(key);
+  if (cached) return cached;
+
   // tafsir_api (jsDelivr, pinned): REAL per-ayah text — fetch the full surah.
   if (tafsirIdentifier.startsWith('api:')) {
     const slug = tafsirIdentifier.slice('api:'.length);
+    // 1. Try single-request full surah JSON from CDN first (fast & complete)
+    try {
+      const canonical = getCanonicalTafsirSlug(slug);
+      const res = await fetchWithTimeout(
+        `${TAFSIR_API_BASE}/${canonical}/${surah}.json`,
+        {},
+        8000
+      );
+      if (res.ok) {
+        const json = await res.json();
+        const rawList = Array.isArray(json) ? json : (Array.isArray(json?.ayahs) ? json.ayahs : null);
+        if (rawList && rawList.length > 0) {
+          const out: Array<{ ayahNumber: number; text: string }> = [];
+          for (const item of rawList) {
+            const ayahNum = Number(item?.ayah);
+            const txt = item?.text;
+            if (Number.isFinite(ayahNum) && typeof txt === 'string' && txt.trim()) {
+              out.push({ ayahNumber: ayahNum, text: txt });
+              saveQuranCache(`tafsir-api:${surah}:${ayahNum}:${slug}`, {
+                text: txt,
+                author: slug,
+                language: '',
+              });
+              saveQuranCache(`tafsir:ayah:${surah}:${ayahNum}:${tafsirIdentifier}:v2`, {
+                text: txt,
+                edition: slug,
+              });
+            }
+          }
+          if (out.length > 0) {
+            saveQuranCache(key, out);
+            return out;
+          }
+        }
+      }
+    } catch {
+      // gap — fall back to per-ayah fetch loop
+    }
+
     const out: Array<{ ayahNumber: number; text: string }> = [];
     const total = SURAH_AYAH_COUNTS[surah - 1] || 7;
     for (let ayah = 1; ayah <= total; ayah++) {
@@ -523,14 +566,11 @@ export async function fetchSurahTafsir(
       }
     }
     if (!out.length) throw new Error('Tafsir unavailable');
+    saveQuranCache(key, out);
     return out;
   }
 
   // islamic.app tafsir removed (served surah intro for every ayah).
-
-  const key = `tafsir:surah:${surah}:${tafsirIdentifier}`;
-  const cached = loadQuranCache<Array<{ ayahNumber: number; text: string }>>(key);
-  if (cached) return cached;
 
   const res = await fetchWithTimeout(`${BASE}/surah/${surah}/${tafsirIdentifier}`, {}, 4000);
   if (!res.ok) throw new Error('Surah tafsir fetch failed');

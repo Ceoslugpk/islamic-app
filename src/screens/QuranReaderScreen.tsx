@@ -1103,6 +1103,26 @@ export default function QuranReaderScreen({
     }
   };
 
+  useEffect(() => {
+    if (activeTafsirAyah !== null) {
+      const currentSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
+      setTafsirLoading(true);
+      setTafsirText(null);
+      setTafsirEdition(null);
+      fetchAyahTafsir(safeSurahNumber, activeTafsirAyah, currentSource.identifier)
+        .then((res) => {
+          setTafsirText(res.text);
+          setTafsirEdition(res.edition);
+        })
+        .catch(() => {
+          setTafsirText(tafsirLoadFailed);
+        })
+        .finally(() => {
+          setTafsirLoading(false);
+        });
+    }
+  }, [settings.tafsirSourceId, safeSurahNumber, activeTafsirAyah]);
+
   // Surah Download (Save for Offline) — from the ⋯ menu
   const [surahDownloaded, setSurahDownloaded] = useState(() => {
     try {

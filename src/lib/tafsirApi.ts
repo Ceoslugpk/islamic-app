@@ -39,6 +39,20 @@ export const TAFSIR_API_TAFSIRS: TafsirApiEntry[] = [
   { slug: 'tafsir-al-muyassar', language: 'Arabic', languageCode: 'ar', author: 'Al-Muyassar (Arabic)', direction: 'rtl' },
 ];
 
+export const TAFSIR_API_BASE = BASE;
+
+const SLUG_CANONICAL_MAP: Record<string, string> = {
+  'tafsir-ibn-kathir': 'ar-tafsir-ibn-kathir',
+  'tafsir-al-tabari': 'ar-tafsir-al-tabari',
+  'tafsir-al-qurtubi': 'ar-tafseer-al-qurtubi',
+  'tafsir-al-baghawi': 'ar-tafsir-al-baghawi',
+  'tafsir-al-muyassar': 'ar-tafsir-muyassar',
+};
+
+export function getCanonicalTafsirSlug(slug: string): string {
+  return SLUG_CANONICAL_MAP[slug] || slug;
+}
+
 export interface TafsirApiResult {
   text: string;
   author: string;
@@ -55,9 +69,10 @@ export async function fetchTafsirApi(
   const cached = loadQuranCache<TafsirApiResult>(key);
   if (cached) return cached;
 
-  const meta = TAFSIR_API_TAFSIRS.find((t) => t.slug === slug);
+  const canonical = getCanonicalTafsirSlug(slug);
+  const meta = TAFSIR_API_TAFSIRS.find((t) => t.slug === slug || t.slug === canonical);
   try {
-    const res = await fetchWithTimeout(`${BASE}/${slug}/${surah}/${ayah}.json`, {}, 8000);
+    const res = await fetchWithTimeout(`${BASE}/${canonical}/${surah}/${ayah}.json`, {}, 8000);
     if (!res.ok) throw new Error(`Tafsir API HTTP ${res.status}`);
     const json = await res.json();
     const text = json?.text;

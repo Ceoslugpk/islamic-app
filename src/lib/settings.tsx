@@ -6,13 +6,14 @@ import { NamesLanguage } from './names99';
 import { setAudioTranslationEnabled } from './quranAudio';
 import { setActiveAdhanReciterId } from './audio';
 import { setCachedLocation } from './useLocation';
+import { TAFSIR_SOURCES } from './tafsirSources';
 
 export type TimeFormat = '12h' | '24h';
 export type LocationMode = 'auto' | 'manual';
 export type ThemeMode = 'system' | 'ink' | 'paper';
 export type QuranArabicFont = 'amiri' | 'notonaskh';
 export type QuranScript = 'uthmani' | 'imlaei' | 'indopak' | 'tajweed';
-export type TafsirSourceId = 'jalalayn' | 'qurtubi' | 'miqbas' | 'waseet' | 'baghawi' | 'muyassar';
+export type TafsirSourceId = string;
 export type Madhab = 'shafi' | 'hanafi';
 
 // Quran reader display ranges (shared by Settings UI + reader)
@@ -192,14 +193,7 @@ const VALID_ACCENTS: Set<string> = new Set([
 
 const VALID_NAMES_LANGS: Set<string> = new Set(['en', 'fr', 'tr', 'es', 'de', 'id', 'bn', 'ru', 'ur']);
 
-const VALID_TAFSIR_SOURCES: Set<string> = new Set([
-  'jalalayn',
-  'qurtubi',
-  'miqbas',
-  'waseet',
-  'baghawi',
-  'muyassar',
-]);
+const VALID_TAFSIR_SOURCES: Set<string> = new Set(TAFSIR_SOURCES.map((s) => s.id));
 
 /**
  * Validates, clamps, and sanitizes every settings field against schema constraints.
