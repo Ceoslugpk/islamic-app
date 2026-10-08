@@ -452,14 +452,18 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}
             <View style={styles.shareCardBrandFooter}>
               <Image
-                source={require('../../assets/logo-master-black.png')}
+                source={
+                  mode === 'paper'
+                    ? require('../../assets/logo-master-black.png')
+                    : require('../../assets/logo-master-ivory.png')
+                }
                 style={styles.shareCardLogo}
                 resizeMode="contain"
               />
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
-                  { color: '#0F172A' },
+                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
                 ]}
               >
                 ISLAMIC

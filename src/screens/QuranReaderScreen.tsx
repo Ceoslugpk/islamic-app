@@ -3091,8 +3091,8 @@ export default function QuranReaderScreen({
               <Image
                 source={
                   mode === 'paper'
-                    ? require('../../assets/logo-small-black.png')
-                    : require('../../assets/logo-small-ivory.png')
+                    ? require('../../assets/logo-master-black.png')
+                    : require('../../assets/logo-master-ivory.png')
                 }
                 style={styles.shareCardLogo}
                 resizeMode="contain"
