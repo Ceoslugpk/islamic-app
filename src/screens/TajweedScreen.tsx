@@ -13,6 +13,7 @@ import {
   BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export function TajweedScreen({ onBack, backLabel }: Props) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -53,11 +55,11 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
       const data = await fetchTajweedSurah(surah);
       setAyahs(data);
     } catch {
-      setError('Could not load tajweed text. Check your connection and try again.');
+      setError(t('Could not load tajweed text. Check your connection and try again.'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (openSurah !== null) loadSurah(openSurah);
@@ -74,14 +76,14 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        title={openSurah === null ? 'Tajweed Colors' : (openMeta?.englishName || `Surah ${openSurah}`)}
+        title={openSurah === null ? t('Tajweed Colors') : (openMeta?.englishName || `Surah ${openSurah}`)}
         subtitle={
           openSurah === null
-            ? 'Full Quran · color-coded recitation rules'
+            ? t('Full Quran · color-coded recitation rules')
             : `${openMeta?.name || ''} · ${openMeta?.numberOfAyahs || ayahs?.length || 0} ayahs`
         }
-        eyebrow={openSurah === null ? 'Learn' : `Surah ${openSurah}`}
-        backLabel={openSurah === null ? (backLabel || 'Library') : 'Tajweed'}
+        eyebrow={openSurah === null ? t('Learn') : `Surah ${openSurah}`}
+        backLabel={openSurah === null ? (backLabel ? t(backLabel) : t('Library')) : t('Tajweed')}
         onBack={openSurah === null ? onBack : () => setOpenSurah(null)}
         rightAction={
           openSurah !== null ? (
@@ -89,10 +91,10 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
               onPress={() => setShowLegend((v) => !v)}
               style={[styles.backChip, { borderColor: colors.borderSubtle }]}
               accessibilityRole="button"
-              accessibilityLabel={showLegend ? 'Hide color legend' : 'Show color legend'}
+              accessibilityLabel={showLegend ? t('Hide color legend') : t('Show color legend')}
             >
               <Ionicons name="color-palette-outline" size={15} color={colors.accent} />
-              <Text style={[styles.backChipText, { color: colors.accent }]}>Legend</Text>
+              <Text style={[styles.backChipText, { color: colors.accent }]}>{t('Legend')}</Text>
             </TouchableOpacity>
           ) : undefined
         }
@@ -103,7 +105,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
           <View style={[styles.infoCard, { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle }]}>
             <Ionicons name="information-circle-outline" size={18} color={colors.accent} />
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-              Every surah of the Quran in standard tajweed colors — ghunnah, idgham, qalqalah, ikhfa, madd and silent letters. Data from islamic.app (uthmani tajweed edition).
+              {t('Every surah of the Quran in standard tajweed colors — ghunnah, idgham, qalqalah, ikhfa, madd and silent letters. Data from islamic.app (uthmani tajweed edition).')}
             </Text>
           </View>
 
@@ -112,7 +114,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
             <TextInput
               value={query}
               onChangeText={setQuery}
-              placeholder="Search surah..."
+              placeholder={t('Search surah...')}
               placeholderTextColor={colors.textMuted}
               style={[styles.searchInput, { color: colors.textPrimary }]}
             />
@@ -145,7 +147,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
           >
             <Ionicons name={showLegend ? 'chevron-up' : 'chevron-down'} size={15} color={colors.accent} />
             <Text style={[styles.legendToggleText, { color: colors.accent }]}>
-              {showLegend ? 'Hide color legend' : 'Show color legend'}
+              {showLegend ? t('Hide color legend') : t('Show color legend')}
             </Text>
           </TouchableOpacity>
 
@@ -168,7 +170,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
           {loading ? (
             <View style={styles.center}>
               <ActivityIndicator color={colors.accent} size="large" />
-              <Text style={[styles.hint, { color: colors.textMuted }]}>Loading tajweed text...</Text>
+              <Text style={[styles.hint, { color: colors.textMuted }]}>{t('Loading tajweed text...')}</Text>
             </View>
           ) : error ? (
             <View style={styles.center}>
@@ -179,7 +181,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
                 onPress={() => loadSurah(openSurah)}
                 accessibilityRole="button"
               >
-                <Text style={styles.retryText}>Retry</Text>
+                <Text style={styles.retryText}>{t('Retry')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -193,7 +195,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
               removeClippedSubviews={Platform.OS !== 'web'}
               ListHeaderComponent={
                 <Text style={[styles.listHint, { color: colors.textMuted }]}>
-                  {ayahs?.length || 0} ayahs · tajweed colors
+                  {ayahs?.length || 0} {t('ayahs · tajweed colors')}
                 </Text>
               }
               renderItem={({ item }: { item: TajweedAyah }) => (

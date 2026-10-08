@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -23,6 +24,7 @@ const MADINAH_LIVE_URL = `https://www.youtube.com/channel/${MADINAH_CHANNEL_ID}/
 const MADINAH_CHANNEL_URL = `https://www.youtube.com/channel/${MADINAH_CHANNEL_ID}`;
 
 export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 720);
@@ -49,21 +51,21 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
       ]}
     >
       <ScreenHeader
-        eyebrow="Hajj & Umrah"
-        title="Madinah Live"
-        subtitle="24/7 Official High-Definition Live Broadcast from Al-Masjid an-Nabawi."
+        eyebrow={t('Hajj & Umrah')}
+        title={t('Madinah Live')}
+        subtitle={t('24/7 Official High-Definition Live Broadcast from Al-Masjid an-Nabawi.')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
 
       {/* Live Badge Bar */}
       <View style={styles.statusBar}>
         <View style={styles.liveIndicator}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveText}>LIVE STREAM</Text>
+          <Text style={styles.liveText}>{t('LIVE STREAM')}</Text>
         </View>
         <Text style={[styles.channelTag, { color: colors.textSecondary }]}>
-          قناة السنة النبوية · Saudi Sunnah TV
+          {t('قناة السنة النبوية · Saudi Sunnah TV')}
         </Text>
       </View>
 
@@ -72,8 +74,8 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
         id="madinah"
         embedUrl={MADINAH_EMBED_URL}
         watchUrl={MADINAH_LIVE_URL}
-        title="Live Stream from Madinah"
-        subtitle="Official 24/7 HD feed from Al-Masjid an-Nabawi"
+        title={t('Live Stream from Madinah')}
+        subtitle={t('Official 24/7 HD feed from Al-Masjid an-Nabawi')}
       />
 
       {/* Stream Controls for Web */}
@@ -85,7 +87,7 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
           >
             <Ionicons name="refresh" size={14} color={colors.accent} />
             <Text style={[styles.controlBtnText, { color: colors.textSecondary }]}>
-              Reload Stream
+              {t('Reload Stream')}
             </Text>
           </TouchableOpacity>
 
@@ -95,7 +97,7 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
           >
             <Ionicons name="open-outline" size={14} color={colors.accent} />
             <Text style={[styles.controlBtnText, { color: colors.textSecondary }]}>
-              Open in YouTube
+              {t('Open in YouTube')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -103,56 +105,56 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
 
       {/* Virtues of the Prophet's Mosque */}
       <Card style={{ marginBottom: 14, padding: 16 }}>
-        <Text style={[styles.cardLead, { color: colors.accent }]}>CITY OF THE MESSENGER ﷺ</Text>
+        <Text style={[styles.cardLead, { color: colors.accent }]}>{t('CITY OF THE MESSENGER ﷺ')}</Text>
         <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-          Virtues of Al-Masjid an-Nabawi
+          {t('Virtues of Al-Masjid an-Nabawi')}
         </Text>
         <ArabicText style={[styles.hadithArabic, { color: colors.textSecondary }]}>
           صَلَاةٌ فِي مَسْجِدِي هَذَا أَفْضَلُ مِنْ أَلْفِ صَلَاةٍ فِيمَا سِوَاهُ إِلَّا الْمَسْجِدَ الْحَرَامَ
         </ArabicText>
         <Text style={[styles.hadithTranslation, { color: colors.textSecondary }]}>
-          The Messenger of Allah ﷺ said: &quot;One prayer in this mosque of mine is better than one thousand prayers elsewhere, except the Sacred Mosque in Makkah.&quot;
+          {t('The Messenger of Allah ﷺ said: "One prayer in this mosque of mine is better than one thousand prayers elsewhere, except the Sacred Mosque in Makkah."')}
         </Text>
         <Text style={[styles.hadithRef, { color: colors.textMuted }]}>
-          Sahih al-Bukhari 1190 · Sahih Muslim 1394
+          {t('Sahih al-Bukhari 1190 · Sahih Muslim 1394')}
         </Text>
       </Card>
 
       {/* Ar-Rawdah ash-Sharifah */}
       <Card style={{ marginBottom: 14, padding: 16 }}>
         <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 8 }]}>
-          Ar-Rawdah ash-Sharifah (الروضة الشريفة)
+          {t('Ar-Rawdah ash-Sharifah (الروضة الشريفة)')}
         </Text>
         <ArabicText style={[styles.hadithArabic, { color: colors.textSecondary }]}>
           مَا بَيْنَ بَيْتِي وَمِنْبَرِي رَوْضَةٌ مِنْ رِيَاضِ الْجَنَّةِ، وَمِنْبَرِي عَلَىٰ حَوْضِي
         </ArabicText>
         <Text style={[styles.hadithTranslation, { color: colors.textSecondary }]}>
-          The Prophet ﷺ said: &quot;Between my house and my pulpit is a garden from the gardens of Paradise, and my pulpit is above my pool (Al-Kawthar).&quot;
+          {t('The Prophet ﷺ said: "Between my house and my pulpit is a garden from the gardens of Paradise, and my pulpit is above my pool (Al-Kawthar)."')}
         </Text>
         <Text style={[styles.hadithRef, { color: colors.textMuted }]}>
-          Sahih al-Bukhari 1196 · Sahih Muslim 1391
+          {t('Sahih al-Bukhari 1196 · Sahih Muslim 1391')}
         </Text>
 
         <Hairline style={{ marginVertical: 12 }} />
 
         <Text style={[styles.landmarkDesc, { color: colors.textSecondary }]}>
-          The Rawdah is recognized in the mosque by its distinct green carpeting, contrasting with the dark red carpets throughout the rest of the Prophet&apos;s Mosque. Pilgrims visit to offer voluntary prayers and make personal supplications in this heavenly sanctuary.
+          {t("The Rawdah is recognized in the mosque by its distinct green carpeting, contrasting with the dark red carpets throughout the rest of the Prophet's Mosque. Pilgrims visit to offer voluntary prayers and make personal supplications in this heavenly sanctuary.")}
         </Text>
       </Card>
 
       {/* Salawat and Greeting upon the Prophet */}
       <Card style={{ marginBottom: 20, padding: 16 }}>
         <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 6 }]}>
-          Salawat &amp; Greeting Upon the Beloved ﷺ
+          {t('Salawat & Greeting Upon the Beloved ﷺ')}
         </Text>
         <ArabicText style={[styles.hadithArabic, { color: colors.textPrimary }]}>
           السَّلَامُ عَلَيْكَ يَا رَسُولَ اللَّهِ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ، أَشْهَدُ أَنَّكَ قَدْ بَلَّغْتَ الرِّسَالَةَ، وَأَدَّيْتَ الْأَمَانَةَ، وَنَصَحْتَ الْأُمَّةَ
         </ArabicText>
         <Text style={[styles.hadithTranslation, { color: colors.textSecondary }]}>
-          &quot;Peace be upon you, O Messenger of Allah, and the mercy of Allah and His blessings. I bear witness that you have conveyed the message, fulfilled the trust, and advised the nation faithfully.&quot;
+          {t('"Peace be upon you, O Messenger of Allah, and the mercy of Allah and His blessings. I bear witness that you have conveyed the message, fulfilled the trust, and advised the nation faithfully."')}
         </Text>
         <Text style={[styles.hadithRef, { color: colors.textMuted }]}>
-          Sunnah greeting when passing the Prophet&apos;s noble chamber
+          {t("Sunnah greeting when passing the Prophet's noble chamber")}
         </Text>
       </Card>
     </ScrollView>

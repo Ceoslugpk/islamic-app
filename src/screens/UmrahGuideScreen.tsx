@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -195,6 +196,7 @@ export default function UmrahGuideScreen({
   onBack?: () => void;
   onOpenDuas?: () => void;
 }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -211,11 +213,11 @@ export default function UmrahGuideScreen({
       ]}
     >
       <ScreenHeader
-        eyebrow="Hajj & Umrah"
-        title="Umrah Guide"
-        subtitle="Step-by-step rituals of the sacred pilgrimage: Ihram, Tawaf, Sa'i, and Halq."
+        eyebrow={t('Hajj & Umrah')}
+        title={t('Umrah Guide')}
+        subtitle={t("Step-by-step rituals of the sacred pilgrimage: Ihram, Tawaf, Sa'i, and Halq.")}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
 
       {/* Quick Stage Pills */}
@@ -252,7 +254,7 @@ export default function UmrahGuideScreen({
                   { color: isActive ? '#FFFFFF' : colors.textPrimary },
                 ]}
               >
-                {s.title.split(' ')[0]}
+                {t(s.title)}
               </Text>
             </TouchableOpacity>
           );
@@ -264,14 +266,14 @@ export default function UmrahGuideScreen({
         <View style={styles.overviewHeader}>
           <View style={[styles.badge, { backgroundColor: colors.accent + '20', borderColor: colors.accent }]}>
             <Ionicons name="sparkles" size={13} color={colors.accent} />
-            <Text style={[styles.badgeText, { color: colors.accent }]}>The 4 Pillars of Umrah</Text>
+            <Text style={[styles.badgeText, { color: colors.accent }]}>{t('The 4 Pillars of Umrah')}</Text>
           </View>
         </View>
         <Text style={[styles.overviewTitle, { color: colors.textPrimary }]}>
-          A Journey of Spiritual Rebirth
+          {t('A Journey of Spiritual Rebirth')}
         </Text>
         <Text style={[styles.overviewDesc, { color: colors.textSecondary }]}>
-          The Prophet ﷺ said: &quot;From one Umrah to another is an expiation for whatever sins come between them, and an accepted Hajj brings no less a reward than Paradise.&quot; (Sahih al-Bukhari)
+          {t('The Prophet ﷺ said: "From one Umrah to another is an expiation for whatever sins come between them, and an accepted Hajj brings no less a reward than Paradise." (Sahih al-Bukhari)')}
         </Text>
       </Card>
 
@@ -310,10 +312,10 @@ export default function UmrahGuideScreen({
               </View>
               <View style={styles.stepTitleCol}>
                 <Text style={[styles.stageName, { color: colors.accent }]}>
-                  {step.stageName.toUpperCase()}
+                  {t(step.stageName).toUpperCase()}
                 </Text>
                 <Text style={[styles.stepTitle, { color: colors.textPrimary }]}>
-                  {step.title}
+                  {t(step.title)}
                 </Text>
               </View>
             </View>
@@ -337,7 +339,7 @@ export default function UmrahGuideScreen({
             >
               <Ionicons name="location-outline" size={14} color={colors.accent} />
               <Text style={[styles.locationText, { color: colors.textMuted }]}>
-                {step.location}
+                {t(step.location)}
               </Text>
             </View>
 
@@ -345,7 +347,7 @@ export default function UmrahGuideScreen({
 
             {/* Actions list */}
             <Text style={[styles.subSectionTitle, { color: colors.textPrimary }]}>
-              Prescribed Actions
+              {t('Prescribed Actions')}
             </Text>
             {step.keyActions.map((action, idx) => (
               <View key={idx} style={styles.actionRow}>
@@ -360,7 +362,7 @@ export default function UmrahGuideScreen({
             {step.duas && step.duas.length > 0 && (
               <View style={styles.duasBlock}>
                 <Text style={[styles.subSectionTitle, { color: colors.textPrimary, marginTop: 12 }]}>
-                  Key Supplications (Ad&apos;iyah)
+                  {t("Key Supplications (Ad'iyah)")}
                 </Text>
                 {step.duas.map((dua, di) => (
                   <View
@@ -383,7 +385,7 @@ export default function UmrahGuideScreen({
                       &quot;{dua.translation}&quot;
                     </Text>
                     <Text style={[styles.duaRef, { color: colors.textMuted }]}>
-                      Source: {dua.reference}
+                      {t('Source')}: {dua.reference}
                     </Text>
                   </View>
                 ))}
@@ -401,7 +403,7 @@ export default function UmrahGuideScreen({
                 <View style={styles.warningHeader}>
                   <Ionicons name="information-circle" size={16} color={colors.accent} />
                   <Text style={[styles.warningTitle, { color: colors.accent }]}>
-                    Important Notes &amp; Cautions
+                    {t('Important Notes & Cautions')}
                   </Text>
                 </View>
                 {step.criticalNotes.map((note, ni) => (
@@ -421,19 +423,19 @@ export default function UmrahGuideScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1, paddingRight: 10 }}>
               <Text style={[styles.duaBannerTitle, { color: colors.textPrimary }]}>
-                Hajj &amp; Umrah Duas Library
+                {t('Hajj & Umrah Duas Library')}
               </Text>
               <Text style={[styles.duaBannerSub, { color: colors.textMuted }]}>
-                Browse full authentic supplications with Arabic, transliteration and audio.
+                {t('Browse full authentic supplications with Arabic, transliteration and audio.')}
               </Text>
             </View>
             <TouchableOpacity
               style={[styles.duaBannerBtn, { backgroundColor: colors.accent }]}
               onPress={onOpenDuas}
               accessibilityRole="button"
-              accessibilityLabel="Open Hajj and Umrah Duas"
+              accessibilityLabel={t('Open Hajj and Umrah Duas')}
             >
-              <Text style={styles.duaBannerBtnText}>Open Duas</Text>
+              <Text style={styles.duaBannerBtnText}>{t('Open Duas')}</Text>
             </TouchableOpacity>
           </View>
         </Card>

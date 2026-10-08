@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
@@ -36,6 +37,7 @@ interface Props {
 }
 
 export function VocabTrainerScreen({ onBack, backLabel }: Props) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -111,10 +113,10 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        title="Quran Vocabulary"
-        subtitle="Most frequent words of the Quran"
-        eyebrow="Learn"
-        backLabel={backLabel || 'Library'}
+        title={t('Quran Vocabulary')}
+        subtitle={t('Most frequent words of the Quran')}
+        eyebrow={t('Learn')}
+        backLabel={backLabel ? t(backLabel) : t('Library')}
         onBack={onBack}
       />
 
@@ -124,7 +126,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
           <View style={[styles.statChip, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
             <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
             <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              {knownCount}/{VOCAB_WORDS.length} known
+              {knownCount}/{VOCAB_WORDS.length} {t('known')}
             </Text>
           </View>
           <View style={[styles.statChip, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
@@ -146,11 +148,11 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
           <View style={styles.dailyTopRow}>
             <View style={[styles.dailyBadge, { backgroundColor: colors.accentDim }]}>
               <Ionicons name="sparkles" size={12} color={colors.accent} />
-              <Text style={[styles.dailyBadgeText, { color: colors.accent }]}>TODAY'S WORD</Text>
+              <Text style={[styles.dailyBadgeText, { color: colors.accent }]}>{t("TODAY'S WORD")}</Text>
             </View>
             <View style={[styles.tierBadge, { backgroundColor: colors.accentDim }]}>
               <Text style={[styles.tierText, { color: colors.accent }]}>
-                {TIER_LABELS[dailyWord.tier]}
+                {t(TIER_LABELS[dailyWord.tier])}
               </Text>
             </View>
           </View>
@@ -163,7 +165,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               {dailyWord.transliteration}
             </Text>
             <Text style={[styles.dailyMeaning, { color: colors.textPrimary }]}>
-              "{dailyWord.meaning}"
+              &quot;{t(dailyWord.meaning)}&quot;
             </Text>
             <Text style={[styles.dailyRef, { color: colors.textMuted }]}>
               Quran {dailyWord.ref}
@@ -189,7 +191,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
             >
               <Ionicons name="school-outline" size={14} color={colors.accent} />
               <Text style={[styles.dailyActionBtnText, { color: colors.accent }]}>
-                Practice in Trainer
+                {t('Practice in Trainer')}
               </Text>
             </TouchableOpacity>
 
@@ -208,7 +210,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                 },
               ]}
               accessibilityRole="button"
-              accessibilityLabel={known[dailyWord.arabic] ? 'Mark as unlearned' : 'Mark as known'}
+              accessibilityLabel={known[dailyWord.arabic] ? t('Mark as unlearned') : t('Mark as known')}
             >
               <Ionicons
                 name={known[dailyWord.arabic] ? 'checkmark-circle' : 'checkmark-circle-outline'}
@@ -221,7 +223,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                   { color: known[dailyWord.arabic] ? colors.accent : colors.textSecondary },
                 ]}
               >
-                {known[dailyWord.arabic] ? 'Learned ✓' : 'Mark Known'}
+                {known[dailyWord.arabic] ? t('Learned ✓') : t('Mark Known')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -230,11 +232,11 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
         {/* Tier filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
           {[
-            { id: null, label: 'All' },
-            { id: 'daily' as const, label: "Today's Set" },
-            { id: 1, label: TIER_LABELS[1] },
-            { id: 2, label: TIER_LABELS[2] },
-            { id: 3, label: TIER_LABELS[3] },
+            { id: null, label: t('All') },
+            { id: 'daily' as const, label: t("Today's Set") },
+            { id: 1, label: t(TIER_LABELS[1]) },
+            { id: 2, label: t(TIER_LABELS[2]) },
+            { id: 3, label: t(TIER_LABELS[3]) },
           ].map((item) => (
             <TouchableOpacity
               key={String(item.id)}
@@ -278,7 +280,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                 {index + 1} / {words.length}
               </Text>
               <View style={[styles.tierBadge, { backgroundColor: colors.accentDim }]}>
-                <Text style={[styles.tierText, { color: colors.accent }]}>{TIER_LABELS[current.tier]}</Text>
+                <Text style={[styles.tierText, { color: colors.accent }]}>{t(TIER_LABELS[current.tier])}</Text>
               </View>
             </View>
 
@@ -288,7 +290,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                   {current.arabic}
                 </ArabicText>
                 <Text style={[styles.cardHint, { color: colors.textMuted }]}>
-                  Tap to reveal meaning
+                  {t('Tap to reveal meaning')}
                 </Text>
               </View>
             ) : (
@@ -301,7 +303,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                 </Text>
                 <View style={[styles.meaningRule, { backgroundColor: colors.accent }]} />
                 <Text style={[styles.cardMeaning, { color: colors.textPrimary }]}>
-                  {current.meaning}
+                  {t(current.meaning)}
                 </Text>
                 <Text style={[styles.cardRef, { color: colors.textMuted }]}>
                   Quran {current.ref}
@@ -317,7 +319,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
             style={[styles.ctrlBtn, { borderColor: colors.borderSubtle }]}
             onPress={prev}
             accessibilityRole="button"
-            accessibilityLabel="Previous word"
+            accessibilityLabel={t('Previous word')}
           >
             <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -326,24 +328,24 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
             style={[styles.knowBtn, { backgroundColor: colors.accent }]}
             onPress={markKnown}
             accessibilityRole="button"
-            accessibilityLabel="Mark this word as known"
+            accessibilityLabel={t('Mark this word as known')}
           >
             <Ionicons name="checkmark" size={18} color="#FFF" />
-            <Text style={styles.knowBtnText}>I know this</Text>
+            <Text style={styles.knowBtnText}>{t('I know this')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.ctrlBtn, { borderColor: colors.borderSubtle }]}
             onPress={next}
             accessibilityRole="button"
-            accessibilityLabel="Next word"
+            accessibilityLabel={t('Next word')}
           >
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         <Text style={[styles.sessionHint, { color: colors.textMuted }]}>
-          {sessionKnown} marked known this session
+          {sessionKnown} {t('marked known this session')}
         </Text>
       </ScrollView>
     </View>

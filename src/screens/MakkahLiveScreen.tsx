@@ -10,6 +10,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -24,6 +25,7 @@ const MAKKAH_LIVE_URL = `https://www.youtube.com/watch?v=${MAKKAH_VIDEO_ID}`;
 const MAKKAH_CHANNEL_URL = `https://www.youtube.com/channel/${MAKKAH_CHANNEL_ID}`;
 
 export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 720);
@@ -50,21 +52,21 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
       ]}
     >
       <ScreenHeader
-        eyebrow="Hajj & Umrah"
-        title="Makkah Live TV"
-        subtitle="24/7 Official High-Definition Live Broadcast from Al-Masjid Al-Haram."
+        eyebrow={t('Hajj & Umrah')}
+        title={t('Makkah Live TV')}
+        subtitle={t('24/7 Official High-Definition Live Broadcast from Al-Masjid Al-Haram.')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
 
       {/* Live Badge Bar */}
       <View style={styles.statusBar}>
         <View style={styles.liveIndicator}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveText}>LIVE STREAM</Text>
+          <Text style={styles.liveText}>{t('LIVE STREAM')}</Text>
         </View>
         <Text style={[styles.channelTag, { color: colors.textSecondary }]}>
-          قناة القرآن الكريم · Saudi Quran TV
+          {t('قناة القرآن الكريم · Saudi Quran TV')}
         </Text>
       </View>
 
@@ -73,8 +75,8 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
         id="makkah"
         embedUrl={MAKKAH_EMBED_URL}
         watchUrl={MAKKAH_LIVE_URL}
-        title="Live Stream from Makkah"
-        subtitle="Official 24/7 HD feed from Al-Masjid Al-Haram"
+        title={t('Live Stream from Makkah')}
+        subtitle={t('Official 24/7 HD feed from Al-Masjid Al-Haram')}
       />
 
       {/* Stream Controls for Web */}
@@ -86,7 +88,7 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
           >
             <Ionicons name="refresh" size={14} color={colors.accent} />
             <Text style={[styles.controlBtnText, { color: colors.textSecondary }]}>
-              Reload Stream
+              {t('Reload Stream')}
             </Text>
           </TouchableOpacity>
 
@@ -96,7 +98,7 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
           >
             <Ionicons name="open-outline" size={14} color={colors.accent} />
             <Text style={[styles.controlBtnText, { color: colors.textSecondary }]}>
-              Open in YouTube
+              {t('Open in YouTube')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -104,33 +106,33 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
 
       {/* Sacred Sanctuary Virtues Card */}
       <Card style={{ marginBottom: 14, padding: 16 }}>
-        <Text style={[styles.cardLead, { color: colors.accent }]}>SACRED SANCTUARY</Text>
+        <Text style={[styles.cardLead, { color: colors.accent }]}>{t('SACRED SANCTUARY')}</Text>
         <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-          Virtues of Al-Masjid Al-Haram
+          {t('Virtues of Al-Masjid Al-Haram')}
         </Text>
         <ArabicText style={[styles.hadithArabic, { color: colors.textSecondary }]}>
           صَلَاةٌ فِي الْمَسْجِدِ الْحَرَامِ أَفْضَلُ مِنْ مِائَةِ أَلْفِ صَلَاةٍ فِيمَا سِوَاهُ
         </ArabicText>
         <Text style={[styles.hadithTranslation, { color: colors.textSecondary }]}>
-          The Messenger of Allah ﷺ said: &quot;One prayer in the Sacred Mosque is better than one hundred thousand prayers elsewhere.&quot;
+          {t('The Messenger of Allah ﷺ said: "One prayer in the Sacred Mosque is better than one hundred thousand prayers elsewhere."')}
         </Text>
         <Text style={[styles.hadithRef, { color: colors.textMuted }]}>
-          Sunan Ibn Majah 1406 · Authentic (Sahih)
+          {t('Sunan Ibn Majah 1406 · Authentic (Sahih)')}
         </Text>
       </Card>
 
       {/* Key Landmarks in View */}
       <Card style={{ marginBottom: 14, padding: 16 }}>
         <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 8 }]}>
-          Sacred Landmarks Visible on Stream
+          {t('Sacred Landmarks Visible on Stream')}
         </Text>
 
         <View style={styles.landmarkItem}>
           <Text style={[styles.landmarkName, { color: colors.textPrimary }]}>
-            The Holy Kaaba (الكعبة المشرفة)
+            {t('The Holy Kaaba (الكعبة المشرفة)')}
           </Text>
           <Text style={[styles.landmarkDesc, { color: colors.textSecondary }]}>
-            The first house established for the worship of Allah on Earth, rebuilt by Prophet Ibrahim and Ismail (peace be upon them). Draped in the hand-woven black silk Kiswah adorned with gold Quranic calligraphy.
+            {t('The first house established for the worship of Allah on Earth, rebuilt by Prophet Ibrahim and Ismail (peace be upon them). Draped in the hand-woven black silk Kiswah adorned with gold Quranic calligraphy.')}
           </Text>
         </View>
 
@@ -138,10 +140,10 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
 
         <View style={styles.landmarkItem}>
           <Text style={[styles.landmarkName, { color: colors.textPrimary }]}>
-            Al-Hajar al-Aswad (الحجر الأسود)
+            {t('Al-Hajar al-Aswad (الحجر الأسود)')}
           </Text>
           <Text style={[styles.landmarkDesc, { color: colors.textSecondary }]}>
-            The Black Stone set into the eastern corner of the Kaaba. It marks the starting and finishing boundary line for each of the seven circuits of Tawaf.
+            {t('The Black Stone set into the eastern corner of the Kaaba. It marks the starting and finishing boundary line for each of the seven circuits of Tawaf.')}
           </Text>
         </View>
 
@@ -149,10 +151,10 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
 
         <View style={styles.landmarkItem}>
           <Text style={[styles.landmarkName, { color: colors.textPrimary }]}>
-            Maqam Ibrahim (مقام إبراهيم)
+            {t('Maqam Ibrahim (مقام إبراهيم)')}
           </Text>
           <Text style={[styles.landmarkDesc, { color: colors.textSecondary }]}>
-            The golden crystal enclosure preserving the stone footprint upon which Prophet Ibrahim (peace be upon him) stood while elevating the upper stones of the Kaaba walls.
+            {t('The golden crystal enclosure preserving the stone footprint upon which Prophet Ibrahim (peace be upon him) stood while elevating the upper stones of the Kaaba walls.')}
           </Text>
         </View>
 
@@ -160,10 +162,10 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
 
         <View style={styles.landmarkItem}>
           <Text style={[styles.landmarkName, { color: colors.textPrimary }]}>
-            Hijr Ismail / Al-Hateem (حجر إسماعيل)
+            {t('Hijr Ismail / Al-Hateem (حجر إسماعيل)')}
           </Text>
           <Text style={[styles.landmarkDesc, { color: colors.textSecondary }]}>
-            The low white marble semi-circular wall facing the northern wall of the Kaaba. It constitutes part of the original foundations of the Kaaba.
+            {t('The low white marble semi-circular wall facing the northern wall of the Kaaba. It constitutes part of the original foundations of the Kaaba.')}
           </Text>
         </View>
       </Card>
@@ -171,16 +173,16 @@ export default function MakkahLiveScreen({ onBack }: { onBack?: () => void }) {
       {/* Spiritual Etiquette Card */}
       <Card style={{ marginBottom: 20, padding: 16 }}>
         <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 6 }]}>
-          Du&apos;a Upon Seeing the Kaaba
+          {t("Du'a Upon Seeing the Kaaba")}
         </Text>
         <ArabicText style={[styles.hadithArabic, { color: colors.textPrimary }]}>
           اللَّهُمَّ زِدْ هَذَا الْبَيْتَ تَشْرِيفًا وَتَعْظِيمًا وَتَكْرِيمًا وَمَهَابَةً، وَزِدْ مَنْ شَرَّفَهُ وَعَظَّمَهُ مِمَّنْ حَجَّهُ أَوِ اعْتَمَرَهُ تَشْرِيفًا وَتَكْرِيمًا وَتَعْظِيمًا وَبِرًّا
         </ArabicText>
         <Text style={[styles.hadithTranslation, { color: colors.textSecondary }]}>
-          &quot;O Allah, increase this House in honor, esteem, respect, and reverence; and increase whoever honors and respects it from those who perform Hajj or Umrah in honor, respect, esteem, and piety.&quot;
+          {t('"O Allah, increase this House in honor, esteem, respect, and reverence; and increase whoever honors and respects it from those who perform Hajj or Umrah in honor, respect, esteem, and piety."')}
         </Text>
         <Text style={[styles.hadithRef, { color: colors.textMuted }]}>
-          Al-Sunan al-Kubra by al-Bayhaqi (5/73)
+          {t('Al-Sunan al-Kubra by al-Bayhaqi (5/73)')}
         </Text>
       </Card>
     </ScrollView>

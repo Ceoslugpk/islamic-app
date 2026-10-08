@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -291,6 +292,7 @@ export default function HajjJourneyScreen({
   onBack?: () => void;
   onOpenDuas?: () => void;
 }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -307,11 +309,11 @@ export default function HajjJourneyScreen({
       ]}
     >
       <ScreenHeader
-        eyebrow="Hajj & Umrah"
-        title="Hajj Journey"
-        subtitle="The day-by-day pilgrimage chronicle: from Yawm al-Tarwiyah to the Farewell Tawaf."
+        eyebrow={t('Hajj & Umrah')}
+        title={t('Hajj Journey')}
+        subtitle={t('The day-by-day pilgrimage chronicle: from Yawm al-Tarwiyah to the Farewell Tawaf.')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
 
       {/* Quick Day Chips */}
@@ -340,7 +342,7 @@ export default function HajjJourneyScreen({
                   { color: isActive ? '#FFFFFF' : colors.accent },
                 ]}
               >
-                {d.dayNumber}
+                {t(d.dayNumber)}
               </Text>
               <Text
                 style={[
@@ -348,7 +350,7 @@ export default function HajjJourneyScreen({
                   { color: isActive ? '#FFFFFF' : colors.textPrimary },
                 ]}
               >
-                {d.hijriDate.split(' ')[0]} {d.hijriDate.split(' ')[1]}
+                {t(d.hijriDate)}
               </Text>
             </TouchableOpacity>
           );
@@ -358,13 +360,13 @@ export default function HajjJourneyScreen({
       {/* Hajj Pillars Summary Card */}
       <Card style={{ marginBottom: 18, padding: 16 }}>
         <Text style={[styles.pillarsLead, { color: colors.accent }]}>
-          THE 4 PILLARS OF HAJJ (ARKAN)
+          {t('THE 4 PILLARS OF HAJJ (ARKAN)')}
         </Text>
         <Text style={[styles.pillarsTitle, { color: colors.textPrimary }]}>
-          Essential Foundations of the Pilgrimage
+          {t('Essential Foundations of the Pilgrimage')}
         </Text>
         <Text style={[styles.pillarsBody, { color: colors.textSecondary }]}>
-          1. Ihram (Intention) · 2. Wuquf at Arafah (Standing on 9th) · 3. Tawaf al-Ifadah (Circumambulation on 10th) · 4. Sa&apos;i between Safa and Marwah. Missing any pillar invalidates Hajj.
+          {t("1. Ihram (Intention) · 2. Wuquf at Arafah (Standing on 9th) · 3. Tawaf al-Ifadah (Circumambulation on 10th) · 4. Sa'i between Safa and Marwah. Missing any pillar invalidates Hajj.")}
         </Text>
       </Card>
 
@@ -390,13 +392,13 @@ export default function HajjJourneyScreen({
                 ]}
               >
                 <Text style={[styles.dayTagText, { color: colors.accent }]}>
-                  {day.dayNumber.toUpperCase()} · {day.hijriDate}
+                  {t(day.dayNumber).toUpperCase()} · {t(day.hijriDate)}
                 </Text>
               </View>
             </View>
 
             <Text style={[styles.dayTitle, { color: colors.textPrimary }]}>
-              {day.title}
+              {t(day.title)}
             </Text>
 
             <ArabicText style={[styles.dayArabicTitle, { color: colors.textSecondary }]}>
@@ -412,7 +414,7 @@ export default function HajjJourneyScreen({
             >
               <Ionicons name="navigate-outline" size={14} color={colors.accent} />
               <Text style={[styles.locationBannerText, { color: colors.textSecondary }]}>
-                {day.location}
+                {t(day.location)}
               </Text>
             </View>
 
@@ -424,7 +426,7 @@ export default function HajjJourneyScreen({
 
             {/* Key Rituals */}
             <Text style={[styles.sectionSubtitle, { color: colors.textPrimary }]}>
-              Day Rituals &amp; Fiqh Obligations
+              {t('Day Rituals & Fiqh Obligations')}
             </Text>
             {day.rituals.map((r, ri) => {
               const obligationColor =
@@ -442,7 +444,7 @@ export default function HajjJourneyScreen({
                     </Text>
                     <View style={[styles.obligationBadge, { borderColor: obligationColor }]}>
                       <Text style={[styles.obligationText, { color: obligationColor }]}>
-                        {r.obligation}
+                        {t(r.obligation)}
                       </Text>
                     </View>
                   </View>
@@ -457,7 +459,7 @@ export default function HajjJourneyScreen({
             {day.duas && day.duas.length > 0 && (
               <View style={{ marginTop: 8 }}>
                 <Text style={[styles.sectionSubtitle, { color: colors.textPrimary, marginTop: 10 }]}>
-                  Pivotal Supplications
+                  {t('Pivotal Supplications')}
                 </Text>
                 {day.duas.map((d, di) => (
                   <View
@@ -480,7 +482,7 @@ export default function HajjJourneyScreen({
                       &quot;{d.translation}&quot;
                     </Text>
                     <Text style={[styles.duaBoxRef, { color: colors.textMuted }]}>
-                      {d.reference}
+                      {t('Source')}: {d.reference}
                     </Text>
                   </View>
                 ))}
@@ -497,7 +499,7 @@ export default function HajjJourneyScreen({
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                 <Ionicons name="compass-outline" size={15} color={colors.accent} />
                 <Text style={[styles.tipsBoxTitle, { color: colors.accent }]}>
-                  Pilgrim Logistics &amp; Advice
+                  {t('Pilgrim Logistics & Advice')}
                 </Text>
               </View>
               {day.practicalNotes.map((pn, pni) => (
@@ -516,19 +518,19 @@ export default function HajjJourneyScreen({
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1, paddingRight: 10 }}>
               <Text style={[styles.footerCardTitle, { color: colors.textPrimary }]}>
-                Full Supplications Repository
+                {t('Full Supplications Repository')}
               </Text>
               <Text style={[styles.footerCardSub, { color: colors.textMuted }]}>
-                Explore the complete Hajj &amp; Umrah Duas collection with audio and translations.
+                {t('Explore the complete Hajj & Umrah Duas collection with audio and translations.')}
               </Text>
             </View>
             <TouchableOpacity
               style={[styles.footerCardBtn, { backgroundColor: colors.accent }]}
               onPress={onOpenDuas}
               accessibilityRole="button"
-              accessibilityLabel="Open Hajj Duas"
+              accessibilityLabel={t('Open Hajj Duas')}
             >
-              <Text style={styles.footerCardBtnText}>Explore Duas</Text>
+              <Text style={styles.footerCardBtnText}>{t('Explore Duas')}</Text>
             </TouchableOpacity>
           </View>
         </Card>

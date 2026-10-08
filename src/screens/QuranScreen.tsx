@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
 import { fetchSurahList, fetchSurahListForLanguage, SurahMeta } from '../lib/quran';
@@ -45,6 +46,7 @@ const REVELATION_OPTIONS = [
 ] as const;
 
 export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width <= 360;
@@ -74,7 +76,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
       setSurahs(data);
     } catch {
       if (!surahs) {
-        setError('Could not load the Quran. Check your connection.');
+        setError(t('Could not load the Quran. Check your connection.'));
       }
     } finally {
       setLoading(false);
@@ -165,8 +167,8 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
           <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
             <SectionHeader
               compact
-              eyebrow="The Holy Quran"
-              title="Surahs"
+              eyebrow={t('The Holy Quran')}
+              title={t('Surahs')}
               style={styles.sectionHeader}
             />
             <View
@@ -176,7 +178,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
               ]}
             >
               <View style={styles.langBarLeft}>
-                <Text style={[styles.langBarLabel, { color: colors.accent }]}>TRANSLATION</Text>
+                <Text style={[styles.langBarLabel, { color: colors.accent }]}>{t('TRANSLATION')}</Text>
                 <Skeleton width="60%" height={13} borderRadius={4} />
               </View>
               <Skeleton width={80} height={32} borderRadius={6} />
@@ -228,9 +230,9 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
               ]}
               onPress={() => loadSurahs()}
               accessibilityRole="button"
-              accessibilityLabel="Retry loading surahs"
+              accessibilityLabel={t('Retry loading surahs')}
             >
-              <Text style={[styles.retryBtnText, { color: colors.accent }]}>Retry</Text>
+              <Text style={[styles.retryBtnText, { color: colors.accent }]}>{t('Retry')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -242,10 +244,10 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
     <View style={[styles.wrap, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
         <ScreenHeader
-          eyebrow="The Holy Quran"
-          title="Surahs"
+          eyebrow={t('The Holy Quran')}
+          title={t('Surahs')}
           onBack={onBack}
-          backLabel="Library"
+          backLabel={t('Library')}
         />
 
         {/* Translation Language Selector Banner */}
@@ -256,7 +258,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
             ]}
           >
             <View style={styles.langBarLeft}>
-              <Text style={[styles.langBarLabel, { color: colors.accent }]}>TRANSLATION</Text>
+              <Text style={[styles.langBarLabel, { color: colors.accent }]}>{t('TRANSLATION')}</Text>
               <Text style={[styles.langBarTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                 {flag} {edition.language} <Text style={{ color: colors.textSecondary, fontSize: 12 }}>· {edition.name}</Text>
               </Text>
@@ -265,9 +267,9 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
               style={[styles.langChangeBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
               onPress={() => setLangPickerOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel={`Change translation language. Current: ${edition.language}`}
+              accessibilityLabel={t('Change translation language')}
             >
-              <Text style={[styles.langChangeBtnText, { color: colors.accent }]}>Change</Text>
+              <Text style={[styles.langChangeBtnText, { color: colors.accent }]}>{t('Change')}</Text>
               <Ionicons name="chevron-forward" size={12} color={colors.accent} />
             </TouchableOpacity>
           </View>
@@ -287,7 +289,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 styles.searchInput,
                 { color: colors.textPrimary, fontSize: isCompact ? 13 : 14 },
               ]}
-              placeholder="Search by name or meaning..."
+              placeholder={t('Search by name or meaning...')}
               placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -300,7 +302,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 onPress={() => setSearchQuery('')}
                 style={styles.clearSearchBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Clear search"
+                accessibilityLabel={t('Clear search')}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Text style={[styles.clearSearchText, { color: colors.textMuted }]}>✕</Text>
@@ -310,7 +312,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
 
 {/* Juz Section Header */}
           <View style={styles.juzSection}>
-            <Text style={[styles.juzLabel, { color: colors.textMuted }]}>JUZ</Text>
+            <Text style={[styles.juzLabel, { color: colors.textMuted }]}>{t('JUZ')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -337,7 +339,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                     ]}
                     onPress={() => handleSelectJuz(j)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Juz ${j}`}
+                    accessibilityLabel={`${t('Juz')} ${j}`}
                     accessibilityState={{ selected: isSelected }}
                   >
                     <Text
@@ -359,7 +361,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
 
           {/* Revelation Type Filter Chips */}
           <View style={styles.revelationSection}>
-            <Text style={[styles.revelationLabel, { color: colors.textMuted }]}>REVELATION</Text>
+            <Text style={[styles.revelationLabel, { color: colors.textMuted }]}>{t('REVELATION')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -386,7 +388,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                     ]}
                     onPress={() => setSelectedRevelation(opt.value)}
                     accessibilityRole="button"
-                    accessibilityLabel={opt.label}
+                    accessibilityLabel={opt.value === null ? t('All') : opt.value === 'Meccan' ? t('Meccan') : t('Medinan')}
                     accessibilityState={{ selected: isSelected }}
                   >
                     <Text
@@ -398,7 +400,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                         },
                       ]}
                     >
-                      {opt.label}
+                      {opt.value === null ? t('All') : opt.value === 'Meccan' ? t('Meccan') : t('Medinan')}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -411,7 +413,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                   { color: colors.textMuted, fontSize: isCompact ? 9 : 10 },
                 ]}
               >
-                Meccan {surahs.filter((s) => s.revelationType === 'Meccan').length} · Medinan{' '}
+                {t('Meccan')} {surahs.filter((s) => s.revelationType === 'Meccan').length} · {t('Medinan')}{' '}
                 {surahs.filter((s) => s.revelationType === 'Medinan').length} · {surahs.length}
               </Text>
             )}
@@ -451,7 +453,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 { paddingVertical: isCompact ? 11 : 14, gap: isCompact ? 10 : 12 },
               ]}
               onPress={() => onOpenSurah(item.number)}
-              accessibilityLabel={`Open Surah ${item.englishName}`}
+              accessibilityLabel={`${t('Open Surah')} ${item.englishName}`}
             >
               <View
                 style={[
@@ -492,7 +494,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {translatedNames?.[item.number] ? `${flag} ${translatedNames[item.number]} · ` : ''}{item.englishNameTranslation} · {item.revelationType}
+                  {translatedNames?.[item.number] ? `${flag} ${translatedNames[item.number]} · ` : ''}{item.englishNameTranslation} · {item.revelationType === 'Meccan' ? t('Meccan') : t('Medinan')}
                 </Text>
               </View>
               <View style={styles.rowRight}>
@@ -510,7 +512,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                   ]}
                   numberOfLines={1}
                 >
-                  {item.numberOfAyahs} ayahs
+                  {item.numberOfAyahs} {t('ayahs')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -518,7 +520,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                No Surahs match &ldquo;{searchQuery}&rdquo;
+                {t('No Surahs match')} &ldquo;{searchQuery}&rdquo;
               </Text>
             </View>
           }

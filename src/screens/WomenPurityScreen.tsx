@@ -10,6 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -39,6 +40,7 @@ interface WomenPurityScreenProps {
 }
 
 function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: WomenPurityScreenProps) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -87,22 +89,22 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
     const cleanNotes = newNifasNotes.trim();
 
     if (!cleanStart) {
-      Alert.alert('Delivery Date Required', 'Please enter delivery start date in YYYY-MM-DD format.');
+      Alert.alert(t('Delivery Date Required'), t('Please enter delivery start date in YYYY-MM-DD format.'));
       return;
     }
 
     if (!isValidYMD(cleanStart)) {
-      Alert.alert('Invalid Date', 'Please enter delivery date in YYYY-MM-DD format (e.g. 2026-10-05).');
+      Alert.alert(t('Invalid Date'), t('Please enter delivery date in YYYY-MM-DD format (e.g. 2026-10-05).'));
       return;
     }
 
     if (cleanEnd && !isValidYMD(cleanEnd)) {
-      Alert.alert('Invalid End Date', 'Please enter end date in YYYY-MM-DD format.');
+      Alert.alert(t('Invalid End Date'), t('Please enter end date in YYYY-MM-DD format.'));
       return;
     }
 
     if (cleanEnd && cleanEnd < cleanStart) {
-      Alert.alert('Invalid Range', 'End date cannot be earlier than start date.');
+      Alert.alert(t('Invalid Range'), t('End date cannot be earlier than start date.'));
       return;
     }
 
@@ -130,27 +132,27 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
     saveNifasEntry(updated);
     refreshData();
     Alert.alert(
-      'Nifas Ended · Purity Resumed',
-      'Please perform Ghusl to lift major ritual impurity and resume your daily prayers and fasting. Follow the step-by-step method below.',
+      t('Nifas Ended · Purity Resumed'),
+      t('Please perform Ghusl to lift major ritual impurity and resume your daily prayers and fasting. Follow the step-by-step method below.'),
       [{ text: 'OK' }]
     );
   };
 
   const handleDeleteNifas = (item: NifasEntry) => {
     Alert.alert(
-      'Delete Postpartum Record?',
+      t('Delete Postpartum Record?'),
       `Are you sure you want to delete the record for ${item.startDate}${item.endDate ? ` → ${item.endDate}` : ' (Active)'}?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('Cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('Delete'),
           style: 'destructive',
           onPress: () => {
             deleteNifasEntry(item.id);
             refreshData();
             saveUndoState({
               id: item.id,
-              action: 'Postpartum record deleted',
+              action: t('Postpartum record deleted'),
               revert: () => {
                 saveNifasEntry(item);
                 refreshData();
@@ -187,18 +189,18 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
       keyboardShouldPersistTaps="handled"
     >
       <ScreenHeader
-        eyebrow="Women's Worship"
-        title="Purity & Ghusl"
-        subtitle="Step-by-step ghusl guide, signs of tuhr, and postpartum (nifas) tracker."
+        eyebrow={t("Women's Worship")}
+        title={t('Purity & Ghusl')}
+        subtitle={t('Step-by-step ghusl guide, signs of tuhr, and postpartum (nifas) tracker.')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
 
       {/* Discreet Privacy Note */}
       <View style={[styles.privacyBadge, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Ionicons name="shield-checkmark" size={14} color={colors.accent} />
         <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
-          Private & local · Stored securely on your device only
+          {t('Private & local · Stored securely on your device only')}
         </Text>
       </View>
 
@@ -207,30 +209,30 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
         <View style={styles.cardHeaderRow}>
           <Ionicons name="heart-outline" size={16} color={colors.accent} />
           <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-            Postpartum Tracker (Nifas)
+            {t('Postpartum Tracker (Nifas)')}
           </Text>
         </View>
         <Text style={[styles.cardSub, { color: colors.textSecondary }]}>
-          Bleeding following childbirth. Standard Prophetic norm is up to 40 days (majority).
+          {t('Bleeding following childbirth. Standard Prophetic norm is up to 40 days (majority).')}
         </Text>
 
         {activeNifas ? (
           <View style={[styles.activeNifasBox, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.activeNifasTitle, { color: colors.accent }]}>
-                Active Nifas · Day {nifasDay} of ~40
+                {t('Active Nifas · Day')} {nifasDay} {t('of ~40')}
               </Text>
               <Text style={[styles.activeNifasSub, { color: colors.textSecondary }]}>
-                Started: {activeNifas.startDate} · Once bleeding ceases completely, perform Ghusl.
+                {t('Started:')} {activeNifas.startDate} · {t('Once bleeding ceases completely, perform Ghusl.')}
               </Text>
             </View>
             <TouchableOpacity
               style={[styles.smallBtn, { backgroundColor: colors.accent }]}
               onPress={() => handleEndNifas(activeNifas)}
               accessibilityRole="button"
-              accessibilityLabel="Mark Nifas Pure"
+              accessibilityLabel={t('Mark Pure')}
             >
-              <Text style={[styles.smallBtnText, { color: colors.onAccent }]}>Mark Pure</Text>
+              <Text style={[styles.smallBtnText, { color: colors.onAccent }]}>{t('Mark Pure')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -238,11 +240,11 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
             style={[styles.secondaryBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim, marginTop: 4 }]}
             onPress={() => setShowLogNifas(true)}
             accessibilityRole="button"
-            accessibilityLabel="Log Postpartum Delivery Date"
+            accessibilityLabel={t('Log Postpartum Delivery Date')}
           >
             <Ionicons name="add" size={16} color={colors.accent} />
             <Text style={[styles.secondaryBtnText, { color: colors.accent }]}>
-              Log Postpartum (Nifas) Delivery Date
+              {t('Log Postpartum (Nifas) Delivery Date')}
             </Text>
           </TouchableOpacity>
         )}
@@ -250,19 +252,19 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
         {showLogNifas && (
           <View style={[styles.innerForm, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}>
             <View style={styles.labelRow}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Delivery Date (YYYY-MM-DD)</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Delivery Date (YYYY-MM-DD)')}</Text>
               <View style={styles.quickPillsRow}>
                 <TouchableOpacity
                   style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
                   onPress={() => setNewNifasStart(todayStr)}
                 >
-                  <Text style={[styles.quickPillText, { color: colors.accent }]}>Today</Text>
+                  <Text style={[styles.quickPillText, { color: colors.accent }]}>{t('Today')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
                   onPress={() => setNewNifasStart(yesterdayStr)}
                 >
-                  <Text style={[styles.quickPillText, { color: colors.textSecondary }]}>Yesterday</Text>
+                  <Text style={[styles.quickPillText, { color: colors.textSecondary }]}>{t('Yesterday')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -276,13 +278,13 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
             />
 
             <View style={styles.labelRow}>
-              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>End Date (Optional)</Text>
+              <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('End Date (Optional)')}</Text>
               {newNifasEnd ? (
                 <TouchableOpacity
                   style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
                   onPress={() => setNewNifasEnd('')}
                 >
-                  <Text style={[styles.quickPillText, { color: colors.textMuted }]}>Clear</Text>
+                  <Text style={[styles.quickPillText, { color: colors.textMuted }]}>{t('Clear')}</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -295,12 +297,12 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
               keyboardType="numbers-and-punctuation"
             />
 
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>Notes (Optional)</Text>
+            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Notes (Optional)')}</Text>
             <TextInput
               style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
               value={newNifasNotes}
               onChangeText={setNewNifasNotes}
-              placeholder="Delivery notes, physician guidance..."
+              placeholder={t('Delivery notes, physician guidance...')}
               placeholderTextColor={colors.textMuted}
             />
             <View style={styles.formBtnRow}>
@@ -308,17 +310,17 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
                 style={[styles.cancelBtn, { borderColor: colors.borderSubtle }]}
                 onPress={() => setShowLogNifas(false)}
                 accessibilityRole="button"
-                accessibilityLabel="Cancel"
+                accessibilityLabel={t('Cancel')}
               >
-                <Text style={{ color: colors.textMuted, fontSize: 12 }}>Cancel</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12 }}>{t('Cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.submitBtn, { backgroundColor: colors.accent }]}
                 onPress={handleSaveNifas}
                 accessibilityRole="button"
-                accessibilityLabel="Save Postpartum Record"
+                accessibilityLabel={t('Save Postpartum Record')}
               >
-                <Text style={{ color: colors.onAccent, fontSize: 12, fontFamily: 'Manrope_700Bold' }}>Save</Text>
+                <Text style={{ color: colors.onAccent, fontSize: 12, fontFamily: 'Manrope_700Bold' }}>{t('Save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -331,7 +333,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
               <View key={item.id} style={[styles.nifasHistoryItem, { borderColor: colors.borderSubtle }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.nifasHistoryText, { color: colors.textPrimary }]}>
-                    {item.startDate} {item.endDate ? `→ ${item.endDate}` : '· (Active)'}
+                    {item.startDate} {item.endDate ? `→ ${item.endDate}` : `· (${t('Active')})`}
                   </Text>
                   {item.notes && (
                     <Text style={[styles.nifasHistoryNotes, { color: colors.textMuted }]}>{item.notes}</Text>
@@ -340,7 +342,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
                 <TouchableOpacity
                   onPress={() => handleDeleteNifas(item)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Delete entry for ${item.startDate}`}
+                  accessibilityLabel={`${t('Delete')} ${item.startDate}`}
                   hitSlop={touchTargetTokens.hitSlop10}
                 >
                   <Ionicons name="trash-outline" size={15} color={colors.textMuted} />
@@ -356,39 +358,39 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
         <Ionicons name="sparkles" size={18} color={colors.accent} />
         <View style={{ flex: 1 }}>
           <Text style={[styles.infoCardTitle, { color: colors.accent }]}>
-            Recognizing Purity (Tuhr)
+            {t('Recognizing Purity (Tuhr)')}
           </Text>
           <Text style={[styles.infoCardDesc, { color: colors.textPrimary }]}>
-            A woman knows her menses or postpartum has ended by either:
-            {'\n'}1. <Text style={{ fontFamily: 'Manrope_700Bold' }}>Al-Qassah Al-Bayda:</Text> A clear, white fluid discharged at the conclusion of menses.
-            {'\n'}2. <Text style={{ fontFamily: 'Manrope_700Bold' }}>Al-Jufuf (Complete Dryness):</Text> Clean cotton emerges completely dry without any trace of blood, yellowish, or brownish discharge.
+            {t('A woman knows her menses or postpartum has ended by either:')}
+            {'\n'}1. <Text style={{ fontFamily: 'Manrope_700Bold' }}>{t('Al-Qassah Al-Bayda:')}</Text> {t('A clear, white fluid discharged at the conclusion of menses.')}
+            {'\n'}2. <Text style={{ fontFamily: 'Manrope_700Bold' }}>{t('Al-Jufuf (Complete Dryness):')}</Text> {t('Clean cotton emerges completely dry without any trace of blood, yellowish, or brownish discharge.')}
           </Text>
         </View>
       </Card>
 
       {/* When Ghusl is Obligatory */}
       <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 18, marginBottom: 8 }]}>
-        When is Ghusl Required?
+        {t('When is Ghusl Required?')}
       </Text>
       {GHUSL_REASONS.map((r) => (
         <Card key={r.id} style={{ marginBottom: 10, padding: 14 }}>
-          <Text style={[styles.reasonTitle, { color: colors.textPrimary }]}>{r.title}</Text>
-          <Text style={[styles.reasonDesc, { color: colors.textSecondary }]}>{r.description}</Text>
-          <Text style={[styles.reasonRef, { color: colors.accent }]}>{r.reference}</Text>
+          <Text style={[styles.reasonTitle, { color: colors.textPrimary }]}>{t(r.title)}</Text>
+          <Text style={[styles.reasonDesc, { color: colors.textSecondary }]}>{t(r.description)}</Text>
+          <Text style={[styles.reasonRef, { color: colors.accent }]}>{t(r.reference)}</Text>
         </Card>
       ))}
 
       {/* How to Perform Ghusl */}
       <View style={[styles.historyHeader, { marginTop: 18, marginBottom: 10 }]}>
         <View>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>How to Perform Ghusl</Text>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('How to Perform Ghusl')}</Text>
           <Text style={[styles.progressSubtitle, { color: colors.textMuted }]}>
-            {completedCount} of 6 steps marked · Tap any step to track progress
+            {completedCount} {t('of')} 6 {t('steps marked · Tap any step to track progress')}
           </Text>
         </View>
         {completedCount > 0 && (
           <TouchableOpacity onPress={resetGhuslSteps} hitSlop={touchTargetTokens.hitSlop8}>
-            <Text style={[styles.resetText, { color: colors.accent }]}>Reset</Text>
+            <Text style={[styles.resetText, { color: colors.accent }]}>{t('Reset')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -412,7 +414,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
                 { color: ghuslFilter === f ? colors.onAccent : colors.textSecondary },
               ]}
             >
-              {f === 'all' ? 'All Steps' : f === 'obligatory' ? 'Obligatory (Rukn)' : 'Sunnah'}
+              {f === 'all' ? t('All Steps') : f === 'obligatory' ? t('Obligatory (Rukn)') : t('Sunnah')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -434,7 +436,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
               onPress={() => toggleGhuslStep(s.id)}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: isDone }}
-              accessibilityLabel={`${s.title}, ${isDone ? 'Completed' : 'Not completed'}`}
+              accessibilityLabel={`${t(s.title)}, ${isDone ? t('Completed') : t('Not completed')}`}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
@@ -454,7 +456,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
                       isDone && { textDecorationLine: 'line-through' },
                     ]}
                   >
-                    {s.title}
+                    {t(s.title)}
                   </Text>
                 </View>
                 <View
@@ -467,7 +469,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
                   ]}
                 >
                   <Text style={[styles.stepBadgeText, { color: s.type === 'obligatory' ? colors.accent : colors.textMuted }]}>
-                    {s.type === 'obligatory' ? 'Obligatory' : 'Sunnah'}
+                    {s.type === 'obligatory' ? t('Obligatory') : t('Sunnah')}
                   </Text>
                 </View>
               </View>
@@ -481,7 +483,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
                   {s.transliteration}
                 </Text>
               )}
-              <Text style={[styles.stepDesc, { color: colors.textSecondary }]}>{s.description}</Text>
+              <Text style={[styles.stepDesc, { color: colors.textSecondary }]}>{t(s.description)}</Text>
             </TouchableOpacity>
           </Card>
         );

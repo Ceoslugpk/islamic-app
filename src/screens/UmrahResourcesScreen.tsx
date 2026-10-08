@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -155,6 +156,7 @@ export default function UmrahResourcesScreen({
   onBack?: () => void;
   onOpenDuas?: () => void;
 }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -179,11 +181,11 @@ export default function UmrahResourcesScreen({
       ]}
     >
       <ScreenHeader
-        eyebrow="Hajj & Umrah"
-        title="Umrah Resources"
-        subtitle="Essential packing checklist, etiquette, common errors, tips & scholarly references."
+        eyebrow={t('Hajj & Umrah')}
+        title={t('Umrah Resources')}
+        subtitle={t('Essential packing checklist, etiquette, common errors, tips & scholarly references.')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
 
       {/* Tab Selectors */}
@@ -198,11 +200,11 @@ export default function UmrahResourcesScreen({
           { key: 'etiquette', label: 'Sacred Etiquette' },
           { key: 'mistakes', label: 'Common Errors' },
           { key: 'books', label: 'Books & Guides' },
-        ].map((t) => {
-          const isActive = activeTab === t.key;
+        ].map((item) => {
+          const isActive = activeTab === item.key;
           return (
             <TouchableOpacity
-              key={t.key}
+              key={item.key}
               style={[
                 styles.tabPill,
                 {
@@ -210,7 +212,7 @@ export default function UmrahResourcesScreen({
                   borderColor: isActive ? colors.accent : colors.borderSubtle,
                 },
               ]}
-              onPress={() => setActiveTab(t.key as any)}
+              onPress={() => setActiveTab(item.key as any)}
             >
               <Text
                 style={[
@@ -218,7 +220,7 @@ export default function UmrahResourcesScreen({
                   { color: isActive ? '#FFFFFF' : colors.textPrimary },
                 ]}
               >
-                {t.label}
+                {t(item.label)}
               </Text>
             </TouchableOpacity>
           );
@@ -230,21 +232,21 @@ export default function UmrahResourcesScreen({
         <Card style={{ marginBottom: 16, padding: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={[styles.cardLead, { color: colors.accent }]}>SUPPLICATIONS READY</Text>
+              <Text style={[styles.cardLead, { color: colors.accent }]}>{t('SUPPLICATIONS READY')}</Text>
               <Text style={[styles.cardTitleSm, { color: colors.textPrimary }]}>
-                Need Key Duas in Your Hand?
+                {t('Need Key Duas in Your Hand?')}
               </Text>
               <Text style={[styles.cardDescSm, { color: colors.textSecondary }]}>
-                Talbiyah, Tawaf, Safa &amp; Marwah duas with Arabic text and audio in the Library tab.
+                {t('Talbiyah, Tawaf, Safa & Marwah duas with Arabic text and audio in the Library tab.')}
               </Text>
             </View>
             <TouchableOpacity
               style={[styles.quickDuaBtn, { backgroundColor: colors.accent }]}
               onPress={onOpenDuas}
               accessibilityRole="button"
-              accessibilityLabel="Open Duas Screen"
+              accessibilityLabel={t('Open Duas Screen')}
             >
-              <Text style={styles.quickDuaBtnText}>Open Duas</Text>
+              <Text style={styles.quickDuaBtnText}>{t('Open Duas')}</Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -255,14 +257,14 @@ export default function UmrahResourcesScreen({
         <View>
           <View style={styles.progressHeader}>
             <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-              Pilgrim Packing Checklist
+              {t('Pilgrim Packing Checklist')}
             </Text>
             <Text style={[styles.progressBadge, { color: colors.accent }]}>
-              {packedCount} of {PACKING_ITEMS.length} packed
+              {packedCount} {t('of')} {PACKING_ITEMS.length} {t('packed')}
             </Text>
           </View>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            Tap items to mark as packed. Everything curated for comfort, compliance with Ihram rules, and ease.
+            {t('Tap items to mark as packed. Everything curated for comfort, compliance with Ihram rules, and ease.')}
           </Text>
 
           {['Ihram & Clothing', 'Toiletries & Hygiene', 'Health & Essentials', 'Travel & Utilities'].map((cat) => {
@@ -270,7 +272,7 @@ export default function UmrahResourcesScreen({
             return (
               <View key={cat} style={{ marginBottom: 14 }}>
                 <Text style={[styles.catHeader, { color: colors.accent }]}>
-                  {cat.toUpperCase()}
+                  {t(cat).toUpperCase()}
                 </Text>
                 {items.map((item) => {
                   const isChecked = !!packedIds[item.id];
@@ -327,10 +329,10 @@ export default function UmrahResourcesScreen({
       {activeTab === 'tips' && (
         <View>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-            Practical Tips for First-Time Pilgrims
+            {t('Practical Tips for First-Time Pilgrims')}
           </Text>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            Field-tested insights to make your pilgrimage smooth, spiritually focused, and safe.
+            {t('Field-tested insights to make your pilgrimage smooth, spiritually focused, and safe.')}
           </Text>
 
           {FIRST_TIMER_TIPS.map((tip, idx) => (
@@ -362,45 +364,45 @@ export default function UmrahResourcesScreen({
       {activeTab === 'etiquette' && (
         <View>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-            Etiquette in the Two Holy Sanctuaries
+            {t('Etiquette in the Two Holy Sanctuaries')}
           </Text>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            Adab (spiritual courtesy) transforms physical travel into an accepted, beloved act of devotion.
+            {t('Adab (spiritual courtesy) transforms physical travel into an accepted, beloved act of devotion.')}
           </Text>
 
           <Card style={{ marginBottom: 12, padding: 16 }}>
             <Text style={[styles.etiquetteTitle, { color: colors.textPrimary }]}>
-              Inner State &amp; Spiritual Presence
+              {t('Inner State & Spiritual Presence')}
             </Text>
             <Text style={[styles.etiquetteBody, { color: colors.textSecondary }]}>
-              Remember that you are an invited guest (Dhayf ar-Rahman) of the Lord of the worlds. Cultivate gratitude, humility, and patience when experiencing exhaustion, delays, or dense crowds.
+              {t('Remember that you are an invited guest (Dhayf ar-Rahman) of the Lord of the worlds. Cultivate gratitude, humility, and patience when experiencing exhaustion, delays, or dense crowds.')}
             </Text>
           </Card>
 
           <Card style={{ marginBottom: 12, padding: 16 }}>
             <Text style={[styles.etiquetteTitle, { color: colors.textPrimary }]}>
-              Patience with Fellow Pilgrims
+              {t('Patience with Fellow Pilgrims')}
             </Text>
             <Text style={[styles.etiquetteBody, { color: colors.textSecondary }]}>
-              Pilgrims arrive from every nation, language, and culture. Treat the elderly, women, and children with gentleness. Forgive accidental bumps or steps on your heels; responding with warmth earns monumental reward.
+              {t('Pilgrims arrive from every nation, language, and culture. Treat the elderly, women, and children with gentleness. Forgive accidental bumps or steps on your heels; responding with warmth earns monumental reward.')}
             </Text>
           </Card>
 
           <Card style={{ marginBottom: 12, padding: 16 }}>
             <Text style={[styles.etiquetteTitle, { color: colors.textPrimary }]}>
-              Protecting the Tranquility of the Sanctuary
+              {t('Protecting the Tranquility of the Sanctuary')}
             </Text>
             <Text style={[styles.etiquetteBody, { color: colors.textSecondary }]}>
-              Lower your voice and avoid loud personal arguments or commercial conversations. Refrain from taking selfie videos during circuits, which detracts from personal khushu and blocks the flow of pilgrims.
+              {t('Lower your voice and avoid loud personal arguments or commercial conversations. Refrain from taking selfie videos during circuits, which detracts from personal khushu and blocks the flow of pilgrims.')}
             </Text>
           </Card>
 
           <Card style={{ marginBottom: 12, padding: 16 }}>
             <Text style={[styles.etiquetteTitle, { color: colors.textPrimary }]}>
-              Cleanliness and Civic Care
+              {t('Cleanliness and Civic Care')}
             </Text>
             <Text style={[styles.etiquetteBody, { color: colors.textSecondary }]}>
-              Throw all tissues, empty cups, and bottles in designated recycling bins. Never leave spilled water on marble pathways where it poses an immediate slip hazard to elderly worshippers.
+              {t('Throw all tissues, empty cups, and bottles in designated recycling bins. Never leave spilled water on marble pathways where it poses an immediate slip hazard to elderly worshippers.')}
             </Text>
           </Card>
         </View>
@@ -410,10 +412,10 @@ export default function UmrahResourcesScreen({
       {activeTab === 'mistakes' && (
         <View>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-            Common Errors &amp; Misconceptions
+            {t('Common Errors & Misconceptions')}
           </Text>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            Review these frequent pitfalls to ensure your Umrah adheres faithfully to the authentic prophetic Sunnah.
+            {t('Review these frequent pitfalls to ensure your Umrah adheres faithfully to the authentic prophetic Sunnah.')}
           </Text>
 
           {COMMON_MISTAKES.map((item, idx) => (
@@ -426,7 +428,7 @@ export default function UmrahResourcesScreen({
               </View>
 
               <Text style={[styles.mistakeText, { color: colors.textPrimary }]}>
-                Mistake: {item.mistake}
+                {t('Mistake')}: {item.mistake}
               </Text>
 
               <Hairline style={{ marginVertical: 8 }} />
@@ -434,7 +436,7 @@ export default function UmrahResourcesScreen({
               <View style={styles.correctHeader}>
                 <Ionicons name="checkmark-circle-outline" size={16} color={colors.accent} />
                 <Text style={[styles.correctText, { color: colors.textSecondary }]}>
-                  Correct Practice: {item.correctAction}
+                  {t('Correct Practice')}: {item.correctAction}
                 </Text>
               </View>
             </Card>
@@ -446,10 +448,10 @@ export default function UmrahResourcesScreen({
       {activeTab === 'books' && (
         <View>
           <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-            Recommended Books &amp; Study Guides
+            {t('Recommended Books & Study Guides')}
           </Text>
           <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            Classic and contemporary scholarly publications providing in-depth analysis of pilgrimage rites.
+            {t('Classic and contemporary scholarly publications providing in-depth analysis of pilgrimage rites.')}
           </Text>
 
           {RECOMMENDED_BOOKS.map((book, idx) => (

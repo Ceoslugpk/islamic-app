@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -30,6 +31,7 @@ interface UpcomingEvent {
 }
 
 export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -88,7 +90,7 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
     const grades = update?.grades ?? item.grades;
     return (
       <Card key={item.id} style={styles.itemCard}>
-        <Text style={[styles.itemTitle, { color: colors.accent }]}>{item.title}</Text>
+        <Text style={[styles.itemTitle, { color: colors.accent }]}>{t(item.title)}</Text>
         {arabic ? (
           <ArabicText style={[styles.itemArabic, { color: colors.textPrimary }]}>
             {arabic}
@@ -100,7 +102,7 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
           </Text>
         ) : null}
         <Text style={[styles.itemTranslation, { color: colors.textSecondary }]}>
-          {translation}
+          {t(translation)}
         </Text>
         <View style={styles.refRow}>
           <Ionicons name="book-outline" size={12} color={colors.textMuted} />
@@ -124,12 +126,12 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
 
   const bannerTitle = banner
     ? banner.isRamadan
-      ? 'Ramadan Mubarak'
+      ? t('Ramadan Mubarak')
       : banner.isEidAlFitr || banner.isEidAlAdha
-        ? 'Eid Mubarak'
+        ? t('Eid Mubarak')
         : banner.daysUntilRamadan != null
-          ? `Ramadan in ${banner.daysUntilRamadan} days`
-          : 'Seasonal Guidance'
+          ? `${t('Ramadan in')} ${banner.daysUntilRamadan} ${t('days')}`
+          : t('Seasonal Guidance')
     : null;
 
   return (
@@ -141,11 +143,11 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
       ]}
     >
       <ScreenHeader
-        title="Ramadan & Eid Guide"
-        eyebrow="Guides"
-        subtitle="Fasting, Laylatul Qadr, Itikaf, Zakat al-Fitr, Eid and Tashriq — every narration verified with its collection, number and grade."
+        title={t('Ramadan & Eid Guide')}
+        eyebrow={t('Guides')}
+        subtitle={t('Fasting, Laylatul Qadr, Itikaf, Zakat al-Fitr, Eid and Tashriq — every narration verified with its collection, number and grade.')}
         onBack={onBack}
-        backLabel="Library"
+        backLabel={t('Library')}
       />
 
       {banner && bannerTitle ? (
@@ -180,12 +182,12 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
                     ? `Laylatul Qadr expected in ${banner.daysUntilLaylatulQadr} night${
                         banner.daysUntilLaylatulQadr === 1 ? '' : 's'
                       } — search for it on the odd nights.`
-                    : 'Seek Laylatul Qadr on every odd night of the last ten nights.'}
+                    : t('Seek Laylatul Qadr on every odd night of the last ten nights.')}
                 </Text>
               ) : null}
               {upcoming && upcoming.daysUntil > 0 ? (
                 <Text style={[styles.bannerMeta, { color: colors.textMuted }]}>
-                  Next: {upcoming.name} in {upcoming.daysUntil} day
+                  {t('Next')}: {upcoming.name} {t('in')} {upcoming.daysUntil} day
                   {upcoming.daysUntil === 1 ? '' : 's'}
                 </Text>
               ) : null}
@@ -213,7 +215,7 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
             </View>
             <View style={styles.sectionTitleCol}>
               <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                {section.title}
+                {t(section.title)}
               </Text>
               {section.arabicTitle ? (
                 <ArabicText align="left" size={13} style={{ color: colors.textMuted }}>

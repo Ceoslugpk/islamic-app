@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import {
@@ -41,6 +42,7 @@ interface BackupActivityInfo {
 }
 
 export function BackupRestoreScreen({ onBack }: Props) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
   const [lastInfo, setLastInfo] = useState<BackupActivityInfo | null>(null);
@@ -66,8 +68,8 @@ export function BackupRestoreScreen({ onBack }: Props) {
         URL.revokeObjectURL(url);
 
         Alert.alert(
-          'Backup exported',
-          `File: ${fileName}\n\nIncluded in backup:\n${summaryText}`
+          t('Backup exported'),
+          `${t('File')}: ${fileName}\n\n${t('Included in backup')}:\n${summaryText}`
         );
       } else {
         const FileSystem = require('expo-file-system/legacy');
@@ -86,8 +88,8 @@ export function BackupRestoreScreen({ onBack }: Props) {
           });
 
           Alert.alert(
-            'Backup exported',
-            `File: ${fileName}\n\nIncluded in backup:\n${summaryText}`
+            t('Backup exported'),
+            `${t('File')}: ${fileName}\n\n${t('Included in backup')}:\n${summaryText}`
           );
         } else {
           // Native when sharing unavailable: write to user-visible Documents directory
@@ -98,8 +100,8 @@ export function BackupRestoreScreen({ onBack }: Props) {
           destinationPath = path;
 
           Alert.alert(
-            'Backup saved to Documents',
-            `Sharing is unavailable on this device.\n\nFile saved to:\n${path}\n\nIncluded in backup:\n${summaryText}`
+            t('Backup saved to Documents'),
+            `${t('Sharing is unavailable on this device.')}\n\n${t('File saved to')}:\n${path}\n\n${t('Included in backup')}:\n${summaryText}`
           );
         }
       }
@@ -115,7 +117,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
         destinationPath,
       });
     } catch (e) {
-      Alert.alert('Export failed', e instanceof Error ? e.message : 'Could not create backup.');
+      Alert.alert(t('Export failed'), e instanceof Error ? e.message : t('Could not create backup.'));
     } finally {
       setBusy(null);
     }
@@ -143,7 +145,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
       } else {
         const FileSystem = require('expo-file-system/legacy');
         if (!DocumentPicker?.getDocumentAsync) {
-          throw new Error('Document picker is unavailable on this device.');
+          throw new Error(t('Document picker is unavailable on this device.'));
         }
         const res = await DocumentPicker.getDocumentAsync({
           type: ['application/json', 'text/json', '*/*'],
@@ -167,12 +169,12 @@ export function BackupRestoreScreen({ onBack }: Props) {
 
       const confirmRestore = () => {
         Alert.alert(
-          'Confirm restore',
-          `Backup from: ${info.exportedAt}\nApp version: ${info.appVersion}\n\nIncludes:\n${info.tables}\n\nNote: For your privacy, Women's Worship PIN is never included in backups and must be configured on this device.\n\nThis will OVERWRITE your current local data. This cannot be undone.`,
+          t('Confirm restore'),
+          `${t('Backup from')}: ${info.exportedAt}\n${t('App version')}: ${info.appVersion}\n\n${t('Includes')}:\n${info.tables}\n\n${t("Note: For your privacy, Women's Worship PIN is never included in backups and must be configured on this device.")}\n\n${t('This will OVERWRITE your current local data. This cannot be undone.')}`,
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('Cancel'), style: 'cancel' },
             {
-              text: 'Restore data',
+              text: t('Restore data'),
               style: 'destructive',
               onPress: async () => {
                 try {
@@ -186,11 +188,11 @@ export function BackupRestoreScreen({ onBack }: Props) {
                     totalRecords: info.totalRecords,
                   });
                   Alert.alert(
-                    'Restore complete',
-                    'Your data has been restored successfully. Please restart the app to apply all changes.'
+                    t('Restore complete'),
+                    t('Your data has been restored successfully. Please restart the app to apply all changes.')
                   );
                 } catch (e2) {
-                  Alert.alert('Restore failed', e2 instanceof Error ? e2.message : 'Could not restore backup.');
+                  Alert.alert(t('Restore failed'), e2 instanceof Error ? e2.message : t('Could not restore backup.'));
                 }
               },
             },
@@ -200,12 +202,12 @@ export function BackupRestoreScreen({ onBack }: Props) {
 
       if (isNewer) {
         Alert.alert(
-          'Newer App Version Detected',
-          `This backup was created on a newer app version (v${p.appVersion}, current version is v${currentVersion}).\n\nSome newer fields or settings may not be recognized by this version of Islamic.\n\nRestore anyway?`,
+          t('Newer App Version Detected'),
+          `This backup was created on a newer app version (v${p.appVersion}, current version is v${currentVersion}).\n\n${t('Some newer fields or settings may not be recognized by this version of Islamic.')}\n\n${t('Restore anyway')}?`,
           [
-            { text: 'Cancel', style: 'cancel' },
+            { text: t('Cancel'), style: 'cancel' },
             {
-              text: 'Restore anyway',
+              text: t('Restore anyway'),
               style: 'destructive',
               onPress: confirmRestore,
             },
@@ -216,10 +218,10 @@ export function BackupRestoreScreen({ onBack }: Props) {
       }
     } catch (e) {
       Alert.alert(
-        'Restore failed',
+        t('Restore failed'),
         e instanceof Error
           ? e.message
-          : 'This file could not be restored (it may be corrupted or not an Islamic backup).'
+          : t('This file could not be restored (it may be corrupted or not an Islamic backup).')
       );
     } finally {
       setBusy(null);
@@ -229,8 +231,8 @@ export function BackupRestoreScreen({ onBack }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        title="Backup & Restore"
-        subtitle="Local only — no account needed"
+        title={t('Backup & Restore')}
+        subtitle={t('Local only — no account needed')}
         onBack={onBack}
       />
 
@@ -242,9 +244,9 @@ export function BackupRestoreScreen({ onBack }: Props) {
               <Ionicons name="cloud-upload-outline" size={22} color={colors.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Export backup</Text>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{t('Export backup')}</Text>
               <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                Saves your prayer history, Quran bookmarks, notes, study tags, reading plans, Hifz, settings, and more to a file.
+                {t('Saves your prayer history, Quran bookmarks, notes, study tags, reading plans, Hifz, settings, and more to a file.')}
               </Text>
             </View>
           </View>
@@ -257,18 +259,18 @@ export function BackupRestoreScreen({ onBack }: Props) {
             onPress={handleExport}
             disabled={busy !== null}
             accessibilityRole="button"
-            accessibilityLabel="Export backup"
-            accessibilityHint="Creates a JSON backup file with your prayers, bookmarks, notes, and settings"
+            accessibilityLabel={t('Export backup')}
+            accessibilityHint={t('Creates a JSON backup file with your prayers, bookmarks, notes, and settings')}
           >
             {busy === 'export' ? (
               <>
                 <ActivityIndicator color="#FFF" size="small" />
-                <Text style={styles.actionText}>Exporting backup...</Text>
+                <Text style={styles.actionText}>{t('Exporting backup...')}</Text>
               </>
             ) : (
               <>
                 <Ionicons name="share-outline" size={16} color="#FFF" />
-                <Text style={styles.actionText}>Export to file</Text>
+                <Text style={styles.actionText}>{t('Export to file')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -281,9 +283,9 @@ export function BackupRestoreScreen({ onBack }: Props) {
               <Ionicons name="cloud-download-outline" size={22} color={colors.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Restore backup</Text>
+              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{t('Restore backup')}</Text>
               <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                Pick a backup file. It is validated before restoring, and your current data is overwritten only after you review and confirm.
+                {t('Pick a backup file. It is validated before restoring, and your current data is overwritten only after you review and confirm.')}
               </Text>
             </View>
           </View>
@@ -296,18 +298,18 @@ export function BackupRestoreScreen({ onBack }: Props) {
             onPress={handleRestore}
             disabled={busy !== null}
             accessibilityRole="button"
-            accessibilityLabel="Restore backup"
-            accessibilityHint="Pick a JSON backup file to validate and restore"
+            accessibilityLabel={t('Restore backup')}
+            accessibilityHint={t('Pick a JSON backup file to validate and restore')}
           >
             {busy === 'import' ? (
               <>
                 <ActivityIndicator color="#FFF" size="small" />
-                <Text style={styles.actionText}>Reading backup...</Text>
+                <Text style={styles.actionText}>{t('Reading backup...')}</Text>
               </>
             ) : (
               <>
                 <Ionicons name="folder-open-outline" size={16} color="#FFF" />
-                <Text style={styles.actionText}>Choose backup file</Text>
+                <Text style={styles.actionText}>{t('Choose backup file')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -324,7 +326,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
                   color={colors.accent}
                 />
                 <Text style={[styles.infoBadgeText, { color: colors.accent }]}>
-                  {lastInfo.type === 'export' ? 'Recent Export' : 'Recent Restore'}
+                  {lastInfo.type === 'export' ? t('Recent Export') : t('Recent Restore')}
                 </Text>
               </View>
               <Text style={[styles.infoMeta, { color: colors.textMuted }]}>
@@ -354,17 +356,17 @@ export function BackupRestoreScreen({ onBack }: Props) {
             <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                Ready for on-device backup
+                {t('Ready for on-device backup')}
               </Text>
               <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-                No backup activity yet in this session. Export a file anytime to keep your prayer history, bookmarks, and notes secure.
+                {t('No backup activity yet in this session. Export a file anytime to keep your prayer history, bookmarks, and notes secure.')}
               </Text>
             </View>
           </View>
         )}
 
         <Text style={[styles.footnote, { color: colors.textMuted }]}>
-          Backups are stored on your device only. No data is uploaded to any server. Audio files, prayer caches, and downloads are never included.
+          {t('Backups are stored on your device only. No data is uploaded to any server. Audio files, prayer caches, and downloads are never included.')}
         </Text>
       </ScrollView>
     </View>

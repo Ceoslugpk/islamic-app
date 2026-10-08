@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Card } from '../components/Card';
@@ -26,6 +27,7 @@ interface WomenGuidanceScreenProps {
 }
 
 export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuidanceScreenProps) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -38,27 +40,27 @@ export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuida
       contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
     >
       <ScreenHeader
-        eyebrow="Women's Worship"
-        title="Worship Guidance"
-        subtitle="Authentic fiqh on exemptions, permitted worship, bleeding types & scholarly references."
+        eyebrow={t("Women's Worship")}
+        title={t('Worship Guidance')}
+        subtitle={t('Authentic fiqh on exemptions, permitted worship, bleeding types & scholarly references.')}
         onBack={onBack}
-        backLabel="Tools"
+        backLabel={t('Tools')}
       />
 
       {/* Discreet Privacy Note */}
       <View style={[styles.privacyBadge, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
         <Ionicons name="shield-checkmark" size={14} color={colors.accent} />
         <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
-          Private & verified · Mainstream classical and contemporary fiqh
+          {t('Private & verified · Mainstream classical and contemporary fiqh')}
         </Text>
       </View>
 
       {/* Rulings During Menses & Postpartum */}
       <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-        Rulings During Menses & Postpartum
+        {t('Rulings During Menses & Postpartum')}
       </Text>
       <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        Authentic guidance on exemptions, permitted devotional acts, and divine mercy.
+        {t('Authentic guidance on exemptions, permitted devotional acts, and divine mercy.')}
       </Text>
 
       {WORSHIP_GUIDELINES.map((item) => {
@@ -75,14 +77,14 @@ export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuida
               <View style={[styles.worshipBadge, { borderColor: statusConfig.color }]}>
                 <Ionicons name={statusConfig.icon as any} size={12} color={statusConfig.color} />
                 <Text style={[styles.worshipBadgeText, { color: statusConfig.color }]}>
-                  {statusConfig.label}
+                  {t(statusConfig.label)}
                 </Text>
               </View>
             </View>
             <Text style={[styles.worshipRuling, { color: colors.accent }]}>{item.ruling}</Text>
             <Text style={[styles.worshipDetails, { color: colors.textSecondary }]}>{item.details}</Text>
             <Text style={[styles.worshipEvidence, { color: colors.textMuted }]}>
-              Source: {item.evidence}
+              {t('Source')}: {item.evidence}
             </Text>
           </Card>
         );
@@ -90,10 +92,10 @@ export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuida
 
       {/* Hayd vs Nifas vs Istihadha */}
       <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 18 }]}>
-        Hayd, Nifas & Istihadha (Irregular Bleeding)
+        {t('Hayd, Nifas & Istihadha (Irregular Bleeding)')}
       </Text>
       <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        Definitions, standard durations, and jurisprudence across bleeding types.
+        {t('Definitions, standard durations, and jurisprudence across bleeding types.')}
       </Text>
 
       {BLEEDING_TYPES.map((b) => (
@@ -104,11 +106,11 @@ export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuida
           </View>
           <Text style={[styles.bleedingDef, { color: colors.textSecondary }]}>{b.definition}</Text>
           <View style={styles.bleedingRow}>
-            <Text style={[styles.bleedingLabel, { color: colors.accent }]}>Duration: </Text>
+            <Text style={[styles.bleedingLabel, { color: colors.accent }]}>{t('Duration: ')}</Text>
             <Text style={[styles.bleedingVal, { color: colors.textPrimary }]}>{b.duration}</Text>
           </View>
           <View style={styles.bleedingRow}>
-            <Text style={[styles.bleedingLabel, { color: colors.accent }]}>Rulings: </Text>
+            <Text style={[styles.bleedingLabel, { color: colors.accent }]}>{t('Rulings: ')}</Text>
             <Text style={[styles.bleedingVal, { color: colors.textPrimary }]}>{b.rulings}</Text>
           </View>
         </Card>
@@ -116,10 +118,10 @@ export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuida
 
       {/* Recommended Reading List */}
       <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 18 }]}>
-        Recommended Fiqh References
+        {t('Recommended Fiqh References')}
       </Text>
       <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        {"Classical and contemporary authoritative works on women's jurisprudence."}
+        {t("Classical and contemporary authoritative works on women's jurisprudence.")}
       </Text>
 
       {WOMENS_FIQH_RESOURCES.map((res) => (
@@ -139,7 +141,7 @@ export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuida
       <Card style={{ ...styles.disclaimerCard, borderColor: colors.borderSubtle }}>
         <Ionicons name="medical-outline" size={20} color={colors.accent} />
         <Text style={[styles.disclaimerCardText, { color: colors.textSecondary }]}>
-          Rulings on bleeding duration and irregularities vary according to individual circumstances and classical legal schools (Madhhabs). If you encounter irregular bleeding exceeding 15 days, or medical complications, please consult both a qualified Islamic scholar and a physician.
+          {t('Rulings on bleeding duration and irregularities vary according to individual circumstances and classical legal schools (Madhhabs). If you encounter irregular bleeding exceeding 15 days, or medical complications, please consult both a qualified Islamic scholar and a physician.')}
         </Text>
       </Card>
     </ScrollView>
