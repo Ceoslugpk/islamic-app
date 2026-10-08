@@ -168,11 +168,15 @@ export default function MosqueFinderScreen({
         for (const endpoint of OVERPASS_ENDPOINTS) {
           // ponytail: bounded timeout — a hanging Overpass fetch would leave the
           // screen stuck in loading forever (same class as the earlier global-stall).
+          // Manual AbortController + setTimeout: AbortSignal.timeout is not
+          // reliably available in Expo Go's Hermes ("undefined is not a function").
           const url = `${endpoint}?data=${encodeURIComponent(overpassQuery)}`;
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 12000);
           try {
             const res = await fetch(url, {
               headers: { 'User-Agent': 'IslamicAppMobile/1.0' },
-              signal: AbortSignal.timeout(12000),
+              signal: controller.signal,
             });
             if (!res.ok) throw new Error(`Server returned status ${res.status}`);
             const json = await res.json();
@@ -184,6 +188,8 @@ export default function MosqueFinderScreen({
           } catch (err: any) {
             lastErr = err;
             // try next mirror
+          } finally {
+            clearTimeout(timer);
           }
         }
 
@@ -249,7 +255,11 @@ export default function MosqueFinderScreen({
   // Trigger search whenever search center or radius changes (unless area not found)
   useEffect(() => {
     if (!areaNotFound) {
-      fetchMosquesForCenter(effectiveCenter.latitude, effectiveCenter.longitude, radiusKm);
+      fetchMosquesForCenter(effectiveCenter.latitude, effectiveCenter.longitude, radiusKm).catch(
+        () => {
+          // Non-fatal: fetchMosquesForCenter sets its own error state on failure.
+        }
+      );
     }
   }, [fetchMosquesForCenter, effectiveCenter.latitude, effectiveCenter.longitude, radiusKm, areaNotFound]);
 
@@ -308,13 +318,20 @@ export default function MosqueFinderScreen({
         q
       )}&format=json&limit=1`;
 
-      const res = await fetch(url, {
-        headers: {
-          'User-Agent': 'IslamicAppMobile/1.0 (https://islamic.app)',
-          Accept: 'application/json',
-        },
-        signal: AbortSignal.timeout(8000),
-      });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      let res: Response;
+      try {
+        res = await fetch(url, {
+          headers: {
+            'User-Agent': 'IslamicAppMobile/1.0 (https://islamic.app)',
+            Accept: 'application/json',
+          },
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
 
       if (!res.ok) {
         throw new Error(`Area lookup failed (${res.status})`);
@@ -540,14 +557,16 @@ export default function MosqueFinderScreen({
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() =>
+            onRefresh={() => {
               fetchMosquesForCenter(
                 effectiveCenter.latitude,
                 effectiveCenter.longitude,
                 radiusKm,
                 true
-              )
-            }
+              ).catch(() => {
+                // Non-fatal: fetchMosquesForCenter sets its own error state.
+              });
+            }}
             tintColor={colors.accent}
             colors={[colors.accent]}
           />
