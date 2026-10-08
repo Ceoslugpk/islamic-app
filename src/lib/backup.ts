@@ -139,7 +139,13 @@ export function filterAllowedStorage(storage: Record<string, string>): Record<st
         }
         delete parsed.womenPinHash;
         delete parsed.womenLockEnabled;
-        filtered[key] = JSON.stringify(parsed);
+        // Security-audit M3: re-sanitize the whole blob so crafted storage
+        // cannot inject arbitrary settings (methodId, locationMode, nested
+        // objects) past validation — sanitizeSettings strips unknown keys and
+        // clamps every known field to safe values.
+        const sanitized = (require('./settings') as typeof import('./settings'))
+          .sanitizeSettings(parsed);
+        filtered[key] = JSON.stringify(sanitized);
       } catch {
         // reject malformed JSON
         continue;
@@ -288,8 +294,10 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
 
   // Wipe user tables, then re-insert inside a single transaction for atomicity & integrity.
   db.withTransactionSync(() => {
-    // 1. Wipe real SQLite tables
+    // 1. Wipe real SQLite tables — ONLY those present in the backup (a partial
+    //    backup must not silently destroy tables it doesn't cover). M1.
     for (const table of SQLITE_USER_TABLES) {
+      if (tables[table] === undefined) continue;
       try {
         db.execSync(`DELETE FROM ${table}`);
       } catch {
@@ -305,6 +313,12 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
           const rowObj = row as Record<string, unknown>;
           const cols = Object.keys(rowObj);
           if (cols.length === 0) continue;
+          // Security-audit M2: reject non-identifier column names (prevents
+          // SQL injection via attacker-controlled backup row keys — SQLite's
+          // double-quote does not escape embedded quotes in identifiers).
+          const isSafeCol = (c: string) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(c);
+          if (!cols.every(isSafeCol)) continue;
+          if (cols.length > 64) continue;
           const placeholders = cols.map(() => '?').join(', ');
           const values = cols.map((c) => rowObj[c]);
           db.runSync(
@@ -981,8 +995,11 @@ export async function applyRestore(payload: BackupPayload): Promise<void> {
     await importWebStorage(payload.data.storage || {});
     await importWebTables(payload.data.tables || {});
   } else {
-    await importNativeTables(payload.data.tables || {});
+    // Import storage FIRST (AsyncStorage is quota/failure-prone), then the
+    // transactional SQLite import. If storage fails, SQLite is left untouched
+    // rather than wiped-and-half-restored (security-audit M1).
     await importNativeStorage(payload.data.storage || {});
+    await importNativeTables(payload.data.tables || {});
   }
 }
 

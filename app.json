@@ -26,6 +26,7 @@
     },
     "android": {
       "package": "com.qashi.islamic",
+      "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#0F5A4A",
         "foregroundImage": "./assets/android-icon-foreground.png",

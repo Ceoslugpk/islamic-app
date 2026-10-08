@@ -2038,6 +2038,18 @@ export async function playSurah(
  * cleared from the session if the URL fails to load (offline).
  */
 export async function playNameAudio(url: string, title: string, reciterName = 'Asma ul-Husna'): Promise<void> {
+  // Security-audit L4: only allow known audio CDN hosts — this exported
+  // primitive must never play an arbitrary URL (SSRF-style fetch boundary).
+  const ALLOWED_AUDIO_HOSTS = ['esmaulhusna.org', 'cdn.islamic.network', 'everyayah.com'];
+  let host = '';
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    throw new Error('Invalid audio URL');
+  }
+  if (!ALLOWED_AUDIO_HOSTS.some((h) => host === h || host.endsWith('.' + h))) {
+    throw new Error('Audio URL host not allowed');
+  }
   await stopAudioPreloading();
   currentPlayback = {
     identifier: 'names99',

@@ -534,9 +534,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         // live changes. On a fresh install the storage snapshot can be empty
         // (DEFAULTS), and a blind setSettings(next) would clobber the just-saved
         // autoLocation/locationMode back to manual — "allowed but nothing changed".
+        // Security-audit M4: only carry the location fields the grant actually
+        // writes; never spread the whole live state (which on a fresh install is
+        // DEFAULTS and would clobber a stored PIN/lock from `next`).
         setSettings((prev) => {
           const userChangedDuringHydration = prev !== DEFAULTS;
-          return userChangedDuringHydration ? { ...next, ...prev } : next;
+          if (!userChangedDuringHydration) return next;
+          return {
+            ...next,
+            autoLocation: prev.autoLocation,
+            autoLocationTimestamp: prev.autoLocationTimestamp,
+            locationMode: prev.locationMode,
+          };
         });
         setAudioTranslationEnabled(next.translationAudioEnabled);
         setActiveAdhanReciterId(next.adhanReciterId || 'alafasy');
