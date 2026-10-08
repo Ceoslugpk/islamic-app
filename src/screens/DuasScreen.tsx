@@ -16,6 +16,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -158,7 +159,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
         {/* Top Header of Card */}
         <View style={styles.cardHeader}>
           <Text style={[styles.duaTitle, { color: colors.textPrimary }]}>
-            {item.title}
+            {t(item.title)}
           </Text>
           <View
             style={[
@@ -170,7 +171,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
             ]}
           >
             <Text style={[styles.categoryBadgeText, { color: colors.accent }]}>
-              {item.category}
+              {t(item.category)}
             </Text>
           </View>
         </View>
@@ -197,12 +198,12 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
         {/* Reference Footnote & Share Button */}
         <View style={styles.refRow}>
           <Text style={[styles.refText, { color: colors.textMuted }]}>
-            Source: {item.reference}
+            {t('Source')}: {item.reference}
           </Text>
           <TouchableOpacity
             onPress={() => handleShareDua(item)}
             accessibilityRole="button"
-            accessibilityLabel={`Share ${item.title}`}
+            accessibilityLabel={`${t('Share')} ${t(item.title)}`}
             style={styles.shareBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
@@ -216,10 +217,10 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        title="Duas & Adhkar"
-        eyebrow="Supplications"
+        title={t('Duas & Adhkar')}
+        eyebrow={t('Supplications')}
         onBack={onBack}
-        backLabel="Library"
+        backLabel={t('Library')}
       />
       <View style={[styles.contentWrap, { paddingHorizontal: paddingH }]}>
 
@@ -257,7 +258,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
                       { color: isSelected ? colors.onAccent : colors.textSecondary },
                     ]}
                   >
-                    {cat} ({DUA_COUNTS[cat]})
+                    {t(cat)} ({DUA_COUNTS[cat]})
                   </Text>
                 </TouchableOpacity>
               );
@@ -276,10 +277,10 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           onPress={handleRandomDua}
           disabled={filteredDuas.length === 0}
           accessibilityRole="button"
-          accessibilityLabel="Show a random dua from the current filter"
+          accessibilityLabel={t('Show a random dua from the current filter')}
         >
           <Text style={[styles.randomBtnText, { color: colors.accent }]}>
-            🎲 Random
+            🎲 {t('Random')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -298,7 +299,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search duas by title, transliteration, or meaning..."
+          placeholder={t('Search duas by title, transliteration, or meaning...')}
           placeholderTextColor={colors.textMuted}
           style={[styles.searchInput, { color: colors.textPrimary }]}
           autoCapitalize="none"
@@ -318,14 +319,14 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
       {searchHistory.length > 0 && !searchQuery && (
         <View style={styles.recentWrap}>
           <View style={styles.recentHeader}>
-            <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+            <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
             <TouchableOpacity
               onPress={clearSearchHistory}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
-              accessibilityLabel="Clear duas search history"
+              accessibilityLabel={t('Clear duas search history')}
             >
-              <Text style={[styles.clearAllText, { color: colors.textMuted }]}>Clear</Text>
+              <Text style={[styles.clearAllText, { color: colors.textMuted }]}>{t('Clear')}</Text>
             </TouchableOpacity>
           </View>
           <ScrollView
@@ -348,7 +349,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
                   }}
                   style={styles.recentChipBtn}
                   accessibilityRole="button"
-                  accessibilityLabel={`Search for ${item}`}
+                  accessibilityLabel={`${t('Search for')} ${item}`}
                 >
                   <Ionicons name="time-outline" size={13} color={colors.accent} />
                   <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -359,7 +360,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
                   onPress={() => removeSearchHistoryQuery(item)}
                   style={styles.recentChipRemove}
                   accessibilityRole="button"
-                  accessibilityLabel={`Remove ${item} from search history`}
+                  accessibilityLabel={`${t('Remove')} ${item}`}
                   hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
                 >
                   <Ionicons name="close" size={12} color={colors.textMuted} />
@@ -392,9 +393,9 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           ListEmptyComponent={
             <EmptyState
               icon="search-outline"
-              title="No duas found"
-              subtitle={`No duas match "${searchQuery}"`}
-              actionLabel="Clear search"
+              title={t('No duas found')}
+              subtitle={`${t('No duas match')} "${searchQuery}"`}
+              actionLabel={t('Clear search')}
               onAction={() => setSearchQuery('')}
             />
           }

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { fetchSurah, SurahDetail } from '../lib/quran';
@@ -44,7 +45,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
       .then((d) => {
         if (alive) setDetail(d);
       })
-      .catch(() => alive && setError('Could not load surah text. Check your connection and try again.'))
+      .catch(() => alive && setError(t('Could not load surah text. Check your connection and try again.')))
       .finally(() => alive && setLoading(false));
     return () => {
       alive = false;
@@ -80,15 +81,15 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        title={surah?.englishName || `Surah ${surahNumber}`}
-        subtitle={`Hide & Peek · ${surah?.numberOfAyahs || 0} ayahs`}
+        title={surah?.englishName || `${t('Surah')} ${surahNumber}`}
+        subtitle={`${t('Hide & Peek')} · ${surah?.numberOfAyahs || 0} ${t('ayahs')}`}
         onBack={onBack}
       />
 
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.accent} size="large" />
-          <Text style={[styles.hint, { color: colors.textMuted }]}>Loading surah text...</Text>
+          <Text style={[styles.hint, { color: colors.textMuted }]}>{t('Loading surah text...')}</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
@@ -101,12 +102,12 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
               setError(null);
               fetchSurah(surahNumber, true)
                 .then(setDetail)
-                .catch(() => setError('Still could not load. Try again later.'))
+                .catch(() => setError(t('Still could not load. Try again later.')))
                 .finally(() => setLoading(false));
             }}
             accessibilityRole="button"
           >
-            <Text style={styles.primaryBtnText}>Retry</Text>
+            <Text style={styles.primaryBtnText}>{t('Retry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -114,10 +115,10 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
           {/* Progress header */}
           <View style={styles.progressRow}>
             <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-              Ayah {index + 1} of {ayahs.length}
+              {t('Ayah')} {index + 1} {t('of')} {ayahs.length}
             </Text>
             <Text style={[styles.progressText, { color: colors.textMuted }]}>
-              {peekedCount} peeked
+              {peekedCount} {t('peeked')}
             </Text>
           </View>
           <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
@@ -146,13 +147,13 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
                     • • • • • • • • •
                   </Text>
                   <Text style={[styles.hiddenHint, { color: colors.textMuted }]}>
-                    Recite from memory, then peek to check.
+                    {t('Recite from memory, then peek to check.')}
                   </Text>
                 </View>
               )}
 
               {revealed && current.translation ? (
-                <Text style={[styles.ayahTrans, { color: colors.textSecondary }]} numberOfLines={4}>
+                <Text style={[styles.ayahTrans, { color: colors.textSecondary }]}>
                   {current.translation}
                 </Text>
               ) : null}
@@ -162,10 +163,10 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
                   style={[styles.peekBtn, { backgroundColor: colors.accent }]}
                   onPress={handleReveal}
                   accessibilityRole="button"
-                  accessibilityLabel="Reveal this ayah"
+                  accessibilityLabel={t('Reveal this ayah')}
                 >
                   <Ionicons name="eye-outline" size={16} color="#FFF" />
-                  <Text style={styles.peekBtnText}>Peek</Text>
+                  <Text style={styles.peekBtnText}>{t('Peek')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -178,7 +179,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
               onPress={goPrev}
               disabled={index === 0}
               accessibilityRole="button"
-              accessibilityLabel="Previous ayah"
+              accessibilityLabel={t('Previous ayah')}
             >
               <Ionicons name="chevron-back" size={20} color={index === 0 ? colors.textMuted : colors.textSecondary} />
             </TouchableOpacity>
@@ -187,9 +188,9 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
               style={[styles.ctrlBtn, styles.ctrlPrimary, { backgroundColor: colors.accent }]}
               onPress={revealed ? goNext : handleReveal}
               accessibilityRole="button"
-              accessibilityLabel={revealed ? 'Next ayah' : 'Reveal this ayah'}
+              accessibilityLabel={revealed ? t('Next ayah') : t('Reveal this ayah')}
             >
-              <Text style={styles.ctrlPrimaryText}>{revealed ? 'Next Ayah' : 'Peek'}</Text>
+              <Text style={styles.ctrlPrimaryText}>{revealed ? t('Next Ayah') : t('Peek')}</Text>
               <Ionicons name={revealed ? 'chevron-forward' : 'eye-outline'} size={18} color="#FFF" />
             </TouchableOpacity>
 
@@ -198,7 +199,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
               onPress={goNext}
               disabled={index === ayahs.length - 1}
               accessibilityRole="button"
-              accessibilityLabel="Next ayah"
+              accessibilityLabel={t('Next ayah')}
             >
               <Ionicons
                 name="chevron-forward"
@@ -212,10 +213,10 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
             style={[styles.restartBtn, { borderColor: colors.borderSubtle }]}
             onPress={restart}
             accessibilityRole="button"
-            accessibilityLabel="Restart practice from the beginning"
+            accessibilityLabel={t('Restart practice from the beginning')}
           >
             <Ionicons name="refresh-outline" size={15} color={colors.textSecondary} />
-            <Text style={[styles.restartText, { color: colors.textSecondary }]}>Restart</Text>
+            <Text style={[styles.restartText, { color: colors.textSecondary }]}>{t('Restart')}</Text>
           </TouchableOpacity>
         </ScrollView>
       )}

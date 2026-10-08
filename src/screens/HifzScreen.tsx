@@ -12,6 +12,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
@@ -125,7 +126,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           ]}
         >
           <Ionicons name="checkmark-circle" size={13} color={colors.bgBase} style={{ marginRight: 4 }} />
-          <Text style={[styles.badgeText, { color: colors.bgBase }]}>Memorized</Text>
+          <Text style={[styles.badgeText, { color: colors.bgBase }]}>{t('Memorized')}</Text>
         </View>
       );
     }
@@ -141,7 +142,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           ]}
         >
           <Ionicons name="sync-outline" size={13} color={colors.accent} style={{ marginRight: 4 }} />
-          <Text style={[styles.badgeText, { color: colors.accent }]}>Revising</Text>
+          <Text style={[styles.badgeText, { color: colors.accent }]}>{t('Revising')}</Text>
         </View>
       );
     }
@@ -155,20 +156,21 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           },
         ]}
       >
-        <Text style={[styles.badgeText, { color: colors.textMuted }]}>Not started</Text>
+        <Text style={[styles.badgeText, { color: colors.textMuted }]}>{t('Not started')}</Text>
       </View>
     );
   };
 
   const renderSurah = ({ item }: { item: SurahSummary }) => {
     const status = statuses[item.number] || 'not-started';
+    const statusLabel = status === 'memorized' ? t('Memorized') : status === 'revising' ? t('Revising') : t('Not started');
 
     return (
       <TouchableOpacity
         style={styles.row}
         onPress={() => handleCycleStatus(item.number)}
         accessibilityRole="button"
-        accessibilityLabel={`Surah ${item.number} ${item.englishName}. Status: ${status}. Tap to change status.`}
+        accessibilityLabel={`${t('Surah')} ${item.number} ${item.englishName}. ${t('Status')}: ${statusLabel}. ${t('Tap to cycle')}.`}
       >
         <View
           style={[
@@ -190,7 +192,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
               {item.englishName}
             </Text>
             <Text style={[styles.ayahCount, { color: colors.textMuted }]}>
-              {item.numberOfAyahs} ayahs · {item.revelationType}
+              {item.numberOfAyahs} {t('ayahs')} · {t(item.revelationType)}
             </Text>
           </View>
           <View style={{ marginTop: 6, alignSelf: 'flex-start' }}>
@@ -207,13 +209,13 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
               onPress={() => setPracticeSurah(item.number)}
               style={[styles.practiceBtn, { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle }]}
               accessibilityRole="button"
-              accessibilityLabel={`Practice ${item.englishName} with hide and peek`}
+              accessibilityLabel={`${t('Practice')} ${item.englishName}`}
             >
               <Ionicons name="eye-outline" size={12} color={colors.accent} />
-              <Text style={[styles.practiceText, { color: colors.accent }]}>Practice</Text>
+              <Text style={[styles.practiceText, { color: colors.accent }]}>{t('Practice')}</Text>
             </TouchableOpacity>
             <Text style={[styles.tapHint, { color: colors.textMuted }]}>
-              Tap to cycle
+              {t('Tap to cycle')}
             </Text>
           </View>
         </View>
@@ -234,10 +236,10 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <View style={[styles.contentWrap, { paddingHorizontal: paddingH }]}>
         <ScreenHeader
-          eyebrow="Memorization"
-          title="Hifz Tracker"
+          eyebrow={t('Memorization')}
+          title={t('Hifz Tracker')}
           onBack={onBack}
-          backLabel="Quran"
+          backLabel={t('Quran')}
         />
 
       {/* Summary Scorecard */}
@@ -255,7 +257,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
             {stats.memorized}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textMuted }]}>
-            MEMORIZED
+            {t('MEMORIZED')}
           </Text>
         </View>
 
@@ -266,7 +268,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
             {stats.revising}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textMuted }]}>
-            REVISING
+            {t('REVISING')}
           </Text>
         </View>
 
@@ -277,7 +279,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
             {stats.notStarted}
           </Text>
           <Text style={[styles.statLabel, { color: colors.textMuted }]}>
-            NOT STARTED
+            {t('NOT STARTED')}
           </Text>
         </View>
       </View>
@@ -296,7 +298,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder="Search surahs by name or number..."
+          placeholder={t('Search surahs by name or number...')}
           placeholderTextColor={colors.textMuted}
           style={[styles.searchInput, { color: colors.textPrimary }]}
           autoCapitalize="none"
@@ -334,7 +336,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
                   { color: isSelected ? colors.bgBase : colors.textSecondary },
                 ]}
               >
-                {tab}
+                {t(tab)}
               </Text>
             </TouchableOpacity>
           );
@@ -352,13 +354,13 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         ListEmptyComponent={
           <EmptyState
             icon="search-outline"
-            title="No surahs found"
+            title={t('No surahs found')}
             subtitle={
               searchQuery
-                ? `Nothing matches "${searchQuery}". Try a different name or number.`
-                : 'Nothing in this category yet — tap a surah to start memorizing.'
+                ? `${t('Nothing matches')} "${searchQuery}". ${t('Try a different name or number.')}`
+                : t('Nothing in this category yet — tap a surah to start memorizing.')
             }
-            actionLabel="Clear filters"
+            actionLabel={t('Clear filters')}
             onAction={() => {
               setActiveFilter('All');
               setSearchQuery('');

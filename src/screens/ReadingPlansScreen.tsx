@@ -12,6 +12,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { savePlanDay, loadPlanProgress } from '../lib/db';
@@ -169,10 +170,10 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
       <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
         <View style={styles.contentWrap}>
           <ScreenHeader
-            eyebrow={selectedPlan.pace}
-            title={selectedPlan.title}
+            eyebrow={t(selectedPlan.pace)}
+            title={t(selectedPlan.title)}
             onBack={() => setSelectedPlanId(null)}
-            backLabel="All Plans"
+            backLabel={t('All Plans')}
           />
 
         {/* Progress Card */}
@@ -187,7 +188,7 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
         >
           <View style={styles.progressHeader}>
             <Text style={[styles.progressTitle, { color: colors.textPrimary }]}>
-              {completedCount} of {selectedPlan.durationDays} completed
+              {completedCount} {t('of')} {selectedPlan.durationDays} {t('completed')}
             </Text>
             <Text style={[styles.progressPercent, { color: colors.accent }]}>
               {percent}%
@@ -208,7 +209,7 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
           </View>
 
           <Text style={[styles.planDesc, { color: colors.textMuted }]}>
-            {selectedPlan.description}
+            {t(selectedPlan.description)}
           </Text>
         </View>
 
@@ -221,13 +222,15 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
           contentContainerStyle={styles.daysList}
           renderItem={({ item }) => {
             const isCompleted = currentPlanProgress[item.day] === true;
+            const displayLabel = item.label.replace('Day', t('Day')).replace('Milestone', t('Milestone'));
+            const displayPortion = item.portion.replace('Juz', t('Juz')).replace('Part', t('Part'));
             return (
               <TouchableOpacity
                 style={styles.dayRow}
                 onPress={() => toggleDay(selectedPlan.id, item.day)}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: isCompleted }}
-                accessibilityLabel={`${item.label}: ${item.portion}. ${isCompleted ? 'Completed' : 'Not completed'}`}
+                accessibilityLabel={`${displayLabel}: ${displayPortion}. ${isCompleted ? t('Completed') : t('Not completed')}`}
               >
                 <View
                   style={[
@@ -253,15 +256,15 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
                       },
                     ]}
                   >
-                    {item.label}
+                    {displayLabel}
                   </Text>
                   <Text style={[styles.dayPortion, { color: colors.textSecondary }]}>
-                    {item.portion}
+                    {displayPortion}
                   </Text>
                 </View>
 
                 {isCompleted && (
-                  <Text style={[styles.doneTag, { color: colors.accent }]}>Done</Text>
+                  <Text style={[styles.doneTag, { color: colors.accent }]}>{t('Done')}</Text>
                 )}
               </TouchableOpacity>
             );
@@ -280,14 +283,14 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
     >
       <View style={styles.contentWrap}>
         <ScreenHeader
-          eyebrow="Khatmah"
-          title="Reading Plans"
+          eyebrow={t('Khatmah')}
+          title={t('Reading Plans')}
           onBack={onBack}
-          backLabel="Quran"
+          backLabel={t('Quran')}
         />
 
       <Text style={[styles.introText, { color: colors.textSecondary }]}>
-        Choose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.
+        {t('Choose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.')}
       </Text>
 
       <View style={styles.planCards}>
@@ -307,15 +310,15 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
               ]}
               onPress={() => setSelectedPlanId(plan.id)}
               accessibilityRole="button"
-              accessibilityLabel={`Select reading plan ${plan.title}`}
+              accessibilityLabel={`${t('Select reading plan')} ${t(plan.title)}`}
             >
               <View style={styles.planCardTop}>
                 <View style={styles.planTitleCol}>
                   <Text style={[styles.planCardTitle, { color: colors.textPrimary }]}>
-                    {plan.title}
+                    {t(plan.title)}
                   </Text>
                   <Text style={[styles.planCardSub, { color: colors.textMuted }]}>
-                    {plan.subtitle}
+                    {t(plan.subtitle)}
                   </Text>
                 </View>
                 <View
@@ -328,13 +331,13 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
                   ]}
                 >
                   <Text style={[styles.paceBadgeText, { color: colors.accent }]}>
-                    {plan.pace}
+                    {t(plan.pace)}
                   </Text>
                 </View>
               </View>
 
               <Text style={[styles.planCardDesc, { color: colors.textSecondary }]}>
-                {plan.description}
+                {t(plan.description)}
               </Text>
 
               {/* Progress Bar & Status */}

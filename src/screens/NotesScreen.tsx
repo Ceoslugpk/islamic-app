@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { getNotes, addNote, deleteNote, Note } from '../lib/study';
 import { EmptyState } from '../components/EmptyState';
@@ -51,11 +52,11 @@ function NotesScreen({
   const onSave = () => {
     const refPattern = /^\d+:\d+$/;
     if (!refPattern.test(refInput.trim())) {
-      setError('Invalid reference format. Use Surah:Ayah (e.g. 2:255)');
+      setError(t('Invalid reference format. Use Surah:Ayah (e.g. 2:255)'));
       return;
     }
     if (!input.trim()) {
-      setError('Note content cannot be empty');
+      setError(t('Note content cannot be empty'));
       return;
     }
     const [surahStr, ayahStr] = refInput.trim().split(':');
@@ -65,7 +66,7 @@ function NotesScreen({
       input.trim()
     );
     if (note === false) {
-      setError('Failed to save note');
+      setError(t('Failed to save note'));
       return;
     }
     setError(null);
@@ -98,7 +99,7 @@ function NotesScreen({
     }, 1200);
     saveUndoState({
       id,
-      action: 'Note deleted',
+      action: t('Note deleted'),
       revert: () => {
         addNote(target.surah, target.ayah, target.body);
         setNotes(getNotes());
@@ -124,13 +125,13 @@ function NotesScreen({
             onPress={() => onOpenVerse?.(item.surah, item.ayah)}
           >
             <Text style={[styles.badgeText, { color: colors.accent }]}>
-              Surah {item.surah}:{item.ayah} →
+              {t('Surah')} {item.surah}:{item.ayah} →
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.deleteBtn}
             accessibilityRole="button"
-            accessibilityLabel={justDeleted === item.id ? 'Note deleted' : 'Delete note'}
+            accessibilityLabel={justDeleted === item.id ? t('Note deleted') : t('Delete note')}
             onPress={() => handleDelete(item.id)}
           >
             <Ionicons
@@ -160,10 +161,10 @@ function NotesScreen({
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
         <ScreenHeader
-          title="Notes & Reflections"
-          eyebrow="Personal Study"
+          title={t('Notes & Reflections')}
+          eyebrow={t('Personal Study')}
           onBack={onBack}
-          backLabel={backLabel}
+          backLabel={t(backLabel)}
         />
 
         <View
@@ -178,10 +179,10 @@ function NotesScreen({
           ]}
         >
           <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>
-            Add New Reflection
+            {t('Add New Reflection')}
           </Text>
           <TextInput
-            placeholder="Write your thoughts or lessons from this verse..."
+            placeholder={t('Write your thoughts or lessons from this verse...')}
             placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={3}
@@ -198,7 +199,7 @@ function NotesScreen({
           />
           <View style={styles.inputRow}>
             <TextInput
-              placeholder="Verse: e.g. 2:255"
+              placeholder={t('Verse: e.g. 2:255')}
               placeholderTextColor={colors.textMuted}
               value={refInput}
               onChangeText={setRefInput}
@@ -218,10 +219,10 @@ function NotesScreen({
               ]}
               onPress={onSave}
               accessibilityRole="button"
-              accessibilityLabel={justSaved ? 'Reflection saved' : 'Save reflection'}
+              accessibilityLabel={justSaved ? t('Reflection saved') : t('Save reflection')}
             >
               <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>
-                {justSaved ? 'Saved ✓' : 'Save'}
+                {justSaved ? t('Saved ✓') : t('Save')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -242,8 +243,8 @@ function NotesScreen({
           ListEmptyComponent={
             <EmptyState
               icon="create-outline"
-              title="No reflections yet"
-              subtitle="Add thoughts and reflections on verses as you read the Quran — or write your first one above."
+              title={t('No reflections yet')}
+              subtitle={t('Add thoughts and reflections on verses as you read the Quran — or write your first one above.')}
             />
           }
         />

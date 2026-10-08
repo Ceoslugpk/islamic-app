@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -78,7 +79,7 @@ export default function TafsirScreen({
       setSurahDetail(detail);
       setTafsirList(tafsirs);
     } catch {
-      setError('Could not load Tafsir. Check your connection.');
+      setError(t('Could not load Tafsir. Check your connection.'));
     } finally {
       setLoading(false);
     }
@@ -117,7 +118,7 @@ export default function TafsirScreen({
         <View style={styles.cardHeader}>
           <View style={[styles.ayahBadge, { backgroundColor: colors.accentDim }]}>
             <Text style={[styles.ayahBadgeText, { color: colors.accent }]}>
-              Ayah {item.ayahNumber}
+              {t('Ayah')} {item.ayahNumber}
             </Text>
           </View>
           {onOpenReader && (
@@ -125,10 +126,10 @@ export default function TafsirScreen({
               onPress={() => onOpenReader(currentSurah, item.ayahNumber)}
               style={styles.readerLink}
               accessibilityRole="button"
-              accessibilityLabel={`Read Ayah ${item.ayahNumber} in Reader`}
+              accessibilityLabel={`${t('Ayah')} ${item.ayahNumber} · ${t('Reader')}`}
             >
               <Text style={[styles.readerLinkText, { color: colors.accent }]}>
-                Reader →
+                {t('Reader')} →
               </Text>
             </TouchableOpacity>
           )}
@@ -167,10 +168,10 @@ export default function TafsirScreen({
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
         <ScreenHeader
-          eyebrow="Exegesis & Commentary"
+          eyebrow={t('Exegesis & Commentary')}
           title={currentTafsirSource.name}
           onBack={onBack}
-          backLabel="Quran"
+          backLabel={t('Quran')}
         />
 
         <View style={{ paddingHorizontal: paddingH }}>
@@ -185,17 +186,17 @@ export default function TafsirScreen({
             ]}
             onPress={() => setPickerOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel="Change Surah"
+            accessibilityLabel={t('Change Surah')}
           >
             <View style={styles.selectorBtnMain}>
               <Text style={[styles.selectorEyebrow, { color: colors.accent }]}>
-                SURAH {currentSurah}
+                {t('SURAH')} {currentSurah}
               </Text>
               <Text
                 style={[styles.selectorTitle, { color: colors.textPrimary }]}
                 numberOfLines={1}
               >
-                {selectedSurahMeta ? selectedSurahMeta.englishName : `Surah ${currentSurah}`}
+                {selectedSurahMeta ? selectedSurahMeta.englishName : `${t('Surah')} ${currentSurah}`}
                 {selectedSurahMeta ? ` · ${selectedSurahMeta.englishNameTranslation}` : ''}
               </Text>
             </View>
@@ -218,11 +219,11 @@ export default function TafsirScreen({
             ]}
             onPress={() => setTafsirSourcePickerOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel="Change Tafsir Source"
+            accessibilityLabel={t('Change Tafsir Source')}
           >
             <View style={styles.selectorBtnMain}>
               <Text style={[styles.selectorEyebrow, { color: colors.accent }]}>
-                TAFSIR SOURCE
+                {t('TAFSIR SOURCE')}
               </Text>
               <Text
                 style={[styles.selectorTitle, { color: colors.textPrimary }]}
@@ -248,9 +249,9 @@ export default function TafsirScreen({
         ) : error ? (
           <EmptyState
             icon="cloud-offline-outline"
-            title="Couldn't load Tafsir"
+            title={t("Couldn't load Tafsir")}
             subtitle={error}
-            actionLabel="Retry"
+            actionLabel={t('Retry')}
             onAction={loadData}
           />
         ) : (
@@ -280,13 +281,13 @@ export default function TafsirScreen({
             <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                Select Surah
+                {t('Select Surah')}
               </Text>
               <TouchableOpacity
                 onPress={() => setPickerOpen(false)}
                 style={styles.closeBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('Close')}
               >
                 <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
@@ -294,7 +295,7 @@ export default function TafsirScreen({
 
             <View style={styles.modalSearchWrap}>
               <TextInput
-                placeholder="Search Surah by name or number..."
+                placeholder={t('Search Surah by name or number...')}
                 placeholderTextColor={colors.textMuted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -364,7 +365,7 @@ export default function TafsirScreen({
                           style={[styles.surahOptionTrans, { color: colors.textMuted }]}
                           numberOfLines={1}
                         >
-                          {item.englishNameTranslation} · {item.numberOfAyahs} ayahs
+                          {item.englishNameTranslation} · {item.numberOfAyahs} {t('ayahs')}
                         </Text>
                       </View>
                     </View>
@@ -396,13 +397,13 @@ export default function TafsirScreen({
             <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                Select Tafsir Source
+                {t('Select Tafsir Source')}
               </Text>
               <TouchableOpacity
                 onPress={() => setTafsirSourcePickerOpen(false)}
                 style={styles.closeBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('Close')}
               >
                 <Ionicons name="close" size={24} color={colors.textPrimary} />
               </TouchableOpacity>
@@ -425,7 +426,7 @@ export default function TafsirScreen({
                     ]}
                     onPress={() => handleTafsirSourceChange(item.id)}
                     accessibilityRole="button"
-                    accessibilityLabel={isSelected ? `${item.name}, selected` : item.name}
+                    accessibilityLabel={isSelected ? `${item.name}, ${t('selected')}` : item.name}
                   >
                     <View style={styles.surahOptionLeft}>
                       <View

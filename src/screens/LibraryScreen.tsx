@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
+import { t } from '../lib/i18n';
 
 export type LibraryItemKey =
   | 'hadith'
@@ -97,7 +98,7 @@ function GroupHeader({ label }: { label: string }) {
   const { colors } = useTheme();
   return (
     <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
-      {label}
+      {t(label)}
     </Text>
   );
 }
@@ -118,7 +119,7 @@ function LibraryRow({
       onPress={onPress}
       activeOpacity={0.6}
       accessibilityRole="button"
-      accessibilityLabel={`Open ${item.title}`}
+      accessibilityLabel={`${t('Open')} ${t(item.title)}`}
     >
       <View
         style={[
@@ -136,13 +137,13 @@ function LibraryRow({
           style={[styles.rowTitle, { color: colors.textPrimary }]}
           numberOfLines={1}
         >
-          {item.title}
+          {t(item.title)}
         </Text>
         <Text
           style={[styles.rowSub, { color: colors.textMuted }]}
           numberOfLines={1}
         >
-          {item.subtitle}
+          {t(item.subtitle)}
         </Text>
       </View>
       <Ionicons
@@ -176,7 +177,7 @@ export default function LibraryScreen({
       showsVerticalScrollIndicator={false}
     >
       <View style={[styles.container, { maxWidth: maxW }]}>
-        <SectionHeader compact eyebrow="Library" title="Explore" />
+        <SectionHeader compact eyebrow={t('Library')} title={t('Explore')} />
 
         {/* Grouped items */}
         {GROUPS.map((group, gi) => (

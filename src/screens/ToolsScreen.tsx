@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View, TouchableOpacity, useWindowDimensio
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
+import { t } from '../lib/i18n';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 
@@ -205,14 +206,14 @@ export default function ToolsScreen({
       <View style={styles.contentWrap}>
         <SectionHeader
           compact
-          eyebrow="Tools"
-          title="Utilities"
-          subtitle="Essential calculators, compass, daily trackers & mosque finder"
+          eyebrow={t('Tools')}
+          title={t('Utilities')}
+          subtitle={t('Essential calculators, compass, daily trackers & mosque finder')}
         />
 
         {groups.map((group, gi) => (
           <View key={group.label} style={gi > 0 ? styles.groupGap : undefined}>
-            <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{group.label}</Text>
+            <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{t(group.label)}</Text>
             <View style={[styles.list, isWide && styles.listWide]}>
               {group.items.map((item, i) => (
                 <View
@@ -222,7 +223,7 @@ export default function ToolsScreen({
                   {item.sectionHeader ? (
                     <View style={[styles.subHeaderWrap, { borderTopColor: colors.borderSubtle }]}>
                       <Text style={[styles.subHeaderLabel, { color: colors.accent }]}>
-                        {item.sectionHeader}
+                        {t(item.sectionHeader)}
                       </Text>
                     </View>
                   ) : (
@@ -238,7 +239,7 @@ export default function ToolsScreen({
                     ]}
                     onPress={() => onOpen(item.key)}
                     accessibilityRole="button"
-                    accessibilityLabel={`Open ${item.title}`}
+                    accessibilityLabel={`${t('Open')} ${t(item.title)}`}
                   >
                     <View
                       style={[
@@ -250,10 +251,10 @@ export default function ToolsScreen({
                     </View>
                     <View style={styles.rowMain}>
                       <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-                        {item.title}
+                        {t(item.title)}
                       </Text>
                       <Text style={[styles.rowSub, { color: colors.textMuted }]} numberOfLines={2}>
-                        {item.subtitle}
+                        {t(item.subtitle)}
                       </Text>
                     </View>
                     <Text style={[styles.arrow, { color: colors.accent }]}>›</Text>

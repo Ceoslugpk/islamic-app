@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { getBookmarks, removeBookmark, addBookmark, VerseRef } from '../lib/study';
 import { ArabicText } from '../components/ArabicText';
@@ -59,7 +60,7 @@ function BookmarksScreen({
     }, 1200);
     saveUndoState({
       id: key,
-      action: 'Bookmark removed',
+      action: t('Bookmark removed'),
       revert: () => {
         addBookmark(target);
         setBookmarks(getBookmarks());
@@ -85,13 +86,13 @@ function BookmarksScreen({
         <View style={styles.itemHeader}>
           <View style={[styles.badge, { backgroundColor: colors.accentDim }]}>
             <Text style={[styles.badgeText, { color: colors.accent }]}>
-              {item.surahName ? `${item.surahName} · ` : ''}Surah {item.surah}:{item.ayah}
+              {item.surahName ? `${item.surahName} · ` : ''}{t('Surah')} {item.surah}:{item.ayah}
             </Text>
           </View>
           <TouchableOpacity
             style={styles.deleteBtn}
             accessibilityRole="button"
-            accessibilityLabel={justRemoved === `${item.surah}:${item.ayah}` ? 'Bookmark removed' : 'Delete bookmark'}
+            accessibilityLabel={justRemoved === `${item.surah}:${item.ayah}` ? t('Bookmark removed') : t('Delete bookmark')}
             onPress={() => handleRemove(item.surah, item.ayah)}
           >
             <Ionicons
@@ -114,7 +115,7 @@ function BookmarksScreen({
 
         <View style={styles.itemFooter}>
           <Text style={[styles.readHint, { color: colors.accent }]}>
-            Tap to open in Reader →
+            {t('Tap to open in Reader →')}
           </Text>
         </View>
       </TouchableOpacity>
@@ -125,10 +126,10 @@ function BookmarksScreen({
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <View style={styles.contentWrap}>
         <ScreenHeader
-          title="Bookmarks"
-          eyebrow="Saved Verses"
+          title={t('Bookmarks')}
+          eyebrow={t('Saved Verses')}
           onBack={onBack}
-          backLabel={backLabel}
+          backLabel={t(backLabel)}
         />
 
         <FlatList
@@ -139,9 +140,9 @@ function BookmarksScreen({
           ListEmptyComponent={
             <EmptyState
               icon="bookmark-outline"
-              title="No bookmarks yet"
-              subtitle="Open the Quran and tap the bookmark icon on any ayah to save it here for quick access."
-              actionLabel="Open the Quran"
+              title={t('No bookmarks yet')}
+              subtitle={t('Open the Quran and tap the bookmark icon on any ayah to save it here for quick access.')}
+              actionLabel={t('Open the Quran')}
               onAction={onOpenVerse ? () => onOpenVerse(1, 1) : undefined}
             />
           }

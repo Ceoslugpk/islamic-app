@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { fetchAyahEditions, fetchSurahList, SurahMeta } from '../lib/quran';
@@ -109,13 +110,13 @@ export default function TranslationCompareScreen({
       ];
       const result = await fetchAyahEditions(currentSurah, currentAyah, editions);
       setArabicText(result['quran-uthmani'] || '');
-      setTrans1Text(result[edA.editionIdentifier] || 'Translation not available');
-      setTrans2Text(result[edB.editionIdentifier] || 'Translation not available');
+      setTrans1Text(result[edA.editionIdentifier] || t('Translation not available'));
+      setTrans2Text(result[edB.editionIdentifier] || t('Translation not available'));
       if (showThird) {
-        setTrans3Text(result[edC.editionIdentifier] || 'Translation not available');
+        setTrans3Text(result[edC.editionIdentifier] || t('Translation not available'));
       }
     } catch {
-      setError('Could not load translations. Check your connection.');
+      setError(t('Could not load translations. Check your connection.'));
     } finally {
       setLoading(false);
     }
@@ -156,10 +157,10 @@ export default function TranslationCompareScreen({
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        eyebrow="Comparative Study"
-        title="Translation Compare"
+        eyebrow={t('Comparative Study')}
+        title={t('Translation Compare')}
         onBack={onBack}
-        backLabel="Quran"
+        backLabel={t('Quran')}
       />
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -182,17 +183,17 @@ export default function TranslationCompareScreen({
                   { opacity: currentSurah === 1 && currentAyah === 1 ? 0.3 : 1 },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Previous Ayah"
+                accessibilityLabel={t('Previous Ayah')}
               >
                 <Ionicons name="chevron-back" size={20} color={colors.accent} />
               </TouchableOpacity>
 
               <View style={styles.positionInfo}>
                 <Text style={[styles.surahName, { color: colors.textPrimary }]}>
-                  {selectedSurahMeta ? selectedSurahMeta.englishName : `Surah ${currentSurah}`}
+                  {selectedSurahMeta ? selectedSurahMeta.englishName : `${t('Surah')} ${currentSurah}`}
                 </Text>
                 <Text style={[styles.ayahNumber, { color: colors.accent }]}>
-                  Ayah {currentAyah} of {maxAyahs}
+                  {t('Ayah')} {currentAyah} {t('of')} {maxAyahs}
                 </Text>
               </View>
 
@@ -204,7 +205,7 @@ export default function TranslationCompareScreen({
                   { opacity: currentSurah === 114 && currentAyah === maxAyahs ? 0.3 : 1 },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Next Ayah"
+                accessibilityLabel={t('Next Ayah')}
               >
                 <Ionicons name="chevron-forward" size={20} color={colors.accent} />
               </TouchableOpacity>
@@ -217,16 +218,16 @@ export default function TranslationCompareScreen({
             <View style={styles.editionCol}>
               <View style={styles.slotHeaderRow}>
                 <Text style={[styles.editionLabel, { color: colors.accent }]}>
-                  TRANSLATION A · {flagA} {edA.language.toUpperCase()}
+                  {t('TRANSLATION')} A · {flagA} {edA.language.toUpperCase()}
                 </Text>
                 <TouchableOpacity
                   style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
                   onPress={() => setPickerSlot('A')}
                   accessibilityRole="button"
-                  accessibilityLabel="Choose Translation A Language"
+                  accessibilityLabel={t('Choose Translation A Language')}
                 >
                   <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
-                    All Languages...
+                    {t('All Languages...')}
                   </Text>
                   <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
                 </TouchableOpacity>
@@ -258,7 +259,7 @@ export default function TranslationCompareScreen({
                           { color: isSelected ? colors.onAccent : colors.textSecondary },
                         ]}
                       >
-                        {ql.flag} {ql.label}
+                        {ql.flag} {t(ql.label)}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -270,16 +271,16 @@ export default function TranslationCompareScreen({
             <View style={styles.editionCol}>
               <View style={styles.slotHeaderRow}>
                 <Text style={[styles.editionLabel, { color: colors.accent }]}>
-                  TRANSLATION B · {flagB} {edB.language.toUpperCase()}
+                  {t('TRANSLATION')} B · {flagB} {edB.language.toUpperCase()}
                 </Text>
                 <TouchableOpacity
                   style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
                   onPress={() => setPickerSlot('B')}
                   accessibilityRole="button"
-                  accessibilityLabel="Choose Translation B Language"
+                  accessibilityLabel={t('Choose Translation B Language')}
                 >
                   <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
-                    All Languages...
+                    {t('All Languages...')}
                   </Text>
                   <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
                 </TouchableOpacity>
@@ -311,7 +312,7 @@ export default function TranslationCompareScreen({
                           { color: isSelected ? colors.onAccent : colors.textSecondary },
                         ]}
                       >
-                        {ql.flag} {ql.label}
+                        {ql.flag} {t(ql.label)}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -324,16 +325,16 @@ export default function TranslationCompareScreen({
               <View style={styles.editionCol}>
                 <View style={styles.slotHeaderRow}>
                   <Text style={[styles.editionLabel, { color: colors.accent }]}>
-                    TRANSLATION C · {flagC} {edC.language.toUpperCase()}
+                    {t('TRANSLATION')} C · {flagC} {edC.language.toUpperCase()}
                   </Text>
                   <TouchableOpacity
                     style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
                     onPress={() => setPickerSlot('C')}
                     accessibilityRole="button"
-                    accessibilityLabel="Choose Translation C Language"
+                    accessibilityLabel={t('Choose Translation C Language')}
                   >
                     <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
-                      All Languages...
+                      {t('All Languages...')}
                     </Text>
                     <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
                   </TouchableOpacity>
@@ -365,7 +366,7 @@ export default function TranslationCompareScreen({
                             { color: isSelected ? colors.onAccent : colors.textSecondary },
                           ]}
                         >
-                          {ql.flag} {ql.label}
+                          {ql.flag} {t(ql.label)}
                         </Text>
                       </TouchableOpacity>
                     );
@@ -385,7 +386,7 @@ export default function TranslationCompareScreen({
               ]}
               onPress={() => setShowThird((prev) => !prev)}
               accessibilityRole="button"
-              accessibilityLabel={showThird ? 'Hide 3rd Translation' : 'Add 3rd Translation for 3-way compare'}
+              accessibilityLabel={showThird ? t('Hide 3rd Translation') : t('Add 3rd Translation for 3-way compare')}
             >
               <Ionicons
                 name={showThird ? 'remove-circle-outline' : 'add-circle-outline'}
@@ -393,7 +394,7 @@ export default function TranslationCompareScreen({
                 color={colors.accent}
               />
               <Text style={[styles.toggleThirdText, { color: colors.accent }]}>
-                {showThird ? 'Compare 2 Translations' : '+ Compare 3 Translations'}
+                {showThird ? t('Compare 2 Translations') : t('+ Compare 3 Translations')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -413,7 +414,7 @@ export default function TranslationCompareScreen({
                 style={[styles.retryBtn, { borderColor: colors.accent }]}
               >
                 <Text style={[styles.retryBtnText, { color: colors.accent }]}>
-                  Retry
+                  {t('Retry')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -431,7 +432,7 @@ export default function TranslationCompareScreen({
               >
                 <View style={styles.cardEyebrowRow}>
                   <Text style={[styles.cardEyebrow, { color: colors.accent }]}>
-                    ORIGINAL ARABIC
+                    {t('ORIGINAL ARABIC')}
                   </Text>
                   <Text style={[styles.ayahBadge, { color: colors.textMuted }]}>
                     {currentSurah}:{currentAyah}
@@ -550,7 +551,7 @@ export default function TranslationCompareScreen({
                   ]}
                 >
                   <Text style={[styles.openReaderBtnText, { color: colors.accent }]}>
-                    Open in Surah Reader →
+                    {t('Open in Surah Reader →')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -564,8 +565,8 @@ export default function TranslationCompareScreen({
         selectedLanguage={activePickerLang}
         onSelectLanguage={handleSelectLanguageFromModal}
         onClose={() => setPickerSlot(null)}
-        title={`Select Translation ${pickerSlot || ''}`}
-        subtitle="Choose any language & edition to compare"
+        title={`${t('Select Translation')} ${pickerSlot || ''}`}
+        subtitle={t('Choose any language & edition to compare')}
       />
     </View>
   );

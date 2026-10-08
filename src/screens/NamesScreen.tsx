@@ -20,6 +20,7 @@ import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { EmptyState } from '../components/EmptyState';
@@ -189,11 +190,11 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
 
   const countLabel =
     filteredNames.length === names.length
-      ? `${names.length} Names`
-      : `${filteredNames.length} of ${names.length} Names`;
+      ? `${names.length} ${t('Names')}`
+      : `${filteredNames.length} ${t('of')} ${names.length} ${t('Names')}`;
 
   const handleShareName = async (item: NameRow) => {
-    const title = isProphet ? 'Names of the Prophet ﷺ' : '99 Names of Allah';
+    const title = isProphet ? t('99 Names of the Prophet ﷺ') : t('99 Names of Allah');
     const verseText = formatVerses(item.verses);
     const textToShare = `${title}\n\n#${item.number} ${item.arabic}\n${item.transliteration}${item.name ? ` (${item.name})` : ''}\n\n${item.meaning}${item.note ? `\n\nNote: ${item.note}` : ''}${verseText ? `\n\n${verseText}` : ''}`;
 
@@ -364,7 +365,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
           <TouchableOpacity
             onPress={() => handleShareName(item)}
             accessibilityRole="button"
-            accessibilityLabel={`Share ${item.transliteration}`}
+            accessibilityLabel={`${t('Share')} ${item.transliteration}`}
             style={styles.cardShareBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
@@ -379,10 +380,10 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
     <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
       <View style={styles.contentWrap}>
         <ScreenHeader
-          eyebrow={isProphet ? 'Asma un-Nabi' : 'Asma ul-Husna'}
-          title={isProphet ? '99 Names of the Prophet ﷺ' : '99 Names'}
+          eyebrow={t(isProphet ? 'Asma un-Nabi' : 'Asma ul-Husna')}
+          title={t(isProphet ? '99 Names of the Prophet ﷺ' : '99 Names')}
           onBack={onBack}
-          backLabel="Library"
+          backLabel={t('Library')}
         />
 
         {/* Language chips (Allah variant only) — single horizontally-scrollable row */}
@@ -415,7 +416,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                     ]}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    accessibilityLabel={`Show names in ${lang.label}`}
+                    accessibilityLabel={`${t('Show names in')} ${lang.label}`}
                     hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
                     pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     delayPressIn={0}
@@ -458,7 +459,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                   ]}
                   onPress={handleScrollRight}
                   accessibilityRole="button"
-                  accessibilityLabel="Scroll more languages"
+                  accessibilityLabel={t('Scroll more languages')}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   activeOpacity={0.7}
                 >
@@ -484,7 +485,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
           <TextInput
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholder="Search by name, meaning, or number..."
+            placeholder={t('Search by name, meaning, or number...')}
             placeholderTextColor={colors.textMuted}
             style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 12.5 : 13 }]}
             autoCapitalize="none"
@@ -509,14 +510,14 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
         {searchHistory.length > 0 && !searchQuery && (
           <View style={styles.recentSearchesWrap}>
             <View style={styles.recentSearchesHeader}>
-              <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+              <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
               <TouchableOpacity
                 onPress={clearSearchHistory}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 accessibilityRole="button"
-                accessibilityLabel="Clear names search history"
+                accessibilityLabel={t('Clear names search history')}
               >
-                <Text style={[styles.clearAllText, { color: colors.textMuted }]}>Clear</Text>
+                <Text style={[styles.clearAllText, { color: colors.textMuted }]}>{t('Clear')}</Text>
               </TouchableOpacity>
             </View>
             <ScrollView
@@ -539,7 +540,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                     }}
                     style={styles.recentChipBtn}
                     accessibilityRole="button"
-                    accessibilityLabel={`Search for ${item}`}
+                    accessibilityLabel={`${t('Search for')} ${item}`}
                   >
                     <Ionicons name="time-outline" size={13} color={colors.accent} />
                     <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -550,7 +551,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                     onPress={() => removeSearchHistoryQuery(item)}
                     style={styles.recentChipRemove}
                     accessibilityRole="button"
-                    accessibilityLabel={`Remove ${item} from search history`}
+                    accessibilityLabel={`${t('Remove')} ${item}`}
                     hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
                   >
                     <Ionicons name="close" size={12} color={colors.textMuted} />
@@ -563,7 +564,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
 
         {loadState === 'offline' ? (
           <Text style={[styles.offlineNote, { color: colors.textMuted }]}>
-            Offline — showing the bundled list.
+            {t('Offline — showing the bundled list.')}
           </Text>
         ) : null}
 
@@ -600,9 +601,9 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
           ListEmptyComponent={
             <EmptyState
               icon="search-outline"
-              title="No names found"
-              subtitle={`No names match "${searchQuery}"`}
-              actionLabel="Clear search"
+              title={t('No names found')}
+              subtitle={`${t('No names match')} "${searchQuery}"`}
+              actionLabel={t('Clear search')}
               onAction={() => setSearchQuery('')}
             />
           }

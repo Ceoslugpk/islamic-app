@@ -16,6 +16,7 @@ import { fetchSurahList, fetchSurahListForLanguage, getBundledSurahs114, SurahMe
 import { ArabicText } from '../components/ArabicText';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
+import { t } from '../lib/i18n';
 import { LastReadPosition, loadLastReadPosition, loadQuranCache } from '../lib/db';
 import { getReadingPosition, ReadingPosition } from '../lib/continuing';
 import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
@@ -250,14 +251,14 @@ export default function QuranHomeScreen({
       return {
         surah: readingPosition.surah,
         ayah: readingPosition.ayah,
-        name: meta?.englishName || `Surah ${readingPosition.surah}`,
+        name: meta?.englishName || `${t('Surah')} ${readingPosition.surah}`,
       };
     }
     if (lastRead) {
       return {
         surah: lastRead.surah,
         ayah: lastRead.ayah,
-        name: lastRead.surahName || `Surah ${lastRead.surah}`,
+        name: lastRead.surahName || `${t('Surah')} ${lastRead.surah}`,
       };
     }
     return null;
@@ -279,7 +280,7 @@ export default function QuranHomeScreen({
   const renderHeader = useCallback(() => {
     return (
       <View style={styles.headerArea}>
-        <SectionHeader compact eyebrow="The Holy Quran" title="Quran" />
+        <SectionHeader compact eyebrow={t('The Holy Quran')} title={t('Quran')} />
 
         {/* Translation Language Selector Banner */}
         <View
@@ -289,7 +290,7 @@ export default function QuranHomeScreen({
           ]}
         >
           <View style={styles.langBarLeft}>
-            <Text style={[styles.langBarLabel, { color: colors.accent }]}>TRANSLATION</Text>
+            <Text style={[styles.langBarLabel, { color: colors.accent }]}>{t('TRANSLATION')}</Text>
             <Text style={[styles.langBarTitle, { color: colors.textPrimary }]} numberOfLines={1}>
               {flag} {edition.language} <Text style={{ color: colors.textSecondary, fontSize: 12 }}>· {edition.name}</Text>
             </Text>
@@ -298,9 +299,9 @@ export default function QuranHomeScreen({
             style={[styles.langChangeBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
             onPress={() => setLangPickerOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel={`Change translation language. Current: ${edition.language}`}
+            accessibilityLabel={`${t('Change translation language')}. ${t('Current')}: ${edition.language}`}
           >
-            <Text style={[styles.langChangeBtnText, { color: colors.accent }]}>Change</Text>
+            <Text style={[styles.langChangeBtnText, { color: colors.accent }]}>{t('Change')}</Text>
             <Ionicons name="chevron-forward" size={12} color={colors.accent} />
           </TouchableOpacity>
         </View>
@@ -346,12 +347,12 @@ export default function QuranHomeScreen({
             <View style={styles.preloadTextCol}>
               <Text style={[styles.preloadTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                 {preloadProgress.isComplete
-                  ? 'Offline Ready · 114 Surahs Cached'
+                  ? t('Offline Ready · 114 Surahs Cached')
                   : preloadProgress.isRunning
-                  ? `Preloading Quran… ${preloadProgress.cached}/114`
+                  ? `${t('Preloading Quran…')} ${preloadProgress.cached}/114`
                   : preloadProgress.cached > 0
-                  ? `${preloadProgress.cached}/114 Surahs Cached Offline`
-                  : 'Preload Quran for Offline Reading'}
+                  ? `${preloadProgress.cached}/114 ${t('Surahs Cached Offline')}`
+                  : t('Preload Quran for Offline Reading')}
               </Text>
               {preloadProgress.isRunning ? (
                 <View style={[styles.preloadTrack, { backgroundColor: colors.bgBase }]}>
@@ -368,8 +369,8 @@ export default function QuranHomeScreen({
               ) : (
                 <Text style={[styles.preloadSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
                   {preloadProgress.isComplete
-                    ? 'All 114 surahs and translations cached for instant access'
-                    : 'Instant opening with Arabic & translations cached'}
+                    ? t('All 114 surahs and translations cached for instant access')
+                    : t('Instant opening with Arabic & translations cached')}
                 </Text>
               )}
             </View>
@@ -393,7 +394,7 @@ export default function QuranHomeScreen({
                 }
               }}
               accessibilityRole="button"
-              accessibilityLabel={preloadProgress.isRunning ? 'Pause preloading' : 'Preload all surahs'}
+              accessibilityLabel={preloadProgress.isRunning ? t('Pause preloading') : t('Preload all surahs')}
             >
               <Text
                 style={[
@@ -401,7 +402,7 @@ export default function QuranHomeScreen({
                   { color: preloadProgress.isRunning ? colors.textSecondary : colors.accent },
                 ]}
               >
-                {preloadProgress.isRunning ? 'Pause' : 'Preload All'}
+                {preloadProgress.isRunning ? t('Pause') : t('Preload All')}
               </Text>
             </TouchableOpacity>
           )}
@@ -423,7 +424,7 @@ export default function QuranHomeScreen({
           <View style={styles.continueLeft}>
             <View style={[styles.continueBadge, { backgroundColor: colors.accentDim }]}>
               <Text style={[styles.continueBadgeText, { color: colors.accent }]}>
-                {resumeTarget ? 'CONTINUE READING' : 'START READING'}
+                {resumeTarget ? t('CONTINUE READING') : t('START READING')}
               </Text>
             </View>
             <Text
@@ -433,7 +434,7 @@ export default function QuranHomeScreen({
               ]}
               numberOfLines={1}
             >
-              {resumeTarget?.name || 'Al-Faatiha'}
+              {resumeTarget?.name || t('Al-Faatiha')}
             </Text>
             <Text
               style={[
@@ -443,8 +444,8 @@ export default function QuranHomeScreen({
               numberOfLines={1}
             >
               {resumeTarget
-                ? `Surah ${resumeTarget.surah}:${resumeTarget.ayah} · Continue`
-                : 'The Opening · Ayah 1'}
+                ? `${t('Surah')} ${resumeTarget.surah}:${resumeTarget.ayah} · ${t('Continue')}`
+                : `${t('The Opening')} · ${t('Ayah')} 1`}
             </Text>
           </View>
           <View
@@ -465,7 +466,7 @@ export default function QuranHomeScreen({
         {/* Recently Read */}
         {recentSurahs.length > 0 && (
           <View style={styles.recentSection}>
-            <Text style={[styles.recentHeading, { color: colors.textMuted }]}>RECENTLY READ</Text>
+            <Text style={[styles.recentHeading, { color: colors.textMuted }]}>{t('RECENTLY READ')}</Text>
             <ScrollView
               horizontal
               nestedScrollEnabled
@@ -479,7 +480,7 @@ export default function QuranHomeScreen({
                   onPress={() => onOpenSurah(recent.surah)}
             pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
                   accessibilityRole="button"
-                  accessibilityLabel={`Open Surah ${recent.name}`}
+                  accessibilityLabel={`${t('Open Surah')} ${recent.name}`}
                   style={[
                     styles.recentChip,
                     {
@@ -550,7 +551,7 @@ export default function QuranHomeScreen({
               ]}
               numberOfLines={1}
             >
-              Audio Center
+              {t('Audio Center')}
             </Text>
             <Text
               style={[
@@ -560,7 +561,7 @@ export default function QuranHomeScreen({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              Reciters & Playlists
+              {t('Reciters & Playlists')}
             </Text>
           </TouchableOpacity>
 
@@ -596,7 +597,7 @@ export default function QuranHomeScreen({
               ]}
               numberOfLines={1}
             >
-              Tafsir
+              {t('Tafsir')}
             </Text>
             <Text
               style={[
@@ -606,7 +607,7 @@ export default function QuranHomeScreen({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              Jalalayn Commentary
+              {t('Jalalayn Commentary')}
             </Text>
           </TouchableOpacity>
 
@@ -642,7 +643,7 @@ export default function QuranHomeScreen({
               ]}
               numberOfLines={1}
             >
-              Topics
+              {t('Topics')}
             </Text>
             <Text
               style={[
@@ -652,7 +653,7 @@ export default function QuranHomeScreen({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              Thematic Passages
+              {t('Thematic Passages')}
             </Text>
           </TouchableOpacity>
 
@@ -688,7 +689,7 @@ export default function QuranHomeScreen({
               ]}
               numberOfLines={1}
             >
-              Compare
+              {t('Compare')}
             </Text>
             <Text
               style={[
@@ -698,7 +699,7 @@ export default function QuranHomeScreen({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              Dual Translations
+              {t('Dual Translations')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -731,7 +732,7 @@ export default function QuranHomeScreen({
                   { color: colors.textPrimary, fontSize: isCompact ? 11 : 12 },
                 ]}
               >
-                Bookmarks
+                {t('Bookmarks')}
               </Text>
               {bookmarkCount > 0 && (
                 <View style={[styles.hubChipBadge, { backgroundColor: colors.accentDim }]}>
@@ -760,7 +761,7 @@ export default function QuranHomeScreen({
                   { color: colors.textPrimary, fontSize: isCompact ? 11 : 12 },
                 ]}
               >
-                Notes
+                {t('Notes')}
               </Text>
               {noteCount > 0 && (
                 <View style={[styles.hubChipBadge, { backgroundColor: colors.accentDim }]}>
@@ -789,7 +790,7 @@ export default function QuranHomeScreen({
                   { color: colors.textPrimary, fontSize: isCompact ? 11 : 12 },
                 ]}
               >
-                Reading Plans
+                {t('Reading Plans')}
               </Text>
             </TouchableOpacity>
 
@@ -813,7 +814,7 @@ export default function QuranHomeScreen({
                   { color: colors.textPrimary, fontSize: isCompact ? 11 : 12 },
                 ]}
               >
-                Hifz Tracker
+                {t('Hifz Tracker')}
               </Text>
             </TouchableOpacity>
           </ScrollView>
@@ -826,7 +827,7 @@ export default function QuranHomeScreen({
           {/* Filter Picker */}
           <View style={styles.searchFilterRow}>
             {(['all', 'name', 'meaning'] as const).map((filter) => {
-              const labels = { all: 'All', name: 'Surah Name', meaning: 'Meaning' };
+              const labels = { all: t('All'), name: t('Surah Name'), meaning: t('Meaning') };
               const isSelected = searchFilter === filter;
               return (
                 <TouchableOpacity
@@ -865,8 +866,8 @@ export default function QuranHomeScreen({
             >
               <Ionicons name="arrow-forward-outline" size={14} color={colors.accent} />
               <Text style={[styles.verseRefHintText, { color: colors.accent }]}>
-                Verse reference detected — jumping to <Text style={{ fontFamily: 'Manrope_700Bold' }}>
-                  {surahs?.find((s) => s.number === verseRef.surah)?.englishName || `Surah ${verseRef.surah}`} {verseRef.ayah}
+                {t('Verse reference detected — jumping to')} <Text style={{ fontFamily: 'Manrope_700Bold' }}>
+                  {surahs?.find((s) => s.number === verseRef.surah)?.englishName || `${t('Surah')} ${verseRef.surah}`} {verseRef.ayah}
                 </Text>
               </Text>
             </View>
@@ -876,14 +877,14 @@ export default function QuranHomeScreen({
           {searchHistory.length > 0 && !searchQuery && (
             <View style={styles.searchRecentWrap}>
               <View style={styles.searchRecentHeader}>
-                <Text style={[styles.searchRecentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                <Text style={[styles.searchRecentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
                 <TouchableOpacity
                   onPress={clearSearchHistory}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   accessibilityRole="button"
-                  accessibilityLabel="Clear surah search history"
+                  accessibilityLabel={t('Clear surah search history')}
                 >
-                  <Text style={[styles.searchRecentClear, { color: colors.textMuted }]}>Clear</Text>
+                  <Text style={[styles.searchRecentClear, { color: colors.textMuted }]}>{t('Clear')}</Text>
                 </TouchableOpacity>
               </View>
               <ScrollView
@@ -907,7 +908,7 @@ export default function QuranHomeScreen({
                       }}
                       style={styles.searchRecentChipBtn}
                       accessibilityRole="button"
-                      accessibilityLabel={`Search for ${item}`}
+                      accessibilityLabel={`${t('Search for')} ${item}`}
                     >
                       <Ionicons name="time-outline" size={13} color={colors.accent} />
                       <Text style={[styles.searchRecentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -918,7 +919,7 @@ export default function QuranHomeScreen({
                       onPress={() => removeSearchHistoryQuery(item)}
                       style={styles.searchRecentChipRemove}
                       accessibilityRole="button"
-                      accessibilityLabel={`Remove ${item} from search history`}
+                      accessibilityLabel={t('Remove from search history')}
                       hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
                     >
                       <Ionicons name="close" size={12} color={colors.textMuted} />
@@ -939,7 +940,7 @@ export default function QuranHomeScreen({
             >
               <Ionicons name="search-outline" size={16} color={colors.textMuted} />
               <Text style={[styles.emptyHistoryHintText, { color: colors.textSecondary }]}>
-                No recent searches yet. Type a surah name, meaning, or verse reference (e.g., "2:255").
+                {t('No recent searches yet. Type a surah name, meaning, or verse reference (e.g., "2:255").')}
               </Text>
             </View>
           )}
@@ -948,7 +949,7 @@ export default function QuranHomeScreen({
 
         {/* Juz Filter Scroll */}
         <View style={[styles.juzRow, { gap: isNarrow ? 8 : 10 }]}>
-          <Text style={[styles.juzLabel, { color: colors.textMuted }]}>JUZ</Text>
+          <Text style={[styles.juzLabel, { color: colors.textMuted }]}>{t('JUZ')}</Text>
           <ScrollView
             horizontal
             nestedScrollEnabled
@@ -1052,7 +1053,7 @@ export default function QuranHomeScreen({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {trName ? `${flag} ${trName} · ` : ''}{item.englishNameTranslation} · {item.numberOfAyahs} ayahs · {item.revelationType}
+              {trName ? `${flag} ${trName} · ` : ''}{item.englishNameTranslation} · {item.numberOfAyahs} {t('ayahs')} · {t(item.revelationType)}
             </Text>
           </View>
         </View>
@@ -1083,7 +1084,7 @@ export default function QuranHomeScreen({
           style={[styles.retryBtn, { borderColor: colors.accent }]}
           onPress={loadData}
         >
-          <Text style={[styles.retryBtnText, { color: colors.accent }]}>Retry</Text>
+          <Text style={[styles.retryBtnText, { color: colors.accent }]}>{t('Retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -1108,12 +1109,12 @@ export default function QuranHomeScreen({
           style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 12.5 : 13 }]}
           placeholder={
             verseRef
-              ? `Jumping to ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || 'Surah'} ${verseRef?.ayah}…`
+              ? `${t('Jumping to')} ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || t('Surah')} ${verseRef?.ayah}…`
               : searchFilter === 'name'
-              ? 'Search surah name…'
+              ? t('Search surah name…')
               : searchFilter === 'meaning'
-              ? 'Search meaning…'
-              : 'Search surah name or meaning…'
+              ? t('Search meaning…')
+              : t('Search surah name or meaning…')
           }
           placeholderTextColor={colors.textMuted}
           value={searchQuery}
@@ -1149,13 +1150,13 @@ export default function QuranHomeScreen({
           searchQuery.trim().length > 0 ? (
             <EmptyState
               icon="search-outline"
-              title="No surahs found"
+              title={t('No surahs found')}
               subtitle={
                 verseRef
-                  ? `Surah ${verseRef.surah} does not have ayah ${verseRef.ayah}`
-                  : `No surahs match "${searchQuery}"${searchFilter !== 'all' ? ` in "${searchFilter === 'name' ? 'Surah Name' : 'Meaning'}"` : ''}`
+                  ? `${t('Surah')} ${verseRef.surah} ${t('does not have ayah')} ${verseRef.ayah}`
+                  : `${t('No surahs match')} "${searchQuery}"${searchFilter !== 'all' ? ` ${t('in')} "${searchFilter === 'name' ? t('Surah Name') : t('Meaning')}"` : ''}`
               }
-              actionLabel="Clear search"
+              actionLabel={t('Clear search')}
               onAction={() => setSearchQuery('')}
             />
           ) : null
