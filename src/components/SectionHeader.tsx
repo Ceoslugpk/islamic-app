@@ -1,7 +1,7 @@
 import React from 'react';
 import { I18nManager, StyleSheet, Text, View, ViewStyle, useWindowDimensions } from 'react-native';
 import { useTheme } from '../lib/theme';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 interface SectionHeaderProps {
   eyebrow?: string;
@@ -79,16 +79,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   eyebrow: {
-    fontFamily: I18nManager.isRTL ? 'Amiri_400Regular' : 'Manrope_600SemiBold',
-    letterSpacing: I18nManager.isRTL ? 0 : 2,
-    textTransform: I18nManager.isRTL ? 'none' : 'uppercase',
+    fontFamily: isRTL() ? 'Amiri_400Regular' : 'Manrope_600SemiBold',
+    letterSpacing: isRTL() ? 0 : 2,
+    textTransform: isRTL() ? 'none' : 'uppercase',
   },
   title: {
-    fontFamily: I18nManager.isRTL ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
-    letterSpacing: I18nManager.isRTL ? 0 : -0.3,
+    fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+    letterSpacing: isRTL() ? 0 : -0.3,
   },
   subtitle: {
-    fontFamily: I18nManager.isRTL ? 'Amiri_400Regular' : 'Manrope_400Regular',
+    fontFamily: isRTL() ? 'Amiri_400Regular' : 'Manrope_400Regular',
     maxWidth: 520,
   },
 });

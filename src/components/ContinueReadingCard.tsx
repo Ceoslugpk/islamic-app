@@ -16,7 +16,7 @@ import { getReadingPosition, ReadingPosition } from '../lib/continuing';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -151,7 +151,7 @@ export function ContinueReadingCard({
                 },
               ]}
             >
-              <Ionicons name={I18nManager.isRTL ? 'arrow-back' : 'arrow-forward'} size={16} color={colors.accent} />
+              <Ionicons name={isRTL() ? 'arrow-back' : 'arrow-forward'} size={16} color={colors.accent} />
             </View>
           </View>
 

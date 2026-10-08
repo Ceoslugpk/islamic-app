@@ -19,6 +19,7 @@ import { iconSizes } from '../lib/iconMap';
 import { QURAN_LANGUAGE_EDITIONS, QuranLanguageEdition } from '../lib/quranLanguages';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { Hairline } from './Hairline';
+import { isRTL } from '../lib/i18n';
 
 interface QuranLanguageModalProps {
   visible: boolean;
@@ -238,7 +239,7 @@ export function QuranLanguageModal({
                     {isSelected ? (
                       <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
                     ) : (
-                      <Ionicons name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textMuted} />
+                      <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textMuted} />
                     )}
                   </View>
                 </TouchableOpacity>

@@ -20,7 +20,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
@@ -1016,7 +1016,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                         <Text style={[styles.browseBooksText, { color: colors.accent }]}>
                           {t('Browse Books')} →
                         </Text>
-                        <Text style={[styles.arrow, { color: colors.accent }]}>{I18nManager.isRTL ? '‹' : '›'}</Text>
+                        <Text style={[styles.arrow, { color: colors.accent }]}>{isRTL() ? '‹' : '›'}</Text>
                       </View>
                     </TouchableOpacity>
                   </Card>

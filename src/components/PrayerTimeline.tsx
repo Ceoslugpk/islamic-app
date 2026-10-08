@@ -16,7 +16,7 @@ import { Card } from './Card';
 import { Hairline } from './Hairline';
 import { formatTime } from '../lib/timeFormat';
 import { DayTimings } from '../lib/prayerTimes';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -346,8 +346,8 @@ export function PrayerTimeline({
                               ? colors.textSecondary
                               : colors.textPrimary,
                             fontFamily: isCurrent
-                              ? (I18nManager.isRTL ? 'Amiri_700Bold' : 'Manrope_700Bold')
-                              : (I18nManager.isRTL ? 'Amiri_400Regular' : 'Manrope_500Medium'),
+                              ? (isRTL() ? 'Amiri_700Bold' : 'Manrope_700Bold')
+                              : (isRTL() ? 'Amiri_400Regular' : 'Manrope_500Medium'),
                           },
                         ]}
                       >

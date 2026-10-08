@@ -20,7 +20,7 @@ import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import { latitudeInvalid, longitudeInvalid, locationSaved } from '../lib/strings';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 export default function LocationScreen({
   onBack,
@@ -233,7 +233,7 @@ export default function LocationScreen({
                 {t('Pick from 68 world cities')}
               </Text>
             </View>
-            <Text style={[styles.shortcutArrow, { color: colors.accent }]}>{I18nManager.isRTL ? '‹' : '›'}</Text>
+            <Text style={[styles.shortcutArrow, { color: colors.accent }]}>{isRTL() ? '‹' : '›'}</Text>
           </TouchableOpacity>
         )}
 

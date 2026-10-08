@@ -5,6 +5,7 @@
 
 import { I18nManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { isRTL } from './i18n';
 
 export type IconGlyph = keyof typeof Ionicons.glyphMap;
 
@@ -32,11 +33,11 @@ export const iconSizes = {
  * In LTR: points left ('chevron-back'). In RTL: points right ('chevron-forward').
  */
 export function getBackIcon(type: 'chevron' | 'arrow' = 'chevron'): IconGlyph {
-  const isRTL = I18nManager.isRTL;
+  const rtl = isRTL();
   if (type === 'arrow') {
-    return isRTL ? 'arrow-forward' : 'arrow-back';
+    return rtl ? 'arrow-forward' : 'arrow-back';
   }
-  return isRTL ? 'chevron-forward' : 'chevron-back';
+  return rtl ? 'chevron-forward' : 'chevron-back';
 }
 
 /**
@@ -44,11 +45,11 @@ export function getBackIcon(type: 'chevron' | 'arrow' = 'chevron'): IconGlyph {
  * In LTR: points right ('chevron-forward'). In RTL: points left ('chevron-back').
  */
 export function getForwardIcon(type: 'chevron' | 'arrow' = 'chevron'): IconGlyph {
-  const isRTL = I18nManager.isRTL;
+  const rtl = isRTL();
   if (type === 'arrow') {
-    return isRTL ? 'arrow-back' : 'arrow-forward';
+    return rtl ? 'arrow-back' : 'arrow-forward';
   }
-  return isRTL ? 'chevron-back' : 'chevron-forward';
+  return rtl ? 'chevron-back' : 'chevron-forward';
 }
 
 /**

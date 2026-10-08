@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as Updates from 'expo-updates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { getForwardIcon, getBackIcon, iconSizes } from '../lib/iconMap';
@@ -776,12 +777,13 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                 setLanguage(nextLang);
                 haptic('selection');
                 // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
-                // after a reload on Android/iOS — trigger it automatically so the
-                // user doesn't have to restart manually.
+                // after a reload on Android/iOS — trigger a native reload so the
+                // user doesn't have to restart manually. Works in dev (DevSettings)
+                // and release (expo-updates).
                 if (Platform.OS !== 'web') {
                   setTimeout(() => {
-                    DevSettings.reload();
-                  }, 350);
+                    Updates.reloadAsync().catch(() => DevSettings.reload());
+                  }, 400);
                 }
               }
             }}

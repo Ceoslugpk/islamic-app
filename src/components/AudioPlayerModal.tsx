@@ -47,6 +47,7 @@ import {
 } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
 import { getLanguageFlag } from '../lib/quranLanguages';
+import { isRTL } from '../lib/i18n';
 
 export interface AudioPlayerModalProps {
   visible: boolean;
@@ -619,7 +620,7 @@ export function AudioPlayerModal({
                   <Text style={[styles.changeLangPillText, { color: colors.accent }]}>
                     Change Lang
                   </Text>
-                  <Ionicons name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'} size={10} color={colors.accent} />
+                  <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={10} color={colors.accent} />
                 </TouchableOpacity>
               </View>
 
@@ -914,7 +915,7 @@ export function AudioPlayerModal({
             <Text style={[styles.audioCenterBtnText, { color: colors.textPrimary }]}>
               Open Audio Center (Reciters, Playlists, Queue)
             </Text>
-            <Ionicons name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'} size={14} color={colors.textMuted} />
+            <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={14} color={colors.textMuted} />
           </TouchableOpacity>
         </Animated.View>
 

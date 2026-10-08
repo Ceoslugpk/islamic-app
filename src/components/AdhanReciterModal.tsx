@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Hairline } from './Hairline';
+import { isRTL } from '../lib/i18n';
 import {
   ADHAN_RECITERS,
   AdhanReciter,
@@ -227,7 +228,7 @@ export function AdhanReciterModal({
                     {isSelected ? (
                       <Ionicons name="checkmark-circle" size={24} color={colors.accent} />
                     ) : (
-                      <Ionicons name={I18nManager.isRTL ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textMuted} />
+                      <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textMuted} />
                     )}
                   </View>
                 </TouchableOpacity>

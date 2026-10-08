@@ -42,7 +42,7 @@ import { GeometricPattern } from '../components/GeometricPattern';
 import { ArabicText } from '../components/ArabicText';
 import { iconSizes } from '../lib/iconMap';
 import { gettingPrayerTimes, preparingDashboard, retry, prayerTimesOfflineError, prayerTimesNeedsConnection } from '../lib/strings';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity, isAppOnline } from '../lib/useConnectivity';
@@ -818,7 +818,7 @@ export default function HomeScreen({
                   />
                   <Text style={[styles.heroTransitionText, { color: colors.textMuted }]}>
                     {t(currentSegment)}{' '}
-                    <Text style={{ color: colors.accent }}>{I18nManager.isRTL ? '←' : '→'}</Text>{' '}
+                    <Text style={{ color: colors.accent }}>{isRTL() ? '←' : '→'}</Text>{' '}
                     {t(next ? next.name : 'Fajr')}
                   </Text>
                 </View>
@@ -1094,11 +1094,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   heroEnglishName: {
-    fontFamily: I18nManager.isRTL ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+    fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
     fontSize: 34,
     lineHeight: 38,
     textAlign: 'center',
-    letterSpacing: I18nManager.isRTL ? 0 : 0.5,
+    letterSpacing: isRTL() ? 0 : 0.5,
   },
   heroTime: {
     fontFamily: 'InstrumentSerif_400Regular',

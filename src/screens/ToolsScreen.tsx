@@ -3,7 +3,7 @@ import { I18nManager, ScrollView, StyleSheet, Text, View, TouchableOpacity, useW
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 
@@ -257,7 +257,7 @@ export default function ToolsScreen({
                         {t(item.subtitle)}
                       </Text>
                     </View>
-                    <Text style={[styles.arrow, { color: colors.accent }]}>{I18nManager.isRTL ? '‹' : '›'}</Text>
+                    <Text style={[styles.arrow, { color: colors.accent }]}>{isRTL() ? '‹' : '›'}</Text>
                   </TouchableOpacity>
                 </View>
               ))}
