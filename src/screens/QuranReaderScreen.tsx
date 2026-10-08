@@ -3832,8 +3832,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shareCardLogo: {
-    width: 22,
-    height: 22,
+    width: 32,
+    height: 32,
   },
   shareCardBrandWordmark: {
     fontFamily: 'Manrope_700Bold',

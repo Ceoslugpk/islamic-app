@@ -645,18 +645,14 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}
             <View style={styles.shareCardBrandFooter}>
               <Image
-                source={
-                  mode === 'paper'
-                    ? require('../../assets/logo-small-black.png')
-                    : require('../../assets/logo-small-ivory.png')
-                }
+                source={require('../../assets/logo-master-black.png')}
                 style={styles.shareCardLogo}
                 resizeMode="contain"
               />
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
-                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                  { color: '#0F172A' },
                 ]}
               >
                 ISLAMIC
@@ -964,8 +960,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shareCardLogo: {
-    width: 22,
-    height: 22,
+    width: 32,
+    height: 32,
   },
   shareCardBrandWordmark: {
     fontFamily: 'Manrope_700Bold',
