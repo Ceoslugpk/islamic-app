@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
+  I18nManager,
   StyleSheet,
   Text,
   View,
@@ -1015,7 +1016,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                         <Text style={[styles.browseBooksText, { color: colors.accent }]}>
                           {t('Browse Books')} →
                         </Text>
-                        <Text style={[styles.arrow, { color: colors.accent }]}>›</Text>
+                        <Text style={[styles.arrow, { color: colors.accent }]}>{I18nManager.isRTL ? '‹' : '›'}</Text>
                       </View>
                     </TouchableOpacity>
                   </Card>

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, View, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { I18nManager, ScrollView, StyleSheet, Text, View, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
@@ -257,7 +257,7 @@ export default function ToolsScreen({
                         {t(item.subtitle)}
                       </Text>
                     </View>
-                    <Text style={[styles.arrow, { color: colors.accent }]}>›</Text>
+                    <Text style={[styles.arrow, { color: colors.accent }]}>{I18nManager.isRTL ? '‹' : '›'}</Text>
                   </TouchableOpacity>
                 </View>
               ))}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  I18nManager,
   ScrollView,
   StyleSheet,
   Text,
@@ -232,7 +233,7 @@ export default function LocationScreen({
                 {t('Pick from 68 world cities')}
               </Text>
             </View>
-            <Text style={[styles.shortcutArrow, { color: colors.accent }]}>›</Text>
+            <Text style={[styles.shortcutArrow, { color: colors.accent }]}>{I18nManager.isRTL ? '‹' : '›'}</Text>
           </TouchableOpacity>
         )}
 
