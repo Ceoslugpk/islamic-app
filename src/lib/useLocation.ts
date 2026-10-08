@@ -127,9 +127,12 @@ export async function refreshLocationSilently(): Promise<Loc | null> {
 
     let pos = await Location.getLastKnownPositionAsync().catch(() => null);
     if (!pos || Date.now() - pos.timestamp > 3600000) {
+      // Guard against unhandled late rejection: Promise.race only settles on the
+      // winner — if the timeout wins, the still-pending getCurrentPositionAsync
+      // rejection would be orphaned (iOS "Location request timed out" console error).
       const posPromise = Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
-      });
+      }).catch(() => null);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Location request timed out')), 5000)
       );
@@ -319,7 +322,7 @@ export function useLocation(askOnMount = false): UseLocationResult {
 
         const posPromise = Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
-        });
+        }).catch(() => null);
         const timeoutPromise = new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Location request timed out')), 8000)
         );
