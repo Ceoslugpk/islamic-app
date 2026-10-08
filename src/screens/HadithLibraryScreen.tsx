@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,7 +12,11 @@ import {
   RefreshControl,
   useWindowDimensions,
   BackHandler,
+  Platform,
+  Image,
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -67,8 +71,18 @@ interface HadithLibraryScreenProps {
 }
 
 export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const { refreshKey } = useConnectivity();
+
+  const shareCardRef = useRef<View>(null);
+  const [shareHadithData, setShareHadithData] = useState<{
+    arabicText: string;
+    englishText: string;
+    collectionName: string;
+    hadithNumber: string;
+    source: string;
+  } | null>(null);
+  const [isSharingImage, setIsSharingImage] = useState(false);
 
   const {
     history: collectionHistory,
@@ -324,12 +338,46 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
     const arText = cleanHadithText(hadith.ar?.text, hadith.ar?.body);
     const enText = cleanHadithText(hadith.en?.text, hadith.en?.body);
     const source = `${collection.nameEn || collection.slug} ${bNum}:${hadith.hadithNumber}`;
-
     const message = `${arText}\n\n${enText}\n\n— ${source}`;
+
+    if (Platform.OS === 'web') {
+      try {
+        await Share.share({ message });
+      } catch {
+        // ignore
+      }
+      return;
+    }
+
     try {
-      await Share.share({ message });
+      setIsSharingImage(true);
+      setShareHadithData({
+        arabicText: arText,
+        englishText: enText,
+        collectionName: collection.nameEn || collection.slug,
+        hadithNumber: String(hadith.hadithNumber),
+        source,
+      });
+      // Wait a frame for the card to render off-screen.
+      await new Promise((r) => setTimeout(r, 80));
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+      setShareHadithData(null);
+      setIsSharingImage(false);
+      const isSharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
+      if (isSharingAvailable) {
+        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share hadith' });
+      } else {
+        await Share.share({ url: uri });
+      }
     } catch {
-      // ignore
+      setShareHadithData(null);
+      setIsSharingImage(false);
+      // Fall back to text share on any capture failure.
+      try {
+        await Share.share({ message });
+      } catch {
+        // ignore
+      }
     }
   }, [view]);
 
@@ -1409,6 +1457,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
               <TouchableOpacity
                 onPress={shareCurrentHadith}
+                disabled={isSharingImage}
                 style={[
                   styles.actionBtn,
                   { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
@@ -1416,7 +1465,11 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 accessibilityRole="button"
                 accessibilityLabel="Share hadith"
               >
-                <Ionicons name="share-outline" size={18} color={colors.textPrimary} />
+                {isSharingImage ? (
+                  <ActivityIndicator size="small" color={colors.textPrimary} />
+                ) : (
+                  <Ionicons name="share-outline" size={18} color={colors.textPrimary} />
+                )}
                 <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Share</Text>
               </TouchableOpacity>
             </View>
@@ -1435,6 +1488,56 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
           </ScrollView>
         )}
       </View>
+
+      {/* Share-as-image capture card (rendered off-screen while sharing) */}
+      {shareHadithData && (
+        <View style={styles.shareCardWrap} pointerEvents="none">
+          <View
+            ref={shareCardRef}
+            collapsable={false}
+            style={[styles.shareCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+          >
+            <Text style={[styles.shareCardEyebrow, { color: colors.accent }]}>
+              {shareHadithData.collectionName}
+            </Text>
+            {shareHadithData.arabicText ? (
+              <Text style={[styles.shareCardArabic, { color: colors.textPrimary }]}>
+                {shareHadithData.arabicText}
+              </Text>
+            ) : null}
+            <View style={[styles.shareCardRule, { backgroundColor: colors.accent }]} />
+            {shareHadithData.englishText ? (
+              <Text style={[styles.shareCardTrans, { color: colors.textSecondary }]}>
+                {shareHadithData.englishText}
+              </Text>
+            ) : null}
+            <Text style={[styles.shareCardRef, { color: colors.textMuted }]}>
+              {shareHadithData.source}
+            </Text>
+
+            {/* App Brand Footer: Logo + ISLAMIC wordmark */}
+            <View style={styles.shareCardBrandFooter}>
+              <Image
+                source={
+                  mode === 'paper'
+                    ? require('../../assets/logo-small-black.png')
+                    : require('../../assets/logo-small-ivory.png')
+                }
+                style={styles.shareCardLogo}
+                resizeMode="contain"
+              />
+              <Text
+                style={[
+                  styles.shareCardBrandWordmark,
+                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                ]}
+              >
+                ISLAMIC
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -1931,5 +2034,74 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: '100%',
     borderRadius: 3,
+  },
+  shareCardWrap: {
+    position: 'absolute',
+    left: -2000,
+    top: 0,
+    width: 360,
+    padding: 20,
+    backgroundColor: '#F8FAF9',
+  },
+  shareCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 24,
+    alignItems: 'stretch',
+  },
+  shareCardEyebrow: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  shareCardArabic: {
+    fontFamily: 'Amiri_400Regular',
+    fontSize: 22,
+    lineHeight: 38,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    includeFontPadding: false,
+    marginBottom: 14,
+  },
+  shareCardRule: {
+    height: 2,
+    borderRadius: 1,
+    marginBottom: 14,
+    width: '40%',
+    alignSelf: 'center',
+  },
+  shareCardTrans: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 14,
+    lineHeight: 21,
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  shareCardRef: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    textAlign: 'center',
+    letterSpacing: 0.3,
+  },
+  shareCardBrandFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: '#E2E8F0',
+    gap: 8,
+  },
+  shareCardLogo: {
+    width: 22,
+    height: 22,
+  },
+  shareCardBrandWordmark: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
 });
