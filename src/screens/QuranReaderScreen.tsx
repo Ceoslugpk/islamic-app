@@ -30,7 +30,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHaptics } from '../lib/haptics';
-import { getBackIcon, iconSizes } from '../lib/iconMap';
+import { getBackIcon, getForwardIcon, iconSizes } from '../lib/iconMap';
 import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
 import { ArabicText, AyahText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { TajweedText } from '../components/TajweedText';
@@ -93,7 +93,7 @@ import {
   saveRecentlyPlayed,
 } from '../lib/db';
 import { getBundledSurahs114, SurahMeta } from '../lib/quran';
-import { hScrollRTLStyle } from '../lib/rtl';
+import { hScrollRTLStyle, isRtlScript } from '../lib/rtl';
 
 // Simple keep-awake implementation using a timer (fallback when expo-keep-awake not available)
 const keepAwakeTimers = new Map<number, ReturnType<typeof setInterval>>();
@@ -1571,7 +1571,7 @@ export default function QuranReaderScreen({
             <Text style={[styles.translationTag, { color: colors.textMuted }]}>
               {flag} {edition?.name || ''}
             </Text>
-            <Text style={[styles.translationText, { color: colors.textSecondary }]}>
+            <Text style={[styles.translationText, { color: colors.textSecondary }, isRtlScript(language) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
               {item.translation}
             </Text>
           </View>
@@ -1780,7 +1780,7 @@ export default function QuranReaderScreen({
               accessibilityRole="button"
               accessibilityLabel="Previous Surah"
             >
-              <Ionicons name="chevron-back" size={surahNavIconSize} color={colors.accent} />
+              <Ionicons name={getBackIcon()} size={surahNavIconSize} color={colors.accent} />
             </TouchableOpacity>
             {surah && (
               <Text
@@ -1805,7 +1805,7 @@ export default function QuranReaderScreen({
               accessibilityRole="button"
               accessibilityLabel="Next Surah"
             >
-              <Ionicons name="chevron-forward" size={surahNavIconSize} color={colors.accent} />
+              <Ionicons name={getForwardIcon()} size={surahNavIconSize} color={colors.accent} />
             </TouchableOpacity>
           </View>
         </View>
@@ -2093,7 +2093,7 @@ export default function QuranReaderScreen({
                         {t(selectedScriptOption.label)} — {t(selectedScriptOption.description)}
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
 
                   <View
@@ -2192,7 +2192,7 @@ export default function QuranReaderScreen({
                         {flag} {language.toUpperCase()} — {edition.name}
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
 
                   <View
@@ -2287,7 +2287,7 @@ export default function QuranReaderScreen({
                         {currentTafsirSource.name} ({currentTafsirSource.language})
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -2330,7 +2330,7 @@ export default function QuranReaderScreen({
                         {selectedJuz ? `Juz ${selectedJuz} selected` : 'Select a Juz to jump'}
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
 
                   <View
@@ -2367,7 +2367,7 @@ export default function QuranReaderScreen({
                         {selectedHizb ? `Hizb ${selectedHizb} selected` : 'Select a Hizb to jump'}
                       </Text>
                     </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                    <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -2433,7 +2433,7 @@ export default function QuranReaderScreen({
                       </Text>
                     </View>
                     {surahDownloaded ? (
-                      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                      <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                     ) : null}
                   </TouchableOpacity>
                 </View>

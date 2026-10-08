@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { iconSizes } from '../lib/iconMap';
+import { getBackIcon, getForwardIcon, iconSizes } from '../lib/iconMap';
 import { t } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
@@ -21,7 +21,7 @@ import {
   QURAN_LANGUAGE_EDITIONS,
 } from '../lib/quranLanguages';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
-import { hScrollRTLStyle } from '../lib/rtl';
+import { hScrollRTLStyle, isRtlScript } from '../lib/rtl';
 
 interface TranslationCompareScreenProps {
   initialSurah?: number;
@@ -186,7 +186,7 @@ export default function TranslationCompareScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t('Previous Ayah')}
               >
-                <Ionicons name="chevron-back" size={20} color={colors.accent} />
+                <Ionicons name={getBackIcon()} size={20} color={colors.accent} />
               </TouchableOpacity>
 
               <View style={styles.positionInfo}>
@@ -208,7 +208,7 @@ export default function TranslationCompareScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t('Next Ayah')}
               >
-                <Ionicons name="chevron-forward" size={20} color={colors.accent} />
+                <Ionicons name={getForwardIcon()} size={20} color={colors.accent} />
               </TouchableOpacity>
             </View>
           </View>
@@ -230,7 +230,7 @@ export default function TranslationCompareScreen({
                   <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
                     {t('All Languages...')}
                   </Text>
-                  <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
+                  <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={colors.accent} />
                 </TouchableOpacity>
               </View>
 
@@ -283,7 +283,7 @@ export default function TranslationCompareScreen({
                   <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
                     {t('All Languages...')}
                   </Text>
-                  <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
+                  <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={colors.accent} />
                 </TouchableOpacity>
               </View>
 
@@ -337,7 +337,7 @@ export default function TranslationCompareScreen({
                     <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
                       {t('All Languages...')}
                     </Text>
-                    <Ionicons name="chevron-forward" size={iconSizes.badge} color={colors.accent} />
+                    <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={colors.accent} />
                   </TouchableOpacity>
                 </View>
 
@@ -470,7 +470,7 @@ export default function TranslationCompareScreen({
                     <Text style={[styles.tagText, { color: colors.accent }]}>A</Text>
                   </View>
                 </View>
-                <Text style={[styles.transBody, { color: colors.textPrimary }]}>
+                <Text style={[styles.transBody, { color: colors.textPrimary }, isRtlScript(langA) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
                   {trans1Text}
                 </Text>
               </View>
@@ -501,7 +501,7 @@ export default function TranslationCompareScreen({
                     <Text style={[styles.tagText, { color: colors.accent }]}>B</Text>
                   </View>
                 </View>
-                <Text style={[styles.transBody, { color: colors.textPrimary }]}>
+                <Text style={[styles.transBody, { color: colors.textPrimary }, isRtlScript(langB) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
                   {trans2Text}
                 </Text>
               </View>
@@ -533,7 +533,7 @@ export default function TranslationCompareScreen({
                       <Text style={[styles.tagText, { color: colors.accent }]}>C</Text>
                     </View>
                   </View>
-                  <Text style={[styles.transBody, { color: colors.textPrimary }]}>
+                  <Text style={[styles.transBody, { color: colors.textPrimary }, isRtlScript(langC) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
                     {trans3Text}
                   </Text>
                 </View>

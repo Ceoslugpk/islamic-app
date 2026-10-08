@@ -858,7 +858,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             desc={`${flag} ${edition.language} (${edition.name})`}
             onPress={() => { setQuranLangModalOpen(true); haptic('light'); }}
             accessibilityLabel={`Change translation language. Current: ${edition.language} ${flag}`}
-            right={<Ionicons name="chevron-forward" size={18} color={colors.accent} />}
+            right={<Ionicons name={getForwardIcon()} size={18} color={colors.accent} />}
           />
         </Section>
 
@@ -1162,7 +1162,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                   Tap to allow notifications so prayer reminders and the Adhan can sound at prayer time.
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+              <Ionicons name={getForwardIcon()} size={16} color={colors.accent} />
             </TouchableOpacity>
           )}
 
@@ -1209,7 +1209,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                 <Text style={[styles.reciterBadgeArabic, { color: colors.accent }]}>
                   {getAdhanReciter(settings.adhanReciterId).arabicName}
                 </Text>
-                <Ionicons name="chevron-forward" size={18} color={colors.accent} />
+                <Ionicons name={getForwardIcon()} size={18} color={colors.accent} />
               </View>
             }
           />

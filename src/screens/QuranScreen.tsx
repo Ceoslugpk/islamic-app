@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
-import { iconSizes } from '../lib/iconMap';
+import { iconSizes, getForwardIcon } from '../lib/iconMap';
 import { fetchSurahList, fetchSurahListForLanguage, SurahMeta } from '../lib/quran';
 import { ArabicText } from '../components/ArabicText';
 import { ScreenHeader } from '../components/ScreenHeader';
@@ -271,7 +271,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
               accessibilityLabel={t('Change translation language')}
             >
               <Text style={[styles.langChangeBtnText, { color: colors.accent }]}>{t('Change')}</Text>
-              <Ionicons name="chevron-forward" size={12} color={colors.accent} />
+              <Ionicons name={getForwardIcon()} size={12} color={colors.accent} />
             </TouchableOpacity>
           </View>
 

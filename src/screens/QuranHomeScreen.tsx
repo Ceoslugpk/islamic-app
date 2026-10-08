@@ -29,6 +29,7 @@ import { useSettings } from '../lib/settings';
 import { useFlatListRestore } from '../lib/useScrollRestore';
 import { useSearchHistory } from '../lib/searchHistory';
 import { EmptyState } from '../components/EmptyState';
+import { getForwardIcon, getBackIcon } from '../lib/iconMap';
 
 interface QuranHomeScreenProps {
   onOpenSurah: (surahNumber: number, initialAyah?: number) => void;
@@ -303,7 +304,7 @@ export default function QuranHomeScreen({
             accessibilityLabel={`${t('Change translation language')}. ${t('Current')}: ${edition.language}`}
           >
             <Text style={[styles.langChangeBtnText, { color: colors.accent }]}>{t('Change')}</Text>
-            <Ionicons name="chevron-forward" size={12} color={colors.accent} />
+            <Ionicons name={getForwardIcon()} size={12} color={colors.accent} />
           </TouchableOpacity>
         </View>
 
@@ -460,7 +461,7 @@ export default function QuranHomeScreen({
               },
             ]}
           >
-            <Ionicons name="arrow-forward" size={isNarrow ? 16 : 18} color={colors.onAccent} />
+            <Ionicons name={getForwardIcon('arrow')} size={isNarrow ? 16 : 18} color={colors.onAccent} />
           </View>
         </TouchableOpacity>
 
@@ -865,7 +866,7 @@ export default function QuranHomeScreen({
                 { backgroundColor: colors.accentDim, borderColor: colors.accent },
               ]}
             >
-              <Ionicons name="arrow-forward-outline" size={14} color={colors.accent} />
+              <Ionicons name={getForwardIcon('arrow')} size={14} color={colors.accent} />
               <Text style={[styles.verseRefHintText, { color: colors.accent }]}>
                 {t('Verse reference detected — jumping to')} <Text style={{ fontFamily: 'Manrope_700Bold' }}>
                   {surahs?.find((s) => s.number === verseRef.surah)?.englishName || `${t('Surah')} ${verseRef.surah}`} {verseRef.ayah}

@@ -690,11 +690,11 @@ export default function HomeScreen({
           }}
         >
 <SectionHeader
-              eyebrow="Today"
-              title="Assalam o Alaikum"
-              subtitle={`${locDisplay} · ${hijriLabel} (${data.readable || data.gregorian})`}
-              style={styles.sectionHeader}
-            />
+      eyebrow="Today"
+      title={t('Assalam o Alaikum')}
+      subtitle={`${locDisplay} · ${hijriLabel} (${data.readable || data.gregorian})`}
+      style={styles.sectionHeader}
+    />
             <Text style={[
               { fontFamily: 'Manrope_400Regular', fontSize: 14, color: colors.textSecondary, marginTop: 4 },
             ]}>
@@ -1094,11 +1094,11 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   heroEnglishName: {
-    fontFamily: 'InstrumentSerif_400Regular',
+    fontFamily: I18nManager.isRTL ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
     fontSize: 34,
     lineHeight: 38,
     textAlign: 'center',
-    letterSpacing: 0.5,
+    letterSpacing: I18nManager.isRTL ? 0 : 0.5,
   },
   heroTime: {
     fontFamily: 'InstrumentSerif_400Regular',

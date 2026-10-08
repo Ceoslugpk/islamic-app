@@ -285,6 +285,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    // RTL: keep H:M:S order LTR — RTL would flip the row and render S:M:H
+    direction: 'ltr',
   },
   unitPair: {
     flexDirection: 'row',

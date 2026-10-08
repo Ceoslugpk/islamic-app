@@ -14,6 +14,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { fetchSurah, SurahDetail } from '../lib/quran';
 import { SURAHS_114 } from '../lib/surahs114';
+import { getBackIcon, getForwardIcon } from '../lib/iconMap';
 
 /**
  * Hifz Hide & Peek practice mode.
@@ -181,7 +182,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
               accessibilityRole="button"
               accessibilityLabel={t('Previous ayah')}
             >
-              <Ionicons name="chevron-back" size={20} color={index === 0 ? colors.textMuted : colors.textSecondary} />
+              <Ionicons name={getBackIcon()} size={20} color={index === 0 ? colors.textMuted : colors.textSecondary} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -202,7 +203,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
               accessibilityLabel={t('Next ayah')}
             >
               <Ionicons
-                name="chevron-forward"
+                name={getForwardIcon()}
                 size={20}
                 color={index === ayahs.length - 1 ? colors.textMuted : colors.textSecondary}
               />

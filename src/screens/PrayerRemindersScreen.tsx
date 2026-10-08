@@ -55,6 +55,7 @@ import {
 } from '../lib/quranProgress';
 import { getReadingPosition } from '../lib/continuing';
 import { buildDeepLink } from '../lib/deeplinks';
+import { getForwardIcon, getBackIcon } from '../lib/iconMap';
 
 const REMINDER_OFFSETS = [
   { label: 'Off', value: 0 },
@@ -799,7 +800,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
             </View>
             <View style={styles.chevronWrap}>
               <Text style={[styles.changeText, { color: colors.accent }]}>{t('Change')}</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.accent} />
+              <Ionicons name={getForwardIcon()} size={16} color={colors.accent} />
             </View>
           </TouchableOpacity>
 

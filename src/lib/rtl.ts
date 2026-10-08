@@ -17,3 +17,9 @@ export function hScrollRTLStyle(): StyleProp<ViewStyle> | null {
 }
 
 export const isRTL = I18nManager.isRTL;
+
+/** True when a language code uses an RTL script (affects translation text alignment). */
+export function isRtlScript(lang?: string): boolean {
+  if (!lang) return false;
+  return ['ar', 'ur', 'fa', 'he', 'ps', 'sd', 'ug', 'dv'].includes(lang.toLowerCase());
+}

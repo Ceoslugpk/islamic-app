@@ -7,6 +7,7 @@ import {
   Animated,
   Easing,
   Platform,
+  I18nManager,
   AccessibilityInfo,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -345,8 +346,8 @@ export function PrayerTimeline({
                               ? colors.textSecondary
                               : colors.textPrimary,
                             fontFamily: isCurrent
-                              ? 'Manrope_700Bold'
-                              : 'Manrope_500Medium',
+                              ? (I18nManager.isRTL ? 'Amiri_700Bold' : 'Manrope_700Bold')
+                              : (I18nManager.isRTL ? 'Amiri_400Regular' : 'Manrope_500Medium'),
                           },
                         ]}
                       >
@@ -451,7 +452,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingRight: 16,
+    paddingEnd: 16,
     minHeight: 46,
   },
   railColumn: {
@@ -548,7 +549,7 @@ const styles = StyleSheet.create({
   },
   currentProgressTrackWrap: {
     marginTop: 6,
-    paddingRight: 4,
+    paddingEnd: 4,
   },
   currentProgressTrack: {
     height: 3,

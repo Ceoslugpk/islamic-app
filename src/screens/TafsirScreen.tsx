@@ -22,6 +22,7 @@ import { EmptyState } from '../components/EmptyState';
 import { fetchSurah, fetchSurahList, fetchSurahTafsir, SurahDetail, SurahMeta } from '../lib/quran';
 import { useSettings } from '../lib/settings';
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
+import { isRtlScript } from '../lib/rtl';
 
 interface TafsirScreenProps {
   surahNumber?: number;
@@ -154,7 +155,8 @@ export default function TafsirScreen({
           ) : (
             <Text style={[
               styles.tafsirBody,
-              { color: colors.textPrimary, fontFamily: 'Manrope_400Regular', textAlign: 'left', writingDirection: 'ltr' }
+              { color: colors.textPrimary, fontFamily: 'Manrope_400Regular' },
+              currentTafsirSource.languageCode === 'ar' || isRtlScript(currentTafsirSource.languageCode) ? { textAlign: 'right', writingDirection: 'rtl' } : { textAlign: 'left', writingDirection: 'ltr' }
             ]}>
               {item.text}
             </Text>

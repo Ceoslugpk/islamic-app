@@ -20,6 +20,7 @@ import { ArabicText } from '../components/ArabicText';
 import { TajweedText, TajweedLegend } from '../components/TajweedText';
 import { fetchTajweedSurah, TajweedAyah } from '../lib/tajweed';
 import { SURAHS_114 } from '../lib/surahs114';
+import { getForwardIcon, getBackIcon } from '../lib/iconMap';
 
 interface Props {
   onBack: () => void;
@@ -136,7 +137,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
                 <Text style={[styles.rowCount, { color: colors.textMuted }]}>{s.numberOfAyahs} ayahs</Text>
               </View>
               <ArabicText size={18}>{s.name}</ArabicText>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginLeft: 8 }} />
+              <Ionicons name={getForwardIcon()} size={16} color={colors.textMuted} style={{ marginStart: 8 }} />
             </TouchableOpacity>
           ))}
 

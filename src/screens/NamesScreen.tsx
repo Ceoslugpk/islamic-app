@@ -39,6 +39,7 @@ import { useSearchHistory } from '../lib/searchHistory';
 import { useSettings } from '../lib/settings';
 import { NameRowSkeleton } from '../components/Skeleton';
 import { hScrollRTLStyle } from '../lib/rtl';
+import { getForwardIcon, getBackIcon } from '../lib/iconMap';
 
 type LoadState = 'loading' | 'online' | 'offline';
 
@@ -464,7 +465,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="chevron-forward" size={12} color={colors.accent} />
+                  <Ionicons name={getForwardIcon()} size={12} color={colors.accent} />
                 </TouchableOpacity>
               </View>
             )}

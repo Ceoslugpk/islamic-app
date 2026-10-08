@@ -364,7 +364,7 @@ export function NowPlayingHeroCard({
               name={status.isPlaying ? 'pause' : 'play'}
               size={iconSizes.inlineLg}
               color={colors.onAccent}
-              style={status.isPlaying ? undefined : { marginLeft: 2 }}
+              style={status.isPlaying ? undefined : { marginStart: 2 }}
             />
           )}
         </TouchableOpacity>

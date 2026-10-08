@@ -15,6 +15,7 @@ import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { VOCAB_WORDS, VocabWord, TIER_LABELS, getDailyWord, getDailyWords } from '../lib/vocab';
 import { hScrollRTLStyle } from '../lib/rtl';
+import { getBackIcon, getForwardIcon } from '../lib/iconMap';
 
 const PROGRESS_KEY = 'vocab-trainer-progress-v1';
 
@@ -322,7 +323,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
             accessibilityRole="button"
             accessibilityLabel={t('Previous word')}
           >
-            <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
+            <Ionicons name={getBackIcon()} size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -341,7 +342,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
             accessibilityRole="button"
             accessibilityLabel={t('Next word')}
           >
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+            <Ionicons name={getForwardIcon()} size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 

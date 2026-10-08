@@ -12,6 +12,7 @@ import { useTheme } from '../lib/theme';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { t } from '../lib/i18n';
+import { getForwardIcon, getBackIcon } from '../lib/iconMap';
 
 export type LibraryItemKey =
   | 'hadith'
@@ -147,7 +148,7 @@ function LibraryRow({
         </Text>
       </View>
       <Ionicons
-        name="chevron-forward"
+        name={getForwardIcon()}
         size={14}
         color={colors.textMuted}
         style={styles.chevron}

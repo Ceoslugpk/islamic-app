@@ -722,7 +722,7 @@ export function AudioPlayerModal({
                       name={status.isPlaying ? 'pause' : 'play'}
                       size={iconSizes.featured}
                       color={colors.onAccent}
-                      style={status.isPlaying ? undefined : { marginLeft: 3 }}
+                      style={status.isPlaying ? undefined : { marginStart: 3 }}
                     />
                   )}
                 </TouchableOpacity>
@@ -940,7 +940,7 @@ export function AudioPlayerModal({
               ]}
             >
               <View style={[styles.pickerHeader, { borderBottomColor: colors.borderSubtle }]}>
-                <View style={{ flex: 1, marginRight: 8 }}>
+                <View style={{ flex: 1, marginEnd: 8 }}>
                   <Text style={[styles.pickerTitle, { color: colors.textPrimary }]}>
                     Audio Language & Reciter
                   </Text>

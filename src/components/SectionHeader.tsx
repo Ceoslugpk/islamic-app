@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View, ViewStyle, useWindowDimensions } from 'react-native';
+import { I18nManager, StyleSheet, Text, View, ViewStyle, useWindowDimensions } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { t } from '../lib/i18n';
 
@@ -79,16 +79,16 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   eyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+    fontFamily: I18nManager.isRTL ? 'Amiri_400Regular' : 'Manrope_600SemiBold',
+    letterSpacing: I18nManager.isRTL ? 0 : 2,
+    textTransform: I18nManager.isRTL ? 'none' : 'uppercase',
   },
   title: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    letterSpacing: -0.3,
+    fontFamily: I18nManager.isRTL ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+    letterSpacing: I18nManager.isRTL ? 0 : -0.3,
   },
   subtitle: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: I18nManager.isRTL ? 'Amiri_400Regular' : 'Manrope_400Regular',
     maxWidth: 520,
   },
 });

@@ -10,6 +10,7 @@ import {
   Animated,
   Easing,
   Platform,
+  I18nManager,
   useWindowDimensions,
   Linking,
   AppState,
@@ -1560,9 +1561,9 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   tabLabel: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: I18nManager.isRTL ? 'Amiri_400Regular' : 'Manrope_600SemiBold',
     fontSize: 12,
-    letterSpacing: 0.3,
+    letterSpacing: I18nManager.isRTL ? 0 : 0.3,
   },
   tabIndicator: {
     width: 24,

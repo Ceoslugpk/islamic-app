@@ -105,13 +105,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
-    marginRight: 8,
+    marginEnd: 8,
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginRight: 8,
+    marginEnd: 8,
   },
   prayerName: {
     fontFamily: 'Manrope_600SemiBold',
