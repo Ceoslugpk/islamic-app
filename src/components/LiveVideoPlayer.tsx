@@ -15,6 +15,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useTheme } from '../lib/theme';
 import { Card } from './Card';
 import { LiveStreamId, setActiveLiveStream } from '../lib/liveStream';
+import { t } from '../lib/i18n';
 
 /**
  * In-app live video player for Makkah / Madinah / Hajj live screens.
@@ -163,20 +164,20 @@ export function LiveVideoPlayer({
               setReloadKey((k) => k + 1);
             }}
             accessibilityRole="button"
-            accessibilityLabel="Reload live stream"
+            accessibilityLabel={t('Reload live stream')}
           >
             <Ionicons name="refresh" size={14} color={colors.accent} />
-            <Text style={[styles.quickBtnText, { color: colors.textSecondary }]}>Reload</Text>
+            <Text style={[styles.quickBtnText, { color: colors.textSecondary }]}>{t('Reload')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.quickBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
             onPress={openYouTube}
             accessibilityRole="button"
-            accessibilityLabel="Open in YouTube app"
+            accessibilityLabel={t('Open in YouTube app')}
           >
             <Ionicons name="open-outline" size={14} color={colors.accent} />
-            <Text style={[styles.quickBtnText, { color: colors.textSecondary }]}>YouTube App</Text>
+            <Text style={[styles.quickBtnText, { color: colors.textSecondary }]}>{t('YouTube App')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -211,7 +212,7 @@ export function LiveVideoPlayer({
         >
           <Ionicons name="play" size={16} color="#FFFFFF" />
           <Text style={[styles.primaryActionText, isCompact && { fontSize: 12.5 }]}>
-            Watch Live on YouTube
+            {t('Watch Live on YouTube')}
           </Text>
         </TouchableOpacity>
       </View>

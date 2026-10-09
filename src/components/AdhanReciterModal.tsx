@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Hairline } from './Hairline';
-import { isRTL } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import {
   ADHAN_RECITERS,
   AdhanReciter,
@@ -103,10 +103,10 @@ export function AdhanReciterModal({
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
             <View style={styles.headerTitles}>
-              <Text style={[styles.eyebrow, { color: colors.accent }]}>PRAYER CALL</Text>
-              <Text style={[styles.title, { color: colors.textPrimary }]}>Adhan Reciters</Text>
+              <Text style={[styles.eyebrow, { color: colors.accent }]}>{t('PRAYER CALL')}</Text>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>{t('Adhan Reciters')}</Text>
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                Choose who calls the prayer
+                {t('Choose who calls the prayer')}
               </Text>
             </View>
             <TouchableOpacity
@@ -114,7 +114,7 @@ export function AdhanReciterModal({
               onPress={handleClose}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
-              accessibilityLabel="Close reciter selector"
+              accessibilityLabel={t('Close reciter selector')}
             >
               <Ionicons name="close" size={22} color={colors.textPrimary} />
             </TouchableOpacity>

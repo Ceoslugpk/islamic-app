@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 
 export interface LocationSetupModalProps {
   visible: boolean;
@@ -64,7 +65,7 @@ export function LocationSetupModal({
             onPress={onDismiss}
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             accessibilityRole="button"
-            accessibilityLabel="Close location setup"
+            accessibilityLabel={t('Close location setup')}
           >
             <Ionicons name="close" size={20} color={colors.textMuted} />
           </TouchableOpacity>
@@ -84,7 +85,7 @@ export function LocationSetupModal({
 
           {/* Title & Concise Education */}
           <Text style={[styles.title, { color: colors.textPrimary }]}>
-            Location for prayer times
+            {t('Location for prayer times')}
           </Text>
           <Text style={[styles.description, { color: colors.textSecondary }]}>
             Islamic uses your location to calculate accurate prayer times and
@@ -105,14 +106,14 @@ export function LocationSetupModal({
               disabled={loading}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Use current device location"
+              accessibilityLabel={t('Use current device location')}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="#ffffff" />
               ) : (
                 <>
                   <Ionicons name="navigate-outline" size={18} color="#ffffff" />
-                  <Text style={styles.primaryBtnText}>Use current location</Text>
+                  <Text style={styles.primaryBtnText}>{t('Use current location')}</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -130,7 +131,7 @@ export function LocationSetupModal({
               disabled={loading}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Choose a city from list"
+              accessibilityLabel={t('Choose a city from list')}
             >
               <Ionicons
                 name="business-outline"
@@ -140,7 +141,7 @@ export function LocationSetupModal({
               <Text
                 style={[styles.secondaryBtnText, { color: colors.textPrimary }]}
               >
-                Choose a city
+                {t('Choose a city')}
               </Text>
             </TouchableOpacity>
 
@@ -151,12 +152,12 @@ export function LocationSetupModal({
               disabled={loading}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="Dismiss location setup and use default location"
+              accessibilityLabel={t('Dismiss location setup and use default location')}
             >
               <Text
                 style={[styles.tertiaryBtnText, { color: colors.textSecondary }]}
               >
-                Not now
+                {t('Not now')}
               </Text>
             </TouchableOpacity>
           </View>

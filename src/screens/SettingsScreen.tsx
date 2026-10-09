@@ -976,7 +976,7 @@ export default function SettingsScreen({
                 : t('Check that all 114 surahs are stored and readable offline')
             }
             onPress={handleVerifyQuranText}
-            accessibilityLabel="Verify locally stored Quran text"
+            accessibilityLabel={t('Verify locally stored Quran text')}
             right={
               verifyingText ? (
                 <ActivityIndicator size="small" color={colors.accent} />
@@ -994,7 +994,7 @@ export default function SettingsScreen({
                 title="Repair incomplete surahs"
                 desc={t('Re-download only the {{count}} surahs that failed verification', { count: textVerification.missingSurahs.length + textVerification.invalidSurahs.length })}
                 onPress={handleRepairQuranText}
-                accessibilityLabel="Re-download incomplete surahs"
+                accessibilityLabel={t('Re-download incomplete surahs')}
                 right={<Ionicons name="cloud-download-outline" size={18} color={colors.accent} />}
               />
             </>
@@ -1044,7 +1044,7 @@ export default function SettingsScreen({
             disabled
             accessibilityRole="radio"
             accessibilityState={{ disabled: true, selected: false }}
-            accessibilityLabel="Arabic font: KFGQPC, coming soon"
+            accessibilityLabel={t('Arabic font: KFGQPC, coming soon')}
             right={<View style={[styles.radio, { borderColor: colors.borderStrong }]} />}
           />
 

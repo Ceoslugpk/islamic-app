@@ -10,6 +10,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
+import { t } from '../lib/i18n';
 
 /**
  * System-biometric + device-credential gate for the Women's Worship screens.
@@ -104,7 +105,7 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
           activeOpacity={0.75}
           onPress={() => authenticate()}
           accessibilityRole="button"
-          accessibilityLabel="Unlock Women's Worship"
+          accessibilityLabel={t("Unlock Women's Worship")}
         >
           <Ionicons name="finger-print" size={18} color={colors.onAccent} />
           <Text style={[styles.buttonText, { color: colors.onAccent }]}>Unlock</Text>

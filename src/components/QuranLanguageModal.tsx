@@ -156,7 +156,7 @@ export function QuranLanguageModal({
                   style={styles.clearSearchBtn}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityRole="button"
-                  accessibilityLabel="Clear search"
+                  accessibilityLabel={t('Clear search')}
                 >
                   <Ionicons name="close-circle" size={iconSizes.inlineLg} color={colors.textMuted} />
                 </TouchableOpacity>
@@ -274,7 +274,7 @@ export function QuranLanguageModal({
                   style={[styles.resetSearchBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
                   onPress={() => setSearch('')}
                   accessibilityRole="button"
-                  accessibilityLabel="Clear search"
+                  accessibilityLabel={t('Clear search')}
                 >
                   <Text style={[styles.resetSearchText, { color: colors.accent }]}>{t('Clear Search')}</Text>
                 </TouchableOpacity>

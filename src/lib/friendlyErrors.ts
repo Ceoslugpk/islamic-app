@@ -3,6 +3,8 @@
  * Replaces technical errors (HTTP 500, Network request failed, etc.) with user-facing guidance.
  */
 
+import { t } from './i18n';
+
 export type ErrorActionType =
   | 'retry'
   | 'open_settings'
@@ -54,7 +56,7 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
     if (scope === 'prayer_times') {
       return {
         title: 'Offline Schedule Active',
-        message: 'Unable to connect to the prayer times server. Displaying your saved prayer schedule.',
+        message: t('Unable to connect to the prayer times server. Displaying your saved prayer schedule.'),
         actionLabel: 'Retry',
         actionType: 'retry',
       };
@@ -62,7 +64,7 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
     if (scope === 'mosque_finder') {
       return {
         title: 'Network Connection Needed',
-        message: 'Mosque search requires an active internet connection to load map data.',
+        message: t('Mosque search requires an active internet connection to load map data.'),
         actionLabel: 'Retry Search',
         actionType: 'retry',
       };
@@ -70,14 +72,14 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
     if (scope === 'audio') {
       return {
         title: 'Audio Stream Unavailable',
-        message: 'Unable to connect to the audio server. Check your connection or play downloaded recitations.',
+        message: t('Unable to connect to the audio server. Check your connection or play downloaded recitations.'),
         actionLabel: 'Try Again',
         actionType: 'retry',
       };
     }
     return {
       title: 'Connection Unavailable',
-      message: 'Please check your internet connection. Saved content remains accessible offline.',
+      message: t('Please check your internet connection. Saved content remains accessible offline.'),
       actionLabel: 'Retry',
       actionType: 'retry',
     };
@@ -94,7 +96,7 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
   if (isServerError) {
     return {
       title: 'Service Temporarily Busy',
-      message: 'The Islamic data service is experiencing high traffic or brief maintenance. Please try again shortly.',
+      message: t('The Islamic data service is experiencing high traffic or brief maintenance. Please try again shortly.'),
       actionLabel: 'Retry',
       actionType: 'retry',
     };
@@ -114,7 +116,7 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
     }
     return {
       title: 'Resource Not Found',
-      message: 'The requested Islamic content could not be located. It may have been updated.',
+      message: t('The requested Islamic content could not be located. It may have been updated.'),
       actionLabel: 'Dismiss',
       actionType: 'dismiss',
     };
@@ -141,7 +143,7 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
   if (scope === 'mosque_finder') {
     return {
       title: 'Unable to Load Mosques',
-      message: 'We encountered an issue retrieving nearby mosques. Please try again or search by area.',
+      message: t('We encountered an issue retrieving nearby mosques. Please try again or search by area.'),
       actionLabel: 'Retry Search',
       actionType: 'retry',
     };
@@ -150,7 +152,7 @@ export function errorToUserMessage(err: unknown, context?: ErrorContext): Friend
   if (scope === 'prayer_times') {
     return {
       title: 'Prayer Times Unavailable',
-      message: 'Could not update prayer timings for this location. Using cached timings where available.',
+      message: t('Could not update prayer timings for this location. Using cached timings where available.'),
       actionLabel: 'Retry',
       actionType: 'retry',
     };

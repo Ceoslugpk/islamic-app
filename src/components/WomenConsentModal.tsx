@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 
 interface WomenConsentModalProps {
   visible: boolean;
@@ -118,7 +119,7 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
                 onPress={onConfirm}
                 accessibilityRole="button"
-                accessibilityLabel="I Understand and enable Women's Worship"
+                accessibilityLabel={t("I Understand and enable Women's Worship")}
               >
                 <Text
                   style={[styles.primaryBtnText, { color: colors.onAccent }]}
@@ -132,7 +133,7 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 style={[styles.cancelBtn, { borderColor: colors.borderSubtle }]}
                 onPress={onCancel}
                 accessibilityRole="button"
-                accessibilityLabel="Cancel"
+                accessibilityLabel={t('Cancel')}
               >
                 <Text
                   style={[styles.cancelBtnText, { color: colors.textSecondary }]}

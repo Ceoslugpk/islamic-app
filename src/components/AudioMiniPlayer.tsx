@@ -15,6 +15,7 @@ import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
 import { formatProgress } from '../lib/formatDuration';
+import { t } from '../lib/i18n';
 
 interface AudioMiniPlayerProps {
   playback: CurrentPlayback;
@@ -329,7 +330,7 @@ export function AudioMiniPlayer({
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
           style={[styles.ctrlBtnSecondary, { borderColor: colors.borderSubtle }]}
           accessibilityRole="button"
-          accessibilityLabel="Stop audio"
+          accessibilityLabel={t('Stop audio')}
         >
           <Ionicons name="square" size={14} color={colors.textSecondary} />
         </TouchableOpacity>

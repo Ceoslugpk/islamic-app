@@ -2208,7 +2208,7 @@ export default function QuranReaderScreen({
               onPress={() => setToolsMenuOpen(false)}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="Dismiss reading tools"
+              accessibilityLabel={t('Dismiss reading tools')}
               hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
             >
               <View style={[styles.toolsMenuDragPill, { backgroundColor: colors.borderStrong }]} />
@@ -2730,7 +2730,7 @@ export default function QuranReaderScreen({
                       setToolsMenuOpen(false);
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="Jump to Juz"
+                    accessibilityLabel={t('Jump to Juz')}
                     activeOpacity={0.7}
                   >
                     <View
@@ -2767,7 +2767,7 @@ export default function QuranReaderScreen({
                       setToolsMenuOpen(false);
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="Jump to Hizb"
+                    accessibilityLabel={t('Jump to Hizb')}
                     activeOpacity={0.7}
                   >
                     <View
@@ -3049,7 +3049,7 @@ export default function QuranReaderScreen({
                 onPress={() => setTafsirSourcePickerOpen(false)}
                 style={styles.closeBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('Close')}
               >
                 <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
               </TouchableOpacity>
@@ -3128,13 +3128,13 @@ export default function QuranReaderScreen({
             <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                Jump to Juz
+                {t('Jump to Juz')}
               </Text>
               <TouchableOpacity
                 onPress={() => setJuzPickerOpen(false)}
                 style={styles.closeBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('Close')}
               >
                 <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
               </TouchableOpacity>
@@ -3220,13 +3220,13 @@ export default function QuranReaderScreen({
             <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
             <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
               <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                Jump to Hizb
+                {t('Jump to Hizb')}
               </Text>
               <TouchableOpacity
                 onPress={() => setHizbPickerOpen(false)}
                 style={styles.closeBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('Close')}
               >
                 <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
               </TouchableOpacity>
@@ -3314,7 +3314,7 @@ export default function QuranReaderScreen({
                 onPress={() => setScriptPickerOpen(false)}
                 style={styles.closeBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Close"
+                accessibilityLabel={t('Close')}
               >
                 <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
               </TouchableOpacity>

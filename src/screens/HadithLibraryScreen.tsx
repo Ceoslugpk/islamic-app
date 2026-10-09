@@ -1076,7 +1076,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
               <TextInput
                 value={bookFilter}
                 onChangeText={setBookFilter}
-                placeholder="Search books by title or number..."
+                placeholder={t('Search books by title or number...')}
                 placeholderTextColor={colors.textMuted}
                 style={[styles.searchInput, { color: colors.textPrimary }]}
                 clearButtonMode="while-editing"
@@ -1102,7 +1102,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     onPress={clearBookHistory}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     accessibilityRole="button"
-                    accessibilityLabel="Clear hadith book search history"
+                    accessibilityLabel={t('Clear hadith book search history')}
                   >
                     <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
                   </TouchableOpacity>
@@ -1466,7 +1466,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                   { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel="Share hadith"
+                accessibilityLabel={t('Share hadith')}
               >
                 {isSharingImage ? (
                   <ActivityIndicator size="small" color={colors.textPrimary} />

@@ -738,7 +738,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   onValueChange={handleToggleTranslationAudio}
                   trackColor={{ false: colors.borderSubtle, true: colors.accent }}
                   thumbColor="#FFFFFF"
-                  accessibilityLabel="Toggle play translation audio after Arabic"
+                  accessibilityLabel={t('Toggle play translation audio after Arabic')}
                 />
               </View>
             </View>

@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 
 type Variant = 'star' | 'rings' | 'arch' | 'bloom' | 'star-small' | 'loading-star';
 
@@ -496,7 +497,7 @@ export function GeometricLoadingStar({
         style,
       ]}
       accessibilityRole="progressbar"
-      accessibilityLabel="Loading..."
+      accessibilityLabel={t('Loading...')}
     >
       <Animated.View
         style={{

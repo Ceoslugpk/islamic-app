@@ -13,6 +13,7 @@ import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
+import { t } from '../lib/i18n';
 
 interface NowPlayingHeroCardProps {
   playback: CurrentPlayback | null;
@@ -123,7 +124,7 @@ export function NowPlayingHeroCard({
         <View style={styles.idleHeaderRow}>
           <View style={[styles.statusBadge, { backgroundColor: colors.accentDim }]}>
             <Ionicons name="headset-outline" size={13} color={colors.accent} />
-            <Text style={[styles.statusBadgeText, { color: colors.accent }]}>AUDIO CENTER</Text>
+            <Text style={[styles.statusBadgeText, { color: colors.accent }]}>{t('AUDIO CENTER')}</Text>
           </View>
         </View>
 
@@ -250,7 +251,7 @@ export function NowPlayingHeroCard({
             onPress={onStop}
             style={[styles.dismissBtn, { borderColor: colors.borderSubtle }]}
             accessibilityRole="button"
-            accessibilityLabel="Stop and close player"
+            accessibilityLabel={t('Stop and close player')}
           >
             <Ionicons name="close" size={14} color={colors.textMuted} />
           </TouchableOpacity>
@@ -278,7 +279,7 @@ export function NowPlayingHeroCard({
             progressWidth.current = e.nativeEvent.layout.width;
           }}
           accessibilityRole="adjustable"
-          accessibilityLabel="Audio timeline seeker"
+          accessibilityLabel={t('Audio timeline seeker')}
         >
           <View
             style={[
@@ -339,7 +340,7 @@ export function NowPlayingHeroCard({
             },
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Previous track or verse"
+          accessibilityLabel={t('Previous track or verse')}
         >
           <Ionicons name="play-skip-back" size={18} color={colors.textPrimary} />
         </TouchableOpacity>
@@ -381,7 +382,7 @@ export function NowPlayingHeroCard({
             },
           ]}
           accessibilityRole="button"
-          accessibilityLabel="Next track or verse"
+          accessibilityLabel={t('Next track or verse')}
         >
           <Ionicons name="play-skip-forward" size={18} color={colors.textPrimary} />
         </TouchableOpacity>
@@ -391,7 +392,7 @@ export function NowPlayingHeroCard({
           onPress={onStop}
           style={[styles.subCtrlBtn, { borderColor: colors.borderSubtle }]}
           accessibilityRole="button"
-          accessibilityLabel="Stop audio"
+          accessibilityLabel={t('Stop audio')}
         >
           <Ionicons name="square" size={14} color={colors.textSecondary} />
         </TouchableOpacity>

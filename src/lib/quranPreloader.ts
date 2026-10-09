@@ -14,6 +14,7 @@ import { getEditionForLanguage, QURAN_LANGUAGE_EDITIONS } from './quranLanguages
 import { getQuranPreloadRequested } from './settings';
 import { SURAHS_114 } from './surahs114';
 import { isAppOnline } from './useConnectivity';
+import { t } from './i18n';
 
 export interface QuranPreloadProgress {
   total: number;
@@ -657,7 +658,7 @@ export async function startQuranPreload(options?: QuranPreloadOptions): Promise<
           isRunning: false,
           isComplete: false,
           saveFailure: true,
-          error: 'Storage full: cannot save Quran cache',
+          error: t('Storage full: cannot save Quran cache'),
           currentSurah: null,
           cached: cachedCount,
         });
@@ -704,7 +705,7 @@ export async function startQuranPreload(options?: QuranPreloadOptions): Promise<
               isRunning: false,
               isComplete: false,
               saveFailure: true,
-              error: 'Storage full: cannot save Quran cache',
+              error: t('Storage full: cannot save Quran cache'),
               currentSurah: null,
               cached: cachedCount,
             });
@@ -743,7 +744,7 @@ export async function startQuranPreload(options?: QuranPreloadOptions): Promise<
             isRunning: false,
             isComplete: false,
             saveFailure: true,
-            error: 'Storage full: cannot save Quran cache',
+            error: t('Storage full: cannot save Quran cache'),
             currentSurah: null,
             cached: cachedCount,
           });

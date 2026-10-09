@@ -225,7 +225,7 @@ export default function LocationScreen({
             ]}
             onPress={onOpenCities}
             accessibilityRole="button"
-            accessibilityLabel="Pick from 68 world cities"
+            accessibilityLabel={t('Pick from 68 world cities')}
           >
             <View style={styles.shortcutLeft}>
               <Ionicons name="business-outline" size={18} color={colors.accent} />
@@ -245,7 +245,7 @@ export default function LocationScreen({
             style={[styles.input, { borderColor: colors.borderSubtle, color: colors.textPrimary, backgroundColor: colors.bgBase }]}
             value={labelInput}
             onChangeText={setLabelInput}
-            placeholder="e.g. Cairo, Egypt"
+            placeholder={t('e.g. Cairo, Egypt')}
             placeholderTextColor={colors.textMuted}
           />
 
@@ -286,7 +286,7 @@ export default function LocationScreen({
             style={[styles.saveBtn, { backgroundColor: colors.accent }]}
             onPress={handleSaveManual}
             accessibilityRole="button"
-            accessibilityLabel="Save coordinates"
+            accessibilityLabel={t('Save coordinates')}
           >
             <Text style={[styles.saveBtnText, { color: colors.onAccent }]}>{t('Save location')}</Text>
           </TouchableOpacity>

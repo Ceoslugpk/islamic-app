@@ -11,6 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import {
   hashPin,
   verifyPinDetailed,
@@ -287,7 +288,7 @@ export function WomenPinModal({
                         style={[styles.keyBtn, styles.specialKey]}
                         onPress={onCancel}
                         accessibilityRole="button"
-                        accessibilityLabel="Cancel"
+                        accessibilityLabel={t('Cancel')}
                       >
                         <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
                       </TouchableOpacity>
@@ -301,7 +302,7 @@ export function WomenPinModal({
                         onPress={handleDelete}
                         disabled={lockoutSeconds > 0}
                         accessibilityRole="button"
-                        accessibilityLabel="Delete last digit"
+                        accessibilityLabel={t('Delete last digit')}
                       >
                         <Ionicons name="backspace-outline" size={22} color={colors.textPrimary} />
                       </TouchableOpacity>

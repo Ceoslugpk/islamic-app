@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { ActiveLiveStream, toggleLiveStreamPlayPause } from '../lib/liveStream';
+import { t } from '../lib/i18n';
 
 interface LiveMiniPlayerProps {
   stream: ActiveLiveStream;
@@ -87,7 +88,7 @@ export function LiveMiniPlayer({ stream, onClose, onExpand }: LiveMiniPlayerProp
             style={styles.actionBtn}
             onPress={onClose}
             accessibilityRole="button"
-            accessibilityLabel="Close live stream"
+            accessibilityLabel={t('Close live stream')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
             <Ionicons name="close" size={18} color={colors.textMuted} />

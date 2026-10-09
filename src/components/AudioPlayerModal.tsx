@@ -47,7 +47,7 @@ import {
 } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
 import { getLanguageFlag, getLocalizedTranslatorName, getLocalizedTranslationTitle } from '../lib/quranLanguages';
-import { isRTL } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 export interface AudioPlayerModalProps {
   visible: boolean;
@@ -414,7 +414,7 @@ export function AudioPlayerModal({
               onPress={onClose}
               style={[styles.closeBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
               accessibilityRole="button"
-              accessibilityLabel="Close audio player modal"
+              accessibilityLabel={t('Close audio player modal')}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons name="close" size={18} color={colors.textPrimary} />
@@ -472,7 +472,7 @@ export function AudioPlayerModal({
                     ],
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Switch to Arabic recitation"
+                  accessibilityLabel={t('Switch to Arabic recitation')}
                   accessibilityState={{ selected: activeSegment === 'arabic' }}
                 >
                   <View style={styles.langSegmentHeader}>
@@ -615,10 +615,10 @@ export function AudioPlayerModal({
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Change translation audio language"
+                  accessibilityLabel={t('Change translation audio language')}
                 >
                   <Text style={[styles.changeLangPillText, { color: colors.accent }]}>
-                    Change Lang
+                    {t('Change Lang')}
                   </Text>
                   <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={10} color={colors.accent} />
                 </TouchableOpacity>
@@ -635,7 +635,7 @@ export function AudioPlayerModal({
                     progressWidth.current = e.nativeEvent.layout.width;
                   }}
                   accessibilityRole="adjustable"
-                  accessibilityLabel="Audio timeline seeker"
+                  accessibilityLabel={t('Audio timeline seeker')}
                 >
                   <View
                     style={[
@@ -698,7 +698,7 @@ export function AudioPlayerModal({
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Previous track or verse"
+                  accessibilityLabel={t('Previous track or verse')}
                 >
                   <Ionicons name="play-skip-back" size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
@@ -741,7 +741,7 @@ export function AudioPlayerModal({
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Next track or verse"
+                  accessibilityLabel={t('Next track or verse')}
                 >
                   <Ionicons name="play-skip-forward" size={20} color={colors.textPrimary} />
                 </TouchableOpacity>
@@ -754,7 +754,7 @@ export function AudioPlayerModal({
                     { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Stop audio"
+                  accessibilityLabel={t('Stop audio')}
                 >
                   <Ionicons name="square" size={15} color={colors.textSecondary} />
                 </TouchableOpacity>
@@ -785,7 +785,7 @@ export function AudioPlayerModal({
                       { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
                     ]}
                     accessibilityRole="button"
-                    accessibilityLabel="Start a 10 minute sleep timer. Tap again for more options."
+                    accessibilityLabel={t('Start a 10 minute sleep timer. Tap again for more options.')}
                   >
                     <Ionicons name="moon-outline" size={15} color={colors.accent} />
                     <Text style={[styles.sleepBtnText, { color: colors.textSecondary }]}>
@@ -890,7 +890,7 @@ export function AudioPlayerModal({
                 <Ionicons name="headset-outline" size={28} color={colors.accent} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                No Audio Playing
+                {t('No Audio Playing')}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
                 Choose any surah or reciter from the Quran tab or Audio Center to start listening.
@@ -909,7 +909,7 @@ export function AudioPlayerModal({
               },
             ]}
             accessibilityRole="button"
-            accessibilityLabel="Open full Audio Center"
+            accessibilityLabel={t('Open full Audio Center')}
           >
             <Ionicons name="musical-notes-outline" size={16} color={colors.accent} />
             <Text style={[styles.audioCenterBtnText, { color: colors.textPrimary }]}>
@@ -943,7 +943,7 @@ export function AudioPlayerModal({
               <View style={[styles.pickerHeader, { borderBottomColor: colors.borderSubtle }]}>
                 <View style={{ flex: 1, marginEnd: 8 }}>
                   <Text style={[styles.pickerTitle, { color: colors.textPrimary }]}>
-                    Audio Language & Reciter
+                    {t('Audio Language & Reciter')}
                   </Text>
                   <Text style={[styles.pickerSubtitle, { color: colors.textMuted }]}>
                     Arabic recitation + 11 translation languages ({NON_ARABIC_AUDIO_EDITIONS.length + 1} options)
@@ -954,7 +954,7 @@ export function AudioPlayerModal({
                   style={[styles.pickerCloseBtn, { borderColor: colors.borderSubtle }]}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   accessibilityRole="button"
-                  accessibilityLabel="Close language picker"
+                  accessibilityLabel={t('Close language picker')}
                 >
                   <Ionicons name="close" size={16} color={colors.textPrimary} />
                 </TouchableOpacity>
@@ -976,7 +976,7 @@ export function AudioPlayerModal({
                     },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Select Arabic recitation"
+                  accessibilityLabel={t('Select Arabic recitation')}
                 >
                   <View style={styles.pickerOptionLeft}>
                     <Text style={styles.pickerFlag}>🇸🇦</Text>
