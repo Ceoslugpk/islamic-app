@@ -20,6 +20,7 @@ import { Hairline } from '../components/Hairline';
 import { t } from '../lib/i18n';
 import { LastReadPosition, loadLastReadPosition, loadQuranCache } from '../lib/db';
 import { getContinueReadingPosition, ReadingPosition } from '../lib/continuing';
+import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { getBookmarks, getNotes } from '../lib/study';
@@ -283,7 +284,7 @@ export default function QuranHomeScreen({
       return {
         surah: readingPosition.surah,
         ayah: readingPosition.ayah,
-        name: meta?.englishName || `${t('Surah')} ${readingPosition.surah}`,
+        name: meta ? getLocalizedSurahName(meta.number, meta.englishName) : `${t('Surah')} ${readingPosition.surah}`,
       };
     }
     if (lastRead) {
@@ -905,7 +906,7 @@ export default function QuranHomeScreen({
               <Ionicons name={getForwardIcon('arrow')} size={14} color={colors.accent} />
               <Text style={[styles.verseRefHintText, { color: colors.accent }]}>
                 {t('Verse reference detected — jumping to')} <Text style={{ fontFamily: 'Manrope_700Bold' }}>
-                  {surahs?.find((s) => s.number === verseRef.surah)?.englishName || `${t('Surah')} ${verseRef.surah}`} {verseRef.ayah}
+                  {(() => { const m = surahs?.find((s) => s.number === verseRef.surah); return m ? getLocalizedSurahName(m.number, m.englishName) : `${t('Surah')} ${verseRef.surah}`; })()} {verseRef.ayah}
                 </Text>
               </Text>
             </View>
@@ -1085,7 +1086,7 @@ export default function QuranHomeScreen({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {item.englishName}
+              {getLocalizedSurahName(item.number, item.englishName)}
             </Text>
             <Text
               style={[

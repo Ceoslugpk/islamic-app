@@ -94,6 +94,7 @@ import {
 } from '../lib/db';
 import { getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { hScrollRTLStyle, isRtlScript } from '../lib/rtl';
+import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 
 // Simple keep-awake implementation using a timer (fallback when expo-keep-awake not available)
 const keepAwakeTimers = new Map<number, ReturnType<typeof setInterval>>();
@@ -1522,7 +1523,7 @@ export default function QuranReaderScreen({
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {surah.englishName || `Surah ${safeSurahNumber}`}
+              {getLocalizedSurahName(safeSurahNumber, surah.englishName || `Surah ${safeSurahNumber}`)}
             </Text>
             {surah.englishNameTranslation ? (
               <Text
@@ -2087,7 +2088,7 @@ export default function QuranReaderScreen({
                   style={[styles.toolsMenuSurahTitle, { color: colors.textPrimary }]}
                   numberOfLines={1}
                 >
-                  {surah?.englishName || `Surah ${safeSurahNumber}`}
+                  {getLocalizedSurahName(safeSurahNumber, surah?.englishName || `Surah ${safeSurahNumber}`)}
                 </Text>
                 <Text style={[styles.toolsMenuSubtitle, { color: colors.textMuted }]}>
                   {readingProgress.percent}% · Ayah {readingProgress.currentAyah} of {readingProgress.totalAyahs}

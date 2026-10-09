@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
 import { getContinueReadingPosition, ReadingPosition } from '../lib/continuing';
+import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
@@ -96,7 +97,7 @@ export function ContinueReadingCard({
   const progressPercent = Math.round(progressRatio * 100);
 
   const eyebrowText = isResuming ? t('CONTINUE READING') : t('START READING');
-  const surahTitle = surahMeta?.englishName || (isResuming ? `Surah ${surahNum}` : 'Al-Fatihah');
+  const surahTitle = surahMeta ? getLocalizedSurahName(surahMeta.number, surahMeta.englishName) : (isResuming ? `Surah ${surahNum}` : 'Al-Fatihah');
   const ayahSubtext = isResuming ? `${t('Ayah')} ${surahNum}:${ayahNum}` : `${t('Ayah')} 1:1 · ${t('Begin recitation')}`;
 
   return (

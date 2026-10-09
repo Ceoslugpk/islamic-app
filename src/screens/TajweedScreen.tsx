@@ -20,6 +20,7 @@ import { ArabicText } from '../components/ArabicText';
 import { TajweedText, TajweedLegend } from '../components/TajweedText';
 import { fetchTajweedSurah, TajweedAyah } from '../lib/tajweed';
 import { SURAHS_114 } from '../lib/surahs114';
+import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 import { getForwardIcon, getBackIcon } from '../lib/iconMap';
 
 interface Props {
@@ -77,7 +78,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
       <ScreenHeader
-        title={openSurah === null ? t('Tajweed Colors') : (openMeta?.englishName || `Surah ${openSurah}`)}
+        title={openSurah === null ? t('Tajweed Colors') : (openMeta ? getLocalizedSurahName(openMeta.number, openMeta.englishName) : `Surah ${openSurah}`)}
         subtitle={
           openSurah === null
             ? t('Full Quran · color-coded recitation rules')
@@ -133,7 +134,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
                 <Text style={[styles.numText, { color: colors.accent }]}>{s.number}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.rowName, { color: colors.textPrimary }]}>{s.englishName}</Text>
+                <Text style={[styles.rowName, { color: colors.textPrimary }]}>{getLocalizedSurahName(s.number, s.englishName)}</Text>
                 <Text style={[styles.rowCount, { color: colors.textMuted }]}>{s.numberOfAyahs} ayahs</Text>
               </View>
               <ArabicText size={18}>{s.name}</ArabicText>

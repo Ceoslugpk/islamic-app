@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '../lib/i18n';
+import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -198,7 +199,7 @@ export default function TafsirScreen({
                 style={[styles.selectorTitle, { color: colors.textPrimary }]}
                 numberOfLines={1}
               >
-                {selectedSurahMeta ? selectedSurahMeta.englishName : `${t('Surah')} ${currentSurah}`}
+                {selectedSurahMeta ? getLocalizedSurahName(selectedSurahMeta.number, selectedSurahMeta.englishName) : `${t('Surah')} ${currentSurah}`}
                 {selectedSurahMeta ? ` · ${selectedSurahMeta.englishNameTranslation}` : ''}
               </Text>
             </View>
@@ -361,7 +362,7 @@ export default function TafsirScreen({
                           style={[styles.surahOptionName, { color: colors.textPrimary }]}
                           numberOfLines={1}
                         >
-                          {item.englishName}
+                          {getLocalizedSurahName(item.number, item.englishName)}
                         </Text>
                         <Text
                           style={[styles.surahOptionTrans, { color: colors.textMuted }]}
