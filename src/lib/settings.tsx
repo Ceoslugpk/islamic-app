@@ -659,6 +659,21 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         })
       );
 
+      // Durability gate: the caller (SettingsScreen) triggers a native reload
+      // once this promise resolves. The fire-and-forget `persist()` above is
+      // not awaited (AsyncStorage.setItem is queued, not flushed), so without
+      // an explicit await here the reload's 400ms could race the write and
+      // boot the app in the OLD language. Await a direct write of the new
+      // language before any side-effect awaits resolve.
+      try {
+        await AsyncStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(sanitizeSettings({ ...settings, language: nextLang }))
+        );
+      } catch {
+        // ignore — persist() already queued the same write
+      }
+
       let nextTafsir: string | undefined;
       if (nextLang === 'ur') {
         try {

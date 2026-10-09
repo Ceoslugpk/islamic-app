@@ -329,6 +329,10 @@ export default function QuranReaderScreen({
   // Continue Reading tracking refs (MUST be declared before any memo/effects)
   const surahNumberRef = useRef<number>(safeSurahNumber);
   const lastSavedAyahRef = useRef<number>(initialAyah || 1);
+  // Position tracking gate: OFF until the positioning jump has LANDED (proven
+  // by the retry completing, by a real user scroll, or by a synchronous
+  // mushaf scroll). While OFF, viewability events do not overwrite the target
+  // ayah with whatever cell measured first during the jump.
   const trackingReadyRef = useRef<boolean>(!initialAyah || initialAyah <= 1);
   // Throttle position saves during fast scroll (setState + 3 storage writes per
   // frame janks the list). Nav-hide logic stays frame-accurate — only the
@@ -376,8 +380,33 @@ export default function QuranReaderScreen({
       : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
     lastSavedAyahRef.current = resolvedAyah;
     setCurrentVisibleAyah(resolvedAyah);
-    trackingReadyRef.current = resolvedAyah <= 1;
+    // Position tracking stays off while the positioning jump settles. The jump
+    // may take several frames (progressive render + retries); enabling tracking
+    // before it lands lets the jump's first viewability event overwrite the
+    // landed ayah with whatever cell measured first.
+    trackingReadyRef.current = false;
   }, [safeSurahNumber, initialAyah]);
+
+  // A real user scroll flips tracking ON: the jump has landed (or the user is
+  // past it), so viewability events now reflect genuine reading progress.
+  useEffect(() => {
+    if (trackingReadyRef.current) return;
+    if (!userScrollingRef.current) return;
+    // Only enable when the guard reflects a REAL user gesture, not the
+    // settling frames of the programmatic jump (those also set the ref briefly
+    // via handleReaderScroll when positionedRef is still false).
+    trackingReadyRef.current = true;
+  }, [userScrollingRef, initialAyah, safeSurahNumber]);
+
+  // If a positioning jump completed with NO retry (synchronous success in the
+  // cards path), the effect above never fires — the user hasn't scrolled yet.
+  // Re-arm the effect when positionedRef flips true: the jump has landed, so
+  // tracking may resume immediately.
+  useEffect(() => {
+    if (positionedRef.current && !trackingReadyRef.current) {
+      trackingReadyRef.current = true;
+    }
+  }, [positionedRef, safeSurahNumber, initialAyah]);
 
   // Fetch / update script text when script or surah changes
   useEffect(() => {
@@ -746,11 +775,20 @@ export default function QuranReaderScreen({
       lastScrollYRef.current = y;
       // User-scroll guard: any real movement marks the user as actively
       // scrolling so positioning jumps never yank the list mid-gesture.
-      if (Math.abs(dy) > 2) {
+      // Programmatic jumps also emit scroll events — but the positioning jump
+      // runs with positionedRef=false and completes in one frame (animated:
+      // false), so treat small, non-user drift from a landing jump as neutral
+      // instead of marking the user as scrolling (which would block the retry).
+      if (Math.abs(dy) > 2 && !positionedRef.current) {
         userScrollingRef.current = true;
         if (userScrollClearTimerRef.current) clearTimeout(userScrollClearTimerRef.current);
         userScrollClearTimerRef.current = setTimeout(() => {
           userScrollingRef.current = false;
+          // A user gesture just finished — the positioning jump has (or has
+          // not) landed by now; enable position tracking so the NEXT scroll
+          // reflects real reading progress. Without this, tracking stays off
+          // forever after a jump that never needed retries.
+          trackingReadyRef.current = true;
         }, 150);
       }
       if (dy > 2 && y > 90 && !navHiddenRef.current) {
@@ -1003,7 +1041,12 @@ export default function QuranReaderScreen({
       surahNumberRef.current = safeSurahNumber;
       lastSavedAyahRef.current = startAyah;
       setCurrentVisibleAyah(startAyah);
-      trackingReadyRef.current = startAyah <= 1;
+      // Position tracking stays OFF until the positioning jump has LANDED —
+      // the landing is proven by a real user scroll (which flips this true) or
+      // by the tracked ayah matching the target (jump completed). Enabling it
+      // before the jump lets the FIRST viewability event of the jump overwrite
+      // the landed ayah with whatever cell happens to be measured first.
+      trackingReadyRef.current = false;
       // Do NOT unconditionally overwrite the auto position with the ENTERED
       // ayah on every open — that moves Continue Reading backward when the
       // user resumes at a saved position then backs out before scrolling.
@@ -1075,30 +1118,38 @@ export default function QuranReaderScreen({
 
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
     const targetAyah = initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
-    if (targetAyah > 1) {
-      if (readingMode === 'mushaf') {
-        const total = surah.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
-        if (mushafContentHeightRef.current > 0) {
-          const y = Math.max(0, ((targetAyah - 1) / total) * mushafContentHeightRef.current);
-          mushafScrollRef.current?.scrollTo({ y, animated: false });
-          positionedRef.current = true;
-        } else {
-          pendingScrollAyahRef.current = targetAyah;
-        }
-      } else {
-        const targetIndex = targetAyah - 1;
-        // Single direct positioning path: synchronous scrollToIndex. Do NOT set
-        // positionedRef in a catch — if the index isn't measured yet,
-        // onScrollToIndexFailed (wired on the FlatList) owns retries and marks
-        // positioned after the first successful retry. This avoids the previous
-        // bug where a swallowed throw left positionedRef=true and never retried.
+    if (targetAyah <= 1) {
+      // Nothing to jump to — start reading at ayah 1; tracking can start now.
+      trackingReadyRef.current = true;
+    } else if (readingMode === 'mushaf') {
+      const total = surah.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
+      if (mushafContentHeightRef.current > 0) {
+        const y = Math.max(0, ((targetAyah - 1) / total) * mushafContentHeightRef.current);
+        mushafScrollRef.current?.scrollTo({ y, animated: false });
+        positionedRef.current = true;
+        // The ScrollView has content height measured and the offset was
+        // applied synchronously — the jump has LANDED.
         trackingReadyRef.current = true;
-        try {
-          listRef.current?.scrollToIndex({ index: targetIndex, animated: false });
-          positionedRef.current = true;
-        } catch {
-          // leave positionedRef false — onScrollToIndexFailed retries
-        }
+      } else {
+        pendingScrollAyahRef.current = targetAyah;
+      }
+    } else {
+      const targetIndex = targetAyah - 1;
+      // Single direct positioning path: synchronous scrollToIndex. Do NOT set
+      // positionedRef in a catch — if the index isn't measured yet,
+      // onScrollToIndexFailed (wired on the FlatList) owns retries and marks
+      // positioned after the first successful retry. This avoids the previous
+      // bug where a swallowed throw left positionedRef=true and never retried.
+      try {
+        listRef.current?.scrollToIndex({ index: targetIndex, animated: false });
+        // Mark positioned only on the RETRY path (onScrollToIndexFailed owns
+        // the retry loop and sets this itself). A synchronous success does NOT
+        // mean the cell is rendered/landed yet — marking here would flip the
+        // guard while the jump is still settling, and the very next scroll
+        // event (from the settling animation) would set userScrollingRef=true
+        // and block the retry path.
+      } catch {
+        // leave positionedRef false — onScrollToIndexFailed retries
       }
     }
   }, [surah, safeSurahNumber, initialAyah, readingMode, initialListIndex]);
@@ -1117,7 +1168,14 @@ export default function QuranReaderScreen({
         if (userScrollingRef.current) return;
         try {
           listRef.current?.scrollToIndex({ index: info.index, animated: false });
+          // The retry is a deliberate positioning jump — mark it done so the
+          // effect never re-fires (a re-fire would scroll away from where the
+          // user landed). The jump's own scroll events set userScrollingRef,
+          // which the guard consumes; that is fine here because we are done.
           positionedRef.current = true;
+          // The target ayah has now been scrolled to — the jump has LANDED.
+          // Let the next viewability event reflect the real landed position.
+          trackingReadyRef.current = true;
         } catch {
           // re-invoked again with a higher measured frame — keep converging
         }
@@ -1779,6 +1837,10 @@ export default function QuranReaderScreen({
             const y = Math.max(0, ((pendingScrollAyahRef.current - 1) / total) * h);
             mushafScrollRef.current?.scrollTo({ y, animated: true });
             pendingScrollAyahRef.current = null;
+            // The pending jump has now been applied — mark positioned and
+            // tracking-ready so the settle event never overwrites the target.
+            positionedRef.current = true;
+            trackingReadyRef.current = true;
           }
         }}
       >
@@ -1807,7 +1869,7 @@ export default function QuranReaderScreen({
           ) : (
             <Text style={styles.mushafParagraph}>
               {surah.ayahs.map((a) => (
-                <Text key={`mushaf-${a.numberInSurah}`}>
+                <Text key={`mushaf-${a.numberInSurah}`} style={styles.mushafAyahBlock}>
                   <Text
                     style={{
                       fontFamily: arabicFamilies.regular,
@@ -3770,6 +3832,16 @@ const styles = StyleSheet.create({
   mushafParagraph: {
     textAlign: 'right',
     writingDirection: 'rtl',
+    // Generous line spacing for Arabic diacritics/tashkeel: the inline ayah
+    // Texts get explicit lineHeight per ayah, and each ayah block is separated
+    // by a bottom margin so rows never overlap regardless of font size.
+  },
+  mushafAyahBlock: {
+    // Each ayah is its own line box — the bottom margin guarantees the next
+    // ayah's ascenders/diacritics never overlap this one's descenders, at any
+    // font size and line-height multiplier.
+    display: 'flex',
+    marginBottom: 10,
   },
   mushafTranslationsWrap: {
     gap: 10,
@@ -4011,6 +4083,10 @@ const styles = StyleSheet.create({
   },
   mushafTajweedAyahRow: {
     width: '100%',
+    // The row is a line box; the bottom margin separates each ayah so the
+    // next ayah's ascenders/diacritics never overlap this one's descenders.
+    // TajweedText gets an explicit generous lineHeight (matching the cards)
+    // so tashkeel never clips.
     marginBottom: 12,
   },
   scriptNoticeCard: {
