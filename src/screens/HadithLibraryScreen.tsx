@@ -1538,7 +1538,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                   { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
                 ]}
               >
-                ISLAMIC
+                {isRTL() ? 'اسلامک' : 'ISLAMIC'}
               </Text>
             </View>
           </View>

@@ -37,7 +37,7 @@ import { TajweedText } from '../components/TajweedText';
 import { stripTajweedHtml } from '../lib/tajweed';
 import { QuranScript, QURAN_SCRIPTS, fetchSurahWithScript, getScriptCacheKey } from '../lib/quranScripts';
 import { retry, cancel, remove, copy, share, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
-import { t } from '../lib/i18n';
+import { t, isRTL } from '../lib/i18n';
 import { useSettings, QURAN_FONT_SIZE_MIN, QURAN_FONT_SIZE_MAX, QURAN_FONT_SIZE_STEP } from '../lib/settings';
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
@@ -256,7 +256,7 @@ function AyahBookmarkButton({
         justifyContent: 'center',
       }}
       accessibilityRole="button"
-      accessibilityLabel={`Bookmark Ayah ${ayahNumber}`}
+      accessibilityLabel={`${t('Bookmark')} ${t('Ayah')} ${ayahNumber}`}
     >
       <Animated.View style={{ transform: [{ scale: bounceAnim }] }}>
         <Ionicons
@@ -1576,7 +1576,7 @@ export default function QuranReaderScreen({
             style={styles.reciterPill}
             onPress={() => setReciterChooserOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel="Choose reciter"
+            accessibilityLabel={t('Choose reciter')}
           >
             <Ionicons name="mic-outline" size={14} color={colors.textSecondary} />
             <Text style={[styles.reciterNameText, { color: colors.textSecondary }]} numberOfLines={1}>
@@ -1655,8 +1655,8 @@ export default function QuranReaderScreen({
         onLongPress={handleLongPress}
         delayLongPress={1000}
         accessibilityRole="button"
-        accessibilityLabel={`Ayah ${item.numberInSurah}. Long press to add note`}
-        accessibilityHint="Long press ~1 second to add a reflection note"
+        accessibilityLabel={`${t('Ayah')} ${item.numberInSurah}. ${t('Long press to add note')}`}
+        accessibilityHint={t('Long press ~1 second to add a reflection note')}
       >
         {/* Action Header */}
         <View style={styles.ayahActionBar}>
@@ -1673,7 +1673,7 @@ export default function QuranReaderScreen({
               style={styles.actionBtn}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel={`Play Ayah ${item.numberInSurah}`}
+              accessibilityLabel={`${t('Play')} ${t('Ayah')} ${item.numberInSurah}`}
             >
               <Ionicons
                 name={isAyahPlaying ? 'pause-circle' : 'play-circle-outline'}
@@ -1706,7 +1706,7 @@ export default function QuranReaderScreen({
               style={styles.actionBtn}
               activeOpacity={0.75}
               accessibilityRole="button"
-              accessibilityLabel={`Tafsir for Ayah ${item.numberInSurah}`}
+              accessibilityLabel={`${t('Tafsir for')} ${t('Ayah')} ${item.numberInSurah}`}
             >
               <Ionicons
                 name={isTafsirOpen ? 'book' : 'book-outline'}
@@ -1937,7 +1937,7 @@ export default function QuranReaderScreen({
           style={[styles.retryBtn, { borderColor: colors.accent }]}
           onPress={() => loadSurah()}
           accessibilityRole="button"
-          accessibilityLabel="Retry loading surah"
+          accessibilityLabel={t('Retry loading surah')}
         >
           <Text style={[styles.retryBtnText, { color: colors.accent }]}>{retry}</Text>
         </TouchableOpacity>
@@ -1976,7 +1976,7 @@ export default function QuranReaderScreen({
           ]}
           onPress={onBack}
           accessibilityRole="button"
-          accessibilityLabel="Back to Quran"
+          accessibilityLabel={t('Back to Quran')}
         >
           <Ionicons name={getBackIcon('chevron')} size={backIconSize} color={colors.accent} />
           <Text style={[styles.backText, { color: colors.accent, fontSize: backTextSize }]}>Quran</Text>
@@ -1994,7 +1994,7 @@ export default function QuranReaderScreen({
               onPress={() => handleNavigateSurah(surahNumber - 1)}
               disabled={surahNumber <= 1}
               accessibilityRole="button"
-              accessibilityLabel="Previous Surah"
+              accessibilityLabel={t('Previous Surah')}
             >
               <Ionicons name={getBackIcon()} size={surahNavIconSize} color={colors.accent} />
             </TouchableOpacity>
@@ -2019,7 +2019,7 @@ export default function QuranReaderScreen({
               onPress={() => handleNavigateSurah(surahNumber + 1)}
               disabled={surahNumber >= 114}
               accessibilityRole="button"
-              accessibilityLabel="Next Surah"
+              accessibilityLabel={t('Next Surah')}
             >
               <Ionicons name={getForwardIcon()} size={surahNavIconSize} color={colors.accent} />
             </TouchableOpacity>
@@ -2037,7 +2037,7 @@ export default function QuranReaderScreen({
           ]}
           onPress={() => setToolsMenuOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Reading tools"
+          accessibilityLabel={t('Reading tools')}
           accessibilityState={{ expanded: toolsMenuOpen }}
           activeOpacity={0.7}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
@@ -2108,7 +2108,7 @@ export default function QuranReaderScreen({
                 onPress={() => setToolsMenuOpen(false)}
                 style={styles.toolsMenuCloseBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Close reading tools"
+                accessibilityLabel={t('Close reading tools')}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="remove" size={20} color={colors.textSecondary} />
@@ -2243,7 +2243,7 @@ export default function QuranReaderScreen({
                         onPress={() => handleAdjustFontSize(-QURAN_FONT_SIZE_STEP)}
                         disabled={fontSize <= QURAN_FONT_SIZE_MIN}
                         accessibilityRole="button"
-                        accessibilityLabel="Decrease font size"
+                        accessibilityLabel={t('Decrease font size')}
                         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       >
                         <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
@@ -2262,7 +2262,7 @@ export default function QuranReaderScreen({
                         onPress={() => handleAdjustFontSize(QURAN_FONT_SIZE_STEP)}
                         disabled={fontSize >= QURAN_FONT_SIZE_MAX}
                         accessibilityRole="button"
-                        accessibilityLabel="Increase font size"
+                        accessibilityLabel={t('Increase font size')}
                         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       >
                         <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
@@ -2711,7 +2711,7 @@ export default function QuranReaderScreen({
                 style={styles.closeBtn}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
-                accessibilityLabel="Close reciter selection"
+                accessibilityLabel={t('Close reciter selection')}
               >
                 <Ionicons name="close" size={22} color={colors.textPrimary} />
               </TouchableOpacity>
@@ -2726,7 +2726,7 @@ export default function QuranReaderScreen({
             >
               <Ionicons name="search" size={16} color={colors.textMuted} />
               <TextInput
-                placeholder="Search reciter name..."
+                placeholder={t('Search reciter name...')}
                 placeholderTextColor={colors.textMuted}
                 value={reciterSearch}
                 onChangeText={setReciterSearch}
@@ -3202,7 +3202,7 @@ export default function QuranReaderScreen({
               onPress={closeNoteComposer}
               activeOpacity={0.7}
               accessibilityRole="button"
-              accessibilityLabel="Dismiss note composer"
+              accessibilityLabel={t('Dismiss note composer')}
               hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
             >
               <View style={[styles.modalDragPill, { backgroundColor: colors.borderStrong }]} />
@@ -3223,7 +3223,7 @@ export default function QuranReaderScreen({
                 onPress={closeNoteComposer}
                 style={styles.closeBtn}
                 accessibilityRole="button"
-                accessibilityLabel="Close note composer"
+                accessibilityLabel={t('Close note composer')}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <Ionicons name="close" size={22} color={colors.textPrimary} />
@@ -3233,7 +3233,7 @@ export default function QuranReaderScreen({
             {/* Content Body */}
             <View style={styles.noteModalBody}>
               <TextInput
-                placeholder="Write your reflection, thoughts, or lessons from this verse..."
+                placeholder={t('Write your reflection, thoughts, or lessons from this verse...')}
                 placeholderTextColor={colors.textMuted}
                 multiline
                 numberOfLines={4}
@@ -3260,20 +3260,20 @@ export default function QuranReaderScreen({
                     { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
                   ]}
                   accessibilityRole="button"
-                  accessibilityLabel="Cancel note"
+                  accessibilityLabel={t('Cancel note')}
                 >
                   <Text style={[styles.noteModalBtnCancelText, { color: colors.textSecondary }]}>
-                    Cancel
+                    {t('Cancel')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSaveNote}
                   style={[styles.noteModalBtnSave, { backgroundColor: colors.accent }]}
                   accessibilityRole="button"
-                  accessibilityLabel="Save note"
+                  accessibilityLabel={t('Save note')}
                 >
                   <Text style={[styles.noteModalBtnSaveText, { color: colors.onAccent }]}>
-                    Save Note
+                    {t('Save Note')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -3324,7 +3324,7 @@ export default function QuranReaderScreen({
                   { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
                 ]}
               >
-                ISLAMIC
+                {isRTL() ? 'اسلامک' : 'ISLAMIC'}
               </Text>
             </View>
           </View>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
 import { Hairline } from './Hairline';
@@ -18,16 +19,16 @@ export function AyahCard({ ayah, onRefresh }: AyahCardProps) {
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>Ayah of the Day</Text>
+        <Text style={[styles.eyebrow, { color: colors.accent }]}>{t('Ayah of the Day')}</Text>
         {onRefresh && (
           <TouchableOpacity
             onPress={onRefresh}
             style={styles.refreshBtn}
             accessibilityRole="button"
-            accessibilityLabel="Refresh Ayah of the Day"
+            accessibilityLabel={t('Refresh Ayah of the Day')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.refreshText, { color: colors.accent }]}>Refresh</Text>
+            <Text style={[styles.refreshText, { color: colors.accent }]}>{t('Refresh')}</Text>
           </TouchableOpacity>
         )}
       </View>

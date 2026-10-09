@@ -424,7 +424,7 @@ export default function UmrahResourcesScreen({
               <View style={styles.mistakeHeader}>
                 <Ionicons name="alert-circle-outline" size={16} color="#EF4444" />
                 <Text style={[styles.mistakeTopic, { color: '#EF4444' }]}>
-                  {item.topic}
+                  {t(item.topic)}
                 </Text>
               </View>
 

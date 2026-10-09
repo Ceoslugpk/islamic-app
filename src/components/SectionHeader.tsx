@@ -1,5 +1,5 @@
 import React from 'react';
-import { I18nManager, StyleSheet, Text, View, ViewStyle, useWindowDimensions } from 'react-native';
+import { I18nManager, StyleSheet, Text, View, ViewStyle, TextStyle, useWindowDimensions } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { isRTL, t } from '../lib/i18n';
 
@@ -17,6 +17,7 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
   const { width } = useWindowDimensions();
   const isCompact = compact ?? width < 380;
   const isTiny = width <= 340;
+  const rtl = isRTL();
 
   const eyebrowFontSize = isTiny ? 9.5 : isCompact ? 10 : 11;
   const titleFontSize = isTiny ? 26 : isCompact ? 28 : 34;
@@ -25,12 +26,21 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
   const subtitleLineHeight = isCompact ? 16 : isTiny ? 18 : 21;
   const marginBottom = isCompact ? 12 : 24;
 
+  // Font/direction-dependent styles are computed at RENDER time (not in the
+  // module-level StyleSheet) so they follow the ACTIVE language: the module
+  // body runs before the persisted language resolves at boot, and live web
+  // switches re-render the tree. Fixes Urdu UI showing LTR fonts.
+  const rtlEyebrow: TextStyle = { fontFamily: rtl ? 'Amiri_400Regular' : 'Manrope_600SemiBold', letterSpacing: rtl ? 0 : 2, textTransform: rtl ? 'none' : 'uppercase' };
+  const rtlTitle: TextStyle = { fontFamily: rtl ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular', letterSpacing: rtl ? 0 : -0.3 };
+  const rtlSubtitle: TextStyle = { fontFamily: rtl ? 'Amiri_400Regular' : 'Manrope_400Regular' };
+
   return (
     <View style={[styles.wrap, { marginBottom }, style]}>
       {eyebrow ? (
         <Text
           style={[
             styles.eyebrow,
+            rtlEyebrow,
             { color: colors.accent, fontSize: eyebrowFontSize, marginBottom: isCompact ? 4 : 10 },
           ]}
           numberOfLines={1}
@@ -42,6 +52,7 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
       <Text
         style={[
           styles.title,
+          rtlTitle,
           {
             color: colors.textPrimary,
             fontSize: titleFontSize,
@@ -57,6 +68,7 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
         <Text
           style={[
             styles.subtitle,
+            rtlSubtitle,
             {
               color: colors.textSecondary,
               fontSize: subtitleFontSize,
@@ -78,17 +90,9 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: '100%',
   },
-  eyebrow: {
-    fontFamily: isRTL() ? 'Amiri_400Regular' : 'Manrope_600SemiBold',
-    letterSpacing: isRTL() ? 0 : 2,
-    textTransform: isRTL() ? 'none' : 'uppercase',
-  },
-  title: {
-    fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
-    letterSpacing: isRTL() ? 0 : -0.3,
-  },
+  eyebrow: {},
+  title: {},
   subtitle: {
-    fontFamily: isRTL() ? 'Amiri_400Regular' : 'Manrope_400Regular',
     maxWidth: 520,
   },
 });

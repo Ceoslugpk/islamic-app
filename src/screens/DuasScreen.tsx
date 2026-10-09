@@ -16,7 +16,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { t } from '../lib/i18n';
+import { t, isRTL } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -471,7 +471,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
                   { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
                 ]}
               >
-                ISLAMIC
+                {isRTL() ? 'اسلامک' : 'ISLAMIC'}
               </Text>
             </View>
           </View>

@@ -137,7 +137,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
     >
       <View style={styles.contentWrap}>
         <ScreenHeader
-          eyebrow="Dhikr & Remembrance"
+          eyebrow={t('Dhikr & Remembrance')}
           title="Tasbih"
           onBack={onBack}
           backLabel="Library"
@@ -317,7 +317,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
           ]}
           activeOpacity={0.75}
           accessibilityRole="button"
-          accessibilityLabel="Reset count to zero"
+          accessibilityLabel={t('Reset count to zero')}
         >
           <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
           <Text style={[styles.resetText, { color: colors.textSecondary }]}>

@@ -616,7 +616,7 @@ export default function HomeScreen({
             load(true, true);
           }}
           accessibilityRole="button"
-          accessibilityLabel="Retry loading prayer times"
+          accessibilityLabel={t('Retry loading prayer times')}
         >
           <Text style={{ color: colors.onAccent, fontWeight: '600', fontSize: 14 }}>{t(retry)}</Text>
         </TouchableOpacity>
@@ -763,7 +763,16 @@ export default function HomeScreen({
                   transform: [{ translateY: englishTranslateY }],
                 }}
               >
-                <Text style={[styles.heroEnglishName, { color: colors.textPrimary }]}>
+                <Text
+                  style={[
+                    styles.heroEnglishName,
+                    {
+                      color: colors.textPrimary,
+                      fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                      letterSpacing: isRTL() ? 0 : 0.5,
+                    },
+                  ]}
+                >
                   {t(next ? next.name : 'Fajr')}
                 </Text>
               </Animated.View>
@@ -1094,11 +1103,9 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   heroEnglishName: {
-    fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
     fontSize: 34,
     lineHeight: 38,
     textAlign: 'center',
-    letterSpacing: isRTL() ? 0 : 0.5,
   },
   heroTime: {
     fontFamily: 'InstrumentSerif_400Regular',

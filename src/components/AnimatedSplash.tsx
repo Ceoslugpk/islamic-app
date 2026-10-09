@@ -11,6 +11,7 @@ import {
 import Svg, { Path, Defs, Mask, Rect } from 'react-native-svg';
 
 import { useTheme } from '../lib/theme';
+import { isRTL, t } from '../lib/i18n';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -156,7 +157,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
     <Animated.View
       pointerEvents={isFading ? 'none' : 'auto'}
       style={[styles.root, { backgroundColor: bg, opacity: fadeOut }]}
-      accessibilityLabel="Islamic app splash"
+      accessibilityLabel={t('Islamic app splash')}
     >
       <View style={styles.center}>
         {/* The symbol grows from the slit via an SVG mask */}
@@ -201,14 +202,14 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
         <Animated.Text
           style={[styles.wordmark, { opacity: wordmarkOpacity, color: logoColor }]}
         >
-          ISLAMIC
+          {isRTL() ? 'اسلامک' : 'ISLAMIC'}
         </Animated.Text>
 
         {/* Tagline — appears at the very end (phase 2) */}
         <Animated.Text
           style={[styles.tagline, { color: accentColor, opacity: wordmarkOpacity }]}
         >
-          Your Daily Companion
+          {t('Your Daily Companion')}
         </Animated.Text>
       </View>
     </Animated.View>

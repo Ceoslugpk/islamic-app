@@ -160,7 +160,7 @@ export function DailyContentRail({
         showsHorizontalScrollIndicator={false}
         snapToInterval={snapInterval}
         decelerationRate="fast"
-        accessibilityLabel="Daily inspiration cards. Swipe left or right for Ayah, Hadith, and Names of God."
+        accessibilityLabel={t('Daily inspiration cards. Swipe left or right for Ayah, Hadith, and Names of God.')}
         contentContainerStyle={{
           paddingHorizontal: 0,
           gap,
@@ -207,7 +207,7 @@ export function DailyContentRail({
                     onPress={() => handleCardPress('ayah')}
                     style={styles.cardContent}
                     accessibilityRole="button"
-                    accessibilityLabel="Ayah of the Day. Tap to read."
+                    accessibilityLabel={t('Ayah of the Day. Tap to read.')}
                   >
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
@@ -263,7 +263,7 @@ export function DailyContentRail({
                     onPress={() => handleCardPress('hadith')}
                     style={styles.cardContent}
                     accessibilityRole="button"
-                    accessibilityLabel="Hadith of the Day. Tap to open Hadith Library."
+                    accessibilityLabel={t('Hadith of the Day. Tap to open Hadith Library.')}
                   >
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
@@ -313,7 +313,7 @@ export function DailyContentRail({
                     onPress={() => handleCardPress('name')}
                     style={styles.cardContent}
                     accessibilityRole="button"
-                    accessibilityLabel="Name of the Day. Tap to view 99 Names."
+                    accessibilityLabel={t('Name of the Day. Tap to view 99 Names.')}
                   >
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
@@ -351,7 +351,7 @@ export function DailyContentRail({
 
                     <View style={styles.footerRow}>
                       <Text style={[styles.referenceText, { color: colors.textSecondary }]}>
-                        Asma ul-Husna · The Divine Attributes
+                        {t('Asma ul-Husna · The Divine Attributes')}
                       </Text>
                     </View>
                   </TouchableOpacity>

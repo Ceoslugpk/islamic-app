@@ -762,7 +762,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
         <Section label="Language / زبان">
           <Row
             title="App Language"
-            desc={settings.language === 'ur' ? 'اردو (Urdu) · دائیں سے بائیں (RTL)' : 'English · Left to Right (LTR)'}
+            desc={settings.language === 'ur' ? t('اردو (Urdu) · دائیں سے بائیں (RTL)') : t('English · Left to Right (LTR)')}
             accessibilityRole="text"
           />
           <Segmented<'en' | 'ur'>
@@ -796,7 +796,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
         <Section label="Appearance">
           <Row
             title="Theme"
-            desc={themeMode === 'system' ? 'Follow system' : themeMode === 'ink' ? 'Dark (Ink)' : 'Light (Paper)'}
+            desc={themeMode === 'system' ? t('Follow system') : themeMode === 'ink' ? t('Dark (Ink)') : t('Light (Paper)')}
             accessibilityRole="text"
           />
           <Segmented<'system' | 'ink' | 'paper'>
@@ -884,11 +884,11 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             title="Preload Quran text"
             desc={
               preloadProgress.isComplete
-                ? `114/114 cached · ${flag} ${edition.name} ready offline`
+                ? t('{{n}}/114 cached · {{flag}} {{edition}} ready offline', { n: 114, flag, edition: edition.name })
                 : preloadProgress.isRunning
-                ? `Downloading text ${preloadProgress.cached}/114…` +
-                  (preloadProgress.currentSurah ? ` · Surah ${preloadProgress.currentSurah}` : '')
-                : `${preloadProgress.cached}/114 cached · ${flag} ${edition.name}`
+                ? t('Downloading text {{n}}/114…', { n: preloadProgress.cached }) +
+                  (preloadProgress.currentSurah ? ` · ${t('Surah')} ${preloadProgress.currentSurah}` : '')
+                : t('{{n}}/114 cached · {{flag}} {{edition}}', { n: preloadProgress.cached, flag, edition: edition.name })
             }
             right={
               <View style={styles.rightCluster}>
@@ -898,7 +898,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                     { color: settings.quranPreloadRequested ? colors.accent : colors.textMuted },
                   ]}
                 >
-                  {settings.quranPreloadRequested ? 'ON' : 'OFF'}
+                  {settings.quranPreloadRequested ? t('ON') : t('OFF')}
                 </Text>
                 <Toggle
                   checked={settings.quranPreloadRequested}
@@ -913,12 +913,16 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             title="Verify offline copy"
             desc={
               verifyingText
-                ? 'Reading local cache…'
+                ? t('Reading local cache…')
                 : textVerification?.ok
-                ? `Verified · ${textVerification.valid}/114 surahs valid`
+                ? t('Verified · {{n}}/114 surahs valid', { n: textVerification.valid })
                 : textVerification
-                ? `${textVerification.valid} valid · ${textVerification.missingSurahs.length} missing · ${textVerification.invalidSurahs.length} incomplete`
-                : 'Check that all 114 surahs are stored and readable offline'
+                ? t('{{valid}} valid · {{missing}} missing · {{incomplete}} incomplete', {
+                    valid: textVerification.valid,
+                    missing: textVerification.missingSurahs.length,
+                    incomplete: textVerification.invalidSurahs.length,
+                  })
+                : t('Check that all 114 surahs are stored and readable offline')
             }
             onPress={handleVerifyQuranText}
             accessibilityLabel="Verify locally stored Quran text"
@@ -928,7 +932,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
               ) : textVerification?.ok ? (
                 <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
               ) : (
-                <Text style={[styles.verifyAction, { color: colors.accent }]}>Check</Text>
+                <Text style={[styles.verifyAction, { color: colors.accent }]}>{t('Check')}</Text>
               )
             }
           />
@@ -937,7 +941,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
               <Hairline />
               <Row
                 title="Repair incomplete surahs"
-                desc={`Re-download only the ${textVerification.missingSurahs.length + textVerification.invalidSurahs.length} surahs that failed verification`}
+                desc={t('Re-download only the {{count}} surahs that failed verification', { count: textVerification.missingSurahs.length + textVerification.invalidSurahs.length })}
                 onPress={handleRepairQuranText}
                 accessibilityLabel="Re-download incomplete surahs"
                 right={<Ionicons name="cloud-download-outline" size={18} color={colors.accent} />}
@@ -1029,7 +1033,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                     { color: quranShowTranslation ? colors.accent : colors.textMuted },
                   ]}
                 >
-                  {quranShowTranslation ? 'ON' : 'OFF'}
+                  {quranShowTranslation ? t('ON') : t('OFF')}
                 </Text>
                 <Toggle
                   checked={quranShowTranslation}
@@ -1124,11 +1128,10 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
               <Ionicons name="phone-portrait-outline" size={18} color={colors.accent} />
               <View style={styles.rowFlex}>
                 <Text style={[styles.permissionBannerTitle, { color: colors.textPrimary }]}>
-                  Reminders deliver on your device
+                  {t('Reminders deliver on your device')}
                 </Text>
                 <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
-                  Browsers can’t schedule notifications, so these switches are saved as preferences. Open the app on
-                  iOS or Android and they’ll schedule there automatically.
+                  {t('Browsers can’t schedule notifications, so these switches are saved as preferences. Open the app on iOS or Android and they’ll schedule there automatically.')}
                 </Text>
               </View>
             </View>
@@ -1167,15 +1170,15 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                 }
               }}
               accessibilityRole="button"
-              accessibilityLabel="Notification permission needed. Tap to allow notifications."
+              accessibilityLabel={t('Notification permission needed. Tap to allow notifications.')}
             >
               <Ionicons name="notifications-outline" size={18} color={colors.accent} />
               <View style={styles.rowFlex}>
                 <Text style={[styles.permissionBannerTitle, { color: colors.textPrimary }]}>
-                  Notification permission needed
+                  {t('Notification permission needed')}
                 </Text>
                 <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
-                  Tap to allow notifications so prayer reminders and the Adhan can sound at prayer time.
+                  {t('Tap to allow notifications so prayer reminders and the Adhan can sound at prayer time.')}
                 </Text>
               </View>
               <Ionicons name={getForwardIcon()} size={16} color={colors.accent} />
@@ -1341,7 +1344,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                 </Text>
               </View>
             ) : (
-              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Unable to load health</Text>
+              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>{t('Unable to load health')}</Text>
             )}
           </View>
         </Section>
@@ -1376,10 +1379,9 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
               <View style={[styles.consentIconWrapSmall, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
                 <Ionicons name="shield-checkmark" size={20} color={colors.accent} />
               </View>
-              <Text style={[styles.consentTitleSmall, { color: colors.textPrimary }]}>Private & On-Device</Text>
+              <Text style={[styles.consentTitleSmall, { color: colors.textPrimary }]}>{t('Private & On-Device')}</Text>
               <Text style={[styles.consentBodySmall, { color: colors.textSecondary }]}>
-                Cycle & purity information is sensitive. Your data:{'\n'}• Stays on this device by default{'\n'}• Needs no
-                account or sign-in{'\n'}• Is never uploaded or included in analytics or logs{'\n'}• Can be deleted anytime
+                {t('Cycle & purity information is sensitive. Your data:\n• Stays on this device by default\n• Needs no account or sign-in\n• Is never uploaded or included in analytics or logs\n• Can be deleted anytime')}
               </Text>
               <View style={styles.consentBtnsInline}>
                 <TouchableOpacity
@@ -1387,14 +1389,14 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                   onPress={() => setConsentOpen(false)}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.consentBtnText, { color: colors.textSecondary }]}>Cancel</Text>
+                  <Text style={[styles.consentBtnText, { color: colors.textSecondary }]}>{t('Cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.consentBtn, styles.consentBtnPrimary, { backgroundColor: colors.accent }]}
                   onPress={confirmWomenEnable}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.consentBtnTextPrimary, { color: colors.bgBase }]}>I Understand</Text>
+                  <Text style={[styles.consentBtnTextPrimary, { color: colors.bgBase }]}>{t('I Understand')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1417,8 +1419,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
               >
                 <Ionicons name="shield-checkmark" size={16} color={colors.accent} />
                 <Text style={[styles.privacyNoteText, { color: colors.textSecondary }]}>
-                  Your cycle & purity data stays on this device by default. No account required — it is never uploaded
-                  or included in analytics or logs.
+                  {t('Your cycle & purity data stays on this device by default. No account required — it is never uploaded or included in analytics or logs.')}
                 </Text>
               </View>
 
@@ -1455,7 +1456,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                     accessibilityLabel={womenLockEnabled ? "Disable App lock PIN" : "Enable App lock PIN"}
                   >
                     <Text style={[styles.privacyActionText, { color: colors.accent }]}>
-                      {womenLockEnabled ? 'Disable' : 'Enable'}
+                      {womenLockEnabled ? t('Disable') : t('Enable')}
                     </Text>
                   </TouchableOpacity>
                 }
@@ -1464,14 +1465,14 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                 <Row
                   title="Change PIN"
                   onPress={() => setPinModalMode('change')}
-                  right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>Change</Text>}
+                  right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>{t('Change')}</Text>}
                 />
               ) : (
                 <Row
                   title="Set PIN"
                   desc="Add a 4-digit PIN to lock women's screens"
                   onPress={() => setPinModalMode('set')}
-                  right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>Set</Text>}
+                  right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>{t('Set')}</Text>}
                 />
               )}
 
@@ -1565,12 +1566,12 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                 title="Clear cycle history"
                 desc="Remove all period entries"
                 onPress={() =>
-                  Alert.alert("Clear Cycle History?", "This deletes all period/cycle entries. Other women's data is kept.", [
+                  Alert.alert(t("Clear Cycle History?"), t("This deletes all period/cycle entries. Other women's data is kept."), [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Clear', style: 'destructive', onPress: () => clearCycleHistory() },
                   ])
                 }
-                right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>Clear</Text>}
+                right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>{t('Clear')}</Text>}
               />
 
               {/* Delete all women's data */}
@@ -1580,7 +1581,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
                 desc="Erase everything, on this device"
                 danger
                 onPress={() =>
-                  Alert.alert("Delete Women's Data?", "This permanently deletes all cycle, purity, nifas and women's qada data from this device. This cannot be undone.", [
+                  Alert.alert(t("Delete Women's Data?"), t("This permanently deletes all cycle, purity, nifas and women's qada data from this device. This cannot be undone."), [
                     { text: 'Cancel', style: 'cancel' },
                     { text: 'Delete', style: 'destructive', onPress: () => { clearWomenData(); setWomenWorship(false); } },
                   ])
@@ -1786,7 +1787,7 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             padding: layout.isCompact ? 16 : 20,
           }}
         >
-          <Text style={[styles.missionEyebrow, { color: colors.accent }]}>SADAQAH JARIYAH</Text>
+          <Text style={[styles.missionEyebrow, { color: colors.accent }]}>{t('SADAQAH JARIYAH')}</Text>
           <View style={styles.missionList}>
             {MISSION_TRANSLATIONS.map((m) => {
               const isRtl = m.lang === 'العربية' || m.lang === 'اردو';
@@ -1819,14 +1820,14 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
 
           {/* Unified thanks to all providers */}
           <Text style={[styles.thanksText, { color: colors.textSecondary }]}>
-            {THANKS_TEXT}
+            {t(THANKS_TEXT)}
           </Text>
         </Card>
 
         {/* Footer */}
         <View style={[styles.footerWrap, { marginTop: layout.isCompact ? 16 : 20 }]}>
           <Text style={[styles.footer, { color: colors.textMuted }]}>
-            Made for Ummah ❤️
+            {t('Made for Ummah ❤️')}
           </Text>
           <Text style={[styles.footerArabic, { color: colors.textSecondary }]}>
             تَوَكَّلْتُ عَلَى ٱللَّٰهُ

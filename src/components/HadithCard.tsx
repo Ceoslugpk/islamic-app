@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { t } from '../lib/i18n';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
 import { Hairline } from './Hairline';
@@ -21,14 +22,14 @@ export function HadithCard({ hadith, onRefresh, loading }: HadithCardProps) {
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>Hadith of the Day</Text>
+        <Text style={[styles.eyebrow, { color: colors.accent }]}>{t('Hadith of the Day')}</Text>
         {onRefresh && (
           <TouchableOpacity
             onPress={onRefresh}
             disabled={loading}
             style={styles.refreshBtn}
             accessibilityRole="button"
-            accessibilityLabel={loading ? 'Loading hadith' : 'Show another hadith'}
+            accessibilityLabel={loading ? t('Loading hadith') : t('Show another hadith')}
             accessibilityState={{ disabled: !!loading }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
@@ -40,7 +41,7 @@ export function HadithCard({ hadith, onRefresh, loading }: HadithCardProps) {
                 { color: loading ? colors.textSecondary : colors.accent },
               ]}
             >
-              {loading ? 'Loading...' : 'Another'}
+              {loading ? t('Loading...') : t('Another')}
             </Text>
           </TouchableOpacity>
         )}

@@ -20,7 +20,7 @@ import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { t } from '../lib/i18n';
+import { t, isRTL } from '../lib/i18n';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { EmptyState } from '../components/EmptyState';
@@ -665,7 +665,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                   { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
                 ]}
               >
-                ISLAMIC
+                {isRTL() ? 'اسلامک' : 'ISLAMIC'}
               </Text>
             </View>
           </View>

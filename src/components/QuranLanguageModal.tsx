@@ -19,7 +19,7 @@ import { iconSizes } from '../lib/iconMap';
 import { QURAN_LANGUAGE_EDITIONS, QuranLanguageEdition } from '../lib/quranLanguages';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { Hairline } from './Hairline';
-import { isRTL } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 interface QuranLanguageModalProps {
   visible: boolean;
@@ -98,8 +98,8 @@ export function QuranLanguageModal({
               <Text style={[styles.eyebrow, { color: colors.accent }]}>
                 TRANSLATIONS ({QURAN_LANGUAGE_EDITIONS.length})
               </Text>
-              <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
-              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>{t(title)}</Text>
+              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t(subtitle)}</Text>
             </View>
             <TouchableOpacity
               style={[
@@ -109,7 +109,7 @@ export function QuranLanguageModal({
               onPress={onClose}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
-              accessibilityLabel="Close language selector"
+              accessibilityLabel={t('Close language selector')}
             >
               <Ionicons name="close" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -129,7 +129,7 @@ export function QuranLanguageModal({
                   styles.searchInput,
                   { color: colors.textPrimary, fontSize: isCompact ? 13 : 14 },
                 ]}
-                placeholder="Search language or translator..."
+                placeholder={t('Search language or translator...')}
                 placeholderTextColor={colors.textMuted}
                 value={search}
                 onChangeText={setSearch}
@@ -252,7 +252,7 @@ export function QuranLanguageModal({
                   No translations match &ldquo;{search}&rdquo;
                 </Text>
                 <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-                  Try searching by language name, country, or translator
+                  {t('Try searching by language name, country, or translator')}
                 </Text>
                 <TouchableOpacity
                   style={[styles.resetSearchBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
@@ -260,7 +260,7 @@ export function QuranLanguageModal({
                   accessibilityRole="button"
                   accessibilityLabel="Clear search"
                 >
-                  <Text style={[styles.resetSearchText, { color: colors.accent }]}>Clear Search</Text>
+                  <Text style={[styles.resetSearchText, { color: colors.accent }]}>{t('Clear Search')}</Text>
                 </TouchableOpacity>
               </View>
             }
