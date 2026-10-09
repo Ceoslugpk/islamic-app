@@ -23,7 +23,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { getForwardIcon, getBackIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
-import { t } from '../lib/i18n';
+import { t, prepareNativeLayoutDirection } from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import {
@@ -809,16 +809,17 @@ export default function SettingsScreen({
                 // reload stale). setLanguage is typed Promise<void>|void.
                 Promise.resolve(setLanguage(nextLang)).then(() => {
                   isSwitchingLanguageRef.current = false;
-                    if (!mountedRef.current) return;
-                    onPrepareReload?.();
-                    if (Platform.OS !== 'web') {
-                      reloadTimerRef.current = setTimeout(() => {
-                        reloadTimerRef.current = null;
-                        if (!mountedRef.current) return;
-                        Updates.reloadAsync().catch(() => DevSettings.reload());
-                      }, 400);
-                    }
-                  })
+                  if (!mountedRef.current) return;
+                  onPrepareReload?.();
+                  prepareNativeLayoutDirection(nextLang);
+                  if (Platform.OS !== 'web') {
+                    reloadTimerRef.current = setTimeout(() => {
+                      reloadTimerRef.current = null;
+                      if (!mountedRef.current) return;
+                      Updates.reloadAsync().catch(() => DevSettings.reload());
+                    }, 400);
+                  }
+                })
                   .catch(() => {
                     isSwitchingLanguageRef.current = false;
                     if (reloadTimerRef.current) {

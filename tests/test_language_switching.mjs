@@ -3,14 +3,14 @@
  * Self-contained (no native runtime dependencies).
  * Tests:
  *  1. Code structure / contract verification across settings.tsx, i18n.ts, SettingsScreen.tsx, and App.tsx
- *  2. en -> ur persist succeeds -> reload allowed
- *  3. ur -> en persist succeeds -> reload allowed
- *  4. Storage write failure -> reload blocked + no false success + state rolled back
+ *  2. en -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
+ *  3. ur -> en ordering: write -> readback verify -> forceRTL(false) -> reload
+ *  4. Storage write failure -> zero forceRTL, zero reload, state rolled back
+ *  4b. Readback mismatch -> zero forceRTL, zero reload, state rolled back
  *  5. Repeated rapid switching converges on final selected language without double-reload
  *  6. Stale-closure write impossibility (concurrent settings updates preserved)
- *  7. RTL flag derivation in both directions
- *  8. Side-effect ordering & resilience (quran lang / tafsir / audio run only after persist; failures do not lose language)
- *  9. Quran reading position preservation across language switch and boot
+ *  7. Side-effect ordering & resilience (quran lang / tafsir / audio run only after persist; failures do not lose language)
+ *  8. Quran reading position preservation across language switch and boot
  */
 
 import assert from 'node:assert/strict';
@@ -38,25 +38,21 @@ assert.ok(
   'settings.tsx must export persistLanguageChange helper'
 );
 
-// (b) settings.tsx uses functional state and awaits storage write without swallowing
+// (b) settings.tsx durable write & readback
 assert.ok(
   settingsCode.includes('await AsyncStorage.setItem') && settingsCode.includes('JSON.stringify(nextClean)'),
   'setLanguage must await direct AsyncStorage write with sanitized clean settings'
 );
 assert.ok(
-  settingsCode.includes("persist({\n          ...prev,\n          language: nextLang,"),
-  'setLanguage must use functional updater with nextLang'
+  settingsCode.includes('await AsyncStorage.getItem(STORAGE_KEY)'),
+  'setLanguage must read back from AsyncStorage to verify persisted language'
 );
 assert.ok(
   settingsCode.includes('throw err;'),
-  'setLanguage must re-throw on persistence failure so caller does not falsely reload'
+  'setLanguage must re-throw on persistence/readback failure so caller does not falsely reload'
 );
 
-// (c) settings.tsx rolls back optimistic state on write failure
-assert.ok(
-  settingsCode.includes("persist({\n            ...prev,\n            language: prevLang,"),
-  'setLanguage must revert React state back to prevLang on write failure'
-);
+// (c) settings.tsx rolls back / keeps previous state on failure
 assert.ok(
   settingsCode.includes('setAppLanguage(prevLang)'),
   'setLanguage must revert in-memory i18n language back to prevLang on write failure'
@@ -76,7 +72,21 @@ assert.ok(
   'Hydration catch block must fall back to getBootLanguage()'
 );
 
-// (e) SettingsScreen double-reload and error handling guards
+// (e) i18n.ts layout direction switch preparation helper
+assert.ok(
+  i18nCode.includes('export function prepareNativeLayoutDirection('),
+  'i18n.ts must export prepareNativeLayoutDirection helper'
+);
+assert.ok(
+  i18nCode.includes('I18nManager.forceRTL(isUrdu)') || i18nCode.includes("I18nManager.forceRTL(lang === 'ur')"),
+  'prepareNativeLayoutDirection must configure I18nManager.forceRTL for Urdu vs English'
+);
+
+// (f) SettingsScreen integration of prepareNativeLayoutDirection & reload guards
+assert.ok(
+  settingsScreenCode.includes('prepareNativeLayoutDirection(nextLang)'),
+  'SettingsScreen must call prepareNativeLayoutDirection(nextLang) before scheduling reload'
+);
 assert.ok(
   settingsScreenCode.includes('isSwitchingLanguageRef.current'),
   'SettingsScreen must guard against concurrent language switches with isSwitchingLanguageRef'
@@ -98,7 +108,7 @@ assert.ok(
   'SettingsScreen must call onPrepareReload before scheduling reload'
 );
 
-// (f) App.tsx boot reconciliation & reader unmount
+// (g) App.tsx boot reconciliation & reader unmount
 assert.ok(
   appCode.includes('onPrepareReload={handlePrepareReload}'),
   'App.tsx Root must wire onPrepareReload into SettingsModal'
@@ -116,7 +126,7 @@ assert.ok(
   'App.tsx boot effect must apply RTL according to persisted language'
 );
 
-// (g) i18n.ts RTL and resolution
+// (h) i18n.ts resolution contract
 assert.ok(
   i18nCode.includes('resolvePersistedLanguage(forceFresh = false)'),
   'i18n.ts resolvePersistedLanguage must support forceFresh parameter'
@@ -130,18 +140,45 @@ console.log('  ✓ Static contracts in settings.tsx, i18n.ts, SettingsScreen.tsx
 
 
 // ---------------------------------------------------------------------------
-// 2. In-Memory Mock Harness & State Machine Simulation
+// 2. Dynamic Behavioral Test Suite
 // ---------------------------------------------------------------------------
 console.log('\n--- 2. Dynamic Behavioral Test Suite ---');
+
+class MockI18nManager {
+  constructor(initialRTL = false) {
+    this.isRTL = initialRTL;
+    this.allowRTLCalls = [];
+    this.forceRTLCalls = [];
+  }
+
+  allowRTL(allow) {
+    this.allowRTLCalls.push(allow);
+  }
+
+  forceRTL(force) {
+    this.forceRTLCalls.push(force);
+    this.isRTL = force;
+  }
+}
 
 class MockStorage {
   constructor() {
     this.store = new Map();
     this.failNextWrite = false;
+    this.failNextRead = false;
+    this.readMismatchLang = null;
     this.writeLatencyMs = 0;
   }
 
   async getItem(key) {
+    if (this.failNextRead) {
+      throw new Error('AsyncStorage disk read error (simulated ReadFail)');
+    }
+    if (key === STORAGE_KEY && this.readMismatchLang !== null) {
+      const existing = this.store.get(key);
+      const parsed = existing ? JSON.parse(existing) : { ...DEFAULT_SETTINGS };
+      return JSON.stringify({ ...parsed, language: this.readMismatchLang });
+    }
     return this.store.has(key) ? this.store.get(key) : null;
   }
 
@@ -218,13 +255,10 @@ function computeNextSettings(prev, nextLang) {
   });
 }
 
-function isRTL(lang) {
-  return lang === 'ur';
-}
-
 class SettingsHarness {
-  constructor(storage) {
+  constructor(storage, i18nManager = new MockI18nManager()) {
     this.storage = storage;
+    this.i18n = i18nManager;
     this.settings = { ...DEFAULT_SETTINGS };
     this.bootLang = 'en';
     this.activeLang = 'en';
@@ -235,6 +269,7 @@ class SettingsHarness {
     this.lastError = null;
     this.readerUnmounted = false;
     this.sideEffectsRun = [];
+    this.operationLog = [];
   }
 
   async boot() {
@@ -250,6 +285,14 @@ class SettingsHarness {
     if (!raw || !JSON.parse(raw).language) {
       this.settings.language = this.bootLang;
     }
+    this.i18n.isRTL = this.bootLang === 'ur';
+  }
+
+  prepareNativeLayoutDirection(lang) {
+    const isUrdu = lang === 'ur';
+    this.i18n.allowRTL(true);
+    this.i18n.forceRTL(isUrdu);
+    this.operationLog.push(`forceRTL:${isUrdu}`);
   }
 
   async runSideEffects(nextLang) {
@@ -281,21 +324,33 @@ class SettingsHarness {
     const currentSnapshot = { ...this.settings };
     const nextClean = computeNextSettings(currentSnapshot, nextLang);
 
-    // Optimistic update
-    this.activeLang = nextLang;
-    this.settings = computeNextSettings(this.settings, nextLang);
-
-    // Durability gate: await direct write
+    // 1. Direct durable write to storage
     try {
       await this.storage.setItem(STORAGE_KEY, JSON.stringify(nextClean));
+      this.operationLog.push(`write:${nextLang}`);
+
+      // 2. Read back and verify stored language
+      const raw = await this.storage.getItem(STORAGE_KEY);
+      if (!raw) {
+        throw new Error('Storage readback failed: empty settings');
+      }
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.language !== nextLang) {
+        throw new Error(`Storage readback verification mismatch: expected ${nextLang}, got ${parsed?.language}`);
+      }
+      this.operationLog.push(`readback_verify:${parsed.language}`);
     } catch (err) {
-      // Rollback on failure
+      // Revert/keep state on failure
       this.settings = computeNextSettings(this.settings, prevLang);
       this.activeLang = prevLang;
       throw err;
     }
 
-    // Side-effects run ONLY AFTER storage write succeeds
+    // 3. Durability verified: update state
+    this.settings = nextClean;
+    this.activeLang = nextLang;
+
+    // 4. Side-effects run ONLY AFTER storage write & readback succeed
     await this.runSideEffects(nextLang);
   }
 
@@ -316,10 +371,15 @@ class SettingsHarness {
       // Unmount reader / flush position before reload
       this.readerUnmounted = true;
 
+      // CRITICAL: prepare layout direction preference AFTER storage write succeeds
+      // and IMMEDIATELY BEFORE scheduling reload
+      this.prepareNativeLayoutDirection(nextLang);
+
       // Schedule reload
       this.reloadTimer = setTimeout(() => {
         this.reloadScheduled = true;
         this.reloadLang = nextLang;
+        this.operationLog.push(`reload:${nextLang}`);
       }, 50);
     } catch (_err) {
       this.isSwitching = false;
@@ -333,19 +393,30 @@ class SettingsHarness {
 }
 
 // ---------------------------------------------------------------------------
-// Test 2: en -> ur persist succeeds -> reload allowed
+// Test 2: en -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
-  const harness = new SettingsHarness(storage);
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
   await harness.boot();
   assert.strictEqual(harness.settings.language, 'en');
+  assert.strictEqual(i18n.isRTL, false);
 
   await harness.onUserSelectLanguage('ur');
-  await new Promise((r) => setTimeout(r, 60));
+  await new Promise((r) => setTimeout(r, 70));
+
+  // Assert exact sequence of operations
+  assert.deepStrictEqual(harness.operationLog, [
+    'write:ur',
+    'readback_verify:ur',
+    'forceRTL:true',
+    'reload:ur',
+  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
 
   assert.strictEqual(harness.settings.language, 'ur');
   assert.strictEqual(harness.activeLang, 'ur');
+  assert.strictEqual(i18n.isRTL, true);
   assert.strictEqual(harness.reloadScheduled, true);
   assert.strictEqual(harness.reloadLang, 'ur');
   assert.strictEqual(harness.lastError, null);
@@ -353,69 +424,117 @@ class SettingsHarness {
 
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ur');
-  assert.strictEqual(isRTL(stored.language), true);
 
-  console.log('  ✓ Test 2 passed: en -> ur persist succeeds and reload is scheduled with RTL layout.');
+  console.log('  ✓ Test 2 passed: en -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 3: ur -> en persist succeeds -> reload allowed
+// Test 3: ur -> en ordering: write -> readback verify -> forceRTL(false) -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
   await storage.setItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_SETTINGS, language: 'ur' }));
-  const harness = new SettingsHarness(storage);
+  const i18n = new MockI18nManager(true);
+  const harness = new SettingsHarness(storage, i18n);
   await harness.boot();
   assert.strictEqual(harness.bootLang, 'ur');
   assert.strictEqual(harness.settings.language, 'ur');
+  assert.strictEqual(i18n.isRTL, true);
 
   await harness.onUserSelectLanguage('en');
-  await new Promise((r) => setTimeout(r, 60));
+  await new Promise((r) => setTimeout(r, 70));
+
+  // Assert exact sequence of operations
+  assert.deepStrictEqual(harness.operationLog, [
+    'write:en',
+    'readback_verify:en',
+    'forceRTL:false',
+    'reload:en',
+  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
 
   assert.strictEqual(harness.settings.language, 'en');
   assert.strictEqual(harness.activeLang, 'en');
+  assert.strictEqual(i18n.isRTL, false);
   assert.strictEqual(harness.reloadScheduled, true);
   assert.strictEqual(harness.reloadLang, 'en');
   assert.strictEqual(harness.lastError, null);
 
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'en');
-  assert.strictEqual(isRTL(stored.language), false);
 
-  console.log('  ✓ Test 3 passed: ur -> en persist succeeds and reload is scheduled with LTR layout.');
+  console.log('  ✓ Test 3 passed: ur -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 4: Storage write failure -> reload blocked + no false success + rolled back
+// Test 4: Storage write failure -> zero forceRTL, zero reload, state rolled back
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
-  const harness = new SettingsHarness(storage);
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
   await harness.boot();
   assert.strictEqual(harness.settings.language, 'en');
 
-  // Inject failure
+  // Inject write failure
   storage.failNextWrite = true;
 
   await harness.onUserSelectLanguage('ur');
-  await new Promise((r) => setTimeout(r, 60));
+  await new Promise((r) => setTimeout(r, 70));
 
   // Reload must NOT be scheduled
   assert.strictEqual(harness.reloadScheduled, false);
   assert.strictEqual(harness.reloadLang, null);
 
-  // State must NOT claim urdu (no false success; rolled back to 'en')
+  // forceRTL must NEVER have been called
+  assert.strictEqual(i18n.forceRTLCalls.length, 0, 'forceRTL must not be called when write fails');
+  assert.strictEqual(i18n.isRTL, false);
+
+  // State must NOT claim urdu (rolled back / kept at 'en')
   assert.strictEqual(harness.settings.language, 'en');
   assert.strictEqual(harness.activeLang, 'en');
 
-  // Error notice must be displayed
+  // Error notice displayed
   assert.strictEqual(harness.lastError, 'Still could not load. Try again later.');
 
   // Storage key must not contain false urdu
   const stored = storage.dump(STORAGE_KEY);
   assert.ok(!stored || stored.language === 'en');
 
-  console.log('  ✓ Test 4 passed: Persistence failure blocks reload, reverts optimistic state, and shows error.');
+  console.log('  ✓ Test 4 passed: Write failure results in zero forceRTL, zero reload, and clean rollback.');
+}
+
+// ---------------------------------------------------------------------------
+// Test 4b: Readback verification failure -> zero forceRTL, zero reload, rollback
+// ---------------------------------------------------------------------------
+{
+  const storage = new MockStorage();
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
+  await harness.boot();
+  assert.strictEqual(harness.settings.language, 'en');
+
+  // Simulate write succeeding on disk but readback mismatching (e.g. stale disk read)
+  storage.readMismatchLang = 'en';
+
+  await harness.onUserSelectLanguage('ur');
+  await new Promise((r) => setTimeout(r, 70));
+
+  // Reload must NOT be scheduled
+  assert.strictEqual(harness.reloadScheduled, false);
+  assert.strictEqual(harness.reloadLang, null);
+
+  // forceRTL must NEVER have been called because readback verification failed
+  assert.strictEqual(i18n.forceRTLCalls.length, 0, 'forceRTL must not be called when readback fails/mismatches');
+  assert.strictEqual(i18n.isRTL, false);
+
+  // State kept at 'en'
+  assert.strictEqual(harness.settings.language, 'en');
+  assert.strictEqual(harness.activeLang, 'en');
+
+  // Error notice displayed
+  assert.strictEqual(harness.lastError, 'Still could not load. Try again later.');
+
+  console.log('  ✓ Test 4b passed: Readback mismatch results in zero forceRTL, zero reload, and clean rollback.');
 }
 
 // ---------------------------------------------------------------------------
@@ -424,11 +543,11 @@ class SettingsHarness {
 {
   const storage = new MockStorage();
   storage.writeLatencyMs = 10;
-  const harness = new SettingsHarness(storage);
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
   await harness.boot();
 
-  // Rapidly trigger en -> ur, then ur -> en, then en -> ur
-  // Each subsequent switch waits for current in-flight switch or is queued safely
+  // Rapidly trigger switches
   const p1 = harness.onUserSelectLanguage('ur');
   // Attempting concurrent switch while in-flight is rejected by guard
   const p2 = harness.onUserSelectLanguage('en');
@@ -442,6 +561,7 @@ class SettingsHarness {
   await new Promise((r) => setTimeout(r, 80));
 
   assert.strictEqual(harness.settings.language, 'ur');
+  assert.strictEqual(i18n.isRTL, true);
   assert.strictEqual(harness.reloadScheduled, true);
   assert.strictEqual(harness.reloadLang, 'ur');
 
@@ -465,11 +585,10 @@ class SettingsHarness {
 
   // Now switch language to 'ur'
   await harness.onUserSelectLanguage('ur');
-  await new Promise((r) => setTimeout(r, 60));
+  await new Promise((r) => setTimeout(r, 70));
 
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ur');
-  // Crucial check: madhab and timeFormat must NOT be clobbered back to defaults ('shafi' / '12h')
   assert.strictEqual(stored.madhab, 'hanafi', 'Madhab must remain hanafi (not overwritten by stale closure)');
   assert.strictEqual(stored.timeFormat, '24h', 'TimeFormat must remain 24h (not overwritten by stale closure)');
 
@@ -485,7 +604,7 @@ class SettingsHarness {
   await harness.boot();
 
   await harness.onUserSelectLanguage('ur');
-  await new Promise((r) => setTimeout(r, 60));
+  await new Promise((r) => setTimeout(r, 70));
 
   // Verify side-effects executed in order
   assert.deepStrictEqual(harness.sideEffectsRun, [
@@ -520,7 +639,7 @@ class SettingsHarness {
 
   // Switch language from en to ur
   await harness.onUserSelectLanguage('ur');
-  await new Promise((r) => setTimeout(r, 60));
+  await new Promise((r) => setTimeout(r, 70));
 
   // Verify reader position keys were NOT clobbered or cleared
   const posAfter = JSON.parse(await storage.getItem('quran-last-reading'));

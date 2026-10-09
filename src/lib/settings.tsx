@@ -485,10 +485,18 @@ export async function persistLanguageChange(
   nextLang: AppLanguage,
   storage: {
     setItem: (key: string, value: string) => Promise<void>;
+    getItem?: (key: string) => Promise<string | null>;
   } = AsyncStorage
 ): Promise<AppSettings> {
   const nextSettings = computeNextLanguageSettings(currentSettings, nextLang);
   await storage.setItem(STORAGE_KEY, JSON.stringify(nextSettings));
+  if (storage.getItem) {
+    const raw = await storage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    if (!parsed || parsed.language !== nextLang) {
+      throw new Error(`Persisted language verification mismatch: expected "${nextLang}", got "${parsed?.language}"`);
+    }
+  }
   return nextSettings;
 }
 
@@ -696,47 +704,45 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Persist + apply the language FIRST so a reload (triggered by the caller)
-      // always boots in the new language. Side-effects (quran lang / tafsir /
-      // audio edition) run after — they must never delay the persist, or the
-      // reload races ahead and the app comes back in the OLD language.
-      setAppLanguage(nextLang);
-      setSettings((prev) =>
-        persist({
-          ...prev,
-          language: nextLang,
-        })
-      );
-
-      // Durability gate: the caller (SettingsScreen) triggers a native reload
-      // once this promise resolves. The fire-and-forget persist() above is
-      // supplemented with an awaited direct write of the clean sanitized settings
-      // object. Must throw on failure so the caller does NOT trigger a reload.
+      // Snapshot settings and compute sanitized clean state once.
+      // Do NOT use generic fire-and-forget persist() for the language change.
       const currentSnapshot = settingsRef.current;
       const nextClean = computeNextLanguageSettings(currentSnapshot, nextLang);
-      settingsRef.current = nextClean;
-      preloadRequestedMem = nextClean.quranPreloadRequested;
 
       try {
+        // Direct durable write to storage
         await AsyncStorage.setItem(
           STORAGE_KEY,
           JSON.stringify(nextClean)
         );
+
+        // Read back and verify stored language exactly matches nextLang
+        const raw = await AsyncStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          throw new Error('Storage readback failed: empty settings');
+        }
+        const parsed = JSON.parse(raw);
+        if (!parsed || parsed.language !== nextLang) {
+          throw new Error(
+            `Storage readback verification mismatch: expected "${nextLang}", got "${parsed?.language}"`
+          );
+        }
       } catch (err) {
-        // Roll back optimistic state on persistence failure
-        setSettings((prev) =>
-          persist({
-            ...prev,
-            language: prevLang,
-          })
-        );
+        // Keep/revert previous React and i18n state on failure
         settingsRef.current = sanitizeSettings({ ...settingsRef.current, language: prevLang });
         preloadRequestedMem = settingsRef.current.quranPreloadRequested;
+        setSettings((prev) => ({ ...prev, language: prevLang }));
         setAppLanguage(prevLang);
         throw err;
       }
 
-      // Side-effects run ONLY AFTER the main language write has succeeded.
+      // Readback succeeded: update in-memory refs, mirror, React state, and i18n
+      settingsRef.current = nextClean;
+      preloadRequestedMem = nextClean.quranPreloadRequested;
+      setSettings(nextClean);
+      setAppLanguage(nextLang);
+
+      // Side-effects run ONLY AFTER the main verified language write.
       // Side-effect write failures are trapped locally so the main language write is never lost.
       let nextTafsir: string | undefined;
       if (nextLang === 'ur') {
@@ -780,7 +786,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (nextTafsir) {
-        setSettings((prev) => persist({ ...prev, tafsirSourceId: nextTafsir }));
+        // Ensure subsequent tafsir update preserves nextLang and cannot overwrite it with old language
+        setSettings((prev) =>
+        persist({
+          ...prev,
+          language: nextLang,
+          tafsirSourceId: nextTafsir,
+        }));
       }
     },
   };

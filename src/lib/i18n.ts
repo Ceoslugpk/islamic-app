@@ -86,6 +86,31 @@ export function applyRTL(isRTL: boolean): void {
 }
 
 /**
+ * Switch preparation helper called AFTER persistent storage is verified and
+ * IMMEDIATELY BEFORE Updates.reloadAsync().
+ *
+ * On native: layout direction changes only take effect on the NEXT native/JS reload.
+ * Calling allowRTL(true) and forceRTL(lang === 'ur') writes the preference into
+ * native storage (SharedPreferences / NSUserDefaults) before reloadAsync restarts the JS engine,
+ * guaranteeing the next reload boots directly into the correct layout direction (Urdu RTL vs English LTR).
+ * On web: updates document element dir/lang immediately.
+ * Does NOT trigger reload itself.
+ */
+export function prepareNativeLayoutDirection(lang: AppLanguage): void {
+  const isUrdu = lang === 'ur';
+  try {
+    I18nManager.allowRTL(true);
+    I18nManager.forceRTL(isUrdu);
+  } catch {
+    // Ignore native module errors in environments where not supported
+  }
+  if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    document.documentElement.dir = isUrdu ? 'rtl' : 'ltr';
+    document.documentElement.lang = isUrdu ? 'ur' : 'en';
+  }
+}
+
+/**
  * Switch app UI language and flip layout direction.
  * The caller (settings) is responsible for persisting + triggering the native
  * reload; the reload re-boots with the persisted language + direction. On web
@@ -99,8 +124,9 @@ export function setAppLanguage(lang: AppLanguage): void {
     document.documentElement.dir = lang === 'ur' ? 'rtl' : 'ltr';
     document.documentElement.lang = lang === 'ur' ? 'ur' : 'en';
   }
-  // Native: direction is applied at boot (module load / App bootstrap). Do NOT
-  // forceRTL here — calling it after UI mount leaves RTL stuck on Android.
+  // Native: layout direction changes take effect on the NEXT native/JS reload.
+  // SettingsScreen calls prepareNativeLayoutDirection(lang) after storage is verified
+  // and immediately before Updates.reloadAsync().
 }
 
 export function getCurrentLanguage(): AppLanguage {
