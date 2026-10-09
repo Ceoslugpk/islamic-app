@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
-  I18nManager,
+  AppState,
   StyleSheet,
   Text,
   View,
@@ -12,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
-import { getContinueReadingPosition, ReadingPosition } from '../lib/continuing';
+import { getContinueReadingPosition, addReadingPositionListener, ReadingPosition } from '../lib/continuing';
 import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { Card } from './Card';
@@ -35,8 +35,7 @@ export function ContinueReadingCard({
   const { colors } = useTheme();
   const { haptic } = useHaptics();
   const [position, setPosition] = useState<ReadingPosition | null>(null);
-  const [loading, setLoading] = useState(true);
-  const scaleAnim = React.useRef(new Animated.Value(1)).current;
+  const scaleAnim = useMemo(() => new Animated.Value(1), []);
 
   const loadPosition = useCallback(async () => {
     try {
@@ -44,13 +43,33 @@ export function ContinueReadingCard({
       setPosition(pos);
     } catch {
       setPosition(null);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadPosition();
+    let mounted = true;
+    (async () => {
+      try {
+        const pos = await getContinueReadingPosition();
+        if (mounted) setPosition(pos);
+      } catch {
+        if (mounted) setPosition(null);
+      }
+    })();
+
+    const unsub = addReadingPositionListener(() => {
+      if (mounted) loadPosition();
+    });
+    const appSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && mounted) {
+        loadPosition();
+      }
+    });
+    return () => {
+      mounted = false;
+      unsub();
+      appSub.remove();
+    };
   }, [loadPosition]);
 
   const handlePressIn = () => {
@@ -71,8 +90,15 @@ export function ContinueReadingCard({
     }).start();
   };
 
-  const handlePress = () => {
+  const handlePress = async () => {
     haptic('light');
+    try {
+      const latest = await getContinueReadingPosition();
+      if (latest && latest.surah > 0) {
+        onOpenReader?.(latest.surah, latest.ayah);
+        return;
+      }
+    } catch {}
     if (position && position.surah > 0) {
       onOpenReader?.(position.surah, position.ayah);
     } else if (onOpenQuranTab) {

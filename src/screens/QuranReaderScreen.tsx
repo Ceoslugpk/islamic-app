@@ -43,7 +43,7 @@ import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
-import { clearReadingMarker, getReadingMarker, getReadingPosition, saveReadingMarker, saveReadingPosition, ReadingPosition } from '../lib/continuing';
+import { clearReadingMarker, getReadingMarker, getReadingPosition, saveReadingMarker, saveReadingPosition, getReadingMarkerSync, addReadingPositionListener, ReadingPosition, ReadingMarker } from '../lib/continuing';
 import { recordQuranReadingSession } from '../lib/quranProgress';
 import { recordSurahVisit } from '../lib/recentSurahs';
 import { preloadRemainingSurahsForEdition } from '../lib/quranPreloader';
@@ -345,8 +345,13 @@ export default function QuranReaderScreen({
   const userScrollClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Guard: positioning (jump to saved/initial ayah) happens exactly once per mount
   const positionedRef = useRef<boolean>(false);
+  const isProgrammaticPositioningRef = useRef<boolean>(false);
   const [currentVisibleAyah, setCurrentVisibleAyah] = useState<number>(() => {
     if (initialAyah && initialAyah > 1) return initialAyah;
+    const syncMarker = getReadingMarkerSync();
+    if (syncMarker && syncMarker.surah === safeSurahNumber && syncMarker.ayah > 1) {
+      return syncMarker.ayah;
+    }
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
     return saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : (initialAyah || 1);
   });
@@ -361,8 +366,13 @@ export default function QuranReaderScreen({
     let target = 1;
     if (initialAyah && initialAyah > 1) target = initialAyah;
     else {
-      const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
-      if (saved && typeof saved.ayah === 'number' && saved.ayah > 1) target = saved.ayah;
+      const syncMarker = getReadingMarkerSync();
+      if (syncMarker && syncMarker.surah === safeSurahNumber && syncMarker.ayah > 1) {
+        target = syncMarker.ayah;
+      } else {
+        const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
+        if (saved && typeof saved.ayah === 'number' && saved.ayah > 1) target = saved.ayah;
+      }
     }
     const maxAyah = SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7;
     return Math.min(target, maxAyah);
@@ -375,10 +385,14 @@ export default function QuranReaderScreen({
 
   useEffect(() => {
     surahNumberRef.current = safeSurahNumber;
+    const syncMarker = getReadingMarkerSync();
+    const markerAyah = syncMarker && syncMarker.surah === safeSurahNumber ? syncMarker.ayah : undefined;
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
     const resolvedAyah = (initialAyah && initialAyah > 1)
       ? initialAyah
-      : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
+      : (markerAyah && markerAyah > 1
+        ? markerAyah
+        : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1));
     lastSavedAyahRef.current = resolvedAyah;
     setCurrentVisibleAyah(resolvedAyah);
     // Position tracking stays off while the positioning jump settles. The jump
@@ -780,7 +794,7 @@ export default function QuranReaderScreen({
       // runs with positionedRef=false and completes in one frame (animated:
       // false), so treat small, non-user drift from a landing jump as neutral
       // instead of marking the user as scrolling (which would block the retry).
-      if (Math.abs(dy) > 2 && !positionedRef.current) {
+      if (Math.abs(dy) > 2 && !positionedRef.current && !isProgrammaticPositioningRef.current) {
         userScrollingRef.current = true;
         if (userScrollClearTimerRef.current) clearTimeout(userScrollClearTimerRef.current);
         userScrollClearTimerRef.current = setTimeout(() => {
@@ -811,6 +825,7 @@ export default function QuranReaderScreen({
       }
 
       if (readingMode === 'mushaf') {
+        if (!trackingReadyRef.current) return;
         const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
         const scrollable = contentSize.height - layoutMeasurement.height;
         if (scrollable > 0) {
@@ -867,26 +882,35 @@ export default function QuranReaderScreen({
         if (mounted) setActiveMarker(m);
       })
       .catch(() => {});
+    const unsub = addReadingPositionListener(() => {
+      getReadingMarker()
+        .then((m) => {
+          if (mounted) setActiveMarker(m);
+        })
+        .catch(() => {});
+    });
     return () => {
       mounted = false;
+      unsub();
     };
   }, []);
 
   /** Per-ayah marker setter (from the ayah action-row flag button). Toggles:
    *  tap on the marked ayah clears the marker; tap on another ayah moves it. */
   const handleSetReadingMarkerAt = useCallback(
-    (ayah: number) => {
+    async (ayah: number) => {
       const isCurrent = activeMarker?.surah === safeSurahNumber && activeMarker.ayah === ayah;
       if (isCurrent) {
         clearReadingMarker();
         setActiveMarker(null);
       } else {
-        saveReadingMarker(safeSurahNumber, ayah);
-        setActiveMarker({ surah: safeSurahNumber, ayah, savedAt: Date.now() });
+        const markerData: ReadingMarker = { surah: safeSurahNumber, ayah, savedAt: Date.now(), manual: true };
+        setActiveMarker(markerData);
+        await saveReadingMarker(safeSurahNumber, ayah);
       }
       haptic('selection');
     },
-    [safeSurahNumber, activeMarker]
+    [safeSurahNumber, activeMarker, haptic]
   );
 
   /** True when the given ayah (in this surah) is the active reading marker. */
@@ -939,7 +963,16 @@ export default function QuranReaderScreen({
       // Gate BEFORE updating the display: during the initial positioning jump
       // (trackingReadyRef false), the first viewability event must not override
       // the target ayah shown in the header.
-      if (!trackingReadyRef.current) return;
+      if (!trackingReadyRef.current) {
+        const hasTarget = viewableItems.some((v) => v.item?.numberInSurah === targetAyahForPosition);
+        if (hasTarget) {
+          positionedRef.current = true;
+          isProgrammaticPositioningRef.current = false;
+          trackingReadyRef.current = true;
+        } else {
+          return;
+        }
+      }
       setCurrentVisibleAyah(ayahNumber);
       if (ayahNumber === lastSavedAyahRef.current) return;
       lastSavedAyahRef.current = ayahNumber;
@@ -949,7 +982,7 @@ export default function QuranReaderScreen({
         saveLastReadPosition(surahNumberRef.current, ayahNumber, surah.englishName);
       }
     },
-    [surah?.englishName]
+    [surah?.englishName, targetAyahForPosition]
   );
 
   // Load preferences and reciters
@@ -1034,8 +1067,14 @@ export default function QuranReaderScreen({
       }
 
       // Save last read position
+      const syncMarker = getReadingMarkerSync();
+      const markerAyah = syncMarker && syncMarker.surah === safeSurahNumber ? syncMarker.ayah : undefined;
       const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
-      const startAyah = initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
+      const startAyah = initialAyah && initialAyah > 1
+        ? initialAyah
+        : (markerAyah && markerAyah > 1
+          ? markerAyah
+          : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1));
       saveLastReadPosition(safeSurahNumber, startAyah, data?.englishName);
 
       // Continue Reading position + Recently Read entry
@@ -1053,7 +1092,7 @@ export default function QuranReaderScreen({
       // user resumes at a saved position then backs out before scrolling.
       // Only advance it when the entered ayah is genuinely ahead.
       const prevPos = await getReadingPosition();
-      if (!prevPos || startAyah > prevPos.ayah) {
+      if (!prevPos || (prevPos.surah === safeSurahNumber ? startAyah > prevPos.ayah : true)) {
         saveReadingPosition(safeSurahNumber, startAyah);
       }
       if (data) {
@@ -1118,7 +1157,7 @@ export default function QuranReaderScreen({
     if (userScrollingRef.current) return;
 
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
-    const targetAyah = initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1);
+    const targetAyah = targetAyahForPosition || (initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1));
     if (targetAyah <= 1) {
       // Nothing to jump to — start reading at ayah 1; tracking can start now.
       trackingReadyRef.current = true;
@@ -1142,6 +1181,7 @@ export default function QuranReaderScreen({
       // positioned after the first successful retry. This avoids the previous
       // bug where a swallowed throw left positionedRef=true and never retried.
       try {
+        isProgrammaticPositioningRef.current = true;
         listRef.current?.scrollToIndex({ index: targetIndex, animated: false });
         // Mark positioned only on the RETRY path (onScrollToIndexFailed owns
         // the retry loop and sets this itself). A synchronous success does NOT
@@ -1153,10 +1193,11 @@ export default function QuranReaderScreen({
         // leave positionedRef false — onScrollToIndexFailed retries
       }
     }
-  }, [surah, safeSurahNumber, initialAyah, readingMode, initialListIndex]);
+  }, [surah, safeSurahNumber, initialAyah, readingMode, initialListIndex, targetAyahForPosition]);
 
   const handleScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
+      isProgrammaticPositioningRef.current = true;
       // scrollToIndex past the measured frame index does NOT render more cells
       // by itself — the retry would re-fail forever. Advance the render window
       // by scrolling to the last MEASURED frame first (never past it, so we
@@ -1166,7 +1207,10 @@ export default function QuranReaderScreen({
       const measuredOffset = Math.max(0, (info.highestMeasuredFrameIndex + 1) * info.averageItemLength);
       listRef.current?.scrollToOffset({ offset: measuredOffset, animated: false });
       setTimeout(() => {
-        if (userScrollingRef.current) return;
+        if (userScrollingRef.current) {
+          isProgrammaticPositioningRef.current = false;
+          return;
+        }
         try {
           listRef.current?.scrollToIndex({ index: info.index, animated: false });
           // The retry is a deliberate positioning jump — mark it done so the
@@ -1174,6 +1218,7 @@ export default function QuranReaderScreen({
           // user landed). The jump's own scroll events set userScrollingRef,
           // which the guard consumes; that is fine here because we are done.
           positionedRef.current = true;
+          isProgrammaticPositioningRef.current = false;
           // The target ayah has now been scrolled to — the jump has LANDED.
           // Let the next viewability event reflect the real landed position.
           trackingReadyRef.current = true;
@@ -1830,13 +1875,23 @@ export default function QuranReaderScreen({
         ref={mushafScrollRef}
         contentContainerStyle={styles.mushafScrollContent}
         onScroll={handleReaderScroll}
+        onScrollBeginDrag={() => {
+          isProgrammaticPositioningRef.current = false;
+          userScrollingRef.current = true;
+        }}
+        onScrollEndDrag={() => {
+          userScrollingRef.current = false;
+        }}
+        onMomentumScrollEnd={() => {
+          userScrollingRef.current = false;
+        }}
         scrollEventThrottle={16}
         onContentSizeChange={(_w, h) => {
           mushafContentHeightRef.current = h;
           if (pendingScrollAyahRef.current && pendingScrollAyahRef.current > 1) {
             const total = surah?.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
             const y = Math.max(0, ((pendingScrollAyahRef.current - 1) / total) * h);
-            mushafScrollRef.current?.scrollTo({ y, animated: true });
+            mushafScrollRef.current?.scrollTo({ y, animated: false });
             pendingScrollAyahRef.current = null;
             // The pending jump has now been applied — mark positioned and
             // tracking-ready so the settle event never overwrites the target.
@@ -2676,6 +2731,16 @@ export default function QuranReaderScreen({
           windowSize={7}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           onScroll={handleReaderScroll}
+          onScrollBeginDrag={() => {
+            isProgrammaticPositioningRef.current = false;
+            userScrollingRef.current = true;
+          }}
+          onScrollEndDrag={() => {
+            userScrollingRef.current = false;
+          }}
+          onMomentumScrollEnd={() => {
+            userScrollingRef.current = false;
+          }}
           scrollEventThrottle={16}
           viewabilityConfig={VIEWABILITY_CONFIG}
           onViewableItemsChanged={handleViewableItemsChanged}

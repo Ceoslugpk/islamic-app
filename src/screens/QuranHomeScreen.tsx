@@ -19,7 +19,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { t } from '../lib/i18n';
 import { LastReadPosition, loadLastReadPosition, loadQuranCache } from '../lib/db';
-import { getContinueReadingPosition, ReadingPosition } from '../lib/continuing';
+import { getContinueReadingPosition, addReadingPositionListener, ReadingPosition } from '../lib/continuing';
 import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
 import { useQuranLanguage } from '../lib/quranLanguageState';
@@ -219,6 +219,22 @@ export default function QuranHomeScreen({
     if (!isActive) wasActiveRef.current = false;
   }, [isActive]);
 
+  useEffect(() => {
+    let mounted = true;
+    const unsub = addReadingPositionListener(() => {
+      const gen = ++refreshGenRef.current;
+      getContinueReadingPosition()
+        .then((pos) => {
+          if (mounted && gen === refreshGenRef.current) setReadingPosition(pos);
+        })
+        .catch(() => {});
+    });
+    return () => {
+      mounted = false;
+      unsub();
+    };
+  }, []);
+
   const filteredSurahs = useMemo(() => {
     if (!surahs) return [];
     const query = searchQuery.trim().toLowerCase();
@@ -297,7 +313,14 @@ export default function QuranHomeScreen({
     return null;
   }, [readingPosition, lastRead, surahs]);
 
-  const handleResumeReading = () => {
+  const handleResumeReading = async () => {
+    try {
+      const freshPos = await getContinueReadingPosition();
+      if (freshPos && freshPos.surah > 0) {
+        onOpenSurah(freshPos.surah, freshPos.ayah);
+        return;
+      }
+    } catch {}
     if (resumeTarget) {
       onOpenSurah(resumeTarget.surah, resumeTarget.ayah);
     } else {
@@ -511,11 +534,15 @@ export default function QuranHomeScreen({
                   key={recent.surah}
                   activeOpacity={0.7}
                   onPress={() => {
-                    // Reopen at the saved reading position for this surah (the
+                    // Reopen at the marker/saved reading position for this surah (the
                     // reader restores from surah-last-ayah cache, but passing it
                     // explicitly is robust even if that cache is stale).
+                    const isMarked = readingPosition && readingPosition.surah === recent.surah;
                     const cached = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${recent.surah}`);
-                    onOpenSurah(recent.surah, cached && typeof cached.ayah === 'number' ? cached.ayah : undefined);
+                    const ayah = isMarked
+                      ? readingPosition.ayah
+                      : (cached && typeof cached.ayah === 'number' ? cached.ayah : undefined);
+                    onOpenSurah(recent.surah, ayah);
                   }}
             pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
                   accessibilityRole="button"
@@ -1052,7 +1079,10 @@ export default function QuranHomeScreen({
             paddingVertical: isCompact ? 11 : 14,
           },
         ]}
-        onPress={() => onOpenSurah(item.number)}
+        onPress={() => {
+          const isMarked = readingPosition && readingPosition.surah === item.number;
+          onOpenSurah(item.number, isMarked ? readingPosition.ayah : undefined);
+        }}
             pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
         activeOpacity={0.7}
       >

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -464,9 +464,15 @@ export interface SettingsScreenProps {
   onClose?: () => void;
   onBackRef?: React.MutableRefObject<(() => boolean) | null>;
   onOpenToolsItem?: (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => void;
+  onPrepareReload?: () => void;
 }
 
-export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: SettingsScreenProps) {
+export default function SettingsScreen({
+  onClose,
+  onBackRef,
+  onOpenToolsItem,
+  onPrepareReload,
+}: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, mode, accentKey, setAccent } = useTheme();
   const {
@@ -503,6 +509,21 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
   const [isLoadingHealth, setIsLoadingHealth] = useState(true);
   const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
   const [showBackupRestore, setShowBackupRestore] = useState(false);
+  const [languageError, setLanguageError] = useState<string | null>(null);
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSwitchingLanguageRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (reloadTimerRef.current) {
+        clearTimeout(reloadTimerRef.current);
+        reloadTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Sync sub-screen back handler with modal backRef
   useEffect(() => {
@@ -773,23 +794,51 @@ export default function SettingsScreen({ onClose, onBackRef, onOpenToolsItem }: 
             ]}
             value={settings.language}
             onChange={(nextLang) => {
-              if (nextLang !== settings.language) {
+              if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
+                isSwitchingLanguageRef.current = true;
+                setLanguageError(null);
                 haptic('selection');
+                if (reloadTimerRef.current) {
+                  clearTimeout(reloadTimerRef.current);
+                  reloadTimerRef.current = null;
+                }
                 // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
                 // after a reload on Android/iOS — trigger a native reload so the
                 // user doesn't have to restart manually. Await the persist so the
                 // reload boots in the NEW language (otherwise Urdu->English could
                 // reload stale). setLanguage is typed Promise<void>|void.
                 Promise.resolve(setLanguage(nextLang)).then(() => {
-                  if (Platform.OS !== 'web') {
-                    setTimeout(() => {
-                      Updates.reloadAsync().catch(() => DevSettings.reload());
-                    }, 400);
-                  }
-                });
+                  isSwitchingLanguageRef.current = false;
+                    if (!mountedRef.current) return;
+                    onPrepareReload?.();
+                    if (Platform.OS !== 'web') {
+                      reloadTimerRef.current = setTimeout(() => {
+                        reloadTimerRef.current = null;
+                        if (!mountedRef.current) return;
+                        Updates.reloadAsync().catch(() => DevSettings.reload());
+                      }, 400);
+                    }
+                  })
+                  .catch(() => {
+                    isSwitchingLanguageRef.current = false;
+                    if (reloadTimerRef.current) {
+                      clearTimeout(reloadTimerRef.current);
+                      reloadTimerRef.current = null;
+                    }
+                    if (mountedRef.current) {
+                      setLanguageError(t('Still could not load. Try again later.'));
+                    }
+                  });
               }
             }}
           />
+          {languageError ? (
+            <View style={{ paddingHorizontal: layout.cardPad, paddingTop: 8, paddingBottom: 4 }}>
+              <Text style={{ fontFamily: 'Manrope_500Medium', fontSize: 13, color: colors.accent }}>
+                {languageError}
+              </Text>
+            </View>
+          ) : null}
         </Section>
 
         {/* Appearance — theme, accent, haptics */}

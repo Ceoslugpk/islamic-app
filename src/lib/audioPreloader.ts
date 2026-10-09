@@ -45,7 +45,9 @@ export async function takePreloadedSound(url: string): Promise<AudioPlayer | nul
   const cached = cache.get(url);
   if (cached) {
     cache.delete(url);
-    return cached.player;
+    const player = cached.player;
+    (cached as any).player = null;
+    return player;
   }
 
   // 2. Currently downloading in-flight
@@ -57,7 +59,11 @@ export async function takePreloadedSound(url: string): Promise<AudioPlayer | nul
       );
       const player = await Promise.race([inFlightPromise, timeoutPromise]);
       if (player) {
-        cache.delete(url);
+        const cachedEntry = cache.get(url);
+        if (cachedEntry) {
+          cache.delete(url);
+          (cachedEntry as any).player = null;
+        }
         return player;
       }
     } catch {
@@ -94,9 +100,16 @@ export function enqueuePreloadUrls(urls: string[]): void {
   for (const [cachedUrl, entry] of cache.entries()) {
     if (!targetSet.has(cachedUrl)) {
       cache.delete(cachedUrl);
-      try {
-        entry.player.remove();
-      } catch {}
+      const playerToEvict = entry.player;
+      (entry as any).player = null;
+      if (playerToEvict) {
+        try {
+          playerToEvict.remove();
+        } catch {}
+        try {
+          (playerToEvict as any).release?.();
+        } catch {}
+      }
     }
   }
 
@@ -142,6 +155,9 @@ async function runWorker(): Promise<void> {
             try {
               player.remove();
             } catch {}
+            try {
+              (player as any).release?.();
+            } catch {}
             return null;
           }
 
@@ -159,9 +175,16 @@ async function runWorker(): Promise<void> {
               const evicted = cache.get(oldestKey);
               cache.delete(oldestKey);
               if (evicted) {
-                try {
-                  evicted.player.remove();
-                } catch {}
+                const playerToEvict = evicted.player;
+                (evicted as any).player = null;
+                if (playerToEvict) {
+                  try {
+                    playerToEvict.remove();
+                  } catch {}
+                  try {
+                    (playerToEvict as any).release?.();
+                  } catch {}
+                }
               }
             }
           }
@@ -214,13 +237,21 @@ export async function stopAudioPreloading(): Promise<void> {
   isStopped = true;
   isPaused = false;
   pendingQueue = [];
+  inFlight.clear();
 
   const entries = Array.from(cache.values());
   cache.clear();
   for (const entry of entries) {
-    try {
-      entry.player.remove();
-    } catch {}
+    const playerToEvict = entry.player;
+    (entry as any).player = null;
+    if (playerToEvict) {
+      try {
+        playerToEvict.remove();
+      } catch {}
+      try {
+        (playerToEvict as any).release?.();
+      } catch {}
+    }
   }
 }
 
@@ -229,12 +260,20 @@ export async function stopAudioPreloading(): Promise<void> {
  */
 export async function clearAudioPreloadCache(): Promise<void> {
   pendingQueue = [];
+  inFlight.clear();
   const entries = Array.from(cache.values());
   cache.clear();
   for (const entry of entries) {
-    try {
-      entry.player.remove();
-    } catch {}
+    const playerToEvict = entry.player;
+    (entry as any).player = null;
+    if (playerToEvict) {
+      try {
+        playerToEvict.remove();
+      } catch {}
+      try {
+        (playerToEvict as any).release?.();
+      } catch {}
+    }
   }
 }
 

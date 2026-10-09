@@ -814,12 +814,43 @@ let currentSoundSubscription: { remove: () => void } | null = null;
 let currentPlaybackUrl: string | null = null;
 let currentPlaybackRate = 1.0;
 
+const removedPlayers = new WeakSet<AudioPlayer>();
+
+/**
+ * Guarded player removal:
+ * - Prevents double remove / use-after-release
+ * - Removes native listeners / pauses
+ * - Invokes remove() and release() if supported
+ * - Catches any use-after-release error thrown by expo-audio
+ * - Returns null so caller can do: player = safeRemovePlayer(player)
+ */
+export function safeRemovePlayer(player: AudioPlayer | null | undefined): null {
+  if (!player) return null;
+  if (removedPlayers.has(player)) return null;
+  removedPlayers.add(player);
+  try {
+    player.pause();
+  } catch {}
+  try {
+    player.remove();
+  } catch {}
+  try {
+    (player as any).release?.();
+  } catch {}
+  return null;
+}
+
+export function isPlayerRemoved(player: AudioPlayer | null | undefined): boolean {
+  if (!player) return true;
+  return removedPlayers.has(player);
+}
+
 type SoundCreatedListener = (sound: AudioPlayer) => void;
 const soundCreatedListeners = new Set<SoundCreatedListener>();
 
 export function addSoundCreatedListener(listener: SoundCreatedListener): () => void {
   soundCreatedListeners.add(listener);
-  if (currentSound) {
+  if (currentSound && !isPlayerRemoved(currentSound)) {
     try {
       listener(currentSound);
     } catch {}
@@ -830,6 +861,7 @@ export function addSoundCreatedListener(listener: SoundCreatedListener): () => v
 }
 
 function notifySoundCreated(sound: AudioPlayer): void {
+  if (isPlayerRemoved(sound)) return;
   soundCreatedListeners.forEach((listener) => {
     try {
       listener(sound);
@@ -838,13 +870,16 @@ function notifySoundCreated(sound: AudioPlayer): void {
 }
 
 export function getCurrentAudioPlayer(): AudioPlayer | null {
-  return currentSound;
+  if (currentSound && !isPlayerRemoved(currentSound)) {
+    return currentSound;
+  }
+  return null;
 }
 
 export async function setRate(rate: number): Promise<void> {
   const safeRate = Math.max(0.25, Math.min(2.0, rate));
   currentPlaybackRate = safeRate;
-  if (currentSound) {
+  if (currentSound && !isPlayerRemoved(currentSound)) {
     try {
       currentSound.setPlaybackRate(safeRate);
     } catch {}
@@ -931,16 +966,14 @@ function cleanupCurrentSound(clearLockScreen: boolean = false): void {
     currentSoundSubscription = null;
   }
   if (currentSound) {
+    const soundToRelease = currentSound;
+    currentSound = null;
     if (clearLockScreen) {
       try {
-        currentSound.clearLockScreenControls();
+        soundToRelease.clearLockScreenControls();
       } catch {}
     }
-    try {
-      currentSound.pause();
-      currentSound.remove();
-    } catch {}
-    currentSound = null;
+    safeRemovePlayer(soundToRelease);
   }
   currentPlaybackUrl = null;
 }
@@ -1261,7 +1294,7 @@ export function getPlaybackStatus(): PlaybackStatus {
 /** Seek to a specific position in milliseconds. */
 export async function seekTo(positionMillis: number): Promise<void> {
   try {
-    if (currentSound) {
+    if (currentSound && !isPlayerRemoved(currentSound)) {
       // expo-audio seekTo expects seconds, convert from positionMillis
       const seconds = Math.max(0, positionMillis / 1000);
       await currentSound.seekTo(seconds);
@@ -1306,8 +1339,9 @@ function handlePlaybackStatusUpdate(status: AudioStatus): void {
       if (fallbackUrl !== currentPlaybackUrl) {
         currentPlaybackUrl = fallbackUrl;
         cleanupCurrentSound();
+        let fallbackPlayer: AudioPlayer | null = null;
         try {
-          const fallbackPlayer = createAudioPlayer({ uri: fallbackUrl }, { updateInterval: 250 });
+          fallbackPlayer = createAudioPlayer({ uri: fallbackUrl }, { updateInterval: 250 });
           fallbackPlayer.volume = 1.0;
           if (currentPlaybackRate !== 1.0) {
             try {
@@ -1318,6 +1352,7 @@ function handlePlaybackStatusUpdate(status: AudioStatus): void {
           fallbackPlayer.play();
           currentSound = fallbackPlayer;
           notifySoundCreated(fallbackPlayer);
+          fallbackPlayer = null;
           if (currentPlayback) currentPlayback.isPlaying = true;
           notifyStatusListeners({
             ...currentStatus,
@@ -1327,7 +1362,11 @@ function handlePlaybackStatusUpdate(status: AudioStatus): void {
           });
           return;
         } catch {
-          // fall through to error handling
+          if (fallbackPlayer) {
+            safeRemovePlayer(fallbackPlayer);
+            fallbackPlayer = null;
+          }
+          cleanupCurrentSound();
         }
       }
     }
@@ -1587,7 +1626,7 @@ async function playAudioUrl(url: string): Promise<void> {
         )
       : url;
 
-  if (currentSound && currentPlaybackUrl === targetUri) {
+  if (currentSound && currentPlaybackUrl === targetUri && !isPlayerRemoved(currentSound)) {
     try {
       await currentSound.seekTo(0);
       currentSound.play();
@@ -1605,7 +1644,7 @@ async function playAudioUrl(url: string): Promise<void> {
   // Reuse existing AudioPlayer instance via replace() if available to preserve the exact same
   // native MediaSession / notification ID without creating multiple notifications on Ayah
   // transitions or Arabic<->Translation switches.
-  if (currentSound && typeof currentSound.replace === 'function') {
+  if (currentSound && typeof currentSound.replace === 'function' && !isPlayerRemoved(currentSound)) {
     try {
       currentPlaybackUrl = targetUri;
       currentSound.replace({ uri: targetUri });
@@ -1634,27 +1673,31 @@ async function playAudioUrl(url: string): Promise<void> {
   // Attempt instant buffer-free playback from preloaded sound cache
   const preloaded = await takePreloadedSound(url);
   if (preloaded) {
-    try {
-      currentSound = preloaded;
-      currentPlaybackUrl = url;
-      if (currentPlaybackRate !== 1.0) {
-        try {
-          preloaded.setPlaybackRate(currentPlaybackRate);
-        } catch {}
+    if (isPlayerRemoved(preloaded)) {
+      // Ignored if already removed
+    } else {
+      try {
+        currentSound = preloaded;
+        currentPlaybackUrl = url;
+        if (currentPlaybackRate !== 1.0) {
+          try {
+            preloaded.setPlaybackRate(currentPlaybackRate);
+          } catch {}
+        }
+        currentSoundSubscription = preloaded.addListener('playbackStatusUpdate', handlePlaybackStatusUpdate);
+        preloaded.play();
+        notifySoundCreated(preloaded);
+        if (currentPlayback) currentPlayback.isPlaying = true;
+        notifyStatusListeners({
+          ...currentStatus,
+          isPlaying: true,
+          isLoaded: true,
+          isBuffering: false,
+        });
+        return;
+      } catch {
+        cleanupCurrentSound(false);
       }
-      currentSoundSubscription = preloaded.addListener('playbackStatusUpdate', handlePlaybackStatusUpdate);
-      preloaded.play();
-      notifySoundCreated(preloaded);
-      if (currentPlayback) currentPlayback.isPlaying = true;
-      notifyStatusListeners({
-        ...currentStatus,
-        isPlaying: true,
-        isLoaded: true,
-        isBuffering: false,
-      });
-      return;
-    } catch {
-      cleanupCurrentSound(false);
     }
   }
 
@@ -1668,8 +1711,9 @@ async function playAudioUrl(url: string): Promise<void> {
     didJustFinish: false,
   });
 
+  let player: AudioPlayer | null = null;
   try {
-    const player = createAudioPlayer({ uri: targetUri }, { updateInterval: 250 });
+    player = createAudioPlayer({ uri: targetUri }, { updateInterval: 250 });
     player.volume = 1.0;
     if (currentPlaybackRate !== 1.0) {
       try {
@@ -1681,6 +1725,7 @@ async function playAudioUrl(url: string): Promise<void> {
     currentSound = player;
     currentPlaybackUrl = targetUri;
     notifySoundCreated(player);
+    player = null;
     if (currentPlayback) currentPlayback.isPlaying = true;
     // Notify immediately with isLoaded=true so the now-playing notification can
     // start without waiting for the first playbackStatusUpdate (expo-audio fires
@@ -1693,7 +1738,19 @@ async function playAudioUrl(url: string): Promise<void> {
       isLoaded: true,
       isBuffering: false,
     });
+    return;
   } catch (err) {
+    if (player) {
+      safeRemovePlayer(player);
+      player = null;
+    }
+    if (currentSoundSubscription) {
+      try {
+        currentSoundSubscription.remove();
+      } catch {}
+      currentSoundSubscription = null;
+    }
+
     // If the provided url fails (e.g. bitrate mismatch), attempt 128kbps fallback
     if (
       !targetUri.startsWith('file://') &&
@@ -1702,9 +1759,10 @@ async function playAudioUrl(url: string): Promise<void> {
     ) {
       const fallbackUrl = targetUri.replace(/\/(192|64|48|40|32|320)\//, '/128/');
       if (fallbackUrl !== targetUri) {
+        let fallbackPlayer: AudioPlayer | null = null;
         try {
           cleanupCurrentSound();
-          const fallbackPlayer = createAudioPlayer({ uri: fallbackUrl }, { updateInterval: 250 });
+          fallbackPlayer = createAudioPlayer({ uri: fallbackUrl }, { updateInterval: 250 });
           fallbackPlayer.volume = 1.0;
           if (currentPlaybackRate !== 1.0) {
             try {
@@ -1716,6 +1774,7 @@ async function playAudioUrl(url: string): Promise<void> {
           currentSound = fallbackPlayer;
           currentPlaybackUrl = fallbackUrl;
           notifySoundCreated(fallbackPlayer);
+          fallbackPlayer = null;
           if (currentPlayback) currentPlayback.isPlaying = true;
           notifyStatusListeners({
             ...currentStatus,
@@ -1725,7 +1784,11 @@ async function playAudioUrl(url: string): Promise<void> {
           });
           return;
         } catch {
-          // ignore fallback error and propagate original
+          if (fallbackPlayer) {
+            safeRemovePlayer(fallbackPlayer);
+            fallbackPlayer = null;
+          }
+          cleanupCurrentSound();
         }
       }
     }
@@ -2295,7 +2358,7 @@ export function canPlayPrevious(): boolean {
 export async function pause(): Promise<void> {
   pauseAudioPreloading();
   try {
-    if (currentSound) {
+    if (currentSound && !isPlayerRemoved(currentSound)) {
       currentSound.pause();
       if (currentPlayback) currentPlayback.isPlaying = false;
       notifyStatusListeners({
@@ -2315,7 +2378,7 @@ export async function resume(): Promise<void> {
     ensureNotificationPermissionForPlayback().catch(() => {});
   }
   try {
-    if (currentSound) {
+    if (currentSound && !isPlayerRemoved(currentSound)) {
       currentSound.play();
       if (currentPlayback) currentPlayback.isPlaying = true;
       notifyStatusListeners({

@@ -293,69 +293,90 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
   const db = SQLite.openDatabaseSync('salah.db');
 
   // Wipe user tables, then re-insert inside a single transaction for atomicity & integrity.
-  db.withTransactionSync(() => {
-    // 1. Wipe real SQLite tables — ONLY those present in the backup (a partial
-    //    backup must not silently destroy tables it doesn't cover). M1.
-    for (const table of SQLITE_USER_TABLES) {
-      if (tables[table] === undefined) continue;
-      try {
-        db.execSync(`DELETE FROM ${table}`);
-      } catch {
-        // ignore missing table
-      }
-    }
-
-    // 2. Insert rows into real SQLite tables
-    for (const table of SQLITE_USER_TABLES) {
-      const rows = tables[table] || [];
-      for (const row of rows) {
+  try {
+    db.withTransactionSync(() => {
+      // 1. Wipe real SQLite tables — ONLY those present in the backup (a partial
+      //    backup must not silently destroy tables it doesn't cover). M1.
+      for (const table of SQLITE_USER_TABLES) {
+        if (tables[table] === undefined) continue;
         try {
-          const rowObj = row as Record<string, unknown>;
-          const cols = Object.keys(rowObj);
-          if (cols.length === 0) continue;
-          // Security-audit M2: reject non-identifier column names (prevents
-          // SQL injection via attacker-controlled backup row keys — SQLite's
-          // double-quote does not escape embedded quotes in identifiers).
-          const isSafeCol = (c: string) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(c);
-          if (!cols.every(isSafeCol)) continue;
-          if (cols.length > 64) continue;
-          const placeholders = cols.map(() => '?').join(', ');
-          const values = cols.map((c) => rowObj[c]);
-          db.runSync(
-            `INSERT OR REPLACE INTO ${table} (${cols.map((c) => `"${c}"`).join(', ')}) VALUES (${placeholders})`,
-            ...values
-          );
-        } catch {
-          // Skip a row that violates constraints; keep the rest intact.
+          db.execSync(`DELETE FROM ${table}`);
+        } catch (e: any) {
+          const msg = String(e?.message || e);
+          if (msg.includes('SQLITE_FULL') || msg.includes('full') || msg.includes('disk')) {
+            throw e;
+          }
+          // ignore missing table
         }
       }
-    }
 
-    // 3. Virtual user tables stored in quran_cache
-    for (const { table, cacheKey, isSingleObject } of VIRTUAL_USER_TABLES) {
-      if (tables[table] !== undefined) {
-        const rows = tables[table];
-        if (Array.isArray(rows)) {
+      // 2. Insert rows into real SQLite tables
+      for (const table of SQLITE_USER_TABLES) {
+        const rows = tables[table] || [];
+        for (const row of rows) {
           try {
-            if (isSingleObject) {
-              const val = rows[0] ? JSON.stringify(rows[0]) : '{}';
-              db.runSync(
-                'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
-                cacheKey, val, Date.now()
-              );
-            } else {
-              db.runSync(
-                'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
-                cacheKey, JSON.stringify(rows), Date.now()
-              );
+            const rowObj = row as Record<string, unknown>;
+            const cols = Object.keys(rowObj);
+            if (cols.length === 0) continue;
+            // Security-audit M2: reject non-identifier column names (prevents
+            // SQL injection via attacker-controlled backup row keys — SQLite's
+            // double-quote does not escape embedded quotes in identifiers).
+            const isSafeCol = (c: string) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(c);
+            if (!cols.every(isSafeCol)) continue;
+            if (cols.length > 64) continue;
+            const placeholders = cols.map(() => '?').join(', ');
+            const values = cols.map((c) => rowObj[c]);
+            db.runSync(
+              `INSERT OR REPLACE INTO ${table} (${cols.map((c) => `"${c}"`).join(', ')}) VALUES (${placeholders})`,
+              ...values
+            );
+          } catch (e: any) {
+            const msg = String(e?.message || e);
+            if (msg.includes('SQLITE_FULL') || msg.includes('full') || msg.includes('disk')) {
+              throw e;
             }
-          } catch {
-            // non-fatal per-item error
+            // Skip a row that violates constraints; keep the rest intact.
           }
         }
       }
+
+      // 3. Virtual user tables stored in quran_cache
+      for (const { table, cacheKey, isSingleObject } of VIRTUAL_USER_TABLES) {
+        if (tables[table] !== undefined) {
+          const rows = tables[table];
+          if (Array.isArray(rows)) {
+            try {
+              if (isSingleObject) {
+                const val = rows[0] ? JSON.stringify(rows[0]) : '{}';
+                db.runSync(
+                  'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
+                  cacheKey, val, Date.now()
+                );
+              } else {
+                db.runSync(
+                  'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
+                  cacheKey, JSON.stringify(rows), Date.now()
+                );
+              }
+            } catch (e: any) {
+              const msg = String(e?.message || e);
+              if (msg.includes('SQLITE_FULL') || msg.includes('full') || msg.includes('disk')) {
+                throw e;
+              }
+              // non-fatal per-item error
+            }
+          }
+        }
+      }
+    });
+  } catch (err: any) {
+    const msg = String(err?.message || err);
+    if (msg.includes('cannot rollback') && msg.includes('no transaction is active')) {
+      console.warn('[backup] SQLite transaction auto-aborted on disk full:', err);
+      throw new Error('Database write failed: device storage is full (SQLITE_FULL).');
     }
-  });
+    throw err;
+  }
 
   return Promise.resolve();
 }

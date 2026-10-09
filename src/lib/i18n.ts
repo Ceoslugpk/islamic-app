@@ -18,8 +18,8 @@ const PERSISTED_LANGUAGE_KEY = 'islamic-settings'; // same key as settings.tsx
 let persistedLanguage: AppLanguage | null = null;
 let languageResolved = false;
 
-export async function resolvePersistedLanguage(): Promise<AppLanguage> {
-  if (languageResolved && persistedLanguage) return persistedLanguage;
+export async function resolvePersistedLanguage(forceFresh = false): Promise<AppLanguage> {
+  if (!forceFresh && languageResolved && persistedLanguage) return persistedLanguage;
   try {
     const raw = await AsyncStorage.getItem(PERSISTED_LANGUAGE_KEY);
     if (raw) {
@@ -93,6 +93,7 @@ export function applyRTL(isRTL: boolean): void {
  */
 export function setAppLanguage(lang: AppLanguage): void {
   persistedLanguage = lang;
+  languageResolved = true;
   i18n.changeLanguage(lang);
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.dir = lang === 'ur' ? 'rtl' : 'ltr';

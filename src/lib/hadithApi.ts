@@ -418,6 +418,61 @@ export async function fetchHadithBooks(collectionSlug: string, force = false): P
   throw new Error(`Failed to load books for ${collectionSlug}`);
 }
 
+export const MAX_HADITH_LIST_PAGES_PER_BOOK = 20;
+export const MAX_HADITH_SINGLE_CACHE = 200;
+
+export async function pruneHadithCaches(): Promise<void> {
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const listPrefix = 'hadith:cache:list:';
+    const singlePrefix = 'hadith:cache:single:';
+
+    const listKeysByBook: Record<string, { key: string; offset: number }[]> = {};
+    const singleKeys: string[] = [];
+
+    for (const key of allKeys) {
+      if (key.startsWith(listPrefix)) {
+        const rest = key.slice(listPrefix.length);
+        const parts = rest.split(':');
+        if (parts.length >= 3) {
+          const bookKey = `${parts[0]}:${parts[1]}`;
+          const offset = parseInt(parts[2], 10) || 0;
+          if (!listKeysByBook[bookKey]) {
+            listKeysByBook[bookKey] = [];
+          }
+          listKeysByBook[bookKey].push({ key, offset });
+        }
+      } else if (key.startsWith(singlePrefix)) {
+        singleKeys.push(key);
+      }
+    }
+
+    const keysToRemove: string[] = [];
+
+    for (const bookKey of Object.keys(listKeysByBook)) {
+      const items = listKeysByBook[bookKey];
+      if (items.length > MAX_HADITH_LIST_PAGES_PER_BOOK) {
+        items.sort((a, b) => a.offset - b.offset);
+        const excess = items.slice(0, items.length - MAX_HADITH_LIST_PAGES_PER_BOOK);
+        for (const item of excess) {
+          keysToRemove.push(item.key);
+        }
+      }
+    }
+
+    if (singleKeys.length > MAX_HADITH_SINGLE_CACHE) {
+      const excess = singleKeys.slice(0, singleKeys.length - MAX_HADITH_SINGLE_CACHE);
+      keysToRemove.push(...excess);
+    }
+
+    if (keysToRemove.length > 0) {
+      await AsyncStorage.multiRemove(keysToRemove);
+    }
+  } catch {
+    // non-fatal
+  }
+}
+
 export async function fetchHadithsInBook(
   collectionSlug: string,
   bookNumber: string,
@@ -459,6 +514,7 @@ export async function fetchHadithsInBook(
             AsyncStorage.setItem(singleKey, JSON.stringify(item)).catch(() => {});
           }
         }
+        pruneHadithCaches().catch(() => {});
         return json.data;
       }
     }
@@ -508,6 +564,7 @@ export async function saveHadithPageCache(
   const cacheKey = `hadith:cache:list:${collectionSlug}:${bookNumber}:${offset}`;
   try {
     await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
+    pruneHadithCaches().catch(() => {});
   } catch {
     // ignore
   }
@@ -546,6 +603,7 @@ export async function fetchSingleHadith(
       const json = await response.json();
       if (json.code === 200 && json.data) {
         await AsyncStorage.setItem(cacheKey, JSON.stringify(json.data)).catch(() => {});
+        pruneHadithCaches().catch(() => {});
         return json.data;
       }
     }

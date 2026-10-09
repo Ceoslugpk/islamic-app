@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Location } from './prayerTimes';
 import { AccentKey } from './accents';
@@ -10,7 +10,7 @@ import {
   AUDIO_TRANSLATION_EDITION_KEY,
 } from './quranAudio';
 import { getQuranTranslationLanguage, setQuranTranslationLanguage } from './quranLanguageState';
-import { AppLanguage, setAppLanguage } from './i18n';
+import { AppLanguage, setAppLanguage, getBootLanguage } from './i18n';
 import { setActiveAdhanReciterId } from './audio';
 import { setCachedLocation } from './useLocation';
 import { TAFSIR_SOURCES } from './tafsirSources';
@@ -463,6 +463,36 @@ export function sanitizeSettings(raw: unknown): AppSettings {
 }
 
 /**
+ * Pure helper: computes next AppSettings when changing language.
+ * Guarantees all existing settings fields are preserved and sanitized.
+ */
+export function computeNextLanguageSettings(
+  prev: AppSettings,
+  nextLang: AppLanguage
+): AppSettings {
+  return sanitizeSettings({
+    ...prev,
+    language: nextLang,
+  });
+}
+
+/**
+ * Pure helper: writes sanitized settings to storage with durability.
+ * Throws on failure — callers MUST NOT reload if this throws.
+ */
+export async function persistLanguageChange(
+  currentSettings: AppSettings,
+  nextLang: AppLanguage,
+  storage: {
+    setItem: (key: string, value: string) => Promise<void>;
+  } = AsyncStorage
+): Promise<AppSettings> {
+  const nextSettings = computeNextLanguageSettings(currentSettings, nextLang);
+  await storage.setItem(STORAGE_KEY, JSON.stringify(nextSettings));
+  return nextSettings;
+}
+
+/**
  * In-memory mirror of `quranPreloadRequested` so non-React callers (background
  * preloader, warmup, app bootstrap) can honour the user's choice synchronously.
  * `null` means "storage not read yet" and falls back to the default (enabled).
@@ -493,8 +523,15 @@ export async function loadQuranPreloadRequested(): Promise<boolean> {
 }
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<AppSettings>(DEFAULTS);
+  const [settings, setSettings] = useState<AppSettings>(() => ({
+    ...DEFAULTS,
+    language: getBootLanguage(),
+  }));
   const [ready, setReady] = useState(false);
+  const settingsRef = useRef<AppSettings>(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   useEffect(() => {
     (async () => {
@@ -512,6 +549,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           : {};
 
         preloadRequestedMem = next.quranPreloadRequested;
+
+        // If storage did not explicitly specify a valid language, preserve boot language
+        if (parsed.language !== 'en' && parsed.language !== 'ur') {
+          next.language = getBootLanguage();
+        }
 
         // Adopt legacy QuranReaderScreen AsyncStorage values once, when settings
         // don't own them yet — settings become the source of truth from here on.
@@ -554,6 +596,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         // Security-audit M4: only carry the location fields the grant actually
         // writes; never spread the whole live state (which on a fresh install is
         // DEFAULTS and would clobber a stored PIN/lock from `next`).
+        settingsRef.current = next;
         setSettings((prev) => {
           const userChangedDuringHydration = prev !== DEFAULTS;
           if (!userChangedDuringHydration) return next;
@@ -571,11 +614,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
         }
       } catch {
-        // fall back to defaults
+        // fall back to defaults, preserving boot language
         preloadRequestedMem = DEFAULTS.quranPreloadRequested;
         setAudioTranslationEnabled(DEFAULTS.translationAudioEnabled);
         setActiveAdhanReciterId(DEFAULTS.adhanReciterId);
-        setAppLanguage(DEFAULTS.language);
+        setAppLanguage(getBootLanguage());
       } finally {
         setReady(true);
       }
@@ -584,6 +627,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   function persist(next: AppSettings): AppSettings {
     const clean = sanitizeSettings(next);
+    settingsRef.current = clean;
     preloadRequestedMem = clean.quranPreloadRequested;
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(clean)).catch(() => {});
     return clean;
@@ -647,6 +691,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setQuranPreloadRequested: (quranPreloadRequested) =>
       setSettings((prev) => persist({ ...prev, quranPreloadRequested })),
     setLanguage: async (nextLang: AppLanguage) => {
+      const prevLang = settingsRef.current.language;
+      if (nextLang === prevLang) {
+        return;
+      }
+
       // Persist + apply the language FIRST so a reload (triggered by the caller)
       // always boots in the new language. Side-effects (quran lang / tafsir /
       // audio edition) run after — they must never delay the persist, or the
@@ -660,20 +709,35 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       );
 
       // Durability gate: the caller (SettingsScreen) triggers a native reload
-      // once this promise resolves. The fire-and-forget `persist()` above is
-      // not awaited (AsyncStorage.setItem is queued, not flushed), so without
-      // an explicit await here the reload's 400ms could race the write and
-      // boot the app in the OLD language. Await a direct write of the new
-      // language before any side-effect awaits resolve.
+      // once this promise resolves. The fire-and-forget persist() above is
+      // supplemented with an awaited direct write of the clean sanitized settings
+      // object. Must throw on failure so the caller does NOT trigger a reload.
+      const currentSnapshot = settingsRef.current;
+      const nextClean = computeNextLanguageSettings(currentSnapshot, nextLang);
+      settingsRef.current = nextClean;
+      preloadRequestedMem = nextClean.quranPreloadRequested;
+
       try {
         await AsyncStorage.setItem(
           STORAGE_KEY,
-          JSON.stringify(sanitizeSettings({ ...settings, language: nextLang }))
+          JSON.stringify(nextClean)
         );
-      } catch {
-        // ignore — persist() already queued the same write
+      } catch (err) {
+        // Roll back optimistic state on persistence failure
+        setSettings((prev) =>
+          persist({
+            ...prev,
+            language: prevLang,
+          })
+        );
+        settingsRef.current = sanitizeSettings({ ...settingsRef.current, language: prevLang });
+        preloadRequestedMem = settingsRef.current.quranPreloadRequested;
+        setAppLanguage(prevLang);
+        throw err;
       }
 
+      // Side-effects run ONLY AFTER the main language write has succeeded.
+      // Side-effect write failures are trapped locally so the main language write is never lost.
       let nextTafsir: string | undefined;
       if (nextLang === 'ur') {
         try {

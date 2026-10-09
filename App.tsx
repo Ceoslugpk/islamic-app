@@ -41,7 +41,8 @@ import {
   HEADER_PADDING_VERTICAL,
   HEADER_SEPARATOR,
 } from './src/lib/headerTokens';
-import { t, setAppLanguage, applyRTL, resolvePersistedLanguage, isRTL } from './src/lib/i18n';
+import { t, setAppLanguage, applyRTL, resolvePersistedLanguage, getBootLanguage, isRTL } from './src/lib/i18n';
+import { getReadingMarkerSync } from './src/lib/continuing';
 
 import HomeScreen from './src/screens/HomeScreen';
 import QiblaScreen from './src/screens/QiblaScreen';
@@ -95,7 +96,8 @@ import { ActiveLiveStream, setActiveLiveStream, subscribeLiveStream } from './sr
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
 import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayingNotification, cleanupNowPlayingNotification } from './src/lib/nowPlayingNotification';
-import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback } from './src/lib/quranAudio';
+import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback, unload } from './src/lib/quranAudio';
+import { stopAudioPreloading } from './src/lib/audioPreloader';
 import { rescheduleIfNeeded, setupNotificationResponseHandler } from './src/lib/notifications';
 import { startQuranPreload } from './src/lib/quranPreloader';
 import { runFirstLaunchWarmup } from './src/lib/warmup';
@@ -457,6 +459,12 @@ function Root({ splashDone }: { splashDone: boolean }) {
     },
     [settings.womenLockEnabled, settings.womenWorshipEnabled, settings.womenPinHash, womenUnlocked]
   );
+
+  const handlePrepareReload = useCallback(() => {
+    if (quran.screen === 'reader') {
+      setQuran({ screen: 'home' });
+    }
+  }, [quran.screen]);
 
   // Global Audio Mini Player state
   const { playback, status, visible, onPlayPause, onStop, onSeek } = useAudioMiniPlayer();
@@ -848,6 +856,25 @@ function Root({ splashDone }: { splashDone: boolean }) {
     registerBackgroundPreload().catch(() => {});
   }, []);
 
+  // Audio lifecycle background handler:
+  // When app moves to background and audio is not actively playing, release the
+  // idle player and preloader cache so no leaked SQLite connection (exoplayer_internal.db)
+  // persists. When playing, preserve the session and now-playing notification.
+  useEffect(() => {
+    const handleAppStateChange = (nextState: string) => {
+      if (nextState === 'background') {
+        const currentPlayback = getCurrentPlayback();
+        const isPlaying = currentPlayback?.isPlaying ?? false;
+        if (!isPlaying) {
+          unload().catch(() => {});
+          stopAudioPreloading().catch(() => {});
+        }
+      }
+    };
+    const sub = AppState.addEventListener('change', handleAppStateChange);
+    return () => sub.remove();
+  }, []);
+
   // Android hardware back: go back through screens instead of exiting.
   // Priority: PIN modal → settings modal → audio player modal → active tab sub-screen → tab hub → default (exit).
   useEffect(() => {
@@ -1002,7 +1029,14 @@ function Root({ splashDone }: { splashDone: boolean }) {
               }}
               onOpenQuran={(surah, ayah) => {
                 if (surah) {
-                  setQuran({ screen: 'reader', surah, initialAyah: ayah });
+                  let initialAyah = ayah;
+                  if (!initialAyah) {
+                    const marker = getReadingMarkerSync();
+                    if (marker && marker.surah === surah) {
+                      initialAyah = marker.ayah;
+                    }
+                  }
+                  setQuran({ screen: 'reader', surah, initialAyah });
                 } else {
                   setQuran({ screen: 'home' });
                 }
@@ -1037,7 +1071,16 @@ function Root({ splashDone }: { splashDone: boolean }) {
             <View style={[styles.tabPane, quran.screen === 'home' ? styles.paneVisible : styles.paneHidden]}>
               <QuranHomeScreen
                 isActive={quran.screen === 'home'}
-                onOpenSurah={(n, a) => setQuran({ screen: 'reader', surah: n, initialAyah: a })}
+                onOpenSurah={(n, a) => {
+                  let initialAyah = a;
+                  if (!initialAyah) {
+                    const marker = getReadingMarkerSync();
+                    if (marker && marker.surah === n) {
+                      initialAyah = marker.ayah;
+                    }
+                  }
+                  setQuran({ screen: 'reader', surah: n, initialAyah });
+                }}
                 onOpenAudio={() => setQuran({ screen: 'audio' })}
                 onOpenTafsir={() => setQuran({ screen: 'tafsir' })}
                 onOpenTopics={() => setQuran({ screen: 'topics' })}
@@ -1053,7 +1096,16 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 surahNumber={quran.surah || 1}
                 initialAyah={quran.initialAyah}
                 onBack={() => setQuran({ screen: 'home' })}
-                onNavigateSurah={(s, a) => setQuran({ screen: 'reader', surah: s, initialAyah: a })}
+                onNavigateSurah={(s, a) => {
+                  let initialAyah = a;
+                  if (!initialAyah) {
+                    const marker = getReadingMarkerSync();
+                    if (marker && marker.surah === s) {
+                      initialAyah = marker.ayah;
+                    }
+                  }
+                  setQuran({ screen: 'reader', surah: s, initialAyah });
+                }}
               />
             )}
             {quran.screen === 'audio' && (
@@ -1307,6 +1359,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         onClose={() => setSettingsOpen(false)}
         backRef={settingsBackRef}
         onOpenToolsItem={handleOpenWomenFromSettings}
+        onPrepareReload={handlePrepareReload}
       />
 
       {/* PIN Unlock Modal for Women's Worship tools */}
@@ -1346,11 +1399,13 @@ function SettingsModal({
   onClose,
   backRef,
   onOpenToolsItem,
+  onPrepareReload,
 }: {
   visible: boolean;
   onClose: () => void;
   backRef?: React.MutableRefObject<(() => boolean) | null>;
   onOpenToolsItem?: (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => void;
+  onPrepareReload?: () => void;
 }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -1420,6 +1475,7 @@ function SettingsModal({
               onClose={onClose}
               onBackRef={backRef}
               onOpenToolsItem={onOpenToolsItem}
+              onPrepareReload={onPrepareReload}
             />
           </View>
         </Animated.View>
@@ -1447,6 +1503,9 @@ export default function App() {
       })
       .catch(() => {
         if (!mounted) return;
+        const fallback = getBootLanguage();
+        setAppLanguage(fallback);
+        applyRTL(fallback === 'ur');
         setLangReady(true);
       });
     return () => {

@@ -18,44 +18,50 @@ export function savePrayerCache(
   metaOrMethod?: any,
   maybePayload?: any,
   maybeMadhab?: string
-) {
-  let cacheKey: string;
-  let payload: object;
-  let date = '';
-  let location = '';
-  let method = 0;
-  let madhab = 'shafi';
+): boolean {
+  try {
+    let cacheKey: string;
+    let payload: object;
+    let date = '';
+    let location = '';
+    let method = 0;
+    let madhab = 'shafi';
 
-  if (typeof payloadOrLocation === 'object' && payloadOrLocation !== null && !Array.isArray(payloadOrLocation)) {
-    cacheKey = cacheKeyOrDate;
-    payload = payloadOrLocation;
-    if (metaOrMethod && typeof metaOrMethod === 'object') {
-      date = metaOrMethod.date || '';
-      location = metaOrMethod.location || '';
-      method = metaOrMethod.method ?? 0;
-      madhab = metaOrMethod.madhab || 'shafi';
+    if (typeof payloadOrLocation === 'object' && payloadOrLocation !== null && !Array.isArray(payloadOrLocation)) {
+      cacheKey = cacheKeyOrDate;
+      payload = payloadOrLocation;
+      if (metaOrMethod && typeof metaOrMethod === 'object') {
+        date = metaOrMethod.date || '';
+        location = metaOrMethod.location || '';
+        method = metaOrMethod.method ?? 0;
+        madhab = metaOrMethod.madhab || 'shafi';
+      }
+    } else {
+      date = cacheKeyOrDate;
+      location = String(payloadOrLocation || '');
+      method = Number(metaOrMethod || 0);
+      payload = maybePayload || {};
+      madhab = maybeMadhab || 'shafi';
+      cacheKey = `prayer:${date}:${location}:${method}:${madhab}`;
     }
-  } else {
-    date = cacheKeyOrDate;
-    location = String(payloadOrLocation || '');
-    method = Number(metaOrMethod || 0);
-    payload = maybePayload || {};
-    madhab = maybeMadhab || 'shafi';
-    cacheKey = `prayer:${date}:${location}:${method}:${madhab}`;
-  }
 
-  const storageKey = cacheKey.startsWith('prayer:') ? cacheKey : `prayer:${cacheKey}`;
-  webKV.set(
-    storageKey,
-    JSON.stringify({
-      payload: typeof payload === 'string' ? payload : JSON.stringify(payload),
-      date,
-      location,
-      method,
-      madhab,
-      cached_at: Date.now(),
-    })
-  );
+    const storageKey = cacheKey.startsWith('prayer:') ? cacheKey : `prayer:${cacheKey}`;
+    webKV.set(
+      storageKey,
+      JSON.stringify({
+        payload: typeof payload === 'string' ? payload : JSON.stringify(payload),
+        date,
+        location,
+        method,
+        madhab,
+        cached_at: Date.now(),
+      })
+    );
+    return true;
+  } catch (err) {
+    console.warn('[db.web] savePrayerCache failed:', err);
+    return false;
+  }
 }
 
 export function loadPrayerCache(
@@ -163,8 +169,115 @@ export function getSalahHistory(days: number): Record<string, Record<string, boo
   return out;
 }
 
-export function saveQuranCache(key: string, payload: object) {
-  webKV.set(`quran:${key}`, JSON.stringify(payload));
+export const QURAN_CACHE_BUDGET_BYTES = 5 * 1024 * 1024; // 5 MB for web localStorage
+
+export const PROTECTED_QURAN_CACHE_KEYS = new Set<string>([
+  'bookmarks',
+  'notes',
+  'playlists',
+  'audio-queue',
+  'audio-settings',
+  'last-read',
+  'recent-audio',
+  'quran-audio-downloads',
+  'surah-list',
+]);
+
+export const DISPOSABLE_KEY_PREFIXES = [
+  'surah:',
+  'ayah:',
+  'mosque:',
+  'tafsir:',
+  'tafsir-',
+  'tajweed:',
+  'hadith:',
+];
+
+export function isDisposableQuranCacheKey(
+  key: string,
+  protectedKeys?: Set<string> | string[]
+): boolean {
+  if (protectedKeys) {
+    if (protectedKeys instanceof Set && protectedKeys.has(key)) return false;
+    if (Array.isArray(protectedKeys) && protectedKeys.includes(key)) return false;
+  }
+  if (PROTECTED_QURAN_CACHE_KEYS.has(key)) return false;
+  if (key.startsWith('prayer-') || key.startsWith('prayer:')) return false;
+  if (key.startsWith('surah-last-ayah:')) return false;
+
+  if (protectedKeys !== undefined) {
+    return true;
+  }
+
+  return DISPOSABLE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix));
+}
+
+export function selectKeysToEvict(
+  rows: { key: string; size?: number; payload?: string; cached_at?: number }[],
+  budgetBytes: number,
+  protectedKeys?: Set<string> | string[]
+): string[] {
+  const getRowSize = (r: { size?: number; payload?: string }): number => {
+    if (typeof r.size === 'number') return r.size;
+    if (typeof r.payload === 'string') return r.payload.length;
+    return 0;
+  };
+
+  let totalBytes = rows.reduce((acc, r) => acc + getRowSize(r), 0);
+  if (totalBytes <= budgetBytes) {
+    return [];
+  }
+
+  const sorted = [...rows].sort((a, b) => (a.cached_at ?? 0) - (b.cached_at ?? 0));
+
+  const evicted: string[] = [];
+  for (const row of sorted) {
+    if (totalBytes <= budgetBytes) {
+      break;
+    }
+    if (!isDisposableQuranCacheKey(row.key, protectedKeys)) {
+      continue;
+    }
+    evicted.push(row.key);
+    totalBytes -= getRowSize(row);
+  }
+
+  return evicted;
+}
+
+export function enforceQuranCacheBudget(budgetBytes: number = QURAN_CACHE_BUDGET_BYTES): void {
+  try {
+    const rows = webKV.getAll('quran:');
+    const items = rows.map((r) => ({
+      key: r.key.replace(/^quran:/, ''),
+      size: r.value.length,
+      cached_at: 0,
+    }));
+    const toEvict = selectKeysToEvict(items, budgetBytes);
+    for (const k of toEvict) {
+      webKV.delete(`quran:${k}`);
+    }
+  } catch (err) {
+    console.warn('[db.web] enforceQuranCacheBudget failed:', err);
+  }
+}
+
+export function saveQuranCache(key: string, payload: object): boolean {
+  try {
+    webKV.set(`quran:${key}`, JSON.stringify(payload));
+    enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES);
+    return true;
+  } catch (err) {
+    console.warn('[db.web] saveQuranCache initial write failed, attempting eviction:', err);
+    try {
+      enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES);
+      webKV.set(`quran:${key}`, JSON.stringify(payload));
+      return true;
+    } catch (retryErr) {
+      console.warn('[db.web] saveQuranCache retry failed:', retryErr);
+      return false;
+    }
+  }
 }
 
 export function loadQuranCache<T>(key: string): T | null {

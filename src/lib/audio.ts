@@ -167,13 +167,23 @@ export async function configureAudio(): Promise<void> {
 export async function stopAdhan(): Promise<void> {
   try {
     if (statusSubscription) {
-      statusSubscription.remove();
+      try {
+        statusSubscription.remove();
+      } catch {}
       statusSubscription = null;
     }
     if (sound) {
-      sound.pause();
-      sound.remove();
+      const playerToRelease = sound;
       sound = null;
+      try {
+        playerToRelease.pause();
+      } catch {}
+      try {
+        playerToRelease.remove();
+      } catch {}
+      try {
+        (playerToRelease as any).release?.();
+      } catch {}
     }
   } catch {
     // ignore
@@ -221,14 +231,23 @@ export async function playAdhan(reciterId?: string): Promise<void> {
 
   const cleanup = () => {
     if (statusSubscription) {
-      statusSubscription.remove();
+      try {
+        statusSubscription.remove();
+      } catch {}
       statusSubscription = null;
     }
     if (sound) {
-      try {
-        sound.remove();
-      } catch {}
+      const playerToRelease = sound;
       sound = null;
+      try {
+        playerToRelease.pause();
+      } catch {}
+      try {
+        playerToRelease.remove();
+      } catch {}
+      try {
+        (playerToRelease as any).release?.();
+      } catch {}
     }
   };
 
@@ -249,24 +268,53 @@ export async function playAdhan(reciterId?: string): Promise<void> {
   try {
     // All reciters are remote adhan URLs now (the bundled "Classic App Chime"
     // was removed as a reciter option).
+    let s: AudioPlayer | null = null;
     try {
-      const s = createAudioPlayer({ uri: reciter.url });
+      s = createAudioPlayer({ uri: reciter.url });
+      sound = s;
       s.volume = 1.0;
       statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
       s.play();
-      sound = s;
+      s = null;
     } catch {
+      cleanup();
+      if (s) {
+        try {
+          (s as any).remove?.();
+        } catch {}
+        try {
+          (s as any).release?.();
+        } catch {}
+        s = null;
+      }
       // Last-resort offline fallback: bundled chime so the call still sounds
       // when the network is unavailable (not selectable as a reciter).
-      const s = createAudioPlayer(require('../../assets/sounds/adhan_chime.wav'));
-      s.volume = 1.0;
-      statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
-      s.play();
-      sound = s;
+      try {
+        s = createAudioPlayer(require('../../assets/sounds/adhan_chime.wav'));
+        sound = s;
+        s.volume = 1.0;
+        statusSubscription = s.addListener('playbackStatusUpdate', onPlaybackStatusUpdate);
+        s.play();
+        s = null;
+      } catch {
+        cleanup();
+        if (s) {
+          try {
+            (s as any).remove?.();
+          } catch {}
+          try {
+            (s as any).release?.();
+          } catch {}
+          s = null;
+        }
+        currentPlayingReciterId = null;
+        notifyListeners();
+        return;
+      }
     }
   } catch {
+    cleanup();
     currentPlayingReciterId = null;
     notifyListeners();
-    cleanup();
   }
 }

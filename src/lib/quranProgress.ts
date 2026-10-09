@@ -47,9 +47,33 @@ export async function loadQuranDailyProgress(dateStr = getTodayDateStr()): Promi
   };
 }
 
+export const MAX_PROGRESS_HISTORY_DAYS = 90;
+
+export async function pruneOldQuranDailyProgress(): Promise<void> {
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    const cutoffDate = new Date(Date.now() - MAX_PROGRESS_HISTORY_DAYS * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+
+    const keysToRemove = allKeys.filter((k) => {
+      if (!k.startsWith(STORAGE_KEY_PREFIX)) return false;
+      const datePart = k.slice(STORAGE_KEY_PREFIX.length);
+      return datePart < cutoffDate;
+    });
+
+    if (keysToRemove.length > 0) {
+      await AsyncStorage.multiRemove(keysToRemove);
+    }
+  } catch {
+    // non-fatal
+  }
+}
+
 export async function saveQuranDailyProgress(progress: QuranDailyProgress): Promise<void> {
   try {
     await AsyncStorage.setItem(`${STORAGE_KEY_PREFIX}${progress.date}`, JSON.stringify(progress));
+    await pruneOldQuranDailyProgress();
   } catch {
     // non-fatal
   }

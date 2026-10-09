@@ -157,6 +157,12 @@ function migrate(database: SQLite.SQLiteDatabase) {
       created_at INTEGER
     );
   `);
+
+  try {
+    enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, database);
+  } catch {
+    // non-fatal
+  }
 }
 
 
@@ -177,7 +183,7 @@ export function savePrayerCache(
   metaOrMethod?: any,
   maybePayload?: any,
   maybeMadhab?: string
-) {
+): boolean {
   try {
     let cacheKey: string;
     let payload: object;
@@ -204,12 +210,32 @@ export function savePrayerCache(
       cacheKey = `prayer:${date}:${location}:${method}:${madhab}`;
     }
 
-    getDb().runSync(
-      `INSERT OR REPLACE INTO prayer_cache (cache_key, date, location, method, madhab, payload, cached_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      cacheKey, date, location, method, madhab, JSON.stringify(payload), Date.now()
-    );
-  } catch { /* non-fatal */ }
+    const doInsert = () => {
+      getDb().runSync(
+        `INSERT OR REPLACE INTO prayer_cache (cache_key, date, location, method, madhab, payload, cached_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        cacheKey, date, location, method, madhab, JSON.stringify(payload), Date.now()
+      );
+    };
+
+    try {
+      doInsert();
+      return true;
+    } catch (writeErr) {
+      console.warn('[db.native] savePrayerCache initial write failed, attempting eviction:', writeErr);
+      try {
+        enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES);
+        doInsert();
+        return true;
+      } catch (retryErr) {
+        console.warn('[db.native] savePrayerCache retry failed:', retryErr);
+        return false;
+      }
+    }
+  } catch (outerErr) {
+    console.warn('[db.native] savePrayerCache failed:', outerErr);
+    return false;
+  }
 }
 
 export function loadPrayerCache(
@@ -305,13 +331,157 @@ export function getSalahHistory(days: number): Record<string, Record<string, boo
   return out;
 }
 
-export function saveQuranCache(key: string, payload: object) {
+export const QURAN_CACHE_BUDGET_BYTES = 400 * 1024 * 1024; // 400 MB
+
+export const PROTECTED_QURAN_CACHE_KEYS = new Set<string>([
+  'bookmarks',
+  'notes',
+  'playlists',
+  'audio-queue',
+  'audio-settings',
+  'last-read',
+  'recent-audio',
+  'quran-audio-downloads',
+  'surah-list',
+]);
+
+export const DISPOSABLE_KEY_PREFIXES = [
+  'surah:',
+  'ayah:',
+  'mosque:',
+  'tafsir:',
+  'tafsir-',
+  'tajweed:',
+  'hadith:',
+];
+
+export function isDisposableQuranCacheKey(
+  key: string,
+  protectedKeys?: Set<string> | string[]
+): boolean {
+  if (protectedKeys) {
+    if (protectedKeys instanceof Set && protectedKeys.has(key)) return false;
+    if (Array.isArray(protectedKeys) && protectedKeys.includes(key)) return false;
+  }
+  if (PROTECTED_QURAN_CACHE_KEYS.has(key)) return false;
+  if (key.startsWith('prayer-') || key.startsWith('prayer:')) return false;
+  if (key.startsWith('surah-last-ayah:')) return false;
+
+  if (protectedKeys !== undefined) {
+    return true;
+  }
+
+  return DISPOSABLE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix));
+}
+
+export function selectKeysToEvict(
+  rows: { key: string; size?: number; payload?: string; cached_at?: number }[],
+  budgetBytes: number,
+  protectedKeys?: Set<string> | string[]
+): string[] {
+  const getRowSize = (r: { size?: number; payload?: string }): number => {
+    if (typeof r.size === 'number') return r.size;
+    if (typeof r.payload === 'string') return r.payload.length;
+    return 0;
+  };
+
+  let totalBytes = rows.reduce((acc, r) => acc + getRowSize(r), 0);
+  if (totalBytes <= budgetBytes) {
+    return [];
+  }
+
+  const sorted = [...rows].sort((a, b) => (a.cached_at ?? 0) - (b.cached_at ?? 0));
+
+  const evicted: string[] = [];
+  for (const row of sorted) {
+    if (totalBytes <= budgetBytes) {
+      break;
+    }
+    if (!isDisposableQuranCacheKey(row.key, protectedKeys)) {
+      continue;
+    }
+    evicted.push(row.key);
+    totalBytes -= getRowSize(row);
+  }
+
+  return evicted;
+}
+
+export function enforceQuranCacheBudget(
+  budgetBytes: number = QURAN_CACHE_BUDGET_BYTES,
+  customDb?: SQLite.SQLiteDatabase
+): void {
+  try {
+    const database = customDb || getDb();
+    const row = database.getFirstSync<{ total: number | null }>(
+      'SELECT SUM(length(payload)) AS total FROM quran_cache'
+    );
+    let total = row?.total ?? 0;
+    if (total <= budgetBytes) {
+      return;
+    }
+
+    const BATCH_SIZE = 50;
+    while (total > budgetBytes) {
+      const res = database.runSync(
+        `DELETE FROM quran_cache
+         WHERE key IN (
+           SELECT key FROM quran_cache
+           WHERE (
+             key LIKE 'surah:%' OR
+             key LIKE 'ayah:%' OR
+             key LIKE 'mosque:%' OR
+             key LIKE 'tafsir:%' OR
+             key LIKE 'tafsir-%' OR
+             key LIKE 'tajweed:%' OR
+             key LIKE 'hadith:%'
+           )
+           AND key NOT IN ('bookmarks', 'notes', 'playlists', 'audio-queue', 'audio-settings', 'last-read', 'recent-audio', 'quran-audio-downloads', 'surah-list')
+           AND key NOT LIKE 'prayer-%'
+           AND key NOT LIKE 'prayer:%'
+           AND key NOT LIKE 'surah-last-ayah:%'
+           ORDER BY cached_at ASC
+           LIMIT ${BATCH_SIZE}
+         )`
+      );
+
+      if (!res || res.changes === 0) {
+        break;
+      }
+
+      const nextRow = database.getFirstSync<{ total: number | null }>(
+        'SELECT SUM(length(payload)) AS total FROM quran_cache'
+      );
+      total = nextRow?.total ?? 0;
+    }
+  } catch (err) {
+    console.warn('[db.native] enforceQuranCacheBudget failed:', err);
+  }
+}
+
+export function saveQuranCache(key: string, payload: object): boolean {
   try {
     getDb().runSync(
       'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
       key, JSON.stringify(payload), Date.now()
     );
-  } catch { /* non-fatal */ }
+    enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES);
+    return true;
+  } catch (err) {
+    console.warn('[db.native] saveQuranCache initial write failed, running eviction:', err);
+    try {
+      enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES);
+      getDb().runSync(
+        'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
+        key, JSON.stringify(payload), Date.now()
+      );
+      enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES);
+      return true;
+    } catch (retryErr) {
+      console.warn('[db.native] saveQuranCache retry failed (storage full?):', retryErr);
+      return false;
+    }
+  }
 }
 
 export function loadQuranCache<T>(key: string, validator?: (val: unknown) => val is T): T | null {

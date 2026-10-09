@@ -26,73 +26,151 @@ export function isValidReadingPosition(pos: { surah: number; ayah: number }): bo
   return ayah >= 1 && ayah <= maxAyah;
 }
 
-export function saveReadingPosition(surah: number, ayah: number): void {
+type ReadingPositionListener = () => void;
+const listeners = new Set<ReadingPositionListener>();
+
+export function addReadingPositionListener(listener: ReadingPositionListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function notifyPositionListeners(): void {
+  listeners.forEach((fn) => {
+    try {
+      fn();
+    } catch {}
+  });
+}
+
+let inMemoryMarker: ReadingMarker | null | undefined = undefined;
+let inMemoryPosition: ReadingPosition | null | undefined = undefined;
+
+export function getReadingMarkerSync(): ReadingMarker | null {
+  return inMemoryMarker ?? null;
+}
+
+export function getReadingPositionSync(): ReadingPosition | null {
+  return inMemoryPosition ?? null;
+}
+
+export function _resetReadingMemoryStateForTest(): void {
+  inMemoryMarker = undefined;
+  inMemoryPosition = undefined;
+  listeners.clear();
+}
+
+export async function saveReadingPosition(surah: number, ayah: number): Promise<boolean> {
+  if (!isValidReadingPosition({ surah, ayah })) return false;
   const position: ReadingPosition = {
     surah,
     ayah,
     savedAt: Date.now(),
   };
-  AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(position))
-    .catch(() => {});
+  inMemoryPosition = position;
+  notifyPositionListeners();
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(position));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function getReadingPosition(): Promise<ReadingPosition | null> {
   try {
     const stored = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!stored) return null;
+    if (!stored) {
+      if (inMemoryPosition === undefined) inMemoryPosition = null;
+      return inMemoryPosition ?? null;
+    }
     const parsed = JSON.parse(stored);
     if (
       parsed &&
       typeof parsed.savedAt === 'number' &&
       isValidReadingPosition(parsed)
     ) {
-      return parsed as ReadingPosition;
+      const pos = parsed as ReadingPosition;
+      if (!inMemoryPosition || inMemoryPosition.savedAt <= pos.savedAt) {
+        inMemoryPosition = pos;
+      }
+      return inMemoryPosition;
     }
-    return null;
+    return inMemoryPosition ?? null;
   } catch {
-    return null;
+    return inMemoryPosition ?? null;
   }
 }
 
-export function clearReadingPosition(): void {
-  AsyncStorage.removeItem(STORAGE_KEY).catch(() => {});
+export async function clearReadingPosition(): Promise<boolean> {
+  inMemoryPosition = null;
+  notifyPositionListeners();
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
  * Manual reading marker — the user explicitly says "this is where I stopped".
  * Exactly one active marker; setting a new one replaces the old.
  */
-export function saveReadingMarker(surah: number, ayah: number): void {
+export async function saveReadingMarker(surah: number, ayah: number): Promise<boolean> {
+  if (!isValidReadingPosition({ surah, ayah })) return false;
   const marker: ReadingMarker = {
     surah,
     ayah,
     savedAt: Date.now(),
     manual: true,
   };
-  AsyncStorage.setItem(MARKER_KEY, JSON.stringify(marker))
-    .catch(() => {});
+  inMemoryMarker = marker;
+  notifyPositionListeners();
+  try {
+    await AsyncStorage.setItem(MARKER_KEY, JSON.stringify(marker));
+    return true;
+  } catch {
+    // If storage write fails (e.g. disk full), optimistic inMemoryMarker is retained
+    return false;
+  }
 }
 
 export async function getReadingMarker(): Promise<ReadingMarker | null> {
   try {
     const stored = await AsyncStorage.getItem(MARKER_KEY);
-    if (!stored) return null;
+    if (!stored) {
+      if (inMemoryMarker === undefined) inMemoryMarker = null;
+      return inMemoryMarker ?? null;
+    }
     const parsed = JSON.parse(stored);
     if (
       parsed &&
       typeof parsed.savedAt === 'number' &&
       isValidReadingPosition(parsed)
     ) {
-      return { ...parsed, manual: true } as ReadingMarker;
+      const marker = { ...parsed, manual: true } as ReadingMarker;
+      if (!inMemoryMarker || inMemoryMarker.savedAt <= marker.savedAt) {
+        inMemoryMarker = marker;
+      }
+      return inMemoryMarker;
     }
-    return null;
+    return inMemoryMarker ?? null;
   } catch {
-    return null;
+    return inMemoryMarker ?? null;
   }
 }
 
-export function clearReadingMarker(): void {
-  AsyncStorage.removeItem(MARKER_KEY).catch(() => {});
+export async function clearReadingMarker(): Promise<boolean> {
+  inMemoryMarker = null;
+  notifyPositionListeners();
+  try {
+    await AsyncStorage.removeItem(MARKER_KEY);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
