@@ -41,7 +41,7 @@ import {
   HEADER_PADDING_VERTICAL,
   HEADER_SEPARATOR,
 } from './src/lib/headerTokens';
-import { t, setAppLanguage, applyRTL, resolvePersistedLanguage } from './src/lib/i18n';
+import { t, setAppLanguage, applyRTL, resolvePersistedLanguage, isRTL } from './src/lib/i18n';
 
 import HomeScreen from './src/screens/HomeScreen';
 import QiblaScreen from './src/screens/QiblaScreen';
@@ -286,7 +286,7 @@ function AppHeader({
           style={[styles.headerWordmark, { color: colors.textPrimary }]}
           numberOfLines={1}
         >
-          ISLAMIC
+          {isRTL() ? 'اسلامک' : 'ISLAMIC'}
         </Text>
       </View>
 
@@ -1552,10 +1552,10 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
   headerWordmark: {
-    fontFamily: 'SourceSans3_500Medium',
+    fontFamily: I18nManager.isRTL ? 'Amiri_700Bold' : 'SourceSans3_500Medium',
     fontSize: 13,
     lineHeight: 16,
-    letterSpacing: 4,
+    letterSpacing: I18nManager.isRTL ? 0 : 4,
   },
   gearBtn: {
     minWidth: 40,
