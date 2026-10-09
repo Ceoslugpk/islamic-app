@@ -38,7 +38,16 @@ import { stripTajweedHtml } from '../lib/tajweed';
 import { QuranScript, QURAN_SCRIPTS, fetchSurahWithScript, getScriptCacheKey } from '../lib/quranScripts';
 import { retry, cancel, remove, copy, share, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
 import { t, isRTL } from '../lib/i18n';
-import { useSettings, QURAN_FONT_SIZE_MIN, QURAN_FONT_SIZE_MAX, QURAN_FONT_SIZE_STEP } from '../lib/settings';
+import {
+  useSettings,
+  QURAN_FONT_SIZE_MIN,
+  QURAN_FONT_SIZE_MAX,
+  QURAN_FONT_SIZE_STEP,
+  QURAN_LINE_HEIGHT_MIN,
+  QURAN_LINE_HEIGHT_MAX,
+  QURAN_LINE_HEIGHT_STEP,
+  QURAN_LINE_HEIGHT_DEFAULT,
+} from '../lib/settings';
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
@@ -134,12 +143,12 @@ const VIEWABILITY_CONFIG: ViewabilityConfig = {
   minimumViewTime: 500,
 };
 
-// ponytail: BOUNDED_PRE_RENDER_CAP = 80 — target-aware initialNumToRender renders
-// enough cards on mount to cover ordinary marked targets (ayahs 15, 35, 70) in one
+// ponytail: BOUNDED_PRE_RENDER_CAP = 120 — target-aware initialNumToRender renders
+// enough cards on mount to cover ordinary marked targets (ayahs 15, 35, 70, 120) in one
 // frame with zero progressive hops, while capping mount memory/CPU for extreme
 // deep markers (e.g. Surah 2:286). Default opens at ayah 1 remain initialNumToRender={15}.
 // Upgrade path: if device performance allows, increase cap or paginate layout estimates.
-const BOUNDED_PRE_RENDER_CAP = 80;
+const BOUNDED_PRE_RENDER_CAP = 120;
 
 // Juz start mapping (which surah:ayah each juz starts at)
 const JUZ_STARTS: Record<number, { surah: number; ayah: number }> = {
@@ -286,7 +295,14 @@ export default function QuranReaderScreen({
   const { colors, mode } = useTheme();
   const { haptic } = useHaptics();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
-  const { settings, setQuranFontSize, setQuranShowTranslation, setTafsirSourceId, setQuranScript } = useSettings();
+  const {
+    settings,
+    setQuranFontSize,
+    setQuranLineHeight,
+    setQuranShowTranslation,
+    setTafsirSourceId,
+    setQuranScript,
+  } = useSettings();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
@@ -327,6 +343,10 @@ export default function QuranReaderScreen({
   });
   const [error, setError] = useState<string | null>(null);
   const fontSize = typeof settings?.quranFontSize === 'number' && settings.quranFontSize > 0 ? settings.quranFontSize : 28;
+  const quranLineHeight =
+    typeof settings?.quranLineHeight === 'number' && settings.quranLineHeight > 0
+      ? Math.round(settings.quranLineHeight * 10) / 10
+      : QURAN_LINE_HEIGHT_DEFAULT;
   const showTranslation = Boolean(settings?.quranShowTranslation);
   const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings?.tafsirSourceId) || TAFSIR_SOURCES[0];
   const arabicFamilies = (settings?.quranArabicFont && QURAN_FONT_FAMILIES[settings.quranArabicFont]) || QURAN_FONT_FAMILIES.amiri;
@@ -1241,7 +1261,7 @@ export default function QuranReaderScreen({
         retryTimerRef.current = null;
       }
 
-      // ponytail: For bounded targets within initialNumToRender (e.g. ayahs 15, 35, 70),
+      // ponytail: For bounded targets within initialNumToRender (e.g. ayahs 15, 35, 70, 120),
       // the card is already rendered on mount. Do NOT call scrollToOffset to an intermediate
       // measured edge — that caused the progressive 100ms stepping/hop lag on physical phones.
       // Instead, perform an immediate interaction-frame retry to let layout finish measuring.
@@ -1281,6 +1301,14 @@ export default function QuranReaderScreen({
 
   const handleAdjustFontSize = (delta: number) => {
     setQuranFontSize(fontSize + delta);
+  };
+
+  const handleAdjustLineHeight = (delta: number) => {
+    const next = Math.max(
+      QURAN_LINE_HEIGHT_MIN,
+      Math.min(QURAN_LINE_HEIGHT_MAX, Math.round((quranLineHeight + delta) * 10) / 10)
+    );
+    setQuranLineHeight(next);
   };
 
   const handleToggleTranslation = () => {
@@ -2372,6 +2400,75 @@ export default function QuranReaderScreen({
                       >
                         <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
                           A+
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.toolsMenuInnerDivider,
+                      { backgroundColor: colors.borderSubtle },
+                    ]}
+                  />
+
+                  {/* Line Height */}
+                  <View style={styles.toolsMenuFontRow}>
+                    <View style={styles.toolsMenuFontLabel}>
+                      <View
+                        style={[
+                          styles.toolsMenuIcon,
+                          { backgroundColor: colors.accentDim },
+                        ]}
+                      >
+                        <Ionicons name="reorder-three-outline" size={20} color={colors.accent} />
+                      </View>
+                      <View style={styles.toolsMenuTextGroup}>
+                        <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                          {t('Line Height')}
+                        </Text>
+                        <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
+                          {quranLineHeight.toFixed(1)}×
+                        </Text>
+                      </View>
+                    </View>
+                    <View style={styles.toolsMenuFontControls}>
+                      <TouchableOpacity
+                        style={[
+                          styles.toolsMenuFontBtn,
+                          {
+                            backgroundColor: colors.bgBase,
+                            borderColor: colors.borderSubtle,
+                            opacity: quranLineHeight <= QURAN_LINE_HEIGHT_MIN ? 0.35 : 1,
+                          },
+                        ]}
+                        onPress={() => handleAdjustLineHeight(-QURAN_LINE_HEIGHT_STEP)}
+                        disabled={quranLineHeight <= QURAN_LINE_HEIGHT_MIN}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Decrease line height')}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      >
+                        <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
+                          −
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.toolsMenuFontBtn,
+                          {
+                            backgroundColor: colors.bgBase,
+                            borderColor: colors.borderSubtle,
+                            opacity: quranLineHeight >= QURAN_LINE_HEIGHT_MAX ? 0.35 : 1,
+                          },
+                        ]}
+                        onPress={() => handleAdjustLineHeight(QURAN_LINE_HEIGHT_STEP)}
+                        disabled={quranLineHeight >= QURAN_LINE_HEIGHT_MAX}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Increase line height')}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      >
+                        <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
+                          +
                         </Text>
                       </TouchableOpacity>
                     </View>

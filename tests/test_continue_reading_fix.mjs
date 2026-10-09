@@ -344,7 +344,7 @@ assert.ok(readerSource.includes('cancelPendingRetry'), 'reader defines cancelPen
 const capMatch = readerSource.match(/BOUNDED_PRE_RENDER_CAP\s*=\s*(\d+)/);
 assert.ok(capMatch, 'BOUNDED_PRE_RENDER_CAP integer value declared in reader');
 const BOUNDED_PRE_RENDER_CAP = parseInt(capMatch[1], 10);
-assert.ok(BOUNDED_PRE_RENDER_CAP >= 75 && BOUNDED_PRE_RENDER_CAP <= 120, 'BOUNDED_PRE_RENDER_CAP covers 70 with headroom without blowing memory');
+assert.equal(BOUNDED_PRE_RENDER_CAP, 120, 'BOUNDED_PRE_RENDER_CAP must be 120');
 
 function computeReaderInitialNumToRender(targetAyah) {
   if (targetAyah <= 1) return 15;
@@ -354,8 +354,8 @@ function computeReaderInitialNumToRender(targetAyah) {
 // Ayah 1 default must remain 15
 assert.equal(computeReaderInitialNumToRender(1), 15, 'Default opens at ayah 1 must have initialNumToRender=15');
 
-// Bounded targets: 15, 35, 70
-for (const target of [15, 35, 70]) {
+// Bounded targets: 15, 35, 70, 120
+for (const target of [15, 35, 70, 120]) {
   const initialNum = computeReaderInitialNumToRender(target);
   const targetIndex = target - 1;
   assert.ok(initialNum > targetIndex, `initialNumToRender (${initialNum}) must pre-render past target index (${targetIndex}) for ayah ${target}`);
@@ -407,14 +407,14 @@ function simulatePositioningFlow(targetAyah) {
   return { landedIndex, intermediateHops, totalDelayMs, attempts };
 }
 
-// Verify bounded targets (15, 35, 70) require ZERO intermediate hops and no 100ms hops
-for (const target of [15, 35, 70]) {
+// Verify bounded targets (15, 35, 70, 120) require ZERO intermediate hops and no 100ms hops
+for (const target of [15, 35, 70, 120]) {
   const result = simulatePositioningFlow(target);
   assert.equal(result.landedIndex, target - 1, `Target ayah ${target} must land on exact index ${target - 1}`);
   assert.equal(result.intermediateHops, 0, `Target ayah ${target} must have 0 intermediate scrollToOffset hops (no stepping lag)`);
   assert.ok(result.totalDelayMs <= 30, `Target ayah ${target} must land within an interaction frame, got ${result.totalDelayMs}ms`);
 }
-console.log('  ✓ (h) bounded targets (15, 35, 70) land with 0 intermediate hops in interaction frame\n');
+console.log('  ✓ (h) bounded targets (15, 35, 70, 120) land with 0 intermediate hops in interaction frame\n');
 
 // ── Test i: deep target (286) convergence without OOM ────────────────────────
 console.log('Testing (i): deep target (286) convergence without OOM...');
@@ -440,6 +440,67 @@ cancelPendingRetrySim();
 assert.equal(activeTimer, null, 'User drag cancels pending retry timer');
 assert.equal(isProgrammatic, false, 'User drag clears programmatic positioning flag');
 console.log('  ✓ (j) user gesture cancels pending programmatic retry timer\n');
+
+// ── Test k: Quran Arabic line-height controls & clamp/round behavior ─────────
+console.log('Testing (k): Quran Arabic line-height controls & clamp/round behavior...');
+
+// 1. Static contract assertions on QuranReaderScreen source
+assert.ok(readerSource.includes('QURAN_LINE_HEIGHT_MIN'), 'reader imports QURAN_LINE_HEIGHT_MIN');
+assert.ok(readerSource.includes('QURAN_LINE_HEIGHT_MAX'), 'reader imports QURAN_LINE_HEIGHT_MAX');
+assert.ok(readerSource.includes('QURAN_LINE_HEIGHT_STEP'), 'reader imports QURAN_LINE_HEIGHT_STEP');
+assert.ok(readerSource.includes('setQuranLineHeight'), 'reader destructures setQuranLineHeight from useSettings');
+assert.ok(readerSource.includes('handleAdjustLineHeight'), 'reader defines handleAdjustLineHeight');
+assert.ok(readerSource.includes('reorder-three-outline'), 'reader uses reorder-three-outline icon for line height');
+assert.ok(readerSource.includes("t('Line Height')"), 'reader displays Line Height label');
+assert.ok(readerSource.includes("t('Decrease line height')"), 'reader has Decrease line height accessibility label');
+assert.ok(readerSource.includes("t('Increase line height')"), 'reader has Increase line height accessibility label');
+assert.ok(readerSource.includes('quranLineHeight <= QURAN_LINE_HEIGHT_MIN'), 'reader disables decrease button at min line height');
+assert.ok(readerSource.includes('quranLineHeight >= QURAN_LINE_HEIGHT_MAX'), 'reader disables increase button at max line height');
+assert.ok(readerSource.includes('-QURAN_LINE_HEIGHT_STEP'), 'reader decreases by QURAN_LINE_HEIGHT_STEP');
+assert.ok(readerSource.includes('handleAdjustLineHeight(QURAN_LINE_HEIGHT_STEP)'), 'reader increases by QURAN_LINE_HEIGHT_STEP');
+
+// 2. Behavioral verification of clamp + round logic (safe clamping and 1-decimal rounding)
+const MIN_LH = 1.4;
+const MAX_LH = 2.2;
+const STEP_LH = 0.1;
+const DEFAULT_LH = 1.8;
+
+function clampAndRoundLineHeight(current, delta) {
+  return Math.max(MIN_LH, Math.min(MAX_LH, Math.round((current + delta) * 10) / 10));
+}
+
+// Stepping from default 1.8:
+const steppedUp = clampAndRoundLineHeight(DEFAULT_LH, STEP_LH);
+assert.equal(steppedUp, 1.9, '1.8 + 0.1 must equal 1.9 without floating-point drift');
+assert.equal(steppedUp.toFixed(1) + '×', '1.9×');
+
+const steppedDown = clampAndRoundLineHeight(DEFAULT_LH, -STEP_LH);
+assert.equal(steppedDown, 1.7, '1.8 - 0.1 must equal 1.7 without floating-point drift');
+assert.equal(steppedDown.toFixed(1) + '×', '1.7×');
+
+// Clamp behavior at min boundary 1.4:
+const clampedMin = clampAndRoundLineHeight(MIN_LH, -STEP_LH);
+assert.equal(clampedMin, 1.4, 'Stepping down at 1.4 must stay clamped at 1.4');
+assert.ok(clampedMin <= MIN_LH, 'Decrease button must be disabled at min line height 1.4');
+
+// Clamp behavior at max boundary 2.2:
+const clampedMax = clampAndRoundLineHeight(MAX_LH, STEP_LH);
+assert.equal(clampedMax, 2.2, 'Stepping up at 2.2 must stay clamped at 2.2');
+assert.ok(clampedMax >= MAX_LH, 'Increase button must be disabled at max line height 2.2');
+
+// Full sweep across range [1.4..2.2] by 0.1 increments:
+let current = MIN_LH;
+const expectedValues = [1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2];
+for (let i = 0; i < expectedValues.length; i++) {
+  assert.equal(Math.round(current * 10) / 10, expectedValues[i]);
+  assert.equal(current.toFixed(1) + '×', `${expectedValues[i].toFixed(1)}×`);
+  if (i < expectedValues.length - 1) {
+    current = clampAndRoundLineHeight(current, STEP_LH);
+  }
+}
+assert.equal(current, 2.2, 'Sweep must reach 2.2 cleanly');
+
+console.log('  ✓ (k) line-height controls and clamp/round behavior verified at 1.4/1.8/2.2\n');
 
 // Static source file checks: ensure files adhere to contracts and no regressions
 const continuingSource = fs.readFileSync('src/lib/continuing.ts', 'utf8');
