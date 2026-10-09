@@ -283,6 +283,7 @@ export function PrayerTimeline({
                 style={[
                   styles.timelineRow,
                   {
+                    flexDirection: isRTL() ? 'row-reverse' : 'row',
                     backgroundColor: isCurrent ? colors.accentDim : 'transparent',
                   },
                 ]}
@@ -334,8 +335,8 @@ export function PrayerTimeline({
 
                 {/* Right content column */}
                 <View style={styles.contentColumn}>
-                  <View style={styles.rowMain}>
-                    <View style={styles.labelGroup}>
+                  <View style={[styles.rowMain, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                    <View style={[styles.labelGroup, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
                       <Text
                         style={[
                           styles.rowLabel,
@@ -393,6 +394,7 @@ export function PrayerTimeline({
                         style={[
                           styles.currentProgressTrack,
                           { backgroundColor: colors.borderSubtle },
+                          isRTL() ? { flexDirection: 'row-reverse' } : null,
                         ]}
                       >
                         <View
@@ -416,7 +418,7 @@ export function PrayerTimeline({
 
       {/* Integrated Salah Tracker Footer */}
       <Hairline />
-      <View style={styles.trackerFooter}>
+      <View style={[styles.trackerFooter, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
         <View style={styles.trackerLeft}>
           <Text style={[styles.trackerText, { color: colors.textSecondary }]}>
             <Text style={[styles.trackerBold, { color: colors.textPrimary }]}>

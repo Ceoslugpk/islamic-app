@@ -17,7 +17,8 @@ import { ArabicText } from './ArabicText';
 import { AnimatedPattern } from './AnimatedPattern';
 import { AyahOfDay } from '../lib/useAyahOfDay';
 import { Hadith } from '../lib/hadith';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
+import { hScrollRTLStyle } from '../lib/rtl';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -129,13 +130,13 @@ export function DailyContentRail({
       ]}
     >
       {/* Header Row: TODAY Eyebrow + Paging Dots */}
-      <View style={styles.headerRow}>
+      <View style={[styles.headerRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
         <View style={styles.eyebrowWrap}>
-          <Text style={[styles.eyebrow, { color: colors.accent }]}>{t('TODAY')}</Text>
+          <Text style={[styles.eyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>{t('TODAY')}</Text>
         </View>
 
         {/* Paging Indicators */}
-        <View style={styles.dotsWrap}>
+        <View style={[styles.dotsWrap, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
           {cards.map((_, i) => {
             const isActive = i === activeIndex;
             return (
@@ -161,10 +162,13 @@ export function DailyContentRail({
         snapToInterval={snapInterval}
         decelerationRate="fast"
         accessibilityLabel={t('Daily inspiration cards. Swipe left or right for Ayah, Hadith, and Names of God.')}
-        contentContainerStyle={{
-          paddingHorizontal: 0,
-          gap,
-        }}
+        contentContainerStyle={[
+          {
+            paddingHorizontal: 0,
+            gap,
+          },
+          hScrollRTLStyle(),
+        ]}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
@@ -209,8 +213,8 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel={t('Ayah of the Day. Tap to read.')}
                   >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.tagBadge}>
+                    <View style={[styles.cardHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                      <View style={[styles.tagBadge, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
                         <Ionicons name="book-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
                           {t('AYAH OF THE DAY')}
@@ -229,21 +233,37 @@ export function DailyContentRail({
                           {ayah.arabic || ayah.text}
                         </ArabicText>
                         <Text
-                          style={[styles.translationText, { color: colors.textSecondary }]}
+                          style={[
+                            styles.translationText,
+                            {
+                              color: colors.textSecondary,
+                              textAlign: isRTL() ? 'right' : 'left',
+                              writingDirection: isRTL() ? 'rtl' : 'ltr',
+                            },
+                          ]}
                           numberOfLines={3}
                         >
                           {ayah.translation}
                         </Text>
                         {ayah.reflection ? (
-                          <View style={styles.reflectionRow}>
+                          <View style={[styles.reflectionRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
                             <Ionicons name="sparkles-outline" size={12} color={colors.accent} />
-                            <Text style={[styles.reflectionText, { color: colors.textMuted }]}>
+                            <Text
+                              style={[
+                                styles.reflectionText,
+                                {
+                                  color: colors.textMuted,
+                                  textAlign: isRTL() ? 'right' : 'left',
+                                  writingDirection: isRTL() ? 'rtl' : 'ltr',
+                                },
+                              ]}
+                            >
                               {ayah.reflection}
                             </Text>
                           </View>
                         ) : null}
-                        <View style={styles.footerRow}>
-                          <Text style={[styles.referenceText, { color: colors.textSecondary }]}>
+                        <View style={[styles.footerRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                          <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
                             {ayah.reference}
                           </Text>
                         </View>
@@ -265,8 +285,8 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel={t('Hadith of the Day. Tap to open Hadith Library.')}
                   >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.tagBadge}>
+                    <View style={[styles.cardHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                      <View style={[styles.tagBadge, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
                         <Ionicons name="library-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
                           {t('HADITH OF THE DAY')}
@@ -287,13 +307,20 @@ export function DailyContentRail({
                           </ArabicText>
                         ) : null}
                         <Text
-                          style={[styles.translationText, { color: colors.textSecondary }]}
+                          style={[
+                            styles.translationText,
+                            {
+                              color: colors.textSecondary,
+                              textAlign: isRTL() ? 'right' : 'left',
+                              writingDirection: isRTL() ? 'rtl' : 'ltr',
+                            },
+                          ]}
                           numberOfLines={4}
                         >
                           "{hadith.translation}"
                         </Text>
-                        <View style={styles.footerRow}>
-                          <Text style={[styles.referenceText, { color: colors.textSecondary }]}>
+                        <View style={[styles.footerRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                          <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
                             {hadith.reference || hadith.source}
                           </Text>
                         </View>
@@ -315,8 +342,8 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel={t('Name of the Day. Tap to view 99 Names.')}
                   >
-                    <View style={styles.cardHeader}>
-                      <View style={styles.tagBadge}>
+                    <View style={[styles.cardHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                      <View style={[styles.tagBadge, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
                         <Ionicons name="sparkles-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
                           {t('NAME OF THE DAY')} · #{nameOfDay.number}
@@ -324,15 +351,25 @@ export function DailyContentRail({
                       </View>
                     </View>
 
-                    <View style={styles.nameRow}>
-                      <View style={styles.nameInfoCol}>
+                    <View style={[styles.nameRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                      <View style={[styles.nameInfoCol, isRTL() ? { alignItems: 'flex-end' } : null]}>
                         <Text
-                          style={[styles.nameTranslit, { color: colors.textPrimary }]}
+                          style={[
+                            styles.nameTranslit,
+                            { color: colors.textPrimary, textAlign: isRTL() ? 'right' : 'left' },
+                          ]}
                         >
                           {nameOfDay.transliteration}
                         </Text>
                         <Text
-                          style={[styles.nameMeaning, { color: colors.textSecondary }]}
+                          style={[
+                            styles.nameMeaning,
+                            {
+                              color: colors.textSecondary,
+                              textAlign: isRTL() ? 'right' : 'left',
+                              writingDirection: isRTL() ? 'rtl' : 'ltr',
+                            },
+                          ]}
                           numberOfLines={2}
                         >
                           {nameOfDay.meaning}
@@ -349,8 +386,8 @@ export function DailyContentRail({
                       </ArabicText>
                     </View>
 
-                    <View style={styles.footerRow}>
-                      <Text style={[styles.referenceText, { color: colors.textSecondary }]}>
+                    <View style={[styles.footerRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                      <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
                         {t('Asma ul-Husna · The Divine Attributes')}
                       </Text>
                     </View>

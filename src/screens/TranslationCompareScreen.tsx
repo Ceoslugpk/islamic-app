@@ -6,7 +6,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
@@ -18,8 +17,10 @@ import { fetchAyahEditions, fetchSurahList, SurahMeta } from '../lib/quran';
 import {
   getEditionForLanguage,
   getLanguageFlag,
+  getLocalizedTranslatorName,
   QURAN_LANGUAGE_EDITIONS,
 } from '../lib/quranLanguages';
+import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { hScrollRTLStyle, isRtlScript } from '../lib/rtl';
 
@@ -46,9 +47,6 @@ export default function TranslationCompareScreen({
   onOpenReader,
 }: TranslationCompareScreenProps) {
   const { colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const isCompact = width < 380;
-  const paddingH = isCompact ? 16 : 20;
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [currentSurah, setCurrentSurah] = useState<number>(initialSurah);
   const [currentAyah, setCurrentAyah] = useState<number>(initialAyah);
@@ -219,7 +217,7 @@ export default function TranslationCompareScreen({
             <View style={styles.editionCol}>
               <View style={styles.slotHeaderRow}>
                 <Text style={[styles.editionLabel, { color: colors.accent }]}>
-                  {t('TRANSLATION')} A · {flagA} {edA.language.toUpperCase()}
+                  {t('TRANSLATION')} A · {flagA} {getLocalizedLanguageName(edA.language).toUpperCase()}
                 </Text>
                 <TouchableOpacity
                   style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
@@ -272,7 +270,7 @@ export default function TranslationCompareScreen({
             <View style={styles.editionCol}>
               <View style={styles.slotHeaderRow}>
                 <Text style={[styles.editionLabel, { color: colors.accent }]}>
-                  {t('TRANSLATION')} B · {flagB} {edB.language.toUpperCase()}
+                  {t('TRANSLATION')} B · {flagB} {getLocalizedLanguageName(edB.language).toUpperCase()}
                 </Text>
                 <TouchableOpacity
                   style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
@@ -326,7 +324,7 @@ export default function TranslationCompareScreen({
               <View style={styles.editionCol}>
                 <View style={styles.slotHeaderRow}>
                   <Text style={[styles.editionLabel, { color: colors.accent }]}>
-                    {t('TRANSLATION')} C · {flagC} {edC.language.toUpperCase()}
+                    {t('TRANSLATION')} C · {flagC} {getLocalizedLanguageName(edC.language).toUpperCase()}
                   </Text>
                   <TouchableOpacity
                     style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
@@ -459,7 +457,7 @@ export default function TranslationCompareScreen({
                     <Text style={styles.flagEmoji}>{flagA}</Text>
                     <View>
                       <Text style={[styles.transAuthor, { color: colors.accent }]}>
-                        {edA.language} · {edA.name}
+                        {getLocalizedLanguageName(edA.language)} · {getLocalizedTranslatorName(edA.editionIdentifier, edA.name)}
                       </Text>
                       <Text style={[styles.editionCode, { color: colors.textMuted }]}>
                         {edA.editionIdentifier}
@@ -490,7 +488,7 @@ export default function TranslationCompareScreen({
                     <Text style={styles.flagEmoji}>{flagB}</Text>
                     <View>
                       <Text style={[styles.transAuthor, { color: colors.accent }]}>
-                        {edB.language} · {edB.name}
+                        {getLocalizedLanguageName(edB.language)} · {getLocalizedTranslatorName(edB.editionIdentifier, edB.name)}
                       </Text>
                       <Text style={[styles.editionCode, { color: colors.textMuted }]}>
                         {edB.editionIdentifier}
@@ -522,7 +520,7 @@ export default function TranslationCompareScreen({
                       <Text style={styles.flagEmoji}>{flagC}</Text>
                       <View>
                         <Text style={[styles.transAuthor, { color: colors.accent }]}>
-                          {edC.language} · {edC.name}
+                          {getLocalizedLanguageName(edC.language)} · {getLocalizedTranslatorName(edC.editionIdentifier, edC.name)}
                         </Text>
                         <Text style={[styles.editionCode, { color: colors.textMuted }]}>
                           {edC.editionIdentifier}

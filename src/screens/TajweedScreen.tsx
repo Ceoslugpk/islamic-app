@@ -20,8 +20,8 @@ import { ArabicText } from '../components/ArabicText';
 import { TajweedText, TajweedLegend } from '../components/TajweedText';
 import { fetchTajweedSurah, TajweedAyah } from '../lib/tajweed';
 import { SURAHS_114 } from '../lib/surahs114';
-import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
-import { getForwardIcon, getBackIcon } from '../lib/iconMap';
+import { getLocalizedSurahName, normalizeSearchText } from '../lib/surahNamesLocalized';
+import { getForwardIcon } from '../lib/iconMap';
 
 interface Props {
   onBack: () => void;
@@ -67,11 +67,19 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
     if (openSurah !== null) loadSurah(openSurah);
   }, [openSurah, loadSurah]);
 
-  const filtered = SURAHS_114.filter(
-    (s) =>
-      s.englishName.toLowerCase().includes(query.toLowerCase()) ||
-      s.number.toString().includes(query)
-  );
+  const rawQuery = query.trim();
+  const normQuery = normalizeSearchText(rawQuery);
+  const lowerQuery = rawQuery.toLowerCase();
+  const filtered = SURAHS_114.filter((s) => {
+    if (!normQuery) return true;
+    const englishNameMatch = s.englishName.toLowerCase().includes(lowerQuery) ||
+      normalizeSearchText(s.englishName).includes(normQuery);
+    const urduName = getLocalizedSurahName(s.number, s.englishName);
+    const urduMatch = normalizeSearchText(urduName).includes(normQuery) || (normQuery === 'یس' && s.number === 36);
+    const arabicMatch = normalizeSearchText(s.name).includes(normQuery);
+    const numberMatch = s.number.toString().includes(lowerQuery);
+    return englishNameMatch || urduMatch || arabicMatch || numberMatch;
+  });
 
   const openMeta = openSurah !== null ? SURAHS_114.find((s) => s.number === openSurah) : null;
 

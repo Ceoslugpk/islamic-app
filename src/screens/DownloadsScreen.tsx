@@ -39,6 +39,7 @@ import {
   QuranPreloadVerification,
 } from '../lib/quranPreloader';
 import { useQuranLanguage } from '../lib/quranLanguageState';
+import { getLocalizedTranslatorName } from '../lib/quranLanguages';
 import { useSettings } from '../lib/settings';
 
 
@@ -219,7 +220,7 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
                 {t('Quran Text & Translation')}
               </Text>
               <Text style={[styles.textSubtitle, { color: colors.textMuted }]} numberOfLines={2}>
-                {t('For offline reading (not audio)')} · {flag} {edition.name}
+                {t('For offline reading (not audio)')} · {flag} {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}
               </Text>
             </View>
             <TouchableOpacity

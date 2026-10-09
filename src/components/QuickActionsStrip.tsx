@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -118,7 +118,7 @@ export function QuickActionsStrip({
   ];
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, { flexDirection: isRTL() ? 'row-reverse' : 'row' }, style]}>
       {actions.map((act) => (
         <ActionButton
           key={act.label}

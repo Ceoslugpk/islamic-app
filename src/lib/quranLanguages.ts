@@ -1,3 +1,6 @@
+import { getCurrentLanguage } from './i18n';
+import { LANGUAGE_NAMES_UR } from './surahNamesLocalized';
+
 export interface QuranLanguageEdition {
   language: string;
   languageCode: string;
@@ -124,4 +127,381 @@ export function getLanguages(): QuranLanguageEdition[] {
 
 export function getQuranLanguages(): QuranLanguageEdition[] {
   return QURAN_LANGUAGE_EDITIONS;
+}
+
+export interface LocalizedEditionMeta {
+  title: string;
+  translator: string;
+  language: string;
+}
+
+export const EDITION_METADATA_UR: Record<string, { title: string; translator: string; language: string }> = {
+  // ── 48 Text Translations (keyed by stable editionIdentifier) ──
+  'ar.muyassar': {
+    title: 'تفسیر المیسر',
+    translator: 'المیسر',
+    language: 'عربی',
+  },
+  'en.sahih': {
+    title: 'صحیح انٹرنیشنل',
+    translator: 'صحیح انٹرنیشنل',
+    language: 'انگریزی',
+  },
+  'ur.jalandhry': {
+    title: 'فتح محمد جالندھری',
+    translator: 'مولانا فتح محمد جالندھری',
+    language: 'اردو',
+  },
+  'id.indonesian': {
+    title: 'انڈونیشیائی ترجمہ',
+    translator: 'وزارت مذہبی امور انڈونیشیا',
+    language: 'انڈونیشیائی',
+  },
+  'tr.diyanet': {
+    title: 'دیانت اشلری',
+    translator: 'دیانت اشلری صدارت',
+    language: 'ترکی',
+  },
+  'fr.hamidullah': {
+    title: 'محمد حمید اللہ',
+    translator: 'ڈاکٹر محمد حمید اللہ',
+    language: 'فرانسیسی',
+  },
+  'de.aburida': {
+    title: 'ابو ریدہ',
+    translator: 'ابو ریدہ محمد بن احمد',
+    language: 'جرمن',
+  },
+  'es.cortes': {
+    title: 'جولیو کورٹس',
+    translator: 'جولیو کورٹس',
+    language: 'ہسپانوی',
+  },
+  'ru.kuliev': {
+    title: 'ایلمیر قلیئیف',
+    translator: 'ایلمیر قلیئیف',
+    language: 'روسی',
+  },
+  'bn.bengali': {
+    title: 'محی الدین خان',
+    translator: 'مولانا محی الدین خان',
+    language: 'بنگالی',
+  },
+  'ms.basmeih': {
+    title: 'عبد اللہ محمد باسمیہ',
+    translator: 'عبد اللہ محمد باسمیہ',
+    language: 'ملائی',
+  },
+  'sw.barwani': {
+    title: 'علی محسن البروانی',
+    translator: 'علی محسن البروانی',
+    language: 'سواحلی',
+  },
+  'fa.ansarian': {
+    title: 'حسین انصاریان',
+    translator: 'حسین انصاریان',
+    language: 'فارسی',
+  },
+  'so.abduh': {
+    title: 'محمود محمد عبدہ',
+    translator: 'محمود محمد عبدہ',
+    language: 'صومالی',
+  },
+  'ta.tamil': {
+    title: 'جان ٹرسٹ فاؤنڈیشن',
+    translator: 'جان ٹرسٹ فاؤنڈیشن',
+    language: 'تامل',
+  },
+  'hi.hindi': {
+    title: 'سہیل فاروق خان و ندوی',
+    translator: 'سہیل فاروق خان و مفتی عزیز الرحمٰن ندوی',
+    language: 'ہندی',
+  },
+  'ha.gumi': {
+    title: 'ابوبکر محمود گومی',
+    translator: 'شیخ ابوبکر محمود گومی',
+    language: 'ہاؤسا',
+  },
+  'uz.sodik': {
+    title: 'محمد صادق محمد یوسف',
+    translator: 'شیخ محمد صادق محمد یوسف',
+    language: 'ازبک',
+  },
+  'sv.bernstrom': {
+    title: 'کنوٹ برنسٹروم',
+    translator: 'کنوٹ برنسٹروم',
+    language: 'سویڈش',
+  },
+  'am.sadiq': {
+    title: 'صادق و ثانی حبیب',
+    translator: 'صادق اور ثانی حبیب',
+    language: 'امہری',
+  },
+  'az.mammadaliyev': {
+    title: 'ممد علیئیف و بنیادوف',
+    translator: 'واصف ممد علیئیف و ضیاء بنیادوف',
+    language: 'آذربائیجانی',
+  },
+  'ba.mehanovic': {
+    title: 'محمد میہانووچ',
+    translator: 'محمد میہانووچ',
+    language: 'بوسنیائی',
+  },
+  'ber.mensur': {
+    title: 'آت منصور',
+    translator: 'رمضان آت منصور',
+    language: 'بربر',
+  },
+  'bg.theophanov': {
+    title: 'تسویطان تھیوفانوف',
+    translator: 'پروفیسر تسویطان تھیوفانوف',
+    language: 'بلغاریائی',
+  },
+  'bs.mlivo': {
+    title: 'مصطفیٰ ملیوو',
+    translator: 'مصطفیٰ ملیوو',
+    language: 'بوسنیائی',
+  },
+  'ce.magomedov': {
+    title: 'مگومیدوف',
+    translator: 'مگومیدوف',
+    language: 'چیچن',
+  },
+  'cs.hrbek': {
+    title: 'ایوان ہربیک',
+    translator: 'ایوان ہربیک',
+    language: 'چیک',
+  },
+  'dv.divehi': {
+    title: 'صدارتی دفتر مالدیپ',
+    translator: 'دفترِ صدر مالدیپ',
+    language: 'ديويہی',
+  },
+  'it.piccardo': {
+    title: 'حمزہ رابرٹو پیکارڈو',
+    translator: 'حمزہ رابرٹو پیکارڈو',
+    language: 'اطالوی',
+  },
+  'ja.japanese': {
+    title: 'ریوئیچی میتا',
+    translator: 'عمر ریوئیچی میتا',
+    language: 'جاپانی',
+  },
+  'ko.korean': {
+    title: 'کورین مسلم فیڈریشن',
+    translator: 'کورین مسلم فیڈریشن',
+    language: 'کوریائی',
+  },
+  'ku.asan': {
+    title: 'برہان محمد امین',
+    translator: 'برہان محمد امین',
+    language: 'کردی',
+  },
+  'ml.abdulhameed': {
+    title: 'عبد الحمید و پرپور',
+    translator: 'عبد الحمید اور پرپور',
+    language: 'ملیالم',
+  },
+  'my.ghazi': {
+    title: 'غازی محمد ہاشم',
+    translator: 'غازی محمد ہاشم',
+    language: 'برمی',
+  },
+  'nl.keyzer': {
+    title: 'سالومو کیزر',
+    translator: 'سالومو کیزر',
+    language: 'ڈچ',
+  },
+  'no.berg': {
+    title: 'اینار برگ',
+    translator: 'اینار برگ',
+    language: 'ناروے',
+  },
+  'pl.bielawskiego': {
+    title: 'جوزف بیلاوسکی',
+    translator: 'پروفیسر جوزف بیلاوسکی',
+    language: 'پولش',
+  },
+  'ps.abdulwali': {
+    title: 'عبد الولی',
+    translator: 'عبد الولی خاں',
+    language: 'پشتو',
+  },
+  'pt.elhayek': {
+    title: 'سمیر الحایک',
+    translator: 'سمیر الحایک',
+    language: 'پرتگالی',
+  },
+  'ro.grigore': {
+    title: 'جارج گریگورے',
+    translator: 'جارج گریگورے',
+    language: 'رومانیائی',
+  },
+  'sd.amroti': {
+    title: 'تاج محمود امروٹی',
+    translator: 'مولانا تاج محمود امروٹی',
+    language: 'سندھی',
+  },
+  'si.naseemismail': {
+    title: 'نسیم اسماعیل و مسور مولانا',
+    translator: 'نسیم اسماعیل و مسور مولانا',
+    language: 'سنہالا',
+  },
+  'sq.ahmeti': {
+    title: 'شریف احمدی',
+    translator: 'شریف احمدی',
+    language: 'البانوی',
+  },
+  'tg.ayati': {
+    title: 'عبد المحمد آیاتی',
+    translator: 'عبد المحمد آیاتی',
+    language: 'تاجک',
+  },
+  'th.thai': {
+    title: 'شاہ فہد قرآن کمپلیکس',
+    translator: 'شاہ فہد قرآن پرنٹنگ کمپلیکس',
+    language: 'تھائی',
+  },
+  'tt.nugman': {
+    title: 'یعقوب ابن نعمان',
+    translator: 'یعقوب ابن نعمان',
+    language: 'تاتاری',
+  },
+  'ug.saleh': {
+    title: 'محمد صالح',
+    translator: 'محمد صالح کاشغری',
+    language: 'ایغور',
+  },
+  'zh.jian': {
+    title: 'ما جیان',
+    translator: 'محمد ما جیان',
+    language: 'چینی',
+  },
+
+  // ── Audio Translations (keyed by reciter identifier) ──
+  'en.everyayah-walk': {
+    title: 'صحیح انٹرنیشنل (ابراہیم والک)',
+    translator: 'ابراہیم والک',
+    language: 'انگریزی',
+  },
+  'ur.everyayah-shamshad': {
+    title: 'شمشاد علی خان',
+    translator: 'شمشاد علی خان',
+    language: 'اردو',
+  },
+  'ur.everyayah-farhathashmi': {
+    title: 'ڈاکٹر فرحت ہاشمی',
+    translator: 'ڈاکٹر فرحت ہاشمی',
+    language: 'اردو',
+  },
+  'zh.chinese': {
+    title: 'چینی ترجمہ',
+    translator: 'چینی ترجمہ',
+    language: 'چینی',
+  },
+  'fr.leclerc': {
+    title: 'یوسف لےکلرک',
+    translator: 'یوسف لےکلرک',
+    language: 'فرانسیسی',
+  },
+  'ru.kuliev-audio': {
+    title: 'ایلمیر قلیئیف',
+    translator: 'ایلمیر قلیئیف',
+    language: 'روسی',
+  },
+  'tr.vakfi-audio': {
+    title: 'دیانت وقفی',
+    translator: 'دیانت وقفی',
+    language: 'ترکی',
+  },
+  'fa.everyayah-kabiri': {
+    title: 'مکارم شیرازی (کبیری)',
+    translator: 'مکارم شیرازی (کبیری)',
+    language: 'فارسی',
+  },
+  'fa.everyayah-hedayatfar': {
+    title: 'فولادوند (ہدایت فر)',
+    translator: 'فولادوند (ہدایت فر)',
+    language: 'فارسی',
+  },
+  'az.everyayah-balayev': {
+    title: 'راسم بالایف',
+    translator: 'راسم بالایف',
+    language: 'آذربائیجانی',
+  },
+  'kk.khalifahaltai-audio': {
+    title: 'خلیفہ التائی',
+    translator: 'خلیفہ التائی',
+    language: 'قازق',
+  },
+  'uz.sodik-audio': {
+    title: 'محمد صادق',
+    translator: 'محمد صادق',
+    language: 'ازبک',
+  },
+  'bs.everyayah-korkut': {
+    title: 'بیسم کورکوت',
+    translator: 'بیسم کورکوت',
+    language: 'بوسنیائی',
+  },
+};
+
+/**
+ * Returns localized translator / author display name for the current language.
+ * - Urdu (`ur`): returns localized Urdu translator name if available in map.
+ * - English (`en`): returns fallbackName unchanged.
+ * - Remote unknown editions safely fall back to fallbackName or identifier.
+ */
+export function getLocalizedTranslatorName(identifier: string, fallbackName?: string): string {
+  const lang = getCurrentLanguage();
+  if (lang === 'ur') {
+    const meta = EDITION_METADATA_UR[identifier];
+    if (meta?.translator) {
+      return meta.translator;
+    }
+  }
+  return fallbackName || identifier;
+}
+
+/**
+ * Returns localized translation title for the current language.
+ */
+export function getLocalizedTranslationTitle(identifier: string, fallbackTitle?: string): string {
+  const lang = getCurrentLanguage();
+  if (lang === 'ur') {
+    const meta = EDITION_METADATA_UR[identifier];
+    if (meta?.title) {
+      return meta.title;
+    }
+  }
+  return fallbackTitle || identifier;
+}
+
+/**
+ * Returns full localized edition metadata (title, translator, language) for current language.
+ */
+export function getLocalizedEditionMeta(
+  identifier: string,
+  fallbackName?: string,
+  fallbackLang?: string
+): LocalizedEditionMeta {
+  const lang = getCurrentLanguage();
+  const rawEdition = QURAN_LANGUAGE_EDITIONS.find((e) => e.editionIdentifier === identifier);
+  const defName = fallbackName || rawEdition?.name || identifier;
+  const defLang = fallbackLang || rawEdition?.language || '';
+
+  if (lang === 'ur') {
+    const meta = EDITION_METADATA_UR[identifier];
+    return {
+      title: meta?.title || defName,
+      translator: meta?.translator || defName,
+      language: meta?.language || (defLang ? (LANGUAGE_NAMES_UR[defLang] || defLang) : ''),
+    };
+  }
+
+  return {
+    title: defName,
+    translator: defName,
+    language: defLang,
+  };
 }

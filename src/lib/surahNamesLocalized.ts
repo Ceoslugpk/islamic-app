@@ -216,3 +216,42 @@ export function getLocalizedLanguageName(englishName: string): string {
   }
   return englishName;
 }
+
+/**
+ * Shared search normalizer for Arabic, Urdu, and English Surah/Islamic search.
+ * - Unicode NFKD normalization
+ * - Lowercases Latin characters
+ * - Strips all Arabic/Urdu diacritics, harakat, tashkeel, dagger alif (\u0670), tatweel (\u0640),
+ *   and Quranic annotation marks.
+ * - Normalizes letter variants:
+ *   - Alif variants [آأإٱ] -> ا
+ *   - Teh Marbuta and Heh variants [ةهھہۃ] -> ہ
+ *   - Yeh variants [يىی] -> ی
+ *   - Kaf variants [ك] -> ک
+ *   - Waw variants [ؤ] -> و
+ *   - Hamza on yeh [ئ] -> ی
+ * - Trims and collapses whitespace.
+ */
+export function normalizeSearchText(text: string): string {
+  if (!text) return '';
+  return text
+    .normalize('NFKD')
+    .toLowerCase()
+    // Strip Arabic & Urdu diacritics, harakat, dagger alif, tatweel, Quranic marks
+    .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
+    // Normalize Alif forms
+    .replace(/[آأإٱ]/g, 'ا')
+    // Normalize Teh Marbuta and Heh forms to standard Urdu Choti Heh
+    .replace(/[ةهھہۃ]/g, 'ہ')
+    // Normalize Arabic Yeh and Alif Maqsura to Urdu Choti Yeh
+    .replace(/[يىی]/g, 'ی')
+    // Normalize Arabic Kaf to Urdu Keheh
+    .replace(/[ك]/g, 'ک')
+    // Normalize Waw with Hamza
+    .replace(/[ؤ]/g, 'و')
+    // Normalize Yeh with Hamza
+    .replace(/[ئ]/g, 'ی')
+    // Collapse whitespace
+    .replace(/\s+/g, ' ')
+    .trim();
+}

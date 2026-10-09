@@ -16,11 +16,12 @@ import { hScrollRTLStyle } from '../lib/rtl';
 import { fetchSurahList, fetchSurahListForLanguage, getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { ArabicText } from '../components/ArabicText';
 import { SectionHeader } from '../components/SectionHeader';
+import i18n, { t } from '../lib/i18n';
 import { Hairline } from '../components/Hairline';
-import { t } from '../lib/i18n';
 import { LastReadPosition, loadLastReadPosition, loadQuranCache } from '../lib/db';
 import { getContinueReadingPosition, addReadingPositionListener, ReadingPosition } from '../lib/continuing';
-import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
+import { getLocalizedSurahName, getLocalizedLanguageName, normalizeSearchText } from '../lib/surahNamesLocalized';
+import { getLocalizedTranslatorName } from '../lib/quranLanguages';
 import { getRecentSurahs, RecentSurah } from '../lib/recentSurahs';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { getBookmarks, getNotes } from '../lib/study';
@@ -237,20 +238,33 @@ export default function QuranHomeScreen({
 
   const filteredSurahs = useMemo(() => {
     if (!surahs) return [];
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return surahs;
+    const rawQuery = searchQuery.trim();
+    if (!rawQuery) return surahs;
     
     // If verse reference detected, return just that surah
     if (verseRef) {
       return surahs.filter((s) => s.number === verseRef.surah);
     }
+
+    const normQuery = normalizeSearchText(rawQuery);
+    const lowerQuery = rawQuery.toLowerCase();
     
     return surahs.filter((s) => {
+      const englishNameMatch = s.englishName.toLowerCase().includes(lowerQuery);
+      const meaningMatch = s.englishNameTranslation.toLowerCase().includes(lowerQuery);
       const tr = translatedNames?.[s.number]?.toLowerCase() || '';
-      const nameMatch = s.englishName.toLowerCase().includes(query);
-      const meaningMatch = s.englishNameTranslation.toLowerCase().includes(query);
-      const trMatch = tr.includes(query);
-      const numberMatch = s.number.toString() === query;
+      const trMatch = tr.includes(lowerQuery);
+      const numberMatch = s.number.toString() === lowerQuery;
+
+      const urduName = getLocalizedSurahName(s.number, s.englishName);
+      const normUrdu = normalizeSearchText(urduName);
+      const normArabic = normalizeSearchText(s.name);
+      const normEnglish = normalizeSearchText(s.englishName);
+
+      const urduMatch = normUrdu.includes(normQuery) || (normQuery === 'یس' && s.number === 36);
+      const arabicMatch = normArabic.includes(normQuery);
+
+      const nameMatch = englishNameMatch || normEnglish.includes(normQuery) || urduMatch || arabicMatch;
       
       switch (searchFilter) {
         case 'name':
@@ -262,7 +276,7 @@ export default function QuranHomeScreen({
           return nameMatch || meaningMatch || trMatch || numberMatch;
       }
     });
-  }, [surahs, searchQuery, translatedNames, searchFilter, verseRef]);
+  }, [surahs, searchQuery, translatedNames, searchFilter, verseRef, i18n.language]);
 
   // Navigate to verse reference when detected and user submits search
   useEffect(() => {
@@ -348,7 +362,7 @@ export default function QuranHomeScreen({
           <View style={styles.langBarLeft}>
             <Text style={[styles.langBarLabel, { color: colors.accent }]}>{t('TRANSLATION')}</Text>
             <Text style={[styles.langBarTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-              {flag} {edition.language} <Text style={{ color: colors.textSecondary, fontSize: 12 }}>· {edition.name}</Text>
+              {flag} {getLocalizedLanguageName(edition.language)} <Text style={{ color: colors.textSecondary, fontSize: 12 }}>· {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}</Text>
             </Text>
           </View>
           <TouchableOpacity

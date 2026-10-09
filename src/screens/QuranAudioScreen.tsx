@@ -58,7 +58,8 @@ import {
 } from '../lib/quranAudio';
 import { useSettings } from '../lib/settings';
 import { checkNotificationPermission, requestNotificationPermission } from '../lib/notifications';
-import { getLanguageFlag } from '../lib/quranLanguages';
+import { getLanguageFlag, getLocalizedTranslatorName, getLocalizedTranslationTitle } from '../lib/quranLanguages';
+import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import {
   AudioSettings,
   deletePlaylist,
@@ -718,7 +719,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     {audioLangName} ({audioLanguage.toUpperCase()})
                   </Text>
                   <Text style={[styles.translationStatusVoice, { color: colors.accent }]}>
-                    {t('Voice')}: {audioEdition.englishName || audioEdition.name}
+                    {t('Voice')}: {getLocalizedTranslatorName(audioEdition.identifier, audioEdition.englishName || audioEdition.name)}
                   </Text>
                 </View>
               </View>
@@ -802,7 +803,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               numberOfLines={1}
                               ellipsizeMode="tail"
                             >
-                              {item.englishName}
+                              {getLocalizedTranslationTitle(item.identifier, item.englishName)}
                             </Text>
                             <View
                               style={[
@@ -828,7 +829,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               style={[styles.reciterArabic, { color: colors.textMuted }]}
                               numberOfLines={1}
                             >
-                              {item.name}
+                              {getLocalizedTranslatorName(item.identifier, item.name)}
                             </Text>
                           ) : null}
                         </View>
@@ -1539,11 +1540,11 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 }}>
                   <Text style={{ fontSize: 13 }}>{getLanguageFlag(audioEdition.language)}</Text>
                   <Text style={[styles.settingSub, { color: colors.accent, fontFamily: 'Manrope_600SemiBold' }]}>
-                    {audioLangName} · {audioEdition.englishName}
+                    {getLocalizedLanguageName(audioLangName)} · {getLocalizedTranslatorName(audioEdition.identifier, audioEdition.englishName)}
                   </Text>
                 </View>
                 <Text style={[styles.settingSub, { color: colors.textSecondary, marginTop: 2, fontSize: 11 }]}>
-                  {t('Audio edition')}: {audioEdition.englishName} ({audioEdition.language.toUpperCase()})
+                  {t('Audio edition')}: {getLocalizedTranslationTitle(audioEdition.identifier, audioEdition.englishName)} ({audioEdition.language.toUpperCase()})
                 </Text>
                 <TouchableOpacity
                   onPress={() => setActiveTab('translations')}

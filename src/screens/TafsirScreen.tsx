@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { t } from '../lib/i18n';
-import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
+import { getLocalizedSurahName, normalizeSearchText } from '../lib/surahNamesLocalized';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
@@ -91,11 +91,19 @@ export default function TafsirScreen({
     loadData();
   }, [loadData]);
 
-  const filteredSurahs = surahs.filter(
-    (s) =>
-      s.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.number.toString().includes(searchQuery)
-  );
+  const rawQuery = searchQuery.trim();
+  const normQuery = normalizeSearchText(rawQuery);
+  const lowerQuery = rawQuery.toLowerCase();
+  const filteredSurahs = surahs.filter((s) => {
+    if (!normQuery) return true;
+    const englishNameMatch = s.englishName.toLowerCase().includes(lowerQuery) ||
+      normalizeSearchText(s.englishName).includes(normQuery);
+    const urduName = getLocalizedSurahName(s.number, s.englishName);
+    const urduMatch = normalizeSearchText(urduName).includes(normQuery) || (normQuery === 'یس' && s.number === 36);
+    const arabicMatch = normalizeSearchText(s.name).includes(normQuery);
+    const numberMatch = s.number.toString().includes(lowerQuery);
+    return englishNameMatch || urduMatch || arabicMatch || numberMatch;
+  });
 
   const selectedSurahMeta = surahs.find((s) => s.number === currentSurah);
 

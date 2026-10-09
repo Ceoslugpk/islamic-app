@@ -16,7 +16,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { iconSizes } from '../lib/iconMap';
-import { QURAN_LANGUAGE_EDITIONS, QuranLanguageEdition } from '../lib/quranLanguages';
+import {
+  QURAN_LANGUAGE_EDITIONS,
+  QuranLanguageEdition,
+  getLocalizedTranslatorName,
+  getLocalizedTranslationTitle,
+} from '../lib/quranLanguages';
+import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { Hairline } from './Hairline';
 import { isRTL, t } from '../lib/i18n';
@@ -51,13 +57,20 @@ export function QuranLanguageModal({
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return QURAN_LANGUAGE_EDITIONS;
-    return QURAN_LANGUAGE_EDITIONS.filter(
-      (item) =>
+    return QURAN_LANGUAGE_EDITIONS.filter((item) => {
+      const locName = getLocalizedTranslatorName(item.editionIdentifier, item.name).toLowerCase();
+      const locTitle = getLocalizedTranslationTitle(item.editionIdentifier, item.name).toLowerCase();
+      const locLang = getLocalizedLanguageName(item.language).toLowerCase();
+      return (
         item.language.toLowerCase().includes(q) ||
+        locLang.includes(q) ||
         item.name.toLowerCase().includes(q) ||
+        locName.includes(q) ||
+        locTitle.includes(q) ||
         item.languageCode.toLowerCase().includes(q) ||
         item.flag.includes(q)
-    );
+      );
+    });
   }, [search]);
 
   const handleSelect = (item: QuranLanguageEdition) => {
@@ -179,6 +192,7 @@ export function QuranLanguageModal({
                 <TouchableOpacity
                   style={[
                     styles.languageRow,
+                    isRTL() && { flexDirection: 'row-reverse' },
                     {
                       backgroundColor: isSelected ? colors.accentDim : 'transparent',
                       borderColor: isSelected ? colors.accent : 'transparent',
@@ -186,7 +200,7 @@ export function QuranLanguageModal({
                   ]}
                   onPress={() => handleSelect(item)}
                   accessibilityRole="button"
-                  accessibilityLabel={`${item.language} - ${item.name}${isSelected ? ', currently selected' : ''}`}
+                  accessibilityLabel={`${getLocalizedLanguageName(item.language)} - ${getLocalizedTranslatorName(item.editionIdentifier, item.name)}${isSelected ? ', currently selected' : ''}`}
                 >
                   {/* Country Flag */}
                   <View style={styles.flagWrap}>
@@ -194,15 +208,16 @@ export function QuranLanguageModal({
                   </View>
 
                   {/* Language & Translator info */}
-                  <View style={styles.textWrap}>
-                    <View style={styles.langNameRow}>
+                  <View style={[styles.textWrap, isRTL() && { alignItems: 'flex-end' }]}>
+                    <View style={[styles.langNameRow, isRTL() && { flexDirection: 'row-reverse' }]}>
                       <Text
                         style={[
                           styles.languageText,
                           { color: isSelected ? colors.accent : colors.textPrimary },
+                          isRTL() && { textAlign: 'right' },
                         ]}
                       >
-                        {item.language}
+                        {getLocalizedLanguageName(item.language)}
                       </Text>
                       <View
                         style={[
@@ -227,10 +242,11 @@ export function QuranLanguageModal({
                       style={[
                         styles.editionNameText,
                         { color: isSelected ? colors.textPrimary : colors.textSecondary },
+                        isRTL() && { textAlign: 'right' },
                       ]}
                       numberOfLines={1}
                     >
-                      {item.name}
+                      {getLocalizedTranslatorName(item.editionIdentifier, item.name)}
                     </Text>
                   </View>
 

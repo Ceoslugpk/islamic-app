@@ -707,7 +707,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       // Snapshot settings and compute sanitized clean state once.
       // Do NOT use generic fire-and-forget persist() for the language change.
       const currentSnapshot = settingsRef.current;
-      const nextClean = computeNextLanguageSettings(currentSnapshot, nextLang);
+      const initialTafsir = nextLang === 'ur'
+        ? (currentSnapshot.tafsirSourceId === 'jalalayn' ? 'api-ibn-kathir-urdu' : undefined)
+        : (currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' ? 'jalalayn' : undefined);
+      const nextClean = sanitizeSettings({
+        ...computeNextLanguageSettings(currentSnapshot, nextLang),
+        ...(initialTafsir ? { tafsirSourceId: initialTafsir } : {}),
+      });
 
       try {
         // Direct durable write to storage

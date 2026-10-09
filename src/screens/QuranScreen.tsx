@@ -22,6 +22,8 @@ import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
+import { getLocalizedTranslatorName } from '../lib/quranLanguages';
+import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import { useConnectivity } from '../lib/useConnectivity';
 import { SurahSkeleton, Skeleton } from '../components/Skeleton';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -261,7 +263,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
             <View style={styles.langBarLeft}>
               <Text style={[styles.langBarLabel, { color: colors.accent }]}>{t('TRANSLATION')}</Text>
               <Text style={[styles.langBarTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-                {flag} {edition.language} <Text style={{ color: colors.textSecondary, fontSize: 12 }}>· {edition.name}</Text>
+                {flag} {getLocalizedLanguageName(edition.language)} <Text style={{ color: colors.textSecondary, fontSize: 12 }}>· {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}</Text>
               </Text>
             </View>
             <TouchableOpacity

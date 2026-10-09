@@ -139,9 +139,9 @@ export function ContinueReadingCard({
           accessibilityLabel={`${eyebrowText}, ${surahTitle}, ${ayahSubtext}`}
         >
           {/* Top Row: Eyebrow + Arabic name */}
-          <View style={styles.topRow}>
+          <View style={[styles.topRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
             <View style={styles.eyebrowWrap}>
-              <Text style={[styles.eyebrow, { color: colors.accent }]}>
+              <Text style={[styles.eyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>
                 {eyebrowText}
               </Text>
             </View>
@@ -151,15 +151,18 @@ export function ContinueReadingCard({
           </View>
 
           {/* Main Title Row: Surah Name + Arrow Chevron */}
-          <View style={styles.titleRow}>
-            <View style={styles.titleCol}>
+          <View style={[styles.titleRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+            <View style={[styles.titleCol, isRTL() ? { alignItems: 'flex-end' } : null]}>
               <Text
-                style={[styles.surahName, { color: colors.textPrimary }]}
+                style={[
+                  styles.surahName,
+                  { color: colors.textPrimary, textAlign: isRTL() ? 'right' : 'left' },
+                ]}
                 numberOfLines={1}
               >
                 {surahTitle}
               </Text>
-              <Text style={[styles.ayahLabel, { color: colors.textMuted }]}>
+              <Text style={[styles.ayahLabel, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}>
                 {ayahSubtext}
                 {isResuming && (
                   <Text style={{ color: colors.textSecondary }}>
@@ -187,6 +190,7 @@ export function ContinueReadingCard({
             style={[
               styles.progressTrack,
               { backgroundColor: colors.borderSubtle },
+              isRTL() ? { flexDirection: 'row-reverse' } : null,
             ]}
             accessibilityRole="progressbar"
             accessibilityValue={{ min: 0, max: 100, now: progressPercent }}

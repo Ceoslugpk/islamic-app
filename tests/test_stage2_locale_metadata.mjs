@@ -120,7 +120,8 @@ for (const [enName] of langNames) {
   assert.ok(enName.length > 0, 'LANGUAGE_NAMES_UR has empty key');
 }
 // The edition languages in quranLanguages must ALL have an entry in LANGUAGE_NAMES_UR
-const editionLangs = [...quranLangsCode.matchAll(/language:\s*'([^']+)'/g)].map((m) => m[1]);
+const editionsBlockMatch = quranLangsCode.match(/export const QURAN_LANGUAGE_EDITIONS:[\s\S]*?= \[([\s\S]*?)\n\];/);
+const editionLangs = [...(editionsBlockMatch ? editionsBlockMatch[1] : quranLangsCode).matchAll(/language:\s*'([^']+)'/g)].map((m) => m[1]);
 const uniqueEditionLangs = [...new Set(editionLangs)];
 const uncovered = uniqueEditionLangs.filter((l) => !urLangKeys.has(l));
 assert.deepStrictEqual(uncovered, [], `Quran edition languages without Urdu name: ${uncovered.join(', ')}`);

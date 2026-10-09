@@ -40,7 +40,11 @@ export async function resolvePersistedLanguage(forceFresh = false): Promise<AppL
 
 /** Synchronously readable current language (module-level cache, set at boot). */
 export function getBootLanguage(): AppLanguage {
-  return persistedLanguage || (deviceLanguageCode === 'ur' ? 'ur' : 'en');
+  if (persistedLanguage) return persistedLanguage;
+  if (Platform.OS !== 'web') {
+    return I18nManager.isRTL ? 'ur' : 'en';
+  }
+  return deviceLanguageCode === 'ur' ? 'ur' : 'en';
 }
 
 const initialLanguage: AppLanguage = getBootLanguage();
@@ -74,7 +78,7 @@ applyRTL(initialLanguage === 'ur');
  */
 export function applyRTL(isRTL: boolean): void {
   try {
-    I18nManager.allowRTL(true);
+    I18nManager.allowRTL(isRTL);
     I18nManager.forceRTL(isRTL);
   } catch {
     // Ignore native module errors in environments where not supported
@@ -90,7 +94,7 @@ export function applyRTL(isRTL: boolean): void {
  * IMMEDIATELY BEFORE Updates.reloadAsync().
  *
  * On native: layout direction changes only take effect on the NEXT native/JS reload.
- * Calling allowRTL(true) and forceRTL(lang === 'ur') writes the preference into
+ * Calling allowRTL(isUrdu) and forceRTL(isUrdu) writes the preference into
  * native storage (SharedPreferences / NSUserDefaults) before reloadAsync restarts the JS engine,
  * guaranteeing the next reload boots directly into the correct layout direction (Urdu RTL vs English LTR).
  * On web: updates document element dir/lang immediately.
@@ -99,7 +103,7 @@ export function applyRTL(isRTL: boolean): void {
 export function prepareNativeLayoutDirection(lang: AppLanguage): void {
   const isUrdu = lang === 'ur';
   try {
-    I18nManager.allowRTL(true);
+    I18nManager.allowRTL(isUrdu);
     I18nManager.forceRTL(isUrdu);
   } catch {
     // Ignore native module errors in environments where not supported

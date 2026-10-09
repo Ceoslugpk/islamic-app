@@ -46,7 +46,7 @@ import {
   getSleepTimerInitialMinutes,
 } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
-import { getLanguageFlag } from '../lib/quranLanguages';
+import { getLanguageFlag, getLocalizedTranslatorName, getLocalizedTranslationTitle } from '../lib/quranLanguages';
 import { isRTL } from '../lib/i18n';
 
 export interface AudioPlayerModalProps {
@@ -580,7 +580,7 @@ export function AudioPlayerModal({
                     ]}
                     numberOfLines={1}
                   >
-                    {audioEdition ? (audioEdition.englishName || audioEdition.name) : 'No audio'}
+                    {audioEdition ? getLocalizedTranslationTitle(audioEdition.identifier, audioEdition.englishName || audioEdition.name) : 'No audio'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -601,7 +601,7 @@ export function AudioPlayerModal({
                     numberOfLines={1}
                   >
                     {audioEdition
-                      ? `Voice: ${audioEdition.englishName || audioEdition.name}`
+                      ? `Voice: ${getLocalizedTranslatorName(audioEdition.identifier, audioEdition.englishName || audioEdition.name)}`
                       : 'Audio translation unavailable'}
                   </Text>
                 </View>
@@ -1038,11 +1038,11 @@ export function AudioPlayerModal({
                             {langTitle} ({ed.language.toUpperCase()})
                           </Text>
                           <Text style={[styles.pickerOptionSub, { color: colors.textMuted }]} numberOfLines={1}>
-                            {ed.englishName}
+                            {getLocalizedTranslationTitle(ed.identifier, ed.englishName)}
                           </Text>
                           {ed.name ? (
                             <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }} numberOfLines={1}>
-                              {ed.name}
+                              {getLocalizedTranslatorName(ed.identifier, ed.name)}
                             </Text>
                           ) : null}
                         </View>

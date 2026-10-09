@@ -63,6 +63,8 @@ import { AdhanReciterModal } from '../components/AdhanReciterModal';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { formatTime } from '../lib/timeFormat';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
+import { getLocalizedTranslatorName } from '../lib/quranLanguages';
+import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import { accentThemes, ACCENT_KEYS } from '../lib/accents';
 import { clearWomenData, clearCycleHistory } from '../lib/db';
 import { WomenPinModal } from '../components/WomenPinModal';
@@ -518,7 +520,7 @@ export default function SettingsScreen({
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
-      if (reloadTimerRef.current) {
+      if (reloadTimerRef.current && !isSwitchingLanguageRef.current) {
         clearTimeout(reloadTimerRef.current);
         reloadTimerRef.current = null;
       }
@@ -808,16 +810,15 @@ export default function SettingsScreen({
                 // reload boots in the NEW language (otherwise Urdu->English could
                 // reload stale). setLanguage is typed Promise<void>|void.
                 Promise.resolve(setLanguage(nextLang)).then(() => {
-                  isSwitchingLanguageRef.current = false;
-                  if (!mountedRef.current) return;
                   onPrepareReload?.();
                   prepareNativeLayoutDirection(nextLang);
                   if (Platform.OS !== 'web') {
                     reloadTimerRef.current = setTimeout(() => {
                       reloadTimerRef.current = null;
-                      if (!mountedRef.current) return;
                       Updates.reloadAsync().catch(() => DevSettings.reload());
                     }, 400);
+                  } else {
+                    isSwitchingLanguageRef.current = false;
                   }
                 })
                   .catch(() => {
@@ -921,9 +922,9 @@ export default function SettingsScreen({
         <Section label="Holy Quran">
           <Row
             title="Translation Language"
-            desc={`${flag} ${edition.language} (${edition.name})`}
+            desc={`${flag} ${getLocalizedLanguageName(edition.language)} (${getLocalizedTranslatorName(edition.editionIdentifier, edition.name)})`}
             onPress={() => { setQuranLangModalOpen(true); haptic('light'); }}
-            accessibilityLabel={`Change translation language. Current: ${edition.language} ${flag}`}
+            accessibilityLabel={`Change translation language. Current: ${getLocalizedLanguageName(edition.language)} ${flag}`}
             right={<Ionicons name={getForwardIcon()} size={18} color={colors.accent} />}
           />
         </Section>
@@ -934,11 +935,11 @@ export default function SettingsScreen({
             title="Preload Quran text"
             desc={
               preloadProgress.isComplete
-                ? t('{{n}}/114 cached · {{flag}} {{edition}} ready offline', { n: 114, flag, edition: edition.name })
+                ? t('{{n}}/114 cached · {{flag}} {{edition}} ready offline', { n: 114, flag, edition: getLocalizedTranslatorName(edition.editionIdentifier, edition.name) })
                 : preloadProgress.isRunning
                 ? t('Downloading text {{n}}/114…', { n: preloadProgress.cached }) +
                   (preloadProgress.currentSurah ? ` · ${t('Surah')} ${preloadProgress.currentSurah}` : '')
-                : t('{{n}}/114 cached · {{flag}} {{edition}}', { n: preloadProgress.cached, flag, edition: edition.name })
+                : t('{{n}}/114 cached · {{flag}} {{edition}}', { n: preloadProgress.cached, flag, edition: getLocalizedTranslatorName(edition.editionIdentifier, edition.name) })
             }
             right={
               <View style={styles.rightCluster}>

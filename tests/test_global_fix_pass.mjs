@@ -49,7 +49,10 @@ const i18n = fs.readFileSync('src/lib/i18n.ts', 'utf8');
 assert.ok(i18n.includes('resolvePersistedLanguage'), 'i18n exposes resolvePersistedLanguage');
 assert.ok(i18n.includes('PERSISTED_LANGUAGE_KEY'), 'reads persisted language key');
 const app = fs.readFileSync('App.tsx', 'utf8');
-assert.ok(app.includes('resolvePersistedLanguage()'), 'App resolves language at boot');
+assert.ok(
+  app.includes('resolvePersistedLanguage(true)') || app.includes('resolvePersistedLanguage()'),
+  'App resolves language at boot'
+);
 assert.ok(app.includes('applyRTL(lang ==='), 'App applies RTL at boot from persisted lang');
 console.log('  [ok] Language boot resolves persisted language + direction pre-mount');
 

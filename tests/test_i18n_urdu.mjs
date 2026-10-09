@@ -44,7 +44,8 @@ console.log('  ✓ Auto-link behavior: translation, tafsir, and translation-audi
 // 4. RTL management verification
 const i18nCode = fs.readFileSync('src/lib/i18n.ts', 'utf8');
 
-assert.ok(i18nCode.includes('I18nManager.allowRTL(true)'), 'I18nManager.allowRTL enabled');
+assert.ok(i18nCode.includes('I18nManager.allowRTL(isRTL)'), 'boot reconciliation enables RTL only for Urdu and disables it for English');
+assert.ok(i18nCode.includes('I18nManager.allowRTL(isUrdu)'), 'switch preparation enables RTL for Urdu and disables it for English');
 assert.ok(i18nCode.includes('I18nManager.forceRTL(isRTL)'), 'I18nManager.forceRTL wired');
 assert.ok(i18nCode.includes("document.documentElement.dir = isRTL ? 'rtl' : 'ltr'"), 'Web RTL direction configured');
 

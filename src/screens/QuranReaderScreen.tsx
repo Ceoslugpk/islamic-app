@@ -103,7 +103,8 @@ import {
 } from '../lib/db';
 import { getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { hScrollRTLStyle, isRtlScript } from '../lib/rtl';
-import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
+import { getLocalizedSurahName, getLocalizedLanguageName } from '../lib/surahNamesLocalized';
+import { getLocalizedTranslatorName } from '../lib/quranLanguages';
 
 // Simple keep-awake implementation using a timer (fallback when expo-keep-awake not available)
 const keepAwakeTimers = new Map<number, ReturnType<typeof setInterval>>();
@@ -2607,7 +2608,7 @@ export default function QuranReaderScreen({
                         style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
                         numberOfLines={1}
                       >
-                        {flag} {language.toUpperCase()} — {edition.name}
+                        {flag} {getLocalizedLanguageName(language).toUpperCase()} — {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}
                       </Text>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />

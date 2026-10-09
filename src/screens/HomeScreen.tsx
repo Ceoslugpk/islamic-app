@@ -878,22 +878,22 @@ export default function HomeScreen({
         {/* 6. Dua After Prayer — swipeable carousel showing all after-prayer duas */}
         <View style={styles.duaRailContainer}>
           {/* Header Row: Eyebrow + context + pagination */}
-          <View style={styles.duaRailHeaderRow}>
-            <View style={styles.duaRailHeaderLeft}>
-              <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent }]}>
+          <View style={[styles.duaRailHeaderRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+            <View style={[styles.duaRailHeaderLeft, isRTL() && { alignItems: 'flex-end' }]}>
+              <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>
                 {t('Dua After Prayer')}
               </Text>
-              <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted }]}>
+              <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}>
                 {lastCompletedPrayer ? `${t('For')} ${t(lastCompletedPrayer)}` : t('Authentic Adhkar')}
               </Text>
             </View>
 
             {/* Pagination indicator: 1 of N + dots */}
-            <View style={styles.duaPaginationWrap}>
-              <Text style={[styles.duaPaginationText, { color: colors.textMuted }]}>
+            <View style={[styles.duaPaginationWrap, { alignItems: isRTL() ? 'flex-start' : 'flex-end' }]}>
+              <Text style={[styles.duaPaginationText, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}>
                 {activeDuaIndex + 1} of {allAfterPrayerDuas.length}
               </Text>
-              <View style={styles.duaDotsRow}>
+              <View style={[styles.duaDotsRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
                 {allAfterPrayerDuas.map((_, i) => {
                   const isActive = i === activeDuaIndex;
                   return (
@@ -941,7 +941,7 @@ export default function HomeScreen({
                   <Card style={styles.duaAfterPrayerCard} padded={false}>
                     <TouchableOpacity
                       activeOpacity={0.88}
-                      style={styles.duaAfterPrayerHeader}
+                      style={[styles.duaAfterPrayerHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}
                       onPress={() => {
                         haptic('light');
                         setExpandedDuaIds((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
@@ -950,7 +950,7 @@ export default function HomeScreen({
                       accessibilityState={{ expanded: isExpanded }}
                       accessibilityLabel={`Dua ${idx + 1} of ${allAfterPrayerDuas.length}. Tap to ${isExpanded ? 'collapse' : 'expand'}.`}
                     >
-                      <View style={styles.duaBadgeRow}>
+                      <View style={[styles.duaBadgeRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
                         <View
                           style={[
                             styles.duaNumberBadge,
@@ -977,7 +977,7 @@ export default function HomeScreen({
                           </View>
                         )}
                       </View>
-                      <View style={styles.duaExpandBtn}>
+                      <View style={[styles.duaExpandBtn, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
                         <Text style={[styles.duaExpandBtnText, { color: colors.textMuted }]}>
                           {isExpanded ? t('Less') : t('More')}
                         </Text>
@@ -1004,7 +1004,7 @@ export default function HomeScreen({
                           <Text
                             style={[
                               styles.duaAfterPrayerTransliteration,
-                              { color: colors.textSecondary },
+                              { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' },
                             ]}
                           >
                             {item.transliteration}
@@ -1012,7 +1012,7 @@ export default function HomeScreen({
                           <Text
                             style={[
                               styles.duaAfterPrayerTranslation,
-                              { color: colors.textPrimary },
+                              { color: colors.textPrimary, textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' },
                             ]}
                           >
                             {item.translation}
@@ -1021,12 +1021,12 @@ export default function HomeScreen({
                             <View
                               style={[
                                 styles.duaRefRow,
-                                { borderTopColor: colors.borderSubtle },
+                                { borderTopColor: colors.borderSubtle, flexDirection: isRTL() ? 'row-reverse' : 'row' },
                               ]}
                             >
                               <Ionicons name="book-outline" size={11} color={colors.textMuted} />
                               <Text
-                                style={[styles.duaAfterPrayerRef, { color: colors.textMuted }]}
+                                style={[styles.duaAfterPrayerRef, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}
                               >
                                 {item.reference || item.source}
                               </Text>
@@ -1037,7 +1037,7 @@ export default function HomeScreen({
                         <Text
                           style={[
                             styles.duaAfterPrayerTranslation,
-                            { color: colors.textSecondary },
+                            { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' },
                           ]}
                           numberOfLines={2}
                         >

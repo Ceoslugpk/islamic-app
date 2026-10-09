@@ -1494,7 +1494,7 @@ export default function App() {
   // vice versa) when the persisted language differs from the device locale.
   useEffect(() => {
     let mounted = true;
-    resolvePersistedLanguage()
+    resolvePersistedLanguage(true)
       .then((lang) => {
         if (!mounted) return;
         setAppLanguage(lang);
