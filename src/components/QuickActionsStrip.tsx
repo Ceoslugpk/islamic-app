@@ -118,7 +118,7 @@ export function QuickActionsStrip({
   ];
 
   return (
-    <View style={[styles.container, { flexDirection: isRTL() ? 'row-reverse' : 'row' }, style]}>
+    <View style={[styles.container, style]}>
       {actions.map((act) => (
         <ActionButton
           key={act.label}
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   actionCol: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 64,
+    minWidth: 54,
   },
   iconCircle: {
     width: 48,

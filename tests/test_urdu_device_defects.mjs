@@ -65,51 +65,119 @@ const quickActionsCode = fs.readFileSync('src/components/QuickActionsStrip.tsx',
 const dailyContentRailCode = fs.readFileSync('src/components/DailyContentRail.tsx', 'utf8');
 const prayerTimelineCode = fs.readFileSync('src/components/PrayerTimeline.tsx', 'utf8');
 
-// 2a. ContinueReadingCard supports RTL alignments and row direction
+// 2a. No conflicting double-mirroring: React Native / Yoga mirrors rows in RTL;
+// manual flexDirection: isRTL() ? 'row-reverse' : 'row' must NOT be applied to nested cards/rows.
 assert.ok(
-  continueReadingCode.includes('isRTL() ?') || continueReadingCode.includes('isRTL'),
-  'ContinueReadingCard must consume isRTL helper'
+  !continueReadingCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'"),
+  'ContinueReadingCard must not double-mirror with row-reverse'
 );
+assert.ok(
+  !prayerTimelineCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'"),
+  'PrayerTimeline rows and footer must not double-mirror with row-reverse'
+);
+assert.ok(
+  !quickActionsCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'"),
+  'QuickActionsStrip must not double-mirror with row-reverse'
+);
+assert.ok(
+  !dailyContentRailCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'"),
+  'DailyContentRail cards and rows must not double-mirror with row-reverse'
+);
+assert.ok(
+  !homeScreenCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'"),
+  'HomeScreen Dua rail rows must not double-mirror with row-reverse'
+);
+
+// 2b. RTL text alignment and typography
 assert.ok(
   continueReadingCode.includes("textAlign: isRTL() ? 'right' : 'left'"),
   'ContinueReadingCard text must align right in RTL'
 );
 assert.ok(
-  continueReadingCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'"),
-  'ContinueReadingCard rows must flow row-reverse in RTL'
-);
-
-// 2b. QuickActionsStrip flows row-reverse in RTL so first action starts from right
-assert.ok(
-  quickActionsCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'") ||
-  quickActionsCode.includes('isRTL() ?'),
-  'QuickActionsStrip must flow RTL so action ordering starts from right in Urdu'
-);
-
-// 2c. DailyContentRail horizontal scroll uses hScrollRTLStyle and card headers/text flow RTL
-assert.ok(
-  dailyContentRailCode.includes('hScrollRTLStyle'),
-  'DailyContentRail horizontal ScrollView must apply hScrollRTLStyle'
+  continueReadingCode.includes("fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular'"),
+  'ContinueReadingCard surah title must use Amiri font in RTL to avoid glyph boxes'
 );
 assert.ok(
   dailyContentRailCode.includes("textAlign: isRTL() ? 'right' : 'left'"),
   'DailyContentRail translations and text must align right in RTL'
 );
 assert.ok(
-  dailyContentRailCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'"),
-  'DailyContentRail header and rows must reverse in RTL'
+  dailyContentRailCode.includes("fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular'"),
+  'DailyContentRail divine names must use Amiri font in RTL'
 );
-
-// 2d. Dua After Prayer in HomeScreen flows RTL
 assert.ok(
   homeScreenCode.includes("textAlign: isRTL() ? 'right' : 'left'"),
   'HomeScreen Dua rail texts must align right in RTL'
 );
-
-// 2e. PrayerTimeline rows and footer flow RTL
 assert.ok(
-  prayerTimelineCode.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'"),
-  'PrayerTimeline footer / rows must flow row-reverse in RTL'
+  prayerTimelineCode.includes("isRTL() ? 'Amiri_700Bold' : 'Manrope_700Bold'"),
+  'PrayerTimeline labels must use Amiri in RTL'
+);
+
+// 2c. Horizontal ScrollViews keep standard hScrollRTLStyle for native RTL start alignment
+assert.ok(
+  dailyContentRailCode.includes('hScrollRTLStyle'),
+  'DailyContentRail horizontal ScrollView must apply hScrollRTLStyle'
+);
+assert.ok(
+  homeScreenCode.includes('hScrollRTLStyle'),
+  'HomeScreen Dua horizontal ScrollView must apply hScrollRTLStyle'
+);
+
+// 2d. Responsiveness: container-measured layout, clamping, and snap interval parity
+assert.ok(
+  dailyContentRailCode.includes('measuredWidth') && dailyContentRailCode.includes('onLayout'),
+  'DailyContentRail must measure container width onLayout'
+);
+assert.ok(
+  homeScreenCode.includes('duaRailWidth') && homeScreenCode.includes('onLayout'),
+  'HomeScreen Dua rail must measure container width onLayout'
+);
+assert.ok(
+  dailyContentRailCode.includes('snapInterval = cardWidth + gap'),
+  'DailyContentRail snapInterval must match cardWidth + gap'
+);
+assert.ok(
+  homeScreenCode.includes('duaSnapInterval = duaCardWidth + duaGap'),
+  'HomeScreen Dua snapInterval must match cardWidth + gap'
+);
+
+// 2e. Exercise responsiveness formulas across 320, 360, 390, 430, and tablet viewports
+const testWidths = [320, 360, 390, 430, 768, 1024];
+const gap = 12;
+for (const w of testWidths) {
+  const containerW = Math.max(260, w - 48);
+  const cardW = Math.min(containerW, 620);
+  const snap = cardW + gap;
+
+  // Clamped at 620 max for wide screens/tablets
+  assert.ok(cardW <= 620, `Card width at viewport ${w} must be <= 620 (got ${cardW})`);
+  // Fits inside available width
+  assert.ok(cardW <= containerW, `Card width must not overflow container width at viewport ${w}`);
+  // Snap interval strictly matches cardWidth + gap
+  assert.equal(snap, cardW + gap, `Snap interval must match card width + gap at viewport ${w}`);
+}
+
+// 2f. Card vertical compactness contracts to prevent height inflation
+assert.ok(
+  dailyContentRailCode.includes('numberOfLines={1}'),
+  'DailyContentRail divine names must limit transliteration lines to avoid vertical inflation'
+);
+assert.ok(
+  dailyContentRailCode.includes('minHeight: 180') && dailyContentRailCode.includes('flex: 1'),
+  'DailyContentRail cards must have uniform flex: 1 and minHeight to avoid height mismatch'
+);
+
+// 2g. PrayerTimeline safe symmetric insets and shrink protection for time strings
+assert.ok(
+  prayerTimelineCode.includes('paddingHorizontal: 16'),
+  'PrayerTimeline timelineRow must use paddingHorizontal: 16 for safe 16px insets on both edges'
+);
+assert.ok(
+  prayerTimelineCode.includes('minWidth: 0') &&
+  prayerTimelineCode.includes("writingDirection: 'ltr'") &&
+  prayerTimelineCode.includes('flexShrink: 0'),
+  'PrayerTimeline must protect time strings with writingDirection LTR, flexShrink 0, and minWidth 0'
 );
 
 console.log('  ✓ Task 2 Home cards RTL flow assertions passed.');

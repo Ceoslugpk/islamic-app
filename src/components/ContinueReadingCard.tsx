@@ -139,7 +139,7 @@ export function ContinueReadingCard({
           accessibilityLabel={`${eyebrowText}, ${surahTitle}, ${ayahSubtext}`}
         >
           {/* Top Row: Eyebrow + Arabic name */}
-          <View style={[styles.topRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+          <View style={styles.topRow}>
             <View style={styles.eyebrowWrap}>
               <Text style={[styles.eyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>
                 {eyebrowText}
@@ -151,12 +151,16 @@ export function ContinueReadingCard({
           </View>
 
           {/* Main Title Row: Surah Name + Arrow Chevron */}
-          <View style={[styles.titleRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.titleCol, isRTL() ? { alignItems: 'flex-end' } : null]}>
+          <View style={styles.titleRow}>
+            <View style={styles.titleCol}>
               <Text
                 style={[
                   styles.surahName,
-                  { color: colors.textPrimary, textAlign: isRTL() ? 'right' : 'left' },
+                  {
+                    color: colors.textPrimary,
+                    textAlign: isRTL() ? 'right' : 'left',
+                    fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                  },
                 ]}
                 numberOfLines={1}
               >
@@ -190,7 +194,6 @@ export function ContinueReadingCard({
             style={[
               styles.progressTrack,
               { backgroundColor: colors.borderSubtle },
-              isRTL() ? { flexDirection: 'row-reverse' } : null,
             ]}
             accessibilityRole="progressbar"
             accessibilityValue={{ min: 0, max: 100, now: progressPercent }}
@@ -276,6 +279,7 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 2,
     overflow: 'hidden',
+    flexDirection: 'row',
   },
   progressFill: {
     height: '100%',

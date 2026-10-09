@@ -391,7 +391,9 @@ export default function HomeScreen({
   );
 
   const isCompact = useMemo(() => width <= 380, [width]);
-  const duaCardWidth = useMemo(() => Math.min(width - 48, 620), [width]);
+  const [duaRailWidth, setDuaRailWidth] = useState(0);
+  const effectiveDuaWidth = duaRailWidth || Math.max(260, width - 48);
+  const duaCardWidth = useMemo(() => Math.min(effectiveDuaWidth, 620), [effectiveDuaWidth]);
   const duaGap = 12;
   const duaSnapInterval = duaCardWidth + duaGap;
 
@@ -876,10 +878,18 @@ export default function HomeScreen({
         />
 
         {/* 6. Dua After Prayer — swipeable carousel showing all after-prayer duas */}
-        <View style={styles.duaRailContainer}>
+        <View
+          style={styles.duaRailContainer}
+          onLayout={(e) => {
+            const w = Math.round(e.nativeEvent.layout.width);
+            if (w > 0 && Math.abs(w - duaRailWidth) > 1) {
+              setDuaRailWidth(w);
+            }
+          }}
+        >
           {/* Header Row: Eyebrow + context + pagination */}
-          <View style={[styles.duaRailHeaderRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
-            <View style={[styles.duaRailHeaderLeft, isRTL() && { alignItems: 'flex-end' }]}>
+          <View style={styles.duaRailHeaderRow}>
+            <View style={styles.duaRailHeaderLeft}>
               <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>
                 {t('Dua After Prayer')}
               </Text>
@@ -893,7 +903,7 @@ export default function HomeScreen({
               <Text style={[styles.duaPaginationText, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}>
                 {activeDuaIndex + 1} of {allAfterPrayerDuas.length}
               </Text>
-              <View style={[styles.duaDotsRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+              <View style={styles.duaDotsRow}>
                 {allAfterPrayerDuas.map((_, i) => {
                   const isActive = i === activeDuaIndex;
                   return (
@@ -941,7 +951,7 @@ export default function HomeScreen({
                   <Card style={styles.duaAfterPrayerCard} padded={false}>
                     <TouchableOpacity
                       activeOpacity={0.88}
-                      style={[styles.duaAfterPrayerHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}
+                      style={styles.duaAfterPrayerHeader}
                       onPress={() => {
                         haptic('light');
                         setExpandedDuaIds((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
@@ -950,7 +960,7 @@ export default function HomeScreen({
                       accessibilityState={{ expanded: isExpanded }}
                       accessibilityLabel={`Dua ${idx + 1} of ${allAfterPrayerDuas.length}. Tap to ${isExpanded ? 'collapse' : 'expand'}.`}
                     >
-                      <View style={[styles.duaBadgeRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                      <View style={styles.duaBadgeRow}>
                         <View
                           style={[
                             styles.duaNumberBadge,
@@ -977,7 +987,7 @@ export default function HomeScreen({
                           </View>
                         )}
                       </View>
-                      <View style={[styles.duaExpandBtn, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                      <View style={styles.duaExpandBtn}>
                         <Text style={[styles.duaExpandBtnText, { color: colors.textMuted }]}>
                           {isExpanded ? t('Less') : t('More')}
                         </Text>
@@ -1021,7 +1031,7 @@ export default function HomeScreen({
                             <View
                               style={[
                                 styles.duaRefRow,
-                                { borderTopColor: colors.borderSubtle, flexDirection: isRTL() ? 'row-reverse' : 'row' },
+                                { borderTopColor: colors.borderSubtle },
                               ]}
                             >
                               <Ionicons name="book-outline" size={11} color={colors.textMuted} />

@@ -56,11 +56,12 @@ export function DailyContentRail({
   const { colors } = useTheme();
   const { haptic } = useHaptics();
   const { width: windowWidth } = useWindowDimensions();
+  const [measuredWidth, setMeasuredWidth] = useState(0);
 
   // Dimensions
-  const containerPadding = 20;
-  const cardWidth = windowWidth - containerPadding * 2;
   const gap = 12;
+  const effectiveWidth = measuredWidth || Math.max(260, windowWidth - 48);
+  const cardWidth = Math.min(effectiveWidth, 620);
   const snapInterval = cardWidth + gap;
 
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -120,6 +121,12 @@ export function DailyContentRail({
 
   return (
     <Animated.View
+      onLayout={(e) => {
+        const w = Math.round(e.nativeEvent.layout.width);
+        if (w > 0 && Math.abs(w - measuredWidth) > 1) {
+          setMeasuredWidth(w);
+        }
+      }}
       style={[
         styles.root,
         {
@@ -130,13 +137,13 @@ export function DailyContentRail({
       ]}
     >
       {/* Header Row: TODAY Eyebrow + Paging Dots */}
-      <View style={[styles.headerRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+      <View style={styles.headerRow}>
         <View style={styles.eyebrowWrap}>
           <Text style={[styles.eyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>{t('TODAY')}</Text>
         </View>
 
         {/* Paging Indicators */}
-        <View style={[styles.dotsWrap, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+        <View style={styles.dotsWrap}>
           {cards.map((_, i) => {
             const isActive = i === activeIndex;
             return (
@@ -213,8 +220,8 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel={t('Ayah of the Day. Tap to read.')}
                   >
-                    <View style={[styles.cardHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
-                      <View style={[styles.tagBadge, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                    <View style={styles.cardHeader}>
+                      <View style={styles.tagBadge}>
                         <Ionicons name="book-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
                           {t('AYAH OF THE DAY')}
@@ -246,7 +253,7 @@ export function DailyContentRail({
                           {ayah.translation}
                         </Text>
                         {ayah.reflection ? (
-                          <View style={[styles.reflectionRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                          <View style={styles.reflectionRow}>
                             <Ionicons name="sparkles-outline" size={12} color={colors.accent} />
                             <Text
                               style={[
@@ -262,7 +269,7 @@ export function DailyContentRail({
                             </Text>
                           </View>
                         ) : null}
-                        <View style={[styles.footerRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                        <View style={styles.footerRow}>
                           <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
                             {ayah.reference}
                           </Text>
@@ -285,8 +292,8 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel={t('Hadith of the Day. Tap to open Hadith Library.')}
                   >
-                    <View style={[styles.cardHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
-                      <View style={[styles.tagBadge, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                    <View style={styles.cardHeader}>
+                      <View style={styles.tagBadge}>
                         <Ionicons name="library-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
                           {t('HADITH OF THE DAY')}
@@ -319,7 +326,7 @@ export function DailyContentRail({
                         >
                           "{hadith.translation}"
                         </Text>
-                        <View style={[styles.footerRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                        <View style={styles.footerRow}>
                           <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
                             {hadith.reference || hadith.source}
                           </Text>
@@ -342,8 +349,8 @@ export function DailyContentRail({
                     accessibilityRole="button"
                     accessibilityLabel={t('Name of the Day. Tap to view 99 Names.')}
                   >
-                    <View style={[styles.cardHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
-                      <View style={[styles.tagBadge, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                    <View style={styles.cardHeader}>
+                      <View style={styles.tagBadge}>
                         <Ionicons name="sparkles-outline" size={12} color={colors.accent} />
                         <Text style={[styles.cardTag, { color: colors.accent }]}>
                           {t('NAME OF THE DAY')} · #{nameOfDay.number}
@@ -351,13 +358,28 @@ export function DailyContentRail({
                       </View>
                     </View>
 
-                    <View style={[styles.nameRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
-                      <View style={[styles.nameInfoCol, isRTL() ? { alignItems: 'flex-end' } : null]}>
+                    <View style={styles.nameRow}>
+                      <ArabicText
+                        size={28}
+                        bold
+                        align={isRTL() ? 'right' : 'left'}
+                        numberOfLines={1}
+                        style={styles.nameArabic}
+                      >
+                        {nameOfDay.arabic || nameOfDay.name || ''}
+                      </ArabicText>
+
+                      <View style={styles.nameInfoCol}>
                         <Text
                           style={[
                             styles.nameTranslit,
-                            { color: colors.textPrimary, textAlign: isRTL() ? 'right' : 'left' },
+                            {
+                              color: colors.textPrimary,
+                              textAlign: isRTL() ? 'right' : 'left',
+                              fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                            },
                           ]}
+                          numberOfLines={1}
                         >
                           {nameOfDay.transliteration}
                         </Text>
@@ -375,18 +397,9 @@ export function DailyContentRail({
                           {nameOfDay.meaning}
                         </Text>
                       </View>
-
-                      <ArabicText
-                        size={32}
-                        bold
-                        align="right"
-                        style={styles.nameArabic}
-                      >
-                        {nameOfDay.arabic || nameOfDay.name || ''}
-                      </ArabicText>
                     </View>
 
-                    <View style={[styles.footerRow, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                    <View style={styles.footerRow}>
                       <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
                         {t('Asma ul-Husna · The Divine Attributes')}
                       </Text>
@@ -440,6 +453,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     minHeight: 180,
+    flex: 1,
   },
   cardContent: {
     position: 'relative',
@@ -447,6 +461,7 @@ const styles = StyleSheet.create({
     minHeight: 180,
     justifyContent: 'space-between',
     zIndex: 1,
+    flex: 1,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -499,20 +514,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    marginVertical: 10,
+    marginVertical: 6,
+    gap: 6,
   },
   nameInfoCol: {
-    flex: 1,
+    gap: 2,
   },
   nameTranslit: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 26,
-    lineHeight: 30,
-    marginBottom: 4,
+    fontSize: 22,
+    lineHeight: 28,
   },
   nameMeaning: {
     fontFamily: 'Manrope_400Regular',
@@ -520,7 +531,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   nameArabic: {
-    lineHeight: 44,
+    lineHeight: 36,
   },
   placeholderText: {
     fontFamily: 'Manrope_400Regular',

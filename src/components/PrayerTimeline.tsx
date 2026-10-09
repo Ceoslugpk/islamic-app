@@ -283,7 +283,6 @@ export function PrayerTimeline({
                 style={[
                   styles.timelineRow,
                   {
-                    flexDirection: isRTL() ? 'row-reverse' : 'row',
                     backgroundColor: isCurrent ? colors.accentDim : 'transparent',
                   },
                 ]}
@@ -335,8 +334,8 @@ export function PrayerTimeline({
 
                 {/* Right content column */}
                 <View style={styles.contentColumn}>
-                  <View style={[styles.rowMain, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
-                    <View style={[styles.labelGroup, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+                  <View style={styles.rowMain}>
+                    <View style={styles.labelGroup}>
                       <Text
                         style={[
                           styles.rowLabel,
@@ -394,7 +393,6 @@ export function PrayerTimeline({
                         style={[
                           styles.currentProgressTrack,
                           { backgroundColor: colors.borderSubtle },
-                          isRTL() ? { flexDirection: 'row-reverse' } : null,
                         ]}
                       >
                         <View
@@ -418,7 +416,7 @@ export function PrayerTimeline({
 
       {/* Integrated Salah Tracker Footer */}
       <Hairline />
-      <View style={[styles.trackerFooter, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+      <View style={styles.trackerFooter}>
         <View style={styles.trackerLeft}>
           <Text style={[styles.trackerText, { color: colors.textSecondary }]}>
             <Text style={[styles.trackerBold, { color: colors.textPrimary }]}>
@@ -454,7 +452,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
-    paddingEnd: 16,
+    paddingHorizontal: 16,
     minHeight: 46,
   },
   railColumn: {
@@ -522,24 +520,30 @@ const styles = StyleSheet.create({
   contentColumn: {
     flex: 1,
     justifyContent: 'center',
+    minWidth: 0,
   },
   rowMain: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
   labelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
+    minWidth: 0,
   },
   rowLabel: {
     fontSize: 15,
+    flexShrink: 1,
   },
   nowBadge: {
     paddingHorizontal: 6,
     paddingVertical: 1.5,
     borderRadius: 4,
+    flexShrink: 0,
   },
   nowBadgeText: {
     fontFamily: 'Manrope_700Bold',
@@ -548,6 +552,8 @@ const styles = StyleSheet.create({
   },
   rowTime: {
     fontSize: 15,
+    flexShrink: 0,
+    writingDirection: 'ltr',
   },
   currentProgressTrackWrap: {
     marginTop: 6,
@@ -557,6 +563,7 @@ const styles = StyleSheet.create({
     height: 3,
     borderRadius: 2,
     overflow: 'hidden',
+    flexDirection: 'row',
   },
   currentProgressFill: {
     height: '100%',
@@ -568,15 +575,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    gap: 8,
   },
   trackerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
   },
   trackerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    flexShrink: 0,
   },
   trackerText: {
     fontFamily: 'Manrope_500Medium',
