@@ -134,6 +134,13 @@ const VIEWABILITY_CONFIG: ViewabilityConfig = {
   minimumViewTime: 500,
 };
 
+// ponytail: BOUNDED_PRE_RENDER_CAP = 80 — target-aware initialNumToRender renders
+// enough cards on mount to cover ordinary marked targets (ayahs 15, 35, 70) in one
+// frame with zero progressive hops, while capping mount memory/CPU for extreme
+// deep markers (e.g. Surah 2:286). Default opens at ayah 1 remain initialNumToRender={15}.
+// Upgrade path: if device performance allows, increase cap or paginate layout estimates.
+const BOUNDED_PRE_RENDER_CAP = 80;
+
 // Juz start mapping (which surah:ayah each juz starts at)
 const JUZ_STARTS: Record<number, { surah: number; ayah: number }> = {
   1: { surah: 1, ayah: 1 }, 2: { surah: 2, ayah: 142 }, 3: { surah: 2, ayah: 253 }, 4: { surah: 3, ayah: 93 },
@@ -343,9 +350,19 @@ export default function QuranReaderScreen({
   // failed-retry) must not fire mid-scroll and yank the list.
   const userScrollingRef = useRef<boolean>(false);
   const userScrollClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Guard: positioning (jump to saved/initial ayah) happens exactly once per mount
   const positionedRef = useRef<boolean>(false);
   const isProgrammaticPositioningRef = useRef<boolean>(false);
+
+  const cancelPendingRetry = useCallback(() => {
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    isProgrammaticPositioningRef.current = false;
+  }, []);
+
   const [currentVisibleAyah, setCurrentVisibleAyah] = useState<number>(() => {
     if (initialAyah && initialAyah > 1) return initialAyah;
     const syncMarker = getReadingMarkerSync();
@@ -378,6 +395,10 @@ export default function QuranReaderScreen({
     return Math.min(target, maxAyah);
   }, [safeSurahNumber, initialAyah]);
   const initialListIndex = Math.max(0, targetAyahForPosition - 1);
+  const initialNumToRender = useMemo(() => {
+    if (targetAyahForPosition <= 1) return 15;
+    return Math.min(BOUNDED_PRE_RENDER_CAP, Math.max(15, targetAyahForPosition + 5));
+  }, [targetAyahForPosition]);
   // NOTE: no getItemLayout — ayah rows are variable-height (Arabic + translation
   // + tafsir + font size + width), so a fixed estimate corrupts cell offsets and
   // causes fast-scroll glitches. Positioning uses the effect's scrollToIndex +
@@ -795,6 +816,7 @@ export default function QuranReaderScreen({
       // false), so treat small, non-user drift from a landing jump as neutral
       // instead of marking the user as scrolling (which would block the retry).
       if (Math.abs(dy) > 2 && !positionedRef.current && !isProgrammaticPositioningRef.current) {
+        cancelPendingRetry();
         userScrollingRef.current = true;
         if (userScrollClearTimerRef.current) clearTimeout(userScrollClearTimerRef.current);
         userScrollClearTimerRef.current = setTimeout(() => {
@@ -848,7 +870,7 @@ export default function QuranReaderScreen({
         }
       }
     },
-    [navOpacity, readingMode, surah, safeSurahNumber]
+    [navOpacity, readingMode, surah, safeSurahNumber, cancelPendingRetry]
   );
 
   // Audio state
@@ -1142,9 +1164,21 @@ export default function QuranReaderScreen({
   // navigation to the same surah with a different target ayah never
   // re-positions — positionedRef stays true forever.
   useEffect(() => {
+    cancelPendingRetry();
     positionedRef.current = false;
     pendingScrollAyahRef.current = null;
-  }, [safeSurahNumber, initialAyah, readingMode]);
+  }, [safeSurahNumber, initialAyah, readingMode, cancelPendingRetry]);
+
+  // Clean pending retry and scroll timers on unmount
+  useEffect(() => {
+    return () => {
+      cancelPendingRetry();
+      if (userScrollClearTimerRef.current) {
+        clearTimeout(userScrollClearTimerRef.current);
+        userScrollClearTimerRef.current = null;
+      }
+    };
+  }, [cancelPendingRetry]);
 
   // Handle auto-scroll to initialAyah or restored ayah
   useEffect(() => {
@@ -1197,16 +1231,31 @@ export default function QuranReaderScreen({
 
   const handleScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
+      if (userScrollingRef.current) {
+        isProgrammaticPositioningRef.current = false;
+        return;
+      }
       isProgrammaticPositioningRef.current = true;
-      // scrollToIndex past the measured frame index does NOT render more cells
-      // by itself — the retry would re-fail forever. Advance the render window
-      // by scrolling to the last MEASURED frame first (never past it, so we
-      // never overshoot the target with a wrong average-based offset), which
-      // triggers progressive cell rendering; then retry scrollToIndex once the
-      // list has more frames to measure. This converges for variable-height rows.
-      const measuredOffset = Math.max(0, (info.highestMeasuredFrameIndex + 1) * info.averageItemLength);
-      listRef.current?.scrollToOffset({ offset: measuredOffset, animated: false });
-      setTimeout(() => {
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+
+      // ponytail: For bounded targets within initialNumToRender (e.g. ayahs 15, 35, 70),
+      // the card is already rendered on mount. Do NOT call scrollToOffset to an intermediate
+      // measured edge — that caused the progressive 100ms stepping/hop lag on physical phones.
+      // Instead, perform an immediate interaction-frame retry to let layout finish measuring.
+      // For deep targets above BOUNDED_PRE_RENDER_CAP (e.g. ayah 286), advance the render window
+      // by scrolling to the last measured frame first so FlatList progressively renders subsequent batches.
+      const isBoundedTarget = info.index < initialNumToRender;
+      if (!isBoundedTarget) {
+        const measuredOffset = Math.max(0, (info.highestMeasuredFrameIndex + 1) * info.averageItemLength);
+        listRef.current?.scrollToOffset({ offset: measuredOffset, animated: false });
+      }
+
+      const retryDelay = isBoundedTarget ? 16 : 50;
+      retryTimerRef.current = setTimeout(() => {
+        retryTimerRef.current = null;
         if (userScrollingRef.current) {
           isProgrammaticPositioningRef.current = false;
           return;
@@ -1225,9 +1274,9 @@ export default function QuranReaderScreen({
         } catch {
           // re-invoked again with a higher measured frame — keep converging
         }
-      }, 100);
+      }, retryDelay);
     },
-    []
+    [initialNumToRender]
   );
 
   const handleAdjustFontSize = (delta: number) => {
@@ -2726,13 +2775,13 @@ export default function QuranReaderScreen({
           renderItem={renderAyahItem}
           ListHeaderComponent={renderSurahHeader}
           contentContainerStyle={styles.listContent}
-          initialNumToRender={15}
+          initialNumToRender={initialNumToRender}
           maxToRenderPerBatch={15}
           windowSize={7}
           onScrollToIndexFailed={handleScrollToIndexFailed}
           onScroll={handleReaderScroll}
           onScrollBeginDrag={() => {
-            isProgrammaticPositioningRef.current = false;
+            cancelPendingRetry();
             userScrollingRef.current = true;
           }}
           onScrollEndDrag={() => {
