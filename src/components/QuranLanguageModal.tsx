@@ -109,7 +109,7 @@ export function QuranLanguageModal({
           <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
             <View style={styles.headerTitles}>
               <Text style={[styles.eyebrow, { color: colors.accent }]}>
-                TRANSLATIONS ({QURAN_LANGUAGE_EDITIONS.length})
+                {t('TRANSLATION')} ({QURAN_LANGUAGE_EDITIONS.length})
               </Text>
               <Text style={[styles.title, { color: colors.textPrimary }]}>{t(title)}</Text>
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t(subtitle)}</Text>
@@ -165,7 +165,7 @@ export function QuranLanguageModal({
             {search.trim().length > 0 && (
               <View style={styles.searchMetaRow}>
                 <Text style={[styles.searchMetaText, { color: colors.textSecondary }]}>
-                  Found {filtered.length} of {QURAN_LANGUAGE_EDITIONS.length} translations
+                  {t('Found')} {filtered.length} / {QURAN_LANGUAGE_EDITIONS.length}
                 </Text>
               </View>
             )}
@@ -200,7 +200,7 @@ export function QuranLanguageModal({
                   ]}
                   onPress={() => handleSelect(item)}
                   accessibilityRole="button"
-                  accessibilityLabel={`${getLocalizedLanguageName(item.language)} - ${getLocalizedTranslatorName(item.editionIdentifier, item.name)}${isSelected ? ', currently selected' : ''}`}
+                  accessibilityLabel={`${getLocalizedLanguageName(item.language)} - ${getLocalizedTranslatorName(item.editionIdentifier, item.name)}${isSelected ? `, ${t('selected')}` : ''}`}
                 >
                   {/* Country Flag */}
                   <View style={styles.flagWrap}>
@@ -265,7 +265,7 @@ export function QuranLanguageModal({
               <View style={styles.emptyWrap}>
                 <Ionicons name="search-outline" size={36} color={colors.textMuted} />
                 <Text style={[styles.emptyText, { color: colors.textPrimary }]}>
-                  No translations match &ldquo;{search}&rdquo;
+                  {t('No matches for')} &ldquo;{search}&rdquo;
                 </Text>
                 <Text style={[styles.emptySub, { color: colors.textMuted }]}>
                   {t('Try searching by language name, country, or translator')}

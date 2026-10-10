@@ -178,7 +178,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
       case 'contact':
         return {
           title: 'Contact & Feedback',
-          subtitle: 'GitHub repository & community issue tracker',
+          subtitle: 'Community Support & Feedback',
         };
     }
   };
@@ -672,60 +672,6 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                   {t("This application is developed as a community project for the Ummah. If you spot a bug, find an error in prayer timings, notice a typo in translations, or wish to propose a new feature, we welcome your feedback.")}
                 </Text>
               </LegalSection>
-
-              <Card style={styles.actionCard}>
-                <View style={styles.actionHeader}>
-                  <View
-                    style={[
-                      styles.actionIconWrap,
-                      { backgroundColor: colors.accent + '15', borderColor: colors.accent + '35' },
-                    ]}
-                  >
-                    <Ionicons name="logo-github" size={24} color={colors.accent} />
-                  </View>
-                  <View style={styles.actionInfo}>
-                    <Text style={[styles.actionTitle, { color: colors.textPrimary }]}>
-                      {t("GitHub Issue Tracker")}
-                    </Text>
-                    <Text style={[styles.actionSubtitle, { color: colors.textSecondary }]}>
-                      Ceoslugpk/islamic-app
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={[styles.actionDesc, { color: colors.textSecondary }]}>
-                  {t("Browse existing issues, report bugs, or submit suggestions directly on our public repository.")}
-                </Text>
-
-                <TouchableOpacity
-                  style={[styles.primaryButton, { backgroundColor: colors.accent }]}
-                  onPress={() => handleOpenLink('https://github.com/Ceoslugpk/islamic-app/issues')}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("Open GitHub Issues")}
-                >
-                  <Ionicons name="open-outline" size={16} color={colors.onAccent} />
-                  <Text style={[styles.primaryButtonText, { color: colors.onAccent }]}>
-                    {t("Open GitHub Issues")}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.secondaryButton,
-                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-                  ]}
-                  onPress={() => handleOpenLink('https://github.com/Ceoslugpk/islamic-app')}
-                  activeOpacity={0.8}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("View GitHub Repository")}
-                >
-                  <Ionicons name="logo-github" size={16} color={colors.textPrimary} />
-                  <Text style={[styles.secondaryButtonText, { color: colors.textPrimary }]}>
-                    {t("View Repository")}
-                  </Text>
-                </TouchableOpacity>
-              </Card>
 
               <LegalSection title={t("Tips for Helpful Issue Reports")}>
                 <BulletItem

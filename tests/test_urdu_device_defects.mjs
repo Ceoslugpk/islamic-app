@@ -23,7 +23,7 @@ const appCode = fs.readFileSync('App.tsx', 'utf8');
 
 // 1a. prepareNativeLayoutDirection sets allowRTL(isUrdu) to prevent stuck RTL on RTL devices
 assert.ok(
-  i18nCode.includes('I18nManager.allowRTL(isUrdu)') || i18nCode.includes("I18nManager.allowRTL(lang === 'ur')"),
+  i18nCode.includes('I18nManager.allowRTL(isRtl)') || i18nCode.includes('I18nManager.allowRTL(isUrdu)') || i18nCode.includes("I18nManager.allowRTL(lang === 'ur')"),
   'prepareNativeLayoutDirection must set allowRTL(false) when switching to English so RTL-device locales do not remain stuck in RTL'
 );
 

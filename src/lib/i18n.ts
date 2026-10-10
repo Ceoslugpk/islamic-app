@@ -5,11 +5,28 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { I18nManager, Platform } from 'react-native';
 import en from '../locales/en.json';
 import ur from '../locales/ur.json';
+import ar from '../locales/ar.json';
 
-export type AppLanguage = 'en' | 'ur';
+export type AppLanguage = 'en' | 'ur' | 'ar';
+
+export function isRtlLanguage(lang: AppLanguage | string | null | undefined): boolean {
+  return lang === 'ur' || lang === 'ar';
+}
+
+export function isAppLanguage(value: unknown): value is AppLanguage {
+  return value === 'en' || value === 'ur' || value === 'ar';
+}
 
 const locales = Localization.getLocales();
 const deviceLanguageCode = locales && locales.length > 0 ? locales[0].languageCode : 'en';
+
+export function resolveDeviceAppLanguage(code: string | null | undefined): AppLanguage {
+  if (!code) return 'en';
+  const lower = code.toLowerCase();
+  if (lower === 'ar' || lower.startsWith('ar-') || lower.startsWith('ar_')) return 'ar';
+  if (lower === 'ur' || lower.startsWith('ur-') || lower.startsWith('ur_')) return 'ur';
+  return 'en';
+}
 
 // The persisted app language is the single source of truth for the UI language.
 // It is resolved BEFORE i18n initializes so the app never boots in a stale
@@ -24,7 +41,7 @@ export async function resolvePersistedLanguage(forceFresh = false): Promise<AppL
     const raw = await AsyncStorage.getItem(PERSISTED_LANGUAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && (parsed.language === 'en' || parsed.language === 'ur')) {
+      if (parsed && isAppLanguage(parsed.language)) {
         persistedLanguage = parsed.language;
       }
     }
@@ -32,7 +49,7 @@ export async function resolvePersistedLanguage(forceFresh = false): Promise<AppL
     // ignore — fall through to device default
   }
   if (!persistedLanguage) {
-    persistedLanguage = deviceLanguageCode === 'ur' ? 'ur' : 'en';
+    persistedLanguage = resolveDeviceAppLanguage(deviceLanguageCode);
   }
   languageResolved = true;
   return persistedLanguage;
@@ -42,9 +59,13 @@ export async function resolvePersistedLanguage(forceFresh = false): Promise<AppL
 export function getBootLanguage(): AppLanguage {
   if (persistedLanguage) return persistedLanguage;
   if (Platform.OS !== 'web') {
-    return I18nManager.isRTL ? 'ur' : 'en';
+    if (I18nManager.isRTL) {
+      const detected = resolveDeviceAppLanguage(deviceLanguageCode);
+      return isRtlLanguage(detected) ? detected : 'ur';
+    }
+    return 'en';
   }
-  return deviceLanguageCode === 'ur' ? 'ur' : 'en';
+  return resolveDeviceAppLanguage(deviceLanguageCode);
 }
 
 const initialLanguage: AppLanguage = getBootLanguage();
@@ -53,6 +74,7 @@ i18n.use(initReactI18next).init({
   resources: {
     en: { translation: en },
     ur: { translation: ur },
+    ar: { translation: ar },
   },
   lng: initialLanguage,
   fallbackLng: 'en',
@@ -67,7 +89,7 @@ i18n.use(initReactI18next).init({
 // Set the native layout direction ONCE at module load from the boot language.
 // forceRTL is only reliable when called before the UI mounts, and calling it
 // repeatedly (or after mount) is what leaves RTL stuck on Android.
-applyRTL(initialLanguage === 'ur');
+applyRTL(isRtlLanguage(initialLanguage));
 
 /**
  * Configure RTL layout direction for React Native and Web.
@@ -85,7 +107,8 @@ export function applyRTL(isRTL: boolean): void {
   }
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-    document.documentElement.lang = isRTL ? 'ur' : 'en';
+    const current = getCurrentLanguage();
+    document.documentElement.lang = isRTL ? (isRtlLanguage(current) ? current : getBootLanguage()) : 'en';
   }
 }
 
@@ -94,23 +117,23 @@ export function applyRTL(isRTL: boolean): void {
  * IMMEDIATELY BEFORE Updates.reloadAsync().
  *
  * On native: layout direction changes only take effect on the NEXT native/JS reload.
- * Calling allowRTL(isUrdu) and forceRTL(isUrdu) writes the preference into
+ * Calling allowRTL(isRtl) and forceRTL(isRtl) writes the preference into
  * native storage (SharedPreferences / NSUserDefaults) before reloadAsync restarts the JS engine,
- * guaranteeing the next reload boots directly into the correct layout direction (Urdu RTL vs English LTR).
+ * guaranteeing the next reload boots directly into the correct layout direction (RTL vs LTR).
  * On web: updates document element dir/lang immediately.
  * Does NOT trigger reload itself.
  */
 export function prepareNativeLayoutDirection(lang: AppLanguage): void {
-  const isUrdu = lang === 'ur';
+  const isRtl = isRtlLanguage(lang);
   try {
-    I18nManager.allowRTL(isUrdu);
-    I18nManager.forceRTL(isUrdu);
+    I18nManager.allowRTL(isRtl);
+    I18nManager.forceRTL(isRtl);
   } catch {
     // Ignore native module errors in environments where not supported
   }
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
-    document.documentElement.dir = isUrdu ? 'rtl' : 'ltr';
-    document.documentElement.lang = isUrdu ? 'ur' : 'en';
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
   }
 }
 
@@ -124,9 +147,10 @@ export function setAppLanguage(lang: AppLanguage): void {
   persistedLanguage = lang;
   languageResolved = true;
   i18n.changeLanguage(lang);
+  const isRtl = isRtlLanguage(lang);
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
-    document.documentElement.dir = lang === 'ur' ? 'rtl' : 'ltr';
-    document.documentElement.lang = lang === 'ur' ? 'ur' : 'en';
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = lang;
   }
   // Native: layout direction changes take effect on the NEXT native/JS reload.
   // SettingsScreen calls prepareNativeLayoutDirection(lang) after storage is verified
@@ -134,11 +158,14 @@ export function setAppLanguage(lang: AppLanguage): void {
 }
 
 export function getCurrentLanguage(): AppLanguage {
-  return (i18n.language === 'ur' ? 'ur' : 'en') as AppLanguage;
+  const lng = i18n.language;
+  if (lng === 'ar') return 'ar';
+  if (lng === 'ur') return 'ur';
+  return 'en';
 }
 
 export function isRTL(): boolean {
-  return i18n.language === 'ur';
+  return isRtlLanguage(i18n.language);
 }
 
 /**

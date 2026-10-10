@@ -205,12 +205,70 @@ export const LANGUAGE_NAMES_UR: Record<string, string> = {
   Chinese: 'چینی',
 };
 
+export const LANGUAGE_NAMES_AR: Record<string, string> = {
+  Arabic: 'العربية',
+  English: 'الإنجليزية',
+  Urdu: 'الأردية',
+  Indonesian: 'الإندونيسية',
+  Turkish: 'التركية',
+  French: 'الفرنسية',
+  German: 'الألمانية',
+  Spanish: 'الإسبانية',
+  Russian: 'الروسية',
+  Bengali: 'البنغالية',
+  Malay: 'الملايو',
+  Swahili: 'السواحيلية',
+  Persian: 'الفارسية',
+  Somali: 'الصومالية',
+  Tamil: 'التاميلية',
+  Hindi: 'الهندية',
+  Hausa: 'الهوسا',
+  Uzbek: 'الأوزبكية',
+  Swedish: 'السويدية',
+  Amharic: 'الأمهرية',
+  Azerbaijani: 'الأذربيجانية',
+  'Bosnian (Mehanović)': 'البوسنية',
+  Berber: 'الأمازيغية',
+  Bulgarian: 'البلغارية',
+  'Bosnian (Mlivo)': 'البوسنية',
+  Chechen: 'الشيشانية',
+  Czech: 'التشيكية',
+  Dhivehi: 'الديفيهية',
+  Italian: 'الإيطالية',
+  Japanese: 'اليابانية',
+  Korean: 'الكورية',
+  Kurdish: 'الكردية',
+  Malayalam: 'الماليالامية',
+  Burmese: 'البورمية',
+  Dutch: 'الهولندية',
+  Norwegian: 'النرويجية',
+  Polish: 'البولندية',
+  Pashto: 'البشتوية',
+  Portuguese: 'البرتغالية',
+  Romanian: 'الرومانية',
+  Sindhi: 'السندية',
+  Sinhala: 'السنهالية',
+  Albanian: 'الألبانية',
+  Tajik: 'الطاجيكية',
+  Thai: 'التايلاندية',
+  Tatar: 'التتارية',
+  Uyghur: 'الأويغورية',
+  Chinese: 'الصينية',
+  Kazakh: 'القازاقية',
+  Bosnian: 'البوسنية',
+};
+
 /**
  * Returns the localized display name for a language.
- * For Urdu UI, returns the Urdu name; for English UI, returns the English name.
+ * - Arabic UI (`ar`): returns the Arabic name
+ * - Urdu UI (`ur`): returns the Urdu name
+ * - English / other UI: returns the English name
  */
 export function getLocalizedLanguageName(englishName: string): string {
   const lang = getCurrentLanguage();
+  if (lang === 'ar' && LANGUAGE_NAMES_AR[englishName]) {
+    return LANGUAGE_NAMES_AR[englishName];
+  }
   if (lang === 'ur' && LANGUAGE_NAMES_UR[englishName]) {
     return LANGUAGE_NAMES_UR[englishName];
   }

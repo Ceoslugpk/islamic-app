@@ -19,13 +19,15 @@ These are the hard rules for working on this project. They apply to every sessio
 12. **Never trust agent self-reports.** Independently re-run checks (files exist, `tsc --noEmit`, tests, key counts, content quality) before declaring done.
 
 ## Localization Rules
-13. **Locale files must have exact key parity** with `src/locales/en.json` (2,263 keys): same key set, zero missing, zero extra, zero empty values, valid JSON, UTF-8.
+13. **Locale files must have exact key parity** with `src/locales/en.json` (currently 2,302 keys; the source file is authoritative): same key set, zero missing, zero extra, zero empty values, valid JSON, UTF-8.
 14. **Interpolation tokens are sacred:** keep EXACT token names (`{{count}}`, `{{n}}`, `{{flag}}`, `{{edition}}`, `{{valid}}`, `{{missing}}`, `{{incomplete}}`) — never translate, rename, or drop them.
 15. **Translations must be genuine:** never copy English values to pad key count (≤5% identical-to-English, only proper nouns/URLs/time formats may match). Never use stub placeholders (`[Sindhi]`), artifact prefixes (`Polskie tłumaczenie:`), or `__TERM__` markers. Each file must be in its own correct language (no language mixing, e.g. German into Czech).
 16. **Quran-app content scan:** before shipping a locale, scan for profanity/negative/bad words. Flag false positives separately; verify each hit.
 17. **One locale file per task run:** agents may touch ONLY the named locale files — no stray scripts, cache files, model dirs, or package.json changes.
+18. **A new app language is incomplete without the full checklist in `docs/adding-app-languages.md`.** In the same change, register the locale centrally, keep exact locale parity, localize domain data, add and test its Quran text/translation edition, same-language tafsir default, and an honest audio policy using verified existing editions only (never fabricate an unavailable translation-audio source). Switching must be symmetric with every registered app language, preserve explicit custom Quran/tafsir/audio selections, persist before reload, and pass cold-boot plus pairwise transition tests.
+19. **Language and appearance are one persistence surface.** Every write to `islamic-settings` must use `src/lib/settingsWriteQueue.ts`; never add a direct setter write. Language switching remains `queued write → in-queue read-back verification → prepareNativeLayoutDirection → one reload`.
 
 ## Verification Rules
-18. **No fabricated results.** Real tool output only. A report table is NOT proof — require on-disk evidence (file exists, real size, parsed content).
-19. **No physical-device claims without a device.** Automated/static checks are not device verification.
-20. **Test suite must pass:** `node tests/<focused>.mjs`, full `npm test`, `NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit`, `git diff --check` before any commit.
+20. **No fabricated results.** Real tool output only. A report table is NOT proof — require on-disk evidence (file exists, real size, parsed content).
+21. **No physical-device claims without a device.** Automated/static checks are not device verification.
+22. **Test suite must pass:** `node tests/<focused>.mjs`, full `npm test`, `NODE_OPTIONS=--max-old-space-size=6144 npx tsc --noEmit`, `git diff --check` before any commit.

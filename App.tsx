@@ -41,7 +41,7 @@ import {
   HEADER_PADDING_VERTICAL,
   HEADER_SEPARATOR,
 } from './src/lib/headerTokens';
-import { t, setAppLanguage, applyRTL, resolvePersistedLanguage, getBootLanguage, isRTL } from './src/lib/i18n';
+import { t, setAppLanguage, applyRTL, resolvePersistedLanguage, getBootLanguage, isRTL, isRtlLanguage } from './src/lib/i18n';
 import { getReadingMarkerSync } from './src/lib/continuing';
 
 import HomeScreen from './src/screens/HomeScreen';
@@ -1498,14 +1498,14 @@ export default function App() {
       .then((lang) => {
         if (!mounted) return;
         setAppLanguage(lang);
-        applyRTL(lang === 'ur'); // pre-UI-mount: safe to force native direction
+        applyRTL(isRtlLanguage(lang)); // pre-UI-mount: safe to force native direction
         setLangReady(true);
       })
       .catch(() => {
         if (!mounted) return;
         const fallback = getBootLanguage();
         setAppLanguage(fallback);
-        applyRTL(fallback === 'ur');
+        applyRTL(isRtlLanguage(fallback));
         setLangReady(true);
       });
     return () => {

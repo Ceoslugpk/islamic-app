@@ -1,8 +1,10 @@
 /**
- * Accent color themes — 10 options, each with dark (ink) and light (paper) variants.
+ * Accent color themes — 14 options (10 original + 4 approved additions: violet, cobalt, crimson, copper).
+ * Each accent provides dark (ink) and light (paper) variants.
  * All pairs pass WCAG AA on their respective base backgrounds (ink #121110, paper #F5F1E8).
  * Source: docs/theming-research.md
  */
+
 export const accentThemes = {
   amber: {
     id: 'amber',
@@ -84,6 +86,39 @@ export const accentThemes = {
     darkDim: 'rgba(244, 63, 94, 0.12)',
     lightDim: 'rgba(225, 29, 72, 0.1)',
   },
+  // Four approved additions: contrast-verified on dark ink (#121110) & light paper (#F5F1E8)
+  violet: {
+    id: 'violet',
+    name: 'Violet',
+    darkAccent: '#A78BFA',
+    lightAccent: '#6D28D9',
+    darkDim: 'rgba(167, 139, 250, 0.12)',
+    lightDim: 'rgba(109, 40, 217, 0.1)',
+  },
+  cobalt: {
+    id: 'cobalt',
+    name: 'Cobalt',
+    darkAccent: '#4F8EF7',
+    lightAccent: '#1E40AF',
+    darkDim: 'rgba(79, 142, 247, 0.12)',
+    lightDim: 'rgba(30, 64, 175, 0.1)',
+  },
+  crimson: {
+    id: 'crimson',
+    name: 'Crimson',
+    darkAccent: '#FF4D6D',
+    lightAccent: '#A4161A',
+    darkDim: 'rgba(255, 77, 109, 0.12)',
+    lightDim: 'rgba(164, 22, 26, 0.1)',
+  },
+  copper: {
+    id: 'copper',
+    name: 'Copper',
+    darkAccent: '#E76F51',
+    lightAccent: '#9C4221',
+    darkDim: 'rgba(231, 111, 81, 0.12)',
+    lightDim: 'rgba(156, 66, 33, 0.1)',
+  },
 } as const;
 
 export type AccentKey = keyof typeof accentThemes;
@@ -100,6 +135,34 @@ export const ACCENT_KEYS: AccentKey[] = [
   'olive',
   'sand',
   'berry',
+  'violet',
+  'cobalt',
+  'crimson',
+  'copper',
 ];
 
 export const DEFAULT_ACCENT: AccentKey = 'amber';
+
+const LOCALIZED_ACCENT_NAMES: Record<AccentKey, { en: string; ar: string; ur: string }> = {
+  amber: { en: 'Amber', ar: 'عنبر', ur: 'سنہرا' },
+  rose: { en: 'Rose', ar: 'وردي', ur: 'گلابی' },
+  emerald: { en: 'Emerald', ar: 'زمرد', ur: 'زمرد' },
+  teal: { en: 'Teal', ar: 'تركواز', ur: 'فیروزی' },
+  terracotta: { en: 'Terracotta', ar: 'طين محروق', ur: 'گیرو' },
+  sky: { en: 'Dusty Blue', ar: 'أزرق سماوي', ur: 'ہلکا نیلا' },
+  mauve: { en: 'Mauve', ar: 'موف', ur: 'کاسنی' },
+  olive: { en: 'Olive', ar: 'زيتوني', ur: 'زیتونی' },
+  sand: { en: 'Sand Gold', ar: 'رملي ذهبي', ur: 'ریتلا سنہرا' },
+  berry: { en: 'Berry', ar: 'توتي', ur: 'بیری' },
+  violet: { en: 'Violet', ar: 'بنفسجي', ur: 'بنفشی' },
+  cobalt: { en: 'Cobalt', ar: 'كوبالت', ur: 'کوبالٹ' },
+  crimson: { en: 'Crimson', ar: 'قرمزي', ur: 'سرخ قرمزی' },
+  copper: { en: 'Copper', ar: 'نحاسي', ur: 'تانبا' },
+};
+
+export function getLocalizedAccentName(key: AccentKey, lang?: string | null): string {
+  const translations = LOCALIZED_ACCENT_NAMES[key];
+  if (lang === 'ar') return translations.ar;
+  if (lang === 'ur') return translations.ur;
+  return translations.en;
+}

@@ -49,8 +49,63 @@ export const COUNTRY_UR: Record<string, string> = {
   "Yemen": "یمن",
 };
 
-export function countryNameUr(country: string): string {
-  return COUNTRY_UR[country] || country;
+export const COUNTRY_AR: Record<string, string> = {
+  "Afghanistan": "أفغانستان", "Algeria": "الجزائر", "Australia": "أستراليا", "Bahrain": "البحرين",
+  "Bangladesh": "بنغلاديش", "Canada": "كندا", "Egypt": "مصر", "Ethiopia": "إثيوبيا", "France": "فرنسا",
+  "Germany": "ألمانيا", "Ghana": "غانا", "India": "الهند", "Indonesia": "إندونيسيا", "Iran": "إيران",
+  "Iraq": "العراق", "Jordan": "الأردن", "Kenya": "كينيا", "Kuwait": "الكويت", "Lebanon": "لبنان",
+  "Malaysia": "ماليزيا", "Morocco": "المغرب", "Nepal": "نيبال", "Nigeria": "نيجيريا", "Oman": "عُمان",
+  "Pakistan": "باكستان", "Palestine": "فلسطين", "Philippines": "الفلبين", "Qatar": "قطر",
+  "Saudi Arabia": "المملكة العربية السعودية", "Senegal": "السنغال", "Singapore": "سنغافورة",
+  "Sri Lanka": "سريلانكا", "Sudan": "السودان", "Syria": "سوريا", "Thailand": "تايلاند", "Tunisia": "تونس",
+  "Turkey": "تركيا", "United Arab Emirates": "الإمارات العربية المتحدة", "United Kingdom": "المملكة المتحدة",
+  "United States": "الولايات المتحدة", "Yemen": "اليمن",
+};
+
+export const CITY_NAMES_UR: Record<string, string> = {
+  "Dubai": "دبئی", "Abu Dhabi": "ابوظہبی", "Sharjah": "شارجہ", "Riyadh": "ریاض", "Jeddah": "جدہ",
+  "Mecca": "مکہ", "Medina": "مدینہ", "Doha": "دوحہ", "Kuwait City": "کویت سٹی", "Manama": "منامہ",
+  "Muscat": "مسقط", "Sana'a": "صنعا", "Karachi": "کراچی", "Lahore": "لاہور", "Islamabad": "اسلام آباد",
+  "Dhaka": "ڈھاکا", "Chittagong": "چٹاگانگ", "Mumbai": "ممبئی", "Delhi": "دہلی", "Hyderabad": "حیدرآباد",
+  "Bangalore": "بنگلور", "Chennai": "چنئی", "Colombo": "کولمبو", "Kathmandu": "کھٹمنڈو", "Kabul": "کابل",
+  "Jakarta": "جکارتہ", "Surabaya": "سورابایا", "Bandung": "بانڈونگ", "Kuala Lumpur": "کوالالمپور",
+  "Singapore": "سنگاپور", "Manila": "منیلا", "Quezon City": "کویزون سٹی", "Bangkok": "بنکاک", "Cairo": "قاہرہ",
+  "Alexandria": "اسکندریہ", "Amman": "عمان", "Beirut": "بیروت", "Damascus": "دمشق", "Baghdad": "بغداد",
+  "Istanbul": "استنبول", "Ankara": "انقرہ", "Tehran": "تہران", "Isfahan": "اصفہان", "Mashhad": "مشہد",
+  "Jerusalem": "یروشلم", "Gaza": "غزہ", "Lagos": "لاگوس", "Kano": "کانو", "Nairobi": "نیروبی",
+  "Casablanca": "کاسابلانکا", "Rabat": "رباط", "Algiers": "الجزائر", "Tunis": "تونس", "Khartoum": "خرطوم",
+  "Addis Ababa": "ادیس ابابا", "Accra": "اکرا", "Dakar": "ڈاکار", "New York": "نیویارک", "Chicago": "شکاگو",
+  "Houston": "ہیوسٹن", "Los Angeles": "لاس اینجلس", "Washington DC": "واشنگٹن ڈی سی", "Detroit": "ڈیٹرائٹ",
+  "London": "لندن", "Paris": "پیرس", "Berlin": "برلن", "Toronto": "ٹورنٹو", "Sydney": "سڈنی",
+};
+
+export const CITY_NAMES_AR: Record<string, string> = {
+  "Dubai": "دبي", "Abu Dhabi": "أبوظبي", "Sharjah": "الشارقة", "Riyadh": "الرياض", "Jeddah": "جدة",
+  "Mecca": "مكة", "Medina": "المدينة المنورة", "Doha": "الدوحة", "Kuwait City": "مدينة الكويت", "Manama": "المنامة",
+  "Muscat": "مسقط", "Sana'a": "صنعاء", "Karachi": "كراتشي", "Lahore": "لاهور", "Islamabad": "إسلام آباد",
+  "Dhaka": "دكا", "Chittagong": "شيتاغونغ", "Mumbai": "مومباي", "Delhi": "دلهي", "Hyderabad": "حيدر آباد",
+  "Bangalore": "بنغالور", "Chennai": "تشيناي", "Colombo": "كولومبو", "Kathmandu": "كاتماندو", "Kabul": "كابل",
+  "Jakarta": "جاكرتا", "Surabaya": "سورابايا", "Bandung": "باندونغ", "Kuala Lumpur": "كوالالمبور",
+  "Singapore": "سنغافورة", "Manila": "مانيلا", "Quezon City": "مدينة كويزون", "Bangkok": "بانكوك", "Cairo": "القاهرة",
+  "Alexandria": "الإسكندرية", "Amman": "عمّان", "Beirut": "بيروت", "Damascus": "دمشق", "Baghdad": "بغداد",
+  "Istanbul": "إسطنبول", "Ankara": "أنقرة", "Tehran": "طهران", "Isfahan": "أصفهان", "Mashhad": "مشهد",
+  "Jerusalem": "القدس", "Gaza": "غزة", "Lagos": "لاغوس", "Kano": "كانو", "Nairobi": "نيروبي",
+  "Casablanca": "الدار البيضاء", "Rabat": "الرباط", "Algiers": "الجزائر", "Tunis": "تونس", "Khartoum": "الخرطوم",
+  "Addis Ababa": "أديس أبابا", "Accra": "أكرا", "Dakar": "داكار", "New York": "نيويورك", "Chicago": "شيكاغو",
+  "Houston": "هيوستن", "Los Angeles": "لوس أنجلوس", "Washington DC": "واشنطن العاصمة", "Detroit": "ديترويت",
+  "London": "لندن", "Paris": "باريس", "Berlin": "برلين", "Toronto": "تورونتو", "Sydney": "سيدني",
+};
+
+export function getLocalizedCountryName(country: string, language: string): string {
+  if (language === 'ar') return COUNTRY_AR[country] || country;
+  if (language === 'ur') return COUNTRY_UR[country] || country;
+  return country;
+}
+
+export function getLocalizedCityName(city: string, language: string): string {
+  if (language === 'ar') return CITY_NAMES_AR[city] || city;
+  if (language === 'ur') return CITY_NAMES_UR[city] || city;
+  return city;
 }
 
 export const CITIES: City[] = [

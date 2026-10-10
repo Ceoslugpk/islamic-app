@@ -49,17 +49,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const mode = resolveMode(settings.themeMode, systemScheme);
   const accentKey = settings.accentKey ?? DEFAULT_ACCENT;
 
-  const toggle = () => setThemeMode(mode === 'ink' ? 'paper' : 'ink');
+  const toggle = () => {
+  if (settings.themeMode === 'system') setThemeMode('ink');
+  else if (settings.themeMode === 'ink') setThemeMode('paper');
+  else setThemeMode('system');
+};
 
   const setAccent = (key: AccentKey) => {
     setAccentKey(key);
   };
 
-  const base = palette[mode];
-  const accentColors = getAccentColors(mode, accentKey);
-
   const colors: ThemeColors = useMemo(
-    () => ({ ...base, ...accentColors }),
+    () => ({ ...palette[mode], ...getAccentColors(mode, accentKey) }),
     [mode, accentKey],
   );
 

@@ -15,7 +15,7 @@ import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { saveTasbihCount, loadTasbihCounts, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
-import { t } from '../lib/i18n';
+import { getCurrentLanguage, t } from '../lib/i18n';
 import { hScrollRTLStyle } from '../lib/rtl';
 
 export interface DhikrItem {
@@ -57,6 +57,33 @@ export const DHIKR_PRESETS: DhikrItem[] = [
     meaning: 'I seek forgiveness from Allah',
   },
 ];
+
+const DHIKR_LOCALIZED: Record<'ur' | 'ar', Record<string, Pick<DhikrItem, 'transliteration' | 'meaning'>>> = {
+  ur: {
+    subhanallah: { transliteration: 'سبحان اللہ', meaning: 'اللہ پاک ہے' },
+    alhamdulillah: { transliteration: 'الحمد للہ', meaning: 'تمام تعریفیں اللہ کے لیے ہیں' },
+    allahuakbar: { transliteration: 'اللہ اکبر', meaning: 'اللہ سب سے بڑا ہے' },
+    lailahaillallah: { transliteration: 'لا الٰہ الا اللہ', meaning: 'اللہ کے سوا کوئی معبود نہیں' },
+    astaghfirullah: { transliteration: 'استغفر اللہ', meaning: 'میں اللہ سے بخشش مانگتا ہوں' },
+  },
+  ar: {
+    subhanallah: { transliteration: 'سُبْحَانَ اللَّهِ', meaning: 'تنزيه الله عن كل نقص' },
+    alhamdulillah: { transliteration: 'الْحَمْدُ لِلَّهِ', meaning: 'الثناء كله لله' },
+    allahuakbar: { transliteration: 'اللَّهُ أَكْبَرُ', meaning: 'الله أعظم من كل شيء' },
+    lailahaillallah: { transliteration: 'لَا إِلَٰهَ إِلَّا اللَّهُ', meaning: 'لا معبود بحق إلا الله' },
+    astaghfirullah: { transliteration: 'أَسْتَغْفِرُ اللَّهَ', meaning: 'أطلب المغفرة من الله' },
+  },
+};
+
+export function getLocalizedDhikrTransliteration(item: DhikrItem): string {
+  const language = getCurrentLanguage();
+  return language === 'en' ? item.transliteration : DHIKR_LOCALIZED[language]?.[item.id]?.transliteration ?? item.transliteration;
+}
+
+export function getLocalizedDhikrMeaning(item: DhikrItem): string {
+  const language = getCurrentLanguage();
+  return language === 'en' ? item.meaning : DHIKR_LOCALIZED[language]?.[item.id]?.meaning ?? item.meaning;
+}
 
 const TARGET_OPTIONS = [33, 99];
 
@@ -111,7 +138,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
     saveTasbihCount(selectedDhikr.id, 0);
     saveUndoState({
       id: `tasbih:${selectedDhikr.id}`,
-      action: 'Count reset',
+      action: t('Reset Count'),
       revert: () => {
         setCounts((prev) => ({
           ...prev,
@@ -138,9 +165,9 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
       <View style={styles.contentWrap}>
         <ScreenHeader
           eyebrow={t('Dhikr & Remembrance')}
-          title="Tasbih"
+          title={t('Tasbih')}
           onBack={onBack}
-          backLabel="Library"
+          backLabel={t('Library')}
         />
 
       {/* Dhikr Selector Tabs */}
@@ -171,7 +198,7 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
                   { color: isSelected ? colors.accent : colors.textSecondary },
                 ]}
               >
-                {d.transliteration}
+                {getLocalizedDhikrTransliteration(d)}
               </Text>
             </TouchableOpacity>
           );
@@ -250,10 +277,10 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
           {selectedDhikr.arabic}
         </ArabicText>
         <Text style={[styles.translit, { color: colors.textPrimary }]}>
-          {selectedDhikr.transliteration}
+          {getLocalizedDhikrTransliteration(selectedDhikr)}
         </Text>
         <Text style={[styles.meaning, { color: colors.textMuted }]}>
-          &ldquo;{selectedDhikr.meaning}&rdquo;
+          &ldquo;{getLocalizedDhikrMeaning(selectedDhikr)}&rdquo;
         </Text>
       </View>
 

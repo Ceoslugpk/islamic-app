@@ -1,5 +1,14 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
+import {
+  CITIES,
+  CITY_NAMES_AR,
+  CITY_NAMES_UR,
+  COUNTRY_AR,
+  COUNTRY_UR,
+  getLocalizedCityName,
+  getLocalizedCountryName,
+} from '../src/lib/cities.ts';
 
 console.log('=== GLOBAL FIX PASS REGRESSION TESTS ===\n');
 
@@ -23,13 +32,18 @@ assert.ok(ur['Cities'].includes('شہر'), 'ur Cities = شہر');
 assert.ok(ur['By'] === 'از', 'ur By = از');
 console.log('  [ok] Locale parity + Cities/Umrah keys present with Urdu values');
 
-// 2. Cities country names — every country in the CITIES data must have a
-//    Urdu mapping or fall back to the English name (no crash).
-const src = fs.readFileSync('src/lib/cities.ts', 'utf8');
-assert.ok(src.includes('countryNameUr'), 'cities.ts exports countryNameUr');
-const countries = [...src.matchAll(/country: "([^"]+)"/g)].map((m) => m[1]);
-assert.ok(countries.length >= 60, `expected 60+ cities, got ${countries.length}`);
-console.log(`  [ok] CITIES catalogue has ${countries.length} countries; countryNameUr fallback-safe`);
+// 2. Cities — every shipped city/country has Arabic and Urdu data, and the
+//    production helpers preserve English rather than applying Urdu globally.
+assert.ok(CITIES.length >= 60, `expected 60+ cities, got ${CITIES.length}`);
+for (const city of CITIES) {
+  assert.ok(CITY_NAMES_AR[city.name], `missing Arabic city name: ${city.name}`);
+  assert.ok(CITY_NAMES_UR[city.name], `missing Urdu city name: ${city.name}`);
+  assert.ok(COUNTRY_AR[city.country], `missing Arabic country name: ${city.country}`);
+  assert.ok(COUNTRY_UR[city.country], `missing Urdu country name: ${city.country}`);
+  assert.strictEqual(getLocalizedCityName(city.name, 'en'), city.name);
+  assert.strictEqual(getLocalizedCountryName(city.country, 'en'), city.country);
+}
+console.log(`  [ok] CITIES catalogue has ${CITIES.length} entries with complete Arabic/Urdu names and English fallback`);
 
 // 3. Reading marker: per-ayah setter still wired (flag button) + menu item removed
 const reader = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
@@ -53,7 +67,10 @@ assert.ok(
   app.includes('resolvePersistedLanguage(true)') || app.includes('resolvePersistedLanguage()'),
   'App resolves language at boot'
 );
-assert.ok(app.includes('applyRTL(lang ==='), 'App applies RTL at boot from persisted lang');
+assert.ok(
+  app.includes('applyRTL(isRtlLanguage(') || app.includes('applyRTL(lang ==='),
+  'App applies RTL at boot from persisted lang'
+);
 console.log('  [ok] Language boot resolves persisted language + direction pre-mount');
 
 // 6. No new Android permissions / no versionCode bump in tracked files

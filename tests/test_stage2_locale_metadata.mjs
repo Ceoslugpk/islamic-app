@@ -22,7 +22,7 @@ assert.ok(
   'i18n caches resolved boot language'
 );
 assert.ok(
-  i18nCode.includes("applyRTL(initialLanguage === 'ur')"),
+  i18nCode.includes('applyRTL(isRtlLanguage(initialLanguage))') || i18nCode.includes("applyRTL(initialLanguage === 'ur')"),
   'RTL applied once at module load from boot language'
 );
 ok('locale boot: persisted language resolved before i18n init; RTL set at boot');
@@ -33,8 +33,9 @@ assert.ok(
   'setLanguage applies the new language immediately'
 );
 assert.ok(
-  settingsCode.includes("persist({\n          ...prev,\n          language: nextLang,"),
-  'setLanguage persists the language in the same call'
+  settingsCode.includes('await enqueueWrite(nextClean, (raw)') &&
+    settingsCode.includes('parsed.language !== nextLang'),
+  'setLanguage serializes and verifies the language in the same queued call'
 );
 // The reload must happen AFTER the persist resolves so the reload boots in ur
 const settingsScreenCode = fs.readFileSync('src/screens/SettingsScreen.tsx', 'utf8');
@@ -54,7 +55,8 @@ assert.ok(
   'ur->en restores quran translation language to en'
 );
 assert.ok(
-  settingsCode.includes("if (settings.tafsirSourceId === 'api-ibn-kathir-urdu') {\n          nextTafsir = 'jalalayn';"),
+  settingsCode.includes("currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu'") ||
+    settingsCode.includes("if (settings.tafsirSourceId === 'api-ibn-kathir-urdu') {\n          nextTafsir = 'jalalayn';"),
   'ur->en restores tafsir source to jalalayn'
 );
 assert.ok(

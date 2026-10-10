@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
-import { CITIES, City, countryNameUr } from '../lib/cities';
+import { CITIES, City, getLocalizedCityName, getLocalizedCountryName } from '../lib/cities';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Hairline } from '../components/Hairline';
 import { t } from '../lib/i18n';
@@ -21,6 +21,7 @@ import { t } from '../lib/i18n';
 export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
   const { colors } = useTheme();
   const { settings, setManualLocation, setLocationMode } = useSettings();
+  const language = settings.language;
   const [query, setQuery] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [successCity, setSuccessCity] = useState<{ name: string; country: string } | null>(null);
@@ -50,19 +51,23 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
     return CITIES.filter(
       (c) =>
         c.name.toLowerCase().includes(q) ||
-        c.country.toLowerCase().includes(q)
+        c.country.toLowerCase().includes(q) ||
+        getLocalizedCityName(c.name, language).toLowerCase().includes(q) ||
+        getLocalizedCountryName(c.country, language).toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, language]);
 
   function handleSelectCity(city: City) {
-    const label = `${city.name}, ${countryNameUr(city.country)}`;
+    const localizedName = getLocalizedCityName(city.name, language);
+    const localizedCountry = getLocalizedCountryName(city.country, language);
+    const label = `${localizedName}, ${localizedCountry}`;
     setManualLocation({
       latitude: city.latitude,
       longitude: city.longitude,
       label,
     });
     setLocationMode('manual');
-    setSuccessCity({ name: city.name, country: countryNameUr(city.country) });
+    setSuccessCity({ name: localizedName, country: localizedCountry });
     setShowSuccess(true);
     setTimeout(() => {
       setShowSuccess(false);
@@ -94,7 +99,7 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
           ]}
           onPress={() => handleSelectCity(item)}
           accessibilityRole="button"
-          accessibilityLabel={`Select ${item.name}, ${countryNameUr(item.country)}`}
+          accessibilityLabel={`${t('Select')} ${getLocalizedCityName(item.name, language)}, ${getLocalizedCountryName(item.country, language)}`}
           accessibilityState={{ selected: isSelected }}
         >
           <View style={styles.rowLeft}>
@@ -115,10 +120,10 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
             </View>
             <View style={styles.textWrap}>
               <Text style={[styles.cityName, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail">
-                {item.name}
+                {getLocalizedCityName(item.name, language)}
               </Text>
               <Text style={[styles.countryName, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
-                {countryNameUr(item.country)}
+                {getLocalizedCountryName(item.country, language)}
               </Text>
             </View>
           </View>

@@ -65,7 +65,7 @@ import { formatTime } from '../lib/timeFormat';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { getLocalizedTranslatorName } from '../lib/quranLanguages';
 import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
-import { accentThemes, ACCENT_KEYS } from '../lib/accents';
+import { accentThemes, ACCENT_KEYS, getLocalizedAccentName } from '../lib/accents';
 import { clearWomenData, clearCycleHistory } from '../lib/db';
 import { WomenPinModal } from '../components/WomenPinModal';
 import {
@@ -512,6 +512,7 @@ export default function SettingsScreen({
   const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
   const [showBackupRestore, setShowBackupRestore] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
+  const [isSwitchingLanguage, setIsSwitchingLanguage] = useState(false);
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSwitchingLanguageRef = useRef(false);
   const mountedRef = useRef(true);
@@ -781,23 +782,33 @@ export default function SettingsScreen({
         )}
         <SectionHeader compact eyebrow={t('Preferences')} title={t('Settings')} />
 
-        {/* Language — English / اردو */}
+        {/* Language — English / اردو / العربية */}
         <Section label={t('Language / زبان')}>
           <Row
             title={t('App Language')}
-            desc={settings.language === 'ur' ? t('اردو (Urdu) · دائیں سے بائیں (RTL)') : t('English · Left to Right (LTR)')}
+            desc={
+              settings.language === 'ar'
+                ? 'العربية · من اليمين إلى اليسار (RTL)'
+                : settings.language === 'ur'
+                ? t('اردو (Urdu) · دائیں سے بائیں (RTL)')
+                : t('English · Left to Right (LTR)')
+            }
             accessibilityRole="text"
           />
-          <Segmented<'en' | 'ur'>
+          <Segmented<'en' | 'ur' | 'ar'>
             label={t('Language / زبان')}
             options={[
+
               { value: 'en', label: 'English' },
               { value: 'ur', label: 'اردو' },
+              { value: 'ar', label: 'العربية' },
             ]}
             value={settings.language}
+            disabled={isSwitchingLanguage}
             onChange={(nextLang) => {
               if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
                 isSwitchingLanguageRef.current = true;
+                setIsSwitchingLanguage(true);
                 setLanguageError(null);
                 haptic('selection');
                 if (reloadTimerRef.current) {
@@ -819,6 +830,7 @@ export default function SettingsScreen({
                     }, 400);
                   } else {
                     isSwitchingLanguageRef.current = false;
+                    setIsSwitchingLanguage(false);
                   }
                 })
                   .catch(() => {
@@ -828,6 +840,7 @@ export default function SettingsScreen({
                       reloadTimerRef.current = null;
                     }
                     if (mountedRef.current) {
+                      setIsSwitchingLanguage(false);
                       setLanguageError(t('Still could not load. Try again later.'));
                     }
                   });
@@ -854,6 +867,7 @@ export default function SettingsScreen({
             label={t("Theme")}
             options={themeOptions}
             value={themeMode}
+            disabled={isSwitchingLanguage}
             onChange={handleThemeModeChange}
           />
           <Hairline />
@@ -872,6 +886,7 @@ export default function SettingsScreen({
               const accent = accentThemes[key];
               const isSelected = accentKey === key;
               const accentColor = mode === 'ink' ? accent.darkAccent : accent.lightAccent;
+              const accentLabel = getLocalizedAccentName(key, settings.language);
               return (
                 <TouchableOpacity
                   key={key}
@@ -879,7 +894,7 @@ export default function SettingsScreen({
                   onPress={() => { setAccent(key); haptic('selection'); }}
                   accessibilityRole="button"
                   accessibilityState={{ selected: isSelected }}
-                  accessibilityLabel={`${accent.name} accent color${isSelected ? ', selected' : ''}`}
+                  accessibilityLabel={`${accentLabel} accent color${isSelected ? ', selected' : ''}`}
                 >
                   <View
                     style={[
@@ -898,7 +913,7 @@ export default function SettingsScreen({
                       { color: isSelected ? accentColor : colors.textSecondary },
                     ]}
                   >
-                    {accent.name}
+                    {accentLabel}
                   </Text>
                 </TouchableOpacity>
               );
@@ -1747,22 +1762,6 @@ export default function SettingsScreen({
             desc={t("Public APIs for prayer times, Quran text & audio")}
             onPress={() => {
               setActiveLegalScreen('services');
-              haptic('light');
-            }}
-            right={
-              <Ionicons
-                name={getForwardIcon('chevron')}
-                size={iconSizes.inlineLg}
-                color={colors.accent}
-              />
-            }
-          />
-          <Hairline />
-          <Row
-            title={t("Contact / Report an Issue")}
-            desc={t("GitHub repository & community issue tracker")}
-            onPress={() => {
-              setActiveLegalScreen('contact');
               haptic('light');
             }}
             right={

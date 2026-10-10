@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Location } from './prayerTimes';
-import { AccentKey } from './accents';
+import { AccentKey, ACCENT_KEYS, DEFAULT_ACCENT } from './accents';
 import { NamesLanguage } from './names99';
 import {
   setAudioTranslationEnabled,
@@ -14,6 +14,7 @@ import { AppLanguage, setAppLanguage, getBootLanguage } from './i18n';
 import { setActiveAdhanReciterId } from './audio';
 import { setCachedLocation } from './useLocation';
 import { TAFSIR_SOURCES } from './tafsirSources';
+import { createSerializedSettingsWriter, StoredValueVerifier } from './settingsWriteQueue';
 
 export type { AppLanguage };
 
@@ -190,18 +191,27 @@ const DEFAULTS: AppSettings = {
 const STORAGE_KEY = 'islamic-settings';
 export const METHOD_MIGRATION_KEY = 'islamic-settings-method-migrated-v16';
 
-const VALID_ACCENTS: Set<string> = new Set([
-  'amber',
-  'rose',
-  'emerald',
-  'sapphire',
-  'ruby',
-  'gold',
-  'amethyst',
-  'teal',
-  'bronze',
-  'slate',
-]);
+export const VALID_ACCENTS: Set<string> = new Set<string>(ACCENT_KEYS);
+
+export const LEGACY_ACCENT_MAP: Record<string, AccentKey> = {
+  sapphire: 'cobalt',
+  ruby: 'crimson',
+  gold: 'amber',
+  amethyst: 'violet',
+  bronze: 'copper',
+  slate: 'sky',
+};
+
+export function normalizeAccentKey(raw: unknown): AccentKey {
+  if (typeof raw !== 'string') return DEFAULT_ACCENT;
+  if (VALID_ACCENTS.has(raw)) return raw as AccentKey;
+  if (raw in LEGACY_ACCENT_MAP) return LEGACY_ACCENT_MAP[raw];
+  return DEFAULT_ACCENT;
+}
+
+export function isAccentKey(value: unknown): value is AccentKey {
+  return typeof value === 'string' && VALID_ACCENTS.has(value);
+}
 
 const VALID_NAMES_LANGS: Set<string> = new Set(['en', 'fr', 'tr', 'es', 'de', 'id', 'bn', 'ru', 'ur']);
 
@@ -346,10 +356,7 @@ export function sanitizeSettings(raw: unknown): AppSettings {
       : DEFAULTS.themeMode;
 
   // 17. accentKey
-  const accentKey: AccentKey =
-    typeof p.accentKey === 'string' && VALID_ACCENTS.has(p.accentKey)
-      ? (p.accentKey as AccentKey)
-      : DEFAULTS.accentKey;
+  const accentKey: AccentKey = normalizeAccentKey(p.accentKey);
 
   // 18. translationAudioEnabled
   const translationAudioEnabled =
@@ -423,9 +430,9 @@ export function sanitizeSettings(raw: unknown): AppSettings {
   const quranPreloadRequested =
     typeof p.quranPreloadRequested === 'boolean' ? p.quranPreloadRequested : DEFAULTS.quranPreloadRequested;
 
-  // 31. language ('en' | 'ur')
+  // 31. language ('en' | 'ur' | 'ar')
   const language: AppLanguage =
-    p.language === 'ur' || p.language === 'en' ? p.language : DEFAULTS.language;
+    p.language === 'ur' || p.language === 'ar' || p.language === 'en' ? p.language : DEFAULTS.language;
 
   return {
     settingsVersion,
@@ -462,19 +469,55 @@ export function sanitizeSettings(raw: unknown): AppSettings {
   };
 }
 
+export const CANONICAL_AUTO_LINKED_TAFSIR_IDS: ReadonlySet<string> = new Set([
+  'jalalayn',
+  'api-ibn-kathir-urdu',
+  'api-ibn-kathir-ar',
+]);
+
+export const CANONICAL_AUTO_LINKED_QURAN_LANGS: ReadonlySet<string> = new Set([
+  'en',
+  'ur',
+  'ar',
+]);
+
+/**
+ * Pure helper: returns the auto-linked tafsir source ID for a given target language,
+ * or undefined if the current tafsir is a custom user selection that must be preserved.
+ */
+export function getAutoLinkedTafsir(currentTafsirId: string, nextLang: AppLanguage): string | undefined {
+  if (!CANONICAL_AUTO_LINKED_TAFSIR_IDS.has(currentTafsirId)) {
+    return undefined;
+  }
+  if (nextLang === 'ar') {
+    return 'api-ibn-kathir-ar';
+  }
+  if (nextLang === 'ur') {
+    return 'api-ibn-kathir-urdu';
+  }
+  if (nextLang === 'en') {
+    return 'jalalayn';
+  }
+  return undefined;
+}
+
 /**
  * Pure helper: computes next AppSettings when changing language.
- * Guarantees all existing settings fields are preserved and sanitized.
+ * Guarantees all existing settings fields are preserved and sanitized,
+ * while auto-linking canonical tafsir sources symmetrically.
  */
 export function computeNextLanguageSettings(
   prev: AppSettings,
   nextLang: AppLanguage
 ): AppSettings {
+  const targetTafsir = getAutoLinkedTafsir(prev.tafsirSourceId, nextLang);
   return sanitizeSettings({
     ...prev,
     language: nextLang,
+    ...(targetTafsir ? { tafsirSourceId: targetTafsir } : {}),
   });
 }
+
 
 /**
  * Pure helper: writes sanitized settings to storage with durability.
@@ -499,6 +542,7 @@ export async function persistLanguageChange(
   }
   return nextSettings;
 }
+
 
 /**
  * In-memory mirror of `quranPreloadRequested` so non-React callers (background
@@ -537,9 +581,39 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   }));
   const [ready, setReady] = useState(false);
   const settingsRef = useRef<AppSettings>(settings);
+  const lastPersistedRef = useRef<AppSettings>(settings);
+  const locationMutatedDuringHydrationRef = useRef(false);
+  const [writeSettings] = useState(() =>
+    createSerializedSettingsWriter<AppSettings>(
+      AsyncStorage,
+      STORAGE_KEY,
+      () => {},
+    )
+  );
+
   useEffect(() => {
     settingsRef.current = settings;
   }, [settings]);
+
+  function enqueueWrite(
+    nextClean: AppSettings,
+    verify?: StoredValueVerifier<AppSettings>,
+  ): Promise<AppSettings> {
+    return writeSettings(nextClean, verify)
+      .then((persisted) => {
+        lastPersistedRef.current = persisted;
+        return persisted;
+      })
+      .catch((err) => {
+        if (settingsRef.current === nextClean) {
+          const rollback = lastPersistedRef.current;
+          settingsRef.current = rollback;
+          preloadRequestedMem = rollback.quranPreloadRequested;
+          setSettings(rollback);
+        }
+        throw err;
+      });
+  }
 
   useEffect(() => {
     (async () => {
@@ -559,7 +633,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         preloadRequestedMem = next.quranPreloadRequested;
 
         // If storage did not explicitly specify a valid language, preserve boot language
-        if (parsed.language !== 'en' && parsed.language !== 'ur') {
+        if (parsed.language !== 'en' && parsed.language !== 'ur' && parsed.language !== 'ar') {
           next.language = getBootLanguage();
         }
 
@@ -596,7 +670,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           setCachedLocation(next.autoLocation, next.autoLocationTimestamp ?? Date.now());
         }
 
-        // Guard the hydration-vs-grant race: if the user already changed settings
+        // Guard the hydration-vs-grant race: if the user already changed location
         // during hydration (e.g. granted location via the setup popup), keep their
         // live changes. On a fresh install the storage snapshot can be empty
         // (DEFAULTS), and a blind setSettings(next) would clobber the just-saved
@@ -605,9 +679,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         // writes; never spread the whole live state (which on a fresh install is
         // DEFAULTS and would clobber a stored PIN/lock from `next`).
         settingsRef.current = next;
+        lastPersistedRef.current = next;
         setSettings((prev) => {
-          const userChangedDuringHydration = prev !== DEFAULTS;
-          if (!userChangedDuringHydration) return next;
+          const locationChangedDuringHydration = locationMutatedDuringHydrationRef.current;
+          if (!locationChangedDuringHydration) return next;
           return {
             ...next,
             autoLocation: prev.autoLocation,
@@ -619,7 +694,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setActiveAdhanReciterId(next.adhanReciterId || 'alafasy');
         setAppLanguage(next.language);
         if (migrated) {
-          AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next)).catch(() => {});
+          enqueueWrite(next).catch(() => {});
         }
       } catch {
         // fall back to defaults, preserving boot language
@@ -633,30 +708,34 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
-  function persist(next: AppSettings): AppSettings {
-    const clean = sanitizeSettings(next);
+  function updateSettings(update: (current: AppSettings) => AppSettings): AppSettings {
+    const clean = sanitizeSettings(update(settingsRef.current));
     settingsRef.current = clean;
     preloadRequestedMem = clean.quranPreloadRequested;
-    AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(clean)).catch(() => {});
+    setSettings(clean);
+    enqueueWrite(clean).catch(() => {});
     return clean;
   }
 
   const value: SettingsContextValue = {
     settings,
-    setMethod: (methodId) => setSettings((prev) => persist({ ...prev, methodId })),
-    setMadhab: (madhab) => setSettings((prev) => persist({ ...prev, madhab })),
-    setTimeFormat: (timeFormat) => setSettings((prev) => persist({ ...prev, timeFormat })),
-    setLocationMode: (locationMode) => setSettings((prev) => persist({ ...prev, locationMode })),
-    setManualLocation: (manualLocation) => setSettings((prev) => persist({ ...prev, manualLocation })),
-    setAutoLocation: (autoLocation, timestamp = Date.now()) => {
-      setCachedLocation(autoLocation, timestamp);
-      setSettings((prev) => persist({ ...prev, autoLocation, autoLocationTimestamp: timestamp }));
+    setMethod: (methodId) => updateSettings((prev) => ({ ...prev, methodId })),
+    setMadhab: (madhab) => updateSettings((prev) => ({ ...prev, madhab })),
+    setTimeFormat: (timeFormat) => updateSettings((prev) => ({ ...prev, timeFormat })),
+    setLocationMode: (locationMode) => {
+      locationMutatedDuringHydrationRef.current = true;
+      updateSettings((prev) => ({ ...prev, locationMode }));
     },
-    setReminders: (remindersEnabled) => setSettings((prev) => persist({ ...prev, remindersEnabled })),
-    setReminderOffsetMinutes: (reminderOffsetMinutes) => setSettings((prev) => persist({ ...prev, reminderOffsetMinutes })),
+    setManualLocation: (manualLocation) => updateSettings((prev) => ({ ...prev, manualLocation })),
+    setAutoLocation: (autoLocation, timestamp = Date.now()) => {
+      locationMutatedDuringHydrationRef.current = true;
+      setCachedLocation(autoLocation, timestamp);
+      updateSettings((prev) => ({ ...prev, autoLocation, autoLocationTimestamp: timestamp }));
+    },
+    setReminders: (remindersEnabled) => updateSettings((prev) => ({ ...prev, remindersEnabled })),
+    setReminderOffsetMinutes: (reminderOffsetMinutes) => updateSettings((prev) => ({ ...prev, reminderOffsetMinutes })),
     setPrayerConfig: (prayer, config) =>
-      setSettings((prev) =>
-        persist({
+      updateSettings((prev) => ({
           ...prev,
           prayerConfigs: {
             ...prev.prayerConfigs,
@@ -665,39 +744,38 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
               ...config,
             },
           },
-        })
-      ),
-    setPrayerConfigs: (prayerConfigs) => setSettings((prev) => persist({ ...prev, prayerConfigs })),
-    setQuranReminderEnabled: (quranReminderEnabled) => setSettings((prev) => persist({ ...prev, quranReminderEnabled })),
-    setQuranReminderTime: (quranReminderTime) => setSettings((prev) => persist({ ...prev, quranReminderTime })),
-    setQuranGoal: (quranGoal) => setSettings((prev) => persist({ ...prev, quranGoal })),
+        })),
+    setPrayerConfigs: (prayerConfigs) => updateSettings((prev) => ({ ...prev, prayerConfigs })),
+    setQuranReminderEnabled: (quranReminderEnabled) => updateSettings((prev) => ({ ...prev, quranReminderEnabled })),
+    setQuranReminderTime: (quranReminderTime) => updateSettings((prev) => ({ ...prev, quranReminderTime })),
+    setQuranGoal: (quranGoal) => updateSettings((prev) => ({ ...prev, quranGoal })),
     setAdhanReciterId: (adhanReciterId) => {
       setActiveAdhanReciterId(adhanReciterId);
-      setSettings((prev) => persist({ ...prev, adhanReciterId }));
+      updateSettings((prev) => ({ ...prev, adhanReciterId }));
     },
-    setThemeMode: (themeMode) => setSettings((prev) => persist({ ...prev, themeMode })),
-    setAccentKey: (accentKey) => setSettings((prev) => persist({ ...prev, accentKey })),
+    setThemeMode: (themeMode) => updateSettings((prev) => ({ ...prev, themeMode })),
+    setAccentKey: (accentKey) => updateSettings((prev) => ({ ...prev, accentKey })),
     setTranslationAudioEnabled: (translationAudioEnabled) => {
       setAudioTranslationEnabled(translationAudioEnabled);
-      setSettings((prev) => persist({ ...prev, translationAudioEnabled }));
+      updateSettings((prev) => ({ ...prev, translationAudioEnabled }));
     },
-    setNamesLanguage: (namesLanguage) => setSettings((prev) => persist({ ...prev, namesLanguage })),
-    setWomenWorship: (womenWorshipEnabled) => setSettings((prev) => persist({ ...prev, womenWorshipEnabled })),
-    setWomenPinHash: (womenPinHash) => setSettings((prev) => persist({ ...prev, womenPinHash })),
-    setWomenLockEnabled: (womenLockEnabled) => setSettings((prev) => persist({ ...prev, womenLockEnabled })),
-    setHapticsEnabled: (hapticsEnabled) => setSettings((prev) => persist({ ...prev, hapticsEnabled })),
-    setQuranArabicFont: (quranArabicFont) => setSettings((prev) => persist({ ...prev, quranArabicFont })),
-    setQuranScript: (quranScript) => setSettings((prev) => persist({ ...prev, quranScript })),
+    setNamesLanguage: (namesLanguage) => updateSettings((prev) => ({ ...prev, namesLanguage })),
+    setWomenWorship: (womenWorshipEnabled) => updateSettings((prev) => ({ ...prev, womenWorshipEnabled })),
+    setWomenPinHash: (womenPinHash) => updateSettings((prev) => ({ ...prev, womenPinHash })),
+    setWomenLockEnabled: (womenLockEnabled) => updateSettings((prev) => ({ ...prev, womenLockEnabled })),
+    setHapticsEnabled: (hapticsEnabled) => updateSettings((prev) => ({ ...prev, hapticsEnabled })),
+    setQuranArabicFont: (quranArabicFont) => updateSettings((prev) => ({ ...prev, quranArabicFont })),
+    setQuranScript: (quranScript) => updateSettings((prev) => ({ ...prev, quranScript })),
     setQuranFontSize: (quranFontSize) =>
-      setSettings((prev) => persist({ ...prev, quranFontSize: clampQuranFontSize(quranFontSize) })),
+      updateSettings((prev) => ({ ...prev, quranFontSize: clampQuranFontSize(quranFontSize) })),
     setQuranLineHeight: (quranLineHeight) =>
-      setSettings((prev) => persist({ ...prev, quranLineHeight: clampQuranLineHeight(quranLineHeight) })),
+      updateSettings((prev) => ({ ...prev, quranLineHeight: clampQuranLineHeight(quranLineHeight) })),
     setQuranShowTranslation: (quranShowTranslation) =>
-      setSettings((prev) => persist({ ...prev, quranShowTranslation })),
+      updateSettings((prev) => ({ ...prev, quranShowTranslation })),
     setTafsirSourceId: (tafsirSourceId) =>
-      setSettings((prev) => persist({ ...prev, tafsirSourceId })),
+      updateSettings((prev) => ({ ...prev, tafsirSourceId })),
     setQuranPreloadRequested: (quranPreloadRequested) =>
-      setSettings((prev) => persist({ ...prev, quranPreloadRequested })),
+      updateSettings((prev) => ({ ...prev, quranPreloadRequested })),
     setLanguage: async (nextLang: AppLanguage) => {
       const prevLang = settingsRef.current.language;
       if (nextLang === prevLang) {
@@ -705,48 +783,47 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Snapshot settings and compute sanitized clean state once.
-      // Do NOT use generic fire-and-forget persist() for the language change.
       const currentSnapshot = settingsRef.current;
-      const initialTafsir = nextLang === 'ur'
-        ? (currentSnapshot.tafsirSourceId === 'jalalayn' ? 'api-ibn-kathir-urdu' : undefined)
-        : (currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' ? 'jalalayn' : undefined);
-      const nextClean = sanitizeSettings({
-        ...computeNextLanguageSettings(currentSnapshot, nextLang),
-        ...(initialTafsir ? { tafsirSourceId: initialTafsir } : {}),
-      });
+      const nextClean = computeNextLanguageSettings(currentSnapshot, nextLang);
 
-      try {
-        // Direct durable write to storage
-        await AsyncStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify(nextClean)
-        );
-
-        // Read back and verify stored language exactly matches nextLang
-        const raw = await AsyncStorage.getItem(STORAGE_KEY);
-        if (!raw) {
-          throw new Error('Storage readback failed: empty settings');
-        }
-        const parsed = JSON.parse(raw);
-        if (!parsed || parsed.language !== nextLang) {
-          throw new Error(
-            `Storage readback verification mismatch: expected "${nextLang}", got "${parsed?.language}"`
-          );
-        }
-      } catch (err) {
-        // Keep/revert previous React and i18n state on failure
-        settingsRef.current = sanitizeSettings({ ...settingsRef.current, language: prevLang });
-        preloadRequestedMem = settingsRef.current.quranPreloadRequested;
-        setSettings((prev) => ({ ...prev, language: prevLang }));
-        setAppLanguage(prevLang);
-        throw err;
-      }
-
-      // Readback succeeded: update in-memory refs, mirror, React state, and i18n
+      // Make optimistic React state and ref reflect nextClean before awaiting the language queue,
+      // so any subsequent setter snapshot includes the target language.
       settingsRef.current = nextClean;
       preloadRequestedMem = nextClean.quranPreloadRequested;
       setSettings(nextClean);
-      setAppLanguage(nextLang);
+
+      try {
+        // Enqueue through the shared write queue and await completion
+        await enqueueWrite(nextClean, (raw) => {
+          const parsed = JSON.parse(raw);
+          if (!parsed || parsed.language !== nextLang) {
+            throw new Error(
+              `Storage readback verification mismatch: expected "${nextLang}", got "${parsed?.language}"`
+            );
+          }
+        });
+      } catch (err) {
+        // On failure: preserve any newer unrelated fields while restoring the previous language,
+        // and ensure a queued newer selection cannot silently leave disk on the failed target language.
+        const currentLang = settingsRef.current.language;
+        if (currentLang === nextLang) {
+          const restored = sanitizeSettings({ ...settingsRef.current, language: prevLang });
+          settingsRef.current = restored;
+          preloadRequestedMem = restored.quranPreloadRequested;
+          setSettings((prev) => (prev.language === nextLang ? sanitizeSettings({ ...prev, language: prevLang }) : prev));
+          setAppLanguage(prevLang);
+          enqueueWrite(restored).catch(() => {});
+        } else if (currentLang === prevLang) {
+          setAppLanguage(prevLang);
+        }
+        throw err;
+      }
+
+      // Readback succeeded: enqueueWrite already maintains lastPersistedRef and optimistic state
+      // already reflects nextClean. Do not redundantly reassign state or ref so newer concurrent appearance changes are never overwritten.
+      if (settingsRef.current.language === nextLang) {
+        setAppLanguage(nextLang);
+      }
 
       // Side-effects run ONLY AFTER the main verified language write.
       // Side-effect write failures are trapped locally so the main language write is never lost.
@@ -756,10 +833,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           const currentQuranLang = getQuranTranslationLanguage();
           if (currentQuranLang === 'en') {
             await setQuranTranslationLanguage('ur');
+          } else if (currentQuranLang === 'ar') {
+            await setQuranTranslationLanguage('ur');
           }
         } catch {}
 
-        if (settings.tafsirSourceId === 'jalalayn') {
+        if (currentSnapshot.tafsirSourceId === 'jalalayn' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
           nextTafsir = 'api-ibn-kathir-urdu';
         }
 
@@ -769,17 +848,36 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             await setAudioTranslationEdition('ur.everyayah-shamshad');
           }
         } catch {}
+      } else if (nextLang === 'ar') {
+        try {
+          const currentQuranLang = getQuranTranslationLanguage();
+          if (currentQuranLang === 'en' || currentQuranLang === 'ur') {
+            await setQuranTranslationLanguage('ar');
+          }
+        } catch {}
+
+        if (currentSnapshot.tafsirSourceId === 'jalalayn' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu') {
+          nextTafsir = 'api-ibn-kathir-ar';
+        }
+
+        try {
+          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+          if (savedAudioEdition === 'ur.everyayah-shamshad') {
+            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
+          }
+        } catch {}
       } else {
-        // Switching back to English: restore the English content defaults that
-        // the ur branch auto-linked (quran translation, tafsir, audio edition).
+        // Switching back to English (from ur or ar)
         try {
           const currentQuranLang = getQuranTranslationLanguage();
           if (currentQuranLang === 'ur') {
             await setQuranTranslationLanguage('en');
+          } else if (currentQuranLang === 'ar') {
+            await setQuranTranslationLanguage('en');
           }
         } catch {}
 
-        if (settings.tafsirSourceId === 'api-ibn-kathir-urdu') {
+        if (currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
           nextTafsir = 'jalalayn';
         }
 
@@ -791,10 +889,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         } catch {}
       }
 
-      if (nextTafsir) {
+      if (nextTafsir && settingsRef.current.tafsirSourceId !== nextTafsir) {
         // Ensure subsequent tafsir update preserves nextLang and cannot overwrite it with old language
-        setSettings((prev) =>
-        persist({
+        updateSettings((prev) => ({
           ...prev,
           language: nextLang,
           tafsirSourceId: nextTafsir,
