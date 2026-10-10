@@ -1523,8 +1523,11 @@ export default function QuranReaderScreen({
     const bitrate = getSurahBitrate(selectedReciter);
     if (surahDownloaded) {
       Alert.alert(
-        'Remove Download',
-        `Remove offline audio for Surah ${surah?.englishName ?? surahNumber} (${surahDownloadSize || '—'})?`,
+        t('Remove Download'),
+        t('Remove offline audio for Surah {surah} ({size})?', {
+          surah: surah?.englishName ?? String(surahNumber),
+          size: surahDownloadSize || '—',
+        }),
         [
           { text: cancel, style: 'cancel' },
           {

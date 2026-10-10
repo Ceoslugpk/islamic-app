@@ -222,97 +222,97 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                 </Text>
                 <BulletItem
                   title="No authentication servers"
-                  text="You can use every core feature immediately without ever signing in or providing personal credentials."
+                  text={t("You can use every core feature immediately without ever signing in or providing personal credentials.")}
                 />
                 <BulletItem
-                  title="No advertising identifiers"
-                  text="The app contains zero ad networks, tracking SDKs, or commercial behavioral tracking."
+                  title={t("No advertising identifiers")}
+                  text={t("The app contains zero ad networks, tracking SDKs, or commercial behavioral tracking.")}
                 />
               </LegalSection>
 
-              <LegalSection title="On-Device Local Storage" badge="Stored on Device">
+              <LegalSection title={t("On-Device Local Storage")} badge={t("Stored on Device")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("Your data stays exclusively on your phone in local storage (embedded SQLite database and secure key-value storage):")}
                 </Text>
                 <BulletItem
-                  title="Quran Reader"
-                  text="Bookmarks, last read ayah position, reading plans, and verse reflection notes."
+                  title={t("Quran Reader")}
+                  text={t("Bookmarks, last read ayah position, reading plans, and verse reflection notes.")}
                 />
                 <BulletItem
-                  title="Worship Trackers"
-                  text="Salah logs, tasbih counts, fasting history, and women’s cycle records."
+                  title={t("Worship Trackers")}
+                  text={t("Salah logs, tasbih counts, fasting history, and women’s cycle records.")}
                 />
                 <BulletItem
-                  title="Preferences"
-                  text="Theme mode, calculation methods, madhab, reciter selection, and notification timings."
+                  title={t("Preferences")}
+                  text={t("Theme mode, calculation methods, madhab, reciter selection, and notification timings.")}
                 />
               </LegalSection>
 
-              <LegalSection title="Device Permissions" badge="Optional & Revocable">
+              <LegalSection title={t("Device Permissions")} badge={t("Optional & Revocable")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("The app requests only the minimum permissions necessary to function:")}
                 </Text>
                 <BulletItem
-                  title="Location (GPS)"
-                  text="Used strictly on-device to calculate local prayer times and determine the Qibla direction. Your coordinates are never sent to our servers or linked to your identity. You can revoke this permission anytime and choose a manual city instead."
+                  title={t("Location (GPS)")}
+                  text={t("Used strictly on-device to calculate local prayer times and determine the Qibla direction. Your coordinates are never sent to our servers or linked to your identity. You can revoke this permission anytime and choose a manual city instead.")}
                 />
                 <BulletItem
-                  title="Notifications"
-                  text="Used solely to schedule local prayer alerts and Quran reminders directly on your phone. Notifications are generated locally without any external push-notification services."
+                  title={t("Notifications")}
+                  text={t("Used solely to schedule local prayer alerts and Quran reminders directly on your phone. Notifications are generated locally without any external push-notification services.")}
                 />
               </LegalSection>
 
-              <LegalSection title="Network Requests to Public APIs" badge="Minimal Queries">
+              <LegalSection title={t("Network Requests to Public APIs")} badge={t("Minimal Queries")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("When network requests are required, they contact free, public APIs with only the bare minimum parameters needed to fulfill the request:")}
                 </Text>
                 <BulletItem
-                  title="Prayer Times"
-                  text="Approximate latitude, longitude, and calculation method parameters are sent to Islamic.app to fetch the monthly prayer schedule."
+                  title={t("Prayer Times")}
+                  text={t("Approximate latitude, longitude, and calculation method parameters are sent to Islamic.app to fetch the monthly prayer schedule.")}
                 />
                 <BulletItem
-                  title="City & Mosque Search"
-                  text="Search text queries are sent to OpenStreetMap Nominatim for geocoding."
+                  title={t("City & Mosque Search")}
+                  text={t("Search text queries are sent to OpenStreetMap Nominatim for geocoding.")}
                 />
                 <BulletItem
-                  title="Quran Audio & Text"
-                  text="Ayah audio streams and translations are downloaded from public CDNs without user identifiers."
+                  title={t("Quran Audio & Text")}
+                  text={t("Ayah audio streams and translations are downloaded from public CDNs without user identifiers.")}
                 />
               </LegalSection>
 
-              <LegalSection title="Zero Analytics & Telemetry" badge="No Analytics">
+              <LegalSection title={t("Zero Analytics & Telemetry")} badge={t("No Analytics")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("The application has no analytics SDKs, crash trackers, or telemetry scripts. We do not collect usage statistics, screen view counts, or interaction events.")}
                 </Text>
               </LegalSection>
 
-              <LegalSection title="Women's Worship Data" badge="On-Device & Private">
+              <LegalSection title={t("Women's Worship Data")} badge={t("On-Device & Private")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("The optional Women's Worship feature may store the following records locally on your device: menstrual/period start and end dates, post-natal (nifas) start and end dates, user-entered private notes associated with those records, purity-day information, and missed-fasting records where the recorded reason relates to menstruation or post-natal status.")}
                 </Text>
                 <BulletItem
-                  title="Stored locally only"
-                  text="These records are kept exclusively in the app's on-device SQLite database. They are never transmitted to our servers, Islamic.app, AlAdhan, Nominatim, Quran providers, or any analytics, advertising, or crash-reporting service."
+                  title={t("Stored locally only")}
+                  text={t("These records are kept exclusively in the app's on-device SQLite database. They are never transmitted to our servers, Islamic.app, AlAdhan, Nominatim, Quran providers, or any analytics, advertising, or crash-reporting service.")}
                 />
                 <BulletItem
-                  title="No Health Connect"
-                  text="The app does not integrate with Android Health Connect and does not read or write menstrual or reproductive-health data through Health Connect."
+                  title={t("No Health Connect")}
+                  text={t("The app does not integrate with Android Health Connect and does not read or write menstrual or reproductive-health data through Health Connect.")}
                 />
                 <BulletItem
-                  title="No advertising or sale"
-                  text="Women's Worship data is never used for advertising and is never sold."
+                  title={t("No advertising or sale")}
+                  text={t("Women's Worship data is never used for advertising and is never sold.")}
                 />
                 <BulletItem
-                  title="Deletion"
-                  text="You can delete all Women's Worship records at any time via Settings → Women's Worship → 'Delete women's data', which erases cycle, purity, nifas, and related qada records."
+                  title={t("Deletion")}
+                  text={t("You can delete all Women's Worship records at any time via Settings → Women's Worship → 'Delete women's data', which erases cycle, purity, nifas, and related qada records.")}
                 />
                 <BulletItem
-                  title="Backup & export"
-                  text="Women's Worship records are included in a user-created backup via Backup & Restore. The exported backup file is not automatically uploaded by the app; if you choose to share it using your device's share or document tools, you control where it goes. Because the exported file itself is not encrypted by the app, store any backup that contains Women's Worship data securely."
+                  title={t("Backup & export")}
+                  text={t("Women's Worship records are included in a user-created backup via Backup & Restore. The exported backup file is not automatically uploaded by the app; if you choose to share it using your device's share or document tools, you control where it goes. Because the exported file itself is not encrypted by the app, store any backup that contains Women's Worship data securely.")}
                 />
                 <BulletItem
-                  title="Privacy lock"
-                  text="The optional privacy lock protects access to the Women's Worship screens using your device's supported authentication mechanisms (biometrics, PIN, pattern, or password). It does not transmit or store any Women's Worship data elsewhere."
+                  title={t("Privacy lock")}
+                  text={t("The optional privacy lock protects access to the Women's Worship screens using your device's supported authentication mechanisms (biometrics, PIN, pattern, or password). It does not transmit or store any Women's Worship data elsewhere.")}
                 />
               </LegalSection>
             </>
@@ -320,42 +320,42 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
 
           {screen === 'terms' && (
             <>
-              <LegalSection title="Free Service as Sadaqah Jariyah" badge="Free & Open">
+              <LegalSection title={t("Free Service as Sadaqah Jariyah")} badge={t("Free & Open")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("This application is provided completely free of charge as Sadaqah Jariyah (continuous charity) for the benefit of the global Muslim community. There are no in-app purchases, paid subscriptions, or paywalled content.")}
                 </Text>
               </LegalSection>
 
-              <LegalSection title="Religious & Educational Purpose" badge="Educational">
+              <LegalSection title={t("Religious & Educational Purpose")} badge={t("Educational")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("All content provided—including the Holy Quran text, translations, tafsir, hadiths, prayer time schedules, and worship guides—is intended for personal devotional and educational purposes. While we strive for absolute accuracy according to verified Islamic scholarship, this software is provided as a supportive companion and does not replace qualified human guidance.")}
                 </Text>
               </LegalSection>
 
-              <LegalSection title="Religious Scholarly Disclaimer" badge="Important">
+              <LegalSection title={t("Religious Scholarly Disclaimer")} badge={t("Important")}>
                 <BulletItem
-                  title="Prayer & Fasting Times"
-                  text="Prayer schedules are astronomical calculations based on established methods. For exact start and end times in special regions (such as extreme high latitudes) or local congregational adjustments, please consult your local mosque or regional Islamic authority."
+                  title={t("Prayer & Fasting Times")}
+                  text={t("Prayer schedules are astronomical calculations based on established methods. For exact start and end times in special regions (such as extreme high latitudes) or local congregational adjustments, please consult your local mosque or regional Islamic authority.")}
                 />
                 <BulletItem
-                  title="Fiqh & Medical Rulings"
-                  text="The worship tools (including the Women's Worship section) provide reference guidance according to major Islamic schools of thought (Hanafi, Shafi'i, Maliki, Hanbali). For intricate personal rulings, menstrual medical doubts, or complex legal questions, please consult a qualified Islamic scholar or medical professional."
+                  title={t("Fiqh & Medical Rulings")}
+                  text={t("The worship tools (including the Women's Worship section) provide reference guidance according to major Islamic schools of thought (Hanafi, Shafi'i, Maliki, Hanbali). For intricate personal rulings, menstrual medical doubts, or complex legal questions, please consult a qualified Islamic scholar or medical professional.")}
                 />
               </LegalSection>
 
-              <LegalSection title="Respectful Use & Adab">
+              <LegalSection title={t("Respectful Use & Adab")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("Users agree to treat the Holy Quran, sacred names of Allah, hadiths, and devotional materials with respect and adab. Users must not attempt to abuse, distort, or maliciously disrupt the public APIs that power the application.")}
                 </Text>
               </LegalSection>
 
-              <LegalSection title="Disclaimer of Warranties & Liability" badge="As-Is">
+              <LegalSection title={t("Disclaimer of Warranties & Liability")} badge={t("As-Is")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("The application is provided on an \"as is\" and \"as available\" basis without warranties of any kind, whether express or implied. The developers and contributors make every reasonable effort to prevent errors, but assume no liability for calculation inaccuracies, compass magnetic interference, or third-party server downtime.")}
                 </Text>
               </LegalSection>
 
-              <LegalSection title="Changes to Terms">
+              <LegalSection title={t("Changes to Terms")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("These terms may be updated occasionally as new features are added. Continued use of the application following an update constitutes acceptance of the revised terms.")}
                 </Text>
@@ -365,115 +365,115 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
 
 {screen === 'data' && (
             <>
-              <LegalSection title="What Data is Stored Locally" badge="Stored on Phone">
+              <LegalSection title={t("What Data is Stored Locally")} badge={t("Stored on Phone")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("All your personal interactions and records remain stored strictly within your device's isolated application container. The app uses an embedded SQLite database (expo-sqlite) plus AsyncStorage for preferences:")}
                 </Text>
                 <BulletItem
-                  title="Holy Quran"
-                  text="Reading bookmarks (bookmarks table), last-read ayah (quran_cache: 'last-read'), verse notes (notes table), and personal reading plan progress (plan_entries table)."
+                  title={t("Holy Quran")}
+                  text={t("Reading bookmarks (bookmarks table), last-read ayah (quran_cache: 'last-read'), verse notes (notes table), and personal reading plan progress (plan_entries table).")}
                 />
                 <BulletItem
-                  title="Salah Tracker & Tasbih"
-                  text="Daily prayer completion records (salah_entries table), prayer streaks, and digital tasbih tally counts (tasbih_entries, tasbih_daily tables)."
+                  title={t("Salah Tracker & Tasbih")}
+                  text={t("Daily prayer completion records (salah_entries table), prayer streaks, and digital tasbih tally counts (tasbih_entries, tasbih_daily tables).")}
                 />
                 <BulletItem
-                  title="Women's Worship"
-                  text="Cycle dates (period_entries table), purity intervals, nifas tracking (nifas_entries table), and fasting qada records (missed_fasts table, filtered by reason). Optional PIN lock via hashPin."
+                  title={t("Women's Worship")}
+                  text={t("Cycle dates (period_entries table), purity intervals, nifas tracking (nifas_entries table), and fasting qada records (missed_fasts table, filtered by reason). Optional PIN lock via hashPin.")}
                 />
                 <BulletItem
-                  title="Fasting & Zakat"
-                  text="Fasting history (fasting_entries table) with type (ramadan/voluntary/qada), and zakat calculations (zakat_history table)."
+                  title={t("Fasting & Zakat")}
+                  text={t("Fasting history (fasting_entries table) with type (ramadan/voluntary/qada), and zakat calculations (zakat_history table).")}
                 />
                 <BulletItem
-                  title="Hifz & Hadith"
-                  text="Hifz memorization status (hifz_entries table), saved hadiths (hadith_saved table), and read markers (hadith_recent, hadith_read_markers tables)."
+                  title={t("Hifz & Hadith")}
+                  text={t("Hifz memorization status (hifz_entries table), saved hadiths (hadith_saved table), and read markers (hadith_recent, hadith_read_markers tables).")}
                 />
                 <BulletItem
-                  title="Downloaded Media"
-                  text="Preloaded Quranic text editions (quran_cache table) and downloaded audio recitation files (quran_cache: 'quran-audio-downloads')."
+                  title={t("Downloaded Media")}
+                  text={t("Preloaded Quranic text editions (quran_cache table) and downloaded audio recitation files (quran_cache: 'quran-audio-downloads').")}
                 />
                 <BulletItem
-                  title="Application Settings"
-                  text="Theme, accent color, calculation method, madhab, notification reminders, font sizes, and reciter selection (AsyncStorage keys)."
+                  title={t("Application Settings")}
+                  text={t("Theme, accent color, calculation method, madhab, notification reminders, font sizes, and reciter selection (AsyncStorage keys).")}
                 />
               </LegalSection>
 
-              <LegalSection title="Device Permissions Used" badge="Optional & Revocable">
+              <LegalSection title={t("Device Permissions Used")} badge={t("Optional & Revocable")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("The app requests only the minimum permissions necessary. Each is optional and can be revoked in system settings:")}
                 </Text>
                 <BulletItem
-                  title="Location (Precise & Approximate)"
-                  text="Used strictly on-device to calculate local prayer times and determine the Qibla direction. Your coordinates are never sent to our servers or linked to your identity. You can revoke this permission anytime and choose a manual city instead."
+                  title={t("Location (Precise & Approximate)")}
+                  text={t("Used strictly on-device to calculate local prayer times and determine the Qibla direction. Your coordinates are never sent to our servers or linked to your identity. You can revoke this permission anytime and choose a manual city instead.")}
                 />
                 <BulletItem
-                  title="Notifications"
+                  title={t("Notifications")}
                   text="Used solely to schedule local prayer alerts, Adhan playback, and Quran reminders directly on your phone. Notifications are generated locally without any external push-notification services. No microphone permission is used — the app has no voice search feature."
                 />
                 <BulletItem
-                  title="Storage (Media & Files)"
-                  text="Required to cache Quran text, translations, and downloaded audio recitations for offline access. You can clear this in Settings → Downloads."
+                  title={t("Storage (Media & Files)")}
+                  text={t("Required to cache Quran text, translations, and downloaded audio recitations for offline access. You can clear this in Settings → Downloads.")}
                 />
               </LegalSection>
 
-              <LegalSection title="What Leaves Your Device (Network Endpoints)" badge="Strictly Minimal">
+              <LegalSection title={t("What Leaves Your Device (Network Endpoints)")} badge={t("Strictly Minimal")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("No personal profile data ever leaves your phone. Network traffic is restricted exclusively to the following public endpoints:")}
                 </Text>
                 <BulletItem
-                  title="Prayer Times & Hadith API"
-                  text="api.islamic.app — receives approximate latitude, longitude, calculation method ID, and madhab to return prayer schedules and authentic hadith collections (Bukhari, Muslim, etc.)."
+                  title={t("Prayer Times & Hadith API")}
+                  text={t("api.islamic.app — receives approximate latitude, longitude, calculation method ID, and madhab to return prayer schedules and authentic hadith collections (Bukhari, Muslim, etc.).")}
                 />
                 <BulletItem
-                  title="Quran Text & Translations"
-                  text="AlQuran Cloud (cdn.alquran.cloud / api.alquran.cloud) — provides verified Uthmani script, surah/ayah metadata, and multilingual translations. No user identifiers sent."
+                  title={t("Quran Text & Translations")}
+                  text={t("AlQuran Cloud (cdn.alquran.cloud / api.alquran.cloud) — provides verified Uthmani script, surah/ayah metadata, and multilingual translations. No user identifiers sent.")}
                 />
                 <BulletItem
-                  title="Quran Audio Recitations"
-                  text="islamic.network / EveryAyah CDNs (cdn.islamic.network, everyayah.com) — direct requests for verse-by-verse audio from reciters like Alafasy, Abdulbasit, Al-Ghamadi. No tracking parameters."
+                  title={t("Quran Audio Recitations")}
+                  text={t("islamic.network / EveryAyah CDNs (cdn.islamic.network, everyayah.com) — direct requests for verse-by-verse audio from reciters like Alafasy, Abdulbasit, Al-Ghamadi. No tracking parameters.")}
                 />
                 <BulletItem
-                  title="Hijri Calendar"
-                  text="AlAdhan / Umm al-Qura algorithms (local calculation with fallback to api.aladhan.com for validation) — astronomical Hijri date conversion."
+                  title={t("Hijri Calendar")}
+                  text={t("AlAdhan / Umm al-Qura algorithms (local calculation with fallback to api.aladhan.com for validation) — astronomical Hijri date conversion.")}
                 />
                 <BulletItem
-                  title="City & Mosque Search"
-                  text="OpenStreetMap Nominatim (nominatim.openstreetmap.org) — search text queries for geocoding city names and nearby mosque discovery via Overpass API."
+                  title={t("City & Mosque Search")}
+                  text={t("OpenStreetMap Nominatim (nominatim.openstreetmap.org) — search text queries for geocoding city names and nearby mosque discovery via Overpass API.")}
                 />
                 <BulletItem
-                  title="99 Names of Allah"
-                  text="EsmaulHusna.org — provides authentic meanings, benefits, and commentary for the 99 Beautiful Names."
+                  title={t("99 Names of Allah")}
+                  text={t("EsmaulHusna.org — provides authentic meanings, benefits, and commentary for the 99 Beautiful Names.")}
                 />
               </LegalSection>
 
-              <LegalSection title="How to Clear or Erase Your Data" badge="User Controlled">
+              <LegalSection title={t("How to Clear or Erase Your Data")} badge={t("User Controlled")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("You have complete authority over your data at all times:")}
                 </Text>
                 <BulletItem
-                  title="Delete Women's Data"
-                  text="Settings → Women's Worship → 'Delete women's data' — instantly erases all cycle, purity, nifas, and related qada records from SQLite."
+                  title={t("Delete Women's Data")}
+                  text={t("Settings → Women's Worship → 'Delete women's data' — instantly erases all cycle, purity, nifas, and related qada records from SQLite.")}
                 />
                 <BulletItem
-                  title="Clear Fasting History"
-                  text="Settings → Data & Privacy → use 'Clear fasting data' (if available) or clear fasting_entries and missed_fasts tables via Backup & Restore → Export → edit → Import."
+                  title={t("Clear Fasting History")}
+                  text={t("Settings → Data & Privacy → use 'Clear fasting data' (if available) or clear fasting_entries and missed_fasts tables via Backup & Restore → Export → edit → Import.")}
                 />
                 <BulletItem
-                  title="Remove Downloaded Audio & Text"
-                  text="Settings → Downloads → 'Clear All Downloads' — removes all cached Quran text editions and downloaded audio files, freeing device storage."
+                  title={t("Remove Downloaded Audio & Text")}
+                  text={t("Settings → Downloads → 'Clear All Downloads' — removes all cached Quran text editions and downloaded audio files, freeing device storage.")}
                 />
                 <BulletItem
-                  title="Reset All App Data"
-                  text="Settings → Backup & Restore → 'Clear All Data' — wipes SQLite database, AsyncStorage, and cached files. Or use system Settings → Apps → Islamic → Clear Storage."
+                  title={t("Reset All App Data")}
+                  text={t("Settings → Backup & Restore → 'Clear All Data' — wipes SQLite database, AsyncStorage, and cached files. Or use system Settings → Apps → Islamic → Clear Storage.")}
                 />
                 <BulletItem
-                  title="Backup & Restore"
-                  text="Settings → Backup & Restore — export all local data as a JSON file for backup, or import a previously exported backup. No cloud sync involved."
+                  title={t("Backup & Restore")}
+                  text={t("Settings → Backup & Restore — export all local data as a JSON file for backup, or import a previously exported backup. No cloud sync involved.")}
                 />
               </LegalSection>
 
-              <LegalSection title="Independent & No Cloud Lock-In" badge="Zero Lock-In">
+              <LegalSection title={t("Independent & No Cloud Lock-In")} badge={t("Zero Lock-In")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("Because the application has no cloud accounts or remote user databases, your data is entirely decentralized. You are never subject to account suspensions, remote data leaks, or unexpected cloud sync discrepancies.")}
                 </Text>
@@ -483,13 +483,13 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
 
           {screen === 'licenses' && (
             <>
-              <LegalSection title="Open Source Foundation" badge="Open Source">
+              <LegalSection title={t("Open Source Foundation")} badge={t("Open Source")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("This application is proudly built on open-source foundations. We stand on the shoulders of generous engineers and communities who make mobile software accessible to all.")}
                 </Text>
               </LegalSection>
 
-              <LegalSection title="Core Runtime & Framework">
+              <LegalSection title={t("Core Runtime & Framework")}>
                 <LibItem
                   name="React (v19.2)"
                   license="MIT"
@@ -509,7 +509,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                 />
               </LegalSection>
 
-              <LegalSection title="Native Modules & Utilities">
+              <LegalSection title={t("Native Modules & Utilities")}>
                 <LibItem
                   name="expo-sqlite"
                   license="MIT"
@@ -565,7 +565,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                 />
               </LegalSection>
 
-              <LegalSection title="Open Font Licenses (OFL)">
+              <LegalSection title={t("Open Font Licenses (OFL)")}>
                 <LibItem
                   name="Manrope"
                   license="OFL 1.1"
@@ -597,7 +597,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                 />
               </LegalSection>
 
-              <LegalSection title="Architecture Note" badge="TanStack-Free">
+              <LegalSection title={t("Architecture Note")} badge={t("TanStack-Free")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("The app is architected with a strict zero-dependency philosophy for data state. Networking, caching, and state synchronization use lightweight React hooks and direct SQLite queries without heavy state management bloat.")}
                 </Text>
@@ -607,13 +607,13 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
 
           {screen === 'services' && (
             <>
-              <LegalSection title="Free Public APIs & Open Data" badge="Public APIs">
+              <LegalSection title={t("Free Public APIs & Open Data")} badge={t("Public APIs")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("The application integrates with established, free public APIs and open data initiatives across the Muslim world. None of these providers receive personal identities or user profiles.")}
                 </Text>
               </LegalSection>
 
-              <LegalSection title="Services Directory">
+              <LegalSection title={t("Services Directory")}>
                 <ServiceItem
                   name="Islamic.app (API)"
                   role="Prayer Times & Hadith"
@@ -657,7 +657,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                 />
               </LegalSection>
 
-              <LegalSection title="Terms of External Providers">
+              <LegalSection title={t("Terms of External Providers")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("Each external service operates under its respective terms of service and open data attribution licenses. We are profoundly grateful to every provider for their selfless contribution to Islamic technology. May Allah reward them all abundantly.")}
                 </Text>
@@ -667,7 +667,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
 
           {screen === 'contact' && (
             <>
-              <LegalSection title="Community Support & Feedback" badge="Open Source">
+              <LegalSection title={t("Community Support & Feedback")} badge={t("Open Source")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
                   {t("This application is developed as a community project for the Ummah. If you spot a bug, find an error in prayer timings, notice a typo in translations, or wish to propose a new feature, we welcome your feedback.")}
                 </Text>
@@ -727,17 +727,17 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
                 </TouchableOpacity>
               </Card>
 
-              <LegalSection title="Tips for Helpful Issue Reports">
+              <LegalSection title={t("Tips for Helpful Issue Reports")}>
                 <BulletItem
-                  title="Device & OS"
+                  title={t("Device & OS")}
                   text="Mention whether you are on Android, iOS, or Web, along with your device model."
                 />
                 <BulletItem
-                  title="Prayer Location & Settings"
+                  title={t("Prayer Location & Settings")}
                   text="For prayer time issues, specify your city/country, chosen calculation method, and madhab."
                 />
                 <BulletItem
-                  title="Expected vs Actual"
+                  title={t("Expected vs Actual")}
                   text="Briefly explain what you expected to happen versus what actually occurred."
                 />
               </LegalSection>

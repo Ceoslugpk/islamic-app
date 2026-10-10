@@ -47,7 +47,7 @@ export function LiveMiniPlayer({ stream, onClose, onExpand }: LiveMiniPlayerProp
         {/* Left: Live status badge */}
         <View style={styles.liveBadge}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveText}>LIVE</Text>
+          <Text style={styles.liveText}>{t('LIVE')}</Text>
         </View>
 
         {/* Center: Title & subtitle */}

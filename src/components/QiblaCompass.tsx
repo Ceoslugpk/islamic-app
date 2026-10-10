@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { shortestAngleDelta } from '../lib/qibla';
+import { t } from '../lib/i18n';
 
 interface QiblaCompassProps {
   rotation: number; // degrees (bearing - heading)
@@ -251,7 +252,7 @@ export function QiblaCompass({
       {isAligned && !isStaticMode && heading !== null && (
         <View style={[styles.alignedBadge, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
           <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
-          <Text style={[styles.alignedBadgeText, { color: colors.accent }]}>Facing Qibla</Text>
+          <Text style={[styles.alignedBadgeText, { color: colors.accent }]}>{t('Facing Qibla')}</Text>
         </View>
       )}
 
@@ -259,7 +260,7 @@ export function QiblaCompass({
       {heading === null && !isStaticMode && (
         <View style={[styles.alignedBadge, { backgroundColor: colors.bgRaised, borderColor: colors.borderSubtle }]}>
           <Ionicons name="compass-outline" size={14} color={colors.accent} />
-          <Text style={[styles.alignedBadgeText, { color: colors.textSecondary }]}>Rotate device to calibrate</Text>
+          <Text style={[styles.alignedBadgeText, { color: colors.textSecondary }]}>{t('Rotate device to calibrate')}</Text>
         </View>
       )}
     </View>

@@ -79,6 +79,7 @@ export const useUndoToast = (): {
 };
 
 import { useTheme } from './theme';
+import { t } from './i18n';
 
 const UndoToast: React.FC<{
   actionDescription: string;
@@ -105,7 +106,7 @@ const UndoToast: React.FC<{
         onPress={onUndo}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={[styles.undoBtnText, { color: colors.accent }]}>Undo</Text>
+        <Text style={[styles.undoBtnText, { color: colors.accent }]}>{t('Undo')}</Text>
       </TouchableOpacity>
     </View>
   ) : null;

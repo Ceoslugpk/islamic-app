@@ -9,6 +9,8 @@ import {
 import { Location as Loc } from './prayerTimes';
 import { getCachedLocation, getCachedStatus } from './useLocation';
 
+import { t } from './i18n';
+
 export const PERMISSIONS_ASKED_KEY = 'permissions-asked-v1';
 export const PERMISSIONS_VERSION = 1;
 export const LOCATION_SETUP_DISMISSED_KEY = 'location-setup-dismissed-v1';
@@ -22,16 +24,16 @@ export function promptNotificationRationale(): Promise<boolean> {
   if (Platform.OS === 'web' || Platform.OS === 'ios') return Promise.resolve(true);
   return new Promise<boolean>((resolve) => {
     Alert.alert(
-      'Prayer reminders',
-      'Notifications let Islamic play the Adhan at prayer time and remind you to read the Quran daily.\n\nYou can change or turn these off anytime in Settings.',
+      t('Prayer reminders'),
+      t('Notifications let Islamic play the Adhan at prayer time and remind you to read the Quran daily.\n\nYou can change or turn these off anytime in Settings.'),
       [
         {
-          text: 'Not now',
+          text: t('Not now'),
           style: 'cancel',
           onPress: () => resolve(false),
         },
         {
-          text: 'Enable reminders',
+          text: t('Enable reminders'),
           onPress: () => resolve(true),
         },
       ],
@@ -49,16 +51,16 @@ export function promptLocationRationale(): Promise<boolean> {
   if (Platform.OS === 'web' || Platform.OS === 'ios') return Promise.resolve(true);
   return new Promise<boolean>((resolve) => {
     Alert.alert(
-      'Your location for prayer times',
-      'Islamic uses your location only to calculate accurate prayer times and the Qibla direction for where you are.\n\nIf you prefer, you can skip this and choose a city instead — you can change this anytime in Settings.',
+      t('Your location for prayer times'),
+      t('Islamic uses your location only to calculate accurate prayer times and the Qibla direction for where you are.\n\nIf you prefer, you can skip this and choose a city instead — you can change this anytime in Settings.'),
       [
         {
-          text: 'Not now',
+          text: t('Not now'),
           style: 'cancel',
           onPress: () => resolve(false),
         },
         {
-          text: 'Use location',
+          text: t('Use location'),
           onPress: () => resolve(true),
         },
       ],

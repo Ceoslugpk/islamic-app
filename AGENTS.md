@@ -1,3 +1,7 @@
+# Project Rules
+
+> **Read `rules.md` first — it contains the binding project rules (build/release gates, agent dispatch, localization contracts, verification). Violating any rule = rejected work.**
+
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
 ## Expo has changed — do not trust your training data

@@ -1097,14 +1097,14 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {bookHistory.length > 0 && !bookFilter && (
               <View style={styles.recentWrap}>
                 <View style={styles.recentHeader}>
-                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>Recent searches</Text>
+                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
                   <TouchableOpacity
                     onPress={clearBookHistory}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     accessibilityRole="button"
                     accessibilityLabel={t('Clear hadith book search history')}
                   >
-                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>Clear</Text>
+                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>{t('Clear')}</Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView
@@ -1412,7 +1412,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {/* Full Arabic Text Card */}
             <Card padded style={styles.mb16}>
               <View style={styles.cardHeaderRow}>
-                <Text style={[styles.languageTag, { color: colors.textMuted }]}>ARABIC</Text>
+                <Text style={[styles.languageTag, { color: colors.textMuted }]}>{t('ARABIC')}</Text>
               </View>
               <ArabicText size={26} style={styles.detailArabicText}>
                 {cleanHadithText(view.hadith.ar?.text, view.hadith.ar?.body)}
@@ -1422,7 +1422,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {/* Full English Translation Card */}
             <Card padded style={styles.mb20}>
               <View style={styles.cardHeaderRow}>
-                <Text style={[styles.languageTag, { color: colors.textMuted }]}>TRANSLATION</Text>
+                <Text style={[styles.languageTag, { color: colors.textMuted }]}>{t('TRANSLATION')}</Text>
               </View>
               <Text style={[styles.detailEnglishText, { color: colors.textPrimary }]}>
                 {cleanHadithText(view.hadith.en?.text, view.hadith.en?.body)}
@@ -1441,7 +1441,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                   },
                 ]}
                 accessibilityRole="button"
-                accessibilityLabel={isCurrentSaved ? 'Unsave hadith' : 'Save hadith'}
+                accessibilityLabel={isCurrentSaved ? t('Unsave hadith') : t('Save hadith')}
               >
                 <Ionicons
                   name={isCurrentSaved ? 'bookmark' : 'bookmark-outline'}
@@ -1454,7 +1454,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     { color: isCurrentSaved ? colors.onAccent : colors.textPrimary },
                   ]}
                 >
-                  {isCurrentSaved ? 'Saved' : 'Save'}
+                  {isCurrentSaved ? t('Saved') : t('Save')}
                 </Text>
               </TouchableOpacity>
 
@@ -1473,7 +1473,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 ) : (
                   <Ionicons name="share-outline" size={18} color={colors.textPrimary} />
                 )}
-                <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>Share</Text>
+                <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>{t('Share')}</Text>
               </TouchableOpacity>
             </View>
 

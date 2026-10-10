@@ -194,21 +194,21 @@ export function WomenPinModal({
   };
 
   // Titles and descriptions
-  let headerTitle = 'PIN Protection';
-  let headerSub = 'Enter your 4-digit PIN';
+  let headerTitle = t('PIN Protection');
+  let headerSub = t('Enter your 4-digit PIN');
 
   if (step === 'verify') {
-    headerTitle = "Women's Worship Locked";
-    headerSub = 'Enter your 4-digit PIN to access';
+    headerTitle = t("Women's Worship Locked");
+    headerSub = t('Enter your 4-digit PIN to access');
   } else if (step === 'verify_old') {
-    headerTitle = 'Change PIN';
-    headerSub = 'Enter your current 4-digit PIN';
+    headerTitle = t('Change PIN');
+    headerSub = t('Enter your current 4-digit PIN');
   } else if (step === 'enter_new') {
-    headerTitle = mode === 'change' ? 'Enter New PIN' : 'Create 4-Digit PIN';
-    headerSub = 'Choose a 4-digit PIN to lock sensitive tools';
+    headerTitle = mode === 'change' ? t('Enter New PIN') : t('Create 4-Digit PIN');
+    headerSub = t('Choose a 4-digit PIN to lock sensitive tools');
   } else if (step === 'confirm_new') {
-    headerTitle = 'Confirm PIN';
-    headerSub = 'Re-enter your 4-digit PIN to confirm';
+    headerTitle = t('Confirm PIN');
+    headerSub = t('Re-enter your 4-digit PIN to confirm');
   }
 
   return (
@@ -266,7 +266,7 @@ export function WomenPinModal({
               <Text style={[styles.errorText, { color: colors.destructive }]}>{errorMsg}</Text>
             ) : (
               <Text style={[styles.hintText, { color: colors.textMuted }]}>
-                {step === 'confirm_new' ? 'Confirming PIN' : 'Strictly on-device lock'}
+                {step === 'confirm_new' ? t('Confirming PIN') : t('Strictly on-device lock')}
               </Text>
             )}
           </View>
@@ -290,7 +290,7 @@ export function WomenPinModal({
                         accessibilityRole="button"
                         accessibilityLabel={t('Cancel')}
                       >
-                        <Text style={[styles.cancelText, { color: colors.textSecondary }]}>Cancel</Text>
+                        <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{t('Cancel')}</Text>
                       </TouchableOpacity>
                     );
                   }

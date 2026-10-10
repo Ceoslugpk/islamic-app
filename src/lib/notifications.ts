@@ -14,6 +14,7 @@ import {
 } from './settings';
 import { stopAdhan } from './audio';
 import { isQuranDailyGoalCompleted } from './quranProgress';
+import { t } from './i18n';
 
 const FINGERPRINT_KEY = 'notification-fingerprint';
 
@@ -516,16 +517,16 @@ export async function ensureNotificationPermissionForPlayback(): Promise<boolean
     // Undetermined: show rationale alert explaining background & lock-screen media controls
     const proceed = await new Promise<boolean>((resolve) => {
       Alert.alert(
-        'Playback & Lock Screen Controls',
-        'Enable notifications to control Quran recitation from your lock screen, notification shade, and headphones while listening in the background.',
+        t('Playback & Lock Screen Controls'),
+        t('Enable notifications to control Quran recitation from your lock screen, notification shade, and headphones while listening in the background.'),
         [
           {
-            text: 'Not now',
+            text: t('Not now'),
             style: 'cancel',
             onPress: () => resolve(false),
           },
           {
-            text: 'Enable controls',
+            text: t('Enable controls'),
             onPress: () => resolve(true),
           },
         ],

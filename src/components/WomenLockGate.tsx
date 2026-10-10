@@ -84,7 +84,7 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
   if (checking) {
     return (
       <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-        <Text style={[styles.message, { color: colors.textSecondary }]}>Unlocking…</Text>
+        <Text style={[styles.message, { color: colors.textSecondary }]}>{t('Unlocking…')}</Text>
       </View>
     );
   }
@@ -95,9 +95,9 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
         <View style={[styles.lockIconWrap, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
           <Ionicons name="lock-closed" size={40} color={colors.accent} />
         </View>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>Protected</Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('Protected')}</Text>
         <Text style={[styles.message, { color: colors.textSecondary }]}>
-          Use your device security (fingerprint, face, or PIN) to view Women's Worship.
+          {t("Use your device security (fingerprint, face, or PIN) to view Women's Worship.")}
         </Text>
         {error && <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>}
         <TouchableOpacity
@@ -108,7 +108,7 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
           accessibilityLabel={t("Unlock Women's Worship")}
         >
           <Ionicons name="finger-print" size={18} color={colors.onAccent} />
-          <Text style={[styles.buttonText, { color: colors.onAccent }]}>Unlock</Text>
+          <Text style={[styles.buttonText, { color: colors.onAccent }]}>{t('Unlock')}</Text>
         </TouchableOpacity>
       </View>
     );

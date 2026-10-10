@@ -779,17 +779,17 @@ export default function SettingsScreen({
             </Text>
           </TouchableOpacity>
         )}
-        <SectionHeader compact eyebrow="Preferences" title="Settings" />
+        <SectionHeader compact eyebrow={t('Preferences')} title={t('Settings')} />
 
         {/* Language — English / اردو */}
-        <Section label="Language / زبان">
+        <Section label={t('Language / زبان')}>
           <Row
-            title="App Language"
+            title={t('App Language')}
             desc={settings.language === 'ur' ? t('اردو (Urdu) · دائیں سے بائیں (RTL)') : t('English · Left to Right (LTR)')}
             accessibilityRole="text"
           />
           <Segmented<'en' | 'ur'>
-            label="Language / زبان"
+            label={t('Language / زبان')}
             options={[
               { value: 'en', label: 'English' },
               { value: 'ur', label: 'اردو' },
@@ -844,20 +844,20 @@ export default function SettingsScreen({
         </Section>
 
         {/* Appearance — theme, accent, haptics */}
-        <Section label="Appearance">
+        <Section label={t("Appearance")}>
           <Row
-            title="Theme"
+            title={t("Theme")}
             desc={themeMode === 'system' ? t('Follow system') : themeMode === 'ink' ? t('Dark (Ink)') : t('Light (Paper)')}
             accessibilityRole="text"
           />
           <Segmented<'system' | 'ink' | 'paper'>
-            label="Theme"
+            label={t("Theme")}
             options={themeOptions}
             value={themeMode}
             onChange={handleThemeModeChange}
           />
           <Hairline />
-          <Row title="Accent color" desc="Highlight colour for toggles, links and selected states" />
+          <Row title={t("Accent color")} desc={t("Highlight colour for toggles, links and selected states")} />
           <View
             style={[
               styles.accentGrid,
@@ -906,22 +906,22 @@ export default function SettingsScreen({
           </View>
           <Hairline />
           <Row
-            title="Haptics"
-            desc="Subtle vibration feedback for meaningful actions"
+            title={t("Haptics")}
+            desc={t("Subtle vibration feedback for meaningful actions")}
             right={
               <Toggle
                 checked={hapticsEnabled}
                 onChange={() => setHapticsEnabled(!hapticsEnabled)}
-                label="Haptics"
+                label={t("Haptics")}
               />
             }
           />
         </Section>
 
         {/* Quran Translation */}
-        <Section label="Holy Quran">
+        <Section label={t("Holy Quran")}>
           <Row
-            title="Translation Language"
+            title={t("Translation Language")}
             desc={`${flag} ${getLocalizedLanguageName(edition.language)} (${getLocalizedTranslatorName(edition.editionIdentifier, edition.name)})`}
             onPress={() => { setQuranLangModalOpen(true); haptic('light'); }}
             accessibilityLabel={`Change translation language. Current: ${getLocalizedLanguageName(edition.language)} ${flag}`}
@@ -930,9 +930,9 @@ export default function SettingsScreen({
         </Section>
 
         {/* Downloads — Quran text/translation preload (separate from audio files) */}
-        <Section label="Downloads">
+        <Section label={t("Downloads")}>
           <Row
-            title="Preload Quran text"
+            title={t("Preload Quran text")}
             desc={
               preloadProgress.isComplete
                 ? t('{{n}}/114 cached · {{flag}} {{edition}} ready offline', { n: 114, flag, edition: getLocalizedTranslatorName(edition.editionIdentifier, edition.name) })
@@ -954,14 +954,14 @@ export default function SettingsScreen({
                 <Toggle
                   checked={settings.quranPreloadRequested}
                   onChange={() => handleToggleQuranTextPreload(!settings.quranPreloadRequested)}
-                  label="Preload Quran text for offline reading"
+                  label={t("Preload Quran text for offline reading")}
                 />
               </View>
             }
           />
           <Hairline />
           <Row
-            title="Verify offline copy"
+            title={t("Verify offline copy")}
             desc={
               verifyingText
                 ? t('Reading local cache…')
@@ -991,7 +991,7 @@ export default function SettingsScreen({
             <>
               <Hairline />
               <Row
-                title="Repair incomplete surahs"
+                title={t("Repair incomplete surahs")}
                 desc={t('Re-download only the {{count}} surahs that failed verification', { count: textVerification.missingSurahs.length + textVerification.invalidSurahs.length })}
                 onPress={handleRepairQuranText}
                 accessibilityLabel={t('Re-download incomplete surahs')}
@@ -1002,10 +1002,10 @@ export default function SettingsScreen({
         </Section>
 
         {/* Quran Display — Arabic font controls for the Quran reader */}
-        <Section label="Quran Display">
+        <Section label={t("Quran Display")}>
           <Row
-            title="Arabic Font"
-            desc="Typeface used for Quran ayahs in the reader"
+            title={t("Arabic Font")}
+            desc={t("Typeface used for Quran ayahs in the reader")}
             accessibilityRole="text"
           />
           <Hairline />
@@ -1039,8 +1039,8 @@ export default function SettingsScreen({
           })}
           {/* KFGQPC: desktop-only King Fahd Quran Complex font, no free mobile file */}
           <Row
-            title="KFGQPC"
-            desc="Coming soon · no bundleable mobile font file yet"
+            title={t("KFGQPC")}
+            desc={t("Coming soon · no bundleable mobile font file yet")}
             disabled
             accessibilityRole="radio"
             accessibilityState={{ disabled: true, selected: false }}
@@ -1050,7 +1050,7 @@ export default function SettingsScreen({
 
           <Hairline />
           <AdjustRow
-            label="Font Size"
+            label={t("Font Size")}
             valueLabel={`${quranFontSize}pt`}
             min={QURAN_FONT_SIZE_MIN}
             max={QURAN_FONT_SIZE_MAX}
@@ -1061,7 +1061,7 @@ export default function SettingsScreen({
 
           <Hairline />
           <AdjustRow
-            label="Line Height"
+            label={t("Line Height")}
             valueLabel={`${quranLineHeight.toFixed(1)}×`}
             min={QURAN_LINE_HEIGHT_MIN}
             max={QURAN_LINE_HEIGHT_MAX}
@@ -1074,8 +1074,8 @@ export default function SettingsScreen({
 
           <Hairline />
           <Row
-            title="Translation"
-            desc="Show the translation beneath each ayah"
+            title={t("Translation")}
+            desc={t("Show the translation beneath each ayah")}
             right={
               <View style={styles.rightCluster}>
                 <Text
@@ -1089,7 +1089,7 @@ export default function SettingsScreen({
                 <Toggle
                   checked={quranShowTranslation}
                   onChange={() => { setQuranShowTranslation(!quranShowTranslation); haptic('light'); }}
-                  label="Show translation in the Quran reader"
+                  label={t("Show translation in the Quran reader")}
                 />
               </View>
             }
@@ -1097,10 +1097,10 @@ export default function SettingsScreen({
         </Section>
 
         {/* Calculation method */}
-        <Section label="Prayer Times">
+        <Section label={t("Prayer Times")}>
           <Row
-            title="Calculation method"
-            desc="Determines how prayer times are computed"
+            title={t("Calculation method")}
+            desc={t("Determines how prayer times are computed")}
             accessibilityRole="text"
           />
           <View
@@ -1152,10 +1152,10 @@ export default function SettingsScreen({
         </Section>
 
         {/* Time format */}
-        <Section label="Time Display">
-          <Row title="Time format" desc="How prayer times are shown across the app" accessibilityRole="text" />
+        <Section label={t("Time Display")}>
+          <Row title={t("Time format")} desc={t("How prayer times are shown across the app")} accessibilityRole="text" />
           <Segmented<'12h' | '24h'>
-            label="Time format"
+            label={t("Time format")}
             options={timeOptions}
             value={timeFormat}
             onChange={(f) => { setTimeFormat(f); haptic('light'); }}
@@ -1163,7 +1163,7 @@ export default function SettingsScreen({
         </Section>
 
         {/* Prayer reminders */}
-        <Section label="Reminders">
+        <Section label={t("Reminders")}>
           {!schedulingSupported && (
             <View
               style={[
@@ -1237,7 +1237,7 @@ export default function SettingsScreen({
           )}
 
           <Row
-            title="Prayer reminders"
+            title={t("Prayer reminders")}
             desc={
               remindersEnabled
                 ? `On · ${reminderOffsetMinutes} min before each prayer`
@@ -1247,7 +1247,7 @@ export default function SettingsScreen({
               <Toggle
                 checked={remindersEnabled}
                 onChange={() => { onToggleReminders(); }}
-                label="Prayer reminders"
+                label={t("Prayer reminders")}
               />
             }
           />
@@ -1255,12 +1255,12 @@ export default function SettingsScreen({
           {/* Reminder offset picker */}
           <Hairline />
           <Row
-            title="Remind before prayer"
+            title={t("Remind before prayer")}
             desc={`${reminderOffsetMinutes} min before each prayer`}
             accessibilityRole="text"
           />
           <Segmented<number>
-            label="Remind before prayer"
+            label={t("Remind before prayer")}
             options={offsetOptions}
             value={reminderOffsetMinutes}
             onChange={(m) => { setReminderOffsetMinutes(m); haptic('light'); }}
@@ -1270,7 +1270,7 @@ export default function SettingsScreen({
           {/* Adhan Reciter Choice */}
           <Hairline />
           <Row
-            title="Adhan Reciter"
+            title={t("Adhan Reciter")}
             desc={`${getAdhanReciter(settings.adhanReciterId).name} · ${getAdhanReciter(settings.adhanReciterId).location}`}
             onPress={() => { setAdhanModalOpen(true); haptic('light'); }}
             accessibilityLabel={`Adhan reciter: ${getAdhanReciter(settings.adhanReciterId).name}. Tap to change.`}
@@ -1287,7 +1287,7 @@ export default function SettingsScreen({
           {/* Test Adhan sound */}
           <Hairline />
           <Row
-            title="Test adhan sound"
+            title={t("Test adhan sound")}
             desc={isPlayingAdhan ? 'Playing preview… tap to stop' : `Preview ${getAdhanReciter(settings.adhanReciterId).name}`}
             onPress={onTestAdhan}
             accessibilityLabel={isPlayingAdhan ? 'Stop adhan sound' : 'Test adhan sound'}
@@ -1321,7 +1321,7 @@ export default function SettingsScreen({
           {/* Quran reminder toggle */}
           <Hairline />
           <Row
-            title="Quran reminder"
+            title={t("Quran reminder")}
             desc={
               quranReminderEnabled
                 ? `On · daily at ${formatTime(settings.quranReminderTime, timeFormat)}`
@@ -1331,7 +1331,7 @@ export default function SettingsScreen({
               <Toggle
                 checked={quranReminderEnabled}
                 onChange={onToggleQuranReminder}
-                label="Quran reminder"
+                label={t("Quran reminder")}
               />
             }
           />
@@ -1401,15 +1401,15 @@ export default function SettingsScreen({
         </Section>
 
         {/* Women's Worship */}
-        <Section label="Women's Worship">
+        <Section label={t("Women's Worship")}>
           <Row
-            title="Women's Worship"
-            desc="Show women's worship tools (period tracking, purity, fiqh)"
+            title={t("Women's Worship")}
+            desc={t("Show women's worship tools (period tracking, purity, fiqh)")}
             right={
               <Toggle
                 checked={womenWorshipEnabled}
                 onChange={onToggleWomenWorship}
-                label="Women's Worship"
+                label={t("Women's Worship")}
               />
             }
           />
@@ -1477,7 +1477,7 @@ export default function SettingsScreen({
               {/* App lock */}
               <Hairline />
               <Row
-                title="App lock (PIN)"
+                title={t("App lock (PIN)")}
                 desc={
                   womenLockEnabled
                     ? "On · PIN required to open women's features"
@@ -1514,14 +1514,14 @@ export default function SettingsScreen({
               />
               {womenPinHash ? (
                 <Row
-                  title="Change PIN"
+                  title={t("Change PIN")}
                   onPress={() => setPinModalMode('change')}
                   right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>{t('Change')}</Text>}
                 />
               ) : (
                 <Row
-                  title="Set PIN"
-                  desc="Add a 4-digit PIN to lock women's screens"
+                  title={t("Set PIN")}
+                  desc={t("Add a 4-digit PIN to lock women's screens")}
                   onPress={() => setPinModalMode('set')}
                   right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>{t('Set')}</Text>}
                 />
@@ -1530,13 +1530,13 @@ export default function SettingsScreen({
               {/* Protect with device security (system biometrics / PIN / face) */}
               <Hairline />
               <Row
-                title="Protect Women's Worship"
-                desc="Require your device security (fingerprint, face, or PIN) before viewing private Women's Worship information."
+                title={t("Protect Women's Worship")}
+                desc={t("Require your device security (fingerprint, face, or PIN) before viewing private Women's Worship information.")}
                 right={
                   <Toggle
                     checked={womenLockEnabled}
                     onChange={() => setWomenLockEnabled(!womenLockEnabled)}
-                    label="Protect Women's Worship"
+                    label={t("Protect Women's Worship")}
                   />
                 }
               />
@@ -1546,8 +1546,8 @@ export default function SettingsScreen({
                 <>
                   <Hairline />
                   <Row
-                    title="Cycle Tracker"
-                    desc="Period logging, cycle duration & predictions"
+                    title={t("Cycle Tracker")}
+                    desc={t("Period logging, cycle duration & predictions")}
                     onPress={() => {
                       onClose?.();
                       onOpenToolsItem('women-cycle');
@@ -1562,8 +1562,8 @@ export default function SettingsScreen({
                   />
                   <Hairline />
                   <Row
-                    title="Purity & Ghusl"
-                    desc="Step-by-step ghusl guide, tuhr & nifas tracker"
+                    title={t("Purity & Ghusl")}
+                    desc={t("Step-by-step ghusl guide, tuhr & nifas tracker")}
                     onPress={() => {
                       onClose?.();
                       onOpenToolsItem('women-purity');
@@ -1578,8 +1578,8 @@ export default function SettingsScreen({
                   />
                   <Hairline />
                   <Row
-                    title="Worship Guidance"
-                    desc="Authentic fiqh, exemptions & bleeding types"
+                    title={t("Worship Guidance")}
+                    desc={t("Authentic fiqh, exemptions & bleeding types")}
                     onPress={() => {
                       onClose?.();
                       onOpenToolsItem('women-guidance');
@@ -1594,8 +1594,8 @@ export default function SettingsScreen({
                   />
                   <Hairline />
                   <Row
-                    title="Qada Fasts"
-                    desc="Missed Ramadan fasts makeup ledger"
+                    title={t("Qada Fasts")}
+                    desc={t("Missed Ramadan fasts makeup ledger")}
                     onPress={() => {
                       onClose?.();
                       onOpenToolsItem('women-qada');
@@ -1614,8 +1614,8 @@ export default function SettingsScreen({
               {/* Clear cycle history */}
               <Hairline />
               <Row
-                title="Clear cycle history"
-                desc="Remove all period entries"
+                title={t("Clear cycle history")}
+                desc={t("Remove all period entries")}
                 onPress={() =>
                   Alert.alert(t("Clear Cycle History?"), t("This deletes all period/cycle entries. Other women's data is kept."), [
                     { text: 'Cancel', style: 'cancel' },
@@ -1628,8 +1628,8 @@ export default function SettingsScreen({
               {/* Delete all women's data */}
               <Hairline />
               <Row
-                title="Delete women's data"
-                desc="Erase everything, on this device"
+                title={t("Delete women's data")}
+                desc={t("Erase everything, on this device")}
                 danger
                 onPress={() =>
                   Alert.alert(t("Delete Women's Data?"), t("This permanently deletes all cycle, purity, nifas and women's qada data from this device. This cannot be undone."), [
@@ -1643,8 +1643,8 @@ export default function SettingsScreen({
               {/* Hide features (keeps data) */}
               <Hairline />
               <Row
-                title="Hide women's features"
-                desc="Hide the tools now (your data is kept)"
+                title={t("Hide women's features")}
+                desc={t("Hide the tools now (your data is kept)")}
                 onPress={() => setWomenWorship(false)}
                 right={<Ionicons name="eye-off-outline" size={18} color={colors.textSecondary} />}
               />
@@ -1677,10 +1677,10 @@ export default function SettingsScreen({
         />
 
         {/* About & Legal */}
-        <Section label="About & Legal">
+        <Section label={t("About & Legal")}>
           <Row
-            title="Privacy Policy"
-            desc="No tracking, no accounts, data stays on device"
+            title={t("Privacy Policy")}
+            desc={t("No tracking, no accounts, data stays on device")}
             onPress={() => {
               setActiveLegalScreen('privacy');
               haptic('light');
@@ -1695,8 +1695,8 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
-            title="Terms of Use"
-            desc="Free service provided as-is for educational use"
+            title={t("Terms of Use")}
+            desc={t("Free service provided as-is for educational use")}
             onPress={() => {
               setActiveLegalScreen('terms');
               haptic('light');
@@ -1711,8 +1711,8 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
-            title="Data & Privacy"
-            desc="Local storage, third-party requests & data removal"
+            title={t("Data & Privacy")}
+            desc={t("Local storage, third-party requests & data removal")}
             onPress={() => {
               setActiveLegalScreen('data');
               haptic('light');
@@ -1727,8 +1727,8 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
-            title="Open Source Licenses"
-            desc="Expo, React Native & open-source libraries"
+            title={t("Open Source Licenses")}
+            desc={t("Expo, React Native & open-source libraries")}
             onPress={() => {
               setActiveLegalScreen('licenses');
               haptic('light');
@@ -1743,8 +1743,8 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
-            title="Third-Party Services"
-            desc="Public APIs for prayer times, Quran text & audio"
+            title={t("Third-Party Services")}
+            desc={t("Public APIs for prayer times, Quran text & audio")}
             onPress={() => {
               setActiveLegalScreen('services');
               haptic('light');
@@ -1759,8 +1759,8 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
-            title="Contact / Report an Issue"
-            desc="GitHub repository & community issue tracker"
+            title={t("Contact / Report an Issue")}
+            desc={t("GitHub repository & community issue tracker")}
             onPress={() => {
               setActiveLegalScreen('contact');
               haptic('light');
@@ -1776,10 +1776,10 @@ export default function SettingsScreen({
         </Section>
 
         {/* Data & App — near the bottom */}
-        <Section label="Data">
+        <Section label={t("Data")}>
           <Row
-            title="Backup & Restore"
-            desc="Export or restore your local data from a file"
+            title={t("Backup & Restore")}
+            desc={t("Export or restore your local data from a file")}
             onPress={() => {
               setShowBackupRestore(true);
               haptic('light');
@@ -1794,8 +1794,8 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
-            title="App Credits"
-            desc="Built with the open-source Expo & React Native ecosystem"
+            title={t("App Credits")}
+            desc={t("Built with the open-source Expo & React Native ecosystem")}
             onPress={() => {
               setActiveLegalScreen('licenses');
               haptic('light');
@@ -1811,7 +1811,7 @@ export default function SettingsScreen({
         </Section>
 
         {/* About — muted, at the bottom */}
-        <Section label="About">
+        <Section label={t("About")}>
           <Image
             source={
               themeMode === 'paper' || themeMode === 'system'
