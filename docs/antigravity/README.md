@@ -19,6 +19,7 @@ Never weaken a higher-priority rule to complete a task faster.
 - Any feature or bug fix: [`FEATURE_IMPLEMENTATION_GUIDE.md`](./FEATURE_IMPLEMENTATION_GUIDE.md)
 - Any new screen or navigation change: [`NEW_SCREEN_CHECKLIST.md`](./NEW_SCREEN_CHECKLIST.md)
 - Any localization work, new user-facing text, or translation audit: [`LOCALIZATION_AUDIT.md`](./LOCALIZATION_AUDIT.md)
+- Reviewing the semantic quality and safety of one or all locales: [`MULTILINGUAL_LOCALE_REVIEW.md`](./MULTILINGUAL_LOCALE_REVIEW.md)
 - Adding a whole app language: [`../adding-app-languages.md`](../adding-app-languages.md)
 
 ## Default execution protocol
