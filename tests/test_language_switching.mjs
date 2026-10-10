@@ -51,7 +51,7 @@ assert.ok(
   'settings.tsx must export CANONICAL_AUTO_LINKED_QURAN_LANGS'
 );
 
-// (a2) settings.tsx Arabic content auto-linking branches
+// (a2) settings.tsx Arabic & Hindi content auto-linking branches
 assert.ok(
   settingsCode.includes("nextLang === 'ar'") && settingsCode.includes("setQuranTranslationLanguage('ar')"),
   'setLanguage must auto-link Arabic Quran translation language'
@@ -59,6 +59,10 @@ assert.ok(
 assert.ok(
   settingsCode.includes("'api-ibn-kathir-ar'"),
   'setLanguage must auto-link Arabic Tafsir Ibn Kathir'
+);
+assert.ok(
+  settingsCode.includes("nextLang === 'hi'") && settingsCode.includes("setQuranTranslationLanguage('hi')"),
+  'setLanguage must auto-link Hindi Quran translation language'
 );
 
 // (b) durable write & readback remain atomic inside the shared writer queue
@@ -268,7 +272,7 @@ const DEFAULT_SETTINGS = {
 
 function sanitizeMockSettings(raw) {
   if (!raw || typeof raw !== 'object') return { ...DEFAULT_SETTINGS };
-  const lang = raw.language === 'ur' || raw.language === 'ar' || raw.language === 'en' ? raw.language : 'en';
+  const lang = raw.language === 'ur' || raw.language === 'ar' || raw.language === 'hi' || raw.language === 'en' ? raw.language : 'en';
   return {
     ...DEFAULT_SETTINGS,
     ...raw,
@@ -278,7 +282,7 @@ function sanitizeMockSettings(raw) {
 }
 
 const CANONICAL_TAFSIRS = new Set(['jalalayn', 'api-ibn-kathir-urdu', 'api-ibn-kathir-ar']);
-const CANONICAL_QURAN_LANGS = new Set(['en', 'ur', 'ar']);
+const CANONICAL_QURAN_LANGS = new Set(['en', 'ur', 'ar', 'hi']);
 
 function computeNextSettings(prev, nextLang) {
   let tafsirSourceId = prev.tafsirSourceId;
@@ -315,7 +319,7 @@ class SettingsHarness {
     const raw = await this.storage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && (parsed.language === 'en' || parsed.language === 'ur' || parsed.language === 'ar')) {
+      if (parsed && (parsed.language === 'en' || parsed.language === 'ur' || parsed.language === 'ar' || parsed.language === 'hi')) {
         this.bootLang = parsed.language;
       }
     }
@@ -343,6 +347,9 @@ class SettingsHarness {
       } else if (nextLang === 'ar') {
         await this.storage.setItem('quran-translation-language', 'ar');
         this.sideEffectsRun.push('quran-lang:ar');
+      } else if (nextLang === 'hi') {
+        await this.storage.setItem('quran-translation-language', 'hi');
+        this.sideEffectsRun.push('quran-lang:hi');
       } else {
         await this.storage.setItem('quran-translation-language', 'en');
         this.sideEffectsRun.push('quran-lang:en');
@@ -369,7 +376,7 @@ class SettingsHarness {
         this.sideEffectsRun.push('audio:shamshad');
       }
     } else {
-      // en or ar: restore default if user had Shamshad. No fake Arabic translation audio.
+      // en, ar, or hi: restore default if user had Shamshad. No fake Arabic or Hindi translation audio.
       if (currentAudioEdition === 'ur.everyayah-shamshad') {
         await this.storage.setItem('quran-audio-translation-edition', 'en.walk');
         this.sideEffectsRun.push('audio:english');
@@ -666,6 +673,221 @@ class SettingsHarness {
   assert.strictEqual(stored.language, 'en');
 
   console.log('  ✓ Test 2e passed: ar -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+}
+
+// ---------------------------------------------------------------------------
+// Test 2f: en -> hi ordering: write -> readback verify -> forceRTL(false) -> reload
+// ---------------------------------------------------------------------------
+{
+  const storage = new MockStorage();
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
+  await harness.boot();
+  assert.strictEqual(harness.settings.language, 'en');
+  assert.strictEqual(i18n.isRTL, false);
+
+  await harness.onUserSelectLanguage('hi');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.deepStrictEqual(harness.operationLog, [
+    'write:hi',
+    'readback_verify:hi',
+    'forceRTL:false',
+    'reload:hi',
+  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(harness.activeLang, 'hi');
+  assert.strictEqual(i18n.isRTL, false);
+  assert.strictEqual(harness.reloadScheduled, true);
+  assert.strictEqual(harness.reloadLang, 'hi');
+  assert.strictEqual(harness.lastError, null);
+  assert.strictEqual(harness.readerUnmounted, true);
+
+  const stored = storage.dump(STORAGE_KEY);
+  assert.strictEqual(stored.language, 'hi');
+
+  console.log('  ✓ Test 2f passed: en -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+}
+
+// ---------------------------------------------------------------------------
+// Test 2g: hi -> en ordering: write -> readback verify -> forceRTL(false) -> reload
+// ---------------------------------------------------------------------------
+{
+  const storage = new MockStorage();
+  await storage.setItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_SETTINGS, language: 'hi' }));
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
+  await harness.boot();
+  assert.strictEqual(harness.bootLang, 'hi');
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(i18n.isRTL, false);
+
+  await harness.onUserSelectLanguage('en');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.deepStrictEqual(harness.operationLog, [
+    'write:en',
+    'readback_verify:en',
+    'forceRTL:false',
+    'reload:en',
+  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+
+  assert.strictEqual(harness.settings.language, 'en');
+  assert.strictEqual(harness.activeLang, 'en');
+  assert.strictEqual(i18n.isRTL, false);
+  assert.strictEqual(harness.reloadScheduled, true);
+  assert.strictEqual(harness.reloadLang, 'en');
+  assert.strictEqual(harness.lastError, null);
+
+  const stored = storage.dump(STORAGE_KEY);
+  assert.strictEqual(stored.language, 'en');
+
+  console.log('  ✓ Test 2g passed: hi -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+}
+
+// ---------------------------------------------------------------------------
+// Test 2h: ur -> hi ordering: write -> readback verify -> forceRTL(false) -> reload
+// ---------------------------------------------------------------------------
+{
+  const storage = new MockStorage();
+  await storage.setItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_SETTINGS, language: 'ur' }));
+  const i18n = new MockI18nManager(true);
+  const harness = new SettingsHarness(storage, i18n);
+  await harness.boot();
+  assert.strictEqual(harness.bootLang, 'ur');
+  assert.strictEqual(harness.settings.language, 'ur');
+  assert.strictEqual(i18n.isRTL, true);
+
+  await harness.onUserSelectLanguage('hi');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.deepStrictEqual(harness.operationLog, [
+    'write:hi',
+    'readback_verify:hi',
+    'forceRTL:false',
+    'reload:hi',
+  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(harness.activeLang, 'hi');
+  assert.strictEqual(i18n.isRTL, false);
+  assert.strictEqual(harness.reloadScheduled, true);
+  assert.strictEqual(harness.reloadLang, 'hi');
+  assert.strictEqual(harness.lastError, null);
+
+  const stored = storage.dump(STORAGE_KEY);
+  assert.strictEqual(stored.language, 'hi');
+
+  console.log('  ✓ Test 2h passed: ur -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+}
+
+// ---------------------------------------------------------------------------
+// Test 2i: hi -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
+// ---------------------------------------------------------------------------
+{
+  const storage = new MockStorage();
+  await storage.setItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_SETTINGS, language: 'hi' }));
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
+  await harness.boot();
+  assert.strictEqual(harness.bootLang, 'hi');
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(i18n.isRTL, false);
+
+  await harness.onUserSelectLanguage('ur');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.deepStrictEqual(harness.operationLog, [
+    'write:ur',
+    'readback_verify:ur',
+    'forceRTL:true',
+    'reload:ur',
+  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+
+  assert.strictEqual(harness.settings.language, 'ur');
+  assert.strictEqual(harness.activeLang, 'ur');
+  assert.strictEqual(i18n.isRTL, true);
+  assert.strictEqual(harness.reloadScheduled, true);
+  assert.strictEqual(harness.reloadLang, 'ur');
+  assert.strictEqual(harness.lastError, null);
+
+  const stored = storage.dump(STORAGE_KEY);
+  assert.strictEqual(stored.language, 'ur');
+
+  console.log('  ✓ Test 2i passed: hi -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+}
+
+// ---------------------------------------------------------------------------
+// Test 2j: ar -> hi ordering: write -> readback verify -> forceRTL(false) -> reload
+// ---------------------------------------------------------------------------
+{
+  const storage = new MockStorage();
+  await storage.setItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_SETTINGS, language: 'ar' }));
+  const i18n = new MockI18nManager(true);
+  const harness = new SettingsHarness(storage, i18n);
+  await harness.boot();
+  assert.strictEqual(harness.bootLang, 'ar');
+  assert.strictEqual(harness.settings.language, 'ar');
+  assert.strictEqual(i18n.isRTL, true);
+
+  await harness.onUserSelectLanguage('hi');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.deepStrictEqual(harness.operationLog, [
+    'write:hi',
+    'readback_verify:hi',
+    'forceRTL:false',
+    'reload:hi',
+  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(harness.activeLang, 'hi');
+  assert.strictEqual(i18n.isRTL, false);
+  assert.strictEqual(harness.reloadScheduled, true);
+  assert.strictEqual(harness.reloadLang, 'hi');
+  assert.strictEqual(harness.lastError, null);
+
+  const stored = storage.dump(STORAGE_KEY);
+  assert.strictEqual(stored.language, 'hi');
+
+  console.log('  ✓ Test 2j passed: ar -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+}
+
+// ---------------------------------------------------------------------------
+// Test 2k: hi -> ar ordering: write -> readback verify -> forceRTL(true) -> reload
+// ---------------------------------------------------------------------------
+{
+  const storage = new MockStorage();
+  await storage.setItem(STORAGE_KEY, JSON.stringify({ ...DEFAULT_SETTINGS, language: 'hi' }));
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
+  await harness.boot();
+  assert.strictEqual(harness.bootLang, 'hi');
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(i18n.isRTL, false);
+
+  await harness.onUserSelectLanguage('ar');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.deepStrictEqual(harness.operationLog, [
+    'write:ar',
+    'readback_verify:ar',
+    'forceRTL:true',
+    'reload:ar',
+  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+
+  assert.strictEqual(harness.settings.language, 'ar');
+  assert.strictEqual(harness.activeLang, 'ar');
+  assert.strictEqual(i18n.isRTL, true);
+  assert.strictEqual(harness.reloadScheduled, true);
+  assert.strictEqual(harness.reloadLang, 'ar');
+  assert.strictEqual(harness.lastError, null);
+
+  const stored = storage.dump(STORAGE_KEY);
+  assert.strictEqual(stored.language, 'ar');
+
+  console.log('  ✓ Test 2k passed: hi -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
@@ -977,6 +1199,104 @@ class SettingsHarness {
   assert.ok(!settingsCode.includes("ar.arabic-audio"), 'settings.tsx must not contain fake AlQuran Cloud Arabic translation audio');
 
   console.log('  ✓ Test 7d passed: Audio policy is honest — zero fake Arabic translation audio identifiers exist.');
+}
+
+// ---------------------------------------------------------------------------
+// Test 7e: Symmetric and deterministic Hindi auto-linking (en->hi, hi->ur, ur->hi, hi->ar, ar->hi, hi->en)
+// ---------------------------------------------------------------------------
+{
+  const storage = new MockStorage();
+  const harness = new SettingsHarness(storage);
+  await harness.boot();
+  assert.strictEqual(harness.settings.language, 'en');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
+
+  // 1. en -> hi: Quran language 'hi', Tafsir 'jalalayn', Audio unchanged
+  await harness.onUserSelectLanguage('hi');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
+  assert.strictEqual(await storage.getItem('quran-translation-language'), 'hi');
+  assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), null); // No fake Hindi translation audio
+  const storedHi = storage.dump(STORAGE_KEY);
+  assert.strictEqual(storedHi.language, 'hi');
+  assert.strictEqual(storedHi.tafsirSourceId, 'jalalayn');
+
+  // 2. hi -> ur: Quran language 'ur', Tafsir 'api-ibn-kathir-urdu', Audio Shamshad
+  await harness.onUserSelectLanguage('ur');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.strictEqual(harness.settings.language, 'ur');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-urdu');
+  assert.strictEqual(await storage.getItem('quran-translation-language'), 'ur');
+  assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'ur.everyayah-shamshad');
+
+  // 3. ur -> hi: Quran language 'hi', Tafsir 'jalalayn' (reset from auto-linked Urdu), Audio restored to default
+  await harness.onUserSelectLanguage('hi');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
+  assert.strictEqual(await storage.getItem('quran-translation-language'), 'hi');
+  assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'en.walk'); // Restored to default
+
+  // 4. hi -> ar: Quran language 'ar', Tafsir 'api-ibn-kathir-ar'
+  await harness.onUserSelectLanguage('ar');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.strictEqual(harness.settings.language, 'ar');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'api-ibn-kathir-ar');
+  assert.strictEqual(await storage.getItem('quran-translation-language'), 'ar');
+
+  // 5. ar -> hi: Quran language 'hi', Tafsir 'jalalayn' (reset from auto-linked Arabic)
+  await harness.onUserSelectLanguage('hi');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.strictEqual(harness.settings.language, 'hi');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
+  assert.strictEqual(await storage.getItem('quran-translation-language'), 'hi');
+
+  // 6. hi -> en: Quran language 'en', Tafsir 'jalalayn', Audio remains default
+  await harness.onUserSelectLanguage('en');
+  await new Promise((r) => setTimeout(r, 70));
+
+  assert.strictEqual(harness.settings.language, 'en');
+  assert.strictEqual(harness.settings.tafsirSourceId, 'jalalayn');
+  assert.strictEqual(await storage.getItem('quran-translation-language'), 'en');
+  assert.strictEqual(await storage.getItem('quran-audio-translation-edition'), 'en.walk');
+
+  // 7. App restart keeps the linked values
+  const restartedHarness = new SettingsHarness(storage);
+  await restartedHarness.boot();
+  assert.strictEqual(restartedHarness.settings.language, 'en');
+  assert.strictEqual(restartedHarness.settings.tafsirSourceId, 'jalalayn');
+
+  console.log('  ✓ Test 7e passed: Symmetric & deterministic Hindi auto-linking verified (en->hi, hi->ur, ur->hi, hi->ar, ar->hi, hi->en).');
+}
+
+// ---------------------------------------------------------------------------
+// Test 7f: Honest audio policy: No fake Hindi translation audio edition
+// ---------------------------------------------------------------------------
+{
+  const quranAudioCode = fs.readFileSync('src/lib/quranAudio.ts', 'utf8');
+
+  // 1. VERIFIED_NON_ARABIC_EDITIONS must not contain a Hindi entry
+  const nonArabicMatch = quranAudioCode.match(/export const VERIFIED_NON_ARABIC_EDITIONS:\s*Reciter\[\]\s*=\s*\[([\s\S]*?)\];/);
+  assert.ok(nonArabicMatch, 'VERIFIED_NON_ARABIC_EDITIONS definition found');
+  assert.ok(!nonArabicMatch[1].includes("language: 'hi'"), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Hindi reciters');
+  assert.ok(!nonArabicMatch[1].includes("identifier: 'hi."), 'VERIFIED_NON_ARABIC_EDITIONS must not contain Hindi identifiers');
+
+  // 2. LANGUAGE_AUDIO_EDITIONS must not contain 'hi'
+  const langAudioMatch = quranAudioCode.match(/export const LANGUAGE_AUDIO_EDITIONS:\s*Record<[\s\S]*?>\s*=\s*\{([\s\S]*?)\};/);
+  assert.ok(langAudioMatch, 'LANGUAGE_AUDIO_EDITIONS definition found');
+  assert.ok(!langAudioMatch[1].includes("hi:"), 'LANGUAGE_AUDIO_EDITIONS must not have a Hindi translation audio entry');
+
+  // 3. settings.tsx must not reference any fake Hindi audio translation edition
+  assert.ok(!settingsCode.includes("hi.everyayah"), 'settings.tsx must not contain fake EveryAyah Hindi translation audio');
+  assert.ok(!settingsCode.includes("hi.hindi-audio"), 'settings.tsx must not contain fake AlQuran Cloud Hindi translation audio');
+
+  console.log('  ✓ Test 7f passed: Audio policy is honest — zero fake Hindi translation audio identifiers exist.');
 }
 
 // ---------------------------------------------------------------------------

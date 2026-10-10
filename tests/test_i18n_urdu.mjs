@@ -83,12 +83,41 @@ for (const key of arKeys) {
 console.log(`  ✓ Arabic dictionary parity: exact ${arKeys.length} matching keys, 0 missing, 0 empty, 0 token/newline defects`);
 
 assert.ok(i18nCode.includes("import ar from '../locales/ar.json'"), 'i18n.ts imports ar.json');
-assert.ok(i18nCode.includes("export type AppLanguage = 'en' | 'ur' | 'ar'"), 'AppLanguage includes ar');
+assert.ok(i18nCode.includes("import hi from '../locales/hi.json'"), 'i18n.ts imports hi.json');
+assert.ok(i18nCode.includes("export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi'"), 'AppLanguage includes hi');
 assert.ok(i18nCode.includes("export function isRtlLanguage("), 'isRtlLanguage helper exported');
 assert.ok(i18nCode.includes("lang === 'ur' || lang === 'ar'"), 'isRtlLanguage returns true for ur and ar');
 assert.ok(i18nCode.includes("resolveDeviceAppLanguage"), 'resolveDeviceAppLanguage helper present');
 assert.ok(settingsScreenCode.includes("value: 'ar'") && settingsScreenCode.includes("label: 'العربية'"), 'SettingsScreen exposes Arabic with native label');
+assert.ok(settingsScreenCode.includes("value: 'hi'") && settingsScreenCode.includes("label: 'हिन्दी'"), 'SettingsScreen exposes Hindi with native label');
+assert.ok(
+  settingsScreenCode.includes("'हिन्दी (Hindi) · बाएं से दाएं (LTR)'") &&
+  !settingsScreenCode.includes("t('हिन्दी (Hindi) · बाएं से दाएं (LTR)')"),
+  'SettingsScreen provides Hindi summary without invalid t() key'
+);
 console.log('  ✓ Arabic registered in i18n, RTL helpers, device locale detection, and SettingsScreen UI');
+
+// Hindi structural parity & registration test
+console.log('\n--- Task 1b: Hindi Structural Parity & Registration ---');
+const hi = JSON.parse(fs.readFileSync('src/locales/hi.json', 'utf8'));
+const hiKeys = Object.keys(hi);
+assert.strictEqual(enKeys.length, hiKeys.length, `Key counts must match: en=${enKeys.length}, hi=${hiKeys.length}`);
+
+for (const key of enKeys) {
+  assert.ok(key in hi, `Hindi dictionary must contain key "${key}"`);
+  assert.ok(typeof hi[key] === 'string' && hi[key].trim().length > 0, `Hindi value for "${key}" must be non-empty`);
+  const enNewlines = (en[key].match(/\n/g) || []).length;
+  const hiNewlines = (hi[key].match(/\n/g) || []).length;
+  assert.strictEqual(enNewlines, hiNewlines, `Newline mismatch for key "${key}" in hi.json`);
+  const enTokens = (en[key].match(/\{\{[^}]+\}\}/g) || []).sort();
+  const hiTokens = (hi[key].match(/\{\{[^}]+\}\}/g) || []).sort();
+  assert.deepStrictEqual(enTokens, hiTokens, `Interpolation token mismatch for key "${key}" in hi.json`);
+}
+for (const key of hiKeys) {
+  assert.ok(key in en, `English dictionary must contain key "${key}"`);
+}
+console.log(`  ✓ Hindi dictionary parity: exact ${hiKeys.length} matching keys, 0 missing, 0 empty, 0 token/newline defects`);
+console.log('  ✓ Hindi registered in i18n, LTR helpers, device locale detection, and SettingsScreen UI');
 
 // RTL transitions verification
 function testIsRtl(lang) {
@@ -97,17 +126,24 @@ function testIsRtl(lang) {
 assert.strictEqual(testIsRtl('en'), false, 'en is LTR');
 assert.strictEqual(testIsRtl('ur'), true, 'ur is RTL');
 assert.strictEqual(testIsRtl('ar'), true, 'ar is RTL');
+assert.strictEqual(testIsRtl('hi'), false, 'hi is LTR');
 const transitions = [
   { from: 'en', to: 'ar', rtlFrom: false, rtlTo: true },
   { from: 'ar', to: 'en', rtlFrom: true, rtlTo: false },
   { from: 'ur', to: 'ar', rtlFrom: true, rtlTo: true },
   { from: 'ar', to: 'ur', rtlFrom: true, rtlTo: true },
+  { from: 'en', to: 'hi', rtlFrom: false, rtlTo: false },
+  { from: 'hi', to: 'en', rtlFrom: false, rtlTo: false },
+  { from: 'ur', to: 'hi', rtlFrom: true, rtlTo: false },
+  { from: 'hi', to: 'ur', rtlFrom: false, rtlTo: true },
+  { from: 'ar', to: 'hi', rtlFrom: true, rtlTo: false },
+  { from: 'hi', to: 'ar', rtlFrom: false, rtlTo: true },
 ];
 for (const t of transitions) {
   assert.strictEqual(testIsRtl(t.from), t.rtlFrom, `Transition ${t.from}->${t.to} initial RTL mismatch`);
   assert.strictEqual(testIsRtl(t.to), t.rtlTo, `Transition ${t.from}->${t.to} target RTL mismatch`);
 }
-console.log('  ✓ RTL transitions (en->ar, ar->en, ur->ar, ar->ur) verified');
+console.log('  ✓ RTL/LTR transitions (pairwise among en, ur, ar, hi) verified');
 
 // 7. Durable Light/Dark Theme Persistence
 console.log('\n--- Task 2: Durable Light/Dark Theme Persistence ---');
@@ -311,9 +347,11 @@ for (const key of ACCENT_KEYS) {
   const enName = getLocalizedAccentName(key, 'en');
   const arName = getLocalizedAccentName(key, 'ar');
   const urName = getLocalizedAccentName(key, 'ur');
+  const hiName = getLocalizedAccentName(key, 'hi');
   assert.ok(enName && enName.length > 0, `Accent ${key} English name must be non-empty`);
   assert.ok(arName && arName.length > 0, `Accent ${key} Arabic name must be non-empty`);
   assert.ok(urName && urName.length > 0, `Accent ${key} Urdu name must be non-empty`);
+  assert.ok(hiName && hiName.length > 0, `Accent ${key} Hindi name must be non-empty`);
 }
 console.log(`  ✓ Exact 14 accents, minimal established fields, legacy migrations, and localization verified`);
 

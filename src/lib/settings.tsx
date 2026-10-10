@@ -430,9 +430,9 @@ export function sanitizeSettings(raw: unknown): AppSettings {
   const quranPreloadRequested =
     typeof p.quranPreloadRequested === 'boolean' ? p.quranPreloadRequested : DEFAULTS.quranPreloadRequested;
 
-  // 31. language ('en' | 'ur' | 'ar')
+  // 31. language ('en' | 'ur' | 'ar' | 'hi')
   const language: AppLanguage =
-    p.language === 'ur' || p.language === 'ar' || p.language === 'en' ? p.language : DEFAULTS.language;
+    p.language === 'ur' || p.language === 'ar' || p.language === 'hi' || p.language === 'en' ? p.language : DEFAULTS.language;
 
   return {
     settingsVersion,
@@ -479,6 +479,7 @@ export const CANONICAL_AUTO_LINKED_QURAN_LANGS: ReadonlySet<string> = new Set([
   'en',
   'ur',
   'ar',
+  'hi',
 ]);
 
 /**
@@ -495,7 +496,7 @@ export function getAutoLinkedTafsir(currentTafsirId: string, nextLang: AppLangua
   if (nextLang === 'ur') {
     return 'api-ibn-kathir-urdu';
   }
-  if (nextLang === 'en') {
+  if (nextLang === 'en' || nextLang === 'hi') {
     return 'jalalayn';
   }
   return undefined;
@@ -633,7 +634,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         preloadRequestedMem = next.quranPreloadRequested;
 
         // If storage did not explicitly specify a valid language, preserve boot language
-        if (parsed.language !== 'en' && parsed.language !== 'ur' && parsed.language !== 'ar') {
+        if (parsed.language !== 'en' && parsed.language !== 'ur' && parsed.language !== 'ar' && parsed.language !== 'hi') {
           next.language = getBootLanguage();
         }
 
@@ -835,6 +836,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             await setQuranTranslationLanguage('ur');
           } else if (currentQuranLang === 'ar') {
             await setQuranTranslationLanguage('ur');
+          } else if (currentQuranLang === 'hi') {
+            await setQuranTranslationLanguage('ur');
           }
         } catch {}
 
@@ -851,7 +854,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       } else if (nextLang === 'ar') {
         try {
           const currentQuranLang = getQuranTranslationLanguage();
-          if (currentQuranLang === 'en' || currentQuranLang === 'ur') {
+          if (currentQuranLang === 'en' || currentQuranLang === 'ur' || currentQuranLang === 'hi') {
             await setQuranTranslationLanguage('ar');
           }
         } catch {}
@@ -866,13 +869,33 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
           }
         } catch {}
+      } else if (nextLang === 'hi') {
+        try {
+          const currentQuranLang = getQuranTranslationLanguage();
+          if (currentQuranLang === 'en' || currentQuranLang === 'ur' || currentQuranLang === 'ar') {
+            await setQuranTranslationLanguage('hi');
+          }
+        } catch {}
+
+        if (currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
+          nextTafsir = 'jalalayn';
+        }
+
+        try {
+          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+          if (savedAudioEdition === 'ur.everyayah-shamshad') {
+            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
+          }
+        } catch {}
       } else {
-        // Switching back to English (from ur or ar)
+        // Switching back to English (from ur, ar, or hi)
         try {
           const currentQuranLang = getQuranTranslationLanguage();
           if (currentQuranLang === 'ur') {
             await setQuranTranslationLanguage('en');
           } else if (currentQuranLang === 'ar') {
+            await setQuranTranslationLanguage('en');
+          } else if (currentQuranLang === 'hi') {
             await setQuranTranslationLanguage('en');
           }
         } catch {}

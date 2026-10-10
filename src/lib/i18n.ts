@@ -6,15 +6,16 @@ import { I18nManager, Platform } from 'react-native';
 import en from '../locales/en.json';
 import ur from '../locales/ur.json';
 import ar from '../locales/ar.json';
+import hi from '../locales/hi.json';
 
-export type AppLanguage = 'en' | 'ur' | 'ar';
+export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi';
 
 export function isRtlLanguage(lang: AppLanguage | string | null | undefined): boolean {
   return lang === 'ur' || lang === 'ar';
 }
 
 export function isAppLanguage(value: unknown): value is AppLanguage {
-  return value === 'en' || value === 'ur' || value === 'ar';
+  return value === 'en' || value === 'ur' || value === 'ar' || value === 'hi';
 }
 
 const locales = Localization.getLocales();
@@ -25,6 +26,7 @@ export function resolveDeviceAppLanguage(code: string | null | undefined): AppLa
   const lower = code.toLowerCase();
   if (lower === 'ar' || lower.startsWith('ar-') || lower.startsWith('ar_')) return 'ar';
   if (lower === 'ur' || lower.startsWith('ur-') || lower.startsWith('ur_')) return 'ur';
+  if (lower === 'hi' || lower.startsWith('hi-') || lower.startsWith('hi_')) return 'hi';
   return 'en';
 }
 
@@ -75,6 +77,7 @@ i18n.use(initReactI18next).init({
     en: { translation: en },
     ur: { translation: ur },
     ar: { translation: ar },
+    hi: { translation: hi },
   },
   lng: initialLanguage,
   fallbackLng: 'en',
@@ -161,6 +164,7 @@ export function getCurrentLanguage(): AppLanguage {
   const lng = i18n.language;
   if (lng === 'ar') return 'ar';
   if (lng === 'ur') return 'ur';
+  if (lng === 'hi') return 'hi';
   return 'en';
 }
 

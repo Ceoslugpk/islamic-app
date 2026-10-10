@@ -58,7 +58,7 @@ export const DHIKR_PRESETS: DhikrItem[] = [
   },
 ];
 
-const DHIKR_LOCALIZED: Record<'ur' | 'ar', Record<string, Pick<DhikrItem, 'transliteration' | 'meaning'>>> = {
+const DHIKR_LOCALIZED: Record<'ur' | 'ar' | 'hi', Record<string, Pick<DhikrItem, 'transliteration' | 'meaning'>>> = {
   ur: {
     subhanallah: { transliteration: 'سبحان اللہ', meaning: 'اللہ پاک ہے' },
     alhamdulillah: { transliteration: 'الحمد للہ', meaning: 'تمام تعریفیں اللہ کے لیے ہیں' },
@@ -73,16 +73,23 @@ const DHIKR_LOCALIZED: Record<'ur' | 'ar', Record<string, Pick<DhikrItem, 'trans
     lailahaillallah: { transliteration: 'لَا إِلَٰهَ إِلَّا اللَّهُ', meaning: 'لا معبود بحق إلا الله' },
     astaghfirullah: { transliteration: 'أَسْتَغْفِرُ اللَّهَ', meaning: 'أطلب المغفرة من الله' },
   },
+  hi: {
+    subhanallah: { transliteration: 'सुब्हानअल्लाह', meaning: 'अल्लाह हर ऐब से पाक है' },
+    alhamdulillah: { transliteration: 'अलहम्दुलिल्लाह', meaning: 'सब तारीफ़ें अल्लाह के लिए हैं' },
+    allahuakbar: { transliteration: 'अल्लाहु अकबर', meaning: 'अल्लाह सबसे बड़ा है' },
+    lailahaillallah: { transliteration: 'ला इलाहा इल्लल्लाह', meaning: 'अल्लाह के सिवा कोई माबूद नहीं' },
+    astaghfirullah: { transliteration: 'अस्तग़फ़िरुल्लाह', meaning: 'मैं अल्लाह से माफ़ी मांगता हूँ' },
+  },
 };
 
 export function getLocalizedDhikrTransliteration(item: DhikrItem): string {
   const language = getCurrentLanguage();
-  return language === 'en' ? item.transliteration : DHIKR_LOCALIZED[language]?.[item.id]?.transliteration ?? item.transliteration;
+  return language === 'en' ? item.transliteration : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi']?.[item.id]?.transliteration ?? item.transliteration;
 }
 
 export function getLocalizedDhikrMeaning(item: DhikrItem): string {
   const language = getCurrentLanguage();
-  return language === 'en' ? item.meaning : DHIKR_LOCALIZED[language]?.[item.id]?.meaning ?? item.meaning;
+  return language === 'en' ? item.meaning : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi']?.[item.id]?.meaning ?? item.meaning;
 }
 
 const TARGET_OPTIONS = [33, 99];

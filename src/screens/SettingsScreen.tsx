@@ -9,8 +9,6 @@ import {
   Alert,
   ActivityIndicator,
   useWindowDimensions,
-  Modal,
-  SafeAreaView,
   Linking,
   BackHandler,
   Platform,
@@ -23,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { getForwardIcon, getBackIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
-import { t, prepareNativeLayoutDirection } from '../lib/i18n';
+import { t, prepareNativeLayoutDirection, AppLanguage } from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import {
@@ -782,7 +780,7 @@ export default function SettingsScreen({
         )}
         <SectionHeader compact eyebrow={t('Preferences')} title={t('Settings')} />
 
-        {/* Language — English / اردو / العربية */}
+        {/* Language — English / اردو / العربية / हिन्दी */}
         <Section label={t('Language / زبان')}>
           <Row
             title={t('App Language')}
@@ -791,17 +789,19 @@ export default function SettingsScreen({
                 ? 'العربية · من اليمين إلى اليسار (RTL)'
                 : settings.language === 'ur'
                 ? t('اردو (Urdu) · دائیں سے بائیں (RTL)')
+                : settings.language === 'hi'
+                ? 'हिन्दी (Hindi) · बाएं से दाएं (LTR)'
                 : t('English · Left to Right (LTR)')
             }
             accessibilityRole="text"
           />
-          <Segmented<'en' | 'ur' | 'ar'>
+          <Segmented<AppLanguage>
             label={t('Language / زبان')}
             options={[
-
               { value: 'en', label: 'English' },
               { value: 'ur', label: 'اردو' },
               { value: 'ar', label: 'العربية' },
+              { value: 'hi', label: 'हिन्दी' },
             ]}
             value={settings.language}
             disabled={isSwitchingLanguage}

@@ -143,26 +143,27 @@ export const ACCENT_KEYS: AccentKey[] = [
 
 export const DEFAULT_ACCENT: AccentKey = 'amber';
 
-const LOCALIZED_ACCENT_NAMES: Record<AccentKey, { en: string; ar: string; ur: string }> = {
-  amber: { en: 'Amber', ar: 'عنبر', ur: 'سنہرا' },
-  rose: { en: 'Rose', ar: 'وردي', ur: 'گلابی' },
-  emerald: { en: 'Emerald', ar: 'زمرد', ur: 'زمرد' },
-  teal: { en: 'Teal', ar: 'تركواز', ur: 'فیروزی' },
-  terracotta: { en: 'Terracotta', ar: 'طين محروق', ur: 'گیرو' },
-  sky: { en: 'Dusty Blue', ar: 'أزرق سماوي', ur: 'ہلکا نیلا' },
-  mauve: { en: 'Mauve', ar: 'موف', ur: 'کاسنی' },
-  olive: { en: 'Olive', ar: 'زيتوني', ur: 'زیتونی' },
-  sand: { en: 'Sand Gold', ar: 'رملي ذهبي', ur: 'ریتلا سنہرا' },
-  berry: { en: 'Berry', ar: 'توتي', ur: 'بیری' },
-  violet: { en: 'Violet', ar: 'بنفسجي', ur: 'بنفشی' },
-  cobalt: { en: 'Cobalt', ar: 'كوبالت', ur: 'کوبالٹ' },
-  crimson: { en: 'Crimson', ar: 'قرمزي', ur: 'سرخ قرمزی' },
-  copper: { en: 'Copper', ar: 'نحاسي', ur: 'تانبا' },
+const LOCALIZED_ACCENT_NAMES: Record<AccentKey, { en: string; ar: string; ur: string; hi: string }> = {
+  amber: { en: 'Amber', ar: 'عنبر', ur: 'سنہرا', hi: 'अम्बर' },
+  rose: { en: 'Rose', ar: 'وردي', ur: 'گلابی', hi: 'गुलाबी' },
+  emerald: { en: 'Emerald', ar: 'زمرد', ur: 'زمرد', hi: 'पन्ना' },
+  teal: { en: 'Teal', ar: 'تركواز', ur: 'فیروزی', hi: 'फ़िरोज़ी' },
+  terracotta: { en: 'Terracotta', ar: 'طين محروق', ur: 'گیرو', hi: 'गेरुआ' },
+  sky: { en: 'Dusty Blue', ar: 'أزرق سماوي', ur: 'ہلکا نیلا', hi: 'आसमानी' },
+  mauve: { en: 'Mauve', ar: 'موف', ur: 'کاسنی', hi: 'हल्का बैंगनी' },
+  olive: { en: 'Olive', ar: 'زيتوني', ur: 'زیتونی', hi: 'ज़ैतूनी' },
+  sand: { en: 'Sand Gold', ar: 'رملي ذهبي', ur: 'ریتلا سنہرا', hi: 'रेतीला सुनहरा' },
+  berry: { en: 'Berry', ar: 'توتي', ur: 'بیری', hi: 'बेरी' },
+  violet: { en: 'Violet', ar: 'بنفسجي', ur: 'بنफشی', hi: 'बैंगनी' },
+  cobalt: { en: 'Cobalt', ar: 'كوبالت', ur: 'کوبالٹ', hi: 'कोबाल्ट' },
+  crimson: { en: 'Crimson', ar: 'قرمزي', ur: 'سرخ قرمزی', hi: 'किरमिज़ी' },
+  copper: { en: 'Copper', ar: 'نحاسي', ur: 'تانبا', hi: 'तांबा' },
 };
 
 export function getLocalizedAccentName(key: AccentKey, lang?: string | null): string {
   const translations = LOCALIZED_ACCENT_NAMES[key];
   if (lang === 'ar') return translations.ar;
   if (lang === 'ur') return translations.ur;
+  if (lang === 'hi') return translations.hi;
   return translations.en;
 }

@@ -1,5 +1,5 @@
 import { getCurrentLanguage } from './i18n';
-import { LANGUAGE_NAMES_UR, LANGUAGE_NAMES_AR } from './surahNamesLocalized';
+import { LANGUAGE_NAMES_UR, LANGUAGE_NAMES_AR, LANGUAGE_NAMES_HI } from './surahNamesLocalized';
 
 export interface QuranLanguageEdition {
   language: string;
@@ -757,10 +757,322 @@ export const EDITION_METADATA_AR: Record<string, { title: string; translator: st
   },
 };
 
+export const EDITION_METADATA_HI: Record<string, { title: string; translator: string; language: string }> = {
+  // ── 48 Text Translations (keyed by stable editionIdentifier) ──
+  'ar.muyassar': {
+    title: 'तफ़्सीर अल-मुयस्सर',
+    translator: 'अल-मुयस्सर',
+    language: 'अरबी',
+  },
+  'en.sahih': {
+    title: 'सहीह इंटरनेशनल',
+    translator: 'सहीह इंटरनेशनल',
+    language: 'अंग्रेज़ी',
+  },
+  'ur.jalandhry': {
+    title: 'फ़तह मुहम्मद जालंधरी',
+    translator: 'मौलाना फ़तह मुहम्मद जालंधरी',
+    language: 'उर्दू',
+  },
+  'id.indonesian': {
+    title: 'इंडोनेशियाई अनुवाद',
+    translator: 'धार्मिक मामलों का मंत्रालय इंडोनेशिया',
+    language: 'इंडोनेशियाई',
+  },
+  'tr.diyanet': {
+    title: 'दियानत इशलेरी',
+    translator: 'दियानत इशलेरी प्रेसीडेंसी',
+    language: 'तुर्की',
+  },
+  'fr.hamidullah': {
+    title: 'मुहम्मद हमीदुल्लाह',
+    translator: 'डॉ. मुहम्मद हमीदुल्लाह',
+    language: 'फ़्रांसीसी',
+  },
+  'de.aburida': {
+    title: 'अबू रिदा',
+    translator: 'अबू रिदा मुहम्मद इब्न अहमद',
+    language: 'जर्मन',
+  },
+  'es.cortes': {
+    title: 'जूलियो कोर्टेस',
+    translator: 'जूलियो कोर्टेस',
+    language: 'स्पैनिश',
+  },
+  'ru.kuliev': {
+    title: 'एल्मिर कुलिएव',
+    translator: 'एल्मिर कुलिएव',
+    language: 'रूसी',
+  },
+  'bn.bengali': {
+    title: 'मुहिउद्दीन ख़ान',
+    translator: 'मौलाना मुहिउद्दीन ख़ान',
+    language: 'बंगाली',
+  },
+  'ms.basmeih': {
+    title: 'अब्दुल्लाह मुहम्मद बासमिया',
+    translator: 'अब्दुल्लाह मुहम्मद बासमिया',
+    language: 'मलय',
+  },
+  'sw.barwani': {
+    title: 'अली मुहसिन अल-बरवानी',
+    translator: 'अली मुहसिन अल-बरवानी',
+    language: 'स्वाहिली',
+  },
+  'fa.ansarian': {
+    title: 'हुसैन अंसारियान',
+    translator: 'हुसैन अंसारियान',
+    language: 'फ़ारसी',
+  },
+  'so.abduh': {
+    title: 'महमूद मुहम्मद अब्दूह',
+    translator: 'महमूद मुहम्मद अब्दूह',
+    language: 'सोमाली',
+  },
+  'ta.tamil': {
+    title: 'जान ट्रस्ट फ़ाउंडेशन',
+    translator: 'जान ट्रस्ट फ़ाउंडेशन',
+    language: 'तमिल',
+  },
+  'hi.hindi': {
+    title: 'सुहेल फ़ारूक़ ख़ान व नदवी',
+    translator: 'सुहेल फ़ारूक़ ख़ान व मुफ़्ती अज़ीज़ुर्रहमान नदवी',
+    language: 'हिन्दी',
+  },
+  'ha.gumi': {
+    title: 'अबू बकर महमूद गूमी',
+    translator: 'शेख़ अबू बकर महमूद गूमी',
+    language: 'हौसा',
+  },
+  'uz.sodik': {
+    title: 'मुहम्मद सोदिक़ मुहम्मद यूसुफ़',
+    translator: 'शेख़ मुहम्मद सोदिक़ मुहम्मद यूसुफ़',
+    language: 'उज़्बेक',
+  },
+  'sv.bernstrom': {
+    title: 'नट बर्नस्ट्रॉम',
+    translator: 'नट बर्नस्ट्रॉम',
+    language: 'स्वीडिश',
+  },
+  'am.sadiq': {
+    title: 'सादिक़ व सानी हबीब',
+    translator: 'सादिक़ और सानी हबीब',
+    language: 'अम्हारिक',
+  },
+  'az.mammadaliyev': {
+    title: 'मम्मादालियेव व बुनियादोव',
+    translator: 'वासिफ़ मम्मादालियेव व ज़िया बुनियादोव',
+    language: 'अज़रबैजानी',
+  },
+  'ba.mehanovic': {
+    title: 'मुहामेद मेहानोविच',
+    translator: 'मुहामेद मेहानोविच',
+    language: 'बोस्नियाई',
+  },
+  'ber.mensur': {
+    title: 'अत मंसूर',
+    translator: 'रमादान अत मंसूर',
+    language: 'बर्बर',
+  },
+  'bg.theophanov': {
+    title: 'वेतान थियोफ़ानोव',
+    translator: 'प्रोफ़ेसर वेतान थियोफ़ानोव',
+    language: 'बुल्गारियाई',
+  },
+  'bs.mlivo': {
+    title: 'मुस्तफ़ा म्लिवो',
+    translator: 'मुस्तफ़ा म्लिवो',
+    language: 'बोस्नियाई',
+  },
+  'ce.magomedov': {
+    title: 'मागोमेदोव',
+    translator: 'मागोमेदोव',
+    language: 'चेचन',
+  },
+  'cs.hrbek': {
+    title: 'इवान हरबेक',
+    translator: 'इवान हरबेक',
+    language: 'चेक',
+  },
+  'dv.divehi': {
+    title: 'राष्ट्रपति कार्यालय मालदीव',
+    translator: 'मालदीव राष्ट्रपति कार्यालय',
+    language: 'धिवेही',
+  },
+  'it.piccardo': {
+    title: 'हमज़ा रॉबर्टो पिकार्डो',
+    translator: 'हमज़ा रॉबर्टो पिकार्डो',
+    language: 'इतालवी',
+  },
+  'ja.japanese': {
+    title: 'रियोइची मीता',
+    translator: 'उमर रियोइची मीता',
+    language: 'जापानी',
+  },
+  'ko.korean': {
+    title: 'कोरियन मुस्लिम फेडरेशन',
+    translator: 'कोरियन मुस्लिम फेडरेशन',
+    language: 'कोरियाई',
+  },
+  'ku.asan': {
+    title: 'बुरहान मुहम्मद-अमीन',
+    translator: 'बुरहान मुहम्मद-अमीन',
+    language: 'कुर्दिश',
+  },
+  'ml.abdulhameed': {
+    title: 'अब्दुल हमीद व पराप्पूर',
+    translator: 'अब्दुल हमीद और पराप्पूर',
+    language: 'मलयालम',
+  },
+  'my.ghazi': {
+    title: 'ग़ाज़ी मुहम्मद हाशिम',
+    translator: 'ग़ाज़ी मुहम्मद हाशिम',
+    language: 'बर्मी',
+  },
+  'nl.keyzer': {
+    title: 'सालोमो काइज़र',
+    translator: 'सालोमो काइज़र',
+    language: 'डच',
+  },
+  'no.berg': {
+    title: 'एनार बर्ग',
+    translator: 'एनार बर्ग',
+    language: 'नॉर्वेजियाई',
+  },
+  'pl.bielawskiego': {
+    title: 'जोज़ेफ़ बिएलावस्की',
+    translator: 'प्रोफ़ेसर जोज़ेफ़ बिएलावस्की',
+    language: 'पोलिश',
+  },
+  'ps.abdulwali': {
+    title: 'अब्दुल वली',
+    translator: 'अब्दुल वली ख़ान',
+    language: 'पश्तो',
+  },
+  'pt.elhayek': {
+    title: 'समीर अल-हायेक',
+    translator: 'समीर अल-हायेक',
+    language: 'पुर्तगाली',
+  },
+  'ro.grigore': {
+    title: 'जॉर्ज ग्रिगोर',
+    translator: 'जॉर्ज ग्रिगोर',
+    language: 'रोमानियाई',
+  },
+  'sd.amroti': {
+    title: 'ताज महमूद अमरोटी',
+    translator: 'मौलाना ताज महमूद अमरोटी',
+    language: 'सिंधी',
+  },
+  'si.naseemismail': {
+    title: 'नसीम इस्माइल व मसरूर मौलाना',
+    translator: 'नसीम इस्माइल व मसरूर मौलाना',
+    language: 'सिंहली',
+  },
+  'sq.ahmeti': {
+    title: 'शरीफ़ अहमेती',
+    translator: 'शरीफ़ अहमेती',
+    language: 'अल्बानियाई',
+  },
+  'tg.ayati': {
+    title: 'अब्दुल मुहम्मद अयाती',
+    translator: 'अब्दुल मुहम्मद अयाती',
+    language: 'ताजिक',
+  },
+  'th.thai': {
+    title: 'शाह फ़हद क़ुरआन कॉम्प्लेक्स',
+    translator: 'शाह फ़हद क़ुरआन प्रिंटिंग कॉम्प्लेक्स',
+    language: 'थाई',
+  },
+  'tt.nugman': {
+    title: 'याकूब इब्न नुग़मान',
+    translator: 'याकूब इब्न नुग़मान',
+    language: 'तातार',
+  },
+  'ug.saleh': {
+    title: 'मुहम्मद सालेह',
+    translator: 'मुहम्मद सालेह काशग़री',
+    language: 'उइघुर',
+  },
+  'zh.jian': {
+    title: 'मा जियान',
+    translator: 'मुहम्मद मा जियान',
+    language: 'चीनी',
+  },
+
+  // ── Audio Translations (keyed by reciter identifier) ──
+  'en.everyayah-walk': {
+    title: 'सहीह इंटरनेशनल (इब्राहीम वॉक)',
+    translator: 'इब्राहीम वॉक',
+    language: 'अंग्रेज़ी',
+  },
+  'ur.everyayah-shamshad': {
+    title: 'शमशाद अली ख़ान',
+    translator: 'शमशाद अली ख़ान',
+    language: 'उर्दू',
+  },
+  'ur.everyayah-farhathashmi': {
+    title: 'डॉ. फ़रहत हाशमी',
+    translator: 'डॉ. फ़रहत हाशमी',
+    language: 'उर्दू',
+  },
+  'zh.chinese': {
+    title: 'चीनी अनुवाद',
+    translator: 'चीनी अनुवाद',
+    language: 'चीनी',
+  },
+  'fr.leclerc': {
+    title: 'यूसुफ़ लेक्लर्क',
+    translator: 'यूसुफ़ लेक्लर्क',
+    language: 'फ़्रांसीसी',
+  },
+  'ru.kuliev-audio': {
+    title: 'एल्मिर कुलिएव',
+    translator: 'एल्मिर कुलिएव',
+    language: 'रूसी',
+  },
+  'tr.vakfi-audio': {
+    title: 'दियानत वक़्फ़',
+    translator: 'दियानत वक़्फ़',
+    language: 'तुर्की',
+  },
+  'fa.everyayah-kabiri': {
+    title: 'मकारिम शिराज़ी (कबीरी)',
+    translator: 'मकारिम शिराज़ी (कबीरी)',
+    language: 'फ़ारसी',
+  },
+  'fa.everyayah-hedayatfar': {
+    title: 'फ़ौलादवंद (हेदायतफ़र)',
+    translator: 'फ़ौलादवंद (हेदायतफ़र)',
+    language: 'फ़ारसी',
+  },
+  'az.everyayah-balayev': {
+    title: 'रासिम बाबायेव',
+    translator: 'रासिम बाबायेव',
+    language: 'अज़रबैजानी',
+  },
+  'kk.khalifahaltai-audio': {
+    title: 'ख़लीफ़ा अल्ताई',
+    translator: 'ख़लीफ़ा अल्ताई',
+    language: 'कज़ाख़',
+  },
+  'uz.sodik-audio': {
+    title: 'मुहम्मद सोदिक़',
+    translator: 'मुहम्मद सोदिक़',
+    language: 'उज़्बेक',
+  },
+  'bs.everyayah-korkut': {
+    title: 'बेसिम कोरकुत',
+    translator: 'बेसिम कोरकुत',
+    language: 'बोस्नियाई',
+  },
+};
+
 /**
  * Returns localized translator / author display name for the current language.
  * - Arabic (`ar`): returns localized Arabic translator name if available.
  * - Urdu (`ur`): returns localized Urdu translator name if available in map.
+ * - Hindi (`hi`): returns localized Hindi translator name if available in map.
  * - English (`en`): returns fallbackName unchanged.
  * - Remote unknown editions safely fall back to fallbackName or identifier.
  */
@@ -776,6 +1088,11 @@ export function getLocalizedTranslatorName(identifier: string, fallbackName?: st
     if (meta?.translator) {
       return meta.translator;
     }
+  } else if (lang === 'hi') {
+    const meta = EDITION_METADATA_HI[identifier];
+    if (meta?.translator) {
+      return meta.translator;
+    }
   }
   return fallbackName || identifier;
 }
@@ -784,6 +1101,7 @@ export function getLocalizedTranslatorName(identifier: string, fallbackName?: st
  * Returns localized translation title for the current language.
  * - Arabic (`ar`): returns localized Arabic translation title if available.
  * - Urdu (`ur`): returns localized Urdu translation title if available.
+ * - Hindi (`hi`): returns localized Hindi translation title if available.
  * - English (`en`): returns fallbackTitle unchanged.
  */
 export function getLocalizedTranslationTitle(identifier: string, fallbackTitle?: string): string {
@@ -795,6 +1113,11 @@ export function getLocalizedTranslationTitle(identifier: string, fallbackTitle?:
     }
   } else if (lang === 'ur') {
     const meta = EDITION_METADATA_UR[identifier];
+    if (meta?.title) {
+      return meta.title;
+    }
+  } else if (lang === 'hi') {
+    const meta = EDITION_METADATA_HI[identifier];
     if (meta?.title) {
       return meta.title;
     }
@@ -830,6 +1153,15 @@ export function getLocalizedEditionMeta(
       title: meta?.title || defName,
       translator: meta?.translator || defName,
       language: meta?.language || (defLang ? (LANGUAGE_NAMES_UR[defLang] || defLang) : ''),
+    };
+  }
+
+  if (lang === 'hi') {
+    const meta = EDITION_METADATA_HI[identifier];
+    return {
+      title: meta?.title || defName,
+      translator: meta?.translator || defName,
+      language: meta?.language || (defLang ? (LANGUAGE_NAMES_HI[defLang] || defLang) : ''),
     };
   }
 

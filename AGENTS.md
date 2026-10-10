@@ -2,6 +2,17 @@
 
 > **Read `rules.md` first — it contains the binding project rules (build/release gates, agent dispatch, localization contracts, verification). Violating any rule = rejected work.**
 
+## Antigravity / Gemini feature guides
+
+Before editing, read the matching repository guide:
+
+- Any feature or bug fix: `docs/antigravity/FEATURE_IMPLEMENTATION_GUIDE.md`
+- Any new screen or navigation change: `docs/antigravity/NEW_SCREEN_CHECKLIST.md`
+- Any localization work or untranslated-string audit: `docs/antigravity/LOCALIZATION_AUDIT.md`
+- Adding a whole app language: `docs/adding-app-languages.md`
+
+`docs/antigravity/README.md` defines instruction precedence and the default execution protocol.
+
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
 ## Expo has changed — do not trust your training data
@@ -29,9 +40,10 @@ Run lint and typecheck before declaring any task done.
 
 ## Navigation & Routing
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+- This repository currently uses typed view-state unions and render branches in `App.tsx`; screens live in `src/screens/`.
+- Extend the existing `LibraryView`, `QuranView`, or `ToolsView` union and wire the entry, render branch, and back path completely.
+- Do **not** introduce Expo Router or a second navigation system unless the user explicitly requests an architecture migration.
+- Keep reusable components, hooks, services, and utilities outside `src/screens/`.
 
 ## Building with EAS
 
