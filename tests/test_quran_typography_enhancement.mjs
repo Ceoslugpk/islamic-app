@@ -15,7 +15,7 @@ assert.ok(settingsCode.includes('export const QURAN_FONT_SIZE_STEP = 2;'), 'Font
 assert.ok(settingsCode.includes('export const QURAN_FONT_SIZE_DEFAULT = 30;'), 'Default font size is 30');
 
 assert.ok(settingsCode.includes('export const QURAN_LINE_HEIGHT_MIN = 1.4;'), 'Min line height is 1.4');
-assert.ok(settingsCode.includes('export const QURAN_LINE_HEIGHT_MAX = 2.2;'), 'Max line height is 2.2');
+assert.ok(settingsCode.includes('export const QURAN_LINE_HEIGHT_MAX = 3.0;'), 'Max line height is 3.0');
 assert.ok(settingsCode.includes('export const QURAN_LINE_HEIGHT_STEP = 0.1;'), 'Line height step is 0.1');
 assert.ok(settingsCode.includes('export const QURAN_LINE_HEIGHT_DEFAULT = 2.2;'), 'Default line height is 2.2');
 
@@ -30,7 +30,7 @@ const QURAN_FONT_SIZE_MAX = 40;
 const QURAN_FONT_SIZE_STEP = 2;
 const QURAN_FONT_SIZE_DEFAULT = 30;
 const QURAN_LINE_HEIGHT_MIN = 1.4;
-const QURAN_LINE_HEIGHT_MAX = 2.2;
+const QURAN_LINE_HEIGHT_MAX = 3.0;
 const QURAN_LINE_HEIGHT_STEP = 0.1;
 const QURAN_LINE_HEIGHT_DEFAULT = 2.2;
 
@@ -51,7 +51,8 @@ assert.equal(clampQuranFontSize(30), 30, 'Preserves 30');
 assert.equal(clampQuranFontSize(NaN), 30, 'Falls back to default 30 on NaN');
 
 assert.equal(clampQuranLineHeight(1.0), 1.4, 'Clamps below min to 1.4');
-assert.equal(clampQuranLineHeight(3.0), 2.2, 'Clamps above max to 2.2');
+assert.equal(clampQuranLineHeight(4.0), 3.0, 'Clamps above max to 3.0');
+assert.equal(clampQuranLineHeight(3.0), 3.0, 'Preserves 3.0');
 assert.equal(clampQuranLineHeight(2.2), 2.2, 'Preserves 2.2');
 assert.equal(clampQuranLineHeight(1.8), 1.8, 'Preserves previously saved 1.8');
 assert.equal(clampQuranLineHeight(NaN), 2.2, 'Falls back to default 2.2 on NaN');

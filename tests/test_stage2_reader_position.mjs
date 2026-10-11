@@ -17,9 +17,9 @@ const ok = (m) => console.log(`  [ok] ${m}`);
 const settingsCode = fs.readFileSync('src/lib/settings.tsx', 'utf8');
 const readerCode = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
 
-const MIN = 1.4, MAX = 2.2, STEP = 0.1, DEFAULT = 2.2;
+const MIN = 1.4, MAX = 3.0, STEP = 0.1, DEFAULT = 2.2;
 assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_MIN = 1.4'), 'line-height min is 1.4');
-assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_MAX = 2.2'), 'line-height max is 2.2');
+assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_MAX = 3.0'), 'line-height max is 3.0');
 assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_DEFAULT = 2.2'), 'line-height default is 2.2');
 assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_STEP = 0.1'), 'line-height step is 0.1');
 assert.ok(settingsCode.includes('quranLineHeight: QURAN_LINE_HEIGHT_DEFAULT'), 'settings default applies line-height 2.2');

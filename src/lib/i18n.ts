@@ -182,9 +182,21 @@ export function isRTL(): boolean {
 
 /**
  * Pure-JS translation helper that respects the current active language.
+ * Supports standard i18next `{{var}}` placeholders as well as single-brace `{var}` / `{ن}` tokens.
  */
 export const t = (key: string, options?: any): string => {
-  return String(i18n.t(key, options as any));
+  let res = String(i18n.t(key, options as any));
+  if (options && typeof options === 'object') {
+    for (const [k, v] of Object.entries(options)) {
+      if (k !== 'defaultValue' && k !== 'lng' && v !== undefined && v !== null) {
+        res = res.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+        if (k === 'n') {
+          res = res.replace(/\{ن\}/g, String(v));
+        }
+      }
+    }
+  }
+  return res;
 };
 
 export { useTranslation };

@@ -32,7 +32,7 @@ export const QURAN_FONT_SIZE_MAX = 40;
 export const QURAN_FONT_SIZE_STEP = 2;
 export const QURAN_FONT_SIZE_DEFAULT = 30;
 export const QURAN_LINE_HEIGHT_MIN = 1.4;
-export const QURAN_LINE_HEIGHT_MAX = 2.2;
+export const QURAN_LINE_HEIGHT_MAX = 3.0;
 export const QURAN_LINE_HEIGHT_STEP = 0.1;
 export const QURAN_LINE_HEIGHT_DEFAULT = 2.2;
 
@@ -142,8 +142,8 @@ interface SettingsContextValue {
   setHapticsEnabled: (enabled: boolean) => void;
   setQuranArabicFont: (font: QuranArabicFont) => void;
   setQuranScript: (script: QuranScript) => void;
-  setQuranFontSize: (size: number) => void;
-  setQuranLineHeight: (multiplier: number) => void;
+  setQuranFontSize: (size: number | ((prev: number) => number)) => void;
+  setQuranLineHeight: (multiplier: number | ((prev: number) => number)) => void;
   setQuranShowTranslation: (enabled: boolean) => void;
   setTafsirSourceId: (sourceId: TafsirSourceId) => void;
   setQuranPreloadRequested: (requested: boolean) => void;
@@ -769,10 +769,18 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     setHapticsEnabled: (hapticsEnabled) => updateSettings((prev) => ({ ...prev, hapticsEnabled })),
     setQuranArabicFont: (quranArabicFont) => updateSettings((prev) => ({ ...prev, quranArabicFont })),
     setQuranScript: (quranScript) => updateSettings((prev) => ({ ...prev, quranScript })),
-    setQuranFontSize: (quranFontSize) =>
-      updateSettings((prev) => ({ ...prev, quranFontSize: clampQuranFontSize(quranFontSize) })),
-    setQuranLineHeight: (quranLineHeight) =>
-      updateSettings((prev) => ({ ...prev, quranLineHeight: clampQuranLineHeight(quranLineHeight) })),
+    setQuranFontSize: (quranFontSize: number | ((prev: number) => number)) =>
+      updateSettings((prev) => {
+        const current = typeof prev.quranFontSize === 'number' ? prev.quranFontSize : QURAN_FONT_SIZE_DEFAULT;
+        const nextVal = typeof quranFontSize === 'function' ? quranFontSize(current) : quranFontSize;
+        return { ...prev, quranFontSize: clampQuranFontSize(nextVal) };
+      }),
+    setQuranLineHeight: (quranLineHeight: number | ((prev: number) => number)) =>
+      updateSettings((prev) => {
+        const current = typeof prev.quranLineHeight === 'number' ? prev.quranLineHeight : QURAN_LINE_HEIGHT_DEFAULT;
+        const nextVal = typeof quranLineHeight === 'function' ? quranLineHeight(current) : quranLineHeight;
+        return { ...prev, quranLineHeight: clampQuranLineHeight(nextVal) };
+      }),
     setQuranShowTranslation: (quranShowTranslation) =>
       updateSettings((prev) => ({ ...prev, quranShowTranslation })),
     setTafsirSourceId: (tafsirSourceId) =>

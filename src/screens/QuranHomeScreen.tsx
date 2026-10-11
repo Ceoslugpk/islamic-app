@@ -373,7 +373,7 @@ export default function QuranHomeScreen({
     if (q.length >= 2) addQuery(q);
   };
 
-  const renderHeader = useCallback(() => {
+  const headerElement = useMemo(() => {
     return (
       <View style={styles.headerArea}>
         <SectionHeader compact eyebrow={t('The Holy Quran')} title={t('Quran')} />
@@ -572,6 +572,8 @@ export default function QuranHomeScreen({
               horizontal
               nestedScrollEnabled
               showsHorizontalScrollIndicator={false}
+              onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
+              scrollEventThrottle={16}
               contentContainerStyle={[styles.recentScroll, { gap: isNarrow ? 8 : 10 }, hScrollRTLStyle()]}
             >
               {recentSurahs.map((recent) => (
@@ -822,6 +824,8 @@ export default function QuranHomeScreen({
             horizontal
             nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
+            onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
+            scrollEventThrottle={16}
             contentContainerStyle={[styles.hubChipsScroll, { gap: isNarrow ? 6 : 8 }, hScrollRTLStyle()]}
           >
             <TouchableOpacity
@@ -1003,6 +1007,8 @@ export default function QuranHomeScreen({
                 horizontal
                 nestedScrollEnabled
                 showsHorizontalScrollIndicator={false}
+                onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
+                scrollEventThrottle={16}
                 contentContainerStyle={[styles.searchRecentScroll, hScrollRTLStyle()]}
               >
                 {searchHistory.map((item) => (
@@ -1066,6 +1072,8 @@ export default function QuranHomeScreen({
             horizontal
             nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
+            onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
+            scrollEventThrottle={16}
             contentContainerStyle={[
               styles.juzScroll,
               { gap: isNarrow ? 5 : 6 },
@@ -1126,6 +1134,9 @@ export default function QuranHomeScreen({
             paddingVertical: isCompact ? 11 : 14,
           },
         ]}
+        accessibilityRole="button"
+        accessibilityLabel={`Open Surah ${item.number} ${item.englishName}`}
+        testID={`surah-row-${item.number}`}
         onPress={() => {
           const isMarked = readingPosition && readingPosition.surah === item.number;
           onOpenSurah(
@@ -1134,7 +1145,7 @@ export default function QuranHomeScreen({
             isMarked ? readingPosition.page : undefined
           );
         }}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+        pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
         activeOpacity={0.7}
       >
         <View style={styles.surahLeft}>
@@ -1260,7 +1271,7 @@ export default function QuranHomeScreen({
         data={filteredSurahs}
         keyExtractor={(item) => String(item.number)}
         renderItem={renderSurahRow}
-        ListHeaderComponent={renderHeader}
+        ListHeaderComponent={headerElement}
         contentContainerStyle={[styles.listContent, { paddingHorizontal: horizontalPadding }]}
         onScroll={onSurahListScroll}
         scrollEventThrottle={16}

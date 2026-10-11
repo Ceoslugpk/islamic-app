@@ -1494,6 +1494,7 @@ export default function QuranReaderScreen({
                 );
               }
             } else if (!target) {
+              mushafListRef.current?.scrollToOffset({ offset: 0, animated: false });
               const firstAyah = cached.ayahs[0];
               if (firstAyah) {
                 surahNumberRef.current = firstAyah.surah.number;
@@ -1524,6 +1525,7 @@ export default function QuranReaderScreen({
               );
             }
           } else if (!target) {
+            mushafListRef.current?.scrollToOffset({ offset: 0, animated: false });
             const firstAyah = data.ayahs[0];
             if (firstAyah) {
               surahNumberRef.current = firstAyah.surah.number;
@@ -1554,19 +1556,23 @@ export default function QuranReaderScreen({
       if (targetPage < 1 || targetPage > TOTAL_MUSHAF_PAGES) return;
       haptic('light');
       clearHighlightTimer();
+      setHighlightedAyahKey(null);
       restorationTargetRef.current = null;
       setSelectedAyah(null);
       setSelectedAyahY(0);
+      setSelectedAyahHeight(0);
       setActiveTafsirAyah(null);
       setActiveTafsirSurah(null);
       ayahLayoutsRef.current = {};
       groupOffsetsRef.current = {};
+      mushafListRef.current?.scrollToOffset({ offset: 0, animated: false });
       setCurrentPage(targetPage);
       const cached = loadQuranCache<MushafPageDetail>(`mushaf-page:${targetPage}:${showTranslation ? (edition?.editionIdentifier || 'en.sahih') : 'ar'}`) ||
                      loadQuranCache<MushafPageDetail>(`mushaf-page:${targetPage}:ar`);
       if (cached && cached.pageNumber === targetPage && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
         setCurrentPageData(cached);
         setPageLoading(false);
+        mushafListRef.current?.scrollToOffset({ offset: 0, animated: false });
         const activeAyahItem = cached.ayahs[0];
         if (activeAyahItem) {
           surahNumberRef.current = activeAyahItem.surah.number;
@@ -1730,15 +1736,19 @@ export default function QuranReaderScreen({
   }, [targetAyahForPosition, scheduleDeferredWork]);
 
   const handleAdjustFontSize = (delta: number) => {
-    setQuranFontSize(fontSize + delta);
+    haptic('selection');
+    setQuranFontSize((prev) => {
+      const current = typeof prev === 'number' && prev > 0 ? prev : fontSize;
+      return current + delta;
+    });
   };
 
   const handleAdjustLineHeight = (delta: number) => {
-    const next = Math.max(
-      QURAN_LINE_HEIGHT_MIN,
-      Math.min(QURAN_LINE_HEIGHT_MAX, Math.round((quranLineHeight + delta) * 10) / 10)
-    );
-    setQuranLineHeight(next);
+    haptic('selection');
+    setQuranLineHeight((prev) => {
+      const current = typeof prev === 'number' && prev > 0 ? prev : quranLineHeight;
+      return Math.round((current + delta) * 10) / 10;
+    });
   };
 
   const handleToggleTranslation = () => {
@@ -2950,9 +2960,11 @@ export default function QuranReaderScreen({
 
     return (
       <FlatList
+        key={`mushaf-page-list-${currentPage}`}
         ref={mushafListRef}
         data={[currentPage]}
         keyExtractor={(item) => `mushaf-page-${item}`}
+        extraData={`${currentPage}:${fontSize}:${quranLineHeight}:${showTranslation}`}
         renderItem={() => (
           <View style={styles.mushafPageCard}>
             {/* Header strip: Juz, Hizb, Surahs, Page number */}
@@ -3307,6 +3319,7 @@ export default function QuranReaderScreen({
 
         {/* Dots menu button - fixed right */}
         <TouchableOpacity
+          testID="reader-dots-menu-btn"
           style={[
             styles.dotsButton,
             {
@@ -3891,7 +3904,11 @@ export default function QuranReaderScreen({
                         {t('Jump to Juz')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
-                        {t('Juz {n} selected', { n: selectedJuz || currentPosition.juz })}
+                        {(() => {
+                          const activeJuz = selectedJuz || currentPosition.juz;
+                          return (t('Juz {n} selected', { n: activeJuz, defaultValue: `Juz ${activeJuz} selected` }) || `Juz ${activeJuz} selected`)
+                            .replace(/\{[nنjp]\}/g, String(activeJuz));
+                        })()}
                       </Text>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
@@ -3928,7 +3945,11 @@ export default function QuranReaderScreen({
                         {t('Jump to Hizb')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
-                        {t('Hizb {n} selected', { n: selectedHizb || currentPosition.hizb })}
+                        {(() => {
+                          const activeHizb = selectedHizb || currentPosition.hizb;
+                          return (t('Hizb {n} selected', { n: activeHizb, defaultValue: `Hizb ${activeHizb} selected` }) || `Hizb ${activeHizb} selected`)
+                            .replace(/\{[nنjp]\}/g, String(activeHizb));
+                        })()}
                       </Text>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
@@ -4034,6 +4055,7 @@ export default function QuranReaderScreen({
           key={`cards-surah-${safeSurahNumber}`}
           ref={listRef}
           data={cardsAyahs}
+          extraData={`${fontSize}:${ayahLineHeight}:${settings?.quranArabicFont}:${currentScript}:${showTranslation}`}
           keyExtractor={(item) => String(item.numberInSurah)}
           renderItem={renderAyahItem}
           ListHeaderComponent={renderSurahHeader}
