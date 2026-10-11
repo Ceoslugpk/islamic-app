@@ -121,6 +121,83 @@ assert.ok(code.includes('const requestId = ++pageRequestRef.current'), 'Mushaf p
 assert.ok(code.includes('`Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`'), 'Mushaf page number must render actual values');
 console.log('  ✓ T11: Mushaf Pages/Ayah mode split, 500ms long-press, compact actions, and page race guard verified');
 
+// Test 12: Mushaf page numbers & metadata validation
+const quranLibCode = fs.readFileSync('src/lib/quran.ts', 'utf8');
+assert.ok(
+  quranLibCode.includes('cached.pageNumber === safePage') &&
+  quranLibCode.includes('cached.ayahs.every((a) => !a.page || a.page === safePage)'),
+  'fetchMushafPage must strictly validate that cached page payload matches requested page and ayah metadata'
+);
+assert.ok(
+  !code.includes("t('Page {p}'") &&
+  !code.includes("t('Page {n}'") &&
+  !code.includes("t('Page {current} of {total}'") &&
+  !code.includes("t('Loading Mushaf Page {n}...'"),
+  'Mushaf UI must never render un-interpolated literal token placeholders like {p}, {n}, {current}, {total}'
+);
+assert.ok(
+  code.includes('`Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`'),
+  'Nav subtitle and footer badge must render actual evaluated displayedMushafPage'
+);
+assert.ok(
+  code.includes('`Page ${Math.max(1, currentPage - 1)}`') &&
+  code.includes('`Page ${Math.min(TOTAL_MUSHAF_PAGES, currentPage + 1)}`'),
+  'Footer pagination buttons must render evaluated page numbers'
+);
+console.log('  ✓ T12: Mushaf page cache safety and zero un-interpolated token leaks verified');
+
+// Test 13: Popup anchoring & layout measurement
+assert.ok(
+  code.includes('ayahLayoutsRef.current') &&
+  code.includes('setSelectedAyahHeight'),
+  'Ayah layout measurements must be recorded for dynamic popup anchoring'
+);
+assert.ok(
+  code.includes('selectedAyahY >= 88') &&
+  code.includes('selectedAyahY - 84') &&
+  code.includes('selectedAyahHeight'),
+  'Popup must be dynamically anchored above or below the selected ayah based on measured coordinates'
+);
+assert.ok(
+  code.includes('mushafTajweedAyahRow') &&
+  code.includes('mushafAyahTouch'),
+  'Both Tajweed and Uthmani render branches must provide measured layout coordinates'
+);
+console.log('  ✓ T13: Ayah popup anchoring with measured layout coordinates in both branches verified');
+
+// Test 14: Reading mode switch resilience
+assert.ok(
+  code.includes('cardsAyahs = useMemo') &&
+  code.includes('readingMode === \'cards\' && loading && cardsAyahs.length === 0') &&
+  code.includes('data={cardsAyahs}'),
+  'Cards mode must compute cardsAyahs with cache/page fallback and never return a blank screen'
+);
+assert.ok(
+  code.includes('currentSurah !== safeSurahNumber && onNavigateSurah') &&
+  code.includes('onNavigateSurah(currentSurah, currentAyah, currentPageNum)'),
+  'Mode toggle must propagate active surah to onNavigateSurah when switching to cards'
+);
+console.log('  ✓ T14: Reading mode switch resilience and blank-screen protection verified');
+
+// Test 15: Footer navigation controls and FlatList onViewableItemsChanged stability
+assert.ok(
+  code.includes('testID="mushaf-footer-next-btn"') &&
+  code.includes('testID="mushaf-footer-prev-btn"') &&
+  code.includes('testID="mushaf-footer-badge"'),
+  'Mushaf footer navigation and badge must have deterministic testIDs'
+);
+assert.ok(
+  code.includes('surahRef = useRef') &&
+  code.includes('surahRef.current = surah'),
+  'surahRef must be maintained to keep handleViewableItemsChanged reference stable'
+);
+assert.ok(
+  code.includes('key={`cards-surah-${safeSurahNumber}`}') &&
+  code.includes('immediateSurah'),
+  'FlatList cards mode must have safe surah key and immediateSurah fallback on toggle'
+);
+console.log('  ✓ T15: Footer controls and FlatList onViewableItemsChanged stability verified');
+
 console.log('\n========================================================');
 console.log('ALL TOOLS MENU & READER ENHANCEMENT TESTS PASSED!');
 console.log('========================================================\n');

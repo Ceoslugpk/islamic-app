@@ -686,7 +686,13 @@ export async function fetchMushafPage(
 
   if (!force) {
     const cached = loadQuranCache<MushafPageDetail>(key);
-    if (cached && cached.pageNumber === safePage && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
+    if (
+      cached &&
+      cached.pageNumber === safePage &&
+      Array.isArray(cached.ayahs) &&
+      cached.ayahs.length > 0 &&
+      cached.ayahs.every((a) => !a.page || a.page === safePage)
+    ) {
       return cached;
     }
   }
@@ -807,12 +813,14 @@ export async function fetchMushafPage(
             if (meta) surahsMap[sNum] = meta;
           }
         }
+        const validJuzAyah = cachedAyahsForPage.find((a) => typeof a.juz === 'number' && a.juz >= 1 && a.juz <= 30);
+        const validHizbAyah = cachedAyahsForPage.find((a) => typeof a.hizbQuarter === 'number' && a.hizbQuarter >= 1 && a.hizbQuarter <= 240);
         const fallbackDetail: MushafPageDetail = {
           pageNumber: safePage,
           ayahs: cachedAyahsForPage,
           surahs: Object.values(surahsMap),
-          juz: cachedAyahsForPage.find((a) => typeof a.juz === 'number')?.juz,
-          hizbQuarter: cachedAyahsForPage.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter,
+          juz: validJuzAyah?.juz,
+          hizbQuarter: validHizbAyah?.hizbQuarter,
         };
         saveQuranCache(key, fallbackDetail);
         return fallbackDetail;
@@ -850,22 +858,25 @@ export async function fetchMushafPage(
         numberOfAyahs: a.surah?.numberOfAyahs,
         revelationType: a.surah?.revelationType,
       },
-      juz: a.juz,
+      juz: typeof a.juz === 'number' && a.juz >= 1 && a.juz <= 30 ? a.juz : 1,
       manzil: a.manzil,
-      page: a.page || safePage,
+      page: safePage,
       ruku: a.ruku,
-      hizbQuarter: a.hizbQuarter,
+      hizbQuarter: typeof a.hizbQuarter === 'number' && a.hizbQuarter >= 1 && a.hizbQuarter <= 240 ? a.hizbQuarter : undefined,
       sajda: a.sajda,
       translation: translationAyahs?.[i]?.text || undefined,
     };
   });
 
+  const validJuz = ayahs.find((a) => typeof a.juz === 'number' && a.juz >= 1 && a.juz <= 30)?.juz;
+  const validHizb = ayahs.find((a) => typeof a.hizbQuarter === 'number' && a.hizbQuarter >= 1 && a.hizbQuarter <= 240)?.hizbQuarter;
+
   const detail: MushafPageDetail = {
     pageNumber: safePage,
     ayahs,
     surahs: Object.values(surahsMap),
-    juz: ayahs.find((a) => typeof a.juz === 'number')?.juz,
-    hizbQuarter: ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter,
+    juz: validJuz,
+    hizbQuarter: validHizb,
   };
 
   saveQuranCache(key, detail);
