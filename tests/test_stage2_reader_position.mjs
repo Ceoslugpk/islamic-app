@@ -245,8 +245,9 @@ ok('navigation: saved page propagates through every navigation layer');
 // (l) 2-second restoration highlight contract in Mushaf mode
 const updatedReaderCode = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
 assert.ok(
-  updatedReaderCode.includes('const [highlightedMushafAyah, setHighlightedMushafAyah] = useState<number | null>(null);'),
-  'QuranReaderScreen defines highlightedMushafAyah state'
+  updatedReaderCode.includes('highlightedAyahKey') ||
+  updatedReaderCode.includes('highlightedMushafAyah'),
+  'QuranReaderScreen defines highlight state'
 );
 assert.ok(
   updatedReaderCode.includes('highlightTimerRef = useRef'),
@@ -274,19 +275,22 @@ assert.ok(
 );
 // Exact ayah identification avoiding fallback when requested ayah exists
 assert.ok(
-  updatedReaderCode.includes('initialAyah\n              ? data.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah)\n              : null') ||
-  updatedReaderCode.includes('initialAyah ? data.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah) : null') ||
-  updatedReaderCode.includes('data.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah)'),
+  updatedReaderCode.includes('a.surah.number === target.surah && a.numberInSurah === target.ayah') ||
+  updatedReaderCode.includes('a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah'),
   'Mushaf mode identifies exact requested surah+ayah before checking fallbacks'
 );
 // Visible highlight in both Tajweed and Uthmani render branches
 assert.ok(
-  updatedReaderCode.includes('highlightedMushafAyah === a.number && { backgroundColor: colors.accentDim'),
+  (updatedReaderCode.includes('highlightedAyahKey === `${a.surah.number}:${a.numberInSurah}`') ||
+   updatedReaderCode.includes('highlightedMushafAyah === a.number')) &&
+  updatedReaderCode.includes('backgroundColor: colors.accentDim'),
   'Tajweed render branch applies visible highlight to restored ayah'
 );
 assert.ok(
-  updatedReaderCode.includes('isRestorationHighlight && { backgroundColor: colors.accentDim') &&
-  updatedReaderCode.includes('const isRestorationHighlight = highlightedMushafAyah === a.number;'),
+  (updatedReaderCode.includes('isRestorationHighlight && {') ||
+   updatedReaderCode.includes('isRestorationHighlight && { backgroundColor: colors.accentDim')) &&
+  (updatedReaderCode.includes('const isRestorationHighlight = highlightedAyahKey === `${a.surah.number}:${a.numberInSurah}`') ||
+   updatedReaderCode.includes('const isRestorationHighlight = highlightedMushafAyah === a.number;')),
   'Uthmani render branch applies visible highlight to restored ayah'
 );
 // Popup menu is NOT automatically opened

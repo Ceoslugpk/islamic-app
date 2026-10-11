@@ -53,11 +53,47 @@ let inMemoryMarker: ReadingMarker | null | undefined = undefined;
 let inMemoryPosition: ReadingPosition | null | undefined = undefined;
 
 export function getReadingMarkerSync(): ReadingMarker | null {
-  return inMemoryMarker ?? null;
+  if (inMemoryMarker !== undefined) return inMemoryMarker;
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(MARKER_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed.savedAt === 'number' && isValidReadingPosition(parsed)) {
+          const page =
+            typeof parsed.page === 'number' && parsed.page >= 1 && parsed.page <= 604
+              ? parsed.page
+              : getMushafPageForAyah(parsed.surah, parsed.ayah);
+          const marker = { ...parsed, page, manual: true } as ReadingMarker;
+          inMemoryMarker = marker;
+          return marker;
+        }
+      }
+    } catch {}
+  }
+  return null;
 }
 
 export function getReadingPositionSync(): ReadingPosition | null {
-  return inMemoryPosition ?? null;
+  if (inMemoryPosition !== undefined) return inMemoryPosition;
+  if (typeof localStorage !== 'undefined') {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed.savedAt === 'number' && isValidReadingPosition(parsed)) {
+          const page =
+            typeof parsed.page === 'number' && parsed.page >= 1 && parsed.page <= 604
+              ? parsed.page
+              : getMushafPageForAyah(parsed.surah, parsed.ayah);
+          const pos: ReadingPosition = { ...parsed, page };
+          inMemoryPosition = pos;
+          return pos;
+        }
+      }
+    } catch {}
+  }
+  return null;
 }
 
 export function _resetReadingMemoryStateForTest(): void {

@@ -587,7 +587,8 @@ export default function QuranHomeScreen({
                     const ayah = isMarked
                       ? readingPosition.ayah
                       : (cached && typeof cached.ayah === 'number' ? cached.ayah : undefined);
-                    onOpenSurah(recent.surah, ayah);
+                    const page = isMarked ? readingPosition.page : undefined;
+                    onOpenSurah(recent.surah, ayah, page);
                   }}
             pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
                   accessibilityRole="button"
@@ -1127,7 +1128,11 @@ export default function QuranHomeScreen({
         ]}
         onPress={() => {
           const isMarked = readingPosition && readingPosition.surah === item.number;
-          onOpenSurah(item.number, isMarked ? readingPosition.ayah : undefined);
+          onOpenSurah(
+            item.number,
+            isMarked ? readingPosition.ayah : undefined,
+            isMarked ? readingPosition.page : undefined
+          );
         }}
             pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
         activeOpacity={0.7}

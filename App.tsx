@@ -42,7 +42,8 @@ import {
   HEADER_SEPARATOR,
 } from './src/lib/headerTokens';
 import { t, setAppLanguage, applyRTL, resolvePersistedLanguage, getBootLanguage, isRTL, isRtlLanguage } from './src/lib/i18n';
-import { getReadingMarkerSync } from './src/lib/continuing';
+import { getReadingMarkerSync, getReadingPositionSync } from './src/lib/continuing';
+import { getMushafPageForAyah } from './src/lib/quran';
 
 import HomeScreen from './src/screens/HomeScreen';
 import QiblaScreen from './src/screens/QiblaScreen';
@@ -1029,15 +1030,44 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 setLibrary({ screen: 'names' });
                 setTab('library');
               }}
+              onOpenReader={(surah, ayah, page) => {
+                let initialAyah = ayah;
+                let initialPage = page;
+                if (!initialPage) {
+                  const marker = getReadingMarkerSync();
+                  if (marker && marker.surah === surah && (!initialAyah || marker.ayah === initialAyah)) {
+                    initialAyah = initialAyah || marker.ayah;
+                    initialPage = marker.page;
+                  } else {
+                    const pos = getReadingPositionSync();
+                    if (pos && pos.surah === surah && (!initialAyah || pos.ayah === initialAyah)) {
+                      initialAyah = initialAyah || pos.ayah;
+                      initialPage = pos.page;
+                    } else {
+                      initialPage = getMushafPageForAyah(surah, initialAyah || 1);
+                    }
+                  }
+                }
+                setQuran({ screen: 'reader', surah, initialAyah, initialPage });
+                setTab('quran');
+              }}
               onOpenQuran={(surah, ayah, page) => {
                 if (surah) {
                   let initialAyah = ayah;
                   let initialPage = page;
-                  if (!initialAyah && !initialPage) {
+                  if (!initialPage) {
                     const marker = getReadingMarkerSync();
-                    if (marker && marker.surah === surah) {
-                      initialAyah = marker.ayah;
+                    if (marker && marker.surah === surah && (!initialAyah || marker.ayah === initialAyah)) {
+                      initialAyah = initialAyah || marker.ayah;
                       initialPage = marker.page;
+                    } else {
+                      const pos = getReadingPositionSync();
+                      if (pos && pos.surah === surah && (!initialAyah || pos.ayah === initialAyah)) {
+                        initialAyah = initialAyah || pos.ayah;
+                        initialPage = pos.page;
+                      } else {
+                        initialPage = getMushafPageForAyah(surah, initialAyah || 1);
+                      }
                     }
                   }
                   setQuran({ screen: 'reader', surah, initialAyah, initialPage });
@@ -1078,11 +1108,19 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 onOpenSurah={(n, a, p) => {
                   let initialAyah = a;
                   let initialPage = p;
-                  if (!initialAyah && !initialPage) {
+                  if (!initialPage) {
                     const marker = getReadingMarkerSync();
-                    if (marker && marker.surah === n) {
-                      initialAyah = marker.ayah;
+                    if (marker && marker.surah === n && (!initialAyah || marker.ayah === initialAyah)) {
+                      initialAyah = initialAyah || marker.ayah;
                       initialPage = marker.page;
+                    } else {
+                      const pos = getReadingPositionSync();
+                      if (pos && pos.surah === n && (!initialAyah || pos.ayah === initialAyah)) {
+                        initialAyah = initialAyah || pos.ayah;
+                        initialPage = pos.page;
+                      } else {
+                        initialPage = getMushafPageForAyah(n, initialAyah || 1);
+                      }
                     }
                   }
                   setQuran({ screen: 'reader', surah: n, initialAyah, initialPage });
@@ -1106,11 +1144,19 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 onNavigateSurah={(s, a, p) => {
                   let initialAyah = a;
                   let initialPage = p;
-                  if (!initialAyah && !initialPage) {
+                  if (!initialPage) {
                     const marker = getReadingMarkerSync();
-                    if (marker && marker.surah === s) {
-                      initialAyah = marker.ayah;
+                    if (marker && marker.surah === s && (!initialAyah || marker.ayah === initialAyah)) {
+                      initialAyah = initialAyah || marker.ayah;
                       initialPage = marker.page;
+                    } else {
+                      const pos = getReadingPositionSync();
+                      if (pos && pos.surah === s && (!initialAyah || pos.ayah === initialAyah)) {
+                        initialAyah = initialAyah || pos.ayah;
+                        initialPage = pos.page;
+                      } else {
+                        initialPage = getMushafPageForAyah(s, initialAyah || 1);
+                      }
                     }
                   }
                   setQuran({ screen: 'reader', surah: s, initialAyah, initialPage });

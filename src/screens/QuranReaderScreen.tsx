@@ -65,7 +65,7 @@ import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
-import { clearReadingMarker, getReadingMarker, getReadingPosition, saveReadingMarker, saveReadingPosition, getReadingMarkerSync, addReadingPositionListener, ReadingPosition, ReadingMarker } from '../lib/continuing';
+import { clearReadingMarker, getReadingMarker, getReadingPosition, saveReadingMarker, saveReadingPosition, getReadingMarkerSync, getReadingPositionSync, addReadingPositionListener, ReadingPosition, ReadingMarker } from '../lib/continuing';
 import { recordQuranReadingSession } from '../lib/quranProgress';
 import { recordSurahVisit } from '../lib/recentSurahs';
 import { preloadRemainingSurahsForEdition } from '../lib/quranPreloader';
@@ -400,13 +400,28 @@ export default function QuranReaderScreen({
   const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings?.tafsirSourceId) || TAFSIR_SOURCES[0];
   const arabicFamilies = (settings?.quranArabicFont && QURAN_FONT_FAMILIES[settings.quranArabicFont]) || QURAN_FONT_FAMILIES.amiri;
   const ayahLineHeight = Math.round(fontSize * (settings?.quranLineHeight || 1.6));
-  const [readingMode, setReadingMode] = useState<ReadingMode>('mushaf');
+  const [readingMode, setReadingMode] = useState<ReadingMode>(() => {
+    if (typeof initialPage === 'number' && initialPage >= 1) return 'mushaf';
+    try {
+      const syncMode = loadQuranCache<ReadingMode>('quran-reading-mode');
+      if (syncMode === 'cards' || syncMode === 'mushaf') return syncMode;
+    } catch {}
+    return 'mushaf';
+  });
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
 
   // Mushaf page architecture state
   const initialResolvedPage = useMemo(() => {
-    if (initialPage && initialPage >= 1 && initialPage <= TOTAL_MUSHAF_PAGES) {
+    if (typeof initialPage === 'number' && initialPage >= 1 && initialPage <= TOTAL_MUSHAF_PAGES) {
       return initialPage;
+    }
+    const syncMarker = getReadingMarkerSync();
+    if (syncMarker && syncMarker.surah === safeSurahNumber && (!initialAyah || syncMarker.ayah === initialAyah) && syncMarker.page >= 1 && syncMarker.page <= TOTAL_MUSHAF_PAGES) {
+      return syncMarker.page;
+    }
+    const syncPos = getReadingPositionSync();
+    if (syncPos && syncPos.surah === safeSurahNumber && (!initialAyah || syncPos.ayah === initialAyah) && syncPos.page >= 1 && syncPos.page <= TOTAL_MUSHAF_PAGES) {
+      return syncPos.page;
     }
     return getMushafPageForAyah(safeSurahNumber, initialAyah || 1);
   }, [initialPage, safeSurahNumber, initialAyah]);
@@ -416,15 +431,19 @@ export default function QuranReaderScreen({
   const [pageLoading, setPageLoading] = useState<boolean>(false);
   const [pageError, setPageError] = useState<string | null>(null);
   const [selectedAyah, setSelectedAyah] = useState<MushafPageAyah | null>(null);
-  const [highlightedMushafAyah, setHighlightedMushafAyah] = useState<number | null>(null);
+  const [highlightedAyahKey, setHighlightedAyahKey] = useState<string | null>(null);
   const [selectedAyahY, setSelectedAyahY] = useState(0);
   const [selectedAyahHeight, setSelectedAyahHeight] = useState<number>(44);
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restorationHighlightedRef = useRef<boolean>(false);
-  const ayahLayoutsRef = useRef<Record<number, { y: number; height: number }>>({});
+  const restorationTargetRef = useRef<{ surah: number; ayah: number } | null>(
+    initialAyah && initialAyah > 0 ? { surah: safeSurahNumber, ayah: initialAyah } : null
+  );
+  const ayahLayoutsRef = useRef<Record<string | number, { y: number; height: number }>>({});
   const groupOffsetsRef = useRef<Record<number, number>>({});
   const currentPageRef = useRef<number>(initialResolvedPage);
   const pageRequestRef = useRef<number>(0);
+  const mushafListRef = useRef<FlatList<number>>(null);
   currentPageRef.current = currentPage;
 
   // Continue Reading tracking refs (MUST be declared before any memo/effects)
@@ -1188,8 +1207,8 @@ export default function QuranReaderScreen({
         ]);
 
         // Mushaf is the default. Only restore cards when the user explicitly
-        // selected it; this migrates stale pre-Mushaf storage safely.
-        if (explicitMode === 'true' && (savedMode === 'mushaf' || savedMode === 'cards')) {
+        // selected it, and never override when initialPage was passed (Continue Reading opens Mushaf page first)
+        if (typeof initialPage !== 'number' && explicitMode === 'true' && (savedMode === 'mushaf' || savedMode === 'cards')) {
           setReadingMode(savedMode);
         }
         if (audioSettings && audioSettings.reciter) {
@@ -1330,8 +1349,8 @@ export default function QuranReaderScreen({
 
       // During programmatic restoration, pause reading-position and cache writes
       // until the target ayah has visibly mounted and settled.
-      // Only advance it when the entered ayah is genuinely ahead.
-      if (!isProgrammaticPositioningRef.current && targetAyahForPosition <= 1) {
+      // Only advance it when the entered ayah is genuinely ahead and not restoring
+      if (!isProgrammaticPositioningRef.current && targetAyahForPosition <= 1 && !restorationTargetRef.current && readingMode === 'cards') {
         saveLastReadPosition(sNum, startAyah, data?.englishName);
         const prevPos = await getReadingPosition();
         if (!prevPos || (prevPos.surah === sNum ? startAyah > prevPos.ayah : true)) {
@@ -1381,25 +1400,50 @@ export default function QuranReaderScreen({
   }, [safeSurahNumber, edition?.editionIdentifier]);
 
   useEffect(() => {
-    loadSurah();
-  }, [loadSurah]);
+    if (readingMode === 'cards') {
+      loadSurah();
+    }
+  }, [readingMode, loadSurah]);
 
   const clearHighlightTimer = useCallback(() => {
     if (highlightTimerRef.current) {
       clearTimeout(highlightTimerRef.current);
       highlightTimerRef.current = null;
     }
-    setHighlightedMushafAyah(null);
+    setHighlightedAyahKey(null);
   }, []);
 
-  const flashMushafAyah = useCallback((ayahNumber: number) => {
-    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
-    setHighlightedMushafAyah(ayahNumber);
-    highlightTimerRef.current = setTimeout(() => {
-      setHighlightedMushafAyah(null);
-      highlightTimerRef.current = null;
-    }, 2000);
-  }, []);
+  const handleMushafAyahLayout = useCallback(
+    (surahNum: number, ayahInSurah: number, y: number, height: number) => {
+      const key = `${surahNum}:${ayahInSurah}`;
+      ayahLayoutsRef.current[key] = { y, height };
+
+      const target = restorationTargetRef.current;
+      if (
+        target &&
+        target.surah === surahNum &&
+        target.ayah === ayahInSurah &&
+        !restorationHighlightedRef.current
+      ) {
+        restorationHighlightedRef.current = true;
+        setHighlightedAyahKey(key);
+
+        if (mushafListRef.current && y > 100) {
+          mushafListRef.current.scrollToOffset({
+            offset: Math.max(0, y - 60),
+            animated: false,
+          });
+        }
+
+        if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+        highlightTimerRef.current = setTimeout(() => {
+          setHighlightedAyahKey(null);
+          highlightTimerRef.current = null;
+        }, 2000);
+      }
+    },
+    []
+  );
 
   useEffect(() => () => {
     if (highlightTimerRef.current) {
@@ -1418,6 +1462,8 @@ export default function QuranReaderScreen({
 
   useEffect(() => {
     restorationHighlightedRef.current = false;
+    restorationTargetRef.current =
+      initialAyah && initialAyah > 0 ? { surah: safeSurahNumber, ayah: initialAyah } : null;
   }, [safeSurahNumber, initialAyah, initialPage]);
 
   const loadPageData = useCallback(
@@ -1433,23 +1479,27 @@ export default function QuranReaderScreen({
           if (requestId === pageRequestRef.current) {
             setCurrentPageData(cached);
             setPageLoading(false);
-            const cachedTarget =
-              (initialAyah
-                ? cached.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah)
-                : null) ||
-              cached.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === lastSavedAyahRef.current) ||
-              cached.ayahs.find((a) => a.surah.number === safeSurahNumber) ||
-              cached.ayahs[0];
-            if (
-              !restorationHighlightedRef.current &&
-              initialAyah &&
-              pageToLoad === initialResolvedPage &&
-              cachedTarget &&
-              cachedTarget.surah.number === safeSurahNumber &&
-              cachedTarget.numberInSurah === initialAyah
-            ) {
-              restorationHighlightedRef.current = true;
-              flashMushafAyah(cachedTarget.number);
+            const target = restorationTargetRef.current;
+            if (target && pageToLoad === initialResolvedPage) {
+              const found = cached.ayahs.find(
+                (a) => a.surah.number === target.surah && a.numberInSurah === target.ayah
+              );
+              if (found) {
+                surahNumberRef.current = found.surah.number;
+                lastSavedAyahRef.current = found.numberInSurah;
+                setCurrentVisibleAyah(found.numberInSurah);
+              } else {
+                console.warn(
+                  `[QuranReader] Restoration target mismatch: Surah ${target.surah}:${target.ayah} not on Mushaf page ${pageToLoad}`
+                );
+              }
+            } else if (!target) {
+              const firstAyah = cached.ayahs[0];
+              if (firstAyah) {
+                surahNumberRef.current = firstAyah.surah.number;
+                lastSavedAyahRef.current = firstAyah.numberInSurah;
+                setCurrentVisibleAyah(firstAyah.numberInSurah);
+              }
             }
           }
         }
@@ -1459,34 +1509,27 @@ export default function QuranReaderScreen({
         if (requestId !== pageRequestRef.current) return;
         if (data && data.pageNumber === pageToLoad && Array.isArray(data.ayahs) && data.ayahs.length > 0) {
           setCurrentPageData(data);
-          let targetAyahItem =
-            (initialAyah
-              ? data.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah)
-              : null) ||
-            data.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === lastSavedAyahRef.current) ||
-            data.ayahs.find((a) => a.surah.number === safeSurahNumber) ||
-            data.ayahs[0];
-          if (
-            !restorationHighlightedRef.current &&
-            initialAyah &&
-            pageToLoad === initialResolvedPage &&
-            targetAyahItem.surah.number === safeSurahNumber &&
-            targetAyahItem.numberInSurah === initialAyah
-          ) {
-            restorationHighlightedRef.current = true;
-            flashMushafAyah(targetAyahItem.number);
-          }
-          const activeSurahNum = targetAyahItem.surah.number;
-          const activeAyahNum = targetAyahItem.numberInSurah;
-          surahNumberRef.current = activeSurahNum;
-          lastSavedAyahRef.current = activeAyahNum;
-          setCurrentVisibleAyah(activeAyahNum);
-          setSelectedAyah(null);
-          setSelectedAyahY(0);
-          saveReadingPosition(activeSurahNum, activeAyahNum, pageToLoad);
-          saveQuranCache(`surah-last-ayah:${activeSurahNum}`, { ayah: activeAyahNum });
-          if (targetAyahItem.surah.englishName) {
-            saveLastReadPosition(activeSurahNum, activeAyahNum, targetAyahItem.surah.englishName, pageToLoad);
+          const target = restorationTargetRef.current;
+          if (target && pageToLoad === initialResolvedPage) {
+            const found = data.ayahs.find(
+              (a) => a.surah.number === target.surah && a.numberInSurah === target.ayah
+            );
+            if (found) {
+              surahNumberRef.current = found.surah.number;
+              lastSavedAyahRef.current = found.numberInSurah;
+              setCurrentVisibleAyah(found.numberInSurah);
+            } else {
+              console.warn(
+                `[QuranReader] Restoration target mismatch: Surah ${target.surah}:${target.ayah} not on Mushaf page ${pageToLoad}`
+              );
+            }
+          } else if (!target) {
+            const firstAyah = data.ayahs[0];
+            if (firstAyah) {
+              surahNumberRef.current = firstAyah.surah.number;
+              lastSavedAyahRef.current = firstAyah.numberInSurah;
+              setCurrentVisibleAyah(firstAyah.numberInSurah);
+            }
           }
         }
         setPageLoading(false);
@@ -1503,7 +1546,7 @@ export default function QuranReaderScreen({
         setPageLoading(false);
       }
     },
-    [safeSurahNumber, initialAyah, initialResolvedPage, showTranslation, edition?.editionIdentifier, flashMushafAyah]
+    [initialResolvedPage, showTranslation, edition?.editionIdentifier]
   );
 
   const goToPage = useCallback(
@@ -1511,6 +1554,7 @@ export default function QuranReaderScreen({
       if (targetPage < 1 || targetPage > TOTAL_MUSHAF_PAGES) return;
       haptic('light');
       clearHighlightTimer();
+      restorationTargetRef.current = null;
       setSelectedAyah(null);
       setSelectedAyahY(0);
       setActiveTafsirAyah(null);
@@ -1540,7 +1584,7 @@ export default function QuranReaderScreen({
       }
       loadPageData(targetPage);
     },
-    [haptic, showTranslation, edition?.editionIdentifier, loadPageData]
+    [haptic, showTranslation, edition?.editionIdentifier, loadPageData, clearHighlightTimer]
   );
 
   const lastInitialPagePropRef = useRef<number | undefined>(initialPage);
@@ -2906,6 +2950,7 @@ export default function QuranReaderScreen({
 
     return (
       <FlatList
+        ref={mushafListRef}
         data={[currentPage]}
         keyExtractor={(item) => `mushaf-page-${item}`}
         renderItem={() => (
@@ -2939,11 +2984,13 @@ export default function QuranReaderScreen({
                       style={styles.mushafTajweedAyahRow}
                       onLayout={(event) => {
                         const { y, height } = event.nativeEvent.layout;
+                        ayahLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y, height };
                         ayahLayoutsRef.current[a.number] = { y, height };
                         if (selectedAyah?.number === a.number) {
                           setSelectedAyahY(y);
                           setSelectedAyahHeight(height);
                         }
+                        handleMushafAyahLayout(a.surah.number, a.numberInSurah, y, height);
                       }}
                     >
                       {a.numberInSurah === 1 && renderSurahStartBanner(a.surah)}
@@ -2955,7 +3002,12 @@ export default function QuranReaderScreen({
                         testID={`mushaf-ayah-${a.surah.number}-${a.numberInSurah}`}
                         style={[
                           styles.mushafTajweedAyahTouch,
-                          highlightedMushafAyah === a.number && { backgroundColor: colors.accentDim, borderRadius: 6 },
+                          highlightedAyahKey === `${a.surah.number}:${a.numberInSurah}` && {
+                            backgroundColor: colors.accentDim,
+                            borderColor: colors.accent,
+                            borderWidth: 1,
+                            borderRadius: 6,
+                          },
                           selectedAyah?.number === a.number && { backgroundColor: colors.accentDim, borderRadius: 6 },
                         ]}
                       >
@@ -2984,7 +3036,7 @@ export default function QuranReaderScreen({
                       <View style={styles.mushafAyahsContainer}>
                         {group.ayahs.map((a) => {
                           const isSelected = selectedAyah?.number === a.number;
-                          const isRestorationHighlight = highlightedMushafAyah === a.number;
+                          const isRestorationHighlight = highlightedAyahKey === `${a.surah.number}:${a.numberInSurah}`;
                           return (
                             <TouchableOpacity
                               key={`mushaf-${a.surah.number}-${a.numberInSurah}`}
@@ -2997,15 +3049,22 @@ export default function QuranReaderScreen({
                                 const { y, height } = event.nativeEvent.layout;
                                 const groupY = groupOffsetsRef.current[group.surah.number] || 0;
                                 const absoluteY = groupY + y;
+                                ayahLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y: absoluteY, height };
                                 ayahLayoutsRef.current[a.number] = { y: absoluteY, height };
                                 if (selectedAyah?.number === a.number) {
                                   setSelectedAyahY(absoluteY);
                                   setSelectedAyahHeight(height);
                                 }
+                                handleMushafAyahLayout(a.surah.number, a.numberInSurah, absoluteY, height);
                               }}
                               style={[
                                 styles.mushafAyahTouch,
-                                isRestorationHighlight && { backgroundColor: colors.accentDim, borderRadius: 8 },
+                                isRestorationHighlight && {
+                                  backgroundColor: colors.accentDim,
+                                  borderColor: colors.accent,
+                                  borderWidth: 1,
+                                  borderRadius: 8,
+                                },
                                 isSelected && { backgroundColor: colors.accentDim, borderRadius: 8 },
                               ]}
                             >
