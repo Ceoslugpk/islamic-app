@@ -529,6 +529,7 @@ export default function SettingsScreen({
   const [showBackupRestore, setShowBackupRestore] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
   const [isSwitchingLanguage, setIsSwitchingLanguage] = useState(false);
+  const [switchingTargetLang, setSwitchingTargetLang] = useState<AppLanguage | null>(null);
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSwitchingLanguageRef = useRef(false);
   const mountedRef = useRef(true);
@@ -741,15 +742,6 @@ export default function SettingsScreen({
   } as const;
 
   const layout = useSettingsLayout();
-  const availableLanguageWidth =
-    Math.min(layout.width - layout.screenPad * 2, layout.maxW) - layout.cardPad * 2;
-  const languageColumns =
-    availableLanguageWidth >= 500 ? 3 : availableLanguageWidth >= 280 ? 2 : 1;
-  const languageGap = layout.isCompact ? 8 : 10;
-  const languageCardWidth =
-    languageColumns > 1
-      ? Math.floor((availableLanguageWidth - (languageColumns - 1) * languageGap) / languageColumns)
-      : availableLanguageWidth;
   const themeOptions: SegOption<'system' | 'ink' | 'paper'>[] = ([
     'system',
     'ink',
@@ -827,136 +819,186 @@ export default function SettingsScreen({
             accessibilityRole="text"
           />
           <Hairline />
-          <View
-            style={[
-              styles.langGrid,
-              {
-                paddingHorizontal: layout.cardPad,
-                paddingVertical: layout.rowPad,
-                gap: languageGap,
-              },
-            ]}
-          >
-            {APP_LANGUAGE_OPTIONS.map((opt) => {
+          <View style={styles.langList}>
+            {APP_LANGUAGE_OPTIONS.map((opt, index) => {
               const isSelected = settings.language === opt.value;
+              const isTarget = isSwitchingLanguage && switchingTargetLang === opt.value;
               const localizedName = getLocalizedLanguageName(opt.englishName);
               const directionBadge = opt.direction;
               const nextLang = opt.value;
+              const isArabicScript = opt.value === 'ar' || opt.value === 'ur';
+
               return (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[
-                    styles.langCard,
-                    {
-                      width: languageCardWidth,
-                      borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                      backgroundColor: isSelected ? colors.accentDim : colors.bgSurface,
-                      paddingVertical: layout.isCompact ? 10 : 12,
-                      paddingHorizontal: layout.isCompact ? 10 : 12,
-                    },
-                    isSwitchingLanguage && { opacity: 0.55 },
-                  ]}
-                  disabled={isSwitchingLanguage}
-                  onPress={() => {
-                    if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
-                      isSwitchingLanguageRef.current = true;
-                      setIsSwitchingLanguage(true);
-                      setLanguageError(null);
-                      haptic('selection');
-                      if (reloadTimerRef.current) {
-                        clearTimeout(reloadTimerRef.current);
-                        reloadTimerRef.current = null;
-                      }
-                      // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
-                      // after a reload on Android/iOS — trigger a native reload so the
-                      // user doesn't have to restart manually. Await the persist so the
-                      // reload boots in the NEW language (otherwise Urdu->English could
-                      // reload stale). setLanguage is typed Promise<void>|void.
-                      Promise.resolve(setLanguage(nextLang)).then(() => {
-                        onPrepareReload?.();
-                        prepareNativeLayoutDirection(nextLang);
-                        if (Platform.OS !== 'web') {
-                          reloadTimerRef.current = setTimeout(() => {
-                            reloadTimerRef.current = null;
-                            Updates.reloadAsync().catch(() => DevSettings.reload());
-                          }, 400);
-                        } else {
-                          isSwitchingLanguageRef.current = false;
-                          setIsSwitchingLanguage(false);
+                <View key={opt.value}>
+                  {index > 0 && <Hairline />}
+                  <TouchableOpacity
+                    style={[
+                      styles.langRow,
+                      {
+                        paddingHorizontal: layout.cardPad,
+                        paddingVertical: layout.isCompact ? 12 : 14,
+                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                      },
+                      isSwitchingLanguage && !isTarget && { opacity: 0.55 },
+                    ]}
+                    disabled={isSwitchingLanguage}
+                    onPress={() => {
+                      if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
+                        isSwitchingLanguageRef.current = true;
+                        setIsSwitchingLanguage(true);
+                        setSwitchingTargetLang(nextLang);
+                        setLanguageError(null);
+                        haptic('selection');
+                        if (reloadTimerRef.current) {
+                          clearTimeout(reloadTimerRef.current);
+                          reloadTimerRef.current = null;
                         }
-                      })
-                        .catch(() => {
-                          isSwitchingLanguageRef.current = false;
-                          if (reloadTimerRef.current) {
-                            clearTimeout(reloadTimerRef.current);
-                            reloadTimerRef.current = null;
+                        // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
+                        // after a reload on Android/iOS — trigger a native reload so the
+                        // user doesn't have to restart manually. Await the persist so the
+                        // reload boots in the NEW language (otherwise Urdu->English could
+                        // reload stale). setLanguage is typed Promise<void>|void.
+                        Promise.resolve(setLanguage(nextLang)).then(() => {
+                          onPrepareReload?.();
+                          prepareNativeLayoutDirection(nextLang);
+                          if (Platform.OS !== 'web') {
+                            reloadTimerRef.current = setTimeout(() => {
+                              reloadTimerRef.current = null;
+                              Updates.reloadAsync().catch(() => DevSettings.reload());
+                            }, 400);
+                          } else {
+                            isSwitchingLanguageRef.current = false;
+                            if (mountedRef.current) {
+                              setIsSwitchingLanguage(false);
+                              setSwitchingTargetLang(null);
+                            }
                           }
-                          if (mountedRef.current) {
-                            setIsSwitchingLanguage(false);
-                            setLanguageError(t('Still could not load. Try again later.'));
-                          }
-                        });
-                    }
-                  }}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: isSelected, disabled: isSwitchingLanguage }}
-                  accessibilityLabel={`${opt.nativeLabel}, ${localizedName} (${directionBadge})${isSelected ? ', ' + t('selected') : ''}`}
-                  hitSlop={touchTargetTokens.hitSlop8}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.langCardHeader}>
-                    <Text
-                      style={[
-                        styles.langCardTitle,
-                        {
-                          color: isSelected ? colors.accent : colors.textPrimary,
-                          fontSize: layout.isCompact ? 14 : 15,
-                          writingDirection: opt.direction === 'RTL' ? 'rtl' : 'ltr',
-                        },
-                        opt.fontFamily ? { fontFamily: opt.fontFamily } : null,
-                      ]}
-                      numberOfLines={1}
-                      adjustsFontSizeToFit
-                      minimumFontScale={0.85}
-                    >
-                      {opt.label}
-                    </Text>
-                    <View
-                      style={[
-                        styles.langRadio,
-                        {
-                          borderColor: isSelected ? colors.accent : colors.borderStrong,
-                          backgroundColor: isSelected ? colors.accent : 'transparent',
-                        },
-                      ]}
-                    >
-                      {isSelected && (
-                        <Ionicons name="checkmark" size={13} color={colors.onAccent} />
+                        })
+                          .catch(() => {
+                            isSwitchingLanguageRef.current = false;
+                            if (reloadTimerRef.current) {
+                              clearTimeout(reloadTimerRef.current);
+                              reloadTimerRef.current = null;
+                            }
+                            if (mountedRef.current) {
+                              setIsSwitchingLanguage(false);
+                              setSwitchingTargetLang(null);
+                              setLanguageError(t('Still could not load. Try again later.'));
+                            }
+                          });
+                      }
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: isSelected, disabled: isSwitchingLanguage }}
+                    accessibilityLabel={`${opt.nativeLabel}, ${localizedName} (${directionBadge})${isSelected ? ', ' + t('selected') : ''}`}
+                    hitSlop={touchTargetTokens.hitSlop8}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.langRowBody}>
+                      <View style={styles.langTitleRow}>
+                        <Text
+                          style={[
+                            styles.langNativeText,
+                            {
+                              color: isSelected ? colors.accent : colors.textPrimary,
+                              fontSize: isArabicScript
+                                ? (layout.isCompact ? 17 : 18)
+                                : (layout.isCompact ? 15 : 16),
+                              writingDirection: opt.direction === 'RTL' ? 'rtl' : 'ltr',
+                            },
+                            opt.fontFamily ? { fontFamily: opt.fontFamily } : null,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {opt.label}
+                        </Text>
+                        <View
+                          style={[
+                            styles.langDirectionBadge,
+                            {
+                              borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                              backgroundColor: colors.bgRaised,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.langDirectionBadgeText,
+                              {
+                                color: isSelected ? colors.accent : colors.textMuted,
+                                fontSize: layout.isCompact ? 10 : 11,
+                              },
+                            ]}
+                          >
+                            {opt.direction}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text
+                        style={[
+                          styles.langSubText,
+                          {
+                            color: isSelected ? colors.accent : colors.textSecondary,
+                            fontSize: layout.isCompact ? 12 : 13,
+                            writingDirection: isRtlLanguage(settings.language) ? 'rtl' : 'ltr',
+                          },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {localizedName}
+                      </Text>
+                    </View>
+
+                    <View style={styles.langEndContainer}>
+                      {isTarget ? (
+                        <ActivityIndicator size="small" color={colors.accent} />
+                      ) : isSelected ? (
+                        <View
+                          style={[
+                            styles.langCheckCircle,
+                            {
+                              backgroundColor: colors.accent,
+                            },
+                          ]}
+                        >
+                          <Ionicons name="checkmark" size={14} color={colors.onAccent} />
+                        </View>
+                      ) : (
+                        <View
+                          style={[
+                            styles.langRadioCircle,
+                            {
+                              borderColor: colors.borderStrong,
+                            },
+                          ]}
+                        />
                       )}
                     </View>
-                  </View>
-                  <Text
-                    style={[
-                      styles.langCardSub,
-                      {
-                        color: isSelected ? colors.accent : colors.textMuted,
-                        fontSize: layout.isCompact ? 11 : 12,
-                        writingDirection: isRtlLanguage(settings.language) ? 'rtl' : 'ltr',
-                      },
-                    ]}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.85}
-                  >
-                    {`${localizedName} · ${directionBadge}`}
-                  </Text>
-                </TouchableOpacity>
+                  </TouchableOpacity>
+                </View>
               );
             })}
           </View>
           {languageError ? (
-            <View style={{ paddingHorizontal: layout.cardPad, paddingTop: 8, paddingBottom: 4 }}>
-              <Text style={{ fontFamily: 'Manrope_500Medium', fontSize: 13, color: colors.accent }}>
+            <View
+              style={[
+                styles.langErrorBanner,
+                {
+                  paddingHorizontal: layout.cardPad,
+                  paddingVertical: layout.rowPad,
+                  backgroundColor: colors.accentDim,
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  borderTopColor: colors.borderSubtle,
+                },
+              ]}
+            >
+              <Ionicons name="alert-circle-outline" size={16} color={colors.accent} style={{ marginEnd: 6 }} />
+              <Text
+                style={[
+                  styles.langErrorText,
+                  { color: colors.accent, fontSize: layout.isCompact ? 12 : 13 },
+                ]}
+              >
                 {languageError}
               </Text>
             </View>
@@ -2134,38 +2176,71 @@ const styles = StyleSheet.create({
     top: -5,
     marginLeft: -8,
   },
-  langGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  langList: {
+    width: '100%',
   },
-  langCard: {
-    borderWidth: 1,
-    borderRadius: 10,
-    minHeight: 52,
-    justifyContent: 'center',
-  },
-  langCardHeader: {
+  langRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 54,
   },
-  langCardTitle: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 15,
+  langRowBody: {
     flex: 1,
+    justifyContent: 'center',
+    marginEnd: 12,
   },
-  langRadio: {
+  langTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  langNativeText: {
+    fontFamily: 'Manrope_700Bold',
+  },
+  langDirectionBadge: {
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langDirectionBadgeText: {
+    fontFamily: 'Manrope_600SemiBold',
+    letterSpacing: 0.5,
+  },
+  langSubText: {
+    fontFamily: 'Manrope_500Medium',
+    marginTop: 2,
+  },
+  langEndContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 28,
+    height: 28,
+    marginStart: 8,
+  },
+  langCheckCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langRadioCircle: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginStart: 8,
+    borderWidth: 1.5,
   },
-  langCardSub: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
-    marginTop: 4,
+  langErrorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  langErrorText: {
+    fontFamily: 'Manrope_600SemiBold',
+    flex: 1,
   },
   segRow: {
     flexDirection: 'row',

@@ -13,7 +13,8 @@ import si from '../locales/si.json';
 export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi' | 'ml' | 'si';
 
 export function isRtlLanguage(lang: AppLanguage | string | null | undefined): boolean {
-  return lang === 'ur' || lang === 'ar';
+  if (!lang) return false;
+  return lang === 'ur' || lang === 'ar' || lang.startsWith('ur-') || lang.startsWith('ur_') || lang.startsWith('ar-') || lang.startsWith('ar_');
 }
 
 export function isAppLanguage(value: unknown): value is AppLanguage {
@@ -168,16 +169,17 @@ export function setAppLanguage(lang: AppLanguage): void {
 
 export function getCurrentLanguage(): AppLanguage {
   const lng = i18n.language;
-  if (lng === 'ar') return 'ar';
-  if (lng === 'ur') return 'ur';
-  if (lng === 'hi') return 'hi';
-  if (lng === 'ml') return 'ml';
-  if (lng === 'si') return 'si';
+  if (!lng) return 'en';
+  if (lng === 'ar' || lng.startsWith('ar-') || lng.startsWith('ar_')) return 'ar';
+  if (lng === 'ur' || lng.startsWith('ur-') || lng.startsWith('ur_')) return 'ur';
+  if (lng === 'hi' || lng.startsWith('hi-') || lng.startsWith('hi_')) return 'hi';
+  if (lng === 'ml' || lng.startsWith('ml-') || lng.startsWith('ml_')) return 'ml';
+  if (lng === 'si' || lng.startsWith('si-') || lng.startsWith('si_')) return 'si';
   return 'en';
 }
 
 export function isRTL(): boolean {
-  return isRtlLanguage(i18n.language);
+  return isRtlLanguage(getCurrentLanguage());
 }
 
 /**

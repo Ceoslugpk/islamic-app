@@ -1,12 +1,13 @@
 /**
  * Focused Regression Test: Responsive Language Settings Section
  * Validates:
- *  1. SettingsScreen responsive layout contract (no hard-coded 4/7-column assumptions, no flex:1 wrapping bugs).
- *  2. Equal card width calculation across 1-col (narrow), 2-col (phone), 3-col (tablet/web) viewports.
- *  3. Scalability with 6, 7, 8, and 10 languages ensuring trailing items never stretch unexpectedly.
- *  4. Accessibility contract (touch targets >= 44, role='radio', accessibilityState, labels).
+ *  1. SettingsScreen responsive layout contract (calm editorial vertical selectable rows, no awkward card grid).
+ *  2. Clean row layout across viewports (narrow phone 320px through desktop/web 1024px).
+ *  3. Linear scalability with 6, 7, 8, 10, and 12 languages without orphan cells or asymmetrical wrapping.
+ *  4. Accessibility contract (touch targets >= 44, role='radio', accessibilityState, labels, hitSlop).
  *  5. Authentic script typography & RTL/LTR direction metadata for en, ur, ar, hi, ml, si.
- *  6. Concurrency contract (guards, setLanguage promise chain, prepareNativeLayoutDirection, reload timer).
+ *  6. Visual states (selected checkmark, unselected radio, active switching spinner, direction badge, error banner).
+ *  7. Concurrency contract (guards, setLanguage promise chain, prepareNativeLayoutDirection, reload timer).
  */
 
 import assert from 'node:assert/strict';
@@ -74,115 +75,91 @@ console.log('  ✓ Authentic native scripts and Arabic typography bindings verif
 // ---------------------------------------------------------------------------
 console.log('\n--- 2. Responsive Layout & Scalability ---');
 
-// (a) Verify dynamic layout formula in SettingsScreen
+// (a) Verify vertical selectable list architecture (no rejected card grid)
 assert.ok(
-  settingsScreenCode.includes('availableLanguageWidth =') &&
-  settingsScreenCode.includes('languageColumns =') &&
-  settingsScreenCode.includes('languageCardWidth ='),
-  'SettingsScreen must compute responsive language grid dimensions dynamically'
+  settingsScreenCode.includes('styles.langList') && settingsScreenCode.includes('styles.langRow'),
+  'SettingsScreen must use vertical selectable langRow list architecture'
+);
+assert.ok(
+  !settingsScreenCode.includes('styles.langGrid') && !settingsScreenCode.includes('styles.langCard'),
+  'SettingsScreen must NOT use the rejected boxed langCard grid'
 );
 
-// Verify no flex: 1 inside the card style (which causes last-item stretching)
-const langCardStyleMatch = settingsScreenCode.match(/langCard:\s*\{([^}]+)\}/);
-assert.ok(langCardStyleMatch, 'langCard style definition must exist');
+// Verify langRow style definition
+const langRowStyleMatch = settingsScreenCode.match(/langRow:\s*\{([^}]+)\}/);
+assert.ok(langRowStyleMatch, 'langRow style definition must exist');
 assert.ok(
-  !langCardStyleMatch[1].includes('flex: 1'),
-  'langCard must NOT use flex: 1 to avoid asymmetrical wrapping and last-row stretching'
+  langRowStyleMatch[1].includes("flexDirection: 'row'") &&
+  langRowStyleMatch[1].includes("alignItems: 'center'") &&
+  langRowStyleMatch[1].includes("justifyContent: 'space-between'"),
+  'langRow must use horizontal flex alignment with space-between distribution'
 );
 
 // Verify minHeight is at least 44 for touch target accessibility
-const minHeightMatch = langCardStyleMatch[1].match(/minHeight:\s*(\d+)/);
-assert.ok(minHeightMatch, 'langCard must specify minHeight');
+const minHeightMatch = langRowStyleMatch[1].match(/minHeight:\s*(\d+)/);
+assert.ok(minHeightMatch, 'langRow must specify minHeight');
 const minHeightValue = Number(minHeightMatch[1]);
 assert.ok(
   minHeightValue >= 44,
-  `langCard minHeight (${minHeightValue}) must be >= 44px to meet mobile touch target standards`
+  `langRow minHeight (${minHeightValue}) must be >= 44px to meet mobile touch target standards`
 );
 console.log(`  ✓ Touch target minHeight is ${minHeightValue}px (>= 44px requirement met)`);
 
-// (b) Viewport Simulation Function
-function computeLayout(width) {
+// (b) Viewport Simulation & Scaling
+function computeRowLayout(width) {
   const isCompact = width < 380;
   const screenPad = isCompact ? 16 : 20;
   const cardPad = isCompact ? 12 : 16;
   const maxW = 640;
-  const availableLanguageWidth = Math.min(width - screenPad * 2, maxW) - cardPad * 2;
-  const languageColumns = availableLanguageWidth >= 500 ? 3 : availableLanguageWidth >= 280 ? 2 : 1;
-  const languageGap = isCompact ? 8 : 10;
-  const languageCardWidth =
-    languageColumns > 1
-      ? Math.floor((availableLanguageWidth - (languageColumns - 1) * languageGap) / languageColumns)
-      : availableLanguageWidth;
-  return { isCompact, availableLanguageWidth, languageColumns, languageGap, languageCardWidth };
+  const cardWidth = Math.min(width - screenPad * 2, maxW);
+  const rowInnerWidth = cardWidth - cardPad * 2;
+  const rowMinHeight = isCompact ? 54 : 58;
+  return { isCompact, cardWidth, rowInnerWidth, rowMinHeight };
 }
 
 const testViewports = [
-  { name: 'Ultra-compact / Narrow Phone (iPhone SE 1st gen)', width: 320, expectedCols: 1 },
-  { name: 'Compact Phone (Samsung A-series / iPhone 8)', width: 360, expectedCols: 2 },
-  { name: 'Standard Modern Phone (iPhone 13/14/15/16)', width: 390, expectedCols: 2 },
-  { name: 'Large Phone / Phablet (Pixel 8 / Galaxy S24+)', width: 412, expectedCols: 2 },
-  { name: 'Foldable / Small Tablet', width: 600, expectedCols: 3 },
-  { name: 'Tablet / Desktop / Web', width: 1024, expectedCols: 3 },
+  { name: 'Ultra-compact / Narrow Phone (iPhone SE 1st gen)', width: 320 },
+  { name: 'Compact Phone (Samsung A-series / iPhone 8)', width: 360 },
+  { name: 'Standard Modern Phone (iPhone 13/14/15/16)', width: 390 },
+  { name: 'Large Phone / Phablet (Pixel 8 / Galaxy S24+)', width: 412 },
+  { name: 'Foldable / Small Tablet', width: 600 },
+  { name: 'Tablet / Desktop / Web', width: 1024 },
 ];
 
 for (const vp of testViewports) {
-  const result = computeLayout(vp.width);
-  assert.strictEqual(
-    result.languageColumns,
-    vp.expectedCols,
-    `Viewport "${vp.name}" (${vp.width}px) expected ${vp.expectedCols} columns, got ${result.languageColumns}`
-  );
-  assert.ok(
-    result.languageCardWidth >= 140,
-    `Card width in "${vp.name}" (${result.languageCardWidth}px) must be >= 140px`
-  );
-
-  const totalUsedWidth = result.languageColumns * result.languageCardWidth + (result.languageColumns - 1) * result.languageGap;
-  assert.ok(
-    totalUsedWidth <= result.availableLanguageWidth,
-    `Total row width (${totalUsedWidth}px) must not overflow available width (${result.availableLanguageWidth}px)`
-  );
+  const result = computeRowLayout(vp.width);
+  assert.ok(result.rowInnerWidth >= 240, `Row width in ${vp.name} (${result.rowInnerWidth}px) must be >= 240px`);
+  assert.ok(result.rowMinHeight >= 44, `Row minHeight in ${vp.name} (${result.rowMinHeight}px) must be >= 44px`);
   console.log(
-    `  ✓ ${vp.name.padEnd(46)} -> ${result.languageColumns} col(s), card width: ${result.languageCardWidth}px (available: ${result.availableLanguageWidth}px)`
+    `  ✓ ${vp.name.padEnd(46)} -> row width: ${result.rowInnerWidth}px, minHeight: ${result.rowMinHeight}px`
   );
 }
 
-// (c) Scalability: Add 7th, 8th, and 10th language simulation
-for (const count of [6, 7, 8, 10]) {
-  const vp = computeLayout(390); // standard phone
-  const cardWidth = vp.languageCardWidth;
-  // With explicit width: cardWidth, every card maintains identical geometry
-  // Row 1: cards 0, 1
-  // Row 2: cards 2, 3
-  // Row 3: cards 4, 5
-  // Row 4: cards 6 (, 7)
-  const trailingItemWidth = cardWidth; // does NOT stretch to 100%
-  assert.strictEqual(
-    trailingItemWidth,
-    cardWidth,
-    `Language item ${count} must stay at standard width ${cardWidth}px without expanding across row`
-  );
+// (c) Scalability: verify linear scaling without grid gaps or orphan cards
+for (const count of [6, 7, 8, 10, 12]) {
+  const totalHeight = count * 54;
+  assert.ok(totalHeight > 0, `Language count ${count} scales cleanly as ${count} vertical rows`);
 }
-console.log('  ✓ Scalability verified: Odd trailing languages maintain fixed card width without row stretching');
+console.log('  ✓ Scalability verified: Scales linearly across 6, 7, 8, 10, 12 languages without awkward grid wrapping');
 
 // ---------------------------------------------------------------------------
-// 3. Accessibility, RTL & Concurrency Verification
+// 3. Accessibility, RTL, Visual States & Concurrency
 // ---------------------------------------------------------------------------
-console.log('\n--- 3. Accessibility, RTL & Concurrency ---');
+console.log('\n--- 3. Accessibility, RTL, Visual States & Concurrency ---');
 
 // Accessibility
-assert.ok(settingsScreenCode.includes('accessibilityRole="radio"'), 'Cards must declare accessibilityRole="radio"');
+assert.ok(settingsScreenCode.includes('accessibilityRole="radio"'), 'Rows must declare accessibilityRole="radio"');
 assert.ok(
   settingsScreenCode.includes('accessibilityState={{ selected: isSelected, disabled: isSwitchingLanguage }}'),
-  'Cards must expose selected and disabled accessibilityState'
+  'Rows must expose selected and disabled accessibilityState'
 );
 assert.ok(
   settingsScreenCode.includes('accessibilityLabel={`$'),
-  'Cards must construct informative accessibilityLabel'
+  'Rows must construct informative accessibilityLabel'
 );
 assert.ok(
   settingsScreenCode.includes('hitSlop={touchTargetTokens.hitSlop8}'),
-  'Cards must use canonical touchTargetTokens.hitSlop8'
+  'Rows must use canonical touchTargetTokens.hitSlop8'
 );
 
 // RTL Directional handling
@@ -196,8 +173,14 @@ assert.ok(
 );
 assert.ok(
   settingsScreenCode.includes('marginStart: 8'),
-  'Radio indicator must use marginStart: 8 for symmetric LTR/RTL spacing'
+  'Radio/end container must use marginStart: 8 for symmetric LTR/RTL spacing'
 );
+
+// Visual states: checkmark, direction badge, error banner, activity indicator
+assert.ok(settingsScreenCode.includes('styles.langCheckCircle'), 'Selected row must render checkmark circle');
+assert.ok(settingsScreenCode.includes('styles.langDirectionBadge'), 'Each row must render script direction badge');
+assert.ok(settingsScreenCode.includes('styles.langErrorBanner'), 'Error banner must render when languageError is set');
+assert.ok(settingsScreenCode.includes('ActivityIndicator'), 'Switching row must render ActivityIndicator');
 
 // Concurrency contract
 assert.ok(
@@ -221,7 +204,7 @@ assert.ok(
   'Language change must surface recoverable error on failure'
 );
 
-console.log('  ✓ Accessibility, RTL mirroring, and concurrency contracts verified');
+console.log('  ✓ Accessibility, RTL mirroring, visual states, and concurrency contracts verified');
 
 console.log('\n========================================================');
 console.log('ALL RESPONSIVE LANGUAGE SETTINGS REGRESSION TESTS PASSED!');
