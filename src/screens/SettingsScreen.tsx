@@ -21,7 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { getForwardIcon, getBackIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
-import { t, prepareNativeLayoutDirection, AppLanguage } from '../lib/i18n';
+import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage } from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import {
@@ -97,6 +97,24 @@ const MISSION_TRANSLATIONS: { lang: string; text: string }[] = [
 const THANKS_TEXT =
   'Thank you to every provider who makes this possible: Islamic.app · AlAdhan · AlQuran Cloud · islamic.network · EveryAyah · EsmaulHusna.org · OpenStreetMap · Google Fonts · Expo & the open-source community. May Allah reward them all.';
 
+
+export interface AppLanguageOption {
+  value: AppLanguage;
+  label: string;
+  nativeLabel: string;
+  englishName: string;
+  direction: 'LTR' | 'RTL';
+  fontFamily?: string;
+}
+
+export const APP_LANGUAGE_OPTIONS: readonly AppLanguageOption[] = [
+  { value: 'en', label: 'English', nativeLabel: 'English', englishName: 'English', direction: 'LTR' },
+  { value: 'ur', label: 'اردو', nativeLabel: 'اردو', englishName: 'Urdu', direction: 'RTL', fontFamily: 'NotoNaskhArabic_700Bold' },
+  { value: 'ar', label: 'العربية', nativeLabel: 'العربية', englishName: 'Arabic', direction: 'RTL', fontFamily: 'NotoNaskhArabic_700Bold' },
+  { value: 'hi', label: 'हिन्दी', nativeLabel: 'हिन्दी', englishName: 'Hindi', direction: 'LTR' },
+  { value: 'ml', label: 'മലയാളം', nativeLabel: 'മലയാളം', englishName: 'Malayalam', direction: 'LTR' },
+  { value: 'si', label: 'සිංහල', nativeLabel: 'සිංහල', englishName: 'Sinhala', direction: 'LTR' },
+];
 
 const QURAN_FONT_OPTIONS: { key: QuranArabicFont; label: string; desc: string }[] = [
   { key: 'amiri', label: 'Amiri', desc: 'Classic Naskh — the Quran reader default' },
@@ -723,6 +741,15 @@ export default function SettingsScreen({
   } as const;
 
   const layout = useSettingsLayout();
+  const availableLanguageWidth =
+    Math.min(layout.width - layout.screenPad * 2, layout.maxW) - layout.cardPad * 2;
+  const languageColumns =
+    availableLanguageWidth >= 500 ? 3 : availableLanguageWidth >= 280 ? 2 : 1;
+  const languageGap = layout.isCompact ? 8 : 10;
+  const languageCardWidth =
+    languageColumns > 1
+      ? Math.floor((availableLanguageWidth - (languageColumns - 1) * languageGap) / languageColumns)
+      : availableLanguageWidth;
   const themeOptions: SegOption<'system' | 'ink' | 'paper'>[] = ([
     'system',
     'ink',
@@ -799,60 +826,134 @@ export default function SettingsScreen({
             }
             accessibilityRole="text"
           />
-          <Segmented<AppLanguage>
-            label={t('Language / زبان')}
-            options={[
-              { value: 'en', label: 'English' },
-              { value: 'ur', label: 'اردو' },
-              { value: 'ar', label: 'العربية' },
-              { value: 'hi', label: 'हिन्दी' },
-              { value: 'ml', label: 'മലയാളം' },
-              { value: 'si', label: 'සිංහල' },
+          <Hairline />
+          <View
+            style={[
+              styles.langGrid,
+              {
+                paddingHorizontal: layout.cardPad,
+                paddingVertical: layout.rowPad,
+                gap: languageGap,
+              },
             ]}
-            value={settings.language}
-            disabled={isSwitchingLanguage}
-            onChange={(nextLang) => {
-              if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
-                isSwitchingLanguageRef.current = true;
-                setIsSwitchingLanguage(true);
-                setLanguageError(null);
-                haptic('selection');
-                if (reloadTimerRef.current) {
-                  clearTimeout(reloadTimerRef.current);
-                  reloadTimerRef.current = null;
-                }
-                // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
-                // after a reload on Android/iOS — trigger a native reload so the
-                // user doesn't have to restart manually. Await the persist so the
-                // reload boots in the NEW language (otherwise Urdu->English could
-                // reload stale). setLanguage is typed Promise<void>|void.
-                Promise.resolve(setLanguage(nextLang)).then(() => {
-                  onPrepareReload?.();
-                  prepareNativeLayoutDirection(nextLang);
-                  if (Platform.OS !== 'web') {
-                    reloadTimerRef.current = setTimeout(() => {
-                      reloadTimerRef.current = null;
-                      Updates.reloadAsync().catch(() => DevSettings.reload());
-                    }, 400);
-                  } else {
-                    isSwitchingLanguageRef.current = false;
-                    setIsSwitchingLanguage(false);
-                  }
-                })
-                  .catch(() => {
-                    isSwitchingLanguageRef.current = false;
-                    if (reloadTimerRef.current) {
-                      clearTimeout(reloadTimerRef.current);
-                      reloadTimerRef.current = null;
+          >
+            {APP_LANGUAGE_OPTIONS.map((opt) => {
+              const isSelected = settings.language === opt.value;
+              const localizedName = getLocalizedLanguageName(opt.englishName);
+              const directionBadge = opt.direction;
+              const nextLang = opt.value;
+              return (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[
+                    styles.langCard,
+                    {
+                      width: languageCardWidth,
+                      borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                      backgroundColor: isSelected ? colors.accentDim : colors.bgSurface,
+                      paddingVertical: layout.isCompact ? 10 : 12,
+                      paddingHorizontal: layout.isCompact ? 10 : 12,
+                    },
+                    isSwitchingLanguage && { opacity: 0.55 },
+                  ]}
+                  disabled={isSwitchingLanguage}
+                  onPress={() => {
+                    if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
+                      isSwitchingLanguageRef.current = true;
+                      setIsSwitchingLanguage(true);
+                      setLanguageError(null);
+                      haptic('selection');
+                      if (reloadTimerRef.current) {
+                        clearTimeout(reloadTimerRef.current);
+                        reloadTimerRef.current = null;
+                      }
+                      // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
+                      // after a reload on Android/iOS — trigger a native reload so the
+                      // user doesn't have to restart manually. Await the persist so the
+                      // reload boots in the NEW language (otherwise Urdu->English could
+                      // reload stale). setLanguage is typed Promise<void>|void.
+                      Promise.resolve(setLanguage(nextLang)).then(() => {
+                        onPrepareReload?.();
+                        prepareNativeLayoutDirection(nextLang);
+                        if (Platform.OS !== 'web') {
+                          reloadTimerRef.current = setTimeout(() => {
+                            reloadTimerRef.current = null;
+                            Updates.reloadAsync().catch(() => DevSettings.reload());
+                          }, 400);
+                        } else {
+                          isSwitchingLanguageRef.current = false;
+                          setIsSwitchingLanguage(false);
+                        }
+                      })
+                        .catch(() => {
+                          isSwitchingLanguageRef.current = false;
+                          if (reloadTimerRef.current) {
+                            clearTimeout(reloadTimerRef.current);
+                            reloadTimerRef.current = null;
+                          }
+                          if (mountedRef.current) {
+                            setIsSwitchingLanguage(false);
+                            setLanguageError(t('Still could not load. Try again later.'));
+                          }
+                        });
                     }
-                    if (mountedRef.current) {
-                      setIsSwitchingLanguage(false);
-                      setLanguageError(t('Still could not load. Try again later.'));
-                    }
-                  });
-              }
-            }}
-          />
+                  }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: isSelected, disabled: isSwitchingLanguage }}
+                  accessibilityLabel={`${opt.nativeLabel}, ${localizedName} (${directionBadge})${isSelected ? ', ' + t('selected') : ''}`}
+                  hitSlop={touchTargetTokens.hitSlop8}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.langCardHeader}>
+                    <Text
+                      style={[
+                        styles.langCardTitle,
+                        {
+                          color: isSelected ? colors.accent : colors.textPrimary,
+                          fontSize: layout.isCompact ? 14 : 15,
+                          writingDirection: opt.direction === 'RTL' ? 'rtl' : 'ltr',
+                        },
+                        opt.fontFamily ? { fontFamily: opt.fontFamily } : null,
+                      ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.85}
+                    >
+                      {opt.label}
+                    </Text>
+                    <View
+                      style={[
+                        styles.langRadio,
+                        {
+                          borderColor: isSelected ? colors.accent : colors.borderStrong,
+                          backgroundColor: isSelected ? colors.accent : 'transparent',
+                        },
+                      ]}
+                    >
+                      {isSelected && (
+                        <Ionicons name="checkmark" size={13} color={colors.onAccent} />
+                      )}
+                    </View>
+                  </View>
+                  <Text
+                    style={[
+                      styles.langCardSub,
+                      {
+                        color: isSelected ? colors.accent : colors.textMuted,
+                        fontSize: layout.isCompact ? 11 : 12,
+                        writingDirection: isRtlLanguage(settings.language) ? 'rtl' : 'ltr',
+                      },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                  >
+                    {`${localizedName} · ${directionBadge}`}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
           {languageError ? (
             <View style={{ paddingHorizontal: layout.cardPad, paddingTop: 8, paddingBottom: 4 }}>
               <Text style={{ fontFamily: 'Manrope_500Medium', fontSize: 13, color: colors.accent }}>
@@ -2032,6 +2133,39 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     top: -5,
     marginLeft: -8,
+  },
+  langGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  langCard: {
+    borderWidth: 1,
+    borderRadius: 10,
+    minHeight: 52,
+    justifyContent: 'center',
+  },
+  langCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  langCardTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 15,
+    flex: 1,
+  },
+  langRadio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginStart: 8,
+  },
+  langCardSub: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    marginTop: 4,
   },
   segRow: {
     flexDirection: 'row',
