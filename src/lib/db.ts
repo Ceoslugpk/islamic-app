@@ -331,6 +331,7 @@ export type HifzStatus = 'not-started' | 'revising' | 'memorized';
 export interface LastReadPosition {
   surah: number;
   ayah: number;
+  page?: number;
   surahName?: string;
   updatedAt: number;
 }
@@ -365,8 +366,8 @@ export interface AudioSettings {
   repeatMode: 'none' | 'one' | 'all';
 }
 
-export function saveLastReadPosition(surah: number, ayah: number, surahName?: string): void {
-  const data: LastReadPosition = { surah, ayah, surahName, updatedAt: Date.now() };
+export function saveLastReadPosition(surah: number, ayah: number, surahName?: string, page?: number): void {
+  const data: LastReadPosition = { surah, ayah, page, surahName, updatedAt: Date.now() };
   webKV.set('quran:last-read', JSON.stringify(data));
 }
 

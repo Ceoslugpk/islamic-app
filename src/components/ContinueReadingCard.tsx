@@ -22,7 +22,7 @@ import { isRTL, t } from '../lib/i18n';
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 export interface ContinueReadingCardProps {
-  onOpenReader?: (surah: number, ayah?: number) => void;
+  onOpenReader?: (surah: number, ayah?: number, page?: number) => void;
   onOpenQuranTab?: () => void;
   style?: any;
 }
@@ -107,15 +107,15 @@ export function ContinueReadingCard({
     try {
       const latest = await getContinueReadingPosition();
       if (latest && latest.surah > 0) {
-        onOpenReader?.(latest.surah, latest.ayah);
+        onOpenReader?.(latest.surah, latest.ayah, latest.page);
         return;
       }
       if (position && position.surah > 0) {
-        onOpenReader?.(position.surah, position.ayah);
+        onOpenReader?.(position.surah, position.ayah, position.page);
       } else if (onOpenQuranTab) {
         onOpenQuranTab();
       } else {
-        onOpenReader?.(1, 1);
+        onOpenReader?.(1, 1, 1);
       }
     } catch {
       inFlightRef.current = false;

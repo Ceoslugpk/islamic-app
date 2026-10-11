@@ -17,12 +17,12 @@ const ok = (m) => console.log(`  [ok] ${m}`);
 const settingsCode = fs.readFileSync('src/lib/settings.tsx', 'utf8');
 const readerCode = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
 
-const MIN = 1.4, MAX = 2.2, STEP = 0.1, DEFAULT = 1.8;
+const MIN = 1.4, MAX = 2.2, STEP = 0.1, DEFAULT = 2.2;
 assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_MIN = 1.4'), 'line-height min is 1.4');
 assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_MAX = 2.2'), 'line-height max is 2.2');
-assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_DEFAULT = 1.8'), 'line-height default is 1.8 (mushaf spacing fix)');
+assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_DEFAULT = 2.2'), 'line-height default is 2.2');
 assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_STEP = 0.1'), 'line-height step is 0.1');
-assert.ok(settingsCode.includes('quranLineHeight: QURAN_LINE_HEIGHT_DEFAULT'), 'settings default applies line-height 1.8');
+assert.ok(settingsCode.includes('quranLineHeight: QURAN_LINE_HEIGHT_DEFAULT'), 'settings default applies line-height 2.2');
 
 // clamp function exists and bounds correctly
 assert.ok(settingsCode.includes('export function clampQuranLineHeight'), 'clampQuranLineHeight exported');
@@ -36,9 +36,9 @@ assert.ok(
   readerCode.includes('Math.round(fontSize * (settings?.quranLineHeight || 1.6))'),
   'cards ayahLineHeight = round(fontSize * lineHeight)'
 );
-// mushaf rows: fontSize + 2
+// mushaf rows: fontSize + 2 in page and tajweed renderers
 const mushafMatches = (readerCode.match(/Math\.round\(\(fontSize \+ 2\) \* \(settings\?\.quranLineHeight \|\| 1\.6\)\)/g) || []);
-assert.strictEqual(mushafMatches.length, 2, `mushaf lineHeight formula must appear for tajweed rows + paragraph text, got ${mushafMatches.length}`);
+assert.strictEqual(mushafMatches.length, 2, `mushaf lineHeight formula must cover page and tajweed renderers, got ${mushafMatches.length}`);
 
 // numeric sweep: no overlap/negative metrics anywhere in range
 for (let fs = 18; fs <= 40; fs += 2) {
@@ -152,20 +152,20 @@ assert.ok(!deep.deadlock, `deep-target retry loop deadlocked: ${JSON.stringify(d
 assert.strictEqual(deep.frames, 287, `retry loop must reach target index+1, got ${deep.frames}`);
 ok(`deep-target retry: simulated loop converges to ayah 286 in ${deep.attempts} retries (no deadlock)`);
 
-// (f) mushaf positioning: ratio y = (targetAyah-1)/total * contentHeight
+// (f) mushaf positioning: exact real page restoration and ayah location without proportional scrolling
 assert.ok(
-  readerCode.includes('const y = Math.max(0, ((targetAyah - 1) / total) * mushafContentHeightRef.current);'),
-  'mushaf positioning maps target ayah to proportional offset'
+  readerCode.includes('fetchMushafPage') && readerCode.includes('currentPage'),
+  'mushaf reader fetches and renders exact real page directly'
 );
 assert.ok(
-  readerCode.includes('const y = Math.max(0, ((pendingScrollAyahRef.current - 1) / total) * h);'),
-  'mushaf onContentSizeChange pending-scroll uses same ratio'
+  readerCode.includes('currentPageData') && !readerCode.includes('mushafContentHeightRef.current'),
+  'mushaf mode uses real page data without proportional scroll approximation'
 );
-ok('mushaf positioning: proportional scroll-to-ayah on both paths');
+ok('mushaf positioning: exact page restoration without proportional scrolling');
 
 // (g) unmount flush: last known ayah saved on exit (marker survives restart)
 assert.ok(
-  readerCode.includes('const ayah = lastSavedAyahRef.current || 1;\n      saveReadingPosition(surahNumberRef.current, ayah);'),
+  readerCode.includes('const ayah = lastSavedAyahRef.current || 1;\n      saveReadingPosition(surahNumberRef.current, ayah'),
   'reader flushes position on unmount'
 );
 assert.ok(
@@ -209,7 +209,7 @@ assert.ok(
   'ContinueReadingCard uses the canonical resolver'
 );
 assert.ok(
-  cardCode.includes('onOpenReader?.(position.surah, position.ayah)'),
+  cardCode.includes('onOpenReader?.(position.surah, position.ayah'),
   'ContinueReadingCard opens reader at exact stored position'
 );
 ok('ContinueReadingCard (Today): resolver + exact-position open');

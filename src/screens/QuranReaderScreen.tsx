@@ -31,10 +31,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHaptics } from '../lib/haptics';
-import { getBackIcon, getForwardIcon, iconSizes } from '../lib/iconMap';
-import { fetchSurah, fetchAyahTafsir, SurahDetail, Ayah } from '../lib/quran';
-import { ArabicText, AyahText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
+import {
+  fetchSurah,
+  fetchAyahTafsir,
+  SurahDetail,
+  Ayah,
+  fetchMushafPage,
+  getMushafPageForAyah,
+  MushafPageDetail,
+  MushafPageAyah,
+  TOTAL_MUSHAF_PAGES,
+  getSurahStartPage,
+  getPrimarySurahForPage,
+} from '../lib/quran';
 import { TajweedText } from '../components/TajweedText';
+import { ArabicText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { stripTajweedHtml } from '../lib/tajweed';
 import { QuranScript, QURAN_SCRIPTS, fetchSurahWithScript, getScriptCacheKey } from '../lib/quranScripts';
 import { retry, cancel, remove, copy, share, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
@@ -44,6 +55,7 @@ import {
   QURAN_FONT_SIZE_MIN,
   QURAN_FONT_SIZE_MAX,
   QURAN_FONT_SIZE_STEP,
+  QURAN_FONT_SIZE_DEFAULT,
   QURAN_LINE_HEIGHT_MIN,
   QURAN_LINE_HEIGHT_MAX,
   QURAN_LINE_HEIGHT_STEP,
@@ -115,6 +127,7 @@ import {
   configureQuranLayoutStorage,
 } from '../lib/quranLayoutCache';
 import { AyahCardRow } from '../components/AyahCardRow';
+import { getBackIcon, getForwardIcon, iconSizes } from '../lib/iconMap';
 
 configureQuranLayoutStorage({
   loadQuranCache,
@@ -144,13 +157,15 @@ function deactivateKeepAwake(tag: number): void {
 interface QuranReaderScreenProps {
   surahNumber: number;
   initialAyah?: number;
+  initialPage?: number;
   onBack: () => void;
-  onNavigateSurah?: (surah: number, initialAyah?: number) => void;
+  onNavigateSurah?: (surah: number, initialAyah?: number, initialPage?: number) => void;
 }
 
 type ReadingMode = 'cards' | 'mushaf';
 
 const STORAGE_KEY_READING_MODE = 'quran-reading-mode';
+const STORAGE_KEY_READING_MODE_EXPLICIT = 'quran-reading-mode-explicit';
 const STORAGE_KEY_KEEP_AWAKE = 'quran-keep-awake';
 const STORAGE_KEY_LAST_READ = 'quran-last-read-timestamp';
 
@@ -196,21 +211,39 @@ Object.keys(JUZ_STARTS).forEach((j) => {
   HIZB_STARTS[juzNum * 2] = JUZ_STARTS[juzNum];
 });
 
-// Page approximation: ~20 pages per juz, 604 pages total for Madani mushaf
-// Approximate: page = (globalAyahIndex / 6236) * 604
-function getGlobalAyahIndex(surah: number, ayah: number): number {
-  let idx = 0;
-  const safeSurah = Math.max(1, Math.min(114, surah || 1));
-  const safeAyah = Math.max(1, ayah || 1);
-  for (let i = 0; i < safeSurah - 1; i++) {
-    idx += SURAH_AYAH_COUNTS[i] || 0;
-  }
-  return idx + safeAyah;
+// Real page lookup: uses authentic AlQuran Cloud metadata / canonical Mushaf page table
+export function getRealPageForAyah(surah: number, ayah: number): number {
+  return getMushafPageForAyah(surah, ayah);
 }
 
-function getApproxPage(surah: number, ayah: number): number {
-  const globalIdx = getGlobalAyahIndex(surah, ayah);
-  return Math.max(1, Math.min(604, Math.round((globalIdx / 6236) * 604) || 1));
+export function getJuzForAyah(surah: number, ayah: number): number {
+  let matchedJuz = 1;
+  const safeSurah = Math.max(1, Math.min(114, surah || 1));
+  const safeAyah = Math.max(1, ayah || 1);
+  for (let j = 1; j <= 30; j++) {
+    const start = JUZ_STARTS[j];
+    if (start && (safeSurah > start.surah || (safeSurah === start.surah && safeAyah >= start.ayah))) {
+      matchedJuz = j;
+    } else {
+      break;
+    }
+  }
+  return matchedJuz;
+}
+
+export function getHizbForAyah(surah: number, ayah: number): number {
+  let matchedHizb = 1;
+  const safeSurah = Math.max(1, Math.min(114, surah || 1));
+  const safeAyah = Math.max(1, ayah || 1);
+  for (let h = 1; h <= 60; h++) {
+    const start = HIZB_STARTS[h];
+    if (start && (safeSurah > start.surah || (safeSurah === start.surah && safeAyah >= start.ayah))) {
+      matchedHizb = h;
+    } else {
+      break;
+    }
+  }
+  return matchedHizb;
 }
 
 /**
@@ -304,6 +337,7 @@ function AyahBookmarkButton({
 export default function QuranReaderScreen({
   surahNumber,
   initialAyah,
+  initialPage,
   onBack,
   onNavigateSurah,
 }: QuranReaderScreenProps) {
@@ -357,7 +391,7 @@ export default function QuranReaderScreen({
     }
   });
   const [error, setError] = useState<string | null>(null);
-  const fontSize = typeof settings?.quranFontSize === 'number' && settings.quranFontSize > 0 ? settings.quranFontSize : 28;
+  const fontSize = typeof settings?.quranFontSize === 'number' && settings.quranFontSize > 0 ? settings.quranFontSize : QURAN_FONT_SIZE_DEFAULT;
   const quranLineHeight =
     typeof settings?.quranLineHeight === 'number' && settings.quranLineHeight > 0
       ? Math.round(settings.quranLineHeight * 10) / 10
@@ -366,8 +400,26 @@ export default function QuranReaderScreen({
   const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings?.tafsirSourceId) || TAFSIR_SOURCES[0];
   const arabicFamilies = (settings?.quranArabicFont && QURAN_FONT_FAMILIES[settings.quranArabicFont]) || QURAN_FONT_FAMILIES.amiri;
   const ayahLineHeight = Math.round(fontSize * (settings?.quranLineHeight || 1.6));
-  const [readingMode, setReadingMode] = useState<ReadingMode>('cards');
+  const [readingMode, setReadingMode] = useState<ReadingMode>('mushaf');
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
+
+  // Mushaf page architecture state
+  const initialResolvedPage = useMemo(() => {
+    if (initialPage && initialPage >= 1 && initialPage <= TOTAL_MUSHAF_PAGES) {
+      return initialPage;
+    }
+    return getMushafPageForAyah(safeSurahNumber, initialAyah || 1);
+  }, [initialPage, safeSurahNumber, initialAyah]);
+
+  const [currentPage, setCurrentPage] = useState<number>(initialResolvedPage);
+  const [currentPageData, setCurrentPageData] = useState<MushafPageDetail | null>(null);
+  const [pageLoading, setPageLoading] = useState<boolean>(false);
+  const [pageError, setPageError] = useState<string | null>(null);
+  const [selectedAyah, setSelectedAyah] = useState<MushafPageAyah | null>(null);
+  const [selectedAyahY, setSelectedAyahY] = useState(0);
+  const currentPageRef = useRef<number>(initialResolvedPage);
+  const pageRequestRef = useRef<number>(0);
+  currentPageRef.current = currentPage;
 
   // Continue Reading tracking refs (MUST be declared before any memo/effects)
   const surahNumberRef = useRef<number>(safeSurahNumber);
@@ -424,9 +476,7 @@ export default function QuranReaderScreen({
     const saved = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${safeSurahNumber}`);
     return saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : (initialAyah || 1);
   });
-  const mushafScrollRef = useRef<ScrollView>(null);
   const listRef = useRef<FlatList<Ayah>>(null);
-  const mushafContentHeightRef = useRef<number>(0);
   const pendingScrollAyahRef = useRef<number | null>(null);
 
   const scheduleDeferredWork = useCallback(() => {
@@ -900,10 +950,31 @@ export default function QuranReaderScreen({
   // Current position indicator
   const currentPosition = useMemo(() => {
     const currentAyah = currentVisibleAyah || lastSavedAyahRef?.current || initialAyah || 1;
-    if (!surah) return { ayah: '—', page: '—' };
-    const page = getApproxPage(safeSurahNumber, currentAyah);
-    return { ayah: currentAyah, page };
-  }, [surah, safeSurahNumber, initialAyah, currentVisibleAyah]);
+    if (readingMode === 'mushaf') {
+      const page = currentPage;
+      const primarySurah = currentPageData?.surahs?.[0]?.number || getPrimarySurahForPage(page);
+      const juz = currentPageData?.juz || getJuzForAyah(primarySurah, currentAyah);
+      const hizb = currentPageData?.hizbQuarter
+        ? Math.ceil((currentPageData.hizbQuarter ?? 0) / 4)
+        : getHizbForAyah(primarySurah, currentAyah);
+      return { ayah: currentAyah, page, juz, hizb };
+    }
+    if (!surah) return { ayah: '—', page: '—', juz: 1, hizb: 1 };
+    const page = getRealPageForAyah(safeSurahNumber, currentAyah);
+    const juz = getJuzForAyah(safeSurahNumber, currentAyah);
+    const hizb = getHizbForAyah(safeSurahNumber, currentAyah);
+    return { ayah: currentAyah, page, juz, hizb };
+  }, [readingMode, currentPage, currentPageData, surah, safeSurahNumber, initialAyah, currentVisibleAyah]);
+
+  // Sync selected Juz and Hizb with current reading position
+  useEffect(() => {
+    if (currentPosition.juz) {
+      setSelectedJuz(currentPosition.juz);
+    }
+    if (currentPosition.hizb) {
+      setSelectedHizb(currentPosition.hizb);
+    }
+  }, [currentPosition.juz, currentPosition.hizb]);
 
   // Auto-hide top nav while scrolling down; reappear on scroll up / back to top
   const navOpacity = useRef(new Animated.Value(1)).current;
@@ -952,33 +1023,8 @@ export default function QuranReaderScreen({
           useNativeDriver: Platform.OS !== 'web',
         }).start();
       }
-
-      if (readingMode === 'mushaf') {
-        if (isProgrammaticPositioningRef.current) return;
-        if (!trackingReadyRef.current) return;
-        const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-        const scrollable = contentSize.height - layoutMeasurement.height;
-        if (scrollable > 0) {
-          // Throttle position tracking during fast scroll (same as cards mode).
-          const now = Date.now();
-          if (now - lastPositionSaveRef.current < 400) return;
-          lastPositionSaveRef.current = now;
-          const progress = Math.max(0, Math.min(1, contentOffset.y / scrollable));
-          const totalAyahs = surah?.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7;
-          const approxAyah = Math.min(totalAyahs, Math.max(1, Math.round(progress * (totalAyahs - 1)) + 1));
-          if (approxAyah !== lastSavedAyahRef.current) {
-            setCurrentVisibleAyah(approxAyah);
-            lastSavedAyahRef.current = approxAyah;
-            saveQuranCache(`surah-last-ayah:${safeSurahNumber}`, { ayah: approxAyah });
-            saveReadingPosition(safeSurahNumber, approxAyah);
-            if (surah?.englishName) {
-              saveLastReadPosition(safeSurahNumber, approxAyah, surah.englishName);
-            }
-          }
-        }
-      }
     },
-    [navOpacity, readingMode, surah, safeSurahNumber, cancelPendingRetry]
+    [navOpacity, cancelPendingRetry]
   );
 
   // Audio state
@@ -1034,7 +1080,7 @@ export default function QuranReaderScreen({
         clearReadingMarker();
         setActiveMarker(null);
       } else {
-        const markerData: ReadingMarker = { surah: safeSurahNumber, ayah, savedAt: Date.now(), manual: true };
+        const markerData: ReadingMarker = { surah: safeSurahNumber, ayah, page: readingMode === 'mushaf' ? currentPageRef.current : getRealPageForAyah(safeSurahNumber, ayah), savedAt: Date.now(), manual: true };
         setActiveMarker(markerData);
         await saveReadingMarker(safeSurahNumber, ayah);
       }
@@ -1061,10 +1107,10 @@ export default function QuranReaderScreen({
       // throttle saves to 400ms, so a quick Back right after scrolling could
       // otherwise leave the stored position one screen behind.
       const ayah = lastSavedAyahRef.current || 1;
-      saveReadingPosition(surahNumberRef.current, ayah);
+      saveReadingPosition(surahNumberRef.current, ayah, readingMode === 'mushaf' ? currentPageRef.current : getRealPageForAyah(surahNumberRef.current, ayah));
       saveQuranCache(`surah-last-ayah:${surahNumberRef.current}`, { ayah });
     };
-  }, []);
+  }, [readingMode]);
 
   // Track daily reading session minutes towards Quran goal
   useEffect(() => {
@@ -1109,12 +1155,15 @@ export default function QuranReaderScreen({
   useEffect(() => {
     (async () => {
       try {
-        const [savedMode, audioSettings] = await Promise.all([
+        const [savedMode, explicitMode, audioSettings] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEY_READING_MODE),
+          AsyncStorage.getItem(STORAGE_KEY_READING_MODE_EXPLICIT),
           Promise.resolve(loadAudioSettings()),
         ]);
 
-        if (savedMode === 'mushaf' || savedMode === 'cards') {
+        // Mushaf is the default. Only restore cards when the user explicitly
+        // selected it; this migrates stale pre-Mushaf storage safely.
+        if (explicitMode === 'true' && (savedMode === 'mushaf' || savedMode === 'cards')) {
           setReadingMode(savedMode);
         }
         if (audioSettings && audioSettings.reciter) {
@@ -1126,12 +1175,47 @@ export default function QuranReaderScreen({
     })();
   }, []);
 
-  // Android hardware back button handler to dismiss tools menu or note composer if open
+  // Android hardware back button handler to dismiss open modals/pickers before falling back to navigation
   useEffect(() => {
-    if (!toolsMenuOpen && noteComposerAyah === null) return;
+    const hasOpenModal =
+      noteComposerAyah !== null ||
+      toolsMenuOpen ||
+      juzPickerOpen ||
+      hizbPickerOpen ||
+      scriptPickerOpen ||
+      tafsirSourcePickerOpen ||
+      reciterChooserOpen ||
+      langPickerOpen;
+
+    if (!hasOpenModal) return;
+
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
       if (noteComposerAyah !== null) {
         closeNoteComposer();
+        return true;
+      }
+      if (juzPickerOpen) {
+        setJuzPickerOpen(false);
+        return true;
+      }
+      if (hizbPickerOpen) {
+        setHizbPickerOpen(false);
+        return true;
+      }
+      if (scriptPickerOpen) {
+        setScriptPickerOpen(false);
+        return true;
+      }
+      if (tafsirSourcePickerOpen) {
+        setTafsirSourcePickerOpen(false);
+        return true;
+      }
+      if (reciterChooserOpen) {
+        setReciterChooserOpen(false);
+        return true;
+      }
+      if (langPickerOpen) {
+        setLangPickerOpen(false);
         return true;
       }
       if (toolsMenuOpen) {
@@ -1141,7 +1225,16 @@ export default function QuranReaderScreen({
       return false;
     });
     return () => sub.remove();
-  }, [toolsMenuOpen, noteComposerAyah]);
+  }, [
+    noteComposerAyah,
+    toolsMenuOpen,
+    juzPickerOpen,
+    hizbPickerOpen,
+    scriptPickerOpen,
+    tafsirSourcePickerOpen,
+    reciterChooserOpen,
+    langPickerOpen,
+  ]);
 
   // Listen to audio status and synchronize with active ayah / surah playback
   useEffect(() => {
@@ -1252,6 +1345,79 @@ export default function QuranReaderScreen({
     loadSurah();
   }, [loadSurah]);
 
+  const loadPageData = useCallback(
+    async (pageToLoad: number, force: boolean = false) => {
+      if (pageToLoad < 1 || pageToLoad > TOTAL_MUSHAF_PAGES) return;
+      const requestId = ++pageRequestRef.current;
+      setPageLoading(true);
+      setPageError(null);
+      try {
+        const data = await fetchMushafPage(pageToLoad, showTranslation, edition?.editionIdentifier, force);
+        if (requestId !== pageRequestRef.current) return;
+        setCurrentPageData(data);
+        if (data && Array.isArray(data.ayahs) && data.ayahs.length > 0) {
+          let targetAyahItem = data.ayahs.find(
+            (a) => a.surah.number === safeSurahNumber && a.numberInSurah === (initialAyah || lastSavedAyahRef.current)
+          );
+          if (!targetAyahItem) {
+            targetAyahItem = data.ayahs.find((a) => a.surah.number === safeSurahNumber) || data.ayahs[0];
+          }
+          const activeSurahNum = targetAyahItem.surah.number;
+          const activeAyahNum = targetAyahItem.numberInSurah;
+          surahNumberRef.current = activeSurahNum;
+          lastSavedAyahRef.current = activeAyahNum;
+          setCurrentVisibleAyah(activeAyahNum);
+          setSelectedAyah(null);
+          setSelectedAyahY(0);
+          saveReadingPosition(activeSurahNum, activeAyahNum, pageToLoad);
+          saveQuranCache(`surah-last-ayah:${activeSurahNum}`, { ayah: activeAyahNum });
+          if (targetAyahItem.surah.englishName) {
+            saveLastReadPosition(activeSurahNum, activeAyahNum, targetAyahItem.surah.englishName, pageToLoad);
+          }
+        }
+        setPageLoading(false);
+        // Preload adjacent neighbor pages in the background
+        if (pageToLoad > 1) {
+          fetchMushafPage(pageToLoad - 1, showTranslation, edition?.editionIdentifier).catch(() => {});
+        }
+        if (pageToLoad < TOTAL_MUSHAF_PAGES) {
+          fetchMushafPage(pageToLoad + 1, showTranslation, edition?.editionIdentifier).catch(() => {});
+        }
+      } catch (err: any) {
+        if (requestId !== pageRequestRef.current) return;
+        setPageError(err?.message || 'Failed to load Mushaf page');
+        setPageLoading(false);
+      }
+    },
+    [safeSurahNumber, initialAyah, showTranslation, edition?.editionIdentifier]
+  );
+
+  const goToPage = useCallback(
+    (targetPage: number) => {
+      if (targetPage < 1 || targetPage > TOTAL_MUSHAF_PAGES) return;
+      haptic('light');
+      setCurrentPage(targetPage);
+    },
+    [haptic]
+  );
+
+  // Sync currentPage with incoming initialPage/safeSurahNumber props
+  useEffect(() => {
+    if (initialPage && initialPage >= 1 && initialPage <= TOTAL_MUSHAF_PAGES) {
+      setCurrentPage(initialPage);
+    } else {
+      const pageForTarget = getMushafPageForAyah(safeSurahNumber, initialAyah || 1);
+      setCurrentPage(pageForTarget);
+    }
+  }, [initialPage, safeSurahNumber, initialAyah]);
+
+  // Fetch page data when in mushaf mode
+  useEffect(() => {
+    if (readingMode === 'mushaf') {
+      loadPageData(currentPage);
+    }
+  }, [readingMode, currentPage, loadPageData]);
+
   // Reset positioning context whenever the target surah/ayah/mode changes.
   // QuranReaderScreen stays mounted across in-reader navigation (App.tsx
   // changes props on the same instance), so without this reset a second
@@ -1297,19 +1463,12 @@ export default function QuranReaderScreen({
       trackingReadyRef.current = true;
       scheduleDeferredWork();
     } else if (readingMode === 'mushaf') {
-      isProgrammaticPositioningRef.current = true;
-      trackingReadyRef.current = false;
-      const total = surah.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
-      if (mushafContentHeightRef.current > 0) {
-        const y = Math.max(0, ((targetAyah - 1) / total) * mushafContentHeightRef.current);
-        mushafScrollRef.current?.scrollTo({ y, animated: false });
-        positionedRef.current = true;
-        isProgrammaticPositioningRef.current = false;
-        trackingReadyRef.current = true;
-        scheduleDeferredWork();
-      } else {
-        pendingScrollAyahRef.current = targetAyah;
-      }
+      // In Mushaf Pages mode, the target page is loaded directly as a discrete page.
+      // No proportional scroll or scrollToIndex needed.
+      positionedRef.current = true;
+      isProgrammaticPositioningRef.current = false;
+      trackingReadyRef.current = true;
+      scheduleDeferredWork();
     } else {
       const targetIndex = targetAyah - 1;
       isProgrammaticPositioningRef.current = true;
@@ -1393,11 +1552,28 @@ export default function QuranReaderScreen({
   };
 
   const handleToggleReadingMode = () => {
-    setReadingMode((curr) => {
-      const next = curr === 'cards' ? 'mushaf' : 'cards';
-      AsyncStorage.setItem(STORAGE_KEY_READING_MODE, next).catch(() => {});
-      return next;
-    });
+    const currentAyah = currentVisibleAyah || lastSavedAyahRef.current || 1;
+    const currentSurah = surahNumberRef.current || safeSurahNumber;
+    const currentPageNum = readingMode === 'mushaf' ? currentPage : getRealPageForAyah(currentSurah, currentAyah);
+    const next: ReadingMode = readingMode === 'cards' ? 'mushaf' : 'cards';
+
+    lastSavedAyahRef.current = currentAyah;
+    saveQuranCache(`surah-last-ayah:${currentSurah}`, { ayah: currentAyah });
+    saveReadingPosition(currentSurah, currentAyah, currentPageNum);
+    if (surah?.englishName) {
+      saveLastReadPosition(currentSurah, currentAyah, surah.englishName, currentPageNum);
+    }
+
+    AsyncStorage.setItem(STORAGE_KEY_READING_MODE, next).catch(() => {});
+    AsyncStorage.setItem(STORAGE_KEY_READING_MODE_EXPLICIT, 'true').catch(() => {});
+    if (next === 'mushaf') {
+      const targetPage = getRealPageForAyah(currentSurah, currentAyah);
+      setCurrentPageData(null);
+      setPageError(null);
+      setPageLoading(true);
+      setCurrentPage(targetPage);
+    }
+    setReadingMode(next);
   };
 
   const handleToggleBookmark = useCallback(
@@ -1962,113 +2138,545 @@ export default function QuranReaderScreen({
     ]
   );
 
-  // Mushaf continuous text view
-  const renderMushafMode = () => {
-    if (!surah || !Array.isArray(surah.ayahs) || surah.ayahs.length === 0) return null;
-    return (
-      <ScrollView
-        ref={mushafScrollRef}
-        contentContainerStyle={styles.mushafScrollContent}
-        onScroll={handleReaderScroll}
-        onScrollBeginDrag={() => {
-          isProgrammaticPositioningRef.current = false;
-          userScrollingRef.current = true;
-        }}
-        onScrollEndDrag={() => {
-          userScrollingRef.current = false;
-        }}
-        onMomentumScrollEnd={() => {
-          userScrollingRef.current = false;
-        }}
-        scrollEventThrottle={16}
-        onContentSizeChange={(_w, h) => {
-          mushafContentHeightRef.current = h;
-          if (pendingScrollAyahRef.current && pendingScrollAyahRef.current > 1) {
-            const total = surah?.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
-            const y = Math.max(0, ((pendingScrollAyahRef.current - 1) / total) * h);
-            mushafScrollRef.current?.scrollTo({ y, animated: false });
-            pendingScrollAyahRef.current = null;
-            // The pending jump has now been applied — mark positioned and
-            // tracking-ready so the settle event never overwrites the target.
-            positionedRef.current = true;
-            trackingReadyRef.current = true;
-          }
-        }}
-      >
-        {renderSurahHeader()}
+  // Group ayahs on the current page by Surah for authentic multi-surah layout
+  const surahGroups = useMemo(() => {
+    if (!currentPageData || !Array.isArray(currentPageData.ayahs)) return [];
+    const groups: Array<{
+      surah: MushafPageAyah['surah'];
+      hasSurahStart: boolean;
+      ayahs: MushafPageAyah[];
+    }> = [];
 
+    for (const ayah of currentPageData.ayahs) {
+      const lastGroup = groups[groups.length - 1];
+      if (lastGroup && lastGroup.surah.number === ayah.surah.number) {
+        lastGroup.ayahs.push(ayah);
+        if (ayah.numberInSurah === 1) {
+          lastGroup.hasSurahStart = true;
+        }
+      } else {
+        groups.push({
+          surah: ayah.surah,
+          hasSurahStart: ayah.numberInSurah === 1,
+          ayahs: [ayah],
+        });
+      }
+    }
+    return groups;
+  }, [currentPageData]);
+
+  const handleSelectMushafAyah = useCallback(
+    (ayahItem: MushafPageAyah) => {
+      haptic('selection');
+      if (selectedAyah?.number === ayahItem.number) {
+        setSelectedAyah(null);
+      } else {
+        setSelectedAyah(ayahItem);
+        surahNumberRef.current = ayahItem.surah.number;
+        lastSavedAyahRef.current = ayahItem.numberInSurah;
+        setCurrentVisibleAyah(ayahItem.numberInSurah);
+        saveReadingPosition(ayahItem.surah.number, ayahItem.numberInSurah, currentPage);
+        saveQuranCache(`surah-last-ayah:${ayahItem.surah.number}`, { ayah: ayahItem.numberInSurah });
+        if (ayahItem.surah.englishName) {
+          saveLastReadPosition(ayahItem.surah.number, ayahItem.numberInSurah, ayahItem.surah.englishName, currentPage);
+        }
+      }
+    },
+    [selectedAyah, currentPage, haptic]
+  );
+
+  const handleLongPressMushafAyah = useCallback(
+    (ayahItem: MushafPageAyah) => {
+      haptic('selection');
+      setSelectedAyah(ayahItem);
+      surahNumberRef.current = ayahItem.surah.number;
+      lastSavedAyahRef.current = ayahItem.numberInSurah;
+      setCurrentVisibleAyah(ayahItem.numberInSurah);
+    },
+    [haptic]
+  );
+
+  const handleCopyMushafAyah = useCallback(
+    (ayahItem: MushafPageAyah) => {
+      const arabicText = getDisplayedAyahText(
+        ayahItem.surah.number,
+        ayahItem.numberInSurah,
+        getAyahScriptText(ayahItem.numberInSurah, ayahItem.text)
+      );
+      const fullText = ayahItem.translation
+        ? `${arabicText}\n\n${ayahItem.translation}\n— [${ayahItem.surah.englishName} ${ayahItem.surah.number}:${ayahItem.numberInSurah}]`
+        : `${arabicText}\n— [${ayahItem.surah.englishName} ${ayahItem.surah.number}:${ayahItem.numberInSurah}]`;
+      Clipboard.setString(fullText);
+      haptic('selection');
+      setCopiedAyah(ayahItem.numberInSurah);
+      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+      copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 2000);
+    },
+    [getDisplayedAyahText, getAyahScriptText, haptic]
+  );
+
+  const handleShareMushafAyah = useCallback(
+    (ayahItem: MushafPageAyah) => {
+      const shareItem: Ayah = {
+        number: ayahItem.number,
+        numberInSurah: ayahItem.numberInSurah,
+        text: getDisplayedAyahText(
+          ayahItem.surah.number,
+          ayahItem.numberInSurah,
+          getAyahScriptText(ayahItem.numberInSurah, ayahItem.text)
+        ),
+        translation: ayahItem.translation,
+        page: ayahItem.page,
+        juz: ayahItem.juz,
+        surah: {
+          number: ayahItem.surah.number,
+          name: ayahItem.surah.name,
+          englishName: ayahItem.surah.englishName,
+        },
+      };
+      setShareAyahItem(shareItem);
+      haptic('selection');
+    },
+    [getDisplayedAyahText, getAyahScriptText, haptic]
+  );
+
+  const handleToggleBookmarkForMushafAyah = useCallback(
+    (ayahItem: MushafPageAyah) => {
+      const sNum = ayahItem.surah.number;
+      const aNum = ayahItem.numberInSurah;
+      const bookmarked = isBookmarked(sNum, aNum);
+      if (bookmarked) {
+        removeBookmark(sNum, aNum);
+        haptic('light');
+      } else {
+        addBookmark({
+          surah: sNum,
+          ayah: aNum,
+          surahName: ayahItem.surah.englishName || `Surah ${sNum}`,
+          text: (ayahItem.text || '').slice(0, 100),
+          translation: (ayahItem.translation || '').slice(0, 120),
+        });
+        haptic('success');
+      }
+      setBookmarks(getBookmarks());
+    },
+    [haptic]
+  );
+
+  const renderSurahStartBanner = (surahMeta: MushafPageAyah['surah']) => {
+    const isTawbah = surahMeta.number === 9;
+    const isFatiha = surahMeta.number === 1;
+    const revelationLabel = surahMeta.revelationType === 'Meccan' ? t('Meccan') : t('Medinan');
+    return (
+      <View key={`surah-banner-${surahMeta.number}`} style={styles.surahBannerContainer}>
         <View
           style={[
-            styles.mushafContainer,
-            { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+            styles.surahBannerFrame,
+            { borderColor: colors.accent, backgroundColor: colors.accentDim },
           ]}
         >
-          {currentScript === 'tajweed' && scriptAyahs ? (
-            <View style={styles.mushafTajweedList}>
-              {surah.ayahs.map((a) => (
-                <View key={`mushaf-tajweed-${a.numberInSurah}`} style={styles.mushafTajweedAyahRow}>
-                  <TajweedText
-                    text={getAyahScriptText(a.numberInSurah, a.text)}
-                    size={fontSize + 2}
-                    fontFamily={arabicFamilies.regular}
-                    lineHeight={Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6))}
-                    numberInSurah={a.numberInSurah}
-                  />
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Text style={styles.mushafParagraph}>
-              {surah.ayahs.map((a) => (
-                <Text key={`mushaf-${a.numberInSurah}`} style={styles.mushafAyahBlock}>
-                  <Text
-                    style={{
-                      fontFamily: arabicFamilies.regular,
-                      fontSize: fontSize + 2,
-                      color: colors.textPrimary,
-                      lineHeight: Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6)),
-                      writingDirection: 'rtl',
-                    }}
-                  >
-                    {getDisplayedAyahText(
-                      surah.number,
-                      a.numberInSurah,
-                      getAyahScriptText(a.numberInSurah, a.text)
-                    )}{' '}
-                  </Text>
-                  <Text
-                    style={{
-                      fontFamily: arabicFamilies.regular,
-                      fontSize: fontSize - 2,
-                      color: colors.accent,
-                    }}
-                  >
-                    ۝{toArabicNumerals(a.numberInSurah)}{' '}
-                  </Text>
-                </Text>
-              ))}
-            </Text>
-          )}
+          <Text style={[styles.surahBannerArabicName, { color: colors.accent, fontFamily: arabicFamilies.bold }]}>
+            {surahMeta.name}
+          </Text>
+          <Text style={[styles.surahBannerMetaText, { color: colors.textSecondary }]}>
+            {surahMeta.englishName} ({surahMeta.englishNameTranslation}) • {revelationLabel} • {surahMeta.numberOfAyahs} {t('Verses')}
+          </Text>
         </View>
-
-        {showTranslation && (
-          <View style={styles.mushafTranslationsWrap}>
-            <Text style={[styles.mushafTranslationsHeading, { color: colors.accent }]}>
-              {t('TRANSLATION')} ({flag} {(edition?.name || '').toUpperCase()})
+        {!isTawbah && !isFatiha && (
+          <View style={styles.bismillahContainer}>
+            <Text
+              style={[
+                styles.bismillahText,
+                { color: colors.textPrimary, fontFamily: arabicFamilies.bold },
+              ]}
+            >
+              بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
             </Text>
-            {surah.ayahs.map((a) => (
-              <View key={`tr-${a.numberInSurah}`} style={styles.mushafTranslationRow}>
-                <Text style={[styles.mushafAyahBadge, { color: colors.accent }]}>
-                  {a.numberInSurah}
-                </Text>
-                <Text style={[styles.mushafTranslationText, { color: colors.textSecondary }]}>
-                  {a.translation || ''}
-                </Text>
-              </View>
-            ))}
           </View>
         )}
-      </ScrollView>
+      </View>
+    );
+  };
+
+  const renderSelectedAyahToolbar = () => {
+    if (!selectedAyah) return null;
+    const isPlayingCurrent = isPlayingAudio && playingAyahNumber === selectedAyah.numberInSurah;
+    const isBookmarkedCurrent = isBookmarked(selectedAyah.surah.number, selectedAyah.numberInSurah);
+
+    return (
+      <View
+        style={[
+          styles.mushafSelectedToolbar,
+          { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+        ]}
+      >
+        <View style={styles.mushafSelectedMeta}>
+          <Text style={[styles.mushafSelectedRef, { color: colors.accent }]}>
+            {selectedAyah.surah.englishName} {selectedAyah.surah.number}:{selectedAyah.numberInSurah}
+          </Text>
+          <TouchableOpacity
+            onPress={() => setSelectedAyah(null)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Close selection')}
+          >
+            <Ionicons name="close" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.mushafSelectedActionsRow}>
+          <TouchableOpacity
+            style={styles.mushafSelectedActionBtn}
+            onPress={() => handlePlayAyahToggle(selectedAyah.numberInSurah)}
+            accessibilityRole="button"
+            accessibilityLabel={isPlayingCurrent ? t('Pause') : t('Play')}
+          >
+            <Ionicons
+              name={isPlayingCurrent ? 'pause' : 'play'}
+              size={18}
+              color={colors.accent}
+            />
+            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+              {isPlayingCurrent ? t('Pause') : t('Play')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mushafSelectedActionBtn}
+            onPress={() => handleOpenTafsir(selectedAyah.numberInSurah)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Tafsir')}
+          >
+            <Ionicons name="information-circle-outline" size={18} color={colors.accent} />
+            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+              {t('Tafsir')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mushafSelectedActionBtn}
+            onPress={() => handleToggleBookmarkForMushafAyah(selectedAyah)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Bookmark')}
+          >
+            <Ionicons
+              name={isBookmarkedCurrent ? 'bookmark' : 'bookmark-outline'}
+              size={18}
+              color={colors.accent}
+            />
+            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+              {t('Bookmark')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mushafSelectedActionBtn}
+            onPress={() => handleSetReadingMarkerAt(selectedAyah.numberInSurah)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Reading marker')}
+          >
+            <Ionicons name="flag-outline" size={18} color={colors.accent} />
+            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+              {t('Marker')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mushafSelectedActionBtn}
+            onPress={() => setNoteComposerAyah(selectedAyah.numberInSurah)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Note')}
+          >
+            <Ionicons name="create-outline" size={18} color={colors.accent} />
+            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+              {t('Note')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mushafSelectedActionBtn}
+            onPress={() => handleCopyMushafAyah(selectedAyah)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Copy')}
+          >
+            <Ionicons name="copy-outline" size={18} color={colors.accent} />
+            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+              {t('Copy')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.mushafSelectedActionBtn}
+            onPress={() => handleShareMushafAyah(selectedAyah)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Share')}
+          >
+            <Ionicons name="share-outline" size={18} color={colors.accent} />
+            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+              {t('Share')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderMushafPaginationFooter = () => {
+    return (
+      <View style={[styles.mushafPaginationFooter, { borderTopColor: colors.borderSubtle }]}>
+        <TouchableOpacity
+          style={[
+            styles.mushafPageNavBtn,
+            { borderColor: colors.borderSubtle, opacity: currentPage <= 1 ? 0.4 : 1 },
+          ]}
+          onPress={() => goToPage(currentPage - 1)}
+          disabled={currentPage <= 1}
+          accessibilityRole="button"
+          accessibilityLabel={t('Previous Page')}
+        >
+          <Ionicons name={getBackIcon()} size={18} color={colors.accent} />
+          <Text style={[styles.mushafPageNavBtnText, { color: colors.accent }]}>
+            {t('Page {n}', { n: Math.max(1, currentPage - 1) })}
+          </Text>
+        </TouchableOpacity>
+
+        <View style={styles.mushafPageBadgeCenter}>
+          <Text style={[styles.mushafPageBadgeText, { color: colors.textPrimary }]}>
+            {t('Page {current} of {total}', { current: currentPage, total: TOTAL_MUSHAF_PAGES })}
+          </Text>
+          {currentPageData?.ayahs?.length ? (
+            <Text style={[styles.mushafPageBadgeSub, { color: colors.textMuted }]}>
+              {t('Juz {j} • Hizb {h}', {
+                j: currentPageData.juz ?? currentPageData.ayahs.find((a) => typeof a.juz === 'number')?.juz,
+                h: Math.ceil((currentPageData.hizbQuarter ?? currentPageData.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter ?? 0) / 4),
+              })}
+            </Text>
+          ) : null}
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.mushafPageNavBtn,
+            { borderColor: colors.borderSubtle, opacity: currentPage >= TOTAL_MUSHAF_PAGES ? 0.4 : 1 },
+          ]}
+          onPress={() => goToPage(currentPage + 1)}
+          disabled={currentPage >= TOTAL_MUSHAF_PAGES}
+          accessibilityRole="button"
+          accessibilityLabel={t('Next Page')}
+        >
+          <Text style={[styles.mushafPageNavBtnText, { color: colors.accent }]}>
+            {t('Page {n}', { n: Math.min(TOTAL_MUSHAF_PAGES, currentPage + 1) })}
+          </Text>
+          <Ionicons name={getForwardIcon()} size={18} color={colors.accent} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  // Mushaf page view
+  const renderMushafMode = () => {
+    if (pageLoading && !currentPageData) {
+      return (
+        <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.mushafLoadingText, { color: colors.textSecondary }]}>
+            {t('Loading Mushaf Page {n}...', { n: currentPage })}
+          </Text>
+        </View>
+      );
+    }
+
+    if (!currentPageData && !pageError) {
+      return (
+        <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
+          <ActivityIndicator size="large" color={colors.accent} />
+          <Text style={[styles.mushafLoadingText, { color: colors.textSecondary }]}>
+            {t('Loading Mushaf Page {n}...', { n: currentPage })}
+          </Text>
+        </View>
+      );
+    }
+
+    if (pageError && !currentPageData) {
+      return (
+        <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
+          <Text style={[styles.errorText, { color: colors.textSecondary }]}>{pageError}</Text>
+          <TouchableOpacity
+            style={[styles.retryBtn, { borderColor: colors.accent }]}
+            onPress={() => loadPageData(currentPage, true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Retry loading page')}
+          >
+            <Text style={[styles.retryBtnText, { color: colors.accent }]}>{retry}</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    if (!currentPageData) return null;
+
+    const pageJuz = currentPageData.juz ?? currentPageData.ayahs.find((a) => typeof a.juz === 'number')?.juz;
+    const pageHizbQuarter = currentPageData.hizbQuarter ?? currentPageData.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter;
+    const pageSurahNames = currentPageData.surahs.map((s) => s.name).filter(Boolean).join(' • ');
+
+    return (
+      <FlatList
+        data={[currentPage]}
+        keyExtractor={(item) => `mushaf-page-${item}`}
+        renderItem={() => (
+          <View style={styles.mushafPageCard}>
+            {/* Header strip: Juz, Hizb, Surahs, Page number */}
+            <View style={[styles.mushafPageHeaderStrip, { borderBottomColor: colors.borderSubtle }]}>
+              <Text style={[styles.mushafPageHeaderLeft, { color: colors.textSecondary }]}>
+                {t('Juz {j} • Hizb {h}', {
+                  j: pageJuz,
+                  h: Math.ceil((pageHizbQuarter ?? 0) / 4),
+                })}
+              </Text>
+              <Text style={[styles.mushafPageHeaderCenter, { color: colors.textPrimary }]}>
+                {pageSurahNames}
+              </Text>
+              <Text style={[styles.mushafPageHeaderRight, { color: colors.textSecondary }]}>
+                {t('Page {p}', { p: currentPage })}
+              </Text>
+            </View>
+
+            {/* Continuous Mushaf Text Area */}
+            <View
+              style={[
+                styles.mushafContainer,
+                width < 380 && { padding: 10, borderRadius: 8 },
+                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+              ]}
+            >
+              {selectedAyah && (
+                <View style={[styles.mushafInlineSelectedToolbar, { top: Math.max(0, selectedAyahY - 78) }]}>
+                  {renderSelectedAyahToolbar()}
+                </View>
+              )}
+              {currentScript === 'tajweed' && scriptAyahs ? (
+                <View style={styles.mushafTajweedList}>
+                  {currentPageData.ayahs.map((a) => (
+                    <View key={`mushaf-tajweed-${a.surah.number}-${a.numberInSurah}`} style={styles.mushafTajweedAyahRow}>
+                      {a.numberInSurah === 1 && renderSurahStartBanner(a.surah)}
+                      <TouchableOpacity
+                        onPress={() => handleSelectMushafAyah(a)}
+                        onLongPress={() => handleLongPressMushafAyah(a)}
+                        delayLongPress={500}
+                        activeOpacity={0.7}
+                        onLayout={(event) => {
+                          if (selectedAyah?.number === a.number) setSelectedAyahY(event.nativeEvent.layout.y);
+                        }}
+                        style={[
+                          styles.mushafTajweedAyahTouch,
+                          selectedAyah?.number === a.number && { backgroundColor: colors.accentDim, borderRadius: 6 },
+                        ]}
+                      >
+                        <TajweedText
+                          text={getAyahScriptText(a.numberInSurah, a.text)}
+                          size={fontSize + 2}
+                          fontFamily={arabicFamilies.regular}
+                          lineHeight={Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6))}
+                          numberInSurah={a.numberInSurah}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.mushafSurahSectionsWrap}>
+                  {surahGroups.map((group) => (
+                    <View key={`mushaf-group-${group.surah.number}`} style={styles.mushafSurahGroup}>
+                      {group.hasSurahStart && renderSurahStartBanner(group.surah)}
+                      <Text style={styles.mushafParagraph}>
+                        {group.ayahs.map((a) => {
+                          const isSelected = selectedAyah?.number === a.number;
+                          return (
+                            <Text
+                              key={`mushaf-${a.surah.number}-${a.numberInSurah}`}
+                              onLayout={(event) => {
+                                if (isSelected) setSelectedAyahY(event.nativeEvent.layout.y);
+                              }}
+                              style={[
+                                styles.mushafAyahBlock,
+                                isSelected && { backgroundColor: colors.accentDim },
+                              ]}
+                              onPress={() => handleSelectMushafAyah(a)}
+                              onLongPress={() => handleLongPressMushafAyah(a)}
+                            >
+                              <Text
+                                style={{
+                                  fontFamily: arabicFamilies.regular,
+                                  fontSize: fontSize + 2,
+                                  color: isSelected ? colors.accent : colors.textPrimary,
+                                  lineHeight: Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6)),
+                                  writingDirection: 'rtl',
+                                }}
+                              >
+                                {getDisplayedAyahText(
+                                  a.surah.number,
+                                  a.numberInSurah,
+                                  getAyahScriptText(a.numberInSurah, a.text)
+                                )}{' '}
+                              </Text>
+                              <Text
+                                style={{
+                                  fontFamily: arabicFamilies.regular,
+                                  fontSize: Math.max(12, fontSize - 2),
+                                  color: colors.accent,
+                                  fontWeight: 'bold',
+                                }}
+                              >
+                                ۝{toArabicNumerals(a.numberInSurah)}{' '}
+                              </Text>
+                            </Text>
+                          );
+                        })}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {/* Translation Section (if enabled) */}
+            {showTranslation && (
+              <View style={[styles.mushafTranslationsWrap, { borderTopColor: colors.borderSubtle }]}>
+                <Text style={[styles.mushafTranslationsHeading, { color: colors.accent }]}>
+                  {t('TRANSLATION')} ({flag} {(edition?.name || '').toUpperCase()})
+                </Text>
+                {currentPageData.ayahs.map((a) => (
+                  <View
+                    key={`tr-${a.surah.number}-${a.numberInSurah}`}
+                    style={[
+                      styles.mushafTranslationRow,
+                      selectedAyah?.number === a.number && { backgroundColor: colors.accentDim, borderRadius: 8 },
+                    ]}
+                  >
+                    <View style={styles.mushafTranslationMeta}>
+                      <Text style={[styles.mushafAyahBadge, { color: colors.accent }]}>
+                        {a.surah.number}:{a.numberInSurah}
+                      </Text>
+                      <Text style={[styles.mushafSurahSmallName, { color: colors.textMuted }]}>
+                        {a.surah.englishName}
+                      </Text>
+                    </View>
+                    <Text style={[styles.mushafTranslationText, { color: colors.textSecondary }]}>
+                      {a.translation || ''}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
+        )}
+        contentContainerStyle={styles.mushafScrollContent}
+        initialNumToRender={1}
+        maxToRenderPerBatch={1}
+        windowSize={3}
+        showsVerticalScrollIndicator={true}
+        ListFooterComponent={renderMushafPaginationFooter()}
+      />
     );
   };
 
@@ -2133,23 +2741,29 @@ export default function QuranReaderScreen({
           <Text style={[styles.backText, { color: colors.accent, fontSize: backTextSize }]}>Quran</Text>
         </TouchableOpacity>
 
-        {/* Center: Surah name as centerpiece with prev/next inline */}
+        {/* Center: Surah name / Page as centerpiece with prev/next inline */}
         <View style={styles.navCenter}>
           <View style={styles.surahNavInline}>
             <TouchableOpacity
               style={[
                 styles.surahNavBtn,
-                { opacity: surahNumber <= 1 ? 0.4 : 1 },
+                { opacity: (readingMode === 'mushaf' ? currentPage <= 1 : surahNumber <= 1) ? 0.4 : 1 },
                 { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
               ]}
-              onPress={() => handleNavigateSurah(surahNumber - 1)}
-              disabled={surahNumber <= 1}
+              onPress={() => {
+                if (readingMode === 'mushaf') {
+                  goToPage(currentPage - 1);
+                } else {
+                  handleNavigateSurah(surahNumber - 1);
+                }
+              }}
+              disabled={readingMode === 'mushaf' ? currentPage <= 1 : surahNumber <= 1}
               accessibilityRole="button"
-              accessibilityLabel={t('Previous Surah')}
+              accessibilityLabel={readingMode === 'mushaf' ? t('Previous Page') : t('Previous Surah')}
             >
               <Ionicons name={getBackIcon()} size={surahNavIconSize} color={colors.accent} />
             </TouchableOpacity>
-            {surah && (
+            <View style={styles.navTitleColumn}>
               <Text
                 style={[
                   styles.navSurahTitle,
@@ -2158,19 +2772,34 @@ export default function QuranReaderScreen({
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
-                {surah.englishName}
+                {readingMode === 'mushaf'
+                  ? (currentPageData?.surahs?.length
+                      ? currentPageData.surahs.map((s) => s.englishName).join(', ')
+                      : surah?.englishName || `Page ${currentPage}`)
+                  : surah?.englishName || `Surah ${surahNumber}`}
               </Text>
-            )}
+              {readingMode === 'mushaf' && (
+                <Text style={[styles.navPageSubTitle, { color: colors.accent }]}>
+                  {t('Page {p} of {total}', { p: currentPage, total: TOTAL_MUSHAF_PAGES })}
+                </Text>
+              )}
+            </View>
             <TouchableOpacity
               style={[
                 styles.surahNavBtn,
-                { opacity: surahNumber >= 114 ? 0.4 : 1 },
+                { opacity: (readingMode === 'mushaf' ? currentPage >= TOTAL_MUSHAF_PAGES : surahNumber >= 114) ? 0.4 : 1 },
                 { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
               ]}
-              onPress={() => handleNavigateSurah(surahNumber + 1)}
-              disabled={surahNumber >= 114}
+              onPress={() => {
+                if (readingMode === 'mushaf') {
+                  goToPage(currentPage + 1);
+                } else {
+                  handleNavigateSurah(surahNumber + 1);
+                }
+              }}
+              disabled={readingMode === 'mushaf' ? currentPage >= TOTAL_MUSHAF_PAGES : surahNumber >= 114}
               accessibilityRole="button"
-              accessibilityLabel={t('Next Surah')}
+              accessibilityLabel={readingMode === 'mushaf' ? t('Next Page') : t('Next Surah')}
             >
               <Ionicons name={getForwardIcon()} size={surahNavIconSize} color={colors.accent} />
             </TouchableOpacity>
@@ -2262,7 +2891,7 @@ export default function QuranReaderScreen({
                 accessibilityLabel={t('Close reading tools')}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
-                <Ionicons name="remove" size={20} color={colors.textSecondary} />
+                <Ionicons name="close" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
@@ -2321,14 +2950,14 @@ export default function QuranReaderScreen({
                         styles.toolsMenuIcon,
                         {
                           backgroundColor:
-                            readingMode === 'mushaf' ? colors.accentDim : colors.bgBase,
+                            readingMode !== 'cards' ? colors.accentDim : colors.bgBase,
                         },
                       ]}
                     >
                       <Ionicons
-                        name={readingMode === 'mushaf' ? 'book' : 'list'}
+                        name={readingMode !== 'cards' ? 'book' : 'list'}
                         size={20}
-                        color={readingMode === 'mushaf' ? colors.accent : colors.textSecondary}
+                        color={readingMode !== 'cards' ? colors.accent : colors.textSecondary}
                       />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
@@ -2337,8 +2966,8 @@ export default function QuranReaderScreen({
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
                         {readingMode === 'mushaf'
-                          ? t('Mushaf (continuous)', 'Mushaf (continuous)')
-                          : t('Cards (per ayah)', 'Cards (per ayah)')}
+                          ? t('Mushaf Pages', 'Mushaf Pages')
+                          : t('Ayah by Ayah', 'Ayah by Ayah')}
                       </Text>
                     </View>
                     <View
@@ -2346,9 +2975,9 @@ export default function QuranReaderScreen({
                         styles.toolsMenuIndicator,
                         {
                           backgroundColor:
-                            readingMode === 'mushaf' ? colors.accent : 'transparent',
+                            readingMode !== 'cards' ? colors.accent : 'transparent',
                           borderColor:
-                            readingMode === 'mushaf' ? colors.accent : colors.borderSubtle,
+                            readingMode !== 'cards' ? colors.accent : colors.borderSubtle,
                         },
                       ]}
                     />
@@ -2763,7 +3392,7 @@ export default function QuranReaderScreen({
                         {t('Jump to Juz')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
-                        {selectedJuz ? t('Juz {n} selected', { n: selectedJuz }) : t('Select a Juz to jump')}
+                        {t('Juz {n} selected', { n: selectedJuz || currentPosition.juz })}
                       </Text>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
@@ -2800,7 +3429,7 @@ export default function QuranReaderScreen({
                         {t('Jump to Hizb')}
                       </Text>
                       <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
-                        {selectedHizb ? t('Hizb {n} selected', { n: selectedHizb }) : t('Select a Hizb to jump')}
+                        {t('Hizb {n} selected', { n: selectedHizb || currentPosition.hizb })}
                       </Text>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
@@ -3187,9 +3816,13 @@ export default function QuranReaderScreen({
                           if (onNavigateSurah) onNavigateSurah(juzStart.surah, juzStart.ayah);
                         } else {
                           // Same surah, scroll to the ayah
-                          setTimeout(() => {
-                            listRef.current?.scrollToIndex({ index: juzStart.ayah - 1, animated: true });
-                          }, 100);
+                          if (readingMode === 'mushaf') {
+                            setCurrentPage(getMushafPageForAyah(safeSurahNumber, juzStart.ayah));
+                          } else {
+                            setTimeout(() => {
+                              listRef.current?.scrollToIndex({ index: juzStart.ayah - 1, animated: true });
+                            }, 100);
+                          }
                         }
                       }
                     }}
@@ -3273,11 +3906,15 @@ export default function QuranReaderScreen({
                       // Scroll to the first ayah of this hizb
                       if (hizbStart) {
                         if (hizbStart.surah !== surahNumber) {
-                          onNavigateSurah?.(hizbStart.surah);
+                          onNavigateSurah?.(hizbStart.surah, hizbStart.ayah);
                         } else {
-                          setTimeout(() => {
-                            listRef.current?.scrollToIndex({ index: hizbStart.ayah - 1, animated: true });
-                          }, 100);
+                          if (readingMode === 'mushaf') {
+                            setCurrentPage(getMushafPageForAyah(safeSurahNumber, hizbStart.ayah));
+                          } else {
+                            setTimeout(() => {
+                              listRef.current?.scrollToIndex({ index: hizbStart.ayah - 1, animated: true });
+                            }, 100);
+                          }
                         }
                       }
                     }}
@@ -4313,12 +4950,39 @@ const styles = StyleSheet.create({
   },
   mushafTajweedAyahRow: {
     width: '100%',
-    // The row is a line box; the bottom margin separates each ayah so the
-    // next ayah's ascenders/diacritics never overlap this one's descenders.
-    // TajweedText gets an explicit generous lineHeight (matching the cards)
-    // so tashkeel never clips.
     marginBottom: 12,
   },
+  mushafTajweedAyahTouch: { width: '100%', paddingVertical: 2 },
+  mushafSurahSectionsWrap: { width: '100%' },
+  mushafSurahGroup: { width: '100%', marginBottom: 8 },
+  mushafTranslationMeta: { fontFamily: 'Manrope_600SemiBold', fontSize: 11, marginTop: 4 },
+  mushafSurahSmallName: { fontFamily: 'Manrope_600SemiBold', fontSize: 12, marginLeft: 4 },
+  surahBannerContainer: { width: '100%', alignItems: 'center', marginBottom: 12 },
+  surahBannerFrame: { width: '100%', borderWidth: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
+  surahBannerArabicName: { fontFamily: 'Amiri_700Bold', fontSize: 24, textAlign: 'center' },
+  surahBannerMetaText: { fontFamily: 'Manrope_500Medium', fontSize: 11, marginTop: 4 },
+  bismillahContainer: { alignItems: 'center', paddingVertical: 10 },
+  mushafInlineSelectedToolbar: { position: 'absolute', left: 0, right: 0, marginHorizontal: -6, zIndex: 20, elevation: 8 },
+  mushafSelectedToolbar: { borderTopWidth: 1, borderBottomWidth: 1, padding: 10, marginBottom: 10 },
+  mushafSelectedMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  mushafSelectedRef: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
+  mushafSelectedActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  mushafSelectedActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 7 },
+  mushafSelectedActionText: { fontFamily: 'Manrope_600SemiBold', fontSize: 11 },
+  mushafPaginationFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
+  mushafPageNavBtn: { minWidth: 84, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, alignItems: 'center' },
+  mushafPageNavBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
+  mushafPageBadgeCenter: { flex: 1, alignItems: 'center' },
+  mushafPageBadgeText: { fontFamily: 'Manrope_700Bold', fontSize: 14 },
+  mushafPageBadgeSub: { fontFamily: 'Manrope_500Medium', fontSize: 10, marginTop: 2 },
+  mushafLoadingText: { fontFamily: 'Manrope_500Medium', fontSize: 13, textAlign: 'center', padding: 24 },
+  mushafPageCard: { width: '100%', paddingBottom: 4 },
+  mushafPageHeaderStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, paddingVertical: 8, gap: 6 },
+  mushafPageHeaderLeft: { flex: 1, fontFamily: 'Manrope_500Medium', fontSize: 10 },
+  mushafPageHeaderCenter: { flex: 1.5, textAlign: 'center', fontFamily: 'Manrope_700Bold', fontSize: 11 },
+  mushafPageHeaderRight: { flex: 1, textAlign: 'right', fontFamily: 'Manrope_500Medium', fontSize: 10 },
+  navTitleColumn: { flex: 1, alignItems: 'center' },
+  navPageSubTitle: { fontFamily: 'Manrope_500Medium', fontSize: 10, marginTop: 2 },
   scriptNoticeCard: {
     flexDirection: 'row',
     alignItems: 'center',

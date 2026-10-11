@@ -34,7 +34,7 @@ import { EmptyState } from '../components/EmptyState';
 import { getForwardIcon, getBackIcon } from '../lib/iconMap';
 
 interface QuranHomeScreenProps {
-  onOpenSurah: (surahNumber: number, initialAyah?: number) => void;
+  onOpenSurah: (surahNumber: number, initialAyah?: number, initialPage?: number) => void;
   onOpenAudio: () => void;
   onOpenTafsir: () => void;
   onOpenTopics: () => void;
@@ -329,6 +329,7 @@ export default function QuranHomeScreen({
       return {
         surah: readingPosition.surah,
         ayah: readingPosition.ayah,
+        page: readingPosition.page,
         name: meta ? getLocalizedSurahName(meta.number, meta.englishName) : `${t('Surah')} ${readingPosition.surah}`,
       };
     }
@@ -336,6 +337,7 @@ export default function QuranHomeScreen({
       return {
         surah: lastRead.surah,
         ayah: lastRead.ayah,
+        page: lastRead.page,
         name: lastRead.surahName || `${t('Surah')} ${lastRead.surah}`,
       };
     }
@@ -349,7 +351,7 @@ export default function QuranHomeScreen({
     try {
       const freshPos = await getContinueReadingPosition();
       if (freshPos && freshPos.surah > 0) {
-        onOpenSurah(freshPos.surah, freshPos.ayah);
+        onOpenSurah(freshPos.surah, freshPos.ayah, freshPos.page);
         return;
       }
       if (resumeTarget) {

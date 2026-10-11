@@ -109,6 +109,8 @@ import {
 import { LocationSetupModal } from './src/components/LocationSetupModal';
 import { useLocation, refreshLocationSilently, computeDistanceKm } from './src/lib/useLocation';
 import { registerBackgroundPreload } from './src/lib/backgroundPreload';
+import OnboardingScreen from './src/screens/OnboardingScreen';
+import { getOnboardingDone } from './src/lib/onboardingState';
 
 export type TabKey = 'home' | 'quran' | 'library' | 'tools';
 
@@ -355,7 +357,7 @@ export type LibraryView =
 
 export type QuranView =
   | { screen: 'home' }
-  | { screen: 'reader'; surah: number; initialAyah?: number }
+  | { screen: 'reader'; surah: number; initialAyah?: number; initialPage?: number }
   | { screen: 'audio' }
   | { screen: 'tafsir'; surah?: number }
   | { screen: 'topics' }
@@ -1071,15 +1073,17 @@ function Root({ splashDone }: { splashDone: boolean }) {
             <View style={[styles.tabPane, quran.screen === 'home' ? styles.paneVisible : styles.paneHidden]}>
               <QuranHomeScreen
                 isActive={quran.screen === 'home'}
-                onOpenSurah={(n, a) => {
+                onOpenSurah={(n, a, p) => {
                   let initialAyah = a;
-                  if (!initialAyah) {
+                  let initialPage = p;
+                  if (!initialAyah && !initialPage) {
                     const marker = getReadingMarkerSync();
                     if (marker && marker.surah === n) {
                       initialAyah = marker.ayah;
+                      initialPage = marker.page;
                     }
                   }
-                  setQuran({ screen: 'reader', surah: n, initialAyah });
+                  setQuran({ screen: 'reader', surah: n, initialAyah, initialPage });
                 }}
                 onOpenAudio={() => setQuran({ screen: 'audio' })}
                 onOpenTafsir={() => setQuran({ screen: 'tafsir' })}
@@ -1095,16 +1099,19 @@ function Root({ splashDone }: { splashDone: boolean }) {
               <QuranReaderScreen
                 surahNumber={quran.surah || 1}
                 initialAyah={quran.initialAyah}
+                initialPage={quran.initialPage}
                 onBack={() => setQuran({ screen: 'home' })}
-                onNavigateSurah={(s, a) => {
+                onNavigateSurah={(s, a, p) => {
                   let initialAyah = a;
-                  if (!initialAyah) {
+                  let initialPage = p;
+                  if (!initialAyah && !initialPage) {
                     const marker = getReadingMarkerSync();
                     if (marker && marker.surah === s) {
                       initialAyah = marker.ayah;
+                      initialPage = marker.page;
                     }
                   }
-                  setQuran({ screen: 'reader', surah: s, initialAyah });
+                  setQuran({ screen: 'reader', surah: s, initialAyah, initialPage });
                 }}
               />
             )}
@@ -1488,6 +1495,27 @@ export default function App() {
   const [fontsLoaded, fontError] = useEditorialFonts();
   const [splashDone, setSplashDone] = useState(false);
   const [langReady, setLangReady] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(true);
+
+  // Check onboardingDone from persistent storage on bootstrap
+  useEffect(() => {
+    let mounted = true;
+    getOnboardingDone()
+      .then((done) => {
+        if (!mounted) return;
+        setOnboardingCompleted(done);
+        setOnboardingChecked(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setOnboardingCompleted(true);
+        setOnboardingChecked(true);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Resolve the persisted app language + native RTL direction BEFORE any UI
   // mounts. Without this the app can boot with language=en but layout=RTL (or
@@ -1517,15 +1545,25 @@ export default function App() {
     setSplashDone(true);
   }, []);
 
-  if ((!fontsLoaded && !fontError) || !langReady) {
+  const handleOnboardingComplete = useCallback(() => {
+    setOnboardingCompleted(true);
+  }, []);
+
+  if ((!fontsLoaded && !fontError) || !langReady || !onboardingChecked) {
     return <View style={styles.loading} />;
   }
+
+  const showOnboarding = !onboardingCompleted;
 
   return (
     <SettingsProvider>
       <ThemeProvider>
         <SafeAreaProvider>
-          <Root splashDone={splashDone} />
+          {showOnboarding ? (
+            <OnboardingScreen onComplete={handleOnboardingComplete} />
+          ) : (
+            <Root splashDone={splashDone} />
+          )}
           {!splashDone && <AnimatedSplash onDone={handleSplashDone} />}
         </SafeAreaProvider>
       </ThemeProvider>

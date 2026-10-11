@@ -12,6 +12,12 @@ import { SURAHS_114 } from './surahs114';
 import { SURAH_NAME_TRANSLATIONS } from './surahTranslationsData';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
 import { fetchTafsirApi, getCanonicalTafsirSlug, TAFSIR_API_BASE } from './tafsirApi';
+import {
+  SURAH_START_PAGES,
+  TOTAL_MUSHAF_PAGES,
+  getSurahStartPage,
+  getPrimarySurahForPage,
+} from './surahPageData';
 
 export interface SurahMeta {
   number: number;
@@ -28,6 +34,41 @@ export interface Ayah {
   text: string; // Arabic
   surah: { number: number; name: string; englishName: string };
   translation?: string; // when requested
+  page?: number;
+  juz?: number;
+  manzil?: number;
+  ruku?: number;
+  hizbQuarter?: number;
+  sajda?: boolean | any;
+}
+
+export interface MushafPageAyah {
+  number: number; // global ayah number (1..6236)
+  numberInSurah: number;
+  text: string; // Arabic
+  surah: {
+    number: number;
+    name: string;
+    englishName: string;
+    englishNameTranslation?: string;
+    numberOfAyahs?: number;
+    revelationType?: 'Meccan' | 'Medinan' | string;
+  };
+  juz: number;
+  manzil?: number;
+  page: number;
+  ruku?: number;
+  hizbQuarter?: number;
+  sajda?: boolean | any;
+  translation?: string;
+}
+
+export interface MushafPageDetail {
+  pageNumber: number;
+  ayahs: MushafPageAyah[];
+  surahs: SurahMeta[];
+  juz?: number;
+  hizbQuarter?: number;
 }
 
 export interface SurahDetail {
@@ -229,6 +270,12 @@ export async function fetchSurah(
       text: a.text,
       surah: { number: arabic.number, name: arabic.name, englishName: arabic.englishName },
       translation: translation ? translation.ayahs[i]?.text : undefined,
+      page: a.page,
+      juz: a.juz,
+      manzil: a.manzil,
+      ruku: a.ruku,
+      hizbQuarter: a.hizbQuarter,
+      sajda: a.sajda,
     })),
   };
 
@@ -317,6 +364,12 @@ export async function fetchSurahMultiEditions(
                 englishName: arabicData.englishName || '',
               },
               translation: undefined,
+              page: a.page,
+              juz: a.juz,
+              manzil: a.manzil,
+              ruku: a.ruku,
+              hizbQuarter: a.hizbQuarter,
+              sajda: a.sajda,
             })),
           };
           saveQuranCache(arKey, arDetail);
@@ -371,6 +424,12 @@ export async function fetchSurahMultiEditions(
           name: arabicData.name || '',
           englishName: arabicData.englishName || '',
         },
+        page: a.page,
+        juz: a.juz,
+        manzil: a.manzil,
+        ruku: a.ruku,
+        hizbQuarter: a.hizbQuarter,
+        sajda: a.sajda,
       }));
 
       if (!arDetail || !arDetail.ayahs || arDetail.ayahs.length === 0) {
@@ -610,6 +669,252 @@ export async function fetchAyahEditions(
   saveQuranCache(key, out);
   return out;
 }
+
+/**
+ * Fetch a single real Mushaf page (1..604).
+ * Uses real AlQuran Cloud /page/{pageNumber} endpoints and existing cache conventions.
+ * Response contains all ayahs on that page with authentic metadata.
+ */
+export async function fetchMushafPage(
+  pageNumber: number,
+  withTranslation = true,
+  translationEdition = 'en.sahih',
+  force = false
+): Promise<MushafPageDetail> {
+  const safePage = Math.max(1, Math.min(TOTAL_MUSHAF_PAGES, Math.round(pageNumber) || 1));
+  const key = `mushaf-page:${safePage}:${withTranslation ? translationEdition : 'ar'}`;
+
+  if (!force) {
+    const cached = loadQuranCache<MushafPageDetail>(key);
+    if (cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
+      return cached;
+    }
+  }
+
+  const editionParam = withTranslation
+    ? `quran-uthmani,${translationEdition}`
+    : 'quran-uthmani';
+
+  let arabicAyahs: any[] | null = null;
+  let translationAyahs: any[] | null = null;
+  let surahsFromApi: Record<string, any> = {};
+
+  // Try the multi-editions endpoint if supported by the provider
+  try {
+    const multiRes = await fetchWithTimeout(
+      `${BASE}/page/${safePage}/editions/${editionParam}`,
+      {},
+      4000
+    );
+    if (multiRes.ok) {
+      const json = await multiRes.json();
+      if (json.code === 200 && Array.isArray(json.data) && json.data.length > 0) {
+        const arData =
+          json.data.find(
+            (d: any) => d.edition?.identifier === 'quran-uthmani' || d.edition?.type === 'quran'
+          ) || json.data[0];
+        const trData =
+          json.data.find(
+            (d: any) => d.edition?.identifier === translationEdition
+          ) || json.data[1];
+        if (arData && Array.isArray(arData.ayahs)) {
+          arabicAyahs = arData.ayahs;
+          translationAyahs = trData?.ayahs || null;
+          if (arData.surahs && typeof arData.surahs === 'object') {
+            surahsFromApi = arData.surahs;
+          }
+        }
+      }
+    }
+  } catch {
+    // Multi-edition page route not available, proceed to per-edition fetch
+  }
+
+  if (!arabicAyahs) {
+    try {
+      const fetchAr = fetchWithTimeout(`${BASE}/page/${safePage}/quran-uthmani`, {}, 4000);
+      const fetchTr = withTranslation
+        ? fetchWithTimeout(`${BASE}/page/${safePage}/${translationEdition}`, {}, 4000).catch(
+            async () => {
+              if (translationEdition !== 'en.sahih') {
+                return fetchWithTimeout(`${BASE}/page/${safePage}/en.sahih`, {}, 4000);
+              }
+              return null;
+            }
+          )
+        : Promise.resolve(null);
+
+      const [arRes, trRes] = await Promise.all([fetchAr, fetchTr]);
+      if (!arRes.ok) throw new Error(`Page fetch failed: HTTP ${arRes.status}`);
+      const arJson = await arRes.json();
+      if (arJson.code !== 200 || !arJson.data || !Array.isArray(arJson.data.ayahs)) {
+        throw new Error('Page non-200');
+      }
+      arabicAyahs = arJson.data.ayahs;
+      if (arJson.data.surahs && typeof arJson.data.surahs === 'object') {
+        surahsFromApi = arJson.data.surahs;
+      }
+
+      if (trRes && trRes.ok) {
+        const trJson = await trRes.json();
+        if (trJson.code === 200 && trJson.data && Array.isArray(trJson.data.ayahs)) {
+          translationAyahs = trJson.data.ayahs;
+        }
+      }
+    } catch (err) {
+      // Fallback: Check if cached surahs contain real ayahs with a.page === safePage
+      const cachedAyahsForPage: MushafPageAyah[] = [];
+      const bundled114 = getBundledSurahs114();
+      for (const s of bundled114) {
+        const cachedSurah =
+          loadQuranCache<SurahDetail>(`surah:${s.number}:${withTranslation ? translationEdition : 'ar'}`) ||
+          loadQuranCache<SurahDetail>(`surah:${s.number}:ar`);
+        if (cachedSurah && Array.isArray(cachedSurah.ayahs)) {
+          for (const a of cachedSurah.ayahs) {
+            if (a.page === safePage) {
+              cachedAyahsForPage.push({
+                number: a.number,
+                numberInSurah: a.numberInSurah,
+                text: a.text,
+                surah: {
+                  number: s.number,
+                  name: s.name,
+                  englishName: s.englishName,
+                  englishNameTranslation: s.englishNameTranslation,
+                  numberOfAyahs: s.numberOfAyahs,
+                  revelationType: s.revelationType,
+                },
+                juz: a.juz || 1,
+                manzil: a.manzil,
+                page: safePage,
+                ruku: a.ruku,
+                hizbQuarter: a.hizbQuarter,
+                sajda: a.sajda,
+                translation: a.translation,
+              });
+            }
+          }
+        }
+      }
+
+      if (cachedAyahsForPage.length > 0) {
+        cachedAyahsForPage.sort((a, b) => a.number - b.number);
+        const surahsMap: Record<number, SurahMeta> = {};
+        for (const a of cachedAyahsForPage) {
+          const sNum = a.surah.number;
+          if (!surahsMap[sNum]) {
+            const meta = bundled114.find((m) => m.number === sNum);
+            if (meta) surahsMap[sNum] = meta;
+          }
+        }
+        const fallbackDetail: MushafPageDetail = {
+          pageNumber: safePage,
+          ayahs: cachedAyahsForPage,
+          surahs: Object.values(surahsMap),
+          juz: cachedAyahsForPage.find((a) => typeof a.juz === 'number')?.juz,
+          hizbQuarter: cachedAyahsForPage.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter,
+        };
+        saveQuranCache(key, fallbackDetail);
+        return fallbackDetail;
+      }
+
+      throw err;
+    }
+  }
+
+  // Normalize page response
+  const surahsMap: Record<number, SurahMeta> = {};
+  const ayahs: MushafPageAyah[] = (arabicAyahs || []).map((a: any, i: number) => {
+    const sNum = a.surah?.number;
+    if (sNum && !surahsMap[sNum]) {
+      const fromApi = surahsFromApi[sNum] || surahsFromApi[String(sNum)];
+      surahsMap[sNum] = {
+        number: sNum,
+        name: a.surah.name || fromApi?.name || '',
+        englishName: a.surah.englishName || fromApi?.englishName || '',
+        englishNameTranslation: a.surah.englishNameTranslation || fromApi?.englishNameTranslation || '',
+        numberOfAyahs: a.surah.numberOfAyahs || fromApi?.numberOfAyahs || 0,
+        revelationType: a.surah.revelationType || fromApi?.revelationType || 'Meccan',
+      };
+    }
+
+    return {
+      number: a.number,
+      numberInSurah: a.numberInSurah,
+      text: a.text,
+      surah: {
+        number: a.surah?.number || 1,
+        name: a.surah?.name || '',
+        englishName: a.surah?.englishName || '',
+        englishNameTranslation: a.surah?.englishNameTranslation,
+        numberOfAyahs: a.surah?.numberOfAyahs,
+        revelationType: a.surah?.revelationType,
+      },
+      juz: a.juz,
+      manzil: a.manzil,
+      page: a.page || safePage,
+      ruku: a.ruku,
+      hizbQuarter: a.hizbQuarter,
+      sajda: a.sajda,
+      translation: translationAyahs?.[i]?.text || undefined,
+    };
+  });
+
+  const detail: MushafPageDetail = {
+    pageNumber: safePage,
+    ayahs,
+    surahs: Object.values(surahsMap),
+    juz: ayahs.find((a) => typeof a.juz === 'number')?.juz,
+    hizbQuarter: ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter,
+  };
+
+  saveQuranCache(key, detail);
+
+  // Also cache Arabic-only page
+  const arKey = `mushaf-page:${safePage}:ar`;
+  if (!loadQuranCache(arKey)) {
+    const arDetail: MushafPageDetail = {
+      ...detail,
+      ayahs: detail.ayahs.map((a) => ({
+        ...a,
+        translation: undefined,
+      })),
+    };
+    saveQuranCache(arKey, arDetail);
+  }
+
+  return detail;
+}
+
+/**
+ * Returns the exact Mushaf page number for a given (surah, ayah).
+ * Uses real ayah page metadata from cache or canonical Surah start pages.
+ * Never calculates page boundaries from proportional global ayah indexes.
+ */
+export function getMushafPageForAyah(surah: number, ayah: number): number {
+  const safeSurah = Math.max(1, Math.min(114, surah || 1));
+  const safeAyah = Math.max(1, ayah || 1);
+  if (safeAyah === 1) {
+    return getSurahStartPage(safeSurah);
+  }
+  const cached =
+    loadQuranCache<SurahDetail>(`surah:${safeSurah}:en.sahih`) ||
+    loadQuranCache<SurahDetail>(`surah:${safeSurah}:ar`);
+  if (cached && Array.isArray(cached.ayahs)) {
+    const found = cached.ayahs.find((a) => a.numberInSurah === safeAyah);
+    if (found && typeof found.page === 'number' && found.page >= 1 && found.page <= TOTAL_MUSHAF_PAGES) {
+      return found.page;
+    }
+  }
+  return getSurahStartPage(safeSurah);
+}
+
+export {
+  SURAH_START_PAGES,
+  TOTAL_MUSHAF_PAGES,
+  getSurahStartPage,
+  getPrimarySurahForPage,
+};
 
 export {
   fetchSurahWithScript,

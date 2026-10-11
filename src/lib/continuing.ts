@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
+import { getMushafPageForAyah } from './quran';
 
 const STORAGE_KEY = 'quran-last-reading';
 const MARKER_KEY = 'quran-reading-marker';
@@ -7,6 +8,7 @@ const MARKER_KEY = 'quran-reading-marker';
 export interface ReadingPosition {
   surah: number;
   ayah: number;
+  page: number;
   savedAt: number;
 }
 
@@ -16,13 +18,16 @@ export interface ReadingMarker extends ReadingPosition {
 }
 
 /** Validate a stored position against the Quran's real bounds (1-114 surahs, per-surah ayah count). */
-export function isValidReadingPosition(pos: { surah: number; ayah: number }): boolean {
+export function isValidReadingPosition(pos: { surah: number; ayah: number; page?: number }): boolean {
   const surah = pos?.surah;
   const ayah = pos?.ayah;
   if (typeof surah !== 'number' || typeof ayah !== 'number') return false;
   if (surah < 1 || surah > 114) return false;
   const maxAyah = SURAH_AYAH_COUNTS[surah - 1];
   if (typeof maxAyah !== 'number') return false;
+  if (pos.page !== undefined) {
+    if (typeof pos.page !== 'number' || pos.page < 1 || pos.page > 604) return false;
+  }
   return ayah >= 1 && ayah <= maxAyah;
 }
 
@@ -61,11 +66,16 @@ export function _resetReadingMemoryStateForTest(): void {
   listeners.clear();
 }
 
-export async function saveReadingPosition(surah: number, ayah: number): Promise<boolean> {
-  if (!isValidReadingPosition({ surah, ayah })) return false;
+export async function saveReadingPosition(surah: number, ayah: number, page?: number): Promise<boolean> {
+  const resolvedPage =
+    typeof page === 'number' && page >= 1 && page <= 604
+      ? page
+      : getMushafPageForAyah(surah, ayah);
+  if (!isValidReadingPosition({ surah, ayah, page: resolvedPage })) return false;
   const position: ReadingPosition = {
     surah,
     ayah,
+    page: resolvedPage,
     savedAt: Date.now(),
   };
   inMemoryPosition = position;
@@ -91,7 +101,14 @@ export async function getReadingPosition(): Promise<ReadingPosition | null> {
       typeof parsed.savedAt === 'number' &&
       isValidReadingPosition(parsed)
     ) {
-      const pos = parsed as ReadingPosition;
+      const page =
+        typeof parsed.page === 'number' && parsed.page >= 1 && parsed.page <= 604
+          ? parsed.page
+          : getMushafPageForAyah(parsed.surah, parsed.ayah);
+      const pos: ReadingPosition = {
+        ...parsed,
+        page,
+      };
       if (!inMemoryPosition || inMemoryPosition.savedAt <= pos.savedAt) {
         inMemoryPosition = pos;
       }
@@ -118,11 +135,16 @@ export async function clearReadingPosition(): Promise<boolean> {
  * Manual reading marker — the user explicitly says "this is where I stopped".
  * Exactly one active marker; setting a new one replaces the old.
  */
-export async function saveReadingMarker(surah: number, ayah: number): Promise<boolean> {
-  if (!isValidReadingPosition({ surah, ayah })) return false;
+export async function saveReadingMarker(surah: number, ayah: number, page?: number): Promise<boolean> {
+  const resolvedPage =
+    typeof page === 'number' && page >= 1 && page <= 604
+      ? page
+      : getMushafPageForAyah(surah, ayah);
+  if (!isValidReadingPosition({ surah, ayah, page: resolvedPage })) return false;
   const marker: ReadingMarker = {
     surah,
     ayah,
+    page: resolvedPage,
     savedAt: Date.now(),
     manual: true,
   };
@@ -150,7 +172,11 @@ export async function getReadingMarker(): Promise<ReadingMarker | null> {
       typeof parsed.savedAt === 'number' &&
       isValidReadingPosition(parsed)
     ) {
-      const marker = { ...parsed, manual: true } as ReadingMarker;
+      const page =
+        typeof parsed.page === 'number' && parsed.page >= 1 && parsed.page <= 604
+          ? parsed.page
+          : getMushafPageForAyah(parsed.surah, parsed.ayah);
+      const marker = { ...parsed, page, manual: true } as ReadingMarker;
       if (!inMemoryMarker || inMemoryMarker.savedAt <= marker.savedAt) {
         inMemoryMarker = marker;
       }

@@ -94,6 +94,30 @@ assert.ok(code.includes('keyboardHeight') && code.includes('paddingBottom:'), 'n
 assert.ok(code.includes('scrollEnabled'), 'note composer input must have scrollEnabled');
 console.log('  ✓ T9: Android edge-to-edge dynamic keyboard tracking & note scrollability verified');
 
+// Test 10: Juz and Hizb sync with currentPosition and expanded BackHandler
+assert.ok(
+  code.indexOf('const currentPosition = useMemo(') < code.indexOf('setSelectedJuz(currentPosition.juz)'),
+  'currentPosition must be declared before selectedJuz/selectedHizb sync effect'
+);
+assert.ok(
+  code.includes('juzPickerOpen') &&
+  code.includes('hizbPickerOpen') &&
+  code.includes('scriptPickerOpen') &&
+  code.includes('tafsirSourcePickerOpen') &&
+  code.includes('reciterChooserOpen') &&
+  code.includes('langPickerOpen'),
+  'BackHandler must handle all reading sub-pickers'
+);
+console.log('  ✓ T10: Juz/Hizb position sync and sub-picker BackHandler dismissal verified');
+
+// Test 11: Mushaf page interaction contract
+assert.ok(code.includes("t('Mushaf Pages', 'Mushaf Pages')"), 'Mushaf Pages mode label must exist');
+assert.ok(code.includes("t('Ayah by Ayah', 'Ayah by Ayah')"), 'Ayah by Ayah mode label must exist');
+assert.ok(code.includes('onLongPress={() => handleLongPressMushafAyah(a)}'), 'Mushaf ayahs must expose long-press actions');
+assert.ok(code.includes('delayLongPress={500}'), 'Mushaf long press must use a 500ms delay');
+assert.ok(code.includes("t('Marker')"), 'Mushaf action popover must expose Marker');
+console.log('  ✓ T11: Mushaf Pages/Ayah mode split and 500ms long-press actions verified');
+
 console.log('\n========================================================');
 console.log('ALL TOOLS MENU & READER ENHANCEMENT TESTS PASSED!');
 console.log('========================================================\n');
