@@ -106,8 +106,8 @@ function checkReducedMotion(cb: (reduced: boolean) => void) {
 
 export interface HomeScreenProps {
   onOpenNames?: () => void;
-  onOpenQuran?: (surah?: number, ayah?: number) => void;
-  onOpenReader?: (surah: number, ayah: number) => void;
+  onOpenQuran?: (surah?: number, ayah?: number, page?: number) => void;
+  onOpenReader?: (surah: number, ayah: number, page?: number) => void;
   onOpenQuranTab?: () => void;
   onOpenHadith?: () => void;
   onOpenQibla?: () => void;
@@ -132,11 +132,11 @@ export default function HomeScreen({
   const { haptic } = useHaptics();
 
   const handleOpenReader = useCallback(
-    (surah: number, ayah?: number) => {
+    (surah: number, ayah?: number, page?: number) => {
       if (onOpenReader) {
-        onOpenReader(surah, ayah ?? 1);
+        onOpenReader(surah, ayah ?? 1, page);
       } else if (onOpenQuran) {
-        onOpenQuran(surah, ayah);
+        onOpenQuran(surah, ayah, page);
       }
     },
     [onOpenReader, onOpenQuran]

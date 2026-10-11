@@ -95,10 +95,10 @@ assert.ok(
   'resumeTarget passes exact stored surah+ayah'
 );
 assert.ok(
-  homeCode.includes('onOpenSurah(resumeTarget.surah, resumeTarget.ayah)'),
-  'handleResumeReading opens reader at exact stored position'
+  homeCode.includes('onOpenSurah(resumeTarget.surah, resumeTarget.ayah, resumeTarget.page)'),
+  'handleResumeReading opens reader at exact stored position including page'
 );
-ok('QuranHome: resumeTarget passes stored surah+ayah through to reader');
+ok('QuranHome: resumeTarget passes stored surah+ayah+page through to reader');
 
 // (d) reader: targetAyahForPosition clamped to real ayah count, index = target-1
 assert.ok(
@@ -213,5 +213,88 @@ assert.ok(
   'ContinueReadingCard opens reader at exact stored position'
 );
 ok('ContinueReadingCard (Today): resolver + exact-position open');
+
+// (k) Page propagation through every navigation layer
+const appCode = fs.readFileSync('App.tsx', 'utf8');
+const todayCode = fs.readFileSync('src/screens/HomeScreen.tsx', 'utf8');
+assert.ok(
+  homeCode.includes('onOpenSurah(freshPos.surah, freshPos.ayah, freshPos.page)'),
+  'QuranHomeScreen passes freshPos page to onOpenSurah'
+);
+assert.ok(
+  appCode.includes('onOpenSurah={(n, a, p) =>') &&
+  appCode.includes("setQuran({ screen: 'reader', surah: n, initialAyah, initialPage })"),
+  'App.tsx propagates initialPage from QuranHomeScreen to QuranView reader state'
+);
+assert.ok(
+  appCode.includes('initialPage={quran.initialPage}'),
+  'App.tsx passes initialPage to QuranReaderScreen'
+);
+assert.ok(
+  todayCode.includes('onOpenReader(surah, ayah ?? 1, page)') &&
+  todayCode.includes('onOpenQuran(surah, ayah, page)'),
+  'HomeScreen propagates page parameter in handleOpenReader'
+);
+assert.ok(
+  appCode.includes('onOpenQuran={(surah, ayah, page) =>') &&
+  appCode.includes("setQuran({ screen: 'reader', surah, initialAyah, initialPage })"),
+  'App.tsx propagates initialPage from HomeScreen to QuranView reader state'
+);
+ok('navigation: saved page propagates through every navigation layer');
+
+// (l) 2-second restoration highlight contract in Mushaf mode
+const updatedReaderCode = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
+assert.ok(
+  updatedReaderCode.includes('const [highlightedMushafAyah, setHighlightedMushafAyah] = useState<number | null>(null);'),
+  'QuranReaderScreen defines highlightedMushafAyah state'
+);
+assert.ok(
+  updatedReaderCode.includes('highlightTimerRef = useRef'),
+  'QuranReaderScreen tracks highlight timer ref'
+);
+assert.ok(
+  updatedReaderCode.includes('clearHighlightTimer'),
+  'QuranReaderScreen defines clearHighlightTimer helper'
+);
+assert.ok(
+  updatedReaderCode.includes('2000'),
+  'QuranReaderScreen sets 2-second (2000ms) timer for temporary highlight'
+);
+// Timer cancelled on unmount
+assert.ok(
+  updatedReaderCode.includes('if (highlightTimerRef.current) {') &&
+  updatedReaderCode.includes('clearTimeout(highlightTimerRef.current)'),
+  'highlight timer is cleared on unmount and page change'
+);
+// Timer cancelled on page change
+assert.ok(
+  updatedReaderCode.includes('currentPage !== lastPageRef.current') &&
+  updatedReaderCode.includes('clearHighlightTimer()'),
+  'highlight timer and highlight state cleared on page change'
+);
+// Exact ayah identification avoiding fallback when requested ayah exists
+assert.ok(
+  updatedReaderCode.includes('initialAyah\n              ? data.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah)\n              : null') ||
+  updatedReaderCode.includes('initialAyah ? data.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah) : null') ||
+  updatedReaderCode.includes('data.ayahs.find((a) => a.surah.number === safeSurahNumber && a.numberInSurah === initialAyah)'),
+  'Mushaf mode identifies exact requested surah+ayah before checking fallbacks'
+);
+// Visible highlight in both Tajweed and Uthmani render branches
+assert.ok(
+  updatedReaderCode.includes('highlightedMushafAyah === a.number && { backgroundColor: colors.accentDim'),
+  'Tajweed render branch applies visible highlight to restored ayah'
+);
+assert.ok(
+  updatedReaderCode.includes('isRestorationHighlight && { backgroundColor: colors.accentDim') &&
+  updatedReaderCode.includes('const isRestorationHighlight = highlightedMushafAyah === a.number;'),
+  'Uthmani render branch applies visible highlight to restored ayah'
+);
+// Popup menu is NOT automatically opened
+assert.ok(
+  !updatedReaderCode.includes('setSelectedAyah(targetAyahItem)') &&
+  updatedReaderCode.includes('setSelectedAyah(null)'),
+  'restoration highlight does not open popup menu automatically'
+);
+ok('highlight: 2-second visible highlight in Uthmani & Tajweed with clean timer lifecycle and popup isolation');
 
 console.log('\nALL STAGE-2 READER/MUSHAF POSITION TESTS PASSED SUCCESSFULLY!');

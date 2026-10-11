@@ -1029,16 +1029,18 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 setLibrary({ screen: 'names' });
                 setTab('library');
               }}
-              onOpenQuran={(surah, ayah) => {
+              onOpenQuran={(surah, ayah, page) => {
                 if (surah) {
                   let initialAyah = ayah;
-                  if (!initialAyah) {
+                  let initialPage = page;
+                  if (!initialAyah && !initialPage) {
                     const marker = getReadingMarkerSync();
                     if (marker && marker.surah === surah) {
                       initialAyah = marker.ayah;
+                      initialPage = marker.page;
                     }
                   }
-                  setQuran({ screen: 'reader', surah, initialAyah });
+                  setQuran({ screen: 'reader', surah, initialAyah, initialPage });
                 } else {
                   setQuran({ screen: 'home' });
                 }

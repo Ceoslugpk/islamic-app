@@ -355,9 +355,9 @@ export default function QuranHomeScreen({
         return;
       }
       if (resumeTarget) {
-        onOpenSurah(resumeTarget.surah, resumeTarget.ayah);
+        onOpenSurah(resumeTarget.surah, resumeTarget.ayah, resumeTarget.page);
       } else {
-        onOpenSurah(1, 1);
+        onOpenSurah(1, 1, 1);
       }
     } catch {
       isResumingRef.current = false;
