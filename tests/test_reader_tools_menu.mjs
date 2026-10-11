@@ -157,7 +157,7 @@ assert.ok(
 );
 assert.ok(
   code.includes('selectedAyahY >= 88') &&
-  code.includes('selectedAyahY - 84') &&
+  code.includes('selectedAyahY - 24') &&
   code.includes('selectedAyahHeight'),
   'Popup must be dynamically anchored above or below the selected ayah based on measured coordinates'
 );

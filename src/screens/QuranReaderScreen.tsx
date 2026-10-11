@@ -2977,8 +2977,8 @@ export default function QuranReaderScreen({
                     styles.mushafInlineSelectedToolbar,
                     {
                       top: selectedAyahY >= 88
-                        ? Math.max(0, selectedAyahY - 84)
-                        : Math.max(0, selectedAyahY + (selectedAyahHeight || 44) + 6),
+                        ? Math.max(0, selectedAyahY - 24)
+                        : Math.max(0, selectedAyahY + (selectedAyahHeight || 44) + 4),
                     },
                   ]}
                 >
