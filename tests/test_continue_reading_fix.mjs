@@ -344,7 +344,10 @@ assert.ok(readerSource.includes('cancelPendingRetry'), 'reader defines cancelPen
 const capMatch = readerSource.match(/BOUNDED_PRE_RENDER_CAP\s*=\s*(\d+)/);
 assert.ok(capMatch, 'BOUNDED_PRE_RENDER_CAP integer value declared in reader');
 const BOUNDED_PRE_RENDER_CAP = parseInt(capMatch[1], 10);
-assert.equal(BOUNDED_PRE_RENDER_CAP, 120, 'BOUNDED_PRE_RENDER_CAP must be 120');
+assert.ok(
+  BOUNDED_PRE_RENDER_CAP >= 290,
+  `BOUNDED_PRE_RENDER_CAP must be >= 290 so deep targets (255/286) are not capped to 120 (was ${BOUNDED_PRE_RENDER_CAP})`
+);
 
 function computeReaderInitialNumToRender(targetAyah) {
   if (targetAyah <= 1) return 15;
@@ -354,75 +357,55 @@ function computeReaderInitialNumToRender(targetAyah) {
 // Ayah 1 default must remain 15
 assert.equal(computeReaderInitialNumToRender(1), 15, 'Default opens at ayah 1 must have initialNumToRender=15');
 
-// Bounded targets: 15, 35, 70, 120
-for (const target of [15, 35, 70, 120]) {
+// Bounded targets: 15, 35, 70, 120, 255, 286
+for (const target of [15, 35, 70, 120, 255, 286]) {
   const initialNum = computeReaderInitialNumToRender(target);
   const targetIndex = target - 1;
   assert.ok(initialNum > targetIndex, `initialNumToRender (${initialNum}) must pre-render past target index (${targetIndex}) for ayah ${target}`);
   assert.ok(initialNum <= BOUNDED_PRE_RENDER_CAP, `initialNumToRender (${initialNum}) must stay within bounded cap (${BOUNDED_PRE_RENDER_CAP})`);
 }
 
-// Deep target: 286 must be capped to avoid OOM / rendering all 286 cards on mount
-const deepInitialNum = computeReaderInitialNumToRender(286);
-assert.equal(deepInitialNum, BOUNDED_PRE_RENDER_CAP, `Deep target (286) must be capped to BOUNDED_PRE_RENDER_CAP (${BOUNDED_PRE_RENDER_CAP}), not all 286`);
+// Deep targets: 255 and 286 must NOT be capped to 120
+assert.ok(computeReaderInitialNumToRender(255) > 120, 'Target ayah 255 must not be capped to 120');
+assert.ok(computeReaderInitialNumToRender(286) > 120, 'Target ayah 286 must not be capped to 120');
+assert.ok(computeReaderInitialNumToRender(286) >= 286, 'Target ayah 286 must mount row 286 on initial render');
 
-// Simulate scrollToIndex failure retry loop with tracking of hops and delays
+// Simulate direct jump positioning flow with tracking of hops and delays
 function simulatePositioningFlow(targetAyah) {
   const targetIndex = targetAyah - 1;
   const initialNum = computeReaderInitialNumToRender(targetAyah);
-  let highestMeasuredIndex = 14; // Initial layout before target card measures
   let intermediateHops = 0;
   let totalDelayMs = 0;
-  let landedIndex = null;
-  let attempts = 0;
+  let attempts = 1;
 
-  // Initial attempt in useEffect
-  let isMeasured = highestMeasuredIndex >= targetIndex;
-  if (isMeasured) {
-    landedIndex = targetIndex;
-    return { landedIndex, intermediateHops, totalDelayMs, attempts: 0 };
+  // The card is mounted within initialNumToRender: direct jump lands in interaction frame
+  const isBoundedTarget = targetIndex < initialNum;
+  if (!isBoundedTarget) {
+    intermediateHops++;
+    totalDelayMs += 50;
+  } else {
+    totalDelayMs += 16;
   }
 
-  // Target card is unmeasured on first mount -> handleScrollToIndexFailed called
-  while (landedIndex === null && attempts < 50) {
-    attempts++;
-    const isBoundedTarget = targetIndex < initialNum;
-    if (!isBoundedTarget) {
-      // Deep fallback: advances render window by scrolling to measured edge
-      intermediateHops++;
-      highestMeasuredIndex = Math.min(targetIndex, highestMeasuredIndex + 15);
-      totalDelayMs += 50; // Deep fallback cadence
-    } else {
-      // Bounded target: card is already rendered! No intermediate hop; fast frame retry
-      totalDelayMs += 16; // Interaction frame cadence (<= 16ms)
-      highestMeasuredIndex = targetIndex; // Measured on next frame
-    }
-
-    if (highestMeasuredIndex >= targetIndex) {
-      landedIndex = targetIndex;
-      break;
-    }
-  }
-
+  const landedIndex = targetIndex;
   return { landedIndex, intermediateHops, totalDelayMs, attempts };
 }
 
-// Verify bounded targets (15, 35, 70, 120) require ZERO intermediate hops and no 100ms hops
-for (const target of [15, 35, 70, 120]) {
+// Verify targets (15, 35, 70, 120, 255, 286) require ZERO intermediate hops and land within interaction frame
+for (const target of [15, 35, 70, 120, 255, 286]) {
   const result = simulatePositioningFlow(target);
   assert.equal(result.landedIndex, target - 1, `Target ayah ${target} must land on exact index ${target - 1}`);
   assert.equal(result.intermediateHops, 0, `Target ayah ${target} must have 0 intermediate scrollToOffset hops (no stepping lag)`);
   assert.ok(result.totalDelayMs <= 30, `Target ayah ${target} must land within an interaction frame, got ${result.totalDelayMs}ms`);
 }
-console.log('  ✓ (h) bounded targets (15, 35, 70, 120) land with 0 intermediate hops in interaction frame\n');
+console.log('  ✓ (h) targets (15, 35, 70, 120, 255, 286) land with 0 intermediate hops in interaction frame\n');
 
-// ── Test i: deep target (286) convergence without OOM ────────────────────────
-console.log('Testing (i): deep target (286) convergence without OOM...');
+// ── Test i: deep target (286) direct landing without 120 cap ────────────────────────
+console.log('Testing (i): deep target (286) direct landing without 120 cap...');
 const deepResult = simulatePositioningFlow(286);
 assert.equal(deepResult.landedIndex, 285, 'Deep target 286 must land exactly on index 285');
-assert.ok(deepResult.attempts > 0, 'Deep target uses progressive measurement retries');
-assert.ok(deepResult.intermediateHops > 0, 'Deep target advances render window as needed');
-console.log(`  ✓ (i) deep target 286 converged to index 285 in ${deepResult.attempts} steps\n`);
+assert.equal(deepResult.intermediateHops, 0, 'Deep target 286 lands with 0 intermediate hops');
+console.log(`  ✓ (i) deep target 286 reached index 285 directly without 120 stall\n`);
 
 // ── Test j: user gesture & unmount cancellation ───────────────────────────────
 console.log('Testing (j): user gesture & unmount cancellation...');
@@ -511,7 +494,10 @@ const appSource = fs.readFileSync('App.tsx', 'utf8');
 assert.ok(continuingSource.includes('addReadingPositionListener'), 'continuing exports addReadingPositionListener');
 assert.ok(continuingSource.includes('getReadingMarkerSync'), 'continuing exports getReadingMarkerSync');
 assert.ok(cardSource.includes('addReadingPositionListener'), 'ContinueReadingCard listens to position changes');
+assert.ok(cardSource.includes('inFlightRef'), 'ContinueReadingCard uses inFlightRef in-flight guard');
 assert.ok(homeSource.includes('addReadingPositionListener'), 'QuranHomeScreen listens to position changes');
+assert.ok(homeSource.includes('isResumingRef'), 'QuranHomeScreen uses isResumingRef in-flight guard');
+assert.ok(homeSource.includes('disabled={isResuming}'), 'QuranHomeScreen disables Continue Reading card while in-flight');
 assert.ok(appSource.includes('getReadingMarkerSync'), 'App.tsx utilizes getReadingMarkerSync in navigation');
 assert.ok(readerSource.includes('isProgrammaticPositioningRef'), 'reader tracks programmatic positioning state');
 

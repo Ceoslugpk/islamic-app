@@ -159,12 +159,11 @@ const VIEWABILITY_CONFIG: ViewabilityConfig = {
   minimumViewTime: 500,
 };
 
-// ponytail: BOUNDED_PRE_RENDER_CAP = 120 — target-aware initialNumToRender renders
-// enough cards on mount to cover ordinary marked targets (ayahs 15, 35, 70, 120) in one
-// frame with zero progressive hops, while capping mount memory/CPU for extreme
-// deep markers (e.g. Surah 2:286). Default opens at ayah 1 remain initialNumToRender={15}.
-// Upgrade path: if device performance allows, increase cap or paginate layout estimates.
-const BOUNDED_PRE_RENDER_CAP = 120;
+// ponytail: BOUNDED_PRE_RENDER_CAP = 300 — target-aware initialNumToRender renders
+// enough cards on mount to cover any surah target (up to Surah 2:286) in one
+// direct jump with guaranteed mount & correction, while keeping default opens at
+// ayah 1 virtualized at initialNumToRender={15}.
+const BOUNDED_PRE_RENDER_CAP = 300;
 
 // Juz start mapping (which surah:ayah each juz starts at)
 const JUZ_STARTS: Record<number, { surah: number; ayah: number }> = {
@@ -1372,7 +1371,7 @@ export default function QuranReaderScreen({
           trackingReadyRef.current = true;
           scheduleDeferredWork();
         }
-      }, 300);
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, [targetAyahForPosition, scheduleDeferredWork]);

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   AppState,
   StyleSheet,
@@ -90,7 +90,19 @@ export function ContinueReadingCard({
     }).start();
   };
 
+  const inFlightRef = useRef(false);
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      inFlightRef.current = false;
+    };
+  }, []);
+
   const handlePress = async () => {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     haptic('light');
     try {
       const latest = await getContinueReadingPosition();
@@ -98,13 +110,17 @@ export function ContinueReadingCard({
         onOpenReader?.(latest.surah, latest.ayah);
         return;
       }
-    } catch {}
-    if (position && position.surah > 0) {
-      onOpenReader?.(position.surah, position.ayah);
-    } else if (onOpenQuranTab) {
-      onOpenQuranTab();
-    } else {
-      onOpenReader?.(1, 1);
+      if (position && position.surah > 0) {
+        onOpenReader?.(position.surah, position.ayah);
+      } else if (onOpenQuranTab) {
+        onOpenQuranTab();
+      } else {
+        onOpenReader?.(1, 1);
+      }
+    } catch {
+      inFlightRef.current = false;
+    } finally {
+      inFlightRef.current = false;
     }
   };
 

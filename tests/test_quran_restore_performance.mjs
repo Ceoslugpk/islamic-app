@@ -236,6 +236,102 @@ assert.equal(restoreResult.programmaticActive, false, 'Programmatic positioning 
 assert.equal(restoreResult.writesBlocked, false, 'Writes must be re-enabled after settlement');
 console.log(`  ✓ Restoration simulation completed in ${restoreResult.jumpCount} jump(s) with zero progressive hopping`);
 
+// ── Test 8: Continue Reading Interaction Single-Tap & In-Flight Guard Contract ──
+console.log('Test 8: Continue Reading single-tap invocation and in-flight guard contract...');
+const homeCode = fs.readFileSync('src/screens/QuranHomeScreen.tsx', 'utf8');
+
+// Verify ref-based in-flight guard
+assert.ok(homeCode.includes('isResumingRef'), 'QuranHomeScreen must declare isResumingRef in-flight guard');
+assert.ok(
+  homeCode.includes('if (isResumingRef.current) return;'),
+  'handleResumeReading must reject overlapping taps while in-flight'
+);
+assert.ok(
+  homeCode.includes('accessibilityState={{ busy: isResuming, disabled: isResuming }}'),
+  'Continue Reading card must report busy and disabled accessibility states'
+);
+assert.ok(
+  homeCode.includes('disabled={isResuming}'),
+  'Continue Reading card TouchableOpacity must be disabled when in-flight'
+);
+
+// Behavioral test: single tap invokes navigation exactly once even if storage is delayed
+async function simulateContinueReadingTaps({ tapCount, storageDelayMs }) {
+  let inFlight = false;
+  let navigationCalls = [];
+
+  const handleResume = async () => {
+    if (inFlight) return;
+    inFlight = true;
+    try {
+      // Simulate delayed getContinueReadingPosition
+      await new Promise((r) => setTimeout(r, storageDelayMs));
+      const freshPos = { surah: 2, ayah: 255 };
+      navigationCalls.push({ surah: freshPos.surah, ayah: freshPos.ayah });
+    } finally {
+      inFlight = false;
+    }
+  };
+
+  // Dispatch multiple rapid taps concurrently during storage delay
+  const promises = [];
+  for (let i = 0; i < tapCount; i++) {
+    promises.push(handleResume());
+    // Small inter-tap interval
+    await new Promise((r) => setTimeout(r, 10));
+  }
+  await Promise.all(promises);
+
+  return { navigationCalls, inFlightFinal: inFlight };
+}
+
+// 5 rapid taps with 60ms storage resolution
+const tapResult = await simulateContinueReadingTaps({ tapCount: 5, storageDelayMs: 60 });
+assert.equal(
+  tapResult.navigationCalls.length,
+  1,
+  `Continue Reading must invoke onOpenSurah exactly once despite 5 overlapping taps. Got: ${tapResult.navigationCalls.length}`
+);
+assert.deepEqual(
+  tapResult.navigationCalls[0],
+  { surah: 2, ayah: 255 },
+  'Continue Reading must pass freshest marker position'
+);
+assert.equal(tapResult.inFlightFinal, false, 'In-flight guard must clear after navigation handoff settles');
+console.log('  ✓ Continue Reading single-tap invocation and in-flight guard verified');
+
+// ── Test 9: Deep Target Ayah Restoration Contract (255 / 286 Not Capped to 120) ──
+console.log('Test 9: Deep target ayah 255 & 286 restoration contract (not capped to 120)...');
+
+// Verify BOUNDED_PRE_RENDER_CAP is not capped to 120
+const capMatch = readerCode.match(/BOUNDED_PRE_RENDER_CAP\s*=\s*(\d+)/);
+assert.ok(capMatch, 'BOUNDED_PRE_RENDER_CAP must be declared');
+const capVal = parseInt(capMatch[1], 10);
+assert.ok(
+  capVal >= 290,
+  `BOUNDED_PRE_RENDER_CAP must be >= 290 to prevent clamping deep targets (was ${capVal})`
+);
+
+// Verify compute initialNumToRender for deep targets
+function computeInitialNum(target) {
+  if (target <= 1) return 15;
+  return Math.min(capVal, Math.max(15, target + 5));
+}
+
+assert.equal(computeInitialNum(1), 15, 'Default open at ayah 1 must keep virtualization (15 items)');
+assert.ok(computeInitialNum(255) >= 255, 'Target ayah 255 initialNumToRender must mount row 255 (not capped to 120)');
+assert.ok(computeInitialNum(286) >= 286, 'Target ayah 286 initialNumToRender must mount row 286 (not capped to 120)');
+
+// Test simulation for ayah 286: reaches target in at most 2 jumps (direct + at most 1 correction)
+const restore286Result = simulateRestoreFlow({ targetAyah: 286 });
+assert.ok(
+  restore286Result.jumpCount <= 2,
+  `Deep target 286 must restore with at most 2 jumps. Got: ${restore286Result.jumpCount}`
+);
+assert.equal(restore286Result.programmaticActive, false, 'Target 286 positioning must settle');
+assert.equal(restore286Result.writesBlocked, false, 'Target 286 writes must be unblocked');
+console.log('  ✓ Deep target 255 and 286 restoration contract verified with at most 1 correction');
+
 console.log('\n========================================================');
 console.log('ALL QURAN RESTORE PERFORMANCE CONTRACT TESTS PASSED!');
 console.log('========================================================\n');

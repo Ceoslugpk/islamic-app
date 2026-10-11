@@ -99,6 +99,17 @@ export default function QuranHomeScreen({
   const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
   const [readingPosition, setReadingPosition] = useState<ReadingPosition | null>(null);
   const [recentSurahs, setRecentSurahs] = useState<RecentSurah[]>([]);
+  const [isResuming, setIsResuming] = useState(false);
+  const isResumingRef = useRef(false);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      isResumingRef.current = false;
+    };
+  }, []);
 
   const {
     history: searchHistory,
@@ -217,7 +228,11 @@ export default function QuranHomeScreen({
       .catch(() => {});
   }, [isActive]);
   useEffect(() => {
-    if (!isActive) wasActiveRef.current = false;
+    if (!isActive) {
+      wasActiveRef.current = false;
+      isResumingRef.current = false;
+      if (isMountedRef.current) setIsResuming(false);
+    }
   }, [isActive]);
 
   useEffect(() => {
@@ -327,20 +342,29 @@ export default function QuranHomeScreen({
     return null;
   }, [readingPosition, lastRead, surahs]);
 
-  const handleResumeReading = async () => {
+  const handleResumeReading = useCallback(async () => {
+    if (isResumingRef.current) return;
+    isResumingRef.current = true;
+    if (isMountedRef.current) setIsResuming(true);
     try {
       const freshPos = await getContinueReadingPosition();
       if (freshPos && freshPos.surah > 0) {
         onOpenSurah(freshPos.surah, freshPos.ayah);
         return;
       }
-    } catch {}
-    if (resumeTarget) {
-      onOpenSurah(resumeTarget.surah, resumeTarget.ayah);
-    } else {
-      onOpenSurah(1, 1);
+      if (resumeTarget) {
+        onOpenSurah(resumeTarget.surah, resumeTarget.ayah);
+      } else {
+        onOpenSurah(1, 1);
+      }
+    } catch {
+      isResumingRef.current = false;
+      if (isMountedRef.current) setIsResuming(false);
+    } finally {
+      isResumingRef.current = false;
+      if (isMountedRef.current) setIsResuming(false);
     }
-  };
+  }, [onOpenSurah, resumeTarget]);
 
   const submitSearch = () => {
     const q = searchQuery.trim();
@@ -482,12 +506,17 @@ export default function QuranHomeScreen({
         <TouchableOpacity
           activeOpacity={0.8}
           onPress={handleResumeReading}
+          disabled={isResuming}
+          accessibilityRole="button"
+          accessibilityState={{ busy: isResuming, disabled: isResuming }}
+          accessibilityLabel={`${resumeTarget ? t('CONTINUE READING') : t('START READING')}. ${resumeTarget?.name || t('Al-Faatiha')}. ${resumeTarget ? `${t('Surah')} ${resumeTarget.surah}:${resumeTarget.ayah}` : `${t('The Opening')} · ${t('Ayah')} 1`}`}
           style={[
             styles.continueCard,
             {
               backgroundColor: colors.bgSurface,
               borderColor: colors.borderSubtle,
               padding: isNarrow ? 12 : 16,
+              opacity: isResuming ? 0.7 : 1,
             },
           ]}
         >
@@ -1080,6 +1109,7 @@ export default function QuranHomeScreen({
     bookmarkCount, noteCount, translatedNames, filteredSurahs,
     onOpenSurah, onOpenBookmarks, onOpenNotes, onOpenPlans, onOpenHifz,
     handleSelectJuz, setSearchFilter, setSearchQuery, addQuery, removeSearchHistoryQuery,
+    handleResumeReading, isResuming, resumeTarget,
   ]);
 
   const renderSurahRow = ({ item }: { item: SurahMeta }) => {
