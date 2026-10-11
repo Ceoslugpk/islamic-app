@@ -77,7 +77,10 @@ console.log('  ✓ T6: Share card logo and ISLAMIC wordmark verified');
 assert.ok(code.includes('noteComposerAyah'), 'noteComposerAyah state must exist');
 assert.ok(code.includes('openNoteComposer'), 'openNoteComposer handler must exist');
 assert.ok(code.includes('handleSaveNote'), 'handleSaveNote handler must exist');
-assert.ok(code.includes('addNote(safeSurahNumber'), 'addNote must be called with safeSurahNumber and noteComposerAyah');
+assert.ok(
+  code.includes('addNote(noteComposerTarget.surah') || code.includes('addNote(safeSurahNumber'),
+  'addNote must be called with noteComposerTarget.surah or safeSurahNumber and noteComposerAyah'
+);
 assert.ok(code.includes('openNoteComposer(item.numberInSurah)'), 'Ayah long press must directly open note composer');
 assert.ok(!code.includes("Alert.alert(\n        `Ayah ${item.numberInSurah}`") && !code.includes("text: 'Add Note'"), 'Ayah long press alert dialog must be removed');
 assert.ok(code.includes('noteModalSheet'), 'Note composer must use noteModalSheet bottom sheet layout');
@@ -197,6 +200,54 @@ assert.ok(
   'FlatList cards mode must have safe surah key and immediateSurah fallback on toggle'
 );
 console.log('  ✓ T15: Footer controls and FlatList onViewableItemsChanged stability verified');
+
+// Test 16: Mushaf selected-ayah popup actions
+assert.ok(
+  code.includes('handleToggleBookmarkForMushafAyah') &&
+  code.includes('isBookmarkedCurrent') &&
+  code.includes('testID="mushaf-action-bookmark"'),
+  'Mushaf bookmark action must use selected ayah surah + ayah and dynamically reflect bookmark state'
+);
+assert.ok(
+  code.includes('handleSetReadingMarkerAt') &&
+  code.includes('isMarkedCurrent') &&
+  code.includes("isMarkedCurrent ? 'flag' : 'flag-outline'") &&
+  code.includes('testID="mushaf-action-marker"'),
+  'Mushaf marker action must target exact page/surah/ayah and toggle flag icon'
+);
+assert.ok(
+  code.includes('noteComposerTarget') &&
+  code.includes('openNoteComposer(selectedAyah.numberInSurah, selectedAyah.surah.number') &&
+  code.includes('testID="mushaf-action-note"'),
+  'Mushaf note action must open noteComposerTarget with selected ayah surah and ayah'
+);
+assert.ok(
+  code.includes('handlePlayAyahToggle(selectedAyah.numberInSurah, selectedAyah.surah.number') &&
+  code.includes('handleOpenTafsir(selectedAyah.numberInSurah, selectedAyah.surah.number') &&
+  code.includes('testID="mushaf-action-play"') &&
+  code.includes('testID="mushaf-action-tafsir"'),
+  'Mushaf play and tafsir actions must target selected ayah surah and ayah'
+);
+assert.ok(
+  code.includes('handleCopyMushafAyah') &&
+  code.includes('isCopiedCurrent') &&
+  code.includes('testID="mushaf-action-copy"'),
+  'Mushaf copy action must provide checkmark feedback'
+);
+assert.ok(
+  code.includes('handleShareMushafAyah') &&
+  code.includes('handleShareAyah(shareItem)') &&
+  code.includes('testID="mushaf-action-share"'),
+  'Mushaf share action must invoke handleShareAyah with selected ayah item metadata'
+);
+assert.ok(
+  code.includes('testID="mushaf-action-close"') &&
+  code.includes('mushafInlineSelectedToolbar') &&
+  code.includes('zIndex: 100') &&
+  code.includes('elevation: 12'),
+  'Mushaf popup overlay must have close button and top-level zIndex/elevation stacking'
+);
+console.log('  ✓ T16: Mushaf selected-ayah popup actions (Bookmark, Marker, Notes, Play, Tafsir, Copy, Share, Stacking) verified');
 
 console.log('\n========================================================');
 console.log('ALL TOOLS MENU & READER ENHANCEMENT TESTS PASSED!');
