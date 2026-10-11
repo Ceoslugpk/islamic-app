@@ -143,21 +143,21 @@ export const ACCENT_KEYS: AccentKey[] = [
 
 export const DEFAULT_ACCENT: AccentKey = 'amber';
 
-const LOCALIZED_ACCENT_NAMES: Record<AccentKey, { en: string; ar: string; ur: string; hi: string }> = {
-  amber: { en: 'Amber', ar: 'عنبر', ur: 'سنہرا', hi: 'अम्बर' },
-  rose: { en: 'Rose', ar: 'وردي', ur: 'گلابی', hi: 'गुलाबी' },
-  emerald: { en: 'Emerald', ar: 'زمرد', ur: 'زمرد', hi: 'पन्ना' },
-  teal: { en: 'Teal', ar: 'تركواز', ur: 'فیروزی', hi: 'फ़िरोज़ी' },
-  terracotta: { en: 'Terracotta', ar: 'طين محروق', ur: 'گیرو', hi: 'गेरुआ' },
-  sky: { en: 'Dusty Blue', ar: 'أزرق سماوي', ur: 'ہلکا نیلا', hi: 'आसमानी' },
-  mauve: { en: 'Mauve', ar: 'موف', ur: 'کاسنی', hi: 'हल्का बैंगनी' },
-  olive: { en: 'Olive', ar: 'زيتوني', ur: 'زیتونی', hi: 'ज़ैतूनी' },
-  sand: { en: 'Sand Gold', ar: 'رملي ذهبي', ur: 'ریتلا سنہرا', hi: 'रेतीला सुनहरा' },
-  berry: { en: 'Berry', ar: 'توتي', ur: 'بیری', hi: 'बेरी' },
-  violet: { en: 'Violet', ar: 'بنفسجي', ur: 'بنफشی', hi: 'बैंगनी' },
-  cobalt: { en: 'Cobalt', ar: 'كوبالت', ur: 'کوبالٹ', hi: 'कोबाल्ट' },
-  crimson: { en: 'Crimson', ar: 'قرمزي', ur: 'سرخ قرمزی', hi: 'किरमिज़ी' },
-  copper: { en: 'Copper', ar: 'نحاسي', ur: 'تانبا', hi: 'तांबा' },
+const LOCALIZED_ACCENT_NAMES: Record<AccentKey, { en: string; ar: string; ur: string; hi: string; ml: string; si: string }> = {
+  amber: { en: 'Amber', ar: 'عنبر', ur: 'سنہرا', hi: 'अम्बर', ml: 'ആംബർ', si: 'ඇම්බර්' },
+  rose: { en: 'Rose', ar: 'وردي', ur: 'گلابی', hi: 'गुलाबी', ml: 'റോസ്', si: 'රෝස' },
+  emerald: { en: 'Emerald', ar: 'زمرد', ur: 'زمرد', hi: 'पन्ना', ml: 'മരതകം', si: 'මරකත' },
+  teal: { en: 'Teal', ar: 'تركواز', ur: 'فیروزی', hi: 'फ़िरोज़ी', ml: 'ടീൽ', si: 'ටීල්' },
+  terracotta: { en: 'Terracotta', ar: 'طين محروق', ur: 'گیرو', hi: 'गेरुआ', ml: 'ടെറാക്കോട്ട', si: 'ටෙරාකොටා' },
+  sky: { en: 'Dusty Blue', ar: 'أزرق سماوي', ur: 'ہلکا نیلا', hi: 'आसमानी', ml: 'ആകാശ നീല', si: 'ලා නිල්' },
+  mauve: { en: 'Mauve', ar: 'موف', ur: 'کاسنی', hi: 'हल्का बैंगनी', ml: 'മോവ്', si: 'මෝව්' },
+  olive: { en: 'Olive', ar: 'زيتوني', ur: 'زیتونی', hi: 'ज़ैतूनी', ml: 'ഒലിവ്', si: 'ඔලිව්' },
+  sand: { en: 'Sand Gold', ar: 'رملي ذهبي', ur: 'ریتلا سنہرا', hi: 'रेतीला सुनहरा', ml: 'മണൽ സ്വർണ്ണം', si: 'වැලි රන්' },
+  berry: { en: 'Berry', ar: 'توتي', ur: 'بیری', hi: 'बेरी', ml: 'ബെറി', si: 'බෙරි' },
+  violet: { en: 'Violet', ar: 'بنفسجي', ur: 'بنفشی', hi: 'बैंगनी', ml: 'വയലറ്റ്', si: 'දම්' },
+  cobalt: { en: 'Cobalt', ar: 'كوبالت', ur: 'کوبالٹ', hi: 'कोबाल्ट', ml: 'കൊബാൾട്ട്', si: 'කොබෝල්ට්' },
+  crimson: { en: 'Crimson', ar: 'قرمزي', ur: 'سرخ قرمزی', hi: 'किरमिज़ी', ml: 'കടും ചുവപ്പ്', si: 'තද රතු' },
+  copper: { en: 'Copper', ar: 'نحاسي', ur: 'تانبا', hi: 'तांबा', ml: 'ചെമ്പ്', si: 'තඹ' },
 };
 
 export function getLocalizedAccentName(key: AccentKey, lang?: string | null): string {
@@ -165,5 +165,7 @@ export function getLocalizedAccentName(key: AccentKey, lang?: string | null): st
   if (lang === 'ar') return translations.ar;
   if (lang === 'ur') return translations.ur;
   if (lang === 'hi') return translations.hi;
+  if (lang === 'ml') return translations.ml;
+  if (lang === 'si') return translations.si;
   return translations.en;
 }

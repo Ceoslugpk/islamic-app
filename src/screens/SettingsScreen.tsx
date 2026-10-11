@@ -791,6 +791,10 @@ export default function SettingsScreen({
                 ? t('اردو (Urdu) · دائیں سے بائیں (RTL)')
                 : settings.language === 'hi'
                 ? 'हिन्दी (Hindi) · बाएं से दाएं (LTR)'
+                : settings.language === 'ml'
+                ? 'മലയാളം (Malayalam) · ഇടത്തുനിന്ന് വലത്തോട്ട് (LTR)'
+                : settings.language === 'si'
+                ? 'සිංහල (Sinhala) · වමේ සිට දකුණට (LTR)'
                 : t('English · Left to Right (LTR)')
             }
             accessibilityRole="text"
@@ -802,6 +806,8 @@ export default function SettingsScreen({
               { value: 'ur', label: 'اردو' },
               { value: 'ar', label: 'العربية' },
               { value: 'hi', label: 'हिन्दी' },
+              { value: 'ml', label: 'മലയാളം' },
+              { value: 'si', label: 'සිංහල' },
             ]}
             value={settings.language}
             disabled={isSwitchingLanguage}

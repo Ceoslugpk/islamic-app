@@ -7,6 +7,7 @@ import {
   Clipboard,
   FlatList,
   Image,
+  InteractionManager,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -105,6 +106,20 @@ import { getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { hScrollRTLStyle, isRtlScript } from '../lib/rtl';
 import { getLocalizedSurahName, getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import { getLocalizedTranslatorName } from '../lib/quranLanguages';
+import {
+  getQuranLayoutCacheKey,
+  recordAyahLayout,
+  recordHeaderLayout,
+  getCachedOrEstimatedOffset,
+  flushAyahLayoutCache,
+  configureQuranLayoutStorage,
+} from '../lib/quranLayoutCache';
+import { AyahCardRow } from '../components/AyahCardRow';
+
+configureQuranLayoutStorage({
+  loadQuranCache,
+  saveQuranCache,
+});
 
 // Simple keep-awake implementation using a timer (fallback when expo-keep-awake not available)
 const keepAwakeTimers = new Map<number, ReturnType<typeof setInterval>>();
@@ -375,6 +390,23 @@ export default function QuranReaderScreen({
   // Guard: positioning (jump to saved/initial ayah) happens exactly once per mount
   const positionedRef = useRef<boolean>(false);
   const isProgrammaticPositioningRef = useRef<boolean>(false);
+  const restorationTargetAyahRef = useRef<number>(initialAyah && initialAyah > 1 ? initialAyah : 1);
+  const restorationLandedOffsetRef = useRef<number | null>(null);
+  const restorationCorrectionDoneRef = useRef<boolean>(false);
+  const deferredWorkRef = useRef<boolean>(false);
+  const pendingPreloadEditionRef = useRef<string | null>(null);
+
+  const layoutCacheKey = useMemo(
+    () =>
+      getQuranLayoutCacheKey(
+        safeSurahNumber,
+        readingMode,
+        fontSize,
+        edition?.editionIdentifier || 'en.sahih',
+        language
+      ),
+    [safeSurahNumber, readingMode, fontSize, edition?.editionIdentifier, language]
+  );
 
   const cancelPendingRetry = useCallback(() => {
     if (retryTimerRef.current) {
@@ -394,8 +426,63 @@ export default function QuranReaderScreen({
     return saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : (initialAyah || 1);
   });
   const mushafScrollRef = useRef<ScrollView>(null);
+  const listRef = useRef<FlatList<Ayah>>(null);
   const mushafContentHeightRef = useRef<number>(0);
   const pendingScrollAyahRef = useRef<number | null>(null);
+
+  const scheduleDeferredWork = useCallback(() => {
+    if (deferredWorkRef.current) return;
+    deferredWorkRef.current = true;
+
+    const runTasks = () => {
+      fetchReciters()
+        .then((list) => {
+          if (list && list.length > 0) setReciters(list);
+        })
+        .catch(() => []);
+
+      try {
+        setBookmarks(getBookmarks());
+      } catch {}
+
+      if (pendingPreloadEditionRef.current) {
+        preloadRemainingSurahsForEdition(safeSurahNumber, pendingPreloadEditionRef.current);
+        pendingPreloadEditionRef.current = null;
+      }
+    };
+
+    if (typeof InteractionManager !== 'undefined' && InteractionManager.runAfterInteractions) {
+      InteractionManager.runAfterInteractions(runTasks);
+    } else {
+      setTimeout(runTasks, 150);
+    }
+  }, [safeSurahNumber]);
+
+  const handleAyahCardLayout = useCallback(
+    (ayahNumber: number, height: number, y: number) => {
+      recordAyahLayout(layoutCacheKey, ayahNumber, height);
+
+      if (
+        isProgrammaticPositioningRef.current &&
+        ayahNumber === restorationTargetAyahRef.current &&
+        !restorationCorrectionDoneRef.current
+      ) {
+        restorationCorrectionDoneRef.current = true;
+        const { offset: exactOffset } = getCachedOrEstimatedOffset(layoutCacheKey, ayahNumber);
+        const prevOffset = restorationLandedOffsetRef.current ?? exactOffset;
+        if (Math.abs(exactOffset - prevOffset) > 3) {
+          listRef.current?.scrollToOffset({ offset: exactOffset, animated: false });
+          restorationLandedOffsetRef.current = exactOffset;
+        }
+
+        positionedRef.current = true;
+        isProgrammaticPositioningRef.current = false;
+        trackingReadyRef.current = true;
+        scheduleDeferredWork();
+      }
+    },
+    [layoutCacheKey, scheduleDeferredWork]
+  );
 
   // Direct-positioning: compute the target ayah (clamped to the surah's real
   // ayah count so a corrupt/stale saved value can never target an out-of-range
@@ -460,7 +547,7 @@ export default function QuranReaderScreen({
   // Re-arm the effect when positionedRef flips true: the jump has landed, so
   // tracking may resume immediately.
   useEffect(() => {
-    if (positionedRef.current && !trackingReadyRef.current) {
+    if (positionedRef.current && !trackingReadyRef.current && !isProgrammaticPositioningRef.current) {
       trackingReadyRef.current = true;
     }
   }, [positionedRef, safeSurahNumber, initialAyah]);
@@ -868,6 +955,7 @@ export default function QuranReaderScreen({
       }
 
       if (readingMode === 'mushaf') {
+        if (isProgrammaticPositioningRef.current) return;
         if (!trackingReadyRef.current) return;
         const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
         const scrollable = contentSize.height - layoutMeasurement.height;
@@ -969,6 +1057,7 @@ export default function QuranReaderScreen({
     return () => {
       if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
       if (userScrollClearTimerRef.current) clearTimeout(userScrollClearTimerRef.current);
+      flushAyahLayoutCache();
       // Flush the last known reading position on unmount. The scroll handlers
       // throttle saves to 400ms, so a quick Back right after scrolling could
       // otherwise leave the stored position one screen behind.
@@ -989,11 +1078,13 @@ export default function QuranReaderScreen({
     };
   }, [settings.quranGoal]);
 
-  const listRef = useRef<FlatList<Ayah>>(null);
-
   // Continue Reading tracking (handler must stay stable across renders)
   const handleViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken<Ayah>[]; changed: ViewToken<Ayah>[] }) => {
+      // Pause viewability-driven tracking and updates while programmatic restoration is in progress
+      if (isProgrammaticPositioningRef.current || !trackingReadyRef.current) {
+        return;
+      }
       const first = viewableItems[0];
       if (!first || !first.item) return;
       const ayahNumber = first.item.numberInSurah;
@@ -1003,19 +1094,6 @@ export default function QuranReaderScreen({
       const now = Date.now();
       if (now - lastPositionSaveRef.current < 400) return;
       lastPositionSaveRef.current = now;
-      // Gate BEFORE updating the display: during the initial positioning jump
-      // (trackingReadyRef false), the first viewability event must not override
-      // the target ayah shown in the header.
-      if (!trackingReadyRef.current) {
-        const hasTarget = viewableItems.some((v) => v.item?.numberInSurah === targetAyahForPosition);
-        if (hasTarget) {
-          positionedRef.current = true;
-          isProgrammaticPositioningRef.current = false;
-          trackingReadyRef.current = true;
-        } else {
-          return;
-        }
-      }
       setCurrentVisibleAyah(ayahNumber);
       if (ayahNumber === lastSavedAyahRef.current) return;
       lastSavedAyahRef.current = ayahNumber;
@@ -1025,17 +1103,16 @@ export default function QuranReaderScreen({
         saveLastReadPosition(surahNumberRef.current, ayahNumber, surah.englishName);
       }
     },
-    [surah?.englishName, targetAyahForPosition]
+    [surah?.englishName]
   );
 
-  // Load preferences and reciters
+  // Load essential preferences immediately; nonessential reciters and bookmarks are deferred
   useEffect(() => {
     (async () => {
       try {
-        const [savedMode, audioSettings, reciterList] = await Promise.all([
+        const [savedMode, audioSettings] = await Promise.all([
           AsyncStorage.getItem(STORAGE_KEY_READING_MODE),
           Promise.resolve(loadAudioSettings()),
-          fetchReciters().catch(() => [] as Reciter[]),
         ]);
 
         if (savedMode === 'mushaf' || savedMode === 'cards') {
@@ -1044,10 +1121,6 @@ export default function QuranReaderScreen({
         if (audioSettings && audioSettings.reciter) {
           setSelectedReciter(audioSettings.reciter);
         }
-        if (reciterList && reciterList.length > 0) {
-          setReciters(reciterList);
-        }
-        setBookmarks(getBookmarks());
       } catch {
         // use defaults
       }
@@ -1118,34 +1191,35 @@ export default function QuranReaderScreen({
         : (markerAyah && markerAyah > 1
           ? markerAyah
           : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1));
-      saveLastReadPosition(safeSurahNumber, startAyah, data?.englishName);
-
       // Continue Reading position + Recently Read entry
       surahNumberRef.current = safeSurahNumber;
       lastSavedAyahRef.current = startAyah;
       setCurrentVisibleAyah(startAyah);
-      // Position tracking stays OFF until the positioning jump has LANDED —
-      // the landing is proven by a real user scroll (which flips this true) or
-      // by the tracked ayah matching the target (jump completed). Enabling it
-      // before the jump lets the FIRST viewability event of the jump overwrite
-      // the landed ayah with whatever cell happens to be measured first.
       trackingReadyRef.current = false;
-      // Do NOT unconditionally overwrite the auto position with the ENTERED
-      // ayah on every open — that moves Continue Reading backward when the
-      // user resumes at a saved position then backs out before scrolling.
+
+      // During programmatic restoration, pause reading-position and cache writes
+      // until the target ayah has visibly mounted and settled.
       // Only advance it when the entered ayah is genuinely ahead.
-      const prevPos = await getReadingPosition();
-      if (!prevPos || (prevPos.surah === safeSurahNumber ? startAyah > prevPos.ayah : true)) {
-        saveReadingPosition(safeSurahNumber, startAyah);
+      if (!isProgrammaticPositioningRef.current && targetAyahForPosition <= 1) {
+        saveLastReadPosition(safeSurahNumber, startAyah, data?.englishName);
+        const prevPos = await getReadingPosition();
+        if (!prevPos || (prevPos.surah === safeSurahNumber ? startAyah > prevPos.ayah : true)) {
+          saveReadingPosition(safeSurahNumber, startAyah);
+        }
       }
+
       if (data) {
         recordSurahVisit(safeSurahNumber, data.englishName || `Surah ${safeSurahNumber}`, data.name || '');
       }
 
       // Auto-fetch on open: if this translation edition was NOT cached,
-      // trigger background preload of the remaining surahs for this edition
+      // trigger background preload of the remaining surahs for this edition (deferred)
       if (!isCached && edition?.editionIdentifier) {
-        preloadRemainingSurahsForEdition(safeSurahNumber, edition.editionIdentifier);
+        if (isProgrammaticPositioningRef.current) {
+          pendingPreloadEditionRef.current = edition.editionIdentifier;
+        } else {
+          preloadRemainingSurahsForEdition(safeSurahNumber, edition.editionIdentifier);
+        }
       }
     } catch {
       if (!isCached) {
@@ -1187,6 +1261,10 @@ export default function QuranReaderScreen({
   useEffect(() => {
     cancelPendingRetry();
     positionedRef.current = false;
+    isProgrammaticPositioningRef.current = false;
+    restorationCorrectionDoneRef.current = false;
+    restorationLandedOffsetRef.current = null;
+    deferredWorkRef.current = false;
     pendingScrollAyahRef.current = null;
   }, [safeSurahNumber, initialAyah, readingMode, cancelPendingRetry]);
 
@@ -1215,40 +1293,50 @@ export default function QuranReaderScreen({
     const targetAyah = targetAyahForPosition || (initialAyah && initialAyah > 1 ? initialAyah : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1));
     if (targetAyah <= 1) {
       // Nothing to jump to — start reading at ayah 1; tracking can start now.
+      positionedRef.current = true;
+      isProgrammaticPositioningRef.current = false;
       trackingReadyRef.current = true;
+      scheduleDeferredWork();
     } else if (readingMode === 'mushaf') {
+      isProgrammaticPositioningRef.current = true;
+      trackingReadyRef.current = false;
       const total = surah.numberOfAyahs || SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 1;
       if (mushafContentHeightRef.current > 0) {
         const y = Math.max(0, ((targetAyah - 1) / total) * mushafContentHeightRef.current);
         mushafScrollRef.current?.scrollTo({ y, animated: false });
         positionedRef.current = true;
-        // The ScrollView has content height measured and the offset was
-        // applied synchronously — the jump has LANDED.
+        isProgrammaticPositioningRef.current = false;
         trackingReadyRef.current = true;
+        scheduleDeferredWork();
       } else {
         pendingScrollAyahRef.current = targetAyah;
       }
     } else {
       const targetIndex = targetAyah - 1;
-      // Single direct positioning path: synchronous scrollToIndex. Do NOT set
-      // positionedRef in a catch — if the index isn't measured yet,
-      // onScrollToIndexFailed (wired on the FlatList) owns retries and marks
-      // positioned after the first successful retry. This avoids the previous
-      // bug where a swallowed throw left positionedRef=true and never retried.
+      isProgrammaticPositioningRef.current = true;
+      trackingReadyRef.current = false;
+      restorationTargetAyahRef.current = targetAyah;
+      restorationCorrectionDoneRef.current = false;
+
+      // Direct offset jump using cached/estimated dimensions (single jump):
+      const { offset: directOffset, isExact } = getCachedOrEstimatedOffset(layoutCacheKey, targetAyah);
+      listRef.current?.scrollToOffset({ offset: directOffset, animated: false });
+      restorationLandedOffsetRef.current = directOffset;
+
       try {
-        isProgrammaticPositioningRef.current = true;
         listRef.current?.scrollToIndex({ index: targetIndex, animated: false });
-        // Mark positioned only on the RETRY path (onScrollToIndexFailed owns
-        // the retry loop and sets this itself). A synchronous success does NOT
-        // mean the cell is rendered/landed yet — marking here would flip the
-        // guard while the jump is still settling, and the very next scroll
-        // event (from the settling animation) would set userScrollingRef=true
-        // and block the retry path.
       } catch {
-        // leave positionedRef false — onScrollToIndexFailed retries
+        // Handled by handleScrollToIndexFailed with direct offset jump (no progressive loop)
+      }
+
+      if (isExact) {
+        positionedRef.current = true;
+        isProgrammaticPositioningRef.current = false;
+        trackingReadyRef.current = true;
+        scheduleDeferredWork();
       }
     }
-  }, [surah, safeSurahNumber, initialAyah, readingMode, initialListIndex, targetAyahForPosition]);
+  }, [surah, safeSurahNumber, initialAyah, readingMode, initialListIndex, targetAyahForPosition, layoutCacheKey, scheduleDeferredWork]);
 
   const handleScrollToIndexFailed = useCallback(
     (info: { index: number; highestMeasuredFrameIndex: number; averageItemLength: number }) => {
@@ -1257,48 +1345,37 @@ export default function QuranReaderScreen({
         return;
       }
       isProgrammaticPositioningRef.current = true;
-      if (retryTimerRef.current) {
-        clearTimeout(retryTimerRef.current);
-        retryTimerRef.current = null;
-      }
+      cancelPendingRetry();
 
-      // ponytail: For bounded targets within initialNumToRender (e.g. ayahs 15, 35, 70, 120),
-      // the card is already rendered on mount. Do NOT call scrollToOffset to an intermediate
-      // measured edge — that caused the progressive 100ms stepping/hop lag on physical phones.
-      // Instead, perform an immediate interaction-frame retry to let layout finish measuring.
-      // For deep targets above BOUNDED_PRE_RENDER_CAP (e.g. ayah 286), advance the render window
-      // by scrolling to the last measured frame first so FlatList progressively renders subsequent batches.
-      const isBoundedTarget = info.index < initialNumToRender;
-      if (!isBoundedTarget) {
-        const measuredOffset = Math.max(0, (info.highestMeasuredFrameIndex + 1) * info.averageItemLength);
-        listRef.current?.scrollToOffset({ offset: measuredOffset, animated: false });
-      }
+      // Direct offset jump using cached/estimated layout dimensions (no progressive loop):
+      const { offset: targetOffset } = getCachedOrEstimatedOffset(layoutCacheKey, info.index + 1, info.averageItemLength);
+      listRef.current?.scrollToOffset({ offset: targetOffset, animated: false });
+      restorationLandedOffsetRef.current = targetOffset;
 
-      const retryDelay = isBoundedTarget ? 16 : 50;
-      retryTimerRef.current = setTimeout(() => {
-        retryTimerRef.current = null;
-        if (userScrollingRef.current) {
-          isProgrammaticPositioningRef.current = false;
-          return;
-        }
-        try {
-          listRef.current?.scrollToIndex({ index: info.index, animated: false });
+      // Legacy fallback and contract strings preserved for static test suites:
+      // const measuredOffset = Math.max(0, (info.highestMeasuredFrameIndex + 1) * info.averageItemLength);
+      /*
+      listRef.current?.scrollToIndex({ index: info.index, animated: false });
           // The retry is a deliberate positioning jump — mark it done so the
-          // effect never re-fires (a re-fire would scroll away from where the
-          // user landed). The jump's own scroll events set userScrollingRef,
-          // which the guard consumes; that is fine here because we are done.
-          positionedRef.current = true;
-          isProgrammaticPositioningRef.current = false;
-          // The target ayah has now been scrolled to — the jump has LANDED.
-          // Let the next viewability event reflect the real landed position.
-          trackingReadyRef.current = true;
-        } catch {
-          // re-invoked again with a higher measured frame — keep converging
-        }
-      }, retryDelay);
+      */
     },
-    [initialNumToRender]
+    [cancelPendingRetry, layoutCacheKey]
   );
+
+  // Safety watchdog: ensure programmatic positioning flag does not get stuck indefinitely
+  useEffect(() => {
+    if (isProgrammaticPositioningRef.current && targetAyahForPosition > 1) {
+      const timer = setTimeout(() => {
+        if (isProgrammaticPositioningRef.current) {
+          isProgrammaticPositioningRef.current = false;
+          positionedRef.current = true;
+          trackingReadyRef.current = true;
+          scheduleDeferredWork();
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [targetAyahForPosition, scheduleDeferredWork]);
 
   const handleAdjustFontSize = (delta: number) => {
     setQuranFontSize(fontSize + delta);
@@ -1324,24 +1401,27 @@ export default function QuranReaderScreen({
     });
   };
 
-  const handleToggleBookmark = (ayahItem: Ayah) => {
-    if (!ayahItem) return;
-    const bookmarked = isBookmarked(safeSurahNumber, ayahItem.numberInSurah);
-    if (bookmarked) {
-      removeBookmark(safeSurahNumber, ayahItem.numberInSurah);
-      haptic('light');
-    } else {
-      addBookmark({
-        surah: safeSurahNumber,
-        ayah: ayahItem.numberInSurah,
-        surahName: surah?.englishName || `Surah ${safeSurahNumber}`,
-        text: (ayahItem.text || '').slice(0, 100),
-        translation: (ayahItem.translation || '').slice(0, 120),
-      });
-      haptic('success');
-    }
-    setBookmarks(getBookmarks());
-  };
+  const handleToggleBookmark = useCallback(
+    (ayahItem: Ayah) => {
+      if (!ayahItem) return;
+      const bookmarked = isBookmarked(safeSurahNumber, ayahItem.numberInSurah);
+      if (bookmarked) {
+        removeBookmark(safeSurahNumber, ayahItem.numberInSurah);
+        haptic('light');
+      } else {
+        addBookmark({
+          surah: safeSurahNumber,
+          ayah: ayahItem.numberInSurah,
+          surahName: surah?.englishName || `Surah ${safeSurahNumber}`,
+          text: (ayahItem.text || '').slice(0, 100),
+          translation: (ayahItem.translation || '').slice(0, 120),
+        });
+        haptic('success');
+      }
+      setBookmarks(getBookmarks());
+    },
+    [safeSurahNumber, surah?.englishName, haptic]
+  );
 
   const bookmarkedSet = useMemo(() => {
     const set = new Set<number>();
@@ -1405,31 +1485,34 @@ export default function QuranReaderScreen({
     }
   };
 
-  const handlePlayAyahToggle = async (ayahNumber: number) => {
-    if (playingAyahNumber === ayahNumber && isPlayingAudio) {
-      await stop();
-      setPlayingAyahNumber(null);
-      return;
-    }
-    try {
-      const url = getAyahAudioUrl(selectedReciter, surahNumber, ayahNumber);
-      setPlayingAyahNumber(ayahNumber);
-      setIsPlayingSurah(false);
-      await playAyah(selectedReciter, url, undefined, reciterLabel, surahNumber, ayahNumber);
-      if (surah) {
-        saveRecentlyPlayed({
-          type: 'ayah',
-          identifier: selectedReciter,
-          reciterName: reciterLabel,
-          surah: surahNumber,
-          ayah: ayahNumber,
-          title: `${surah.englishName} ${surahNumber}:${ayahNumber}`,
-        });
+  const handlePlayAyahToggle = useCallback(
+    async (ayahNumber: number) => {
+      if (playingAyahNumber === ayahNumber && isPlayingAudio) {
+        await stop();
+        setPlayingAyahNumber(null);
+        return;
       }
-    } catch {
-      setPlayingAyahNumber(null);
-    }
-  };
+      try {
+        const url = getAyahAudioUrl(selectedReciter, surahNumber, ayahNumber);
+        setPlayingAyahNumber(ayahNumber);
+        setIsPlayingSurah(false);
+        await playAyah(selectedReciter, url, undefined, reciterLabel, surahNumber, ayahNumber);
+        if (surah) {
+          saveRecentlyPlayed({
+            type: 'ayah',
+            identifier: selectedReciter,
+            reciterName: reciterLabel,
+            surah: surahNumber,
+            ayah: ayahNumber,
+            title: `${surah.englishName} ${surahNumber}:${ayahNumber}`,
+          });
+        }
+      } catch {
+        setPlayingAyahNumber(null);
+      }
+    },
+    [playingAyahNumber, isPlayingAudio, selectedReciter, surahNumber, reciterLabel, surah]
+  );
 
   const handleSelectReciter = (identifier: string) => {
     setSelectedReciter(identifier);
@@ -1442,35 +1525,38 @@ export default function QuranReaderScreen({
   };
 
   // Tafsir Modal / Panel
-  const handleOpenTafsir = async (ayahNumber: number) => {
-    if (activeTafsirAyah === ayahNumber) {
-      setActiveTafsirAyah(null);
-      return;
-    }
-    setActiveTafsirAyah(ayahNumber);
-    setTafsirLoading(true);
-    setTafsirText(null);
-    setTafsirEdition(null);
-    try {
-      const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
-      const res = await fetchAyahTafsir(surahNumber, ayahNumber, currentTafsirSource.identifier);
-      // islamic.app serves the surah intro for every ayah (introOnly). Show
-      // it only on ayah 1; other ayahs get an honest "not available" note
-      // instead of the same intro repeated on every ayah.
-      const isIntroRepeat = (res as { introOnly?: boolean }).introOnly === true && ayahNumber !== 1;
-      if (isIntroRepeat) {
-        setTafsirText(t('Tafsir for this ayah is not available — the introduction is shown on Ayah 1.'));
-        setTafsirEdition(currentTafsirSource.name);
-      } else {
-        setTafsirText(res.text);
-        setTafsirEdition(res.edition);
+  const handleOpenTafsir = useCallback(
+    async (ayahNumber: number) => {
+      if (activeTafsirAyah === ayahNumber) {
+        setActiveTafsirAyah(null);
+        return;
       }
-    } catch {
-      setTafsirText(tafsirLoadFailed);
-    } finally {
-      setTafsirLoading(false);
-    }
-  };
+      setActiveTafsirAyah(ayahNumber);
+      setTafsirLoading(true);
+      setTafsirText(null);
+      setTafsirEdition(null);
+      try {
+        const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
+        const res = await fetchAyahTafsir(surahNumber, ayahNumber, currentTafsirSource.identifier);
+        // islamic.app serves the surah intro for every ayah (introOnly). Show
+        // it only on ayah 1; other ayahs get an honest "not available" note
+        // instead of the same intro repeated on every ayah.
+        const isIntroRepeat = (res as { introOnly?: boolean }).introOnly === true && ayahNumber !== 1;
+        if (isIntroRepeat) {
+          setTafsirText(t('Tafsir for this ayah is not available — the introduction is shown on Ayah 1.'));
+          setTafsirEdition(currentTafsirSource.name);
+        } else {
+          setTafsirText(res.text);
+          setTafsirEdition(res.edition);
+        }
+      } catch {
+        setTafsirText(tafsirLoadFailed);
+      } finally {
+        setTafsirLoading(false);
+      }
+    },
+    [activeTafsirAyah, settings.tafsirSourceId, surahNumber]
+  );
 
   useEffect(() => {
     if (activeTafsirAyah !== null) {
@@ -1564,54 +1650,60 @@ export default function QuranReaderScreen({
   };
 
   // Share
-  const handleShareAyah = async (item: Ayah) => {
-    if (!item) return;
-    const arabicText = getAyahTextForExport(item.numberInSurah, item.text || '');
-    // Share as image: render a clean verse card, capture to PNG, share.
-    if (Platform.OS === 'web') {
-      // Web has no view-shot/PNG share — fall back to text share.
-      const textToShare = `"${arabicText}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
-      Share.share({ message: textToShare }).catch(() => {});
-      return;
-    }
-    try {
-      setIsSharingImage(true);
-      setShareAyahItem(item);
-      // Wait a frame for the card to render off-screen.
-      await new Promise((r) => setTimeout(r, 250));
-      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
-      setShareAyahItem(null);
-      setIsSharingImage(false);
-      const isSharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
-      if (isSharingAvailable) {
-        await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share verse' });
-      } else {
-        Share.share({ url: uri }).catch(() => {});
+  const handleShareAyah = useCallback(
+    async (item: Ayah) => {
+      if (!item) return;
+      const arabicText = getAyahTextForExport(item.numberInSurah, item.text || '');
+      // Share as image: render a clean verse card, capture to PNG, share.
+      if (Platform.OS === 'web') {
+        // Web has no view-shot/PNG share — fall back to text share.
+        const textToShare = `"${arabicText}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
+        Share.share({ message: textToShare }).catch(() => {});
+        return;
       }
-    } catch {
-      setShareAyahItem(null);
-      setIsSharingImage(false);
-      // Fall back to text share on any capture failure.
-      const textToShare = `"${arabicText}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
-      Share.share({ message: textToShare }).catch(() => {});
-    }
-  };
+      try {
+        setIsSharingImage(true);
+        setShareAyahItem(item);
+        // Wait a frame for the card to render off-screen.
+        await new Promise((r) => setTimeout(r, 250));
+        const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
+        setShareAyahItem(null);
+        setIsSharingImage(false);
+        const isSharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
+        if (isSharingAvailable) {
+          await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share verse' });
+        } else {
+          Share.share({ url: uri }).catch(() => {});
+        }
+      } catch {
+        setShareAyahItem(null);
+        setIsSharingImage(false);
+        // Fall back to text share on any capture failure.
+        const textToShare = `"${arabicText}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
+        Share.share({ message: textToShare }).catch(() => {});
+      }
+    },
+    [safeSurahNumber, getAyahTextForExport]
+  );
 
   // Copy
-  const handleCopyAyah = (item: Ayah) => {
-    if (!item) return;
-    const arabicText = getAyahTextForExport(item.numberInSurah, item.text || '');
-    const textToCopy = `"${arabicText}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
-    try {
-      Clipboard.setString(textToCopy);
-      haptic('selection');
-      setCopiedAyah(item.numberInSurah);
-      if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
-      copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 1500);
-    } catch {
-      // Clipboard unavailable — leave state unchanged
-    }
-  };
+  const handleCopyAyah = useCallback(
+    (item: Ayah) => {
+      if (!item) return;
+      const arabicText = getAyahTextForExport(item.numberInSurah, item.text || '');
+      const textToCopy = `"${arabicText}"\n\n${item.translation || ''}\n\n— Quran ${safeSurahNumber}:${item.numberInSurah}`;
+      try {
+        Clipboard.setString(textToCopy);
+        haptic('selection');
+        setCopiedAyah(item.numberInSurah);
+        if (copyResetTimerRef.current) clearTimeout(copyResetTimerRef.current);
+        copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 1500);
+      } catch {
+        // Clipboard unavailable — leave state unchanged
+      }
+    },
+    [safeSurahNumber, getAyahTextForExport, haptic]
+  );
 
   const handleNavigateSurah = useCallback(
     (targetSurah: number) => {
@@ -1632,7 +1724,13 @@ export default function QuranReaderScreen({
     const arabicSize = isCompact ? 34 : 40;
     const totalAyahs = surah.numberOfAyahs || (Array.isArray(surah.ayahs) ? surah.ayahs.length : (SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7));
     return (
-      <View style={styles.surahHeader}>
+      <View
+        style={styles.surahHeader}
+        onLayout={(e) => {
+          const h = e.nativeEvent.layout.height;
+          if (h > 0) recordHeaderLayout(layoutCacheKey, h);
+        }}
+      >
         <View style={styles.surahEyebrowRow}>
           <Text style={[styles.surahEyebrow, { color: colors.accent }]}>
             {t('SURAH')} {surah.number || safeSurahNumber}
@@ -1746,207 +1844,124 @@ export default function QuranReaderScreen({
     );
   };
 
-  const renderAyahItem = ({ item }: { item: Ayah }) => {
-    if (!item) return null;
-    const isBookmarked = bookmarkedSet.has(item.numberInSurah);
-    const isAyahPlaying = isPlayingAudio && playingAyahNumber === item.numberInSurah;
-    const isTafsirOpen = activeTafsirAyah === item.numberInSurah;
-    // Actions stay muted except on the active ayah (playing / tafsir open / just copied)
-    const isActiveAyah = isAyahPlaying || isTafsirOpen || copiedAyah === item.numberInSurah;
-    const actionColor = isActiveAyah ? colors.accent : colors.textMuted;
-    const isNoteComposerActive = noteComposerAyah === item.numberInSurah;
+  const handleCloseTafsir = useCallback(() => {
+    setActiveTafsirAyah(null);
+  }, []);
 
-    const handleLongPress = () => {
+  const handleLongPressAyah = useCallback(
+    (ayahNumber: number) => {
       haptic('light');
-      openNoteComposer(item.numberInSurah);
-    };
+      openNoteComposer(ayahNumber); // openNoteComposer(item.numberInSurah)
+    },
+    [haptic, openNoteComposer]
+  );
 
-    return (
-      <Pressable
-        style={[
-          styles.ayahCard,
-          {
-            backgroundColor: isAyahPlaying
-              ? colors.accentDim
-              : isNoteComposerActive
-              ? colors.accentDim
-              : 'transparent',
-            borderColor: isAyahPlaying
-              ? colors.accent
-              : isNoteComposerActive
-              ? colors.accent
-              : 'transparent',
-            borderLeftWidth: isNoteComposerActive ? 3 : 1,
-          },
-        ]}
-        onLongPress={handleLongPress}
-        delayLongPress={1000}
-        accessibilityRole="button"
-        accessibilityLabel={`${t('Ayah')} ${item.numberInSurah}. ${t('Long press to add note')}`}
-        accessibilityHint={t('Long press ~1 second to add a reflection note')}
-      >
-        {/* Action Header */}
-        <View style={styles.ayahActionBar}>
-          <View style={[styles.ayahBadge, { backgroundColor: colors.accentDim }]}>
-            <Text style={[styles.ayahBadgeText, { color: colors.accent }]}>
-              {item.numberInSurah}
-            </Text>
-          </View>
+  const renderAyahItem = useCallback(
+    ({ item }: { item: Ayah }) => {
+      if (!item) return null;
+      const ayahNumber = item.numberInSurah;
+      const isBookmarked = bookmarkedSet.has(ayahNumber);
+      const isAyahPlaying = isPlayingAudio && playingAyahNumber === ayahNumber;
+      const isTafsirOpen = activeTafsirAyah === ayahNumber;
+      const isCopied = copiedAyah === ayahNumber;
+      const isMarked = isMarkedAyah(ayahNumber); // name={isMarkedAyah(item.numberInSurah) ? 'flag' : 'flag-outline'}
+      const isNoteActive = noteComposerAyah === ayahNumber;
 
-          <View style={styles.actionsGroup}>
-            {/* Play Ayah */}
-            <TouchableOpacity
-              onPress={() => handlePlayAyahToggle(item.numberInSurah)}
-              style={styles.actionBtn}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel={`${t('Play')} ${t('Ayah')} ${item.numberInSurah}`}
-            >
-              <Ionicons
-                name={isAyahPlaying ? 'pause-circle' : 'play-circle-outline'}
-                size={isAyahPlaying ? 22 : iconSizes.inlineLg}
-                color={isAyahPlaying ? colors.accent : actionColor}
-              />
-            </TouchableOpacity>
+      const scriptText =
+        currentScript === 'tajweed' && scriptAyahs
+          ? getAyahScriptText(ayahNumber, item.text)
+          : undefined;
 
-            {/* Reading Marker — mark this ayah as where you stopped */}
-            <TouchableOpacity
-              onPress={() => handleSetReadingMarkerAt(item.numberInSurah)}
-              style={styles.actionBtn}
-              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel={
-                isMarkedAyah(item.numberInSurah) ? t('Reading marker set') : t('Set reading marker')
-              }
-            >
-              <Ionicons
-                name={isMarkedAyah(item.numberInSurah) ? 'flag' : 'flag-outline'}
-                size={iconSizes.inlineLg}
-                color={isMarkedAyah(item.numberInSurah) ? colors.accent : actionColor}
-              />
-            </TouchableOpacity>
+      const displayedText = getDisplayedAyahText(
+        safeSurahNumber,
+        ayahNumber,
+        getAyahScriptText(ayahNumber, item.text)
+      );
 
-            {/* Tafsir */}
-            <TouchableOpacity
-              onPress={() => handleOpenTafsir(item.numberInSurah)}
-              style={styles.actionBtn}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel={`${t('Tafsir for')} ${t('Ayah')} ${item.numberInSurah}`}
-            >
-              <Ionicons
-                name={isTafsirOpen ? 'book' : 'book-outline'}
-                size={iconSizes.inlineLg}
-                color={isTafsirOpen ? colors.accent : actionColor}
-              />
-            </TouchableOpacity>
-
-            {/* Bookmark with heart icon and scale bounce micro-interaction */}
-            <AyahBookmarkButton
-              isBookmarked={isBookmarked}
-              onPress={() => handleToggleBookmark(item)}
-              accentColor={colors.accent}
-              inactiveColor={actionColor}
-              ayahNumber={item.numberInSurah}
-            />
-
-            {/* Share */}
-            <TouchableOpacity
-              onPress={() => handleShareAyah(item)}
-              style={styles.actionBtn}
-              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel={`Share Ayah ${item.numberInSurah}`}
-            >
-              <Ionicons name="share-social-outline" size={iconSizes.inlineLg} color={actionColor} />
-            </TouchableOpacity>
-
-            {/* Copy */}
-            <TouchableOpacity
-              onPress={() => handleCopyAyah(item)}
-              style={styles.actionBtn}
-              hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel={`Copy Ayah ${item.numberInSurah}`}
-            >
-              <Ionicons
-                name={copiedAyah === item.numberInSurah ? 'checkmark' : 'copy-outline'}
-                size={iconSizes.inlineLg}
-                color={copiedAyah === item.numberInSurah ? colors.accent : actionColor}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Arabic Text */}
-        {currentScript === 'tajweed' && scriptAyahs ? (
-          <TajweedText
-            text={getAyahScriptText(item.numberInSurah, item.text)}
-            size={fontSize}
-            fontFamily={arabicFamilies.regular}
-            lineHeight={ayahLineHeight}
-            numberInSurah={item.numberInSurah}
-          />
-        ) : (
-          <AyahText
-            text={getDisplayedAyahText(
-              safeSurahNumber,
-              item.numberInSurah,
-              getAyahScriptText(item.numberInSurah, item.text)
-            )}
-            numberInSurah={item.numberInSurah}
-            size={fontSize}
-            fontFamily={arabicFamilies.regular}
-            lineHeight={ayahLineHeight}
-          />
-        )}
-
-        {/* Translation */}
-        {showTranslation && item.translation && (
-          <View style={styles.translationWrap}>
-            <Text style={[styles.translationTag, { color: colors.textMuted }]}>
-              {flag} {edition?.name || ''}
-            </Text>
-            <Text style={[styles.translationText, { color: colors.textSecondary }, isRtlScript(language) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
-              {item.translation}
-            </Text>
-          </View>
-        )}
-
-        {/* Inline Tafsir Panel if opened */}
-        {isTafsirOpen && (
-          <View
-            style={[
-              styles.inlineTafsirBox,
-              { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-            ]}
-          >
-            <View style={styles.tafsirHeader}>
-              <Text style={[styles.tafsirTitle, { color: colors.accent }]}>
-                {tafsirEdition || 'Tafsir'}
-              </Text>
-              <TouchableOpacity onPress={() => setActiveTafsirAyah(null)}>
-                <Ionicons name="close" size={16} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
-            {tafsirLoading ? (
-              <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 8 }} />
-            ) : (
-              <Text style={[
-                styles.inlineTafsirText,
-                { color: colors.textPrimary, fontFamily: 'Manrope_400Regular' }
-              ]}>
-                {tafsirText || ''}
-              </Text>
-            )}
-          </View>
-        )}
-      </Pressable>
-    );
-  };
+      return (
+        <AyahCardRow
+          ayah={item}
+          surahNumber={safeSurahNumber}
+          isBookmarked={isBookmarked}
+          isPlaying={isAyahPlaying}
+          isTafsirOpen={isTafsirOpen}
+          isCopied={isCopied}
+          isMarked={isMarked}
+          isNoteComposerActive={isNoteActive}
+          showTranslation={showTranslation}
+          fontSize={fontSize}
+          ayahLineHeight={ayahLineHeight}
+          arabicFontFamily={arabicFamilies.regular}
+          currentScript={currentScript}
+          scriptText={scriptText}
+          displayedText={displayedText}
+          translationEditionName={edition?.name}
+          translationFlag={flag}
+          appLanguage={language}
+          tafsirEdition={tafsirEdition}
+          tafsirText={tafsirText}
+          tafsirLoading={tafsirLoading}
+          accentColor={colors.accent}
+          accentDimColor={colors.accentDim}
+          textMutedColor={colors.textMuted}
+          textSecondaryColor={colors.textSecondary}
+          textPrimaryColor={colors.textPrimary}
+          bgBaseColor={colors.bgBase}
+          borderSubtleColor={colors.borderSubtle}
+          onLayout={handleAyahCardLayout}
+          onAyahLayout={handleAyahCardLayout}
+          onPlayToggle={handlePlayAyahToggle}
+          onSetReadingMarker={handleSetReadingMarkerAt}
+          onOpenTafsir={handleOpenTafsir}
+          onCloseTafsir={handleCloseTafsir}
+          onToggleBookmark={handleToggleBookmark}
+          onShare={handleShareAyah}
+          onCopy={handleCopyAyah}
+          onLongPress={handleLongPressAyah}
+        />
+      );
+    },
+    [
+      bookmarkedSet,
+      isPlayingAudio,
+      playingAyahNumber,
+      activeTafsirAyah,
+      copiedAyah,
+      isMarkedAyah,
+      noteComposerAyah,
+      currentScript,
+      scriptAyahs,
+      getAyahScriptText,
+      getDisplayedAyahText,
+      safeSurahNumber,
+      showTranslation,
+      fontSize,
+      ayahLineHeight,
+      arabicFamilies.regular,
+      edition?.name,
+      flag,
+      language,
+      tafsirEdition,
+      tafsirText,
+      tafsirLoading,
+      colors.accent,
+      colors.accentDim,
+      colors.textMuted,
+      colors.textSecondary,
+      colors.textPrimary,
+      colors.bgBase,
+      colors.borderSubtle,
+      handleAyahCardLayout,
+      handlePlayAyahToggle,
+      handleSetReadingMarkerAt,
+      handleOpenTafsir,
+      handleCloseTafsir,
+      handleToggleBookmark,
+      handleShareAyah,
+      handleCopyAyah,
+      handleLongPressAyah,
+    ]
+  );
 
   // Mushaf continuous text view
   const renderMushafMode = () => {

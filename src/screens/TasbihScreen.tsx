@@ -58,7 +58,7 @@ export const DHIKR_PRESETS: DhikrItem[] = [
   },
 ];
 
-const DHIKR_LOCALIZED: Record<'ur' | 'ar' | 'hi', Record<string, Pick<DhikrItem, 'transliteration' | 'meaning'>>> = {
+const DHIKR_LOCALIZED: Record<'ur' | 'ar' | 'hi' | 'ml' | 'si', Record<string, Pick<DhikrItem, 'transliteration' | 'meaning'>>> = {
   ur: {
     subhanallah: { transliteration: 'سبحان اللہ', meaning: 'اللہ پاک ہے' },
     alhamdulillah: { transliteration: 'الحمد للہ', meaning: 'تمام تعریفیں اللہ کے لیے ہیں' },
@@ -80,16 +80,30 @@ const DHIKR_LOCALIZED: Record<'ur' | 'ar' | 'hi', Record<string, Pick<DhikrItem,
     lailahaillallah: { transliteration: 'ला इलाहा इल्लल्लाह', meaning: 'अल्लाह के सिवा कोई माबूद नहीं' },
     astaghfirullah: { transliteration: 'अस्तग़फ़िरुल्लाह', meaning: 'मैं अल्लाह से माफ़ी मांगता हूँ' },
   },
+  ml: {
+    subhanallah: { transliteration: 'സുബ്ഹാനല്ലാഹ്', meaning: 'അല്ലാഹു സർവ്വ ന്യൂനതകളിൽ നിന്നും പരിശുദ്ധനാണ്' },
+    alhamdulillah: { transliteration: 'അൽഹംദുലില്ലാഹ്', meaning: 'സർവ്വ സ്തുതിയും അല്ലാഹുവിനാണ്' },
+    allahuakbar: { transliteration: 'അല്ലാഹു അക്ബർ', meaning: 'അല്ലാഹു ഏറ്റവും മഹാനാണ്' },
+    lailahaillallah: { transliteration: 'ലാ ഇലാഹ ഇല്ലല്ലാഹ്', meaning: 'അല്ലാഹുവല്ലാതെ യഥാർത്ഥ ആരാധനക്കർഹനില്ല' },
+    astaghfirullah: { transliteration: 'അസ്തഗ്ഫിറുല്ലാഹ്', meaning: 'ഞാൻ അല്ലാഹുവോട് പാപമോചനം തേടുന്നു' },
+  },
+  si: {
+    subhanallah: { transliteration: 'සුබ්හානල්ලාහ්', meaning: 'අල්ලාහ් සියලු අඩුපාඩුවලින් පිවිතුරුය' },
+    alhamdulillah: { transliteration: 'අල්හම්දුලිල්ලාහ්', meaning: 'සියලු ප්‍රශංසා අල්ලාහ්ටමය' },
+    allahuakbar: { transliteration: 'අල්ලාහු අක්බර්', meaning: 'අල්ලාහ් අතිශ්‍රේෂ්ඨය' },
+    lailahaillallah: { transliteration: 'ලා ඉලාහ ඉල්ලල්ලාහ්', meaning: 'නැමදුමට සුදුසු කිසිදු දෙවියෙක් නැත, අල්ලාහ් හැර' },
+    astaghfirullah: { transliteration: 'අස්තග්ෆිරුල්ලාහ්', meaning: 'මම අල්ලාහ්ගෙන් සමාව අයදිමි' },
+  },
 };
 
 export function getLocalizedDhikrTransliteration(item: DhikrItem): string {
   const language = getCurrentLanguage();
-  return language === 'en' ? item.transliteration : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi']?.[item.id]?.transliteration ?? item.transliteration;
+  return language === 'en' ? item.transliteration : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi' | 'ml' | 'si']?.[item.id]?.transliteration ?? item.transliteration;
 }
 
 export function getLocalizedDhikrMeaning(item: DhikrItem): string {
   const language = getCurrentLanguage();
-  return language === 'en' ? item.meaning : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi']?.[item.id]?.meaning ?? item.meaning;
+  return language === 'en' ? item.meaning : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi' | 'ml' | 'si']?.[item.id]?.meaning ?? item.meaning;
 }
 
 const TARGET_OPTIONS = [33, 99];

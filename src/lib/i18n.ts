@@ -7,15 +7,17 @@ import en from '../locales/en.json';
 import ur from '../locales/ur.json';
 import ar from '../locales/ar.json';
 import hi from '../locales/hi.json';
+import ml from '../locales/ml.json';
+import si from '../locales/si.json';
 
-export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi';
+export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi' | 'ml' | 'si';
 
 export function isRtlLanguage(lang: AppLanguage | string | null | undefined): boolean {
   return lang === 'ur' || lang === 'ar';
 }
 
 export function isAppLanguage(value: unknown): value is AppLanguage {
-  return value === 'en' || value === 'ur' || value === 'ar' || value === 'hi';
+  return value === 'en' || value === 'ur' || value === 'ar' || value === 'hi' || value === 'ml' || value === 'si';
 }
 
 const locales = Localization.getLocales();
@@ -27,6 +29,8 @@ export function resolveDeviceAppLanguage(code: string | null | undefined): AppLa
   if (lower === 'ar' || lower.startsWith('ar-') || lower.startsWith('ar_')) return 'ar';
   if (lower === 'ur' || lower.startsWith('ur-') || lower.startsWith('ur_')) return 'ur';
   if (lower === 'hi' || lower.startsWith('hi-') || lower.startsWith('hi_')) return 'hi';
+  if (lower === 'ml' || lower.startsWith('ml-') || lower.startsWith('ml_')) return 'ml';
+  if (lower === 'si' || lower.startsWith('si-') || lower.startsWith('si_')) return 'si';
   return 'en';
 }
 
@@ -78,6 +82,8 @@ i18n.use(initReactI18next).init({
     ur: { translation: ur },
     ar: { translation: ar },
     hi: { translation: hi },
+    ml: { translation: ml },
+    si: { translation: si },
   },
   lng: initialLanguage,
   fallbackLng: 'en',
@@ -165,6 +171,8 @@ export function getCurrentLanguage(): AppLanguage {
   if (lng === 'ar') return 'ar';
   if (lng === 'ur') return 'ur';
   if (lng === 'hi') return 'hi';
+  if (lng === 'ml') return 'ml';
+  if (lng === 'si') return 'si';
   return 'en';
 }
 

@@ -72,6 +72,44 @@ for (const id of editionIds) {
   assert.ok(metaHiKeys.has(id), `EDITION_METADATA_HI must have entry for edition "${id}"`);
 }
 
+// 1b3. Malayalam & Sinhala coverage in surahNamesLocalized & quranLanguages
+assert.ok(surahNamesCode.includes('LANGUAGE_NAMES_ML'), 'surahNamesLocalized must export LANGUAGE_NAMES_ML');
+assert.ok(quranLanguagesCode.includes('EDITION_METADATA_ML'), 'quranLanguages must export EDITION_METADATA_ML');
+assert.ok(surahNamesCode.includes('LANGUAGE_NAMES_SI'), 'surahNamesLocalized must export LANGUAGE_NAMES_SI');
+assert.ok(quranLanguagesCode.includes('EDITION_METADATA_SI'), 'quranLanguages must export EDITION_METADATA_SI');
+
+const langMlMatch = surahNamesCode.match(/export const LANGUAGE_NAMES_ML:[\s\S]*?= \{([\s\S]*?)\n\};/);
+assert.ok(langMlMatch, 'LANGUAGE_NAMES_ML found');
+const langMlKeys = new Set([...langMlMatch[1].matchAll(/^\s*'([^']+)':/gm), ...langMlMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
+
+for (const lang of editionLangs) {
+  assert.ok(langMlKeys.has(lang), `LANGUAGE_NAMES_ML must have entry for language "${lang}"`);
+}
+
+const metaMlMatch = quranLanguagesCode.match(/export const EDITION_METADATA_ML:[\s\S]*?= \{([\s\S]*?)\n\};/);
+assert.ok(metaMlMatch, 'EDITION_METADATA_ML found');
+const metaMlKeys = new Set([...metaMlMatch[1].matchAll(/^\s*'([^']+)':/gm), ...metaMlMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
+
+for (const id of editionIds) {
+  assert.ok(metaMlKeys.has(id), `EDITION_METADATA_ML must have entry for edition "${id}"`);
+}
+
+const langSiMatch = surahNamesCode.match(/export const LANGUAGE_NAMES_SI:[\s\S]*?= \{([\s\S]*?)\n\};/);
+assert.ok(langSiMatch, 'LANGUAGE_NAMES_SI found');
+const langSiKeys = new Set([...langSiMatch[1].matchAll(/^\s*'([^']+)':/gm), ...langSiMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
+
+for (const lang of editionLangs) {
+  assert.ok(langSiKeys.has(lang), `LANGUAGE_NAMES_SI must have entry for language "${lang}"`);
+}
+
+const metaSiMatch = quranLanguagesCode.match(/export const EDITION_METADATA_SI:[\s\S]*?= \{([\s\S]*?)\n\};/);
+assert.ok(metaSiMatch, 'EDITION_METADATA_SI found');
+const metaSiKeys = new Set([...metaSiMatch[1].matchAll(/^\s*'([^']+)':/gm), ...metaSiMatch[1].matchAll(/^\s*([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
+
+for (const id of editionIds) {
+  assert.ok(metaSiKeys.has(id), `EDITION_METADATA_SI must have entry for edition "${id}"`);
+}
+
 // Modal remaining raw English strings must be localized
 assert.ok(!modalCode.includes("accessibilityLabel={`${getLocalizedLanguageName(item.language)} - ${getLocalizedTranslatorName(item.editionIdentifier, item.name)}${isSelected ? ', currently selected' : ''}`}"),
   'Modal accessibilityLabel must not have hardcoded ", currently selected"');
@@ -81,21 +119,18 @@ assert.ok(!modalCode.includes("TRANSLATIONS (${QURAN_LANGUAGE_EDITIONS.length})"
 console.log('  ✓ Task 1 Quran chooser static assertions passed.');
 
 // 1c. Dynamic evaluation of language and translator helpers
-const getLocalizedLangFunction = new Function('englishName, lang, LANGUAGE_NAMES_UR, LANGUAGE_NAMES_AR, LANGUAGE_NAMES_HI', `
-  if (lang === 'ar' && LANGUAGE_NAMES_AR[englishName]) return LANGUAGE_NAMES_AR[englishName];
-  if (lang === 'ur' && LANGUAGE_NAMES_UR[englishName]) return LANGUAGE_NAMES_UR[englishName];
-  if (lang === 'hi' && LANGUAGE_NAMES_HI[englishName]) return LANGUAGE_NAMES_HI[englishName];
-  return englishName;
-`);
-
 const urMatch = surahNamesCode.match(/export const LANGUAGE_NAMES_UR:[\s\S]*?= \{([\s\S]*?)\n\};/);
 const langUrMap = new Function('return {' + urMatch[1] + '}')();
 const langArMap = new Function('return {' + langArMatch[1] + '}')();
 const langHiMap = new Function('return {' + langHiMatch[1] + '}')();
+const langMlMap = new Function('return {' + langMlMatch[1] + '}')();
+const langSiMap = new Function('return {' + langSiMatch[1] + '}')();
 const metaUrMatch = quranLanguagesCode.match(/export const EDITION_METADATA_UR:[\s\S]*?= \{([\s\S]*?)\n\};/);
 const metaUrMap = new Function('return {' + metaUrMatch[1] + '}')();
 const metaArMap = new Function('return {' + metaArMatch[1] + '}')();
 const metaHiMap = new Function('return {' + metaHiMatch[1] + '}')();
+const metaMlMap = new Function('return {' + metaMlMatch[1] + '}')();
+const metaSiMap = new Function('return {' + metaSiMatch[1] + '}')();
 
 for (const ed of editionIds) {
   assert.ok(metaArMap[ed]?.title, `Arabic metadata for ${ed} must have title`);
@@ -104,12 +139,20 @@ for (const ed of editionIds) {
   assert.ok(metaHiMap[ed]?.title, `Hindi metadata for ${ed} must have title`);
   assert.ok(metaHiMap[ed]?.translator, `Hindi metadata for ${ed} must have translator`);
   assert.ok(metaHiMap[ed]?.language, `Hindi metadata for ${ed} must have language`);
+  assert.ok(metaMlMap[ed]?.title, `Malayalam metadata for ${ed} must have title`);
+  assert.ok(metaMlMap[ed]?.translator, `Malayalam metadata for ${ed} must have translator`);
+  assert.ok(metaMlMap[ed]?.language, `Malayalam metadata for ${ed} must have language`);
+  assert.ok(metaSiMap[ed]?.title, `Sinhala metadata for ${ed} must have title`);
+  assert.ok(metaSiMap[ed]?.translator, `Sinhala metadata for ${ed} must have translator`);
+  assert.ok(metaSiMap[ed]?.language, `Sinhala metadata for ${ed} must have language`);
 }
 for (const lang of editionLangs) {
   assert.ok(langArMap[lang], `Arabic language name for ${lang} must exist`);
   assert.ok(langHiMap[lang], `Hindi language name for ${lang} must exist`);
+  assert.ok(langMlMap[lang], `Malayalam language name for ${lang} must exist`);
+  assert.ok(langSiMap[lang], `Sinhala language name for ${lang} must exist`);
 }
-console.log('  ✓ Task 1 dynamic Arabic & Hindi coverage verified across all editions.');
+console.log('  ✓ Task 1 dynamic Arabic, Hindi, Malayalam & Sinhala coverage verified across all editions.');
 
 // ---------------------------------------------------------------------------
 // 2. TASBIH: Localization in Urdu & Arabic
@@ -127,26 +170,32 @@ assert.ok(!tasbihCode.includes("action: 'Count reset'"), 'TasbihScreen undo acti
 
 // Meanings and transliterations must be localized
 assert.ok(tasbihCode.includes('getLocalizedDhikrMeaning'),
-  'TasbihScreen must provide getLocalizedDhikrMeaning for Urdu, Arabic, and Hindi');
+  'TasbihScreen must provide getLocalizedDhikrMeaning for Urdu, Arabic, Hindi, Malayalam, and Sinhala');
 assert.ok(tasbihCode.includes('getLocalizedDhikrTransliteration'),
   'TasbihScreen must provide getLocalizedDhikrTransliteration');
 assert.ok(tasbihCode.includes('hi:'), 'TasbihScreen must provide Hindi dhikr translations');
+assert.ok(tasbihCode.includes('ml:'), 'TasbihScreen must provide Malayalam dhikr translations');
+assert.ok(tasbihCode.includes('si:'), 'TasbihScreen must provide Sinhala dhikr translations');
 
 console.log('  ✓ Task 2 Tasbih assertions passed.');
 
 // ---------------------------------------------------------------------------
 // 3. CITIES: Localized Arabic, Urdu & Hindi names and bilingual search
 // ---------------------------------------------------------------------------
-console.log('\n--- 3. Cities: Localized Arabic, Urdu & Hindi names and search ---');
+console.log('\n--- 3. Cities: Localized Arabic, Urdu, Hindi, Malayalam & Sinhala names and bilingual search ---');
 
 const citiesCode = fs.readFileSync('src/lib/cities.ts', 'utf8');
 const citiesScreenCode = fs.readFileSync('src/screens/CitiesScreen.tsx', 'utf8');
 
 assert.ok(citiesCode.includes('COUNTRY_AR'), 'cities.ts must export COUNTRY_AR');
 assert.ok(citiesCode.includes('COUNTRY_HI'), 'cities.ts must export COUNTRY_HI');
+assert.ok(citiesCode.includes('COUNTRY_ML'), 'cities.ts must export COUNTRY_ML');
+assert.ok(citiesCode.includes('COUNTRY_SI'), 'cities.ts must export COUNTRY_SI');
 assert.ok(citiesCode.includes('CITY_NAMES_AR'), 'cities.ts must export CITY_NAMES_AR');
 assert.ok(citiesCode.includes('CITY_NAMES_UR'), 'cities.ts must export CITY_NAMES_UR');
 assert.ok(citiesCode.includes('CITY_NAMES_HI'), 'cities.ts must export CITY_NAMES_HI');
+assert.ok(citiesCode.includes('CITY_NAMES_ML'), 'cities.ts must export CITY_NAMES_ML');
+assert.ok(citiesCode.includes('CITY_NAMES_SI'), 'cities.ts must export CITY_NAMES_SI');
 assert.ok(citiesCode.includes('getLocalizedCityName'), 'cities.ts must export getLocalizedCityName');
 assert.ok(citiesCode.includes('getLocalizedCountryName'), 'cities.ts must export getLocalizedCountryName');
 
@@ -275,6 +324,20 @@ assert.ok(
   assert.strictEqual(settingsRef.current.language, 'hi');
   assert.strictEqual(settingsRef.current.themeMode, 'paper');
   assert.strictEqual(JSON.parse(storageData['islamic-settings']).language, 'hi');
+
+  // 2c. Light write -> hi->ml
+  setThemeMode('paper');
+  await setLanguage('ml');
+  assert.strictEqual(settingsRef.current.language, 'ml');
+  assert.strictEqual(settingsRef.current.themeMode, 'paper');
+  assert.strictEqual(JSON.parse(storageData['islamic-settings']).language, 'ml');
+
+  // 2d. Light write -> ml->si
+  setThemeMode('paper');
+  await setLanguage('si');
+  assert.strictEqual(settingsRef.current.language, 'si');
+  assert.strictEqual(settingsRef.current.themeMode, 'paper');
+  assert.strictEqual(JSON.parse(storageData['islamic-settings']).language, 'si');
 
   // 3. Concurrent rapid appearance write during language write
   const p3 = setLanguage('en');

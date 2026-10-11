@@ -7,10 +7,10 @@ This checklist is mandatory for Hermes and every coding agent. A locale file alo
 Update the shared language contract, not individual screens:
 
 - `src/lib/i18n.ts`
-  - extend `AppLanguage`
+  - extend `AppLanguage` (current registered: `'en' | 'ur' | 'ar' | 'hi' | 'ml' | 'si'`)
   - import and register the locale in `resources`
   - update `isAppLanguage()` and device-locale detection
-  - update `isRtlLanguage()` only if the language is RTL
+  - update `isRtlLanguage()` only if the language is RTL (Urdu & Arabic are RTL; English, Hindi, Malayalam, and Sinhala are strictly LTR)
 - `src/lib/settings.tsx`
   - accept the language in `sanitizeSettings()`
   - include it in the Settings language selector
@@ -92,3 +92,5 @@ Automated tests do not prove native `I18nManager` timing. On a physical Android 
 - no stale language, wrong direction, blank screen, or double reload
 
 Do not claim device verification without performing it. Do not build, commit, or push unless the user explicitly authorizes it.
+
+- For full details on the Malayalam & Sinhala integration, see [docs/malayalam-sinhala-languages.md](docs/malayalam-sinhala-languages.md).
