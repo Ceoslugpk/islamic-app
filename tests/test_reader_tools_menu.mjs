@@ -116,7 +116,10 @@ assert.ok(code.includes("t('Ayah by Ayah', 'Ayah by Ayah')"), 'Ayah by Ayah mode
 assert.ok(code.includes('onLongPress={() => handleLongPressMushafAyah(a)}'), 'Mushaf ayahs must expose long-press actions');
 assert.ok(code.includes('delayLongPress={500}'), 'Mushaf long press must use a 500ms delay');
 assert.ok(code.includes("t('Marker')"), 'Mushaf action popover must expose Marker');
-console.log('  ✓ T11: Mushaf Pages/Ayah mode split and 500ms long-press actions verified');
+assert.ok(code.includes("mushafSelectedActionText: { display: 'none' }"), 'Mushaf action popover must use icon-only actions');
+assert.ok(code.includes('const requestId = ++pageRequestRef.current'), 'Mushaf page loading must reject stale responses');
+assert.ok(code.includes('`Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`'), 'Mushaf page number must render actual values');
+console.log('  ✓ T11: Mushaf Pages/Ayah mode split, 500ms long-press, compact actions, and page race guard verified');
 
 console.log('\n========================================================');
 console.log('ALL TOOLS MENU & READER ENHANCEMENT TESTS PASSED!');

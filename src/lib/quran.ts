@@ -686,7 +686,7 @@ export async function fetchMushafPage(
 
   if (!force) {
     const cached = loadQuranCache<MushafPageDetail>(key);
-    if (cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
+    if (cached && cached.pageNumber === safePage && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
       return cached;
     }
   }

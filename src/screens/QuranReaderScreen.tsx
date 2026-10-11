@@ -966,6 +966,8 @@ export default function QuranReaderScreen({
     return { ayah: currentAyah, page, juz, hizb };
   }, [readingMode, currentPage, currentPageData, surah, safeSurahNumber, initialAyah, currentVisibleAyah]);
 
+  const displayedMushafPage = currentPageData?.pageNumber === currentPage ? currentPageData.pageNumber : currentPage;
+
   // Sync selected Juz and Hizb with current reading position
   useEffect(() => {
     if (currentPosition.juz) {
@@ -1572,6 +1574,15 @@ export default function QuranReaderScreen({
       setPageError(null);
       setPageLoading(true);
       setCurrentPage(targetPage);
+    } else {
+      setSelectedAyah(null);
+      setPageError(null);
+      if (surah?.ayahs?.length) {
+        setLoading(false);
+      } else {
+        setLoading(true);
+        loadSurah();
+      }
     }
     setReadingMode(next);
   };
@@ -2436,20 +2447,17 @@ export default function QuranReaderScreen({
         >
           <Ionicons name={getBackIcon()} size={18} color={colors.accent} />
           <Text style={[styles.mushafPageNavBtnText, { color: colors.accent }]}>
-            {t('Page {n}', { n: Math.max(1, currentPage - 1) })}
+            {`Page ${Math.max(1, currentPage - 1)}`}
           </Text>
         </TouchableOpacity>
 
         <View style={styles.mushafPageBadgeCenter}>
           <Text style={[styles.mushafPageBadgeText, { color: colors.textPrimary }]}>
-            {t('Page {current} of {total}', { current: currentPage, total: TOTAL_MUSHAF_PAGES })}
+            {`Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`}
           </Text>
           {currentPageData?.ayahs?.length ? (
             <Text style={[styles.mushafPageBadgeSub, { color: colors.textMuted }]}>
-              {t('Juz {j} • Hizb {h}', {
-                j: currentPageData.juz ?? currentPageData.ayahs.find((a) => typeof a.juz === 'number')?.juz,
-                h: Math.ceil((currentPageData.hizbQuarter ?? currentPageData.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter ?? 0) / 4),
-              })}
+              {`Juz ${currentPageData.juz ?? currentPageData.ayahs.find((a) => typeof a.juz === 'number')?.juz ?? '—'} • Hizb ${Math.ceil((currentPageData.hizbQuarter ?? currentPageData.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter ?? 0) / 4)}`}
             </Text>
           ) : null}
         </View>
@@ -2465,7 +2473,7 @@ export default function QuranReaderScreen({
           accessibilityLabel={t('Next Page')}
         >
           <Text style={[styles.mushafPageNavBtnText, { color: colors.accent }]}>
-            {t('Page {n}', { n: Math.min(TOTAL_MUSHAF_PAGES, currentPage + 1) })}
+            {`Page ${Math.min(TOTAL_MUSHAF_PAGES, currentPage + 1)}`}
           </Text>
           <Ionicons name={getForwardIcon()} size={18} color={colors.accent} />
         </TouchableOpacity>
@@ -2480,7 +2488,7 @@ export default function QuranReaderScreen({
         <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.mushafLoadingText, { color: colors.textSecondary }]}>
-            {t('Loading Mushaf Page {n}...', { n: currentPage })}
+            {`Loading Mushaf Page ${currentPage}...`}
           </Text>
         </View>
       );
@@ -2491,7 +2499,7 @@ export default function QuranReaderScreen({
         <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
           <ActivityIndicator size="large" color={colors.accent} />
           <Text style={[styles.mushafLoadingText, { color: colors.textSecondary }]}>
-            {t('Loading Mushaf Page {n}...', { n: currentPage })}
+            {`Loading Mushaf Page ${currentPage}...`}
           </Text>
         </View>
       );
@@ -2528,16 +2536,13 @@ export default function QuranReaderScreen({
             {/* Header strip: Juz, Hizb, Surahs, Page number */}
             <View style={[styles.mushafPageHeaderStrip, { borderBottomColor: colors.borderSubtle }]}>
               <Text style={[styles.mushafPageHeaderLeft, { color: colors.textSecondary }]}>
-                {t('Juz {j} • Hizb {h}', {
-                  j: pageJuz,
-                  h: Math.ceil((pageHizbQuarter ?? 0) / 4),
-                })}
+                {`Juz ${pageJuz ?? '—'} • Hizb ${Math.ceil((pageHizbQuarter ?? 0) / 4)}`}
               </Text>
               <Text style={[styles.mushafPageHeaderCenter, { color: colors.textPrimary }]}>
                 {pageSurahNames}
               </Text>
               <Text style={[styles.mushafPageHeaderRight, { color: colors.textSecondary }]}>
-                {t('Page {p}', { p: currentPage })}
+                {`Page ${displayedMushafPage}`}
               </Text>
             </View>
 
@@ -2780,7 +2785,7 @@ export default function QuranReaderScreen({
               </Text>
               {readingMode === 'mushaf' && (
                 <Text style={[styles.navPageSubTitle, { color: colors.accent }]}>
-                  {t('Page {p} of {total}', { p: currentPage, total: TOTAL_MUSHAF_PAGES })}
+                  {`Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`}
                 </Text>
               )}
             </View>
@@ -4966,9 +4971,9 @@ const styles = StyleSheet.create({
   mushafSelectedToolbar: { borderTopWidth: 1, borderBottomWidth: 1, padding: 10, marginBottom: 10 },
   mushafSelectedMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   mushafSelectedRef: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
-  mushafSelectedActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
-  mushafSelectedActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, borderWidth: 1, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 7 },
-  mushafSelectedActionText: { fontFamily: 'Manrope_600SemiBold', fontSize: 11 },
+  mushafSelectedActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+  mushafSelectedActionBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 8, padding: 0 },
+  mushafSelectedActionText: { display: 'none' },
   mushafPaginationFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
   mushafPageNavBtn: { minWidth: 84, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, alignItems: 'center' },
   mushafPageNavBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
