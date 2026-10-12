@@ -44,6 +44,7 @@ export interface MushafScrollTargetResult {
   targetKey: string | null;
   isSharedPageTarget: boolean;
   targetAyahFound: boolean;
+  isLayoutReady: boolean;
 }
 
 export interface CalculateScrollTargetParams {
@@ -54,11 +55,30 @@ export interface CalculateScrollTargetParams {
 }
 
 /**
+ * Computes absolute Y for an ayah row within a multi-surah Mushaf page group.
+ * Returns null if any required dimension (group Y, banner height when applicable, local ayah Y)
+ * has not yet completed its layout measurement.
+ */
+export function computeGroupAbsoluteAyahY(params: {
+  groupY?: number;
+  bannerHeight?: number;
+  hasSurahStart: boolean;
+  localAyahY?: number;
+}): number | null {
+  if (typeof params.groupY !== 'number') return null;
+  if (params.hasSurahStart && typeof params.bannerHeight !== 'number') return null;
+  if (typeof params.localAyahY !== 'number') return null;
+  const bannerH = params.hasSurahStart ? (params.bannerHeight || 0) : 0;
+  return params.groupY + bannerH + params.localAyahY;
+}
+
+/**
  * Calculates the exact scroll target offset for a Mushaf page:
  * - If target is null (explicit page navigation), lands at offset 0 (page top).
  * - If the target ayah is the first ayah of the page (ayahs[0]), lands at offset 0.
- * - If the target ayah is on a shared page after a previous Surah (e.g. Surah 113 on page 604),
+ * - If the target ayah is on a shared page after a previous Surah (e.g. Surah 113 on page 604 or Surah 11 on page 221),
  *   lands at the measured row offset of that first ayah (y - headroom), NOT offset 0.
+ * - If the target row's layout is not yet measured, reports isLayoutReady: false.
  */
 export function calculateMushafScrollTarget(
   params: CalculateScrollTargetParams
@@ -69,6 +89,7 @@ export function calculateMushafScrollTarget(
       targetKey: null,
       isSharedPageTarget: false,
       targetAyahFound: false,
+      isLayoutReady: true,
     };
   }
 
@@ -81,6 +102,7 @@ export function calculateMushafScrollTarget(
       targetKey,
       isSharedPageTarget: false,
       targetAyahFound: false,
+      isLayoutReady: false,
     };
   }
 
@@ -94,6 +116,7 @@ export function calculateMushafScrollTarget(
       targetKey,
       isSharedPageTarget: false,
       targetAyahFound: false,
+      isLayoutReady: false,
     };
   }
 
@@ -104,12 +127,14 @@ export function calculateMushafScrollTarget(
       targetKey,
       isSharedPageTarget: false,
       targetAyahFound: true,
+      isLayoutReady: true,
     };
   }
 
   // Shared page target: land at measured row
   const headroom = typeof params.headroom === 'number' ? params.headroom : 60;
   const measured = params.measuredLayouts[targetKey];
+  const isLayoutReady = !!measured && typeof measured.y === 'number';
   const measuredY = measured ? measured.y : 0;
   const targetOffset = Math.max(0, measuredY - headroom);
 
@@ -118,5 +143,6 @@ export function calculateMushafScrollTarget(
     targetKey,
     isSharedPageTarget: true,
     targetAyahFound: true,
+    isLayoutReady,
   };
 }

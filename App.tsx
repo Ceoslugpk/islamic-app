@@ -358,7 +358,7 @@ export type LibraryView =
 
 export type QuranView =
   | { screen: 'home' }
-  | { screen: 'reader'; surah: number; initialAyah?: number; initialPage?: number }
+  | { screen: 'reader'; surah: number; initialAyah?: number; initialPage?: number; pageOnly?: boolean }
   | { screen: 'audio' }
   | { screen: 'tafsir'; surah?: number }
   | { screen: 'topics' }
@@ -1143,6 +1143,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 surahNumber={quran.surah || 1}
                 initialAyah={quran.initialAyah}
                 initialPage={quran.initialPage}
+                pageOnly={quran.pageOnly}
                 onBack={() => setQuran({ screen: 'home' })}
                 onNavigateSurah={(s, a, p) => {
                   let initialAyah = a;
