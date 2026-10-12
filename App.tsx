@@ -1045,6 +1045,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
                       initialPage = pos.page;
                     } else {
                       initialPage = getMushafPageForAyah(surah, initialAyah || 1);
+                      initialAyah = initialAyah || 1;
                     }
                   }
                 }
@@ -1067,6 +1068,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
                         initialPage = pos.page;
                       } else {
                         initialPage = getMushafPageForAyah(surah, initialAyah || 1);
+                        initialAyah = initialAyah || 1;
                       }
                     }
                   }
@@ -1120,6 +1122,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
                         initialPage = pos.page;
                       } else {
                         initialPage = getMushafPageForAyah(n, initialAyah || 1);
+                        initialAyah = initialAyah || 1;
                       }
                     }
                   }
@@ -1156,6 +1159,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
                         initialPage = pos.page;
                       } else {
                         initialPage = getMushafPageForAyah(s, initialAyah || 1);
+                        initialAyah = initialAyah || 1;
                       }
                     }
                   }

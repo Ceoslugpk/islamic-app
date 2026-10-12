@@ -44,6 +44,11 @@ import {
   getSurahStartPage,
   getPrimarySurahForPage,
 } from '../lib/quran';
+import {
+  resolveMushafRestorationTarget,
+  calculateMushafScrollTarget,
+  MushafRestorationTarget,
+} from '../lib/mushafRestoration';
 import { TajweedText } from '../components/TajweedText';
 import { ArabicText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { stripTajweedHtml } from '../lib/tajweed';
@@ -158,6 +163,7 @@ interface QuranReaderScreenProps {
   surahNumber: number;
   initialAyah?: number;
   initialPage?: number;
+  pageOnly?: boolean;
   onBack: () => void;
   onNavigateSurah?: (surah: number, initialAyah?: number, initialPage?: number) => void;
 }
@@ -338,6 +344,7 @@ export default function QuranReaderScreen({
   surahNumber,
   initialAyah,
   initialPage,
+  pageOnly,
   onBack,
   onNavigateSurah,
 }: QuranReaderScreenProps) {
@@ -437,14 +444,18 @@ export default function QuranReaderScreen({
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restorationHighlightedRef = useRef<boolean>(false);
   const restorationTargetRef = useRef<{ surah: number; ayah: number } | null>(
-    initialAyah && initialAyah > 0
-      ? { surah: safeSurahNumber, ayah: initialAyah }
-      : typeof initialPage !== 'number'
-        ? { surah: safeSurahNumber, ayah: 1 }
-        : null
+    resolveMushafRestorationTarget({
+      surahNumber: safeSurahNumber,
+      initialAyah,
+      initialPage,
+      pageOnly,
+    })
   );
+  // Ordinary Surah opens target { surah: safeSurahNumber, ayah: 1 } via resolveMushafRestorationTarget
   const ayahLayoutsRef = useRef<Record<string | number, { y: number; height: number }>>({});
+  const ayahLocalLayoutsRef = useRef<Record<string, { y: number; height: number }>>({});
   const groupOffsetsRef = useRef<Record<number, number>>({});
+  const bannerHeightsRef = useRef<Record<number, number>>({});
   const currentPageRef = useRef<number>(initialResolvedPage);
   const pageRequestRef = useRef<number>(0);
   const mushafListRef = useRef<FlatList<number>>(null);
@@ -1432,9 +1443,16 @@ export default function QuranReaderScreen({
         restorationHighlightedRef.current = true;
         setHighlightedAyahKey(key);
 
-        if (mushafListRef.current && y > 100) {
+        const scrollTarget = calculateMushafScrollTarget({
+          target,
+          pageData: currentPageData,
+          measuredLayouts: ayahLayoutsRef.current,
+          headroom: 60,
+        });
+
+        if (mushafListRef.current) {
           mushafListRef.current.scrollToOffset({
-            offset: Math.max(0, y - 60),
+            offset: scrollTarget.targetOffset,
             animated: false,
           });
         }
@@ -1446,7 +1464,34 @@ export default function QuranReaderScreen({
         }, 2000);
       }
     },
-    []
+    [currentPageData]
+  );
+
+  const checkPendingMushafGroupLayout = useCallback(
+    (
+      group: { surah: MushafPageAyah['surah']; hasSurahStart: boolean; ayahs: MushafPageAyah[] },
+      explicitGroupY?: number
+    ) => {
+      const groupY = typeof explicitGroupY === 'number' ? explicitGroupY : groupOffsetsRef.current[group.surah.number];
+      if (typeof groupY !== 'number') return;
+      const bannerH = group.hasSurahStart ? (bannerHeightsRef.current[group.surah.number] || 0) : 0;
+      for (const a of group.ayahs) {
+        const key = `${a.surah.number}:${a.numberInSurah}`;
+        const local = ayahLocalLayoutsRef.current[key];
+        if (local) {
+          const absoluteY = groupY + bannerH + local.y;
+          ayahLayoutsRef.current[key] = { y: absoluteY, height: local.height };
+          ayahLayoutsRef.current[a.number] = { y: absoluteY, height: local.height };
+          handleMushafAyahLayout(a.surah.number, a.numberInSurah, absoluteY, local.height);
+        } else if (a.numberInSurah === 1 && group.hasSurahStart) {
+          const estimateAbsY = groupY;
+          ayahLayoutsRef.current[key] = { y: estimateAbsY, height: 44 };
+          ayahLayoutsRef.current[a.number] = { y: estimateAbsY, height: 44 };
+          handleMushafAyahLayout(a.surah.number, a.numberInSurah, estimateAbsY, 44);
+        }
+      }
+    },
+    [handleMushafAyahLayout]
   );
 
   useEffect(() => () => {
@@ -1466,13 +1511,13 @@ export default function QuranReaderScreen({
 
   useEffect(() => {
     restorationHighlightedRef.current = false;
-    restorationTargetRef.current =
-      initialAyah && initialAyah > 0
-        ? { surah: safeSurahNumber, ayah: initialAyah }
-        : typeof initialPage !== 'number'
-          ? { surah: safeSurahNumber, ayah: 1 }
-          : null;
-  }, [safeSurahNumber, initialAyah, initialPage]);
+    restorationTargetRef.current = resolveMushafRestorationTarget({
+      surahNumber: safeSurahNumber,
+      initialAyah,
+      initialPage,
+      pageOnly,
+    });
+  }, [safeSurahNumber, initialAyah, initialPage, pageOnly]);
 
   const loadPageData = useCallback(
     async (pageToLoad: number, force: boolean = false) => {
@@ -1566,13 +1611,16 @@ export default function QuranReaderScreen({
       clearHighlightTimer();
       setHighlightedAyahKey(null);
       restorationTargetRef.current = null;
+      restorationHighlightedRef.current = false;
       setSelectedAyah(null);
       setSelectedAyahY(0);
       setSelectedAyahHeight(0);
       setActiveTafsirAyah(null);
       setActiveTafsirSurah(null);
       ayahLayoutsRef.current = {};
+      ayahLocalLayoutsRef.current = {};
       groupOffsetsRef.current = {};
+      bannerHeightsRef.current = {};
       mushafListRef.current?.scrollToOffset({ offset: 0, animated: false });
       setCurrentPage(targetPage);
       const cached = loadQuranCache<MushafPageDetail>(`mushaf-page:${targetPage}:${showTranslation ? (edition?.editionIdentifier || 'en.sahih') : 'ar'}`) ||
@@ -3049,10 +3097,22 @@ export default function QuranReaderScreen({
                       key={`mushaf-group-${group.surah.number}`}
                       style={styles.mushafSurahGroup}
                       onLayout={(event) => {
-                        groupOffsetsRef.current[group.surah.number] = event.nativeEvent.layout.y;
+                        const gy = event.nativeEvent.layout.y;
+                        groupOffsetsRef.current[group.surah.number] = gy;
+                        checkPendingMushafGroupLayout(group, gy);
                       }}
                     >
-                      {group.hasSurahStart && renderSurahStartBanner(group.surah)}
+                      {group.hasSurahStart && (
+                        <View
+                          onLayout={(event) => {
+                            const bh = event.nativeEvent.layout.height;
+                            bannerHeightsRef.current[group.surah.number] = bh;
+                            checkPendingMushafGroupLayout(group);
+                          }}
+                        >
+                          {renderSurahStartBanner(group.surah)}
+                        </View>
+                      )}
                       <View style={styles.mushafAyahsContainer}>
                         {group.ayahs.map((a) => {
                           const isSelected = selectedAyah?.number === a.number;
@@ -3067,15 +3127,19 @@ export default function QuranReaderScreen({
                               testID={`mushaf-ayah-${a.surah.number}-${a.numberInSurah}`}
                               onLayout={(event) => {
                                 const { y, height } = event.nativeEvent.layout;
-                                const groupY = groupOffsetsRef.current[group.surah.number] || 0;
-                                const absoluteY = groupY + y;
-                                ayahLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y: absoluteY, height };
-                                ayahLayoutsRef.current[a.number] = { y: absoluteY, height };
-                                if (selectedAyah?.number === a.number) {
-                                  setSelectedAyahY(absoluteY);
-                                  setSelectedAyahHeight(height);
+                                ayahLocalLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y, height };
+                                const groupY = groupOffsetsRef.current[group.surah.number];
+                                const bannerH = group.hasSurahStart ? (bannerHeightsRef.current[group.surah.number] || 0) : 0;
+                                if (typeof groupY === 'number') {
+                                  const absoluteY = groupY + bannerH + y;
+                                  ayahLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y: absoluteY, height };
+                                  ayahLayoutsRef.current[a.number] = { y: absoluteY, height };
+                                  if (selectedAyah?.number === a.number) {
+                                    setSelectedAyahY(absoluteY);
+                                    setSelectedAyahHeight(height);
+                                  }
+                                  handleMushafAyahLayout(a.surah.number, a.numberInSurah, absoluteY, height);
                                 }
-                                handleMushafAyahLayout(a.surah.number, a.numberInSurah, absoluteY, height);
                               }}
                               style={[
                                 styles.mushafAyahTouch,
