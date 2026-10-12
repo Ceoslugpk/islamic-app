@@ -236,13 +236,13 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
                   style={[
                     styles.checkCircle,
                     {
-                      borderColor: isCompleted ? colors.accent : colors.borderSubtle,
-                      backgroundColor: isCompleted ? colors.accent : 'transparent',
+                      borderColor: isCompleted ? (colors.forestGreen || colors.accent) : colors.borderSubtle,
+                      backgroundColor: isCompleted ? (colors.forestGreen || colors.accent) : 'transparent',
                     },
                   ]}
                 >
                   {isCompleted && (
-                    <Ionicons name="checkmark" size={14} color={colors.bgBase} />
+                    <Ionicons name="checkmark" size={14} color={colors.onAccent} />
                   )}
                 </View>
 
@@ -325,12 +325,12 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
                   style={[
                     styles.paceBadge,
                     {
-                      backgroundColor: colors.accentDim,
-                      borderColor: colors.accent,
+                      backgroundColor: colors.sagePill || '#DBE7E1',
+                      borderColor: 'transparent',
                     },
                   ]}
                 >
-                  <Text style={[styles.paceBadgeText, { color: colors.accent }]}>
+                  <Text style={[styles.paceBadgeText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>
                     {t(plan.pace)}
                   </Text>
                 </View>
@@ -347,13 +347,13 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
                     style={[
                       styles.progressBarFill,
                       {
-                        backgroundColor: colors.accent,
+                        backgroundColor: colors.forestGreen || colors.accent,
                         width: `${percent}%`,
                       },
                     ]}
                   />
                 </View>
-                <Text style={[styles.percentText, { color: colors.accent }]}>
+                <Text style={[styles.percentText, { color: colors.forestGreen || colors.accent }]}>
                   {completedCount}/{plan.durationDays} ({percent}%)
                 </Text>
               </View>
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   },
   planCard: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 20,
     padding: 18,
   },
   planCardTop: {
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   paceBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 1,
   },
   paceBadgeText: {
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
   },
   progressCard: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 20,
     padding: 18,
     marginBottom: 16,
   },

@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 6,
+    borderRadius: 14,
     borderWidth: 1,
   },
   controlBtnText: {
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
   tvIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
   },
   primaryActionText: {
     color: '#FFFFFF',
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   secondaryActionText: {

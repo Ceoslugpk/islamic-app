@@ -525,7 +525,7 @@ export default function QiblaScreen({
                     : isAligned
                     ? colors.accent
                     : heading !== null
-                    ? '#10B981' // green for active tracking
+                    ? (colors.forestGreen || colors.accent) // active tracking
                     : colors.textSecondary,
                 },
               ]}
@@ -608,11 +608,11 @@ export default function QiblaScreen({
         {!isStaticMode && !error && (
           <Card style={styles.calibrationCard} padded>
             <View style={styles.calibrationHeader}>
-              <View style={styles.calibrationIconWrap}>
+              <View style={[styles.calibrationIconWrap, { backgroundColor: colors.iconCircleBg || '#E0EAE5' }]}>
                 <Ionicons
                   name={calibrationGuidance.icon as any}
-                  size={22}
-                  color={colors.accent}
+                  size={20}
+                  color={colors.iconCircleFg || colors.forestGreen || colors.accent}
                 />
               </View>
               <View style={styles.calibrationTextWrap}>
@@ -625,7 +625,7 @@ export default function QiblaScreen({
               </View>
             </View>
             <View style={styles.calibrationProgressWrap}>
-              <View style={styles.calibrationProgressTrack}>
+              <View style={[styles.calibrationProgressTrack, { backgroundColor: colors.borderSubtle }]}>
                 <View
                   style={[
                     styles.calibrationProgressFill,
@@ -806,6 +806,7 @@ export default function QiblaScreen({
 const styles = StyleSheet.create({
   wrap: {
     flex: 1,
+    overflow: 'hidden',
   },
   pattern: {
     top: -20,
@@ -996,8 +997,7 @@ const styles = StyleSheet.create({
   calibrationIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 10,
-    backgroundColor: '#C26E1715',
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1020,7 +1020,6 @@ const styles = StyleSheet.create({
   calibrationProgressTrack: {
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#E8ECEF',
     overflow: 'hidden',
   },
   calibrationProgressFill: {
@@ -1038,7 +1037,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 20,
   },

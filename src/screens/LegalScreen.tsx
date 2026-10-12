@@ -40,10 +40,10 @@ function Badge({ label }: BadgeProps) {
     <View
       style={[
         styles.badge,
-        { backgroundColor: colors.accent + '15', borderColor: colors.accent + '35' },
+        { backgroundColor: colors.sagePill, borderColor: colors.borderSubtle },
       ]}
     >
-      <Text style={[styles.badgeText, { color: colors.accent }]}>{t(label)}</Text>
+      <Text style={[styles.badgeText, { color: colors.forestGreen }]}>{t(label)}</Text>
     </View>
   );
 }
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 20,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -775,7 +775,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 1,
     alignSelf: 'flex-start',
   },
@@ -826,7 +826,7 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     padding: 18,
-    borderRadius: 12,
+    borderRadius: 20,
     gap: 12,
   },
   actionHeader: {
@@ -865,7 +865,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     height: 44,
-    borderRadius: 10,
+    borderRadius: 16,
     marginTop: 4,
   },
   primaryButtonText: {
@@ -879,7 +879,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     height: 44,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1,
   },
   secondaryButtonText: {

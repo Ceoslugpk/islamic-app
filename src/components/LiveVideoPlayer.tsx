@@ -210,8 +210,8 @@ export function LiveVideoPlayer({
           accessibilityRole="button"
           accessibilityLabel={`Watch ${title} on YouTube`}
         >
-          <Ionicons name="play" size={16} color="#FFFFFF" />
-          <Text style={[styles.primaryActionText, isCompact && { fontSize: 12.5 }]}>
+          <Ionicons name="play" size={16} color={colors.onAccent} />
+          <Text style={[styles.primaryActionText, { color: colors.onAccent }, isCompact && { fontSize: 12.5 }]}>
             {t('Watch Live on YouTube')}
           </Text>
         </TouchableOpacity>
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     minHeight: 44,
-    borderRadius: 12,
+    borderRadius: 14,
   },
   primaryActionText: {
     fontFamily: 'Manrope_600SemiBold',

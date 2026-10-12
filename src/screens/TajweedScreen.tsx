@@ -191,7 +191,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
                 onPress={() => loadSurah(openSurah)}
                 accessibilityRole="button"
               >
-                <Text style={styles.retryText}>{t('Retry')}</Text>
+                <Text style={[styles.retryText, { color: colors.onAccent }]}>{t('Retry')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   retryBtn: { paddingHorizontal: 22, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   retryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
   ayahCard: { borderRadius: 16, borderWidth: 1, padding: 18, backgroundColor: 'transparent' },
-  listHint: { fontFamily: 'Manrope_500Medium', fontSize: 11, color: '#8C8474', marginBottom: 10 },
+  listHint: { fontFamily: 'Manrope_500Medium', fontSize: 11, marginBottom: 10 },
   ayahBlock: { marginBottom: 16 },
   ayahNum: { fontFamily: 'Manrope_500Medium', fontSize: 11, letterSpacing: 0.4, marginBottom: 6 },
 });

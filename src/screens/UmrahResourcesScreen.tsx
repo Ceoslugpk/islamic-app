@@ -218,7 +218,7 @@ export default function UmrahResourcesScreen({
               <Text
                 style={[
                   styles.tabPillText,
-                  { color: isActive ? '#FFFFFF' : colors.textPrimary },
+                  { color: isActive ? colors.onAccent : colors.textPrimary },
                 ]}
               >
                 {t(item.label)}
@@ -247,7 +247,7 @@ export default function UmrahResourcesScreen({
               accessibilityRole="button"
               accessibilityLabel={t('Open Duas Screen')}
             >
-              <Text style={styles.quickDuaBtnText}>{t('Open Duas')}</Text>
+              <Text style={[styles.quickDuaBtnText, { color: colors.onAccent }]}>{t('Open Duas')}</Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -299,7 +299,7 @@ export default function UmrahResourcesScreen({
                           },
                         ]}
                       >
-                        {isChecked && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                        {isChecked && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text

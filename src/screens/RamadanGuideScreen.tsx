@@ -90,7 +90,7 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
     const grades = update?.grades ?? item.grades;
     return (
       <Card key={item.id} style={styles.itemCard}>
-        <Text style={[styles.itemTitle, { color: colors.accent }]}>{t(item.title)}</Text>
+        <Text style={[styles.itemTitle, { color: colors.forestGreen || colors.accent }]}>{t(item.title)}</Text>
         {arabic ? (
           <ArabicText style={[styles.itemArabic, { color: colors.textPrimary }]}>
             {arabic}
@@ -113,10 +113,10 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
             <View
               style={[
                 styles.gradePill,
-                { backgroundColor: colors.accent + '12', borderColor: colors.accent + '40' },
+                { backgroundColor: colors.sagePill || '#DBE7E1', borderColor: 'transparent' },
               ]}
             >
-              <Text style={[styles.gradePillText, { color: colors.accent }]}>{grades}</Text>
+              <Text style={[styles.gradePillText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>{grades}</Text>
             </View>
           ) : null}
         </View>
@@ -156,7 +156,7 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
             <View
               style={[
                 styles.bannerIcon,
-                { backgroundColor: colors.accent + '18', borderColor: colors.accent + '50' },
+                { backgroundColor: colors.iconCircleBg || '#E0EAE5', borderColor: 'transparent' },
               ]}
             >
               <Ionicons
@@ -168,7 +168,7 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
                       : 'calendar-outline'
                 }
                 size={17}
-                color={colors.accent}
+                color={colors.iconCircleFg || colors.forestGreen || colors.accent}
               />
             </View>
             <View style={styles.bannerTextCol}>
@@ -202,7 +202,7 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
             <View
               style={[
                 styles.sectionIcon,
-                { backgroundColor: colors.accent + '15', borderColor: colors.accent + '40' },
+                { backgroundColor: colors.iconCircleBg || '#E0EAE5', borderColor: 'transparent' },
               ]}
             >
               <Ionicons
@@ -210,7 +210,7 @@ export default function RamadanGuideScreen({ onBack }: { onBack?: () => void }) 
                   (SECTION_ICONS[section.id] ?? 'book-outline') as keyof typeof Ionicons.glyphMap
                 }
                 size={16}
-                color={colors.accent}
+                color={colors.iconCircleFg || colors.forestGreen || colors.accent}
               />
             </View>
             <View style={styles.sectionTitleCol}>

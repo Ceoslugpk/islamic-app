@@ -121,10 +121,10 @@ function NotesScreen({
       >
         <View style={styles.cardHeader}>
           <TouchableOpacity
-            style={[styles.badge, { backgroundColor: colors.accentDim }]}
+            style={[styles.badge, { backgroundColor: colors.sagePill || '#DBE7E1' }]}
             onPress={() => onOpenVerse?.(item.surah, item.ayah)}
           >
-            <Text style={[styles.badgeText, { color: colors.accent }]}>
+            <Text style={[styles.badgeText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>
               {t('Surah')} {item.surah}:{item.ayah} →
             </Text>
           </TouchableOpacity>
@@ -215,7 +215,7 @@ function NotesScreen({
             <TouchableOpacity
               style={[
                 styles.saveBtn,
-                { backgroundColor: justSaved ? colors.accent : colors.accent },
+                { backgroundColor: colors.forestGreen || colors.accent },
               ]}
               onPress={onSave}
               accessibilityRole="button"
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   inputCard: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 20,
     borderWidth: 1,
     marginBottom: 12,
   },
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
   },
   textArea: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 14,
     fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     padding: 12,
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   refInput: {
     flex: 1,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 14,
     fontFamily: 'Manrope_500Medium',
     fontSize: 14,
     paddingHorizontal: 12,
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   saveBtn: {
     paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   },
   noteCard: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
   },
   cardHeader: {
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 12,
   },
   badgeText: {
     fontFamily: 'Manrope_600SemiBold',

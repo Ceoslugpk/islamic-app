@@ -2,7 +2,7 @@
   "expo": {
     "name": "Islamic - Your Daily Companion",
     "slug": "islamic",
-    "version": "1.0.0",
+    "version": "1.1.70",
     "scheme": "salah",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon-ink.png",
       "resizeMode": "contain",
-      "backgroundColor": "#F8FAF9",
+      "backgroundColor": "#F4EEDE",
       "dark": {
         "image": "./assets/splash-icon.png",
         "backgroundColor": "#0E1214"
@@ -28,7 +28,7 @@
       "package": "com.qashi.islamic",
       "allowBackup": false,
       "adaptiveIcon": {
-        "backgroundColor": "#0F5A4A",
+        "backgroundColor": "#105A4B",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"

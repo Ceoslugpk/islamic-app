@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { isRTL, t } from '../lib/i18n';
+import { getForwardIcon } from '../lib/iconMap';
 import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
 
@@ -214,7 +215,16 @@ export default function ToolsScreen({
         {groups.map((group, gi) => (
           <View key={group.label} style={gi > 0 ? styles.groupGap : undefined}>
             <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{t(group.label)}</Text>
-            <View style={[styles.list, isWide && styles.listWide]}>
+            <View
+              style={[
+                styles.groupCard,
+                isWide && styles.groupCardWide,
+                {
+                  backgroundColor: colors.bgSurface,
+                  borderColor: colors.borderSubtle,
+                },
+              ]}
+            >
               {group.items.map((item, i) => (
                 <View
                   key={item.key}
@@ -227,7 +237,7 @@ export default function ToolsScreen({
                       </Text>
                     </View>
                   ) : (
-                    i > 0 && !isWide && <Hairline />
+                    i > 0 && !isWide && <Hairline style={styles.insetHairline} />
                   )}
                   <TouchableOpacity
                     style={[
@@ -240,24 +250,31 @@ export default function ToolsScreen({
                     onPress={() => onOpen(item.key)}
                     accessibilityRole="button"
                     accessibilityLabel={`${t('Open')} ${t(item.title)}`}
+                    activeOpacity={0.7}
                   >
                     <View
                       style={[
                         styles.iconBox,
-                        { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface },
+                        { backgroundColor: colors.iconCircleBg },
                       ]}
                     >
-                      <Ionicons name={item.icon} size={18} color={colors.accent} />
+                      <Ionicons name={item.icon} size={18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
                     </View>
                     <View style={styles.rowMain}>
                       <Text style={[styles.rowTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                         {t(item.title)}
                       </Text>
-                      <Text style={[styles.rowSub, { color: colors.textMuted }]} numberOfLines={2}>
+                      <Text style={[styles.rowSub, { color: colors.textSecondary }]} numberOfLines={2}>
                         {t(item.subtitle)}
                       </Text>
                     </View>
-                    <Text style={[styles.arrow, { color: colors.accent }]}>{isRTL() ? '‹' : '›'}</Text>
+                    <View style={[styles.chevronCircle, { backgroundColor: colors.iconCircleBg }]}>
+                      <Ionicons
+                        name={getForwardIcon()}
+                        size={14}
+                        color={colors.forestGreen || colors.accent}
+                      />
+                    </View>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -300,10 +317,20 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginLeft: 4,
   },
-  list: {},
-  listWide: {
+  groupCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 14,
+    elevation: 2,
+  },
+  groupCardWide: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    padding: 12,
     gap: 12,
   },
   itemCell: {
@@ -316,7 +343,7 @@ const styles = StyleSheet.create({
   },
   rowCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 16,
   },
@@ -325,18 +352,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
+    paddingHorizontal: 16,
     gap: 14,
+    minHeight: 56,
   },
   iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 8,
-    borderWidth: 1,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowMain: { flex: 1 },
-  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 15 },
+  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 14.5 },
   rowSub: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
-  arrow: { fontFamily: 'Manrope_600SemiBold', fontSize: 22, lineHeight: 24 },
+  chevronCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  insetHairline: {
+    marginLeft: 68,
+    marginRight: 16,
+  },
 });

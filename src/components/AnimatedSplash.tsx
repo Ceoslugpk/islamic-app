@@ -17,10 +17,11 @@ const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 const BG_DARK = '#0E1214';
-const BG_LIGHT = '#F8FAF9';
-const IVORY = '#F4EEE1';
+const BG_LIGHT = '#F4EEDE';
+const IVORY = '#F4EEDE';
 const INK = '#0E1214';
-const GOLD = '#B8975A';
+const BRAND_GREEN_LIGHT = '#105A4B';
+const BRAND_GREEN_DARK = '#10B981';
 
 // Exact approved symbol geometry (viewBox 100x100, from the brand SVGs)
 const LOGO_PATH = 'M20 93V37A32 32 0 0 1 52 5H65A15 15 0 0 1 80 20V93H65.4L65 37.5A6.5 6.5 0 0 0 52 37.5L51.6 93Z';
@@ -42,7 +43,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
   const isDark = mode !== 'paper';
   const bg = isDark ? BG_DARK : BG_LIGHT;
   const logoColor = isDark ? IVORY : INK;
-  const accentColor = isDark ? GOLD : INK;
+  const accentColor = isDark ? BRAND_GREEN_DARK : BRAND_GREEN_LIGHT;
 
   // Phase progress (0..1 drives the timeline, we step phases manually)
   const [phase, setPhase] = useState(0);

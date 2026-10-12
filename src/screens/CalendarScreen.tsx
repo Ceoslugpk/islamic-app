@@ -371,7 +371,7 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
                       event.inCurrentMonth && styles.eventRowCurrentMonth,
                       { 
                         borderColor: event.inCurrentMonth ? colors.accent : colors.borderSubtle,
-                        backgroundColor: event.inCurrentMonth ? '#D4A84310' : colors.bgSurface,
+                        backgroundColor: event.inCurrentMonth ? colors.sageDim : colors.bgSurface,
                       },
                     ]}
                     onPress={() => {
@@ -379,14 +379,14 @@ export default function CalendarScreen({ onBack }: { onBack?: () => void }) {
                     }}
                     accessibilityLabel={`${event.name}, ${event.daysUntil} ${t('days')} ${t('away')}`}
                   >
-                    <View style={[styles.eventIconWrapper, { backgroundColor: colors.bgRaised }]}>
-                      <Ionicons name={getEventIcon(event)} size={20} color={event.inCurrentMonth ? colors.accent : colors.textMuted} />
+                    <View style={[styles.eventIconWrapper, { backgroundColor: event.inCurrentMonth ? colors.iconCircleBg : colors.bgRaised }]}>
+                      <Ionicons name={getEventIcon(event)} size={20} color={event.inCurrentMonth ? colors.iconCircleFg : colors.textMuted} />
                     </View>
                     <View style={styles.eventInfo}>
                       <View style={styles.eventHeader}>
                         <Text style={[styles.eventName, { color: colors.textPrimary }]}>{event.name}</Text>
                         {event.inCurrentMonth && (
-                          <Text style={styles.eventCurrentBadge}>{t('This month')}</Text>
+                          <Text style={[styles.eventCurrentBadge, { color: colors.forestGreen, backgroundColor: colors.sagePill }]}>{t('This month')}</Text>
                         )}
                       </View>
                       <Text style={[styles.eventArabic, { color: colors.accent }]}>{event.arabic}</Text>
@@ -622,17 +622,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 12,
   },
-  eventRowCurrentMonth: {
-    backgroundColor: '#D4A84310', // subtle amber tint
-  },
+  eventRowCurrentMonth: {},
   eventIconWrapper: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
@@ -648,11 +646,9 @@ const styles = StyleSheet.create({
   eventCurrentBadge: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
-    color: '#D4A843',
-    backgroundColor: '#D4A84320',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 12,
   },
   eventArabic: {
     fontFamily: 'Amiri_400Regular',

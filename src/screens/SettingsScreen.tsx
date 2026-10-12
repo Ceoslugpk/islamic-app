@@ -1523,7 +1523,7 @@ export default function SettingsScreen({
                     {
                       backgroundColor:
                         health.status === 'active'
-                          ? '#10B981'
+                          ? (colors.forestGreen || colors.accent)
                           : health.status === 'permission-needed'
                           ? '#F59E0B'
                           : colors.textMuted,
@@ -1536,7 +1536,7 @@ export default function SettingsScreen({
                     {
                       color:
                         health.status === 'active'
-                          ? '#10B981'
+                          ? (colors.forestGreen || colors.accent)
                           : health.status === 'permission-needed'
                           ? '#F59E0B'
                           : colors.textSecondary,

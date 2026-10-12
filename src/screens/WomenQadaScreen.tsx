@@ -180,7 +180,7 @@ function WomenQadaScreen({ onBack, onOpenCycle }: WomenQadaScreenProps) {
           <Text style={[styles.qadaStatLbl, { color: colors.textMuted }]}>{t('Logged Fasts')}</Text>
         </View>
         <View style={[styles.qadaStatBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-          <Text style={[styles.qadaStatNum, { color: '#10B981' }]}>{qadaStats.completed}</Text>
+          <Text style={[styles.qadaStatNum, { color: colors.forestGreen || colors.accent }]}>{qadaStats.completed}</Text>
           <Text style={[styles.qadaStatLbl, { color: colors.textMuted }]}>{t('Made Up (Qada)')}</Text>
         </View>
         <View style={[styles.qadaStatBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
@@ -302,15 +302,15 @@ function WomenQadaScreen({ onBack, onOpenCycle }: WomenQadaScreenProps) {
               <TouchableOpacity
                 style={[
                   styles.checkbox,
-                  { borderColor: fast.madeUp ? '#10B981' : colors.borderSubtle },
-                  fast.madeUp && { backgroundColor: '#10B981' },
+                  { borderColor: fast.madeUp ? (colors.forestGreen || colors.accent) : colors.borderSubtle },
+                  fast.madeUp && { backgroundColor: colors.forestGreen || colors.accent },
                 ]}
                 onPress={() => handleToggleQada(fast.id, fast.madeUp)}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: fast.madeUp }}
                 accessibilityLabel={`Mark fast from ${fast.date} as ${fast.madeUp ? 'unmade' : 'made up'}`}
               >
-                {fast.madeUp && <Ionicons name="checkmark" size={14} color="#FFF" />}
+                {fast.madeUp && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
               </TouchableOpacity>
               <View style={{ flex: 1 }}>
                 <Text
@@ -326,7 +326,7 @@ function WomenQadaScreen({ onBack, onOpenCycle }: WomenQadaScreenProps) {
                   {fast.reason}
                 </Text>
                 {fast.madeUpDate && (
-                  <Text style={[styles.qadaMadeUpNote, { color: '#10B981' }]}>
+                  <Text style={[styles.qadaMadeUpNote, { color: colors.forestGreen || colors.accent }]}>
                     {t('Made up on')} {fast.madeUpDate}
                   </Text>
                 )}

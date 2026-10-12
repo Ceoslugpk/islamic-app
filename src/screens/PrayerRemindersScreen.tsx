@@ -498,7 +498,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                       {
                         backgroundColor:
                           health?.status === 'active'
-                            ? '#10B981'
+                            ? (colors.forestGreen || colors.accent)
                             : health?.status === 'permission-needed'
                             ? '#F59E0B'
                             : colors.textMuted,
@@ -511,7 +511,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                       {
                         color:
                           health?.status === 'active'
-                            ? '#10B981'
+                            ? (colors.forestGreen || colors.accent)
                             : health?.status === 'permission-needed'
                             ? '#F59E0B'
                             : colors.textSecondary,
@@ -1063,15 +1063,15 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   style={[
                     styles.goalStatusBadge,
                     {
-                      backgroundColor: isGoalMet ? '#10B98120' : colors.accentDim,
-                      borderColor: isGoalMet ? '#10B981' : colors.accent,
+                      backgroundColor: isGoalMet ? (colors.sagePill || colors.accentDim) : colors.accentDim,
+                      borderColor: isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       styles.goalStatusText,
-                      { color: isGoalMet ? '#10B981' : colors.accent },
+                      { color: isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent },
                     ]}
                   >
                     {isGoalMet ? t('✓ Goal met') : t('In progress')}
@@ -1086,7 +1086,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                     styles.progressBarFill,
                     {
                       width: `${Math.round(progressRatio * 100)}%`,
-                      backgroundColor: isGoalMet ? '#10B981' : colors.accent,
+                      backgroundColor: isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent,
                     },
                   ]}
                 />
@@ -1097,8 +1097,8 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   style={[
                     styles.markGoalBtn,
                     {
-                      borderColor: isGoalMet ? '#10B981' : colors.accent,
-                      backgroundColor: isGoalMet ? '#10B98120' : colors.accentDim,
+                      borderColor: isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent,
+                      backgroundColor: isGoalMet ? (colors.sagePill || colors.accentDim) : colors.accentDim,
                     },
                   ]}
                   onPress={onToggleQuranGoalToday}
@@ -1108,21 +1108,21 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                   <Ionicons
                     name={isGoalMet ? 'checkmark-circle' : 'checkmark-circle-outline'}
                     size={16}
-                    color={isGoalMet ? '#10B981' : colors.accent}
+                    color={isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent}
                   />
-                  <Text style={[styles.markGoalText, { color: isGoalMet ? '#10B981' : colors.accent }]}>
+                  <Text style={[styles.markGoalText, { color: isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent }]}>
                     {isGoalMet ? t('Done for today') : t('Mark done for today')}
                   </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.readNowBtn, { backgroundColor: colors.accent }]}
+                  style={[styles.readNowBtn, { backgroundColor: colors.forestGreen || colors.accent }]}
                   onPress={onOpenQuranReaderNow}
                   accessibilityRole="button"
                   accessibilityLabel={t('Read Quran now at saved position')}
                 >
-                  <Ionicons name="book" size={14} color={colors.bgBase} />
-                  <Text style={[styles.readNowText, { color: colors.bgBase }]}>{t('Read Now')}</Text>
+                  <Ionicons name="book" size={14} color={colors.onAccent || '#FFFFFF'} />
+                  <Text style={[styles.readNowText, { color: colors.onAccent || '#FFFFFF' }]}>{t('Read Now')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1484,7 +1484,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   reciterActionBtnText: {
@@ -1497,7 +1497,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   stopIconBtnText: {
@@ -1510,7 +1510,7 @@ const styles = StyleSheet.create({
   },
   testCardBtn: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 4,
   },
@@ -1545,7 +1545,7 @@ const styles = StyleSheet.create({
   timePill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   timePillText: {
@@ -1562,7 +1562,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   goalTypePillText: {
@@ -1574,14 +1574,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 6,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
     marginTop: 10,
   },
   stepBtn: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1591,7 +1591,7 @@ const styles = StyleSheet.create({
   },
   goalProgressCard: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 18,
     borderWidth: 1,
     marginTop: 12,
     gap: 8,
@@ -1615,7 +1615,7 @@ const styles = StyleSheet.create({
   goalStatusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 1,
   },
   goalStatusText: {
@@ -1644,7 +1644,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   markGoalText: {
@@ -1657,7 +1657,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 14,
   },
   readNowText: {
     fontFamily: 'Manrope_600SemiBold',

@@ -1625,7 +1625,7 @@ const styles = StyleSheet.create({
   tabPane: { flex: 1 },
   paneVisible: { display: 'flex' },
   paneHidden: { display: 'none' },
-  loading: { flex: 1, backgroundColor: '#121110' },
+  loading: { flex: 1, backgroundColor: '#F4EEDE' },
   appHeaderWrap: {
     width: '100%',
   },

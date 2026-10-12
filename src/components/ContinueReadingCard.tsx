@@ -196,12 +196,12 @@ export function ContinueReadingCard({
               style={[
                 styles.arrowCircle,
                 {
-                  backgroundColor: colors.accentDim,
-                  borderColor: colors.accent,
+                  backgroundColor: colors.iconCircleBg || colors.accentDim,
+                  borderColor: colors.iconCircleBg ? 'transparent' : colors.accent,
                 },
               ]}
             >
-              <Ionicons name={isRTL() ? 'arrow-back' : 'arrow-forward'} size={16} color={colors.accent} />
+              <Ionicons name={isRTL() ? 'arrow-back' : 'arrow-forward'} size={16} color={colors.iconCircleFg || colors.accent} />
             </View>
           </View>
 
@@ -233,7 +233,7 @@ export function ContinueReadingCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   touchArea: {

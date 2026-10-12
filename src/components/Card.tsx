@@ -28,7 +28,7 @@ export function Card({ children, style, padded = true }: CardProps) {
 const styles = StyleSheet.create({
   card: {
     position: 'relative',
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
   },

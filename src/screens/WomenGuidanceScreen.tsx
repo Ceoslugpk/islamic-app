@@ -66,8 +66,8 @@ export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuida
       {WORSHIP_GUIDELINES.map((item) => {
         const statusConfig = {
           restricted: { color: colors.destructive, icon: 'close-circle', label: 'Exempt / Restricted' },
-          permitted: { color: '#3B82F6', icon: 'checkmark-circle', label: 'Permitted' },
-          recommended: { color: '#10B981', icon: 'star', label: 'Highly Encouraged' },
+          permitted: { color: colors.sage || colors.accent, icon: 'checkmark-circle', label: 'Permitted' },
+          recommended: { color: colors.forestGreen || colors.accent, icon: 'star', label: 'Highly Encouraged' },
         }[item.status];
 
         return (

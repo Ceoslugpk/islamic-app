@@ -1535,7 +1535,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
-                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                  { color: colors.textPrimary },
                 ]}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
@@ -1926,7 +1926,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
   },
   actionBtnText: {
@@ -2047,7 +2047,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 360,
     padding: 20,
-    backgroundColor: '#F8FAF9',
+    backgroundColor: '#F4EEDE',
   },
   shareCard: {
     borderRadius: 20,
@@ -2097,7 +2097,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#E6DFC9',
     gap: 8,
   },
   shareCardLogoWrap: {

@@ -243,14 +243,14 @@ export function AudioMiniPlayer({
         accessibilityRole="button"
         accessibilityLabel={`Now playing ${playback.title} by ${playback.reciterName}. Tap to open audio player.`}
       >
-        <View style={[styles.iconWrap, { backgroundColor: colors.accentDim }]}>
+        <View style={[styles.iconWrap, { backgroundColor: colors.iconCircleBg || colors.accentDim }]}>
           {status.isBuffering ? (
-            <ActivityIndicator size="small" color={colors.accent} />
+            <ActivityIndicator size="small" color={colors.iconCircleFg || colors.accent} />
           ) : (
             <Ionicons
               name={status.isPlaying ? 'volume-medium' : 'volume-mute'}
               size={18}
-              color={colors.accent}
+              color={colors.iconCircleFg || colors.accent}
             />
           )}
         </View>
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 36,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },

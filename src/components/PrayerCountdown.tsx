@@ -8,6 +8,7 @@ import {
   Platform,
   AccessibilityInfo,
 } from 'react-native';
+import { useTheme } from '../lib/theme';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -133,11 +134,14 @@ interface PrayerCountdownProps {
 
 export function PrayerCountdown({
   targetTime,
-  color = '#e0a96d',
-  separatorColor = '#8c827a',
+  color,
+  separatorColor,
   fontSize = 18,
   onExpire,
 }: PrayerCountdownProps) {
+  const { colors } = useTheme();
+  const activeColor = color ?? colors.accent;
+  const activeSeparatorColor = separatorColor ?? colors.textMuted;
   const [reducedMotion, setReducedMotion] = useState(false);
   const expiredRef = useRef(false);
   const [digits, setDigits] = useState<{
@@ -214,7 +218,7 @@ export function PrayerCountdown({
   const separatorStyle = {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: fontSize * 0.9,
-    color: separatorColor,
+    color: activeSeparatorColor,
     marginHorizontal: 3,
   };
 
@@ -229,13 +233,13 @@ export function PrayerCountdown({
       <View style={styles.unitPair}>
         <AnimatedDigit
           digit={digits.h1}
-          color={color}
+          color={activeColor}
           fontSize={fontSize}
           reducedMotion={reducedMotion}
         />
         <AnimatedDigit
           digit={digits.h2}
-          color={color}
+          color={activeColor}
           fontSize={fontSize}
           reducedMotion={reducedMotion}
         />
@@ -247,13 +251,13 @@ export function PrayerCountdown({
       <View style={styles.unitPair}>
         <AnimatedDigit
           digit={digits.m1}
-          color={color}
+          color={activeColor}
           fontSize={fontSize}
           reducedMotion={reducedMotion}
         />
         <AnimatedDigit
           digit={digits.m2}
-          color={color}
+          color={activeColor}
           fontSize={fontSize}
           reducedMotion={reducedMotion}
         />
@@ -265,13 +269,13 @@ export function PrayerCountdown({
       <View style={styles.unitPair}>
         <AnimatedDigit
           digit={digits.s1}
-          color={color}
+          color={activeColor}
           fontSize={fontSize}
           reducedMotion={reducedMotion}
         />
         <AnimatedDigit
           digit={digits.s2}
-          color={color}
+          color={activeColor}
           fontSize={fontSize}
           reducedMotion={reducedMotion}
         />

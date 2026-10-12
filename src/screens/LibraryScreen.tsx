@@ -118,7 +118,7 @@ function LibraryRow({
     <TouchableOpacity
       style={styles.row}
       onPress={onPress}
-      activeOpacity={0.6}
+      activeOpacity={0.7}
       accessibilityRole="button"
       accessibilityLabel={`${t('Open')} ${t(item.title)}`}
     >
@@ -126,12 +126,11 @@ function LibraryRow({
         style={[
           styles.iconTile,
           {
-            backgroundColor: colors.accentDim,
-            borderColor: colors.borderSubtle,
+            backgroundColor: colors.iconCircleBg,
           },
         ]}
       >
-        <Ionicons name={ICONS[item.key]} size={17} color={colors.accent} />
+        <Ionicons name={ICONS[item.key]} size={18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
       </View>
       <View style={styles.rowText}>
         <Text
@@ -141,18 +140,19 @@ function LibraryRow({
           {t(item.title)}
         </Text>
         <Text
-          style={[styles.rowSub, { color: colors.textMuted }]}
+          style={[styles.rowSub, { color: colors.textSecondary }]}
           numberOfLines={1}
         >
           {t(item.subtitle)}
         </Text>
       </View>
-      <Ionicons
-        name={getForwardIcon()}
-        size={14}
-        color={colors.textMuted}
-        style={styles.chevron}
-      />
+      <View style={[styles.chevronCircle, { backgroundColor: colors.iconCircleBg }]}>
+        <Ionicons
+          name={getForwardIcon()}
+          size={14}
+          color={colors.forestGreen || colors.accent}
+        />
+      </View>
     </TouchableOpacity>
   );
 }
@@ -242,9 +242,14 @@ const styles = StyleSheet.create({
 
   /* Group card wrapping rows */
   groupCard: {
-    borderRadius: 12,
+    borderRadius: 24,
     borderWidth: 1,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 14,
+    elevation: 2,
   },
   groupCardWide: {
     flexDirection: 'row',
@@ -262,15 +267,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 14,
-    gap: 12,
-    minHeight: 52,
+    paddingHorizontal: 16,
+    gap: 14,
+    minHeight: 56,
   },
   iconTile: {
-    width: 34,
-    height: 34,
-    borderRadius: 9,
-    borderWidth: 1,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -285,18 +289,22 @@ const styles = StyleSheet.create({
   },
   rowSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
     marginTop: 2,
   },
-  chevron: {
-    marginLeft: 4,
+  chevronCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   /* Inset hairline (doesn't span to card edges) */
   insetHairline: {
-    marginLeft: 60,
-    marginRight: 14,
+    marginLeft: 68,
+    marginRight: 16,
   },
 
   bottomSpacer: {

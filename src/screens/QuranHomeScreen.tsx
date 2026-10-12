@@ -649,14 +649,15 @@ export default function QuranHomeScreen({
               style={[
                 styles.hubIconBox,
                 {
-                  backgroundColor: colors.accentDim,
-                  width: isCompact ? 28 : 32,
-                  height: isCompact ? 28 : 32,
+                  backgroundColor: colors.iconCircleBg || '#E0EAE5',
+                  width: isCompact ? 32 : 36,
+                  height: isCompact ? 32 : 36,
+                  borderRadius: isCompact ? 16 : 18,
                   marginBottom: isCompact ? 6 : 8,
                 },
               ]}
             >
-              <Ionicons name="headset-outline" size={isCompact ? 16 : 18} color={colors.accent} />
+              <Ionicons name="headset-outline" size={isCompact ? 16 : 18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
             </View>
             <Text
               style={[
@@ -695,14 +696,15 @@ export default function QuranHomeScreen({
               style={[
                 styles.hubIconBox,
                 {
-                  backgroundColor: colors.accentDim,
-                  width: isCompact ? 28 : 32,
-                  height: isCompact ? 28 : 32,
+                  backgroundColor: colors.iconCircleBg || '#E0EAE5',
+                  width: isCompact ? 32 : 36,
+                  height: isCompact ? 32 : 36,
+                  borderRadius: isCompact ? 16 : 18,
                   marginBottom: isCompact ? 6 : 8,
                 },
               ]}
             >
-              <Ionicons name="library-outline" size={isCompact ? 16 : 18} color={colors.accent} />
+              <Ionicons name="library-outline" size={isCompact ? 16 : 18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
             </View>
             <Text
               style={[
@@ -741,14 +743,15 @@ export default function QuranHomeScreen({
               style={[
                 styles.hubIconBox,
                 {
-                  backgroundColor: colors.accentDim,
-                  width: isCompact ? 28 : 32,
-                  height: isCompact ? 28 : 32,
+                  backgroundColor: colors.iconCircleBg || '#E0EAE5',
+                  width: isCompact ? 32 : 36,
+                  height: isCompact ? 32 : 36,
+                  borderRadius: isCompact ? 16 : 18,
                   marginBottom: isCompact ? 6 : 8,
                 },
               ]}
             >
-              <Ionicons name="compass-outline" size={isCompact ? 16 : 18} color={colors.accent} />
+              <Ionicons name="compass-outline" size={isCompact ? 16 : 18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
             </View>
             <Text
               style={[
@@ -787,14 +790,15 @@ export default function QuranHomeScreen({
               style={[
                 styles.hubIconBox,
                 {
-                  backgroundColor: colors.accentDim,
-                  width: isCompact ? 28 : 32,
-                  height: isCompact ? 28 : 32,
+                  backgroundColor: colors.iconCircleBg || '#E0EAE5',
+                  width: isCompact ? 32 : 36,
+                  height: isCompact ? 32 : 36,
+                  borderRadius: isCompact ? 16 : 18,
                   marginBottom: isCompact ? 6 : 8,
                 },
               ]}
             >
-              <Ionicons name="git-compare-outline" size={isCompact ? 16 : 18} color={colors.accent} />
+              <Ionicons name="git-compare-outline" size={isCompact ? 16 : 18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
             </View>
             <Text
               style={[
@@ -1153,17 +1157,17 @@ export default function QuranHomeScreen({
             style={[
               styles.numberBadge,
               {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
+                backgroundColor: colors.iconCircleBg || '#E0EAE5',
                 width: isCompact ? 30 : 34,
                 height: isCompact ? 30 : 34,
+                borderRadius: isCompact ? 15 : 17,
               },
             ]}
           >
             <Text
               style={[
                 styles.numberText,
-                { color: colors.textSecondary, fontSize: isCompact ? 11 : 12 },
+                { color: colors.iconCircleFg || colors.forestGreen || colors.accent, fontSize: isCompact ? 11 : 12 },
               ]}
             >
               {item.number}
@@ -1346,9 +1350,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
     borderWidth: 1,
     marginTop: 4,
     marginBottom: 4,
@@ -1371,9 +1375,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 14,
     borderWidth: 1,
   },
   langChangeBtnText: {
@@ -1384,9 +1388,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
     borderWidth: 1,
     marginTop: 6,
     marginBottom: 4,
@@ -1398,12 +1402,12 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   preloadIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginRight: 10,
   },
   preloadTextCol: {
     flex: 1,
@@ -1429,9 +1433,9 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
   },
   preloadActionBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
     borderWidth: 1,
   },
   preloadActionText: {
@@ -1443,10 +1447,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     marginTop: 10,
     marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 2,
   },
   continueLeft: {
     flex: 1,
@@ -1455,7 +1464,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 4,
+    borderRadius: 6,
     marginBottom: 6,
   },
   continueBadgeText: {
@@ -1491,7 +1500,7 @@ const styles = StyleSheet.create({
   },
   recentScroll: {},
   recentChip: {
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
     minWidth: 116,
     maxWidth: 170,
@@ -1502,9 +1511,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   recentNumBadge: {
-    width: 18,
-    height: 18,
-    borderRadius: 5,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -1530,11 +1539,18 @@ const styles = StyleSheet.create({
     flexBasis: '47%',
     flexGrow: 1,
     minWidth: 0,
-    borderRadius: 10,
+    borderRadius: 18,
     borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    elevation: 2,
   },
   hubIconBox: {
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1553,7 +1569,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   hubChipText: {
@@ -1577,10 +1593,10 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    height: 42,
-    borderRadius: 8,
+    gap: 10,
+    paddingHorizontal: 16,
+    height: 46,
+    borderRadius: 23,
     borderWidth: 1,
     marginBottom: 12,
   },
@@ -1624,11 +1640,11 @@ const styles = StyleSheet.create({
   searchRecentChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
-    paddingLeft: 8,
-    paddingRight: 4,
-    height: 28,
+    paddingLeft: 10,
+    paddingRight: 6,
+    height: 30,
   },
   searchRecentChipBtn: {
     flexDirection: 'row',
@@ -1654,7 +1670,7 @@ const styles = StyleSheet.create({
   },
   juzScroll: {},
   juzPill: {
-    borderRadius: 6,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1673,13 +1689,15 @@ const styles = StyleSheet.create({
   surahLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     flex: 1,
     minWidth: 0,
   },
   numberBadge: {
-    borderRadius: 8,
-    borderWidth: 1,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 0,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

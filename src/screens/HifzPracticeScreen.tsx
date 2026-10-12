@@ -97,7 +97,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
           <Ionicons name="cloud-offline-outline" size={40} color={colors.textMuted} />
           <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
           <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
+            style={[styles.primaryBtn, { backgroundColor: colors.forestGreen }]}
             onPress={() => {
               setLoading(true);
               setError(null);
@@ -161,13 +161,13 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
 
               {!revealed && (
                 <TouchableOpacity
-                  style={[styles.peekBtn, { backgroundColor: colors.accent }]}
+                  style={[styles.peekBtn, { backgroundColor: colors.forestGreen }]}
                   onPress={handleReveal}
                   accessibilityRole="button"
                   accessibilityLabel={t('Reveal this ayah')}
                 >
-                  <Ionicons name="eye-outline" size={16} color="#FFF" />
-                  <Text style={styles.peekBtnText}>{t('Peek')}</Text>
+                  <Ionicons name="eye-outline" size={16} color={colors.onAccent} />
+                  <Text style={[styles.peekBtnText, { color: colors.onAccent }]}>{t('Peek')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -186,13 +186,13 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.ctrlBtn, styles.ctrlPrimary, { backgroundColor: colors.accent }]}
+              style={[styles.ctrlBtn, styles.ctrlPrimary, { backgroundColor: colors.forestGreen }]}
               onPress={revealed ? goNext : handleReveal}
               accessibilityRole="button"
               accessibilityLabel={revealed ? t('Next ayah') : t('Reveal this ayah')}
             >
-              <Text style={styles.ctrlPrimaryText}>{revealed ? t('Next Ayah') : t('Peek')}</Text>
-              <Ionicons name={revealed ? 'chevron-forward' : 'eye-outline'} size={18} color="#FFF" />
+              <Text style={[styles.ctrlPrimaryText, { color: colors.onAccent }]}>{revealed ? t('Next Ayah') : t('Peek')}</Text>
+              <Ionicons name={revealed ? 'chevron-forward' : 'eye-outline'} size={18} color={colors.onAccent} />
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   progressText: { fontFamily: 'Manrope_500Medium', fontSize: 12 },
   progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden', marginBottom: 18 },
   progressFill: { height: 4, borderRadius: 2 },
-  ayahCard: { borderRadius: 16, borderWidth: 1, padding: 20, marginBottom: 20 },
+  ayahCard: { borderRadius: 20, borderWidth: 1, padding: 20, marginBottom: 20 },
   ayahNum: { fontFamily: 'Manrope_600SemiBold', fontSize: 12, letterSpacing: 0.4, marginBottom: 12 },
   ayahArabic: { marginBottom: 12 },
   ayahTrans: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19 },

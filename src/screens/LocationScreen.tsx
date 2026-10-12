@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
   },
   group: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   row: {
@@ -338,6 +338,7 @@ const styles = StyleSheet.create({
   toggleKnob: { width: 22, height: 22, borderRadius: 11 },
   activeCard: {
     padding: 16,
+    borderRadius: 20,
   },
   badgeRow: {
     flexDirection: 'row',
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
   modeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 4,
+    borderRadius: 12,
     borderWidth: 1,
   },
   modeBadgeText: {
@@ -375,7 +376,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 16,
     marginTop: 14,
   },
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
   },
   formCard: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 20,
     padding: 16,
   },
   inputLabel: {
@@ -404,7 +405,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontFamily: 'Manrope_400Regular',
@@ -426,7 +427,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   saveBtn: {
-    borderRadius: 8,
+    borderRadius: 14,
     paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',

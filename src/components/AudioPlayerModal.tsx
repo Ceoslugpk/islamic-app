@@ -498,7 +498,7 @@ export function AudioPlayerModal({
                       <Text
                         style={[
                           styles.langSegmentMiniBadgeText,
-                          { color: activeSegment === 'arabic' ? '#121110' : colors.accent },
+                          { color: activeSegment === 'arabic' ? colors.onAccent : colors.accent },
                         ]}
                       >
                         AR
@@ -591,12 +591,12 @@ export function AudioPlayerModal({
                   <Ionicons
                     name={audioEdition ? 'volume-medium-outline' : 'alert-circle-outline'}
                     size={13}
-                    color={audioEdition ? colors.accent : '#E5A93C'}
+                    color={audioEdition ? colors.accent : colors.destructive}
                   />
                   <Text
                     style={[
                       styles.langSwitchNotice,
-                      { color: audioEdition ? colors.textMuted : '#E5A93C' },
+                      { color: audioEdition ? colors.textMuted : colors.destructive },
                     ]}
                     numberOfLines={1}
                   >

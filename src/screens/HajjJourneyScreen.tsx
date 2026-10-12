@@ -340,7 +340,7 @@ export default function HajjJourneyScreen({
               <Text
                 style={[
                   styles.dayChipNum,
-                  { color: isActive ? '#FFFFFF' : colors.accent },
+                  { color: isActive ? colors.onAccent : colors.accent },
                 ]}
               >
                 {t(d.dayNumber)}
@@ -348,7 +348,7 @@ export default function HajjJourneyScreen({
               <Text
                 style={[
                   styles.dayChipDate,
-                  { color: isActive ? '#FFFFFF' : colors.textPrimary },
+                  { color: isActive ? colors.onAccent : colors.textPrimary },
                 ]}
               >
                 {t(d.hijriDate)}
@@ -435,7 +435,7 @@ export default function HajjJourneyScreen({
                   ? '#EF4444'
                   : r.obligation === 'Obligatory (Wajib)'
                   ? colors.accent
-                  : '#10B981';
+                  : (colors.forestGreen || colors.accent);
 
               return (
                 <View key={ri} style={styles.ritualCard}>
@@ -526,12 +526,12 @@ export default function HajjJourneyScreen({
               </Text>
             </View>
             <TouchableOpacity
-              style={[styles.footerCardBtn, { backgroundColor: colors.accent }]}
+              style={[styles.footerCardBtn, { backgroundColor: colors.forestGreen }]}
               onPress={onOpenDuas}
               accessibilityRole="button"
               accessibilityLabel={t('Open Hajj Duas')}
             >
-              <Text style={styles.footerCardBtnText}>{t('Explore Duas')}</Text>
+              <Text style={[styles.footerCardBtnText, { color: colors.onAccent }]}>{t('Explore Duas')}</Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
   dayTag: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 4,
+    borderRadius: 12,
     borderWidth: 1,
   },
   dayTagText: {
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 10,
   },
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
   obligationBadge: {
     paddingHorizontal: 7,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 12,
     borderWidth: 1,
     marginLeft: 8,
   },
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
   },
   duaBox: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 10,
   },
@@ -698,7 +698,7 @@ const styles = StyleSheet.create({
   },
   tipsBox: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     marginTop: 10,
   },
@@ -724,7 +724,7 @@ const styles = StyleSheet.create({
   footerCardBtn: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 14,
   },
   footerCardBtnText: {
     color: '#FFFFFF',

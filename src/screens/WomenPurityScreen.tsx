@@ -328,7 +328,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
 
         {/* Nifas History List */}
         {nifasEntries.length > 0 && (
-          <View style={styles.nifasHistory}>
+          <View style={[styles.nifasHistory, { borderTopColor: colors.borderSubtle }]}>
             {nifasEntries.map((item) => (
               <View key={item.id} style={[styles.nifasHistoryItem, { borderColor: colors.borderSubtle }]}>
                 <View style={{ flex: 1 }}>
@@ -428,7 +428,7 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
             style={{
               marginBottom: 10,
               padding: 14,
-              borderColor: isDone ? '#10B981' : colors.borderSubtle,
+              borderColor: isDone ? (colors.forestGreen || colors.accent) : colors.borderSubtle,
               backgroundColor: isDone ? (colors.bgSurface) : colors.bgSurface,
             }}
           >
@@ -443,11 +443,11 @@ function WomenPurityScreen({ onBack, onOpenCycle, onOpenQada, onOpenGuidance }: 
                   <View
                     style={[
                       styles.stepCheckbox,
-                      { borderColor: isDone ? '#10B981' : colors.borderSubtle },
-                      isDone && { backgroundColor: '#10B981' },
+                      { borderColor: isDone ? (colors.forestGreen || colors.accent) : colors.borderSubtle },
+                      isDone && { backgroundColor: colors.forestGreen || colors.accent },
                     ]}
                   >
-                    {isDone && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
+                    {isDone && <Ionicons name="checkmark" size={13} color={colors.onAccent} />}
                   </View>
                   <Text
                     style={[
@@ -649,7 +649,6 @@ const styles = StyleSheet.create({
   nifasHistory: {
     marginTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#FFFFFF15',
     paddingTop: 8,
     gap: 6,
   },

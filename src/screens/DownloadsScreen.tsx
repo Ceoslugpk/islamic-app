@@ -193,9 +193,7 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
               style={[
                 styles.textIconWrap,
                 {
-                  backgroundColor: preloadProgress.isRunning || preloadProgress.isComplete
-                    ? colors.accentDim
-                    : colors.bgRaised,
+                  backgroundColor: colors.iconCircleBg,
                 },
               ]}
             >
@@ -207,12 +205,8 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
                     ? 'cloud-download'
                     : 'book-outline'
                 }
-                size={16}
-                color={
-                  preloadProgress.isComplete || preloadProgress.isRunning
-                    ? colors.accent
-                    : colors.textSecondary
-                }
+                size={18}
+                color={colors.iconCircleFg}
               />
             </View>
             <View style={styles.textHeaderMain}>
@@ -227,8 +221,8 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
               style={[
                 styles.textActionBtn,
                 {
-                  backgroundColor: preloadProgress.isRunning ? colors.bgRaised : colors.accentDim,
-                  borderColor: preloadProgress.isRunning ? colors.borderSubtle : colors.accent,
+                  backgroundColor: preloadProgress.isRunning ? colors.bgRaised : colors.sagePill,
+                  borderColor: colors.borderSubtle,
                 },
               ]}
               onPress={handleQuranTextAction}
@@ -244,7 +238,7 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
               <Text
                 style={[
                   styles.textActionText,
-                  { color: preloadProgress.isRunning ? colors.textSecondary : colors.accent },
+                  { color: preloadProgress.isRunning ? colors.textSecondary : colors.forestGreen },
                 ]}
               >
                 {preloadProgress.isRunning
@@ -529,7 +523,7 @@ const styles = StyleSheet.create({
   },
   textCard: {
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     marginBottom: 12,
   },
@@ -539,9 +533,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   textIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -562,7 +556,7 @@ const styles = StyleSheet.create({
   textActionBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     flexShrink: 0,
   },
@@ -631,7 +625,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     marginBottom: 12,
     gap: 12,
@@ -656,7 +650,7 @@ const styles = StyleSheet.create({
   clearAllBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   clearAllText: {
@@ -755,7 +749,7 @@ const styles = StyleSheet.create({
   exploreBtn: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
   },
   exploreBtnText: {

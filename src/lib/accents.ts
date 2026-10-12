@@ -26,9 +26,9 @@ export const accentThemes = {
     id: 'emerald',
     name: 'Emerald',
     darkAccent: '#34D399',
-    lightAccent: '#059669',
-    darkDim: 'rgba(52, 211, 153, 0.12)',
-    lightDim: 'rgba(5, 150, 105, 0.1)',
+    lightAccent: '#105A4B',
+    darkDim: 'rgba(52, 211, 153, 0.15)',
+    lightDim: '#E0EAE5',
   },
   teal: {
     id: 'teal',
@@ -141,7 +141,7 @@ export const ACCENT_KEYS: AccentKey[] = [
   'copper',
 ];
 
-export const DEFAULT_ACCENT: AccentKey = 'amber';
+export const DEFAULT_ACCENT: AccentKey = 'emerald';
 
 const LOCALIZED_ACCENT_NAMES: Record<AccentKey, { en: string; ar: string; ur: string; hi: string; ml: string; si: string }> = {
   amber: { en: 'Amber', ar: 'عنبر', ur: 'سنہرا', hi: 'अम्बर', ml: 'ആംബർ', si: 'ඇම්බර්' },

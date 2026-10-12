@@ -446,11 +446,11 @@ const styles = StyleSheet.create({
     borderRadius: 2.5,
   },
   cardSlideWrap: {
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
     minHeight: 180,
     flex: 1,

@@ -84,8 +84,8 @@ function BookmarksScreen({
         ]}
       >
         <View style={styles.itemHeader}>
-          <View style={[styles.badge, { backgroundColor: colors.accentDim }]}>
-            <Text style={[styles.badgeText, { color: colors.accent }]}>
+          <View style={[styles.badge, { backgroundColor: colors.sagePill }]}>
+            <Text style={[styles.badgeText, { color: colors.forestGreen }]}>
               {item.surahName ? `${item.surahName} · ` : ''}{t('Surah')} {item.surah}:{item.ayah}
             </Text>
           </View>
@@ -114,7 +114,7 @@ function BookmarksScreen({
         ) : null}
 
         <View style={styles.itemFooter}>
-          <Text style={[styles.readHint, { color: colors.accent }]}>
+          <Text style={[styles.readHint, { color: colors.forestGreen }]}>
             {t('Tap to open in Reader →')}
           </Text>
         </View>
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
   },
   itemHeader: {
@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 12,
   },
   badgeText: {
     fontFamily: 'Manrope_600SemiBold',

@@ -120,13 +120,13 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           style={[
             styles.badge,
             {
-              backgroundColor: colors.accent,
-              borderColor: colors.accent,
+              backgroundColor: colors.forestGreen,
+              borderColor: colors.forestGreen,
             },
           ]}
         >
-          <Ionicons name="checkmark-circle" size={13} color={colors.bgBase} style={{ marginRight: 4 }} />
-          <Text style={[styles.badgeText, { color: colors.bgBase }]}>{t('Memorized')}</Text>
+          <Ionicons name="checkmark-circle" size={13} color={colors.onAccent} style={{ marginRight: 4 }} />
+          <Text style={[styles.badgeText, { color: colors.onAccent }]}>{t('Memorized')}</Text>
         </View>
       );
     }
@@ -136,13 +136,13 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           style={[
             styles.badge,
             {
-              backgroundColor: colors.accentDim,
-              borderColor: colors.accent,
+              backgroundColor: colors.sagePill,
+              borderColor: colors.borderSubtle,
             },
           ]}
         >
-          <Ionicons name="sync-outline" size={13} color={colors.accent} style={{ marginRight: 4 }} />
-          <Text style={[styles.badgeText, { color: colors.accent }]}>{t('Revising')}</Text>
+          <Ionicons name="sync-outline" size={13} color={colors.forestGreen} style={{ marginRight: 4 }} />
+          <Text style={[styles.badgeText, { color: colors.forestGreen }]}>{t('Revising')}</Text>
         </View>
       );
     }
@@ -176,12 +176,12 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           style={[
             styles.numberBox,
             {
-              backgroundColor: colors.bgSurface,
+              backgroundColor: colors.iconCircleBg,
               borderColor: colors.borderSubtle,
             },
           ]}
         >
-          <Text style={[styles.numberText, { color: colors.textSecondary }]}>
+          <Text style={[styles.numberText, { color: colors.iconCircleFg }]}>
             {item.number}
           </Text>
         </View>
@@ -207,12 +207,12 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           <View style={styles.rowActions}>
             <TouchableOpacity
               onPress={() => setPracticeSurah(item.number)}
-              style={[styles.practiceBtn, { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle }]}
+              style={[styles.practiceBtn, { backgroundColor: colors.sagePill, borderColor: colors.borderSubtle }]}
               accessibilityRole="button"
               accessibilityLabel={`${t('Practice')} ${item.englishName}`}
             >
-              <Ionicons name="eye-outline" size={12} color={colors.accent} />
-              <Text style={[styles.practiceText, { color: colors.accent }]}>{t('Practice')}</Text>
+              <Ionicons name="eye-outline" size={12} color={colors.forestGreen} />
+              <Text style={[styles.practiceText, { color: colors.forestGreen }]}>{t('Practice')}</Text>
             </TouchableOpacity>
             <Text style={[styles.tapHint, { color: colors.textMuted }]}>
               {t('Tap to cycle')}
@@ -389,8 +389,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: 20,
+    paddingVertical: 14,
     marginBottom: 10,
   },
   statCol: {
@@ -416,9 +416,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 38,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    height: 42,
     marginBottom: 8,
   },
   searchIcon: {
@@ -438,7 +438,7 @@ const styles = StyleSheet.create({
   filterTab: {
     flex: 1,
     paddingVertical: 7,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
   numberBox: {
     width: 34,
     height: 34,
-    borderRadius: 8,
+    borderRadius: 17,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 1,
   },
   badgeText: {
@@ -527,7 +527,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
   practiceText: {

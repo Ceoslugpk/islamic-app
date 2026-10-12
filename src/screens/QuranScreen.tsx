@@ -464,7 +464,8 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 style={[
                   styles.numberBadge,
                   {
-                    borderColor: colors.borderSubtle,
+                    backgroundColor: colors.iconCircleBg || '#E0EAE5',
+                    borderColor: 'transparent',
                     width: isCompact ? 30 : 34,
                     height: isCompact ? 30 : 34,
                     borderRadius: isCompact ? 15 : 17,
@@ -474,7 +475,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 <Text
                   style={[
                     styles.number,
-                    { color: colors.accent, fontSize: isCompact ? 12 : 13 },
+                    { color: colors.iconCircleFg || colors.forestGreen || colors.accent, fontSize: isCompact ? 12 : 13 },
                   ]}
                 >
                   {item.number}
@@ -567,7 +568,7 @@ const styles = StyleSheet.create({
   retryBtn: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   retryBtnText: {
@@ -598,9 +599,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
     borderWidth: 1,
     marginBottom: 8,
   },
@@ -622,9 +623,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
     borderWidth: 1,
   },
   langChangeBtnText: {
@@ -635,9 +636,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    height: 38,
+    borderRadius: 23,
+    paddingHorizontal: 14,
+    height: 42,
     marginBottom: 8,
   },
   searchInput: {

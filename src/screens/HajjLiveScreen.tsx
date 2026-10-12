@@ -77,9 +77,9 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
       {/* Season Status Indicator */}
       <View style={styles.seasonBanner}>
         {isHajjSeason ? (
-          <View style={[styles.statusBadge, { backgroundColor: '#10B98120', borderColor: '#10B981' }]}>
-            <View style={[styles.pulseDot, { backgroundColor: '#10B981' }]} />
-            <Text style={[styles.statusBadgeText, { color: '#10B981' }]}>
+          <View style={[styles.statusBadge, { backgroundColor: colors.sagePill || colors.accentDim, borderColor: colors.forestGreen || colors.accent }]}>
+            <View style={[styles.pulseDot, { backgroundColor: colors.forestGreen || colors.accent }]} />
+            <Text style={[styles.statusBadgeText, { color: colors.forestGreen || colors.accent }]}>
               {t('HAJJ SEASON ACTIVE · 8–13 DHU AL-HIJJAH')}
             </Text>
           </View>
@@ -122,8 +122,8 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
           style={[
             styles.switchBtn,
             {
-              backgroundColor: selectedChannel === 'ekhbariya' ? colors.accent : colors.bgSurface,
-              borderColor: selectedChannel === 'ekhbariya' ? colors.accent : colors.borderSubtle,
+              backgroundColor: selectedChannel === 'ekhbariya' ? colors.forestGreen : colors.bgSurface,
+              borderColor: selectedChannel === 'ekhbariya' ? colors.forestGreen : colors.borderSubtle,
             },
           ]}
           onPress={() => setSelectedChannel('ekhbariya')}
@@ -131,7 +131,7 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
           <Text
             style={[
               styles.switchBtnText,
-              { color: selectedChannel === 'ekhbariya' ? '#FFFFFF' : colors.textPrimary },
+              { color: selectedChannel === 'ekhbariya' ? colors.onAccent : colors.textPrimary },
             ]}
           >
             {t('Al Ekhbariya (Live News & Events)')}
@@ -142,8 +142,8 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
           style={[
             styles.switchBtn,
             {
-              backgroundColor: selectedChannel === 'ministry' ? colors.accent : colors.bgSurface,
-              borderColor: selectedChannel === 'ministry' ? colors.accent : colors.borderSubtle,
+              backgroundColor: selectedChannel === 'ministry' ? colors.forestGreen : colors.bgSurface,
+              borderColor: selectedChannel === 'ministry' ? colors.forestGreen : colors.borderSubtle,
             },
           ]}
           onPress={() => setSelectedChannel('ministry')}
@@ -151,7 +151,7 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
           <Text
             style={[
               styles.switchBtnText,
-              { color: selectedChannel === 'ministry' ? '#FFFFFF' : colors.textPrimary },
+              { color: selectedChannel === 'ministry' ? colors.onAccent : colors.textPrimary },
             ]}
           >
             {t('Ministry of Hajj & Umrah')}
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 8,
     paddingHorizontal: 8,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
   },
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 6,
+    borderRadius: 14,
     borderWidth: 1,
   },
   controlBtnText: {
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   tvIconWrap: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -379,7 +379,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
   },
   primaryActionText: {
     color: '#FFFFFF',
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   secondaryActionText: {

@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 6,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1,
   },
   infoBannerText: {
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1,
     marginVertical: 4,
   },

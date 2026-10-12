@@ -337,8 +337,8 @@ function WomenCycleScreen({
               </View>
             )}
             {todayRecordedStatus === 'pure' && (
-              <View style={[styles.recordedReminderChip, { backgroundColor: '#10B98115', borderColor: '#10B98150' }]}>
-                <Ionicons name="sparkles" size={15} color="#10B981" />
+              <View style={[styles.recordedReminderChip, { backgroundColor: colors.sagePill || colors.accentDim, borderColor: colors.forestGreen || colors.accent }]}>
+                <Ionicons name="sparkles" size={15} color={colors.forestGreen || colors.accent} />
                 <Text style={[styles.recordedReminderText, { color: colors.textPrimary }]}>
                   {t('Recorded as Pure today:')} <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Perform Ghusl before resuming Salah & fasting.')}</Text>
                 </Text>
@@ -457,7 +457,7 @@ function WomenCycleScreen({
                 const statusColors = {
                   menstruating: { bg: '#991B1B20', border: colors.destructive, text: colors.destructive, label: t('Flow') },
                   spotting: { bg: '#D9770620', border: '#D97706', text: '#F59E0B', label: t('Spot') },
-                  pure: { bg: '#05966920', border: '#059669', text: '#10B981', label: t('Pure') },
+                  pure: { bg: colors.sagePill || '#DBE7E1', border: colors.forestGreen || '#105A4B', text: colors.forestGreen || '#105A4B', label: t('Pure') },
                 }[status];
 
                 return (
@@ -492,7 +492,7 @@ function WomenCycleScreen({
               <Text style={[styles.legendText, { color: colors.textMuted }]}>{t('Spotting')}</Text>
             </View>
             <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#10B981' }]} />
+              <View style={[styles.legendDot, { backgroundColor: colors.forestGreen || colors.accent }]} />
               <Text style={[styles.legendText, { color: colors.textMuted }]}>{t('Pure (Dry / Tuhr)')}</Text>
             </View>
           </View>

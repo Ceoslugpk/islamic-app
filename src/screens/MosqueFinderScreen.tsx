@@ -464,7 +464,7 @@ export default function MosqueFinderScreen({
             <TouchableOpacity
               style={[
                 styles.searchSubmitBtn,
-                { backgroundColor: colors.accent },
+                { backgroundColor: colors.forestGreen || colors.accent },
                 (!areaInput.trim() || searchingArea) && styles.searchSubmitBtnDisabled,
               ]}
               onPress={() => handleSearchArea(areaInput)}
@@ -473,11 +473,11 @@ export default function MosqueFinderScreen({
               accessibilityLabel={t('Search area')}
             >
               {searchingArea ? (
-                <ActivityIndicator size="small" color={colors.bgBase} />
+                <ActivityIndicator size="small" color={colors.onAccent} />
               ) : (
                 <>
-                  <Ionicons name="search" size={14} color={colors.bgBase} style={{ marginRight: 4 }} />
-                  <Text style={[styles.searchSubmitText, { color: colors.bgBase }]}>
+                  <Ionicons name="search" size={14} color={colors.onAccent} style={{ marginRight: 4 }} />
+                  <Text style={[styles.searchSubmitText, { color: colors.onAccent }]}>
                     {t('Find')}
                   </Text>
                 </>
@@ -582,15 +582,15 @@ export default function MosqueFinderScreen({
                   style={[
                     styles.locationIconBox,
                     {
-                      backgroundColor: colors.accentDim,
-                      borderColor: colors.borderSubtle,
+                      backgroundColor: colors.iconCircleBg || '#E0EAE5',
+                      borderColor: 'transparent',
                     },
                   ]}
                 >
                   <Ionicons
                     name={areaSearchCenter ? 'map-outline' : 'navigate'}
                     size={16}
-                    color={colors.accent}
+                    color={colors.iconCircleFg || colors.forestGreen || colors.accent}
                   />
                 </View>
 
@@ -718,8 +718,8 @@ export default function MosqueFinderScreen({
                         style={[
                           styles.radiusPill,
                           {
-                            backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                            borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                            backgroundColor: isSelected ? (colors.forestGreen || colors.accent) : colors.bgSurface,
+                            borderColor: isSelected ? (colors.forestGreen || colors.accent) : colors.borderSubtle,
                           },
                         ]}
                         onPress={() => setRadiusKm(r)}
@@ -730,7 +730,7 @@ export default function MosqueFinderScreen({
                           style={[
                             styles.radiusPillText,
                             {
-                              color: isSelected ? colors.bgBase : colors.textPrimary,
+                              color: isSelected ? colors.onAccent : colors.textPrimary,
                             },
                           ]}
                         >
@@ -772,13 +772,13 @@ export default function MosqueFinderScreen({
                   style={[
                     styles.distanceBadge,
                     {
-                      backgroundColor: colors.accentDim,
-                      borderColor: colors.borderSubtle,
+                      backgroundColor: colors.sagePill || '#DBE7E1',
+                      borderColor: 'transparent',
                     },
                   ]}
                 >
-                  <Ionicons name="location-outline" size={13} color={colors.accent} />
-                  <Text style={[styles.distanceText, { color: colors.accent }]}>
+                  <Ionicons name="location-outline" size={13} color={colors.forestDark || colors.forestGreen || colors.accent} />
+                  <Text style={[styles.distanceText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>
                     {formatDistance(item.distanceKm)}
                   </Text>
                 </View>
@@ -826,12 +826,12 @@ export default function MosqueFinderScreen({
                 {t('No geographic location found for')} "{searchedQuery}". {t('Try another city, district, or landmark name (e.g. "Dubai Marina", "Lahore", or "Istanbul").')}
               </Text>
               <TouchableOpacity
-                style={[styles.retryButton, { backgroundColor: colors.accent }]}
+                style={[styles.retryButton, { backgroundColor: colors.forestGreen || colors.accent }]}
                 onPress={handleClearAreaSearch}
                 accessibilityRole="button"
                 accessibilityLabel={t('Return to my location')}
               >
-                <Text style={[styles.retryText, { color: colors.bgBase }]}>
+                <Text style={[styles.retryText, { color: colors.onAccent }]}>
                   {t('Return to My Location')}
                 </Text>
               </TouchableOpacity>
@@ -844,7 +844,7 @@ export default function MosqueFinderScreen({
               </Text>
               <Text style={[styles.errorSubtitle, { color: colors.textMuted }]}>{error}</Text>
               <TouchableOpacity
-                style={[styles.retryButton, { backgroundColor: colors.accent }]}
+                style={[styles.retryButton, { backgroundColor: colors.forestGreen || colors.accent }]}
                 onPress={() =>
                   fetchMosquesForCenter(
                     effectiveCenter.latitude,
@@ -855,7 +855,7 @@ export default function MosqueFinderScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t('Retry search')}
               >
-                <Text style={[styles.retryText, { color: colors.bgBase }]}>
+                <Text style={[styles.retryText, { color: colors.onAccent }]}>
                   {t('Retry Search')}
                 </Text>
               </TouchableOpacity>
@@ -872,12 +872,12 @@ export default function MosqueFinderScreen({
               </Text>
               {areaSearchCenter && (
                 <TouchableOpacity
-                  style={[styles.retryButton, { backgroundColor: colors.accent }]}
+                  style={[styles.retryButton, { backgroundColor: colors.forestGreen || colors.accent }]}
                   onPress={handleClearAreaSearch}
                   accessibilityRole="button"
                   accessibilityLabel={t('Return to my location')}
                 >
-                  <Text style={[styles.retryText, { color: colors.bgBase }]}>
+                  <Text style={[styles.retryText, { color: colors.onAccent }]}>
                     {t('Return to My Location')}
                   </Text>
                 </TouchableOpacity>
@@ -923,7 +923,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 22,
     paddingHorizontal: 6,
     height: 48,
     marginTop: 4,
@@ -951,7 +951,7 @@ const styles = StyleSheet.create({
   searchSubmitBtn: {
     paddingVertical: 8,
     paddingHorizontal: 14,
-    borderRadius: 10,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 64,
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
   },
   controlCard: {
     marginBottom: 8,
-    borderRadius: 10,
+    borderRadius: 20,
   },
   locationHeaderRow: {
     flexDirection: 'row',
@@ -1026,7 +1026,7 @@ const styles = StyleSheet.create({
   locationIconBox: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1067,7 +1067,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 7,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     marginTop: 8,
   },
@@ -1081,7 +1081,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     marginTop: 10,
   },
@@ -1110,7 +1110,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     marginTop: 10,
     gap: 8,
@@ -1139,7 +1139,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 5,
     paddingHorizontal: 8,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 1,
   },
   areaBannerCloseText: {
@@ -1190,7 +1190,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   mosqueCard: {
-    borderRadius: 12,
+    borderRadius: 20,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1212,7 +1212,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
   distanceText: {
@@ -1233,7 +1233,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   mapButtonText: {

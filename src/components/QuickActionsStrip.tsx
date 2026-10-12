@@ -72,13 +72,13 @@ function ActionButton({ icon, label, onPress }: ActionItemProps) {
         style={[
           styles.iconCircle,
           {
-            backgroundColor: colors.bgSurface,
+            backgroundColor: colors.iconCircleBg || colors.bgSurface,
             borderColor: colors.borderSubtle,
             transform: [{ scale: scaleAnim }],
           },
         ]}
       >
-        <Ionicons name={icon} size={20} color={colors.accent} />
+        <Ionicons name={icon} size={20} color={colors.iconCircleFg || colors.accent} />
       </Animated.View>
       <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>
         {t(label)}

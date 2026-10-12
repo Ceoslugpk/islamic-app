@@ -437,7 +437,11 @@ export default function QuranReaderScreen({
   const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restorationHighlightedRef = useRef<boolean>(false);
   const restorationTargetRef = useRef<{ surah: number; ayah: number } | null>(
-    initialAyah && initialAyah > 0 ? { surah: safeSurahNumber, ayah: initialAyah } : null
+    initialAyah && initialAyah > 0
+      ? { surah: safeSurahNumber, ayah: initialAyah }
+      : typeof initialPage !== 'number'
+        ? { surah: safeSurahNumber, ayah: 1 }
+        : null
   );
   const ayahLayoutsRef = useRef<Record<string | number, { y: number; height: number }>>({});
   const groupOffsetsRef = useRef<Record<number, number>>({});
@@ -1463,7 +1467,11 @@ export default function QuranReaderScreen({
   useEffect(() => {
     restorationHighlightedRef.current = false;
     restorationTargetRef.current =
-      initialAyah && initialAyah > 0 ? { surah: safeSurahNumber, ayah: initialAyah } : null;
+      initialAyah && initialAyah > 0
+        ? { surah: safeSurahNumber, ayah: initialAyah }
+        : typeof initialPage !== 'number'
+          ? { surah: safeSurahNumber, ayah: 1 }
+          : null;
   }, [safeSurahNumber, initialAyah, initialPage]);
 
   const loadPageData = useCallback(
@@ -4729,7 +4737,7 @@ export default function QuranReaderScreen({
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
-                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                  { color: colors.textPrimary },
                 ]}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
@@ -5417,7 +5425,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 360,
     padding: 20,
-    backgroundColor: '#F8FAF9',
+    backgroundColor: '#F4EEDE',
   },
   shareCard: {
     borderRadius: 20,
@@ -5467,7 +5475,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#E6DFC9',
     gap: 8,
   },
   shareCardLogoWrap: {

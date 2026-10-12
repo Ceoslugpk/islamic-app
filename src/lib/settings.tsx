@@ -171,7 +171,7 @@ const DEFAULTS: AppSettings = {
   quranGoal: DEFAULT_QURAN_GOAL,
   adhanReciterId: 'alafasy',
   themeMode: 'system',
-  accentKey: 'amber',
+  accentKey: DEFAULT_ACCENT,
   translationAudioEnabled: true,
   namesLanguage: 'en',
   womenWorshipEnabled: false,
@@ -582,6 +582,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     ...DEFAULTS,
     language: getBootLanguage(),
   }));
+  const hydrationBaselineRef = useRef<AppSettings>(settings);
   const [ready, setReady] = useState(false);
   const settingsRef = useRef<AppSettings>(settings);
   const lastPersistedRef = useRef<AppSettings>(settings);
@@ -681,23 +682,38 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         // Security-audit M4: only carry the location fields the grant actually
         // writes; never spread the whole live state (which on a fresh install is
         // DEFAULTS and would clobber a stored PIN/lock from `next`).
-        settingsRef.current = next;
-        lastPersistedRef.current = next;
+        // Preserve controls changed while AsyncStorage was hydrating. Without this,
+        // a fast Quran reader tap is overwritten by the older storage snapshot.
+        const live = settingsRef.current;
+        const baseline = hydrationBaselineRef.current;
+        const changedDuringHydration = Object.keys(DEFAULTS).reduce((merged, key) => {
+          const typedKey = key as keyof AppSettings;
+          if (!Object.is(live[typedKey], baseline[typedKey])) {
+            (merged as AppSettings)[typedKey] = live[typedKey] as never;
+          }
+          return merged;
+        }, { ...next } as AppSettings);
+        const hasLiveChanges = Object.keys(DEFAULTS).some((key) => {
+          const typedKey = key as keyof AppSettings;
+          return !Object.is(live[typedKey], baseline[typedKey]);
+        });
+        settingsRef.current = changedDuringHydration;
+        lastPersistedRef.current = changedDuringHydration;
         setSettings((prev) => {
           const locationChangedDuringHydration = locationMutatedDuringHydrationRef.current;
-          if (!locationChangedDuringHydration) return next;
+          if (!locationChangedDuringHydration) return changedDuringHydration;
           return {
-            ...next,
+            ...changedDuringHydration,
             autoLocation: prev.autoLocation,
             autoLocationTimestamp: prev.autoLocationTimestamp,
             locationMode: prev.locationMode,
           };
         });
-        setAudioTranslationEnabled(next.translationAudioEnabled);
-        setActiveAdhanReciterId(next.adhanReciterId || 'alafasy');
-        setAppLanguage(next.language);
-        if (migrated) {
-          enqueueWrite(next).catch(() => {});
+        setAudioTranslationEnabled(changedDuringHydration.translationAudioEnabled);
+        setActiveAdhanReciterId(changedDuringHydration.adhanReciterId || 'alafasy');
+        setAppLanguage(changedDuringHydration.language);
+        if (migrated || hasLiveChanges) {
+          enqueueWrite(changedDuringHydration).catch(() => {});
         }
       } catch {
         // fall back to defaults, preserving boot language

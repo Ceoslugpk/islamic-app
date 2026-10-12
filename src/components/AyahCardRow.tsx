@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
   ayahBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 12,
   },
   ayahBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -458,7 +458,7 @@ const styles = StyleSheet.create({
   inlineTafsirBox: {
     marginTop: 12,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   tafsirHeader: {

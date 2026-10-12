@@ -166,12 +166,12 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
             style={[
               styles.categoryBadge,
               {
-                backgroundColor: colors.accentDim,
-                borderColor: colors.accent,
+                backgroundColor: colors.sagePill,
+                borderColor: colors.borderSubtle,
               },
             ]}
           >
-            <Text style={[styles.categoryBadgeText, { color: colors.accent }]}>
+            <Text style={[styles.categoryBadgeText, { color: colors.forestGreen }]}>
               {t(item.category)}
             </Text>
           </View>
@@ -468,7 +468,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
-                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                  { color: colors.textPrimary },
                 ]}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
@@ -537,9 +537,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    height: 38,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    height: 42,
     marginBottom: 10,
   },
   searchIcon: {
@@ -606,7 +606,7 @@ const styles = StyleSheet.create({
   },
   duaCard: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 20,
     padding: 18,
   },
   cardHeader: {
@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   categoryBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 12,
     borderWidth: 1,
   },
   categoryBadgeText: {
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 360,
     padding: 20,
-    backgroundColor: '#F8FAF9',
+    backgroundColor: '#F4EEDE',
   },
   shareCard: {
     borderRadius: 20,
@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#E6DFC9',
     gap: 8,
   },
   shareCardLogoWrap: {

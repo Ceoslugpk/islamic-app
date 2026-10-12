@@ -259,7 +259,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               <Text
                 style={[
                   styles.filterText,
-                  { color: tierFilter === item.id ? '#FFF' : colors.textSecondary },
+                  { color: tierFilter === item.id ? colors.onAccent : colors.textSecondary },
                 ]}
               >
                 {item.label}
@@ -332,8 +332,8 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
             accessibilityRole="button"
             accessibilityLabel={t('Mark this word as known')}
           >
-            <Ionicons name="checkmark" size={18} color="#FFF" />
-            <Text style={styles.knowBtnText}>{t('I know this')}</Text>
+            <Ionicons name="checkmark" size={18} color={colors.onAccent} />
+            <Text style={[styles.knowBtnText, { color: colors.onAccent }]}>{t('I know this')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity

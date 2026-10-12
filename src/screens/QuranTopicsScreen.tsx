@@ -49,8 +49,8 @@ export default function QuranTopicsScreen({
         ]}
       >
         <View style={styles.verseHeader}>
-          <View style={[styles.refBadge, { backgroundColor: colors.accentDim }]}>
-            <Text style={[styles.refBadgeText, { color: colors.accent }]}>
+          <View style={[styles.refBadge, { backgroundColor: colors.sagePill || '#DBE7E1' }]}>
+            <Text style={[styles.refBadgeText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>
               {verse.surahName} {verse.surah}:{verse.ayah}
             </Text>
           </View>
@@ -94,15 +94,15 @@ export default function QuranTopicsScreen({
               style={[
                 styles.iconWrap,
                 {
-                  backgroundColor: isExpanded ? colors.accent : colors.bgBase,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: isExpanded ? (colors.forestGreen || colors.accent) : (colors.iconCircleBg || '#E0EAE5'),
+                  borderColor: 'transparent',
                 },
               ]}
             >
               <Ionicons
                 name={item.icon as any}
                 size={18}
-                color={isExpanded ? colors.onAccent : colors.accent}
+                color={isExpanded ? colors.onAccent : (colors.iconCircleFg || colors.forestGreen || colors.accent)}
               />
             </View>
             <View style={styles.topicTextWrap}>
@@ -115,8 +115,8 @@ export default function QuranTopicsScreen({
             </View>
           </View>
           <View style={styles.topicActionWrap}>
-            <View style={[styles.countPill, { backgroundColor: colors.bgBase }]}>
-              <Text style={[styles.countPillText, { color: colors.textMuted }]}>
+            <View style={[styles.countPill, { backgroundColor: colors.sagePill || '#DBE7E1' }]}>
+              <Text style={[styles.countPillText, { color: colors.forestDark || colors.forestGreen || colors.textSecondary }]}>
                 {item.verses.length} {t('verses')}
               </Text>
             </View>
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   topicCard: {
-    borderRadius: 12,
+    borderRadius: 20,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 38,
     height: 38,
-    borderRadius: 8,
+    borderRadius: 19,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   countPill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 12,
     flexShrink: 0,
   },
   countPillText: {
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   },
   verseCard: {
     padding: 14,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
   },
   verseHeader: {
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   refBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 4,
+    borderRadius: 12,
     flexShrink: 0,
   },
   refBadgeText: {

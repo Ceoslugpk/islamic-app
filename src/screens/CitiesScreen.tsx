@@ -107,15 +107,15 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
               style={[
                 styles.cityIconBox,
                 {
-                  borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                  backgroundColor: isSelected ? colors.accent : colors.bgSurface,
+                  borderColor: isSelected ? colors.forestGreen : colors.borderSubtle,
+                  backgroundColor: isSelected ? colors.forestGreen : colors.iconCircleBg,
                 },
               ]}
             >
               <Ionicons
                 name={isSelected ? 'checkmark' : 'business'}
                 size={16}
-                color={isSelected ? colors.onAccent : colors.accent}
+                color={isSelected ? colors.onAccent : colors.iconCircleFg}
               />
             </View>
             <View style={styles.textWrap}>
@@ -136,10 +136,10 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
               <View
                 style={[
                   styles.activeBadge,
-                  { backgroundColor: colors.accentDim, borderColor: colors.accent },
+                  { backgroundColor: colors.sagePill, borderColor: colors.borderSubtle },
                 ]}
               >
-                <Text style={[styles.activeBadgeText, { color: colors.accent }]}>
+                <Text style={[styles.activeBadgeText, { color: colors.forestGreen }]}>
                   {t('Active')}
                 </Text>
               </View>
@@ -262,9 +262,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 38,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    height: 42,
     marginBottom: 6,
   },
   searchIcon: {
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: 14,
   },
   rowLeft: {
     flexDirection: 'row',
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
   cityIconBox: {
     width: 34,
     height: 34,
-    borderRadius: 8,
+    borderRadius: 17,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -338,8 +338,8 @@ const styles = StyleSheet.create({
   },
   activeBadge: {
     borderWidth: 1,
-    borderRadius: 4,
-    paddingHorizontal: 6,
+    borderRadius: 12,
+    paddingHorizontal: 8,
     paddingVertical: 2,
   },
   activeBadgeText: {

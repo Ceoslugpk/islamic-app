@@ -240,8 +240,8 @@ export function BackupRestoreScreen({ onBack }: Props) {
         {/* Export Card */}
         <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
           <View style={styles.cardHeader}>
-            <View style={[styles.iconWrap, { backgroundColor: colors.accentDim }]}>
-              <Ionicons name="cloud-upload-outline" size={22} color={colors.accent} />
+            <View style={[styles.iconWrap, { backgroundColor: colors.iconCircleBg }]}>
+              <Ionicons name="cloud-upload-outline" size={22} color={colors.iconCircleFg} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{t('Export backup')}</Text>
@@ -253,7 +253,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
           <TouchableOpacity
             style={[
               styles.actionBtn,
-              { backgroundColor: colors.accent },
+              { backgroundColor: colors.forestGreen },
               busy !== null && { opacity: 0.6 },
             ]}
             onPress={handleExport}
@@ -264,13 +264,13 @@ export function BackupRestoreScreen({ onBack }: Props) {
           >
             {busy === 'export' ? (
               <>
-                <ActivityIndicator color="#FFF" size="small" />
-                <Text style={styles.actionText}>{t('Exporting backup...')}</Text>
+                <ActivityIndicator color={colors.onAccent} size="small" />
+                <Text style={[styles.actionText, { color: colors.onAccent }]}>{t('Exporting backup...')}</Text>
               </>
             ) : (
               <>
-                <Ionicons name="share-outline" size={16} color="#FFF" />
-                <Text style={styles.actionText}>{t('Export to file')}</Text>
+                <Ionicons name="share-outline" size={16} color={colors.onAccent} />
+                <Text style={[styles.actionText, { color: colors.onAccent }]}>{t('Export to file')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -279,8 +279,8 @@ export function BackupRestoreScreen({ onBack }: Props) {
         {/* Restore Card */}
         <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
           <View style={styles.cardHeader}>
-            <View style={[styles.iconWrap, { backgroundColor: colors.accentDim }]}>
-              <Ionicons name="cloud-download-outline" size={22} color={colors.accent} />
+            <View style={[styles.iconWrap, { backgroundColor: colors.iconCircleBg }]}>
+              <Ionicons name="cloud-download-outline" size={22} color={colors.iconCircleFg} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{t('Restore backup')}</Text>
@@ -292,7 +292,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
           <TouchableOpacity
             style={[
               styles.actionBtn,
-              { backgroundColor: colors.accent },
+              { backgroundColor: colors.forestGreen },
               busy !== null && { opacity: 0.6 },
             ]}
             onPress={handleRestore}
@@ -303,13 +303,13 @@ export function BackupRestoreScreen({ onBack }: Props) {
           >
             {busy === 'import' ? (
               <>
-                <ActivityIndicator color="#FFF" size="small" />
-                <Text style={styles.actionText}>{t('Reading backup...')}</Text>
+                <ActivityIndicator color={colors.onAccent} size="small" />
+                <Text style={[styles.actionText, { color: colors.onAccent }]}>{t('Reading backup...')}</Text>
               </>
             ) : (
               <>
-                <Ionicons name="folder-open-outline" size={16} color="#FFF" />
-                <Text style={styles.actionText}>{t('Choose backup file')}</Text>
+                <Ionicons name="folder-open-outline" size={16} color={colors.onAccent} />
+                <Text style={[styles.actionText, { color: colors.onAccent }]}>{t('Choose backup file')}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -319,13 +319,13 @@ export function BackupRestoreScreen({ onBack }: Props) {
         {lastInfo ? (
           <View style={[styles.infoCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
             <View style={styles.infoHeader}>
-              <View style={[styles.infoBadge, { backgroundColor: colors.accentDim }]}>
+              <View style={[styles.infoBadge, { backgroundColor: colors.sagePill }]}>
                 <Ionicons
                   name={lastInfo.type === 'export' ? 'cloud-upload' : 'cloud-download'}
                   size={14}
-                  color={colors.accent}
+                  color={colors.forestGreen}
                 />
-                <Text style={[styles.infoBadgeText, { color: colors.accent }]}>
+                <Text style={[styles.infoBadgeText, { color: colors.forestGreen }]}>
                   {lastInfo.type === 'export' ? t('Recent Export') : t('Recent Restore')}
                 </Text>
               </View>
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 20, paddingBottom: 40 },
   card: {
-    borderRadius: 14,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 18,
     marginBottom: 16,
@@ -392,11 +392,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     minHeight: 46,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   actionText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
   infoCard: {
-    borderRadius: 14,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 14,
     marginBottom: 16,
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   infoBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 14,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 14,
     marginBottom: 16,

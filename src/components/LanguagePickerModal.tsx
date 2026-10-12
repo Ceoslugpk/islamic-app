@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
     height: 44,
-    borderRadius: 10,
+    borderRadius: 22,
     borderWidth: 1,
   },
   searchInput: {
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1,
     marginVertical: 3,
   },

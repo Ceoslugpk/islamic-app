@@ -312,7 +312,7 @@ function ZakatScreen({ onBack }: { onBack?: () => void }) {
                   <Text
                     style={[
                       styles.nisabOptionTitle,
-                      { color: nisabStandard === 'gold' ? '#FFFFFF' : colors.textPrimary },
+                      { color: nisabStandard === 'gold' ? colors.onAccent : colors.textPrimary },
                     ]}
                   >
                     {t('Gold (85g)')}
@@ -320,7 +320,7 @@ function ZakatScreen({ onBack }: { onBack?: () => void }) {
                   <Text
                     style={[
                       styles.nisabOptionSub,
-                      { color: nisabStandard === 'gold' ? '#F5F5F5' : colors.textMuted },
+                      { color: nisabStandard === 'gold' ? colors.onAccent : colors.textMuted },
                     ]}
                   >
                     {t('Recommended standard')}
@@ -340,7 +340,7 @@ function ZakatScreen({ onBack }: { onBack?: () => void }) {
                   <Text
                     style={[
                       styles.nisabOptionTitle,
-                      { color: nisabStandard === 'silver' ? '#FFFFFF' : colors.textPrimary },
+                      { color: nisabStandard === 'silver' ? colors.onAccent : colors.textPrimary },
                     ]}
                   >
                     {t('Silver (595g)')}
@@ -348,7 +348,7 @@ function ZakatScreen({ onBack }: { onBack?: () => void }) {
                   <Text
                     style={[
                       styles.nisabOptionSub,
-                      { color: nisabStandard === 'silver' ? '#F5F5F5' : colors.textMuted },
+                      { color: nisabStandard === 'silver' ? colors.onAccent : colors.textMuted },
                     ]}
                   >
                     {t('Lower threshold')}

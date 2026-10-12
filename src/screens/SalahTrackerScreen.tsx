@@ -145,7 +145,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
             <View
               style={[
                 styles.progressBarFill,
-                { backgroundColor: colors.accent, width: `${progressPercent}%` },
+                { backgroundColor: colors.forestGreen || colors.accent, width: `${progressPercent}%` },
               ]}
             />
           </View>
@@ -153,8 +153,8 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
 
         <Card style={styles.statCard} padded>
           <View style={styles.streakWrap}>
-            <Text style={[styles.statValue, { color: colors.accent }]}>{streak}</Text>
-            <Ionicons name="flame" size={20} color={colors.accent} />
+            <Text style={[styles.statValue, { color: colors.forestGreen || colors.accent }]}>{streak}</Text>
+            <Ionicons name="flame" size={20} color={colors.forestGreen || colors.accent} />
           </View>
           <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('Day Streak')}</Text>
           <Text style={[styles.streakHint, { color: colors.textSecondary }]}>
@@ -202,7 +202,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
                 <TouchableOpacity
                   style={[
                     styles.prayerRow,
-                    isDone && { backgroundColor: colors.accentDim },
+                    isDone && { backgroundColor: colors.sagePill || colors.accentDim },
                   ]}
                   onPress={() => togglePrayer(p.key)}
                   activeOpacity={0.7}
@@ -214,8 +214,8 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
                     <View
                       style={[
                         styles.checkbox,
-                        { borderColor: isDone ? colors.accent : colors.borderStrong },
-                        isDone && { backgroundColor: colors.accent },
+                        { borderColor: isDone ? (colors.forestGreen || colors.accent) : colors.borderStrong },
+                        isDone && { backgroundColor: colors.forestGreen || colors.accent },
                       ]}
                     >
                       {isDone && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
@@ -230,7 +230,7 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
                       >
                         {t(p.label)}
                       </Text>
-                      <Text style={[styles.prayerStatus, { color: isDone ? colors.accent : colors.textMuted }]}>
+                      <Text style={[styles.prayerStatus, { color: isDone ? (colors.forestGreen || colors.accent) : colors.textMuted }]}>
                         {isDone ? t('Completed') : t('Pending')}
                       </Text>
                     </View>
@@ -272,9 +272,9 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
                           {
                             backgroundColor:
                               dayPrayers === 5
-                                ? colors.accent
+                                ? (colors.forestGreen || colors.accent)
                                 : dayPrayers > 0
-                                ? colors.accentDim
+                                ? (colors.sagePill || colors.accentDim)
                                 : colors.borderSubtle,
                           },
                         ]}
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   loadingWrap: {
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   },
   historyContainer: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   historyRow: {

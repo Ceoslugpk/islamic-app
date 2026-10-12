@@ -1782,7 +1782,7 @@ const styles = StyleSheet.create({
   tabBadge: {
     paddingHorizontal: 6,
     paddingVertical: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     marginLeft: 2,
   },
   tabBadgeText: {
@@ -1799,9 +1799,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 8,
     marginBottom: 6,
-    paddingHorizontal: 12,
-    height: 38,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    height: 42,
+    borderRadius: 22,
     borderWidth: 1,
   },
   searchInput: {
@@ -1831,7 +1831,7 @@ const styles = StyleSheet.create({
   },
   reciterCard: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 18,
     borderWidth: 1,
   },
   reciterMain: {
@@ -1926,10 +1926,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 10,
+    padding: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    gap: 10,
+    gap: 12,
   },
   recentInfo: {
     flex: 1,
@@ -1937,7 +1937,7 @@ const styles = StyleSheet.create({
   },
   recentTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontSize: 14.5,
   },
   recentSub: {
     fontFamily: 'Manrope_400Regular',
@@ -1945,9 +1945,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   playCircleIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1968,11 +1968,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   presetsGrid: {
-    gap: 10,
+    gap: 12,
   },
   presetCard: {
-    padding: 14,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 18,
     borderWidth: 1,
   },
   presetTopRow: {
@@ -2044,7 +2044,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 14,
     minHeight: 32,
   },
   createBtnText: {
@@ -2059,7 +2059,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 18,
     borderWidth: 1,
     gap: 10,
   },

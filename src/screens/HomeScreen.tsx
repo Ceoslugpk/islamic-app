@@ -1079,7 +1079,7 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 14 },
-  content: { padding: 24, gap: 24 },
+  content: { padding: 24, gap: 24, maxWidth: 680, width: '100%', alignSelf: 'center' },
   patternTop: { top: -40, right: -60 },
   sectionHeader: { marginBottom: 20 },
   prayerHeroCard: {

@@ -244,7 +244,7 @@ export default function UmrahGuideScreen({
               <Text
                 style={[
                   styles.stepPillNum,
-                  { color: isActive ? '#FFFFFF' : colors.textMuted },
+                  { color: isActive ? colors.onAccent : colors.textMuted },
                 ]}
               >
                 0{s.stepNumber}
@@ -252,7 +252,7 @@ export default function UmrahGuideScreen({
               <Text
                 style={[
                   styles.stepPillLabel,
-                  { color: isActive ? '#FFFFFF' : colors.textPrimary },
+                  { color: isActive ? colors.onAccent : colors.textPrimary },
                 ]}
               >
                 {t(s.title)}
@@ -305,7 +305,7 @@ export default function UmrahGuideScreen({
                 <Text
                   style={[
                     styles.stepNumText,
-                    { color: isHighlighted ? '#FFFFFF' : colors.accent },
+                    { color: isHighlighted ? colors.onAccent : colors.accent },
                   ]}
                 >
                   {step.stepNumber}
@@ -436,7 +436,7 @@ export default function UmrahGuideScreen({
               accessibilityRole="button"
               accessibilityLabel={t('Open Hajj and Umrah Duas')}
             >
-              <Text style={styles.duaBannerBtnText}>{t('Open Duas')}</Text>
+              <Text style={[styles.duaBannerBtnText, { color: colors.onAccent }]}>{t('Open Duas')}</Text>
             </TouchableOpacity>
           </View>
         </Card>

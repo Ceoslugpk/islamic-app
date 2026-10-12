@@ -19,8 +19,8 @@ function resolveMode(
   systemScheme: ReturnType<typeof useColorScheme>,
 ): ThemeMode {
   if (themeMode === 'ink' || themeMode === 'paper') return themeMode;
-  // 'system' — follow OS; default to 'ink' if indeterminate
-  return systemScheme === 'light' ? 'paper' : 'ink';
+  // 'system' — follow OS; default to 'paper' (reference brand system) if indeterminate
+  return systemScheme === 'dark' ? 'ink' : 'paper';
 }
 
 function getAccentColors(mode: ThemeMode, accentKey: AccentKey) {

@@ -253,7 +253,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             style={[
               styles.numberBadge,
               {
-                backgroundColor: colors.accentDim,
+                backgroundColor: colors.iconCircleBg || '#E0EAE5',
                 width: isCompact ? 30 : 32,
                 height: isCompact ? 30 : 32,
               },
@@ -263,7 +263,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
               style={[
                 styles.numberText,
                 {
-                  color: colors.accent,
+                  color: colors.iconCircleFg || colors.forestGreen || colors.accent,
                   fontSize: isCompact ? 13 : 14,
                 },
               ]}
@@ -662,7 +662,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
-                  { color: mode === 'paper' ? '#0F172A' : '#F1F5F9' },
+                  { color: colors.textPrimary },
                 ]}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 18,
     overflow: 'hidden',
   },
   cardTopRow: {
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     borderWidth: 1,
-    borderRadius: 6,
+    borderRadius: 12,
     paddingHorizontal: 7,
     paddingVertical: 3,
   },
@@ -904,7 +904,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 360,
     padding: 20,
-    backgroundColor: '#F8FAF9',
+    backgroundColor: '#F4EEDE',
   },
   shareCard: {
     borderRadius: 20,
@@ -966,7 +966,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#E6DFC9',
     gap: 8,
   },
   shareCardLogoWrap: {

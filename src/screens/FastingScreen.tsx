@@ -462,7 +462,7 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
                             <Text
                               style={[
                                 styles.typeBtnText,
-                                { color: isChosen ? '#FFFFFF' : colors.textPrimary },
+                                { color: isChosen ? colors.onAccent : colors.textPrimary },
                               ]}
                             >
                               {typeLabels[type]}
@@ -478,8 +478,8 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
                   style={[
                     styles.primaryCtaBtn,
                     {
-                      backgroundColor: todayEntry.fasting ? 'transparent' : colors.accent,
-                      borderColor: todayEntry.fasting ? colors.borderSubtle : colors.accent,
+                      backgroundColor: todayEntry.fasting ? 'transparent' : colors.forestGreen,
+                      borderColor: todayEntry.fasting ? colors.borderSubtle : colors.forestGreen,
                     },
                   ]}
                   onPress={handleToggleFasting}
@@ -489,12 +489,12 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
                   <Ionicons
                     name={todayEntry.fasting ? 'close-circle-outline' : 'checkmark-circle'}
                     size={18}
-                    color={todayEntry.fasting ? colors.textMuted : '#FFFFFF'}
+                    color={todayEntry.fasting ? colors.textMuted : colors.onAccent}
                   />
                   <Text
                     style={[
                       styles.primaryCtaBtnText,
-                      { color: todayEntry.fasting ? colors.textSecondary : '#FFFFFF' },
+                      { color: todayEntry.fasting ? colors.textSecondary : colors.onAccent },
                     ]}
                   >
                     {todayEntry.fasting ? t('Cancel / Not Fasting Today') : t('I am Fasting Today')}
@@ -614,7 +614,7 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: item.madeUp }}
                       >
-                        {item.madeUp && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                        {item.madeUp && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
                       </TouchableOpacity>
                       <View style={{ flex: 1 }}>
                         <Text
@@ -677,15 +677,15 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
                     style={[
                       styles.statusPill,
                       {
-                        backgroundColor: rec.isActiveToday ? colors.accent : colors.bgBase,
-                        borderColor: rec.isActiveToday ? colors.accent : colors.borderSubtle,
+                        backgroundColor: rec.isActiveToday ? colors.sagePill : colors.bgBase,
+                        borderColor: colors.borderSubtle,
                       },
                     ]}
                   >
                     <Text
                       style={[
                         styles.statusPillText,
-                        { color: rec.isActiveToday ? '#FFFFFF' : colors.textMuted },
+                        { color: rec.isActiveToday ? colors.forestGreen : colors.textMuted },
                       ]}
                     >
                       {rec.upcomingDateLabel}
@@ -831,7 +831,7 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
                   >
                     <Text
                       style={{
-                        color: '#FFFFFF',
+                        color: colors.onAccent,
                         fontFamily: 'Manrope_600SemiBold',
                       }}
                     >
@@ -869,7 +869,7 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
                       accessibilityRole="checkbox"
                       accessibilityState={{ checked: item.madeUp }}
                     >
-                      {item.madeUp && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                      {item.madeUp && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
                     </TouchableOpacity>
                     <View style={styles.missedItemText}>
                       <Text
@@ -1305,7 +1305,7 @@ const styles = StyleSheet.create({
   statusPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
   },
   statusPillText: {
@@ -1321,7 +1321,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'flex-start',
   },
@@ -1338,7 +1338,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     marginTop: 4,
   },
@@ -1355,7 +1355,7 @@ const styles = StyleSheet.create({
   qadaStatBox: {
     flex: 1,
     padding: 14,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
   },
@@ -1374,7 +1374,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 12,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
   },
   addMissedBtnText: {

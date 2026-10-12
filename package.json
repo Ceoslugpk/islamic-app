@@ -1,6 +1,6 @@
 {
   "name": "scaffold",
-  "version": "1.0.0",
+  "version": "1.1.70",
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/amiri": "^0.4.1",
@@ -59,7 +59,8 @@
     "test:security": "node tests/test_security_audit_regressions.mjs",
     "test:header": "node tests/test_header_ux.mjs",
     "test:i18n": "node tests/test_i18n_urdu.mjs",
-    "test": "node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_reading_marker.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs && node tests/test_header_ux.mjs && node tests/test_i18n_urdu.mjs && node tests/test_language_switching.mjs && node tests/test_defect_regressions.mjs && node tests/test_global_fix_pass.mjs && node tests/test_recovery_mission.mjs && node tests/test_stage2_locale_metadata.mjs && node tests/test_stage2_reader_position.mjs && node tests/test_urdu_device_defects.mjs && node tests/test_continue_reading_page_first.mjs && node tests/test_responsive_language_settings.mjs && node tests/test_real_language_switching_harden.mjs"
+    "test:guard": "node tests/test_ui_redesign_functionality_guard.mjs",
+    "test": "node tests/test_ui_redesign_functionality_guard.mjs && node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_reading_marker.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs && node tests/test_header_ux.mjs && node tests/test_i18n_urdu.mjs && node tests/test_language_switching.mjs && node tests/test_defect_regressions.mjs && node tests/test_global_fix_pass.mjs && node tests/test_recovery_mission.mjs && node tests/test_stage2_locale_metadata.mjs && node tests/test_stage2_reader_position.mjs && node tests/test_urdu_device_defects.mjs && node tests/test_continue_reading_page_first.mjs && node tests/test_responsive_language_settings.mjs && node tests/test_real_language_switching_harden.mjs"
   },
   "private": true
 }

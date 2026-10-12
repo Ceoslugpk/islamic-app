@@ -14,23 +14,25 @@ export interface EmptyStateProps {
 }
 
 /** Compact, muted empty/offline state with an optional action (e.g. Retry). */
-export function EmptyState({ icon, title, subtitle, actionLabel, onAction, iconSize = 56 }: EmptyStateProps) {
+export function EmptyState({ icon, title, subtitle, actionLabel, onAction, iconSize = 28 }: EmptyStateProps) {
   const { colors } = useTheme();
 
   return (
     <View style={styles.wrap}>
-      <Ionicons name={icon} size={iconSize} color={colors.textSecondary} />
-      <Text style={[styles.title, { color: colors.textSecondary }]}>{t(title)}</Text>
+      <View style={[styles.iconCircle, { backgroundColor: colors.iconCircleBg || '#E0EAE5' }]}>
+        <Ionicons name={icon} size={iconSize} color={colors.forestGreen || colors.accent} />
+      </View>
+      <Text style={[styles.title, { color: colors.textPrimary }]}>{t(title)}</Text>
       <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t(subtitle)}</Text>
       {actionLabel && onAction ? (
         <TouchableOpacity
           onPress={onAction}
-          style={[styles.actionBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
+          style={[styles.actionBtn, { backgroundColor: colors.forestGreen || colors.accent }]}
           accessibilityRole="button"
           accessibilityLabel={t(actionLabel)}
-          activeOpacity={0.75}
+          activeOpacity={0.85}
         >
-          <Text style={[styles.actionText, { color: colors.accent }]}>{t(actionLabel)}</Text>
+          <Text style={[styles.actionText, { color: colors.onAccent || '#FFFFFF' }]}>{t(actionLabel)}</Text>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -44,27 +46,34 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     paddingHorizontal: 24,
   },
+  iconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
   title: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 15,
-    marginTop: 14,
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 22,
+    marginTop: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 13.5,
+    lineHeight: 19,
     marginTop: 6,
     textAlign: 'center',
-    maxWidth: 300,
+    maxWidth: 320,
   },
   actionBtn: {
-    marginTop: 16,
+    marginTop: 18,
     minHeight: 44,
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
     paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
