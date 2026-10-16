@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  FlatList,
   StyleSheet,
   Text,
   View,
@@ -8,13 +7,14 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useThemeTokens } from '../theme/tokens';
 import { t } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { getBookmarks, removeBookmark, addBookmark, VerseRef } from '../lib/study';
 import { ArabicText } from '../components/ArabicText';
-import { Hairline } from '../components/Hairline';
 import { EmptyState } from '../components/EmptyState';
+import { PremiumCard } from '../components/ui';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
 
 interface BookmarksScreenProps {
@@ -28,18 +28,14 @@ function BookmarksScreen({
   backLabel = 'Quran',
   onOpenVerse,
 }: BookmarksScreenProps) {
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
-  const paddingH = isCompact ? 16 : 20;
-  const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
+  const paddingH = isCompact ? 14 : 20;
+  const [bookmarks, setBookmarks] = useState<VerseRef[]>(() => getBookmarks());
   const [justRemoved, setJustRemoved] = useState<string | null>(null);
   const removedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { saveUndoState } = useUndoToast();
-
-  useEffect(() => {
-    setBookmarks(getBookmarks());
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -71,21 +67,18 @@ function BookmarksScreen({
   const renderBookmark = ({ item }: { item: VerseRef }) => {
     const arabicText = item.text.replace(/<[^>]*>/g, '').trim();
     return (
-      <TouchableOpacity
-        activeOpacity={0.8}
+      <PremiumCard
         onPress={() => onOpenVerse?.(item.surah, item.ayah)}
         style={[
           styles.itemCard,
           {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
             opacity: justRemoved === `${item.surah}:${item.ayah}` ? 0.45 : 1,
           },
         ]}
       >
         <View style={styles.itemHeader}>
-          <View style={[styles.badge, { backgroundColor: colors.sagePill }]}>
-            <Text style={[styles.badgeText, { color: colors.forestGreen }]}>
+          <View style={[styles.badge, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
+            <Text style={[styles.badgeText, { color: tokens.goldText }]}>
               {item.surahName ? `${item.surahName} · ` : ''}{t('Surah')} {item.surah}:{item.ayah}
             </Text>
           </View>
@@ -98,57 +91,70 @@ function BookmarksScreen({
             <Ionicons
               name={justRemoved === `${item.surah}:${item.ayah}` ? 'checkmark' : 'trash-outline'}
               size={17}
-              color={justRemoved === `${item.surah}:${item.ayah}` ? colors.accent : colors.textMuted}
+              color={justRemoved === `${item.surah}:${item.ayah}` ? tokens.accent : tokens.muted}
             />
           </TouchableOpacity>
         </View>
 
-        <ArabicText size={22} style={styles.arabic}>
+        <ArabicText size={22} style={[styles.arabic, { color: tokens.text }]}>
           {arabicText}
         </ArabicText>
 
         {item.translation ? (
-          <Text style={[styles.translation, { color: colors.textSecondary }]}>
+          <Text style={[styles.translation, { color: tokens.muted }]}>
             {item.translation}
           </Text>
         ) : null}
 
         <View style={styles.itemFooter}>
-          <Text style={[styles.readHint, { color: colors.forestGreen }]}>
+          <Text style={[styles.readHint, { color: tokens.goldText }]}>
             {t('Tap to open in Reader →')}
           </Text>
         </View>
-      </TouchableOpacity>
+      </PremiumCard>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <View style={styles.contentWrap}>
-        <ScreenHeader
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
           title={t('Bookmarks')}
           eyebrow={t('Saved Verses')}
+          subtitle={t('Access your saved verses and reading bookmarks')}
           onBack={onBack}
           backLabel={t(backLabel)}
+          borderBottom
+          showFade
         />
-
-        <FlatList
+      }
+    >
+      <View style={styles.contentWrap}>
+        <DetailScreen.FlatList
           data={bookmarks}
           keyExtractor={(item) => `${item.surah}:${item.ayah}`}
           renderItem={renderBookmark}
-          contentContainerStyle={[styles.listContent, { paddingHorizontal: paddingH }]}
+          contentContainerStyle={[
+            styles.listContent,
+            {
+              paddingHorizontal: paddingH,
+            },
+          ]}
           ListEmptyComponent={
-            <EmptyState
-              icon="bookmark-outline"
-              title={t('No bookmarks yet')}
-              subtitle={t('Open the Quran and tap the bookmark icon on any ayah to save it here for quick access.')}
-              actionLabel={t('Open the Quran')}
-              onAction={onOpenVerse ? () => onOpenVerse(1, 1) : undefined}
-            />
+            <PremiumCard padded={false} style={styles.emptyCard} contentStyle={styles.emptyCardContent}>
+              <EmptyState
+                icon="bookmark-outline"
+                title={t('No bookmarks yet')}
+                subtitle={t('Open the Quran and tap the bookmark icon on any ayah to save it here for quick access.')}
+                actionLabel={t('Open the Quran')}
+                onAction={onOpenVerse ? () => onOpenVerse(1, 1) : undefined}
+              />
+            </PremiumCard>
           }
         />
       </View>
-    </View>
+    </DetailScreen>
   );
 }
 
@@ -162,20 +168,21 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     alignSelf: 'center',
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 4,
-  },
   listContent: {
-    padding: 20,
     paddingTop: 8,
     gap: 12,
   },
+  emptyCard: {
+    borderRadius: 14,
+    marginTop: 20,
+  },
+  emptyCardContent: {
+    padding: 20,
+    paddingVertical: 32,
+  },
   itemCard: {
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderWidth: 0.75,
   },
   itemHeader: {
     flexDirection: 'row',

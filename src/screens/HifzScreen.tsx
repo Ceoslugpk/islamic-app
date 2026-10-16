@@ -3,18 +3,19 @@ import {
   StyleSheet,
   Text,
   View,
-  FlatList,
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
   BackHandler,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
+import { getCardShadow, getHeroCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { t } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Hairline } from '../components/Hairline';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { ArabicText } from '../components/ArabicText';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
 import { HifzStatus, saveHifzStatus, loadHifzStatuses } from '../lib/db';
@@ -32,20 +33,15 @@ const NEXT_STATUS: Record<HifzStatus, HifzStatus> = {
 };
 
 export default function HifzScreen({ onBack }: { onBack?: () => void }) {
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
-  const paddingH = isCompact ? 16 : 20;
+  const paddingH = isCompact ? 14 : 20;
 
-  const [statuses, setStatuses] = useState<Record<number, HifzStatus>>({});
+  const [statuses, setStatuses] = useState<Record<number, HifzStatus>>(() => loadHifzStatuses());
   const [activeFilter, setActiveFilter] = useState<FilterTab>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [practiceSurah, setPracticeSurah] = useState<number | null>(null);
-
-  useEffect(() => {
-    const loaded = loadHifzStatuses();
-    setStatuses(loaded);
-  }, []);
 
   // Return from practice sub-screen on Android hardware back
   useEffect(() => {
@@ -119,14 +115,15 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         <View
           style={[
             styles.badge,
+            getPillShadow(mode),
             {
-              backgroundColor: colors.forestGreen,
-              borderColor: colors.forestGreen,
+              backgroundColor: tokens.gold,
+              borderColor: tokens.goldBorder,
             },
           ]}
         >
-          <Ionicons name="checkmark-circle" size={13} color={colors.onAccent} style={{ marginRight: 4 }} />
-          <Text style={[styles.badgeText, { color: colors.onAccent }]}>{t('Memorized')}</Text>
+          <Ionicons name="checkmark-circle" size={13} color={tokens.onGold} style={{ marginRight: 4 }} />
+          <Text style={[styles.badgeText, { color: tokens.onGold }]}>{t('Memorized')}</Text>
         </View>
       );
     }
@@ -135,14 +132,15 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         <View
           style={[
             styles.badge,
+            getPillShadow(mode),
             {
-              backgroundColor: colors.sagePill,
-              borderColor: colors.borderSubtle,
+              backgroundColor: tokens.ringFill,
+              borderColor: tokens.ringBorder,
             },
           ]}
         >
-          <Ionicons name="sync-outline" size={13} color={colors.forestGreen} style={{ marginRight: 4 }} />
-          <Text style={[styles.badgeText, { color: colors.forestGreen }]}>{t('Revising')}</Text>
+          <Ionicons name="sync-outline" size={13} color={tokens.goldText} style={{ marginRight: 4 }} />
+          <Text style={[styles.badgeText, { color: tokens.goldText }]}>{t('Revising')}</Text>
         </View>
       );
     }
@@ -151,12 +149,12 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         style={[
           styles.badge,
           {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
+            backgroundColor: tokens.ringFill,
+            borderColor: tokens.cardBorder,
           },
         ]}
       >
-        <Text style={[styles.badgeText, { color: colors.textMuted }]}>{t('Not started')}</Text>
+        <Text style={[styles.badgeText, { color: tokens.muted }]}>{t('Not started')}</Text>
       </View>
     );
   };
@@ -167,7 +165,14 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
 
     return (
       <TouchableOpacity
-        style={styles.row}
+        style={[
+          styles.rowCard,
+          getCardShadow(mode),
+          {
+            backgroundColor: tokens.cardTop,
+            borderColor: tokens.cardBorder,
+          },
+        ]}
         onPress={() => handleCycleStatus(item.number)}
         accessibilityRole="button"
         accessibilityLabel={`${t('Surah')} ${item.number} ${item.englishName}. ${t('Status')}: ${statusLabel}. ${t('Tap to cycle')}.`}
@@ -175,23 +180,24 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         <View
           style={[
             styles.numberBox,
+            getPillShadow(mode),
             {
-              backgroundColor: colors.iconCircleBg,
-              borderColor: colors.borderSubtle,
+              backgroundColor: tokens.ringFill,
+              borderColor: tokens.ringBorder,
             },
           ]}
         >
-          <Text style={[styles.numberText, { color: colors.iconCircleFg }]}>
+          <Text style={[styles.numberText, { color: tokens.goldText }]}>
             {item.number}
           </Text>
         </View>
 
         <View style={styles.midCol}>
           <View style={styles.nameRow}>
-            <Text style={[styles.englishName, { color: colors.textPrimary }]} numberOfLines={1}>
+            <Text style={[styles.englishName, { color: tokens.text }]} numberOfLines={1}>
               {item.englishName}
             </Text>
-            <Text style={[styles.ayahCount, { color: colors.textMuted }]}>
+            <Text style={[styles.ayahCount, { color: tokens.muted }]}>
               {item.numberOfAyahs} {t('ayahs')} · {t(item.revelationType)}
             </Text>
           </View>
@@ -201,20 +207,27 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
         </View>
 
         <View style={styles.rightCol}>
-          <ArabicText size={20} align="right" style={styles.arabicName} numberOfLines={1}>
+          <ArabicText size={20} align="right" style={[styles.arabicName, { color: tokens.arabicName }]} numberOfLines={1}>
             {item.name}
           </ArabicText>
           <View style={styles.rowActions}>
             <TouchableOpacity
               onPress={() => setPracticeSurah(item.number)}
-              style={[styles.practiceBtn, { backgroundColor: colors.sagePill, borderColor: colors.borderSubtle }]}
+              style={[
+                styles.practiceBtn,
+                getPillShadow(mode),
+                {
+                  backgroundColor: tokens.ringFill,
+                  borderColor: tokens.goldBorder,
+                },
+              ]}
               accessibilityRole="button"
               accessibilityLabel={`${t('Practice')} ${item.englishName}`}
             >
-              <Ionicons name="eye-outline" size={12} color={colors.forestGreen} />
-              <Text style={[styles.practiceText, { color: colors.forestGreen }]}>{t('Practice')}</Text>
+              <Ionicons name="eye-outline" size={12} color={tokens.goldText} />
+              <Text style={[styles.practiceText, { color: tokens.goldText }]}>{t('Practice')}</Text>
             </TouchableOpacity>
-            <Text style={[styles.tapHint, { color: colors.textMuted }]}>
+            <Text style={[styles.tapHint, { color: tokens.muted }]}>
               {t('Tap to cycle')}
             </Text>
           </View>
@@ -233,151 +246,171 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <View style={[styles.contentWrap, { paddingHorizontal: paddingH }]}>
-        <ScreenHeader
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
           eyebrow={t('Memorization')}
           title={t('Hifz Tracker')}
+          subtitle={t('Track memorization progress, revisions, and test recall')}
           onBack={onBack}
           backLabel={t('Quran')}
+          borderBottom
+          showFade
         />
-
-      {/* Summary Scorecard */}
-      <View
-        style={[
-          styles.summaryCard,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
-          },
-        ]}
-      >
-        <View style={styles.statCol}>
-          <Text style={[styles.statValue, { color: colors.accent }]}>
-            {stats.memorized}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>
-            {t('MEMORIZED')}
-          </Text>
-        </View>
-
-        <View style={[styles.statDivider, { backgroundColor: colors.borderSubtle }]} />
-
-        <View style={styles.statCol}>
-          <Text style={[styles.statValue, { color: colors.textPrimary }]}>
-            {stats.revising}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>
-            {t('REVISING')}
-          </Text>
-        </View>
-
-        <View style={[styles.statDivider, { backgroundColor: colors.borderSubtle }]} />
-
-        <View style={styles.statCol}>
-          <Text style={[styles.statValue, { color: colors.textSecondary }]}>
-            {stats.notStarted}
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>
-            {t('NOT STARTED')}
-          </Text>
-        </View>
-      </View>
-
-      {/* Search Input */}
-      <View
-        style={[
-          styles.searchBox,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
-          },
-        ]}
-      >
-        <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
-        <TextInput
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder={t('Search surahs by name or number...')}
-          placeholderTextColor={colors.textMuted}
-          style={[styles.searchInput, { color: colors.textPrimary }]}
-          autoCapitalize="none"
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Filter Tabs */}
-      <View style={styles.filterRow}>
-        {FILTER_TABS.map((tab) => {
-          const isSelected = tab === activeFilter;
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[
-                styles.filterTab,
-                {
-                  backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                  borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                },
-              ]}
-              onPress={() => setActiveFilter(tab)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
-            >
-              <Text
-                style={[
-                  styles.filterTabText,
-                  { color: isSelected ? colors.bgBase : colors.textSecondary },
-                ]}
-              >
-                {t(tab)}
+      }
+    >
+      <View style={styles.contentWrap}>
+        {/* Summary Scorecard */}
+        <View style={{ paddingHorizontal: paddingH, paddingTop: 12 }}>
+          <View
+            style={[
+              styles.summaryCard,
+              getHeroCardShadow(mode),
+              {
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
+              },
+            ]}
+          >
+            <View style={styles.statCol}>
+              <Text style={[styles.statValue, { color: tokens.goldText }]}>
+                {stats.memorized}
               </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+              <Text style={[styles.statLabel, { color: tokens.muted }]}>
+                {t('MEMORIZED')}
+              </Text>
+            </View>
 
-      {/* Surahs List */}
-      <FlatList
-        data={filteredSurahs}
-        keyExtractor={(item) => item.number.toString()}
-        renderItem={renderSurah}
-        ItemSeparatorComponent={Hairline}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        ListEmptyComponent={
-          <EmptyState
-            icon="search-outline"
-            title={t('No surahs found')}
-            subtitle={
-              searchQuery
-                ? `${t('Nothing matches')} "${searchQuery}". ${t('Try a different name or number.')}`
-                : t('Nothing in this category yet — tap a surah to start memorizing.')
-            }
-            actionLabel={t('Clear filters')}
-            onAction={() => {
-              setActiveFilter('All');
-              setSearchQuery('');
-            }}
-          />
-        }
-      />
+            <View style={[styles.statDivider, { backgroundColor: tokens.cardBorder }]} />
+
+            <View style={styles.statCol}>
+              <Text style={[styles.statValue, { color: tokens.text }]}>
+                {stats.revising}
+              </Text>
+              <Text style={[styles.statLabel, { color: tokens.muted }]}>
+                {t('REVISING')}
+              </Text>
+            </View>
+
+            <View style={[styles.statDivider, { backgroundColor: tokens.cardBorder }]} />
+
+            <View style={styles.statCol}>
+              <Text style={[styles.statValue, { color: tokens.muted }]}>
+                {stats.notStarted}
+              </Text>
+              <Text style={[styles.statLabel, { color: tokens.muted }]}>
+                {t('NOT STARTED')}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Search Input */}
+        <View style={{ paddingHorizontal: paddingH }}>
+          <View
+            style={[
+              styles.searchBox,
+              getPillShadow(mode),
+              {
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
+              },
+            ]}
+          >
+            <Ionicons name="search" size={16} color={tokens.muted} style={styles.searchIcon} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder={t('Search surahs by name or number...')}
+              placeholderTextColor={tokens.muted}
+              style={[
+                styles.searchInput,
+                { color: tokens.text },
+                Platform.OS === 'web' && ({ outlineStyle: 'none' } as any),
+              ]}
+              autoCapitalize="none"
+              autoCorrect={false}
+              clearButtonMode="while-editing"
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                <Ionicons name="close-circle" size={16} color={tokens.muted} />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Filter Tabs */}
+        <View style={[styles.filterRow, { paddingHorizontal: paddingH }]}>
+          {FILTER_TABS.map((tab) => {
+            const isSelected = tab === activeFilter;
+            return (
+              <TouchableOpacity
+                key={tab}
+                style={[
+                  styles.filterTab,
+                  getPillShadow(mode),
+                  {
+                    backgroundColor: isSelected ? tokens.gold : tokens.ringFill,
+                    borderColor: isSelected ? tokens.goldBorder : tokens.ringBorder,
+                  },
+                ]}
+                onPress={() => setActiveFilter(tab)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+              >
+                <Text
+                  style={[
+                    styles.filterTabText,
+                    { color: isSelected ? tokens.onGold : tokens.muted },
+                  ]}
+                >
+                  {t(tab)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Surahs List */}
+        <DetailScreen.FlatList
+          data={filteredSurahs}
+          keyExtractor={(item) => item.number.toString()}
+          renderItem={renderSurah}
+          showsVerticalScrollIndicator={false}
+          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.listContent,
+            {
+              paddingHorizontal: paddingH,
+            },
+          ]}
+          ListEmptyComponent={
+            <EmptyState
+              icon="search-outline"
+              title={t('No surahs found')}
+              subtitle={
+                searchQuery
+                  ? `${t('Nothing matches')} "${searchQuery}". ${t('Try a different name or number.')}`
+                  : t('Nothing in this category yet — tap a surah to start memorizing.')
+              }
+              actionLabel={t('Clear filters')}
+              onAction={() => {
+                setActiveFilter('All');
+                setSearchQuery('');
+              }}
+            />
+          }
+        />
       </View>
-    </View>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 10,
-    paddingBottom: 0,
   },
   contentWrap: {
     flex: 1,
@@ -388,7 +421,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     borderRadius: 20,
     paddingVertical: 14,
     marginBottom: 10,
@@ -415,7 +448,7 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     borderRadius: 22,
     paddingHorizontal: 14,
     height: 42,
@@ -439,7 +472,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 7,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -447,20 +480,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
   },
-  listContent: {
-    paddingBottom: 30,
+  headerWrap: {
+    paddingTop: 4,
+    paddingBottom: 4,
   },
-  row: {
+  listContent: {
+    paddingTop: 8,
+    gap: 10,
+  },
+  rowCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: cardTokens.borderWidth,
     gap: 12,
   },
   numberBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -490,7 +530,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
   },
   badgeText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -528,7 +568,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
   },
   practiceText: {
     fontFamily: 'Manrope_600SemiBold',

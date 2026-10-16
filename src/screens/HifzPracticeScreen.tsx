@@ -4,14 +4,17 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
+import { getPillShadow } from '../lib/homeThemeTokens';
 import { t } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { ArabicText } from '../components/ArabicText';
+import { PremiumCard } from '../components/ui';
 import { fetchSurah, SurahDetail } from '../lib/quran';
 import { SURAHS_114 } from '../lib/surahs114';
 import { getBackIcon, getForwardIcon } from '../lib/iconMap';
@@ -28,7 +31,10 @@ interface Props {
 }
 
 export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 14 : 20;
   const [detail, setDetail] = useState<SurahDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +46,6 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
-    setError(null);
     fetchSurah(surahNumber, false)
       .then((d) => {
         if (alive) setDetail(d);
@@ -80,164 +84,242 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader
-        title={surah?.englishName || `${t('Surah')} ${surahNumber}`}
-        subtitle={`${t('Hide & Peek')} · ${surah?.numberOfAyahs || 0} ${t('ayahs')}`}
-        onBack={onBack}
-      />
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
+          eyebrow={t('Hide & Peek')}
+          title={surah?.englishName || `${t('Surah')} ${surahNumber}`}
+          subtitle={`${surah?.numberOfAyahs || 0} ${t('ayahs')} · ${t('Recite from memory & test recall')}`}
+          onBack={onBack}
+          backLabel={t('Hifz')}
+          borderBottom
+          showFade
+        />
+      }
+    >
+      <View style={styles.contentWrap}>
 
-      {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator color={colors.accent} size="large" />
-          <Text style={[styles.hint, { color: colors.textMuted }]}>{t('Loading surah text...')}</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.center}>
-          <Ionicons name="cloud-offline-outline" size={40} color={colors.textMuted} />
-          <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
-          <TouchableOpacity
-            style={[styles.primaryBtn, { backgroundColor: colors.forestGreen }]}
-            onPress={() => {
-              setLoading(true);
-              setError(null);
-              fetchSurah(surahNumber, true)
-                .then(setDetail)
-                .catch(() => setError(t('Still could not load. Try again later.')))
-                .finally(() => setLoading(false));
-            }}
-            accessibilityRole="button"
+        {loading ? (
+          <View style={styles.center}>
+            <ActivityIndicator color={tokens.gold} size="large" />
+            <Text style={[styles.hint, { color: tokens.muted }]}>{t('Loading surah text...')}</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.center}>
+            <Ionicons name="cloud-offline-outline" size={40} color={tokens.muted} />
+            <Text style={[styles.errorText, { color: tokens.muted }]}>{error}</Text>
+            <TouchableOpacity
+              style={[styles.primaryBtn, getPillShadow(mode), { backgroundColor: tokens.gold, borderColor: tokens.goldBorder }]}
+              onPress={() => {
+                setLoading(true);
+                setError(null);
+                fetchSurah(surahNumber, true)
+                  .then(setDetail)
+                  .catch(() => setError(t('Still could not load. Try again later.')))
+                  .finally(() => setLoading(false));
+              }}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.primaryBtnText, { color: tokens.onGold }]}>{t('Retry')}</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <DetailScreen.ScrollView
+            contentContainerStyle={[
+              styles.content,
+              {
+                paddingHorizontal: paddingH,
+              },
+            ]}
+            style={{ flex: 1 }}
           >
-            <Text style={styles.primaryBtnText}>{t('Retry')}</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <ScrollView contentContainerStyle={styles.content} style={{ flex: 1 }}>
-          {/* Progress header */}
-          <View style={styles.progressRow}>
-            <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-              {t('Ayah')} {index + 1} {t('of')} {ayahs.length}
-            </Text>
-            <Text style={[styles.progressText, { color: colors.textMuted }]}>
-              {peekedCount} {t('peeked')}
-            </Text>
-          </View>
-          <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
-            <View
-              style={[
-                styles.progressFill,
-                { backgroundColor: colors.accent, width: `${ayahs.length ? ((index + 1) / ayahs.length) * 100 : 0}%` },
-              ]}
-            />
-          </View>
-
-          {/* Ayah card */}
-          {current ? (
-            <View style={[styles.ayahCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-              <Text style={[styles.ayahNum, { color: colors.accent }]}>
-                {surahNumber}:{current.numberInSurah}
-              </Text>
-
-              {revealed ? (
-                <ArabicText size={24} align="right" style={styles.ayahArabic}>
-                  {current.text}
-                </ArabicText>
-              ) : (
-                <View style={styles.hiddenBox}>
-                  <Text style={[styles.hiddenDots, { color: colors.textMuted }]}>
-                    • • • • • • • • •
-                  </Text>
-                  <Text style={[styles.hiddenHint, { color: colors.textMuted }]}>
-                    {t('Recite from memory, then peek to check.')}
-                  </Text>
-                </View>
-              )}
-
-              {revealed && current.translation ? (
-                <Text style={[styles.ayahTrans, { color: colors.textSecondary }]}>
-                  {current.translation}
+            {/* Progress header card */}
+            <PremiumCard
+              style={styles.progressCard}
+              padded
+              borderRadius={16}
+            >
+              <View style={styles.progressRow}>
+                <Text style={[styles.progressText, { color: tokens.text }]}>
+                  {t('Ayah')} {index + 1} {t('of')} {ayahs.length}
                 </Text>
-              ) : null}
+                <Text style={[styles.progressText, { color: tokens.muted }]}>
+                  {peekedCount} {t('peeked')}
+                </Text>
+              </View>
+              <View style={[styles.progressTrack, { backgroundColor: tokens.trackColor }]}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    { backgroundColor: tokens.gold, width: `${ayahs.length ? ((index + 1) / ayahs.length) * 100 : 0}%` },
+                  ]}
+                />
+              </View>
+            </PremiumCard>
 
-              {!revealed && (
+            {/* Ayah card */}
+            {current ? (
+              <PremiumCard
+                style={styles.ayahCard}
+                padded
+                borderRadius={20}
+              >
+                <Text style={[styles.ayahNum, { color: tokens.goldText }]}>
+                  {surahNumber}:{current.numberInSurah}
+                </Text>
+
+                {revealed ? (
+                  <ArabicText size={24} align="right" style={[styles.ayahArabic, { color: tokens.text }]}>
+                    {current.text}
+                  </ArabicText>
+                ) : (
+                  <View style={styles.hiddenBox}>
+                    <Text style={[styles.hiddenDots, { color: tokens.muted }]}>
+                      • • • • • • • • •
+                    </Text>
+                    <Text style={[styles.hiddenHint, { color: tokens.muted }]}>
+                      {t('Recite from memory, then peek to check.')}
+                    </Text>
+                  </View>
+                )}
+
+                {revealed && current.translation ? (
+                  <Text style={[styles.ayahTrans, { color: tokens.muted }]}>
+                    {current.translation}
+                  </Text>
+                ) : null}
+
+                {!revealed && (
+                  <TouchableOpacity
+                    style={[
+                      styles.peekBtn,
+                      getPillShadow(mode),
+                      { backgroundColor: tokens.gold, borderColor: tokens.goldBorder },
+                    ]}
+                    onPress={handleReveal}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Reveal this ayah')}
+                  >
+                    <Ionicons name="eye-outline" size={16} color={tokens.onGold} />
+                    <Text style={[styles.peekBtnText, { color: tokens.onGold }]}>{t('Peek')}</Text>
+                  </TouchableOpacity>
+                )}
+              </PremiumCard>
+            ) : null}
+
+            {/* Controls panel */}
+            <PremiumCard style={styles.controlsCard} padded borderRadius={18}>
+              <View style={styles.controlsRow}>
                 <TouchableOpacity
-                  style={[styles.peekBtn, { backgroundColor: colors.forestGreen }]}
-                  onPress={handleReveal}
+                  style={[
+                    styles.ctrlBtn,
+                    getPillShadow(mode),
+                    {
+                      backgroundColor: tokens.cardTop,
+                      borderColor: tokens.cardBorder,
+                    },
+                  ]}
+                  onPress={goPrev}
+                  disabled={index === 0}
                   accessibilityRole="button"
-                  accessibilityLabel={t('Reveal this ayah')}
+                  accessibilityLabel={t('Previous ayah')}
                 >
-                  <Ionicons name="eye-outline" size={16} color={colors.onAccent} />
-                  <Text style={[styles.peekBtnText, { color: colors.onAccent }]}>{t('Peek')}</Text>
+                  <Ionicons
+                    name={getBackIcon()}
+                    size={20}
+                    color={index === 0 ? tokens.muted : tokens.text}
+                  />
                 </TouchableOpacity>
-              )}
-            </View>
-          ) : null}
 
-          {/* Controls */}
-          <View style={styles.controlsRow}>
-            <TouchableOpacity
-              style={[styles.ctrlBtn, { borderColor: colors.borderSubtle }]}
-              onPress={goPrev}
-              disabled={index === 0}
-              accessibilityRole="button"
-              accessibilityLabel={t('Previous ayah')}
-            >
-              <Ionicons name={getBackIcon()} size={20} color={index === 0 ? colors.textMuted : colors.textSecondary} />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.ctrlBtn,
+                    styles.ctrlPrimary,
+                    getPillShadow(mode),
+                    { backgroundColor: tokens.gold, borderColor: tokens.goldBorder },
+                  ]}
+                  onPress={revealed ? goNext : handleReveal}
+                  accessibilityRole="button"
+                  accessibilityLabel={revealed ? t('Next ayah') : t('Reveal this ayah')}
+                >
+                  <Text style={[styles.ctrlPrimaryText, { color: tokens.onGold }]}>
+                    {revealed ? t('Next Ayah') : t('Peek')}
+                  </Text>
+                  <Ionicons
+                    name={revealed ? 'chevron-forward' : 'eye-outline'}
+                    size={18}
+                    color={tokens.onGold}
+                  />
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.ctrlBtn, styles.ctrlPrimary, { backgroundColor: colors.forestGreen }]}
-              onPress={revealed ? goNext : handleReveal}
-              accessibilityRole="button"
-              accessibilityLabel={revealed ? t('Next ayah') : t('Reveal this ayah')}
-            >
-              <Text style={[styles.ctrlPrimaryText, { color: colors.onAccent }]}>{revealed ? t('Next Ayah') : t('Peek')}</Text>
-              <Ionicons name={revealed ? 'chevron-forward' : 'eye-outline'} size={18} color={colors.onAccent} />
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.ctrlBtn,
+                    getPillShadow(mode),
+                    {
+                      backgroundColor: tokens.cardTop,
+                      borderColor: tokens.cardBorder,
+                    },
+                  ]}
+                  onPress={goNext}
+                  disabled={index === ayahs.length - 1}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Next ayah')}
+                >
+                  <Ionicons
+                    name={getForwardIcon()}
+                    size={20}
+                    color={index === ayahs.length - 1 ? tokens.muted : tokens.text}
+                  />
+                </TouchableOpacity>
+              </View>
 
-            <TouchableOpacity
-              style={[styles.ctrlBtn, { borderColor: colors.borderSubtle }]}
-              onPress={goNext}
-              disabled={index === ayahs.length - 1}
-              accessibilityRole="button"
-              accessibilityLabel={t('Next ayah')}
-            >
-              <Ionicons
-                name={getForwardIcon()}
-                size={20}
-                color={index === ayahs.length - 1 ? colors.textMuted : colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.restartBtn, { borderColor: colors.borderSubtle }]}
-            onPress={restart}
-            accessibilityRole="button"
-            accessibilityLabel={t('Restart practice from the beginning')}
-          >
-            <Ionicons name="refresh-outline" size={15} color={colors.textSecondary} />
-            <Text style={[styles.restartText, { color: colors.textSecondary }]}>{t('Restart')}</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      )}
-    </View>
+              <TouchableOpacity
+                style={[
+                  styles.restartBtn,
+                  getPillShadow(mode),
+                  {
+                    backgroundColor: tokens.cardTop,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+                onPress={restart}
+                accessibilityRole="button"
+                accessibilityLabel={t('Restart practice from the beginning')}
+              >
+                <Ionicons name="refresh-outline" size={15} color={tokens.muted} />
+                <Text style={[styles.restartText, { color: tokens.muted }]}>{t('Restart')}</Text>
+              </TouchableOpacity>
+            </PremiumCard>
+          </DetailScreen.ScrollView>
+        )}
+      </View>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  contentWrap: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+  },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, gap: 12 },
   hint: { fontFamily: 'Manrope_400Regular', fontSize: 13 },
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   primaryBtn: { paddingHorizontal: 22, minHeight: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
-  primaryBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
-  content: { padding: 20, paddingBottom: 40 },
+  primaryBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
+  content: { paddingTop: 10, paddingBottom: 40 },
+  progressCard: { marginBottom: 14 },
   progressRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   progressText: { fontFamily: 'Manrope_500Medium', fontSize: 12 },
-  progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden', marginBottom: 18 },
+  progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: 4, borderRadius: 2 },
-  ayahCard: { borderRadius: 20, borderWidth: 1, padding: 20, marginBottom: 20 },
+  ayahCard: { marginBottom: 14 },
+  controlsCard: { marginBottom: 20 },
   ayahNum: { fontFamily: 'Manrope_600SemiBold', fontSize: 12, letterSpacing: 0.4, marginBottom: 12 },
   ayahArabic: { marginBottom: 12 },
   ayahTrans: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19 },
@@ -253,7 +335,7 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     marginTop: 10,
   },
-  peekBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
+  peekBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
   controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14 },
   ctrlBtn: {
     flexDirection: 'row',
@@ -263,11 +345,11 @@ const styles = StyleSheet.create({
     minWidth: 92,
     minHeight: 46,
     borderRadius: 23,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     paddingHorizontal: 16,
   },
-  ctrlPrimary: { borderWidth: 0 },
-  ctrlPrimaryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 15, color: '#FFF' },
+  ctrlPrimary: { borderWidth: cardTokens.borderWidth },
+  ctrlPrimaryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 15 },
   restartBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -275,7 +357,7 @@ const styles = StyleSheet.create({
     gap: 6,
     minHeight: 40,
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     marginTop: 16,
   },
   restartText: { fontFamily: 'Manrope_500Medium', fontSize: 13 },
