@@ -34,6 +34,10 @@ export interface SheetHeaderProps {
   closeLabel?: string;
   /** Whether to show the top drag pill. Defaults to true */
   showDragPill?: boolean;
+  /** Optional accessibility label for drag pill dismiss button */
+  dismissAccessibilityLabel?: string;
+  /** Optional chip or badge accessory */
+  chip?: React.ReactNode;
   /** Custom container style */
   style?: StyleProp<ViewStyle>;
   /** Whether to show bottom hairline separator. Defaults to true */
@@ -57,6 +61,8 @@ export function SheetHeader({
   onClose,
   closeLabel,
   showDragPill = true,
+  dismissAccessibilityLabel,
+  chip,
   style,
   borderBottom = true,
   testID = 'sheet-header',
@@ -83,13 +89,31 @@ export function SheetHeader({
       {/* Centered Drag Pill (36 x 5dp, radius 2.5dp) */}
       {showDragPill && (
         <View style={styles.dragPillWrap} testID={`${testID}-drag-pill-wrap`}>
-          <View
-            style={[
-              styles.dragPill,
-              { backgroundColor: mode === 'ink' ? tokens.ringBorder : colors.borderSubtle },
-            ]}
-            testID={`${testID}-drag-pill`}
-          />
+          {onClose ? (
+            <TouchableOpacity
+              onPress={onClose}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel={dismissAccessibilityLabel ?? t('Dismiss')}
+              hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
+            >
+              <View
+                style={[
+                  styles.dragPill,
+                  { backgroundColor: mode === 'ink' ? tokens.ringBorder : colors.borderSubtle },
+                ]}
+                testID={`${testID}-drag-pill`}
+              />
+            </TouchableOpacity>
+          ) : (
+            <View
+              style={[
+                styles.dragPill,
+                { backgroundColor: mode === 'ink' ? tokens.ringBorder : colors.borderSubtle },
+              ]}
+              testID={`${testID}-drag-pill`}
+            />
+          )}
         </View>
       )}
 
@@ -154,40 +178,54 @@ export function SheetHeader({
           ) : null}
         </View>
 
-        {/* Dismiss Button */}
-        {onClose && (
-          <View style={styles.dismissWrap}>
-            {closeLabel ? (
-              <TouchableOpacity
-                testID={`${testID}-close-btn`}
-                onPress={onClose}
-                accessibilityRole="button"
-                accessibilityLabel={t(closeLabel)}
-                hitSlop={touchTargetTokens.hitSlop8}
-                activeOpacity={0.7}
-                style={styles.closeTextTouch}
-              >
-                <Text
-                  style={[
-                    styles.closeText,
-                    {
-                      color: colors.accent,
-                      fontFamily: rtl ? fontRoles.arabicBold : fontRoles.uiSemiBold,
-                    },
-                  ]}
-                >
-                  {t(closeLabel)}
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <HeaderRingButton
-                testID={`${testID}-close-btn`}
-                iconName="close"
-                iconSize={16}
-                iconColor={colors.accent}
-                onPress={onClose}
-                accessibilityLabel={t('Close')}
-              />
+        {/* Right Actions & Dismiss */}
+        {(chip || onClose) && (
+          <View
+            style={[
+              styles.rightActionsRow,
+              { flexDirection: rtl ? 'row-reverse' : 'row' },
+            ]}
+          >
+            {chip ? (
+              <View testID={`${testID}-chip`} style={styles.chipWrap}>
+                {chip}
+              </View>
+            ) : null}
+            {onClose && (
+              <View style={styles.dismissWrap}>
+                {closeLabel ? (
+                  <TouchableOpacity
+                    testID={`${testID}-close-btn`}
+                    onPress={onClose}
+                    accessibilityRole="button"
+                    accessibilityLabel={t(closeLabel)}
+                    hitSlop={touchTargetTokens.hitSlop8}
+                    activeOpacity={0.7}
+                    style={styles.closeTextTouch}
+                  >
+                    <Text
+                      style={[
+                        styles.closeText,
+                        {
+                          color: colors.accent,
+                          fontFamily: rtl ? fontRoles.arabicBold : fontRoles.uiSemiBold,
+                        },
+                      ]}
+                    >
+                      {t(closeLabel)}
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <HeaderRingButton
+                    testID={`${testID}-close-btn`}
+                    iconName="close"
+                    iconSize={16}
+                    iconColor={colors.accent}
+                    onPress={onClose}
+                    accessibilityLabel={t('Close')}
+                  />
+                )}
+              </View>
             )}
           </View>
         )}
@@ -251,5 +289,14 @@ const styles = StyleSheet.create({
   },
   closeText: {
     fontSize: 14,
+  },
+  rightActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chipWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

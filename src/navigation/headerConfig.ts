@@ -614,6 +614,35 @@ export const HEADER_CONFIG: Record<string, HeaderConfig> = {
     eyebrowKey: 'Preferences',
     titleKey: 'Settings',
   },
+
+  // Batch 7 SubHeader Screens
+  'legal': {
+    type: 'sub',
+    eyebrowKey: 'About & Legal',
+    titleKey: 'Privacy Policy',
+    subtitleKey: 'No accounts, zero tracking, on-device privacy',
+    backLabelKey: 'Settings',
+    showFade: true,
+    borderBottom: true,
+  },
+  'backup-restore': {
+    type: 'sub',
+    eyebrowKey: 'Preferences',
+    titleKey: 'Backup & Restore',
+    subtitleKey: 'Local only — no account needed',
+    backLabelKey: 'Settings',
+    showFade: true,
+    borderBottom: true,
+  },
+  'backup': {
+    type: 'sub',
+    eyebrowKey: 'Preferences',
+    titleKey: 'Backup & Restore',
+    subtitleKey: 'Local only — no account needed',
+    backLabelKey: 'Settings',
+    showFade: true,
+    borderBottom: true,
+  },
 };
 
 /**

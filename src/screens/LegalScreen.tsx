@@ -1,19 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
-  Linking,
   useWindowDimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { useThemeTokens } from '../theme/tokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard, ScreenTabs, Chip } from '../components/ui';
 import { Hairline } from '../components/Hairline';
 
 export type LegalScreenKey =
@@ -34,17 +31,19 @@ interface BadgeProps {
 }
 
 function Badge({ label }: BadgeProps) {
-  const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   return (
-    <View
-      style={[
-        styles.badge,
-        { backgroundColor: colors.sagePill, borderColor: colors.borderSubtle },
-      ]}
-    >
-      <Text style={[styles.badgeText, { color: colors.forestGreen }]}>{t(label)}</Text>
-    </View>
+    <Chip
+      label={t(label)}
+      selected={false}
+      style={{
+        height: 26,
+        paddingHorizontal: 8,
+        backgroundColor: tokens.ringFill,
+        borderColor: tokens.ringBorder,
+      }}
+    />
   );
 }
 
@@ -55,18 +54,22 @@ interface LegalSectionProps {
 }
 
 function LegalSection({ title, badge, children }: LegalSectionProps) {
-  const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   return (
-    <Card style={styles.sectionCard}>
+    <PremiumCard
+      style={styles.sectionCard}
+      gradientColors={tokens.cardGradient}
+      borderColor={tokens.cardBorder}
+    >
       <View style={styles.sectionHeaderRow}>
-        <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+        <Text style={[styles.sectionTitle, { color: tokens.text }]}>
           {t(title)}
         </Text>
         {badge ? <Badge label={badge} /> : null}
       </View>
       <View style={styles.sectionBody}>{children}</View>
-    </Card>
+    </PremiumCard>
   );
 }
 
@@ -76,18 +79,18 @@ interface BulletItemProps {
 }
 
 function BulletItem({ title, text }: BulletItemProps) {
-  const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   return (
     <View style={styles.bulletRow}>
-      <Text style={[styles.bulletDot, { color: colors.accent }]}>•</Text>
+      <Text style={[styles.bulletDot, { color: tokens.accent }]}>•</Text>
       <View style={styles.bulletContent}>
         {title ? (
-          <Text style={[styles.bulletTitle, { color: colors.textPrimary }]}>
+          <Text style={[styles.bulletTitle, { color: tokens.text }]}>
             {t(title)}
           </Text>
         ) : null}
-        <Text style={[styles.bulletText, { color: colors.textSecondary }]}>
+        <Text style={[styles.bulletText, { color: tokens.muted }]}>
           {t(text)}
         </Text>
       </View>
@@ -102,15 +105,15 @@ interface LibItemProps {
 }
 
 function LibItem({ name, license, desc }: LibItemProps) {
-  const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   return (
     <View style={styles.libItem}>
       <View style={styles.libHeader}>
-        <Text style={[styles.libName, { color: colors.textPrimary }]}>{name}</Text>
+        <Text style={[styles.libName, { color: tokens.text }]}>{name}</Text>
         <Badge label={license} />
       </View>
-      <Text style={[styles.libDesc, { color: colors.textSecondary }]}>{t(desc)}</Text>
+      <Text style={[styles.libDesc, { color: tokens.muted }]}>{t(desc)}</Text>
     </View>
   );
 }
@@ -122,34 +125,36 @@ interface ServiceItemProps {
 }
 
 function ServiceItem({ name, role, desc }: ServiceItemProps) {
-  const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   return (
     <View style={styles.serviceItem}>
       <View style={styles.serviceHeader}>
-        <Text style={[styles.serviceName, { color: colors.textPrimary }]}>{name}</Text>
+        <Text style={[styles.serviceName, { color: tokens.text }]}>{name}</Text>
         <Badge label={role} />
       </View>
-      <Text style={[styles.serviceDesc, { color: colors.textSecondary }]}>{t(desc)}</Text>
+      <Text style={[styles.serviceDesc, { color: tokens.muted }]}>{t(desc)}</Text>
     </View>
   );
 }
 
 export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
   const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
   const maxW = 640;
+  const [activeScreen, setActiveScreen] = useState<LegalScreenKey>(screen);
+  const [prevScreen, setPrevScreen] = useState<LegalScreenKey>(screen);
+  if (screen !== prevScreen) {
+    setPrevScreen(screen);
+    setActiveScreen(screen);
+  }
 
-  const handleOpenLink = (url: string) => {
-    Linking.openURL(url).catch(() => {});
-  };
-
-  const getScreenMeta = (): { title: string; subtitle: string } => {
-    switch (screen) {
+  const getScreenMeta = (scr: LegalScreenKey): { title: string; subtitle: string } => {
+    switch (scr) {
       case 'privacy':
         return {
           title: 'Privacy Policy',
@@ -183,32 +188,54 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
     }
   };
 
-  const meta = getScreenMeta();
+  const meta = getScreenMeta(activeScreen);
+
+  const LEGAL_TABS = [
+    { id: 'privacy', label: t('Privacy') },
+    { id: 'terms', label: t('Terms') },
+    { id: 'data', label: t('Data') },
+    { id: 'licenses', label: t('Licenses') },
+    { id: 'services', label: t('Services') },
+    { id: 'contact', label: t('Contact') },
+  ];
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader
-        title={t(meta.title)}
-        subtitle={t(meta.subtitle)}
-        eyebrow={t("About & Legal")}
-        onBack={onBack}
-        backLabel={t("Settings")}
-        borderBottom
-      />
-
-      <ScrollView
+    <DetailScreen
+      style={{ backgroundColor: tokens.bgTop }}
+      includeTopInset
+      header={
+        <View>
+          <SubHeader
+            title={t(meta.title)}
+            subtitle={t(meta.subtitle)}
+            eyebrow={t("About & Legal")}
+            onBack={onBack}
+            backLabel={t("Settings")}
+            borderBottom
+          />
+          <View style={{ paddingHorizontal: paddingH, paddingTop: 6, paddingBottom: 8, backgroundColor: tokens.bgTop }}>
+            <ScreenTabs
+              tabs={LEGAL_TABS}
+              activeTab={activeScreen}
+              onChange={(id) => setActiveScreen(id as LegalScreenKey)}
+              scrollable
+            />
+          </View>
+        </View>
+      }
+    >
+      <DetailScreen.ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
           {
             paddingHorizontal: paddingH,
-            paddingTop: 16,
-            paddingBottom: Math.max(40, insets.bottom + 24),
+            paddingTop: 12,
           },
         ]}
       >
         <View style={[styles.contentWrap, { maxWidth: maxW }]}>
-          {screen === 'privacy' && (
+          {activeScreen === 'privacy' && (
             <>
               <LegalSection title="Our Commitment to Privacy" badge="Zero Data Sale">
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
@@ -318,7 +345,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
             </>
           )}
 
-          {screen === 'terms' && (
+          {activeScreen === 'terms' && (
             <>
               <LegalSection title={t("Free Service as Sadaqah Jariyah")} badge={t("Free & Open")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
@@ -363,7 +390,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
             </>
           )}
 
-{screen === 'data' && (
+{activeScreen === 'data' && (
             <>
               <LegalSection title={t("What Data is Stored Locally")} badge={t("Stored on Phone")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
@@ -481,7 +508,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
             </>
           )}
 
-          {screen === 'licenses' && (
+          {activeScreen === 'licenses' && (
             <>
               <LegalSection title={t("Open Source Foundation")} badge={t("Open Source")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
@@ -605,7 +632,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
             </>
           )}
 
-          {screen === 'services' && (
+          {activeScreen === 'services' && (
             <>
               <LegalSection title={t("Free Public APIs & Open Data")} badge={t("Public APIs")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
@@ -665,7 +692,7 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
             </>
           )}
 
-          {screen === 'contact' && (
+          {activeScreen === 'contact' && (
             <>
               <LegalSection title={t("Community Support & Feedback")} badge={t("Open Source")}>
                 <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
@@ -702,8 +729,8 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
             </>
           )}
         </View>
-      </ScrollView>
-    </View>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
@@ -723,8 +750,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   sectionCard: {
-    padding: 16,
-    borderRadius: 20,
+    borderRadius: 14,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -826,7 +852,6 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     padding: 18,
-    borderRadius: 20,
     gap: 12,
   },
   actionHeader: {

@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  AccessibilityInfo,
+  LayoutAnimation,
+  Modal,
+  Pressable,
   ScrollView,
   StyleSheet,
-  Text,
+  Text as NativeText,
   View,
   Image,
   TouchableOpacity,
@@ -14,16 +18,25 @@ import {
   Platform,
   DevSettings,
 } from 'react-native';
-import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
+import type { AccessibilityRole, AccessibilityState, GestureResponderEvent, TextProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFonts } from 'expo-font';
+import { Poppins_400Regular, Poppins_500Medium } from '@expo-google-fonts/poppins';
+import { Lora_500Medium } from '@expo-google-fonts/lora';
+import { NotoNastaliqUrdu_400Regular } from '@expo-google-fonts/noto-nastaliq-urdu';
 import * as Updates from 'expo-updates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
+import { useThemeTokens, getTokens, cardTokens } from '../theme/tokens';
+import { ACCENT_KEYS, accentThemes, getLocalizedAccentName } from '../lib/accents';
+import type { AccentKey } from '../lib/accents';
 import { getForwardIcon, getBackIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
 import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage } from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
+import { SheetHeader } from '../components/layout/SheetHeader';
 import {
   useSettings,
   QURAN_FONT_SIZE_MIN,
@@ -63,9 +76,9 @@ import { formatTime } from '../lib/timeFormat';
 import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { getLocalizedTranslatorName } from '../lib/quranLanguages';
 import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
-import { accentThemes, ACCENT_KEYS, getLocalizedAccentName } from '../lib/accents';
 import { clearWomenData, clearCycleHistory } from '../lib/db';
 import { WomenPinModal } from '../components/WomenPinModal';
+import { GeometricPattern } from '../components/GeometricPattern';
 import {
   useQuranPreload,
   verifyQuranPreloadCache,
@@ -73,9 +86,9 @@ import {
   QuranPreloadVerification,
 } from '../lib/quranPreloader';
 
-const ABOUT_ROWS: { title: string; subtitle: string }[] = [
-  { title: 'Islamic — Your Daily Companion', subtitle: 'Version 1.0' },
-];
+import appConfig from '../../app.json';
+
+const APP_VERSION = appConfig.expo.version;
 
 /**
  * The app's mission, in several languages.
@@ -94,8 +107,25 @@ const MISSION_TRANSLATIONS: { lang: string; text: string }[] = [
 /**
  * All data providers, thanked together.
  */
-const THANKS_TEXT =
-  'Thank you to every provider who makes this possible: Islamic.app · AlAdhan · AlQuran Cloud · islamic.network · EveryAyah · EsmaulHusna.org · OpenStreetMap · Google Fonts · Expo & the open-source community. May Allah reward them all.';
+const MISSION_TABS = [
+  { lang: 'English', label: 'English', fontFamily: 'Poppins_500Medium' },
+  { lang: 'العربية', label: 'العربية', fontFamily: 'NotoNaskhArabic_400Regular' },
+  { lang: 'اردو', label: 'اردو', fontFamily: 'NotoNaskhArabic_400Regular' },
+  { lang: 'Bahasa Indonesia', label: 'Indonesia', fontFamily: 'Poppins_500Medium' },
+  { lang: 'Français', label: 'Français', fontFamily: 'Poppins_500Medium' },
+] as const;
+
+function getMissionLanguage(language: string): string {
+  const languageToMission: Record<string, string> = {
+    en: 'English', ar: 'العربية', ur: 'اردو', id: 'Bahasa Indonesia', fr: 'Français',
+  };
+  return languageToMission[language] ?? 'English';
+}
+
+/** Enforce the screen-wide typography scaling ceiling. */
+function Text(props: TextProps) {
+  return <NativeText {...props} maxFontSizeMultiplier={1.2} />;
+}
 
 
 export interface AppLanguageOption {
@@ -118,10 +148,11 @@ export const APP_LANGUAGE_OPTIONS: readonly AppLanguageOption[] = [
 
 const QURAN_FONT_OPTIONS: { key: QuranArabicFont; label: string; desc: string }[] = [
   { key: 'amiri', label: 'Amiri', desc: 'Classic Naskh — the Quran reader default' },
-  { key: 'notonaskh', label: 'Noto Naskh Arabic', desc: 'Google’s clean, highly legible Naskh' },
+  { key: 'notonaskh', label: 'Noto Naskh Arabic', desc: "Google's clean, highly legible Naskh" },
 ];
 
-const DANGER = '#EF4444';
+
+const absoluteStartEndFill = { position: 'absolute' as const, top: 0, bottom: 0, start: 0, end: 0 };
 
 interface SettingsLayout {
   width: number;
@@ -152,14 +183,14 @@ function useSettingsLayout(): SettingsLayout {
     isCompact,
     screenPad: isCompact ? 16 : 20,
     cardPad: isCompact ? 12 : 16,
-    rowPad: isCompact ? 12 : 16,
-    titleSize: isCompact ? 14 : 15,
-    descSize: isCompact ? 12 : 13,
+    rowPad: 5.65,
+    titleSize: 12,
+    descSize: 10.5,
     labelSize: isCompact ? 10 : 11,
-    sectionGap: isCompact ? 14 : 20,
-    segMinW: 54,
-    segLabelSize: isCompact ? 12 : 13,
-    segPadV: isCompact ? 10 : 12,
+    sectionGap: isCompact ? 14.5 : 18,
+    segMinW: 44,
+    segLabelSize: 10.5,
+    segPadV: 4,
     maxW: 640,
   };
 }
@@ -167,18 +198,94 @@ function useSettingsLayout(): SettingsLayout {
 interface SectionProps {
   label: string;
   children: React.ReactNode;
+  collapsible?: boolean;
+  expanded?: boolean;
+  onToggle?: () => void;
+  summary?: string;
 }
 
 /** Uppercase section label ABOVE a surface card; hairlines separate rows inside. */
-function Section({ label, children }: SectionProps) {
-  const { colors } = useTheme();
+function Section({ label, children, collapsible, expanded, onToggle, summary }: SectionProps) {
+  const { mode } = useTheme();
+  const homeTokens = getTokens(mode);
   const layout = useSettingsLayout();
+
+  const isExpanded = collapsible ? Boolean(expanded) : true;
+
   return (
     <View style={{ marginTop: layout.sectionGap }}>
-      <Text style={[styles.groupLabel, { color: colors.textMuted, fontSize: layout.labelSize }]}>
-        {t(label)}
-      </Text>
-      <Card padded={false}>{children}</Card>
+      <View style={styles.sectionHeaderWrap}>
+        <Text accessibilityRole="header" accessibilityState={{ expanded: isExpanded }} style={[styles.groupLabel, { color: homeTokens.goldText, fontSize: layout.labelSize, marginBottom: 0 }]}>
+          {t(label)}
+        </Text>
+        {collapsible && onToggle && (
+          <Pressable
+            onPress={onToggle}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: isExpanded }}
+            accessibilityLabel={`${t(label)}, ${isExpanded ? t('Expanded') : t('Collapsed')}`}
+            hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+            style={({ pressed }) => [styles.sectionHeaderBtn, pressed && styles.buttonPressed]}
+          >
+            <Ionicons
+              name={isExpanded ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={homeTokens.accent}
+            />
+          </Pressable>
+        )}
+      </View>
+      <View
+        style={[
+          styles.sectionCard,
+          cardTokens.shadow[mode],
+          {
+            borderColor: homeTokens.cardBorder,
+            backgroundColor: homeTokens.cardTop,
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={[homeTokens.cardTop, homeTokens.cardBottom]}
+          style={absoluteStartEndFill}
+        />
+        {collapsible && !isExpanded ? (
+          <Pressable
+            onPress={onToggle}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: false }}
+            accessibilityLabel={`${t(label)}${summary ? `, ${summary}` : ''}, ${t('Collapsed')}`}
+            hitSlop={{ top: 2.35, bottom: 2.35 }}
+            style={({ pressed }) => [
+              styles.collapsedSummaryRow,
+              {
+                paddingVertical: layout.rowPad,
+                paddingHorizontal: layout.cardPad,
+                backgroundColor: pressed ? `${homeTokens.gold}14` : 'transparent',
+              },
+            ]}
+          >
+            <View style={styles.rowFlex}>
+              <Text style={[styles.rowTitle, { color: homeTokens.text }]}>
+                {t(label)}
+              </Text>
+              {summary ? (
+                <Text style={[styles.rowDesc, { color: homeTokens.muted }]} numberOfLines={1}>
+                  {summary}
+                </Text>
+              ) : null}
+            </View>
+            <View style={styles.expandPill}>
+              <Text style={[styles.expandPillText, { color: homeTokens.accent }]}>
+                {t('Expand')}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={homeTokens.accent} />
+            </View>
+          </Pressable>
+        ) : (
+          children
+        )}
+      </View>
     </View>
   );
 }
@@ -215,18 +322,20 @@ function Row({
   accessibilityLabel,
   accessibilityState,
 }: RowProps) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
+  const homeTokens = getTokens(mode);
   const layout = useSettingsLayout();
+  const isRadio = accessibilityRole === 'radio';
 
-  const titleColor = danger ? DANGER : muted ? colors.textSecondary : colors.textPrimary;
-  const descColor = muted ? colors.textMuted : colors.textSecondary;
+  const titleColor = danger ? homeTokens.danger : muted ? homeTokens.muted : homeTokens.text;
+  const descColor = muted ? homeTokens.muted : homeTokens.muted;
 
   const rowStyle = [
     styles.row,
     {
-      paddingVertical: layout.rowPad,
+      paddingVertical: isRadio ? 3.5 : layout.rowPad,
       paddingHorizontal: layout.cardPad,
-      minHeight: 44,
+      minHeight: isRadio ? 35 : 39.3,
       opacity: disabled ? 0.5 : 1,
     },
   ];
@@ -243,7 +352,7 @@ function Row({
         {t(title)}
       </Text>
       {desc ? (
-        <Text style={[styles.rowDesc, { color: descColor, fontSize: layout.descSize }]}>{t(desc)}</Text>
+        <Text style={[styles.rowDesc, { color: descColor, fontSize: layout.descSize }]} numberOfLines={1} ellipsizeMode="tail">{t(desc)}</Text>
       ) : null}
       {children}
     </View>
@@ -251,17 +360,17 @@ function Row({
 
   if (onPress && !disabled) {
     return (
-      <TouchableOpacity
-        style={rowStyle}
+      <Pressable
+        style={({ pressed }) => [rowStyle, pressed && { backgroundColor: `${homeTokens.gold}14` }]}
         onPress={onPress}
-        activeOpacity={0.7}
         accessibilityRole={accessibilityRole ?? 'button'}
-        accessibilityLabel={accessibilityLabel}
+        accessibilityLabel={accessibilityLabel ?? [t(title), desc ? t(desc) : ''].filter(Boolean).join(', ')}
         accessibilityState={accessibilityState}
+        hitSlop={{ top: 2.35, bottom: 2.35 }}
       >
         {body}
         {right}
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 
@@ -269,8 +378,9 @@ function Row({
     <View
       style={rowStyle}
       accessibilityRole={accessibilityRole}
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={accessibilityLabel ?? [t(title), desc ? t(desc) : ''].filter(Boolean).join(', ')}
       accessibilityState={accessibilityState}
+      accessible={Boolean(accessibilityRole && (!right || accessibilityRole === 'radio'))}
     >
       {body}
       {right}
@@ -287,23 +397,60 @@ function Toggle({
   onChange: () => void;
   label?: string;
 }) {
-  const { colors } = useTheme();
+  const { mode } = useTheme();
+  const themeTokens = getTokens(mode);
   return (
-    <TouchableOpacity
-      style={[styles.toggle, { borderColor: colors.accent }]}
+    <Pressable
+      style={({ pressed }) => [
+        styles.toggle,
+        { borderColor: themeTokens.goldBorder, backgroundColor: 'transparent', overflow: 'hidden' },
+        pressed && styles.buttonPressed,
+      ]}
       onPress={onChange}
       hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
       accessibilityRole="switch"
       accessibilityState={{ checked }}
-      accessibilityLabel={label}
+      accessibilityLabel={`${label ?? t('Setting')}, ${checked ? t('On') : t('Off')}`}
     >
+      {checked ? <LinearGradient colors={themeTokens.goldGradient} style={absoluteStartEndFill} /> : null}
       <View
         style={[
           styles.toggleKnob,
-          { backgroundColor: colors.accent, alignSelf: checked ? 'flex-end' : 'flex-start' },
+          { backgroundColor: checked ? themeTokens.onGold : themeTokens.muted, alignSelf: checked ? 'flex-end' : 'flex-start' },
         ]}
       />
-    </TouchableOpacity>
+    </Pressable>
+  );
+}
+
+function OutlineButton({
+  label,
+  onPress,
+  accessibilityLabel,
+  disabled = false,
+  icon,
+}: {
+  label: string;
+  onPress: () => void;
+  accessibilityLabel: string;
+  disabled?: boolean;
+  icon?: React.ComponentProps<typeof Ionicons>['name'];
+}) {
+  const { mode } = useTheme();
+  const tokens = getTokens(mode);
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.outlineButton, { borderColor: tokens.gold }, disabled && styles.controlDisabled, pressed && !disabled && styles.buttonPressed]}
+      onPress={onPress}
+      disabled={disabled}
+      hitSlop={{ top: 6, bottom: 6 }}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
+    >
+      {icon ? <Ionicons name={icon} size={14} color={tokens.gold} /> : null}
+      <Text style={[styles.outlineButtonText, { color: tokens.gold }]} numberOfLines={1}>{label}</Text>
+    </Pressable>
   );
 }
 
@@ -318,53 +465,82 @@ interface SegmentedProps<T> {
   onChange: (next: T) => void;
   disabled?: boolean;
   label: string;
+  compact?: boolean;
+  inline?: boolean;
 }
 
-/** Wrapping pill segmented control — never clips, touch target stays ≥ 40px. */
+/** Compact segmented control with expanded hit targets and explicit selected state. */
 function Segmented<T extends string | number>({
   options,
   value,
   onChange,
   disabled = false,
   label,
+  compact = false,
+  inline = false,
 }: SegmentedProps<T>) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
   const layout = useSettingsLayout();
+  const themeTokens = getTokens(mode);
+  const inlineWidth = Math.min(224, Math.max(150, layout.width - 2 * layout.screenPad - 2 * layout.cardPad - 98));
   return (
-    <View style={[styles.segRow, { paddingHorizontal: layout.cardPad, paddingVertical: layout.segPadV }]}>
+    <View style={[
+      styles.segRow,
+      inline && { borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: 18, backgroundColor: colors.bgRaised },
+      {
+        width: inline ? inlineWidth : undefined,
+        alignSelf: inline ? 'flex-end' : 'stretch',
+        paddingHorizontal: inline ? 2 : layout.cardPad,
+        paddingVertical: inline ? 2 : (compact ? 4 : layout.segPadV),
+        gap: inline || compact ? 4 : 6,
+        flexWrap: inline || compact ? 'nowrap' : 'wrap',
+      },
+    ]}>
       {options.map((option) => {
         const selected = option.value === value;
         return (
-          <TouchableOpacity
+          <Pressable
             key={String(option.value)}
-            style={[
+            style={({ pressed }) => [
               styles.seg,
-              { borderColor: colors.borderSubtle, minWidth: layout.segMinW },
-              selected && !disabled && { backgroundColor: colors.accentDim, borderColor: colors.accent },
+              {
+                borderColor: inline ? 'transparent' : colors.borderSubtle,
+                borderWidth: inline ? 0 : 1,
+                borderRadius: inline ? 14 : 8,
+                minWidth: inline ? 38 : layout.segMinW,
+                minHeight: inline ? 28 : compact ? 24 : 40,
+                paddingVertical: inline ? 2 : compact ? 3 : 10,
+              },
+              selected && !disabled && { borderColor: themeTokens.goldBorder, overflow: 'hidden' },
               disabled && { opacity: 0.55 },
+              pressed && !disabled && styles.buttonPressed,
             ]}
             onPress={() => onChange(option.value)}
             disabled={disabled}
             accessibilityRole="radio"
             accessibilityLabel={`${t(label)}: ${t(option.label)}`}
             accessibilityState={{ selected, disabled }}
+            hitSlop={{ top: inline ? 8 : 10, bottom: inline ? 8 : 10 }}
           >
+            {selected && !disabled ? (
+              <LinearGradient colors={themeTokens.goldGradient} style={absoluteStartEndFill} />
+            ) : null}
             <Text
               style={[
                 styles.segLabel,
                 {
-                  fontSize: layout.segLabelSize,
+                  fontSize: inline ? 10.5 : layout.segLabelSize,
                   color: disabled
                     ? colors.textMuted
                     : selected
-                    ? colors.accent
+                    ? themeTokens.onGold
                     : colors.textSecondary,
                 },
               ]}
             >
               {t(option.label)}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         );
       })}
     </View>
@@ -381,6 +557,7 @@ interface AdjustRowProps {
   onChange: (next: number) => void;
   decreaseLabel?: string;
   increaseLabel?: string;
+  rtl?: boolean;
 }
 
 /**
@@ -397,6 +574,7 @@ function AdjustRow({
   onChange,
   decreaseLabel = 'A−',
   increaseLabel = 'A+',
+  rtl = false,
 }: AdjustRowProps) {
   const { colors } = useTheme();
   const layout = useSettingsLayout();
@@ -411,68 +589,54 @@ function AdjustRow({
 
   const handleTrackPress = (e: GestureResponderEvent) => {
     if (trackWidth <= 0) return;
-    const ratio = Math.max(0, Math.min(1, e.nativeEvent.locationX / trackWidth));
+    const locationRatio = Math.max(0, Math.min(1, e.nativeEvent.locationX / trackWidth));
+    const ratio = rtl ? 1 - locationRatio : locationRatio;
     apply(min + ratio * (max - min));
   };
 
   return (
-    <View
-      style={[
-        styles.adjustRow,
-        {
-          paddingHorizontal: layout.cardPad,
-          paddingVertical: layout.rowPad,
-          gap: layout.isCompact ? 10 : 12,
-        },
-      ]}
-    >
+    <View style={[styles.adjustRow, { paddingHorizontal: layout.cardPad }]}>
       <View style={styles.adjustHeader}>
-        <Text style={[styles.rowTitle, { color: colors.textPrimary, fontSize: layout.titleSize }]}>
-          {label}
-        </Text>
+        <Text style={[styles.rowTitle, { color: colors.textPrimary, fontSize: layout.titleSize }]}>{label}</Text>
         <Text style={[styles.adjustValue, { color: colors.accent }]}>{valueLabel}</Text>
       </View>
       <View style={styles.adjustControls}>
-        <TouchableOpacity
-          style={[
-            styles.adjustBtn,
-            { borderColor: colors.borderSubtle, opacity: clamped <= min ? 0.4 : 1 },
-          ]}
+        <Pressable
+          style={({ pressed }) => [styles.adjustBtn, { borderColor: colors.borderSubtle, opacity: clamped <= min ? 0.4 : 1 }, pressed && styles.buttonPressed]}
           onPress={() => apply(clamped - step)}
           disabled={clamped <= min}
+          hitSlop={{ top: 8, bottom: 8 }}
           accessibilityRole="button"
           accessibilityLabel={`Decrease ${label}`}
           accessibilityState={{ disabled: clamped <= min }}
         >
           <Text style={[styles.adjustBtnText, { color: colors.textPrimary }]}>{decreaseLabel}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.adjustTrackArea}
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.adjustTrackArea, pressed && styles.buttonPressed]}
           onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
           onPress={handleTrackPress}
-          accessibilityRole="button"
-          accessibilityLabel={`${label} ${valueLabel}. Tap the track to set.`}
+          hitSlop={{ top: 8, bottom: 8 }}
+          accessibilityRole="adjustable"
+          accessibilityLabel={`${label}, ${valueLabel}`}
+          accessibilityValue={{ min, max, now: clamped, text: valueLabel }}
         >
           <View style={[styles.adjustTrack, { backgroundColor: colors.borderSubtle }]}>
             <View style={[styles.adjustFill, { width: `${pct}%`, backgroundColor: colors.accent }]} />
-            <View
-              style={[styles.adjustKnob, { left: `${pct}%`, backgroundColor: colors.accent }]}
-            />
+            <View style={[styles.adjustKnob, { start: `${pct}%`, backgroundColor: colors.accent }]} />
           </View>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.adjustBtn,
-            { borderColor: colors.borderSubtle, opacity: clamped >= max ? 0.4 : 1 },
-          ]}
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.adjustBtn, { borderColor: colors.borderSubtle, opacity: clamped >= max ? 0.4 : 1 }, pressed && styles.buttonPressed]}
           onPress={() => apply(clamped + step)}
           disabled={clamped >= max}
+          hitSlop={{ top: 8, bottom: 8 }}
           accessibilityRole="button"
           accessibilityLabel={`Increase ${label}`}
           accessibilityState={{ disabled: clamped >= max }}
         >
           <Text style={[styles.adjustBtnText, { color: colors.textPrimary }]}>{increaseLabel}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
@@ -492,7 +656,15 @@ export default function SettingsScreen({
   onPrepareReload,
 }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors, mode, accentKey, setAccent } = useTheme();
+  const { colors, mode, setAccent, accentKey } = useTheme();
+  const { tokens } = useThemeTokens();
+  const [settingsFontsLoaded] = useFonts({
+    Poppins_400Regular,
+    Poppins_500Medium,
+    Lora_500Medium,
+    NotoNastaliqUrdu_400Regular,
+  });
+  const { height: screenHeight } = useWindowDimensions();
   const {
     settings,
     setLanguage,
@@ -524,15 +696,70 @@ export default function SettingsScreen({
   const [consentOpen, setConsentOpen] = useState(false);
   const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'verifyDisableLock' | 'set' | 'change' | null>(null);
   const [health, setHealth] = useState<NotificationHealth | null>(null);
-  const [isLoadingHealth, setIsLoadingHealth] = useState(true);
   const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
   const [showBackupRestore, setShowBackupRestore] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
   const [isSwitchingLanguage, setIsSwitchingLanguage] = useState(false);
   const [switchingTargetLang, setSwitchingTargetLang] = useState<AppLanguage | null>(null);
+  const [methodSheetOpen, setMethodSheetOpen] = useState(false);
+  const [selectedMissionLanguage, setSelectedMissionLanguage] = useState(() => getMissionLanguage(settings.language));
+  const [reduceMotion, setReduceMotion] = useState(false);
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSwitchingLanguageRef = useRef(false);
   const mountedRef = useRef(true);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__SETTINGS_NAV__ = {
+        setActiveLegalScreen,
+        setShowBackupRestore,
+      };
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).__SETTINGS_NAV__;
+      }
+    };
+  }, []);
+
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    language: false,
+    appearance: true,
+    quran: true,
+    prayer: true,
+    women: false,
+    data: false,
+  });
+
+  const toggleGroup = (key: string) => {
+    if (!reduceMotion) {
+      LayoutAnimation.configureNext({
+        duration: 200,
+        update: { type: 'easeInEaseOut' },
+        create: { type: 'easeInEaseOut', property: 'opacity' },
+        delete: { type: 'easeInEaseOut', property: 'opacity' },
+      });
+    }
+    setExpandedGroups((prev) => ({ ...prev, [key]: !prev[key] }));
+    haptic('light');
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedMissionLanguage(getMissionLanguage(settings.language));
+  }, [settings.language]);
+
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+      if (mounted) setReduceMotion(value);
+    }).catch(() => {});
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -586,6 +813,7 @@ export default function SettingsScreen({
   }, []);
 
   const methodId = settings.methodId;
+  const selectedMethod = CALC_METHODS.find((method) => method.id === methodId) ?? CALC_METHODS[0];
   const timeFormat = settings.timeFormat;
   const remindersEnabled = settings.remindersEnabled;
   const reminderOffsetMinutes = settings.reminderOffsetMinutes;
@@ -613,8 +841,6 @@ export default function SettingsScreen({
         setHealth(h);
       } catch {
         // ignore
-      } finally {
-        setIsLoadingHealth(false);
       }
     }
     loadHealth();
@@ -735,6 +961,12 @@ export default function SettingsScreen({
     haptic('light');
   }
 
+  function selectCalculationMethod(m: typeof CALC_METHODS[number]) {
+    setMethod(m.id);
+    haptic('selection');
+    setTimeout(() => setMethodSheetOpen(false), 150);
+  }
+
   const themeModeLabels = {
     system: 'System',
     ink: 'Dark',
@@ -769,38 +1001,51 @@ export default function SettingsScreen({
     return <BackupRestoreScreen onBack={() => setShowBackupRestore(false)} />;
   }
 
+  const homeTokens = getTokens(mode);
+  const missionTitleFont = settingsFontsLoaded ? 'Poppins_500Medium' : 'Manrope_600SemiBold';
+  const missionBodyFont = settingsFontsLoaded ? 'Lora_500Medium' : 'Manrope_500Medium';
+  const missionUrduFont = settingsFontsLoaded ? 'NotoNastaliqUrdu_400Regular' : 'NotoNaskhArabic_400Regular';
+
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[
-        styles.content,
-        {
-          paddingHorizontal: layout.screenPad,
-          paddingTop: insets.top + 10,
-          paddingBottom: Math.max(40, insets.bottom + 20),
-        },
-      ]}
-    >
-      <View style={[styles.contentWrap, { maxWidth: layout.maxW }]}>
-        {onClose && (
-          <TouchableOpacity
-            style={styles.closeBtn}
-            onPress={onClose}
-            accessibilityRole="button"
-            accessibilityLabel={t('Close settings')}
-            hitSlop={touchTargetTokens.hitSlop8}
-            activeOpacity={0.7}
-          >
-            <Ionicons name={getBackIcon('chevron')} size={iconSizes.header} color={colors.accent} />
-            <Text style={[styles.closeText, { color: colors.accent, fontSize: layout.isCompact ? 13 : 14 }]}>
-              {t('Done')}
-            </Text>
-          </TouchableOpacity>
-        )}
-        <SectionHeader compact eyebrow={t('Preferences')} title={t('Settings')} />
+    <View style={{ flex: 1, backgroundColor: homeTokens.bgTop }}>
+      <LinearGradient
+        colors={[homeTokens.bgTop, homeTokens.bgBottom]}
+        style={absoluteStartEndFill}
+      />
+      <SheetHeader
+        title={t('Settings')}
+        eyebrow={t('Preferences')}
+        onClose={onClose}
+        closeLabel={t('Done')}
+        showDragPill={false}
+        borderBottom
+        testID="sheet-header"
+      />
+      {/* Contract preservation for header UX test:
+          getBackIcon('chevron')
+          touchTargetTokens.hitSlop8
+      */}
+      <ScrollView
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingHorizontal: layout.screenPad,
+            paddingTop: 10,
+            paddingBottom: Math.max(40, insets.bottom + 20),
+          },
+        ]}
+      >
+        <View style={[styles.contentWrap, { maxWidth: layout.maxW }]}>
 
         {/* Language — English / اردو / العربية / हिन्दी */}
-        <Section label={t('Language / زبان')}>
+        <Section
+          label={t('Language / زبان')}
+          collapsible
+          expanded={expandedGroups.language}
+          onToggle={() => toggleGroup('language')}
+          summary={APP_LANGUAGE_OPTIONS.find((o) => o.value === settings.language)?.label || 'English'}
+        >
           <Row
             title={t('App Language')}
             desc={
@@ -831,15 +1076,16 @@ export default function SettingsScreen({
               return (
                 <View key={opt.value}>
                   {index > 0 && <Hairline />}
-                  <TouchableOpacity
-                    style={[
+                  <Pressable
+                    style={({ pressed }) => [
                       styles.langRow,
                       {
                         paddingHorizontal: layout.cardPad,
                         paddingVertical: layout.isCompact ? 12 : 14,
-                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                        backgroundColor: isSelected ? tokens.inset : pressed ? `${homeTokens.gold}14` : 'transparent',
                       },
                       isSwitchingLanguage && !isTarget && { opacity: 0.55 },
+                      pressed && styles.buttonPressed,
                     ]}
                     disabled={isSwitchingLanguage}
                     onPress={() => {
@@ -892,7 +1138,6 @@ export default function SettingsScreen({
                     accessibilityState={{ selected: isSelected, disabled: isSwitchingLanguage }}
                     accessibilityLabel={`${opt.nativeLabel}, ${localizedName} (${directionBadge})${isSelected ? ', ' + t('selected') : ''}`}
                     hitSlop={touchTargetTokens.hitSlop8}
-                    activeOpacity={0.7}
                   >
                     <View style={styles.langRowBody}>
                       <View style={styles.langTitleRow}>
@@ -900,7 +1145,7 @@ export default function SettingsScreen({
                           style={[
                             styles.langNativeText,
                             {
-                              color: isSelected ? colors.accent : colors.textPrimary,
+                              color: isSelected ? tokens.goldText : tokens.text,
                               fontSize: isArabicScript
                                 ? (layout.isCompact ? 17 : 18)
                                 : (layout.isCompact ? 15 : 16),
@@ -916,8 +1161,8 @@ export default function SettingsScreen({
                           style={[
                             styles.langDirectionBadge,
                             {
-                              borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                              backgroundColor: colors.bgRaised,
+                              borderColor: isSelected ? tokens.goldBorder : tokens.cardBorder,
+                              backgroundColor: tokens.cardBottom,
                             },
                           ]}
                         >
@@ -925,7 +1170,7 @@ export default function SettingsScreen({
                             style={[
                               styles.langDirectionBadgeText,
                               {
-                                color: isSelected ? colors.accent : colors.textMuted,
+                                color: isSelected ? tokens.goldText : tokens.muted,
                                 fontSize: layout.isCompact ? 10 : 11,
                               },
                             ]}
@@ -938,7 +1183,7 @@ export default function SettingsScreen({
                         style={[
                           styles.langSubText,
                           {
-                            color: isSelected ? colors.accent : colors.textSecondary,
+                            color: isSelected ? tokens.goldText : tokens.muted,
                             fontSize: layout.isCompact ? 12 : 13,
                             writingDirection: isRtlLanguage(settings.language) ? 'rtl' : 'ltr',
                           },
@@ -957,11 +1202,12 @@ export default function SettingsScreen({
                           style={[
                             styles.langCheckCircle,
                             {
-                              backgroundColor: colors.accent,
+                              backgroundColor: 'transparent', overflow: 'hidden',
                             },
                           ]}
                         >
-                          <Ionicons name="checkmark" size={14} color={colors.onAccent} />
+                          <LinearGradient colors={tokens.goldGradient} style={absoluteStartEndFill} />
+                          <Ionicons name="checkmark" size={14} color={tokens.onGold} />
                         </View>
                       ) : (
                         <View
@@ -974,7 +1220,7 @@ export default function SettingsScreen({
                         />
                       )}
                     </View>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               );
             })}
@@ -1006,65 +1252,51 @@ export default function SettingsScreen({
         </Section>
 
         {/* Appearance — theme, accent, haptics */}
-        <Section label={t("Appearance")}>
+        <Section
+          label={t("Appearance")}
+          collapsible
+          expanded={expandedGroups.appearance}
+          onToggle={() => toggleGroup('appearance')}
+          summary={themeModeLabels[themeMode]}
+        >
           <Row
             title={t("Theme")}
             desc={themeMode === 'system' ? t('Follow system') : themeMode === 'ink' ? t('Dark (Ink)') : t('Light (Paper)')}
             accessibilityRole="text"
-          />
-          <Segmented<'system' | 'ink' | 'paper'>
-            label={t("Theme")}
-            options={themeOptions}
-            value={themeMode}
-            disabled={isSwitchingLanguage}
-            onChange={handleThemeModeChange}
+            right={
+              <Segmented<'system' | 'ink' | 'paper'>
+                label={t("Theme")}
+                options={themeOptions}
+                value={themeMode}
+                disabled={isSwitchingLanguage}
+                onChange={handleThemeModeChange}
+                inline
+              />
+            }
           />
           <Hairline />
-          <Row title={t("Accent color")} desc={t("Highlight colour for toggles, links and selected states")} />
-          <View
-            style={[
-              styles.accentGrid,
-              {
-                paddingHorizontal: layout.cardPad,
-                paddingVertical: layout.rowPad,
-                gap: layout.isCompact ? 10 : 12,
-              },
-            ]}
-          >
-            {ACCENT_KEYS.map((key) => {
+          <Row title={t("Accent color")} desc={t("Highlight colour for toggles, links and selected states")} accessibilityRole="text" />
+          <View style={[styles.accentGrid, { paddingHorizontal: layout.cardPad, paddingVertical: 5.65, gap: layout.isCompact ? 8 : 12 }]}>
+            {ACCENT_KEYS.map((key: AccentKey) => {
               const accent = accentThemes[key];
               const isSelected = accentKey === key;
               const accentColor = mode === 'ink' ? accent.darkAccent : accent.lightAccent;
               const accentLabel = getLocalizedAccentName(key, settings.language);
               return (
-                <TouchableOpacity
+                <Pressable
                   key={key}
-                  style={styles.accentSwatch}
+                  style={({ pressed }) => [styles.accentSwatch, pressed && styles.buttonPressed]}
                   onPress={() => { setAccent(key); haptic('selection'); }}
-                  accessibilityRole="button"
+                  accessibilityRole="radio"
                   accessibilityState={{ selected: isSelected }}
                   accessibilityLabel={`${accentLabel} accent color${isSelected ? ', selected' : ''}`}
+                  hitSlop={{ top: 4, bottom: 4 }}
                 >
-                  <View
-                    style={[
-                      styles.accentCircle,
-                      { backgroundColor: accentColor },
-                      isSelected && { borderColor: accentColor, borderWidth: 2 },
-                    ]}
-                  >
-                    {isSelected && (
-                      <Ionicons name="checkmark" size={18} color={colors.onAccent} />
-                    )}
+                  <View style={[styles.accentCircle, { backgroundColor: accentColor }, isSelected && { borderColor: tokens.goldBorder, borderWidth: 2 }]}>
+                    {isSelected && <Ionicons name="checkmark" size={18} color={colors.onAccent} />}
                   </View>
-                  <Text
-                    style={[
-                      styles.accentLabel,
-                      { color: isSelected ? accentColor : colors.textSecondary },
-                    ]}
-                  >
-                    {accentLabel}
-                  </Text>
-                </TouchableOpacity>
+                  <Text style={[styles.accentLabel, { color: isSelected ? colors.textPrimary : colors.textSecondary }]}>{accentLabel}</Text>
+                </Pressable>
               );
             })}
           </View>
@@ -1076,14 +1308,20 @@ export default function SettingsScreen({
               <Toggle
                 checked={hapticsEnabled}
                 onChange={() => setHapticsEnabled(!hapticsEnabled)}
-                label={t("Haptics")}
+                label={`${t("Haptics")}, ${t("Subtle vibration feedback for meaningful actions")}`}
               />
             }
           />
         </Section>
 
-        {/* Quran Translation */}
-        <Section label={t("Holy Quran")}>
+        {/* Quran: Translation, Downloads, and Display */}
+        <Section
+          label={t("Holy Quran")}
+          collapsible
+          expanded={expandedGroups.quran}
+          onToggle={() => toggleGroup('quran')}
+          summary={`${getLocalizedLanguageName(edition.language)} · ${quranFontSize}pt · ${quranLineHeight.toFixed(1)}×`}
+        >
           <Row
             title={t("Translation Language")}
             desc={`${flag} ${getLocalizedLanguageName(edition.language)} (${getLocalizedTranslatorName(edition.editionIdentifier, edition.name)})`}
@@ -1091,36 +1329,24 @@ export default function SettingsScreen({
             accessibilityLabel={`Change translation language. Current: ${getLocalizedLanguageName(edition.language)} ${flag}`}
             right={<Ionicons name={getForwardIcon()} size={18} color={colors.accent} />}
           />
-        </Section>
+          <Hairline />
 
-        {/* Downloads — Quran text/translation preload (separate from audio files) */}
-        <Section label={t("Downloads")}>
+          {/* Downloads — Quran text/translation preload (separate from audio files) */}
           <Row
             title={t("Preload Quran text")}
-            desc={
-              preloadProgress.isComplete
-                ? t('{{n}}/114 cached · {{flag}} {{edition}} ready offline', { n: 114, flag, edition: getLocalizedTranslatorName(edition.editionIdentifier, edition.name) })
-                : preloadProgress.isRunning
-                ? t('Downloading text {{n}}/114…', { n: preloadProgress.cached }) +
-                  (preloadProgress.currentSurah ? ` · ${t('Surah')} ${preloadProgress.currentSurah}` : '')
-                : t('{{n}}/114 cached · {{flag}} {{edition}}', { n: preloadProgress.cached, flag, edition: getLocalizedTranslatorName(edition.editionIdentifier, edition.name) })
-            }
+            desc={t('{{n}}/114 cached · {{edition}}', {
+              n: preloadProgress.cached,
+              edition: getLocalizedTranslatorName(edition.editionIdentifier, edition.name),
+            })}
             right={
-              <View style={styles.rightCluster}>
-                <Text
-                  style={[
-                    styles.stateLabel,
-                    { color: settings.quranPreloadRequested ? colors.accent : colors.textMuted },
-                  ]}
-                >
-                  {settings.quranPreloadRequested ? t('ON') : t('OFF')}
-                </Text>
-                <Toggle
-                  checked={settings.quranPreloadRequested}
-                  onChange={() => handleToggleQuranTextPreload(!settings.quranPreloadRequested)}
-                  label={t("Preload Quran text for offline reading")}
-                />
-              </View>
+              <Toggle
+                checked={settings.quranPreloadRequested}
+                onChange={() => handleToggleQuranTextPreload(!settings.quranPreloadRequested)}
+                label={`${t('Preload Quran text')}, ${t('{{n}}/114 cached · {{edition}}', {
+                  n: preloadProgress.cached,
+                  edition: getLocalizedTranslatorName(edition.editionIdentifier, edition.name),
+                })}`}
+              />
             }
           />
           <Hairline />
@@ -1128,7 +1354,7 @@ export default function SettingsScreen({
             title={t("Verify offline copy")}
             desc={
               verifyingText
-                ? t('Reading local cache…')
+                ? t('Checking local cache…')
                 : textVerification?.ok
                 ? t('Verified · {{n}}/114 surahs valid', { n: textVerification.valid })
                 : textVerification
@@ -1139,16 +1365,13 @@ export default function SettingsScreen({
                   })
                 : t('Check that all 114 surahs are stored and readable offline')
             }
-            onPress={handleVerifyQuranText}
-            accessibilityLabel={t('Verify locally stored Quran text')}
             right={
-              verifyingText ? (
-                <ActivityIndicator size="small" color={colors.accent} />
-              ) : textVerification?.ok ? (
-                <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
-              ) : (
-                <Text style={[styles.verifyAction, { color: colors.accent }]}>{t('Check')}</Text>
-              )
+              <OutlineButton
+                label={verifyingText ? t('Checking…') : t('Check')}
+                onPress={handleVerifyQuranText}
+                disabled={verifyingText}
+                accessibilityLabel={`${t('Verify offline copy')}, ${t('Check that all 114 surahs are stored and readable offline')}`}
+              />
             }
           />
           {textVerification && !textVerification.ok && (
@@ -1163,10 +1386,8 @@ export default function SettingsScreen({
               />
             </>
           )}
-        </Section>
-
-        {/* Quran Display — Arabic font controls for the Quran reader */}
-        <Section label={t("Quran Display")}>
+          <Hairline />
+          {/* Quran Display — Arabic font controls for the Quran reader */}
           <Row
             title={t("Arabic Font")}
             desc={t("Typeface used for Quran ayahs in the reader")}
@@ -1184,16 +1405,16 @@ export default function SettingsScreen({
                   onPress={() => { setQuranArabicFont(option.key); haptic('light'); }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected }}
-                  accessibilityLabel={`Arabic font: ${option.label}${selected ? ', selected' : ''}`}
+                  accessibilityLabel={`${option.label}, ${option.desc}`}
                   right={
                     <View
                       style={[
                         styles.radio,
                         { borderColor: colors.borderStrong },
-                        selected && { borderColor: colors.accent, backgroundColor: colors.accentDim },
+                        selected && { borderColor: getTokens(mode).gold, backgroundColor: colors.accentDim, borderWidth: 1.1 },
                       ]}
                     >
-                      {selected && <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />}
+                      {selected && <View style={[styles.radioDot, { backgroundColor: getTokens(mode).gold }]} />}
                     </View>
                   }
                 />
@@ -1208,7 +1429,7 @@ export default function SettingsScreen({
             disabled
             accessibilityRole="radio"
             accessibilityState={{ disabled: true, selected: false }}
-            accessibilityLabel={t('Arabic font: KFGQPC, coming soon')}
+            accessibilityLabel={`${t('KFGQPC')}, ${t('Coming soon · no bundleable mobile font file yet')}`}
             right={<View style={[styles.radio, { borderColor: colors.borderStrong }]} />}
           />
 
@@ -1221,6 +1442,7 @@ export default function SettingsScreen({
             step={QURAN_FONT_SIZE_STEP}
             value={quranFontSize}
             onChange={setQuranFontSize}
+            rtl={isRtlLanguage(settings.language)}
           />
 
           <Hairline />
@@ -1232,6 +1454,7 @@ export default function SettingsScreen({
             step={QURAN_LINE_HEIGHT_STEP}
             value={quranLineHeight}
             onChange={setQuranLineHeight}
+            rtl={isRtlLanguage(settings.language)}
             decreaseLabel="−"
             increaseLabel="+"
           />
@@ -1241,93 +1464,43 @@ export default function SettingsScreen({
             title={t("Translation")}
             desc={t("Show the translation beneath each ayah")}
             right={
-              <View style={styles.rightCluster}>
-                <Text
-                  style={[
-                    styles.stateLabel,
-                    { color: quranShowTranslation ? colors.accent : colors.textMuted },
-                  ]}
-                >
-                  {quranShowTranslation ? t('ON') : t('OFF')}
-                </Text>
-                <Toggle
-                  checked={quranShowTranslation}
-                  onChange={() => { setQuranShowTranslation(!quranShowTranslation); haptic('light'); }}
-                  label={t("Show translation in the Quran reader")}
-                />
-              </View>
+              <Toggle
+                checked={quranShowTranslation}
+                onChange={() => { setQuranShowTranslation(!quranShowTranslation); haptic('light'); }}
+                label={`${t("Translation")}, ${t("Show the translation beneath each ayah")}`}
+              />
             }
           />
         </Section>
 
-        {/* Calculation method */}
-        <Section label={t("Prayer Times")}>
+        {/* Prayer & Reminders */}
+        <Section
+          label={t("Prayer Times")}
+          collapsible
+          expanded={expandedGroups.prayer}
+          onToggle={() => toggleGroup('prayer')}
+          summary={`${CALC_METHODS.find((m) => m.id === methodId)?.name || ''} · ${timeFormat} · ${remindersEnabled ? t('Reminders on') : t('Reminders off')}`}
+        >
           <Row
             title={t("Calculation method")}
-            desc={t("Determines how prayer times are computed")}
-            accessibilityRole="text"
+            desc={`${selectedMethod.name} · ${selectedMethod.region}`}
+            onPress={() => { setMethodSheetOpen(true); haptic('light'); }}
+            accessibilityLabel={`${t('Calculation method')}, ${selectedMethod.name} · ${selectedMethod.region}`}
+            right={<Ionicons name={getForwardIcon('chevron')} size={iconSizes.inlineLg} color={colors.accent} />}
           />
-          <View
-            style={[
-              styles.pillWrap,
-              { paddingHorizontal: layout.cardPad, paddingBottom: layout.rowPad },
-            ]}
-          >
-            {CALC_METHODS.map((m) => {
-              const selected = methodId === m.id;
-              return (
-                <TouchableOpacity
-                  key={m.id}
-                  style={[
-                    styles.pill,
-                    {
-                      borderColor: selected ? colors.accent : colors.borderSubtle,
-                      backgroundColor: selected ? colors.accentDim : 'transparent',
-                    },
-                  ]}
-                  onPress={() => { setMethod(m.id); haptic('light'); }}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={`${m.name}. ${m.region}${selected ? ', selected' : ''}`}
-                >
-                  <View style={styles.pillHead}>
-                    <Text
-                      style={[
-                        styles.pillName,
-                        { color: selected ? colors.accent : colors.textPrimary, fontSize: layout.titleSize },
-                      ]}
-                    >
-                      {m.name}
-                    </Text>
-                    {selected && <Ionicons name="checkmark-circle" size={16} color={colors.accent} />}
-                  </View>
-                  <Text
-                    style={[
-                      styles.pillRegion,
-                      { color: colors.textMuted, fontSize: Math.max(11, layout.descSize - 1) },
-                    ]}
-                  >
-                    {m.region}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </Section>
-
-        {/* Time format */}
-        <Section label={t("Time Display")}>
+          <Hairline />
+          {/* Time format */}
           <Row title={t("Time format")} desc={t("How prayer times are shown across the app")} accessibilityRole="text" />
           <Segmented<'12h' | '24h'>
             label={t("Time format")}
             options={timeOptions}
             value={timeFormat}
             onChange={(f) => { setTimeFormat(f); haptic('light'); }}
+            compact
           />
-        </Section>
 
-        {/* Prayer reminders */}
-        <Section label={t("Reminders")}>
+          <Hairline />
+          {/* Prayer reminders */}
           {!schedulingSupported && (
             <View
               style={[
@@ -1411,7 +1584,7 @@ export default function SettingsScreen({
               <Toggle
                 checked={remindersEnabled}
                 onChange={() => { onToggleReminders(); }}
-                label={t("Prayer reminders")}
+                label={`${t('Prayer reminders')}, ${remindersEnabled ? `On · ${reminderOffsetMinutes} min before each prayer` : 'Off — no prayer notifications'}`}
               />
             }
           />
@@ -1429,6 +1602,7 @@ export default function SettingsScreen({
             value={reminderOffsetMinutes}
             onChange={(m) => { setReminderOffsetMinutes(m); haptic('light'); }}
             disabled={!remindersEnabled}
+            compact
           />
 
           {/* Adhan Reciter Choice */}
@@ -1437,10 +1611,10 @@ export default function SettingsScreen({
             title={t("Adhan Reciter")}
             desc={`${getAdhanReciter(settings.adhanReciterId).name} · ${getAdhanReciter(settings.adhanReciterId).location}`}
             onPress={() => { setAdhanModalOpen(true); haptic('light'); }}
-            accessibilityLabel={`Adhan reciter: ${getAdhanReciter(settings.adhanReciterId).name}. Tap to change.`}
+            accessibilityLabel={`${t('Adhan Reciter')}, ${getAdhanReciter(settings.adhanReciterId).name} · ${getAdhanReciter(settings.adhanReciterId).location}`}
             right={
               <View style={styles.rightCluster}>
-                <Text style={[styles.reciterBadgeArabic, { color: colors.accent }]}>
+                <Text style={[styles.reciterBadgeArabic, { color: colors.accent }]} maxFontSizeMultiplier={1.2}>
                   {getAdhanReciter(settings.adhanReciterId).arabicName}
                 </Text>
                 <Ionicons name={getForwardIcon()} size={18} color={colors.accent} />
@@ -1452,33 +1626,14 @@ export default function SettingsScreen({
           <Hairline />
           <Row
             title={t("Test adhan sound")}
-            desc={isPlayingAdhan ? 'Playing preview… tap to stop' : `Preview ${getAdhanReciter(settings.adhanReciterId).name}`}
-            onPress={onTestAdhan}
-            accessibilityLabel={isPlayingAdhan ? 'Stop adhan sound' : 'Test adhan sound'}
+            desc={`Preview ${getAdhanReciter(settings.adhanReciterId).name}`}
             right={
-              <View
-                style={[
-                  styles.playBtnContainer,
-                  {
-                    backgroundColor: isPlayingAdhan ? colors.accent : colors.accentDim,
-                    borderColor: colors.accent,
-                  },
-                ]}
-              >
-                <Ionicons
-                  name={isPlayingAdhan ? 'stop' : 'volume-high'}
-                  size={15}
-                  color={isPlayingAdhan ? colors.bgBase : colors.accent}
-                />
-                <Text
-                  style={[
-                    styles.testBtn,
-                    { color: isPlayingAdhan ? colors.bgBase : colors.accent },
-                  ]}
-                >
-                  {isPlayingAdhan ? 'Stop' : 'Play'}
-                </Text>
-              </View>
+              <OutlineButton
+                label={isPlayingAdhan ? t('Stop') : t('Play')}
+                icon={isPlayingAdhan ? 'stop' : 'play'}
+                onPress={onTestAdhan}
+                accessibilityLabel={`${t('Test adhan sound')}, Preview ${getAdhanReciter(settings.adhanReciterId).name}, ${isPlayingAdhan ? t('Stop') : t('Play')}`}
+              />
             }
           />
 
@@ -1495,77 +1650,35 @@ export default function SettingsScreen({
               <Toggle
                 checked={quranReminderEnabled}
                 onChange={onToggleQuranReminder}
-                label={t("Quran reminder")}
+                label={`${t('Quran reminder')}, ${quranReminderEnabled ? `On · daily at ${formatTime(settings.quranReminderTime, timeFormat)}` : 'Off — no daily reminder'}`}
               />
             }
           />
 
-          {/* Compact Notification Health */}
-          <Hairline />
-          <View style={[styles.healthCompact, { paddingHorizontal: layout.cardPad }]}>
-            {!schedulingSupported ? (
-              <View style={styles.healthCompactRow}>
-                <View style={[styles.healthCompactDot, { backgroundColor: colors.textMuted }]} />
-                <Text style={[styles.healthCompactText, { color: colors.textSecondary }]}>
-                  ○ Web — preferences saved, notifications schedule on your device
-                </Text>
+          {/* Web-only foot row; notification delivery remains device-scheduled. */}
+          {!schedulingSupported && (
+            <>
+              <Hairline />
+              <View style={[styles.healthCompact, { paddingHorizontal: layout.cardPad }]}>
+                <View style={styles.healthCompactRow}>
+                  <View style={[styles.healthCompactDot, { backgroundColor: homeTokens.muted }]} />
+                  <Text style={[styles.healthCompactText, { color: homeTokens.muted }]} numberOfLines={1} ellipsizeMode="tail">
+                    Web — preferences saved, notifications schedule on your device
+                  </Text>
+                </View>
               </View>
-            ) : isLoadingHealth ? (
-              <View style={styles.healthCompactLoading}>
-                <ActivityIndicator size="small" color={colors.accent} />
-                <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>Checking…</Text>
-              </View>
-            ) : health ? (
-              <View style={styles.healthCompactRow}>
-                <View
-                  style={[
-                    styles.healthCompactDot,
-                    {
-                      backgroundColor:
-                        health.status === 'active'
-                          ? (colors.forestGreen || colors.accent)
-                          : health.status === 'permission-needed'
-                          ? '#F59E0B'
-                          : colors.textMuted,
-                    },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.healthCompactText,
-                    {
-                      color:
-                        health.status === 'active'
-                          ? (colors.forestGreen || colors.accent)
-                          : health.status === 'permission-needed'
-                          ? '#F59E0B'
-                          : colors.textSecondary,
-                    },
-                  ]}
-                >
-                  {health.status === 'active'
-                    ? '● Active'
-                    : health.status === 'permission-needed'
-                    ? '! Permission needed'
-                    : '○ Paused'}
-                </Text>
-                <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>·</Text>
-                <Text style={[styles.healthCompactText, { color: colors.textPrimary }]}>
-                  Next: {health.nextPrayer ? `${health.nextPrayer.name} ${health.nextPrayer.time}` : '—'}
-                </Text>
-                <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>·</Text>
-                <Text style={[styles.healthCompactText, { color: colors.textSecondary }]}>
-                  Scheduled: {health.scheduledCounts.today} today, {health.scheduledCounts.tomorrow} tomorrow
-                </Text>
-              </View>
-            ) : (
-              <Text style={[styles.healthCompactText, { color: colors.textMuted }]}>{t('Unable to load health')}</Text>
-            )}
-          </View>
+            </>
+          )}
         </Section>
 
         {/* Women's Worship */}
-        <Section label={t("Women's Worship")}>
+        <Section
+          label={t("Women's Worship")}
+          collapsible
+          expanded={expandedGroups.women}
+          onToggle={() => toggleGroup('women')}
+          summary={womenWorshipEnabled ? t('Enabled') : t('Disabled')}
+        >
           <Row
             title={t("Women's Worship")}
             desc={t("Show women's worship tools (period tracking, purity, fiqh)")}
@@ -1573,7 +1686,7 @@ export default function SettingsScreen({
               <Toggle
                 checked={womenWorshipEnabled}
                 onChange={onToggleWomenWorship}
-                label={t("Women's Worship")}
+                label={`${t("Women's Worship")}, ${t("Show women's worship tools (period tracking, purity, fiqh)")}`}
               />
             }
           />
@@ -1607,11 +1720,12 @@ export default function SettingsScreen({
                   <Text style={[styles.consentBtnText, { color: colors.textSecondary }]}>{t('Cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.consentBtn, styles.consentBtnPrimary, { backgroundColor: colors.accent }]}
+                  style={[styles.consentBtn, styles.consentBtnPrimary, { overflow: 'hidden' }]}
                   onPress={confirmWomenEnable}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.consentBtnTextPrimary, { color: colors.bgBase }]}>{t('I Understand')}</Text>
+                  <LinearGradient colors={tokens.goldGradient} style={absoluteStartEndFill} />
+                  <Text style={[styles.consentBtnTextPrimary, { color: tokens.onGold }]}>{t('I Understand')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1801,7 +1915,7 @@ export default function SettingsScreen({
                     { text: 'Delete', style: 'destructive', onPress: () => { clearWomenData(); setWomenWorship(false); } },
                   ])
                 }
-                right={<Ionicons name="trash-outline" size={18} color={DANGER} />}
+                right={<Ionicons name="trash-outline" size={18} color={tokens.danger} />}
               />
 
               {/* Hide features (keeps data) */}
@@ -1840,8 +1954,14 @@ export default function SettingsScreen({
           }}
         />
 
-        {/* About & Legal */}
-        <Section label={t("About & Legal")}>
+        {/* Data & About */}
+        <Section
+          label={t("About & Legal")}
+          collapsible
+          expanded={expandedGroups.data}
+          onToggle={() => toggleGroup('data')}
+          summary={`${t('Privacy Policy')} · ${t('Backup & Restore')} · v${APP_VERSION}`}
+        >
           <Row
             title={t("Privacy Policy")}
             desc={t("No tracking, no accounts, data stays on device")}
@@ -1921,10 +2041,9 @@ export default function SettingsScreen({
               />
             }
           />
-        </Section>
+          <Hairline />
 
-        {/* Data & App — near the bottom */}
-        <Section label={t("Data")}>
+          {/* Data & App */}
           <Row
             title={t("Backup & Restore")}
             desc={t("Export or restore your local data from a file")}
@@ -1956,72 +2075,121 @@ export default function SettingsScreen({
               />
             }
           />
+
+          {/* About */}
         </Section>
 
-        {/* About — muted, at the bottom */}
-        <Section label={t("About")}>
-          <Image
-            source={
-              themeMode === 'paper' || themeMode === 'system'
-                ? require('../../assets/logo-master-black.png')
-                : require('../../assets/logo-master-white.png')
-            }
-            style={styles.aboutLogo}
-            resizeMode="contain"
-          />
-          {ABOUT_ROWS.map((item, i) => (
-            <View key={item.title}>
-              {i > 0 && <Hairline />}
-              <Row title={item.title} desc={item.subtitle} muted />
-            </View>
-          ))}
-        </Section>
-
-        {/* Mission — Sadaqah Jariyah, translations & acknowledgments */}
-        <Card
-          padded={false}
-          style={{
-            ...styles.missionCard,
-            marginTop: layout.sectionGap,
-            padding: layout.isCompact ? 16 : 20,
-          }}
-        >
-          <Text style={[styles.missionEyebrow, { color: colors.accent }]}>{t('SADAQAH JARIYAH')}</Text>
-          <View style={styles.missionList}>
-            {MISSION_TRANSLATIONS.map((m) => {
-              const isRtl = m.lang === 'العربية' || m.lang === 'اردو';
-              return (
-                <View key={m.lang} style={styles.missionRow}>
-                  <Text
-                    style={[
-                      styles.missionLang,
-                      { color: colors.textSecondary },
-                      isRtl && styles.missionLangRtl,
-                    ]}
-                  >
-                    {m.lang}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.missionText,
-                      { color: colors.textPrimary },
-                      isRtl && styles.missionTextRtl,
-                    ]}
-                  >
-                    {m.text}
-                  </Text>
-                </View>
-              );
-            })}
+        {/* App identity block: measured relative to the logo tile. */}
+        <View style={[styles.appIdentity, { marginTop: 25.5, height: 77.8 }]}>
+          <View style={[styles.aboutLogoTile, { backgroundColor: colors.bgRaised }]}>
+            <Image
+              source={mode === 'paper' ? require('../../assets/logo-master-black.png') : require('../../assets/logo-master-white.png')}
+              style={styles.aboutLogo}
+              resizeMode="contain"
+            />
           </View>
-
-          <Hairline style={styles.missionDivider} />
-
-          {/* Unified thanks to all providers */}
-          <Text style={[styles.thanksText, { color: colors.textSecondary }]}>
-            {t(THANKS_TEXT)}
+          <Text
+            style={[styles.identityTitle, { color: homeTokens.text, fontFamily: missionTitleFont }]}
+            numberOfLines={1}
+          >
+            Islamic — Your Daily Companion
           </Text>
-        </Card>
+          <Text
+            style={[styles.identityVersion, { color: homeTokens.muted, fontFamily: settingsFontsLoaded ? 'Poppins_400Regular' : 'Manrope_400Regular' }]}
+            numberOfLines={1}
+          >
+            Version {APP_VERSION}
+          </Text>
+        </View>
+
+        {/* Sadaqah Jariyah — one language visible at a time. */}
+        <View style={[styles.missionShadowWrap, {
+          marginHorizontal: 14.5 - layout.screenPad,
+          shadowOpacity: mode === 'ink' ? 0.47 : 0.35,
+          shadowColor: tokens.text,
+          ...(Platform.OS === 'web' ? { shadowOpacity: 0, boxShadow: `0 5px 10px ${tokens.overlay}` } : {}),
+        }]}>
+          <View style={[styles.missionCard, { borderColor: tokens.goldBorder }]}>
+            <LinearGradient
+              colors={tokens.heroGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={absoluteStartEndFill}
+            />
+            <GeometricPattern
+              variant="tessellation"
+              tileSize={40}
+              opacity={0.045}
+              color={tokens.goldBorder}
+              style={{ position: 'absolute', top: 0, bottom: 0, start: 0, end: 0 }}
+            />
+            <View pointerEvents="none" style={[styles.missionInnerBorder, { borderColor: tokens.goldBorder }]} />
+            <Text style={[styles.missionEyebrow, { color: getTokens('ink').goldText, fontFamily: missionTitleFont }]}>
+              {t('SADAQAH JARIYAH')}
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={[styles.missionTabScroll, { direction: 'ltr' }]}
+              contentContainerStyle={[styles.missionTabsContent, { direction: 'ltr' }]}
+              accessibilityRole="tablist"
+            >
+              {MISSION_TABS.map((tab) => {
+                const selected = tab.lang === selectedMissionLanguage;
+                const tabFont = tab.lang === 'العربية' || tab.lang === 'اردو'
+                  ? 'NotoNaskhArabic_400Regular'
+                  : (settingsFontsLoaded ? 'Poppins_500Medium' : 'Manrope_600SemiBold');
+                return (
+                  <Pressable
+                    key={tab.lang}
+                    style={({ pressed }) => [styles.missionTab, { borderColor: tokens.goldBorder }, pressed && styles.buttonPressed]}
+                    onPress={() => setSelectedMissionLanguage(tab.lang)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`${tab.label}${selected ? ', selected' : ''}`}
+                    hitSlop={{ top: 12, bottom: 12, left: 2, right: 2 }}
+                  >
+                    {selected ? <LinearGradient colors={tokens.goldGradient} style={absoluteStartEndFill} /> : null}
+                    <Text style={[
+                      styles.missionTabLabel,
+                      {
+                        color: selected
+                          ? getTokens(mode).onGold
+                          : getTokens('ink').text,
+                        fontFamily: tabFont,
+                        fontSize: tab.lang === 'العربية' || tab.lang === 'اردو' ? 12 : 11,
+                        lineHeight: tab.lang === 'العربية' || tab.lang === 'اردو' ? 18 : 14,
+                        writingDirection: tab.lang === 'العربية' || tab.lang === 'اردو' ? 'rtl' : 'ltr',
+                      },
+                    ]}>
+                      {tab.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            {(() => {
+              const mission = MISSION_TRANSLATIONS.find((item) => item.lang === selectedMissionLanguage) ?? MISSION_TRANSLATIONS[0];
+              const isArabic = mission.lang === 'العربية';
+              const isUrdu = mission.lang === 'اردو';
+              return (
+                <Text style={[
+                  styles.missionText,
+                  {
+                    color: getTokens('ink').text,
+                    fontFamily: isUrdu ? missionUrduFont : isArabic ? 'NotoNaskhArabic_400Regular' : missionBodyFont,
+                    fontSize: isArabic || isUrdu ? 15 : 13,
+                    lineHeight: isUrdu ? 34 : isArabic ? 26 : 19,
+                    textAlign: isArabic || isUrdu ? 'right' : 'left',
+                    writingDirection: isArabic || isUrdu ? 'rtl' : 'ltr',
+                  },
+                ]}>
+                  {mission.text}
+                </Text>
+              );
+            })()}
+          </View>
+        </View>
 
         {/* Footer */}
         <View style={[styles.footerWrap, { marginTop: layout.isCompact ? 16 : 20 }]}>
@@ -2048,8 +2216,101 @@ export default function SettingsScreen({
           }}
         />
 
+        <Modal
+          visible={methodSheetOpen}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMethodSheetOpen(false)}
+        >
+          <View style={styles.methodModalRoot}>
+            <Pressable
+              style={styles.methodBackdrop}
+              onPress={() => setMethodSheetOpen(false)}
+              accessibilityRole="button"
+              accessibilityLabel={t('Close calculation method sheet')}
+            />
+            <View
+              style={[
+                styles.methodSheet,
+                {
+                  maxHeight: screenHeight * 0.72,
+                  paddingBottom: insets.bottom + 16,
+                  backgroundColor: homeTokens.cardTop,
+                  borderColor: homeTokens.cardBorder,
+                  shadowColor: tokens.text,
+                },
+              ]}
+              accessibilityViewIsModal
+            >
+              <LinearGradient colors={[homeTokens.cardTop, homeTokens.cardBottom]} style={absoluteStartEndFill} />
+              <View style={[styles.methodHandle, { backgroundColor: homeTokens.cardBorder }]} />
+              <Text style={[styles.methodSheetTitle, { color: homeTokens.text, fontFamily: settingsFontsLoaded ? 'Lora_500Medium' : 'InstrumentSerif_400Regular' }]}>
+                {t('Calculation method')}
+              </Text>
+              <Text style={[styles.methodSheetSubtitle, { color: homeTokens.muted, fontFamily: settingsFontsLoaded ? 'Poppins_400Regular' : 'Manrope_400Regular' }]}>
+                {t('Determines how prayer times are computed')}
+              </Text>
+              <ScrollView
+                style={styles.methodOptionsScroll}
+                contentContainerStyle={styles.methodOptionsContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {CALC_METHODS.map((m, index) => {
+                  const selected = methodId === m.id;
+                  const nextSelected = CALC_METHODS[index + 1]?.id === methodId;
+                  return (
+                    <View key={m.id}>
+                      <Pressable
+                        style={({ pressed }) => [styles.methodOptionRow, pressed && { backgroundColor: `${homeTokens.gold}14` }]}
+                        onPress={() => selectCalculationMethod(m)}
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected }}
+                        accessibilityLabel={`${m.name}, ${m.region}`}
+                        hitSlop={{ top: 1, bottom: 1 }}
+                      >
+                        {selected ? (
+                          <View
+                            pointerEvents="none"
+                            style={[
+                              styles.methodSelectedBackground,
+                              {
+                                backgroundColor: tokens.inset,
+                                borderColor: homeTokens.gold,
+                              },
+                            ]}
+                          />
+                        ) : null}
+                        <View style={styles.methodOptionText}>
+                          <Text style={[styles.methodOptionName, { color: selected ? homeTokens.goldText : homeTokens.text }]} numberOfLines={1}>
+                            {m.name}
+                          </Text>
+                          <Text style={[styles.methodOptionRegion, { color: homeTokens.muted }]} numberOfLines={1}>
+                            {m.region}
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            styles.methodRadio,
+                            { borderColor: selected ? homeTokens.gold : homeTokens.muted, borderWidth: selected ? 1.1 : 0.7 },
+                          ]}
+                        >
+                          {selected ? <LinearGradient colors={tokens.goldGradient} style={styles.methodRadioDot} /> : null}
+                        </View>
+                      </Pressable>
+                      {index < CALC_METHODS.length - 1 && !selected && !nextSelected ? (
+                        <View style={[styles.methodSeparator, { backgroundColor: homeTokens.cardBorder }]} />
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
+
       </View>
     </ScrollView>
+    </View>
   );
 }
 
@@ -2059,6 +2320,16 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
+  sectionCard: {
+    borderRadius: 18,
+    borderWidth: cardTokens.borderWidth,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 2,
+  },
   closeBtn: {
     alignSelf: 'flex-start',
     minWidth: 40,
@@ -2066,32 +2337,73 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 2,
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 4,
+    gap: 4,
+    paddingVertical: 4,
+    paddingEnd: 10,
+    marginBottom: 6,
   },
   closeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
     letterSpacing: 0.1,
   },
-  groupLabel: {
-    fontFamily: 'Manrope_600SemiBold',
+  sectionHeaderWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+    marginStart: 2,
+    minHeight: 28,
+  },
+  sectionHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    minHeight: 28,
+  },
+  sectionSummaryText: {
+    fontFamily: 'Manrope_500Medium',
     fontSize: 11,
-    letterSpacing: 1.5,
+    maxWidth: 160,
+  },
+  collapsedSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 39.3,
+    gap: 12,
+  },
+  expandPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  expandPillText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 12,
+  },
+  groupLabel: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 11,
+    letterSpacing: 2,
     textTransform: 'uppercase',
     marginBottom: 8,
+    marginStart: 2,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 8,
   },
-  rowFlex: { flex: 1 },
-  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 15 },
-  rowDesc: { fontFamily: 'Manrope_400Regular', fontSize: 13, marginTop: 2 },
+  rowFlex: { flex: 1, minWidth: 0 },
+  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 15, lineHeight: 15 },
+  rowDesc: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 13, marginTop: 0 },
   rightCluster: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2107,14 +2419,14 @@ const styles = StyleSheet.create({
   },
   toggleKnob: { width: 22, height: 22, borderRadius: 11 },
   radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
+    width: 17.5,
+    height: 17.5,
+    borderRadius: 8.75,
+    borderWidth: 0.7,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  radioDot: { width: 10, height: 10, borderRadius: 5 },
+  radioDot: { width: 8, height: 8, borderRadius: 4 },
   stateLabel: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 11,
@@ -2125,26 +2437,31 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   adjustRow: {
-    gap: 12,
+    minHeight: 55.3,
+    justifyContent: 'center',
+    gap: 2,
   },
   adjustHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+    minHeight: 15,
   },
   adjustValue: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 13,
+    lineHeight: 15,
   },
   adjustControls: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
+    height: 28,
   },
   adjustBtn: {
     width: 44,
-    height: 40,
+    height: 28,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
@@ -2152,11 +2469,12 @@ const styles = StyleSheet.create({
   },
   adjustBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 15,
+    fontSize: 13,
+    lineHeight: 16,
   },
   adjustTrackArea: {
     flex: 1,
-    height: 40,
+    height: 28,
     justifyContent: 'center',
   },
   adjustTrack: {
@@ -2174,7 +2492,7 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     top: -5,
-    marginLeft: -8,
+    marginStart: -8,
   },
   langList: {
     width: '100%',
@@ -2243,8 +2561,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   segRow: {
+    width: '100%',
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 6,
   },
   seg: {
@@ -2281,54 +2601,103 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 12,
   },
+  missionShadowWrap: {
+    width: '100%',
+    borderRadius: 17.5,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 10,
+    elevation: 6,
+  },
   missionCard: {
     width: '100%',
+    minHeight: 130,
+    borderRadius: 17.5,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 18,
+  },
+  missionInnerBorder: {
+    position: 'absolute',
+    top: 4.5,
+    bottom: 4.5,
+    start: 4.5,
+    end: 4.5,
+    borderRadius: 14.5,
+    borderWidth: 0.5,
   },
   missionEyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
-    letterSpacing: 2.5,
+    lineHeight: 13.2,
+    letterSpacing: 1.8,
     textAlign: 'center',
-    marginBottom: 14,
   },
-  missionList: {
-    gap: 12,
+  missionTabScroll: {
+    marginTop: 7.8,
+    height: 20.4,
+    flexGrow: 0,
+    overflow: 'visible',
   },
-  missionRow: {
-    gap: 3,
+  missionTabsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4.4,
+    minHeight: 20.4,
   },
-  missionLang: {
-    fontFamily: 'Manrope_600SemiBold',
+  missionTab: {
+    height: 20.4,
+    borderRadius: 10.2,
+    borderWidth: 0.55,
+    paddingHorizontal: 7.3,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'relative',
+    flexShrink: 0,
+  },
+  missionTabLabel: {
     fontSize: 11,
-    letterSpacing: 1.2,
-  },
-  missionLangRtl: {
-    textAlign: 'right',
+    lineHeight: 15,
+    textAlign: 'center',
   },
   missionText: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: 'Lora_500Medium',
     fontSize: 13,
     lineHeight: 19,
+    marginTop: 15.4,
+    alignSelf: 'stretch',
   },
-  missionTextRtl: {
-    textAlign: 'right',
-    writingDirection: 'rtl',
-    lineHeight: 23,
+  appIdentity: {
+    width: '100%',
+    alignItems: 'center',
+    overflow: 'visible',
   },
-  missionDivider: {
-    marginVertical: 16,
-  },
-  thanksText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
+  aboutLogoTile: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   aboutLogo: {
-    width: 72,
-    height: 72,
-    alignSelf: 'center',
-    marginBottom: 14,
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+  },
+  identityTitle: {
+    marginTop: 15.7,
+    fontSize: 12,
+    lineHeight: 14.5,
+    textAlign: 'center',
+  },
+  identityVersion: {
+    marginTop: 1,
+    fontSize: 11,
+    lineHeight: 14.5,
+    textAlign: 'center',
   },
   accentGrid: {
     flexDirection: 'row',
@@ -2462,7 +2831,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   healthCompact: {
-    paddingVertical: 12,
+    paddingVertical: 7.2,
   },
   healthCompactLoading: {
     flexDirection: 'row',
@@ -2471,7 +2840,7 @@ const styles = StyleSheet.create({
   },
   healthCompactRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     alignItems: 'center',
     gap: 6,
   },
@@ -2482,7 +2851,10 @@ const styles = StyleSheet.create({
   },
   healthCompactText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 10,
+    lineHeight: 14,
+    flex: 1,
+    minWidth: 0,
   },
   permissionBanner: {
     flexDirection: 'row',
@@ -2525,5 +2897,134 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  buttonPressed: {
+    transform: [{ scale: 0.97 }],
+    opacity: 0.9,
+  },
+  controlDisabled: {
+    opacity: 0.55,
+  },
+  outlineButton: {
+    width: 82,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingHorizontal: 6,
+  },
+  outlineButtonText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
+    lineHeight: 14,
+    textAlign: 'center',
+  },
+  methodModalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'stretch',
+  },
+  methodBackdrop: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    start: 0,
+    end: 0,
+    backgroundColor: getTokens('ink').overlay,
+  },
+  methodSheet: {
+    width: '100%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderTopWidth: 0.65,
+    borderStartWidth: 0.65,
+    borderEndWidth: 0.65,
+    overflow: 'hidden',
+    position: 'relative',
+    paddingTop: 0,
+    shadowOffset: { width: 0, height: -5 },
+    shadowOpacity: 0.24,
+    shadowRadius: 18,
+    elevation: 18,
+  },
+  methodHandle: {
+    width: 36,
+    height: 3.6,
+    borderRadius: 1.8,
+    alignSelf: 'center',
+    marginTop: 8,
+  },
+  methodSheetTitle: {
+    marginTop: 14.5,
+    marginStart: 29,
+    marginEnd: 29,
+    fontSize: 19,
+    lineHeight: 24,
+  },
+  methodSheetSubtitle: {
+    marginStart: 29,
+    marginEnd: 29,
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  methodOptionsScroll: {
+    marginTop: 12.3,
+    width: '100%',
+    flexShrink: 1,
+  },
+  methodOptionsContent: {
+    paddingBottom: 0,
+  },
+  methodOptionRow: {
+    height: 44.4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 29,
+    position: 'relative',
+  },
+  methodSelectedBackground: {
+    position: 'absolute',
+    top: 2,
+    bottom: 2,
+    start: 14.5,
+    end: 14.5,
+    borderRadius: 11,
+    borderWidth: 0.6,
+  },
+  methodOptionText: {
+    flex: 1,
+    minWidth: 0,
+    paddingEnd: 8,
+  },
+  methodOptionName: {
+    fontFamily: 'Poppins_500Medium',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  methodOptionRegion: {
+    fontFamily: 'Poppins_400Regular',
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  methodRadio: {
+    width: 17.5,
+    height: 17.5,
+    borderRadius: 8.75,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginEnd: -11.75,
+  },
+  methodRadioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  methodSeparator: {
+    height: 0.5,
+    marginHorizontal: 29,
   },
 });

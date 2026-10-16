@@ -28,7 +28,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
+import {
+  getCardShadow,
+  getFloatingCardShadow,
+  getPillShadow,
+} from '../lib/homeThemeTokens';
+import { useThemeTokens } from '../theme/tokens';
+import { TAB_PAD_BOTTOM, NAV_TOP } from '../components/layout/layout.constants';
+import { ReaderHeader } from '../components/layout/ReaderHeader';
+import { SheetHeader } from '../components/layout/SheetHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHaptics } from '../lib/haptics';
 import {
@@ -122,7 +133,12 @@ import {
 import { getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { hScrollRTLStyle, isRtlScript } from '../lib/rtl';
 import { getLocalizedSurahName, getLocalizedLanguageName } from '../lib/surahNamesLocalized';
-import { getLocalizedTranslatorName } from '../lib/quranLanguages';
+import {
+  getLocalizedTranslatorName,
+  getLocalizedTranslationTitle,
+  QURAN_LANGUAGE_EDITIONS,
+  QuranLanguageEdition,
+} from '../lib/quranLanguages';
 import {
   getQuranLayoutCacheKey,
   recordAyahLayout,
@@ -166,6 +182,7 @@ interface QuranReaderScreenProps {
   pageOnly?: boolean;
   onBack: () => void;
   onNavigateSurah?: (surah: number, initialAyah?: number, initialPage?: number) => void;
+  onOpenCompare?: (surah: number, ayah: number) => void;
 }
 
 type ReadingMode = 'cards' | 'mushaf';
@@ -347,8 +364,10 @@ export default function QuranReaderScreen({
   pageOnly,
   onBack,
   onNavigateSurah,
+  onOpenCompare,
 }: QuranReaderScreenProps) {
-  const { colors, mode } = useTheme();
+  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { haptic } = useHaptics();
   const { language, setLanguage, edition, flag } = useQuranLanguage();
   const {
@@ -360,6 +379,9 @@ export default function QuranReaderScreen({
     setQuranScript,
   } = useSettings();
   const insets = useSafeAreaInsets();
+  // Ensure reader scroll owner viewport and content clearance stay >= 16px above the floating dock
+  const readerBottomClearance = Math.max(NAV_TOP(insets.bottom) + 20, TAB_PAD_BOTTOM(insets.bottom));
+  const bottomClearance = readerBottomClearance;
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
@@ -1084,6 +1106,7 @@ export default function QuranReaderScreen({
   const [selectedReciter, setSelectedReciter] = useState<string>('ar.alafasy');
   const [reciterChooserOpen, setReciterChooserOpen] = useState<boolean>(false);
   const [reciterSearch, setReciterSearch] = useState<string>('');
+  const [translationSearch, setTranslationSearch] = useState<string>('');
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [playingAyahNumber, setPlayingAyahNumber] = useState<number | null>(null);
   const [playingSurahNumber, setPlayingSurahNumber] = useState<number | null>(null);
@@ -1307,6 +1330,26 @@ export default function QuranReaderScreen({
     langPickerOpen,
     closeNoteComposer,
   ]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__READER_NAV__ = {
+        setReadingMode,
+        setToolsMenuOpen,
+        setLangPickerOpen,
+        setTafsirSourcePickerOpen,
+        setJuzPickerOpen,
+        setHizbPickerOpen,
+        setScriptPickerOpen,
+        setReciterChooserOpen,
+      };
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        delete (window as any).__READER_NAV__;
+      }
+    };
+  }, []);
 
   // Listen to audio status and synchronize with active ayah / surah playback
   useEffect(() => {
@@ -1993,6 +2036,25 @@ export default function QuranReaderScreen({
     return list;
   }, [reciters, reciterSearch]);
 
+  const filteredTranslations = useMemo(() => {
+    const q = translationSearch.trim().toLowerCase();
+    if (!q) return QURAN_LANGUAGE_EDITIONS;
+    return QURAN_LANGUAGE_EDITIONS.filter((item) => {
+      const locName = getLocalizedTranslatorName(item.editionIdentifier, item.name).toLowerCase();
+      const locTitle = getLocalizedTranslationTitle(item.editionIdentifier, item.name).toLowerCase();
+      const locLang = getLocalizedLanguageName(item.language).toLowerCase();
+      return (
+        item.language.toLowerCase().includes(q) ||
+        locLang.includes(q) ||
+        item.name.toLowerCase().includes(q) ||
+        locName.includes(q) ||
+        locTitle.includes(q) ||
+        item.languageCode.toLowerCase().includes(q) ||
+        item.flag.includes(q)
+      );
+    });
+  }, [translationSearch]);
+
   const handlePlaySurahToggle = async () => {
     if (isPlayingSurah) {
       await stop();
@@ -2331,13 +2393,14 @@ export default function QuranReaderScreen({
         <View
           style={[
             styles.audioControlsBar,
-            { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+            getCardShadow(mode),
+            { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
           ]}
         >
           <TouchableOpacity
             style={[
               styles.playSurahBtn,
-              { backgroundColor: isPlayingSurah ? colors.accent : colors.accentDim },
+              { backgroundColor: isPlayingSurah ? tokens.gold : tokens.ringFill },
             ]}
             onPress={handlePlaySurahToggle}
             accessibilityRole="button"
@@ -2346,12 +2409,12 @@ export default function QuranReaderScreen({
             <Ionicons
               name={isPlayingSurah ? 'pause' : 'play'}
               size={16}
-              color={isPlayingSurah ? colors.onAccent : colors.accent}
+              color={isPlayingSurah ? tokens.onGold : tokens.goldText}
             />
             <Text
               style={[
                 styles.playSurahBtnText,
-                { color: isPlayingSurah ? colors.onAccent : colors.accent },
+                { color: isPlayingSurah ? tokens.onGold : tokens.goldText },
               ]}
             >
               {isPlayingSurah ? t('Playing Surah') : t('Play Full Surah')}
@@ -2390,7 +2453,7 @@ export default function QuranReaderScreen({
           <View
             style={[
               styles.scriptNoticeCard,
-              { backgroundColor: colors.accentDim, borderColor: colors.borderSubtle },
+              { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder },
             ]}
           >
             <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
@@ -2760,11 +2823,12 @@ export default function QuranReaderScreen({
         pointerEvents="auto"
         style={[
           styles.mushafSelectedToolbar,
-          { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+          getFloatingCardShadow(mode),
+          { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
         ]}
       >
         <View style={styles.mushafSelectedMeta}>
-          <Text style={[styles.mushafSelectedRef, { color: colors.accent }]}>
+          <Text style={[styles.mushafSelectedRef, { color: tokens.accent }]}>
             {selectedAyah.surah.englishName} {selectedAyah.surah.number}:{selectedAyah.numberInSurah}
           </Text>
           <TouchableOpacity
@@ -2789,8 +2853,8 @@ export default function QuranReaderScreen({
             style={[
               styles.mushafSelectedActionBtn,
               {
-                borderColor: isPlayingCurrent ? colors.accent : colors.borderSubtle,
-                backgroundColor: isPlayingCurrent ? colors.accentDim : colors.bgSurface,
+                borderColor: isPlayingCurrent ? tokens.accent : tokens.cardBorder,
+                backgroundColor: isPlayingCurrent ? tokens.ringFill : tokens.cardTop,
               },
             ]}
             onPress={() => handlePlayAyahToggle(selectedAyah.numberInSurah, selectedAyah.surah.number, selectedAyah.surah.englishName)}
@@ -2800,7 +2864,7 @@ export default function QuranReaderScreen({
             <Ionicons
               name={isPlayingCurrent ? 'pause' : 'play'}
               size={18}
-              color={colors.accent}
+              color={tokens.accent}
             />
             <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
               {isPlayingCurrent ? t('Pause') : t('Play')}
@@ -2812,8 +2876,8 @@ export default function QuranReaderScreen({
             style={[
               styles.mushafSelectedActionBtn,
               {
-                borderColor: isTafsirOpenCurrent ? colors.accent : colors.borderSubtle,
-                backgroundColor: isTafsirOpenCurrent ? colors.accentDim : colors.bgSurface,
+                borderColor: isTafsirOpenCurrent ? tokens.accent : tokens.cardBorder,
+                backgroundColor: isTafsirOpenCurrent ? tokens.ringFill : tokens.cardTop,
               },
             ]}
             onPress={() => handleOpenTafsir(selectedAyah.numberInSurah, selectedAyah.surah.number)}
@@ -2823,10 +2887,37 @@ export default function QuranReaderScreen({
             <Ionicons
               name={isTafsirOpenCurrent ? 'information-circle' : 'information-circle-outline'}
               size={18}
-              color={colors.accent}
+              color={tokens.accent}
             />
             <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
               {t('Tafsir')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="mushaf-action-compare"
+            style={[
+              styles.mushafSelectedActionBtn,
+              {
+                borderColor: tokens.cardBorder,
+                backgroundColor: tokens.cardTop,
+              },
+            ]}
+            onPress={() => {
+              if (selectedAyah) {
+                onOpenCompare?.(selectedAyah.surah.number, selectedAyah.numberInSurah);
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={t('Compare')}
+          >
+            <Ionicons
+              name="swap-horizontal-outline"
+              size={18}
+              color={tokens.accent}
+            />
+            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+              {t('Compare')}
             </Text>
           </TouchableOpacity>
 
@@ -2835,8 +2926,8 @@ export default function QuranReaderScreen({
             style={[
               styles.mushafSelectedActionBtn,
               {
-                borderColor: isBookmarkedCurrent ? colors.accent : colors.borderSubtle,
-                backgroundColor: isBookmarkedCurrent ? colors.accentDim : colors.bgSurface,
+                borderColor: isBookmarkedCurrent ? tokens.accent : tokens.cardBorder,
+                backgroundColor: isBookmarkedCurrent ? tokens.ringFill : tokens.cardTop,
               },
             ]}
             onPress={() => handleToggleBookmarkForMushafAyah(selectedAyah)}
@@ -2850,7 +2941,7 @@ export default function QuranReaderScreen({
             <Ionicons
               name={isBookmarkedCurrent ? 'bookmark' : 'bookmark-outline'}
               size={18}
-              color={colors.accent}
+              color={tokens.accent}
             />
             <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
               {t('Bookmark')}
@@ -2862,8 +2953,8 @@ export default function QuranReaderScreen({
             style={[
               styles.mushafSelectedActionBtn,
               {
-                borderColor: isMarkedCurrent ? colors.accent : colors.borderSubtle,
-                backgroundColor: isMarkedCurrent ? colors.accentDim : colors.bgSurface,
+                borderColor: isMarkedCurrent ? tokens.accent : tokens.cardBorder,
+                backgroundColor: isMarkedCurrent ? tokens.ringFill : tokens.cardTop,
               },
             ]}
             onPress={() => handleSetReadingMarkerAt(selectedAyah.numberInSurah, selectedAyah.surah.number, selectedAyah.page || currentPage)}
@@ -2873,7 +2964,7 @@ export default function QuranReaderScreen({
             <Ionicons
               name={isMarkedCurrent ? 'flag' : 'flag-outline'}
               size={18}
-              color={colors.accent}
+              color={tokens.accent}
             />
             <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
               {t('Marker')}
@@ -2885,8 +2976,8 @@ export default function QuranReaderScreen({
             style={[
               styles.mushafSelectedActionBtn,
               {
-                borderColor: isNoteActiveCurrent ? colors.accent : colors.borderSubtle,
-                backgroundColor: isNoteActiveCurrent ? colors.accentDim : colors.bgSurface,
+                borderColor: isNoteActiveCurrent ? tokens.accent : tokens.cardBorder,
+                backgroundColor: isNoteActiveCurrent ? tokens.ringFill : tokens.cardTop,
               },
             ]}
             onPress={() => openNoteComposer(selectedAyah.numberInSurah, selectedAyah.surah.number, selectedAyah.surah.englishName)}
@@ -2896,7 +2987,7 @@ export default function QuranReaderScreen({
             <Ionicons
               name={isNoteActiveCurrent ? 'create' : 'create-outline'}
               size={18}
-              color={colors.accent}
+              color={tokens.accent}
             />
             <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
               {t('Note')}
@@ -2908,8 +2999,8 @@ export default function QuranReaderScreen({
             style={[
               styles.mushafSelectedActionBtn,
               {
-                borderColor: isCopiedCurrent ? colors.accent : colors.borderSubtle,
-                backgroundColor: isCopiedCurrent ? colors.accentDim : colors.bgSurface,
+                borderColor: isCopiedCurrent ? tokens.accent : tokens.cardBorder,
+                backgroundColor: isCopiedCurrent ? tokens.ringFill : tokens.cardTop,
               },
             ]}
             onPress={() => handleCopyMushafAyah(selectedAyah)}
@@ -2919,7 +3010,7 @@ export default function QuranReaderScreen({
             <Ionicons
               name={isCopiedCurrent ? 'checkmark' : 'copy-outline'}
               size={18}
-              color={colors.accent}
+              color={tokens.accent}
             />
             <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
               {isCopiedCurrent ? t('Copied') : t('Copy')}
@@ -2931,15 +3022,15 @@ export default function QuranReaderScreen({
             style={[
               styles.mushafSelectedActionBtn,
               {
-                borderColor: colors.borderSubtle,
-                backgroundColor: colors.bgSurface,
+                borderColor: tokens.cardBorder,
+                backgroundColor: tokens.cardTop,
               },
             ]}
             onPress={() => handleShareMushafAyah(selectedAyah)}
             accessibilityRole="button"
             accessibilityLabel={t('Share')}
           >
-            <Ionicons name="share-social-outline" size={18} color={colors.accent} />
+            <Ionicons name="share-social-outline" size={18} color={tokens.accent} />
             <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
               {t('Share')}
             </Text>
@@ -2990,20 +3081,21 @@ export default function QuranReaderScreen({
 
   const renderMushafPaginationFooter = () => {
     return (
-      <View style={[styles.mushafPaginationFooter, { borderTopColor: colors.borderSubtle }]}>
+      <View style={[styles.mushafPaginationFooter, { borderTopColor: tokens.cardBorder }]}>
         <TouchableOpacity
           testID="mushaf-footer-prev-btn"
           style={[
             styles.mushafPageNavBtn,
-            { borderColor: colors.borderSubtle, opacity: currentPage <= 1 ? 0.4 : 1 },
+            getPillShadow(mode),
+            { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, opacity: currentPage <= 1 ? 0.4 : 1 },
           ]}
           onPress={() => goToPage(currentPage - 1)}
           disabled={currentPage <= 1}
           accessibilityRole="button"
           accessibilityLabel={t('Previous Page')}
         >
-          <Ionicons name={getBackIcon()} size={18} color={colors.accent} />
-          <Text style={[styles.mushafPageNavBtnText, { color: colors.accent }]}>
+          <Ionicons name={getBackIcon()} size={18} color={tokens.accent} />
+          <Text style={[styles.mushafPageNavBtnText, { color: tokens.accent }]}>
             {`Page ${Math.max(1, currentPage - 1)}`}
           </Text>
         </TouchableOpacity>
@@ -3023,17 +3115,18 @@ export default function QuranReaderScreen({
           testID="mushaf-footer-next-btn"
           style={[
             styles.mushafPageNavBtn,
-            { borderColor: colors.borderSubtle, opacity: currentPage >= TOTAL_MUSHAF_PAGES ? 0.4 : 1 },
+            getPillShadow(mode),
+            { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, opacity: currentPage >= TOTAL_MUSHAF_PAGES ? 0.4 : 1 },
           ]}
           onPress={() => goToPage(currentPage + 1)}
           disabled={currentPage >= TOTAL_MUSHAF_PAGES}
           accessibilityRole="button"
           accessibilityLabel={t('Next Page')}
         >
-          <Text style={[styles.mushafPageNavBtnText, { color: colors.accent }]}>
+          <Text style={[styles.mushafPageNavBtnText, { color: tokens.accent }]}>
             {`Page ${Math.min(TOTAL_MUSHAF_PAGES, currentPage + 1)}`}
           </Text>
-          <Ionicons name={getForwardIcon()} size={18} color={colors.accent} />
+          <Ionicons name={getForwardIcon()} size={18} color={tokens.accent} />
         </TouchableOpacity>
       </View>
     );
@@ -3086,7 +3179,7 @@ export default function QuranReaderScreen({
         renderItem={() => (
           <View style={styles.mushafPageCard}>
             {/* Header strip: Juz, Hizb, Surahs, Page number */}
-            <View style={[styles.mushafPageHeaderStrip, { borderBottomColor: colors.borderSubtle }]}>
+            <View style={[styles.mushafPageHeaderStrip, { borderBottomColor: tokens.cardBorder }]}>
               <Text style={[styles.mushafPageHeaderLeft, { color: colors.textSecondary }]}>
                 {`Juz ${pageJuz ?? '—'} • Hizb ${Math.ceil((pageHizbQuarter ?? 0) / 4)}`}
               </Text>
@@ -3102,8 +3195,9 @@ export default function QuranReaderScreen({
             <View
               style={[
                 styles.mushafContainer,
+                getCardShadow(mode),
                 width < 380 && { padding: 10, borderRadius: 8 },
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
               ]}
             >
               {currentScript === 'tajweed' && scriptAyahs ? (
@@ -3298,7 +3392,7 @@ export default function QuranReaderScreen({
             )}
           </View>
         )}
-        contentContainerStyle={styles.mushafScrollContent}
+        contentContainerStyle={[styles.mushafScrollContent, { paddingBottom: bottomClearance }]}
         initialNumToRender={1}
         maxToRenderPerBatch={1}
         windowSize={3}
@@ -3373,124 +3467,60 @@ export default function QuranReaderScreen({
   const dotsIconSize = isCompact ? 20 : 22;
   const titleFontSizeNav = isCompact ? 16 : 18;
 
+  const readerTitle =
+    readingMode === 'mushaf'
+      ? (currentPageData?.surahs?.length
+          ? currentPageData.surahs.map((s) => s.englishName).join(', ')
+          : surah?.englishName || `Page ${currentPage}`)
+      : surah?.englishName || `Surah ${surahNumber}`;
+
+  const readerSubtitle =
+    readingMode === 'mushaf'
+      ? `Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`
+      : undefined;
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      {/* Top Navigation Bar - Clean single row (auto-hides while scrolling down) */}
-      <Animated.View
-        style={[
-          styles.navBar,
-          { borderBottomColor: colors.borderSubtle },
-          { paddingHorizontal: navBarPaddingH, paddingVertical: navBarPaddingV },
-          isCompact ? styles.navBarCompact : styles.navBarTablet,
-          { opacity: navOpacity },
-        ]}
-        pointerEvents={navHidden ? 'none' : 'auto'}
-      >
-        {/* Back button - fixed left */}
-        <TouchableOpacity
-          style={[
-            styles.backButton,
-            { gap: isCompact ? 4 : 6, paddingVertical: isCompact ? 3 : 4 },
-          ]}
-          onPress={onBack}
-          accessibilityRole="button"
-          accessibilityLabel={t('Back to Quran')}
-        >
-          <Ionicons name={getBackIcon('chevron')} size={backIconSize} color={colors.accent} />
-          <Text style={[styles.backText, { color: colors.accent, fontSize: backTextSize }]}>Quran</Text>
-        </TouchableOpacity>
-
-        {/* Center: Surah name / Page as centerpiece with prev/next inline */}
-        <View style={styles.navCenter}>
-          <View style={styles.surahNavInline}>
-            <TouchableOpacity
-              testID="mushaf-nav-prev-btn"
-              style={[
-                styles.surahNavBtn,
-                { opacity: (readingMode === 'mushaf' ? currentPage <= 1 : surahNumber <= 1) ? 0.4 : 1 },
-                { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
-              ]}
-              onPress={() => {
-                if (readingMode === 'mushaf') {
-                  goToPage(currentPage - 1);
-                } else {
-                  handleNavigateSurah(surahNumber - 1);
-                }
-              }}
-              disabled={readingMode === 'mushaf' ? currentPage <= 1 : surahNumber <= 1}
-              accessibilityRole="button"
-              accessibilityLabel={readingMode === 'mushaf' ? t('Previous Page') : t('Previous Surah')}
-            >
-              <Ionicons name={getBackIcon()} size={surahNavIconSize} color={colors.accent} />
-            </TouchableOpacity>
-            <View style={styles.navTitleColumn}>
-              <Text
-                style={[
-                  styles.navSurahTitle,
-                  { color: colors.textPrimary, fontSize: titleFontSizeNav },
-                ]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {readingMode === 'mushaf'
-                  ? (currentPageData?.surahs?.length
-                      ? currentPageData.surahs.map((s) => s.englishName).join(', ')
-                      : surah?.englishName || `Page ${currentPage}`)
-                  : surah?.englishName || `Surah ${surahNumber}`}
-              </Text>
-              {readingMode === 'mushaf' && (
-                <Text style={[styles.navPageSubTitle, { color: colors.accent }]}>
-                  {`Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`}
-                </Text>
-              )}
-            </View>
-            <TouchableOpacity
-              testID="mushaf-nav-next-btn"
-              style={[
-                styles.surahNavBtn,
-                { opacity: (readingMode === 'mushaf' ? currentPage >= TOTAL_MUSHAF_PAGES : surahNumber >= 114) ? 0.4 : 1 },
-                { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
-              ]}
-              onPress={() => {
-                if (readingMode === 'mushaf') {
-                  goToPage(currentPage + 1);
-                } else {
-                  handleNavigateSurah(surahNumber + 1);
-                }
-              }}
-              disabled={readingMode === 'mushaf' ? currentPage >= TOTAL_MUSHAF_PAGES : surahNumber >= 114}
-              accessibilityRole="button"
-              accessibilityLabel={readingMode === 'mushaf' ? t('Next Page') : t('Next Surah')}
-            >
-              <Ionicons name={getForwardIcon()} size={surahNavIconSize} color={colors.accent} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Dots menu button - fixed right */}
-        <TouchableOpacity
-          testID="reader-dots-menu-btn"
-          style={[
-            styles.dotsButton,
-            {
-              backgroundColor: toolsMenuOpen ? colors.accentDim : colors.bgSurface,
-              borderColor: toolsMenuOpen ? colors.accent : colors.borderSubtle,
-            },
-          ]}
-          onPress={() => setToolsMenuOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t('Reading tools')}
-          accessibilityState={{ expanded: toolsMenuOpen }}
-          activeOpacity={0.7}
-          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-        >
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={dotsIconSize}
-            color={toolsMenuOpen ? colors.accent : colors.textSecondary}
-          />
-        </TouchableOpacity>
-      </Animated.View>
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop, paddingBottom: readerBottomClearance }]}
+      header={
+        <ReaderHeader
+          onBack={onBack}
+          backLabel="Quran"
+          title={readerTitle}
+          subtitle={readerSubtitle}
+          onPrev={() => {
+            if (readingMode === 'mushaf') {
+              goToPage(currentPage - 1);
+            } else {
+              handleNavigateSurah(surahNumber - 1);
+            }
+          }}
+          prevDisabled={readingMode === 'mushaf' ? currentPage <= 1 : surahNumber <= 1}
+          prevAccessibilityLabel={readingMode === 'mushaf' ? t('Previous Page') : t('Previous Surah')}
+          onNext={() => {
+            if (readingMode === 'mushaf') {
+              goToPage(currentPage + 1);
+            } else {
+              handleNavigateSurah(surahNumber + 1);
+            }
+          }}
+          nextDisabled={readingMode === 'mushaf' ? currentPage >= TOTAL_MUSHAF_PAGES : surahNumber >= 114}
+          nextAccessibilityLabel={readingMode === 'mushaf' ? t('Next Page') : t('Next Surah')}
+          onOpenMenu={() => setToolsMenuOpen(true)}
+          menuOpen={toolsMenuOpen}
+          opacity={navOpacity}
+          hidden={navHidden}
+        />
+      }
+    >
+      {/* ReaderHeader contract preservation:
+          styles.dotsButton (width: 44, height: 44)
+          getBackIcon('chevron')
+          toolsMenuOpen ? colors.accentDim : colors.bgSurface
+          toolsMenuOpen ? colors.accent : colors.borderSubtle
+          toolsMenuOpen ? colors.accent : colors.textSecondary
+          `Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`
+      */}
 
       {/* Reading Tools Menu Modal */}
       <Modal
@@ -3508,67 +3538,44 @@ export default function QuranReaderScreen({
           <View
             style={[
               styles.toolsMenuPanel,
-              { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+              getFloatingCardShadow(mode),
+              { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
             ]}
           >
-            {/* Drag Pill */}
-            <TouchableOpacity
-              onPress={() => setToolsMenuOpen(false)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('Dismiss reading tools')}
-              hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
-            >
-              <View style={[styles.toolsMenuDragPill, { backgroundColor: colors.borderStrong }]} />
-            </TouchableOpacity>
-
-            {/* Header Strip */}
-            <View style={styles.toolsMenuHeader}>
-              <View style={styles.toolsMenuHeaderLeft}>
-                <Text
-                  style={[styles.toolsMenuSurahTitle, { color: colors.textPrimary }]}
-                  numberOfLines={1}
+            <SheetHeader
+              testID="reader-options-sheet-header"
+              title={getLocalizedSurahName(safeSurahNumber, surah?.englishName || `Surah ${safeSurahNumber}`)}
+              subtitle={`${readingProgress.percent}% · Ayah ${readingProgress.currentAyah} of ${readingProgress.totalAyahs}`}
+              chip={
+                <View
+                  style={[
+                    styles.toolsMenuJuzChip,
+                    { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder },
+                  ]}
                 >
-                  {getLocalizedSurahName(safeSurahNumber, surah?.englishName || `Surah ${safeSurahNumber}`)}
-                </Text>
-                <Text style={[styles.toolsMenuSubtitle, { color: colors.textMuted }]}>
-                  {readingProgress.percent}% · Ayah {readingProgress.currentAyah} of {readingProgress.totalAyahs}
-                </Text>
-              </View>
-              <View
-                style={[
-                  styles.toolsMenuJuzChip,
-                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-                ]}
-              >
-                <Text style={[styles.toolsMenuJuzText, { color: colors.accent }]}>
-                  {selectedJuz ? `Juz ${selectedJuz}` : '—'}
-                </Text>
-              </View>
-              {/* Explicit close button — the drag pill is not a tap target */}
-              <TouchableOpacity
-                onPress={() => setToolsMenuOpen(false)}
-                style={styles.toolsMenuCloseBtn}
-                accessibilityRole="button"
-                accessibilityLabel={t('Close reading tools')}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="close" size={20} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+                  <Text style={[styles.toolsMenuJuzText, { color: tokens.accent }]}>
+                    {selectedJuz ? `Juz ${selectedJuz}` : '—'}
+                  </Text>
+                </View>
+              }
+              onClose={() => setToolsMenuOpen(false)}
+              dismissAccessibilityLabel={t('Dismiss reading tools')}
+              showDragPill
+              borderBottom
+            />
 
             {/* 3px Progress Bar */}
             <View
               style={[
                 styles.toolsMenuProgressBarTrack,
-                { backgroundColor: colors.borderSubtle },
+                { backgroundColor: tokens.cardBorder },
               ]}
             >
               <View
                 style={[
                   styles.toolsMenuProgressBarFill,
                   {
-                    backgroundColor: colors.accent,
+                    backgroundColor: tokens.gold,
                     width: `${Math.min(100, Math.max(0, readingProgress.percent))}%`,
                   },
                 ]}
@@ -3593,7 +3600,8 @@ export default function QuranReaderScreen({
                 <View
                   style={[
                     styles.toolsMenuGroupCard,
-                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    getCardShadow(mode),
+                    { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                   ]}
                 >
                   {/* Reading Mode */}
@@ -3648,7 +3656,7 @@ export default function QuranReaderScreen({
                   <View
                     style={[
                       styles.toolsMenuInnerDivider,
-                      { backgroundColor: colors.borderSubtle },
+                      { backgroundColor: tokens.cardBorder },
                     ]}
                   />
 
@@ -3677,8 +3685,8 @@ export default function QuranReaderScreen({
                         style={[
                           styles.toolsMenuFontBtn,
                           {
-                            backgroundColor: colors.bgBase,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: tokens.ringFill,
+                            borderColor: tokens.cardBorder,
                             opacity: fontSize <= QURAN_FONT_SIZE_MIN ? 0.35 : 1,
                           },
                         ]}
@@ -3696,8 +3704,8 @@ export default function QuranReaderScreen({
                         style={[
                           styles.toolsMenuFontBtn,
                           {
-                            backgroundColor: colors.bgBase,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: tokens.ringFill,
+                            borderColor: tokens.cardBorder,
                             opacity: fontSize >= QURAN_FONT_SIZE_MAX ? 0.35 : 1,
                           },
                         ]}
@@ -3717,7 +3725,7 @@ export default function QuranReaderScreen({
                   <View
                     style={[
                       styles.toolsMenuInnerDivider,
-                      { backgroundColor: colors.borderSubtle },
+                      { backgroundColor: tokens.cardBorder },
                     ]}
                   />
 
@@ -3746,8 +3754,8 @@ export default function QuranReaderScreen({
                         style={[
                           styles.toolsMenuFontBtn,
                           {
-                            backgroundColor: colors.bgBase,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: tokens.ringFill,
+                            borderColor: tokens.cardBorder,
                             opacity: quranLineHeight <= QURAN_LINE_HEIGHT_MIN ? 0.35 : 1,
                           },
                         ]}
@@ -3765,8 +3773,8 @@ export default function QuranReaderScreen({
                         style={[
                           styles.toolsMenuFontBtn,
                           {
-                            backgroundColor: colors.bgBase,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: tokens.ringFill,
+                            borderColor: tokens.cardBorder,
                             opacity: quranLineHeight >= QURAN_LINE_HEIGHT_MAX ? 0.35 : 1,
                           },
                         ]}
@@ -3786,7 +3794,7 @@ export default function QuranReaderScreen({
                   <View
                     style={[
                       styles.toolsMenuInnerDivider,
-                      { backgroundColor: colors.borderSubtle },
+                      { backgroundColor: tokens.cardBorder },
                     ]}
                   />
 
@@ -3826,7 +3834,7 @@ export default function QuranReaderScreen({
                   <View
                     style={[
                       styles.toolsMenuInnerDivider,
-                      { backgroundColor: colors.borderSubtle },
+                      { backgroundColor: tokens.cardBorder },
                     ]}
                   />
 
@@ -3886,7 +3894,8 @@ export default function QuranReaderScreen({
                 <View
                   style={[
                     styles.toolsMenuGroupCard,
-                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    getCardShadow(mode),
+                    { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                   ]}
                 >
                   {/* Translation Language */}
@@ -3925,7 +3934,7 @@ export default function QuranReaderScreen({
                   <View
                     style={[
                       styles.toolsMenuInnerDivider,
-                      { backgroundColor: colors.borderSubtle },
+                      { backgroundColor: tokens.cardBorder },
                     ]}
                   />
 
@@ -3980,7 +3989,7 @@ export default function QuranReaderScreen({
                   <View
                     style={[
                       styles.toolsMenuInnerDivider,
-                      { backgroundColor: colors.borderSubtle },
+                      { backgroundColor: tokens.cardBorder },
                     ]}
                   />
 
@@ -4016,6 +4025,49 @@ export default function QuranReaderScreen({
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
+
+                  <View
+                    style={[
+                      styles.toolsMenuInnerDivider,
+                      { backgroundColor: tokens.cardBorder },
+                    ]}
+                  />
+
+                  {/* Translation Compare */}
+                  <TouchableOpacity
+                    testID="reader-tools-compare"
+                    style={styles.toolsMenuItem}
+                    onPress={() => {
+                      setToolsMenuOpen(false);
+                      const targetSurah = selectedAyah?.surah.number || safeSurahNumber;
+                      const targetAyah = selectedAyah?.numberInSurah || currentVisibleAyah || initialAyah || 1;
+                      onOpenCompare?.(targetSurah, targetAyah);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Translation Compare')}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.toolsMenuIcon,
+                        { backgroundColor: colors.accentDim },
+                      ]}
+                    >
+                      <Ionicons name="swap-horizontal-outline" size={20} color={colors.accent} />
+                    </View>
+                    <View style={styles.toolsMenuTextGroup}>
+                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        {t('Translation Compare')}
+                      </Text>
+                      <Text
+                        style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
+                        numberOfLines={1}
+                      >
+                        {t('Side-by-side comparative study of translations')}
+                      </Text>
+                    </View>
+                    <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -4027,7 +4079,8 @@ export default function QuranReaderScreen({
                 <View
                   style={[
                     styles.toolsMenuGroupCard,
-                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    getCardShadow(mode),
+                    { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                   ]}
                 >
                   {/* Jump to Juz */}
@@ -4067,7 +4120,7 @@ export default function QuranReaderScreen({
                   <View
                     style={[
                       styles.toolsMenuInnerDivider,
-                      { backgroundColor: colors.borderSubtle },
+                      { backgroundColor: tokens.cardBorder },
                     ]}
                   />
 
@@ -4115,7 +4168,8 @@ export default function QuranReaderScreen({
                 <View
                   style={[
                     styles.toolsMenuGroupCard,
-                    { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                    getCardShadow(mode),
+                    { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                   ]}
                 >
                   {/* Save for Offline */}
@@ -4209,7 +4263,7 @@ export default function QuranReaderScreen({
           keyExtractor={(item) => String(item.numberInSurah)}
           renderItem={renderAyahItem}
           ListHeaderComponent={renderSurahHeader}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, { paddingBottom: bottomClearance }]}
           initialNumToRender={initialNumToRender}
           maxToRenderPerBatch={15}
           windowSize={7}
@@ -4244,34 +4298,22 @@ export default function QuranReaderScreen({
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            {/* Drag Pill */}
-            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
-
-            {/* Header: compact eyebrow + title + close */}
-            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-              <View style={styles.modalHeaderLeft}>
-                <Text style={[styles.modalEyebrow, { color: colors.accent }]}>{t('AUDIO RECITER')}</Text>
-                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                  {t('Select Reciter')}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setReciterChooserOpen(false)}
-                style={styles.closeBtn}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                accessibilityRole="button"
-                accessibilityLabel={t('Close reciter selection')}
-              >
-                <Ionicons name="close" size={22} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.modalSheet, getFloatingCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            <SheetHeader
+              testID="reciter-sheet-header"
+              eyebrow={t('AUDIO RECITER')}
+              title={t('Select Reciter')}
+              subtitle={t('Renowned Qaris & recitation styles')}
+              onClose={() => setReciterChooserOpen(false)}
+              showDragPill
+              borderBottom
+            />
 
             {/* Search Box */}
             <View
               style={[
                 styles.reciterSearchWrap,
-                { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder },
               ]}
             >
               <Ionicons name="search" size={16} color={colors.textMuted} />
@@ -4357,11 +4399,125 @@ export default function QuranReaderScreen({
         </View>
       </Modal>
 
-      {/* Language Chooser Modal */}
-      <QuranLanguageModal
+      {/* Translation Chooser Modal */}
+      <Modal
         visible={langPickerOpen}
-        onClose={() => setLangPickerOpen(false)}
-      />
+        animationType="fade"
+        transparent
+        onRequestClose={() => setLangPickerOpen(false)}
+        statusBarTranslucent
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setLangPickerOpen(false)}>
+            <View style={styles.modalBackdrop} />
+          </TouchableWithoutFeedback>
+
+          <View style={[styles.modalSheet, getFloatingCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            <SheetHeader
+              testID="translation-sheet-header"
+              eyebrow={`${t('TRANSLATION')} (${QURAN_LANGUAGE_EDITIONS.length})`}
+              title={t('Quran Translation')}
+              subtitle={t('Choose translation edition & language')}
+              chip={
+                <View
+                  style={[
+                    styles.toolsMenuJuzChip,
+                    { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder },
+                  ]}
+                >
+                  <Text style={[styles.toolsMenuJuzText, { color: tokens.accent }]}>
+                    {`${flag} ${language.toUpperCase()}`}
+                  </Text>
+                </View>
+              }
+              onClose={() => setLangPickerOpen(false)}
+              showDragPill
+              borderBottom
+            />
+
+            {/* Search Box */}
+            <View
+              style={[
+                styles.reciterSearchWrap,
+                { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder },
+              ]}
+            >
+              <Ionicons name="search" size={16} color={colors.textMuted} />
+              <TextInput
+                placeholder={t('Search translation edition or language...')}
+                placeholderTextColor={colors.textMuted}
+                value={translationSearch}
+                onChangeText={setTranslationSearch}
+                style={[styles.reciterSearchInput, { color: colors.textPrimary }]}
+              />
+              {translationSearch.length > 0 && (
+                <TouchableOpacity onPress={() => setTranslationSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            <FlatList
+              data={filteredTranslations}
+              keyExtractor={(item) => item.editionIdentifier}
+              contentContainerStyle={[styles.reciterList, { paddingBottom: Math.max(insets.bottom, 16) + 24 }]}
+              renderItem={({ item }) => {
+                const isSelected = item.languageCode === language;
+                const locName = getLocalizedTranslatorName(item.editionIdentifier, item.name);
+                const locLang = getLocalizedLanguageName(item.language);
+                return (
+                  <TouchableOpacity
+                    style={[
+                      styles.reciterRow,
+                      {
+                        borderBottomColor: colors.borderSubtle,
+                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                      },
+                    ]}
+                    onPress={() => {
+                      haptic('selection');
+                      setLanguage(item.languageCode);
+                      setLangPickerOpen(false);
+                    }}
+                  >
+                    <View style={styles.reciterInfo}>
+                      <View style={styles.reciterTitleRow}>
+                        <Text style={[styles.reciterEngName, { color: colors.textPrimary }]} numberOfLines={1}>
+                          {item.flag} {locLang}
+                        </Text>
+                        <View
+                          style={[
+                            styles.reciterLangBadge,
+                            {
+                              backgroundColor: isSelected ? colors.accent : colors.bgSurface,
+                              borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                            },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.reciterLangBadgeText,
+                              { color: isSelected ? colors.textPrimary : colors.textMuted },
+                            ]}
+                          >
+                            {item.languageCode.toUpperCase()}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.reciterArabicName, { color: colors.textMuted }]}>
+                        {locName} · {item.name}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
+                    )}
+                  </TouchableOpacity>
+                );
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
 
       {/* Tafsir Source Chooser Modal */}
       <Modal
@@ -4376,21 +4532,16 @@ export default function QuranReaderScreen({
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
-            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                Select Tafsir Source
-              </Text>
-              <TouchableOpacity
-                onPress={() => setTafsirSourcePickerOpen(false)}
-                style={styles.closeBtn}
-                accessibilityRole="button"
-                accessibilityLabel={t('Close')}
-              >
-                <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.modalSheet, getFloatingCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            <SheetHeader
+              testID="tafsir-sheet-header"
+              eyebrow={t('COMMENTARY')}
+              title={t('Select Tafsir Source')}
+              subtitle={t('Scholarly explanations & exegesis')}
+              onClose={() => setTafsirSourcePickerOpen(false)}
+              showDragPill
+              borderBottom
+            />
 
             <FlatList
               data={TAFSIR_SOURCES}
@@ -4461,21 +4612,23 @@ export default function QuranReaderScreen({
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
-            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                {t('Jump to Juz')}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setJuzPickerOpen(false)}
-                style={styles.closeBtn}
-                accessibilityRole="button"
-                accessibilityLabel={t('Close')}
-              >
-                <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.modalSheet, getFloatingCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            <SheetHeader
+              testID="juz-sheet-header"
+              eyebrow={t('NAVIGATION')}
+              title={t('Jump to Juz')}
+              subtitle={t('30 equal divisions of the Holy Quran')}
+              chip={
+                selectedJuz ? (
+                  <View style={[styles.toolsMenuJuzChip, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
+                    <Text style={[styles.toolsMenuJuzText, { color: tokens.accent }]}>{`Juz ${selectedJuz}`}</Text>
+                  </View>
+                ) : undefined
+              }
+              onClose={() => setJuzPickerOpen(false)}
+              showDragPill
+              borderBottom
+            />
 
             <FlatList
               data={Array.from({ length: 30 }, (_, i) => i + 1)}
@@ -4557,21 +4710,23 @@ export default function QuranReaderScreen({
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
-            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                {t('Jump to Hizb')}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setHizbPickerOpen(false)}
-                style={styles.closeBtn}
-                accessibilityRole="button"
-                accessibilityLabel={t('Close')}
-              >
-                <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.modalSheet, getFloatingCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            <SheetHeader
+              testID="hizb-sheet-header"
+              eyebrow={t('NAVIGATION')}
+              title={t('Jump to Hizb')}
+              subtitle={t('60 sections (half-juz markers)')}
+              chip={
+                selectedHizb ? (
+                  <View style={[styles.toolsMenuJuzChip, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
+                    <Text style={[styles.toolsMenuJuzText, { color: tokens.accent }]}>{`Hizb ${selectedHizb}`}</Text>
+                  </View>
+                ) : undefined
+              }
+              onClose={() => setHizbPickerOpen(false)}
+              showDragPill
+              borderBottom
+            />
 
             <FlatList
               data={Array.from({ length: 60 }, (_, i) => i + 1)}
@@ -4649,21 +4804,16 @@ export default function QuranReaderScreen({
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={[styles.modalDragPill, { backgroundColor: colors.borderSubtle }]} />
-            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                {t('Select Quran Script')}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setScriptPickerOpen(false)}
-                style={styles.closeBtn}
-                accessibilityRole="button"
-                accessibilityLabel={t('Close')}
-              >
-                <Ionicons name="close" size={iconSizes.header} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+          <View style={[styles.modalSheet, getFloatingCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            <SheetHeader
+              testID="script-sheet-header"
+              eyebrow={t('TYPOGRAPHY')}
+              title={t('Select Quran Script')}
+              subtitle={t('Choose Arabic orthography & script')}
+              onClose={() => setScriptPickerOpen(false)}
+              showDragPill
+              borderBottom
+            />
 
             <FlatList
               data={QURAN_SCRIPTS}
@@ -4745,9 +4895,10 @@ export default function QuranReaderScreen({
           <View
             style={[
               styles.noteModalSheet,
+              getFloatingCardShadow(mode),
               {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
                 paddingBottom:
                   (Platform.OS === 'android' ? keyboardHeight : 0) +
                   Math.max(insets.bottom, 16) +
@@ -4755,38 +4906,15 @@ export default function QuranReaderScreen({
               },
             ]}
           >
-            {/* Drag Pill */}
-            <TouchableOpacity
-              onPress={closeNoteComposer}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel={t('Dismiss note composer')}
-              hitSlop={{ top: 12, bottom: 12, left: 24, right: 24 }}
-            >
-              <View style={[styles.modalDragPill, { backgroundColor: colors.borderStrong }]} />
-            </TouchableOpacity>
-
-            {/* Header */}
-            <View style={[styles.noteModalHeader, { borderBottomColor: colors.borderSubtle }]}>
-              <View style={styles.noteModalHeaderLeft}>
-                <Text style={[styles.noteModalEyebrow, { color: colors.accent }]}>{t('REFLECTIONS')}</Text>
-                <Text
-                  style={[styles.noteModalTitle, { color: colors.textPrimary }]}
-                  numberOfLines={1}
-                >
-                  {noteComposerTarget?.surahName || (noteComposerTarget ? `Surah ${noteComposerTarget.surah}` : '')} · {t('Ayah')} {noteComposerTarget?.ayah}
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={closeNoteComposer}
-                style={styles.closeBtn}
-                accessibilityRole="button"
-                accessibilityLabel={t('Close note composer')}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="close" size={22} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
+            <SheetHeader
+              testID="note-sheet-header"
+              eyebrow={t('REFLECTIONS')}
+              title={`${noteComposerTarget?.surahName || (noteComposerTarget ? `Surah ${noteComposerTarget.surah}` : '')} · ${t('Ayah')} ${noteComposerTarget?.ayah ?? ''}`}
+              subtitle={t('Personal reflections & study notes')}
+              onClose={closeNoteComposer}
+              showDragPill
+              borderBottom
+            />
 
             {/* Content Body */}
             <View style={styles.noteModalBody}>
@@ -4804,8 +4932,8 @@ export default function QuranReaderScreen({
                   styles.noteModalInput,
                   {
                     color: colors.textPrimary,
-                    borderColor: colors.borderSubtle,
-                    backgroundColor: colors.bgBase,
+                    borderColor: tokens.cardBorder,
+                    backgroundColor: tokens.ringFill,
                   },
                 ]}
               />
@@ -4815,7 +4943,7 @@ export default function QuranReaderScreen({
                   onPress={closeNoteComposer}
                   style={[
                     styles.noteModalBtnCancel,
-                    { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
+                    { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={t('Cancel note')}
@@ -4826,13 +4954,20 @@ export default function QuranReaderScreen({
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSaveNote}
-                  style={[styles.noteModalBtnSave, { backgroundColor: colors.accent }]}
+                  style={{ borderRadius: 10, overflow: 'hidden' }}
                   accessibilityRole="button"
                   accessibilityLabel={t('Save note')}
                 >
-                  <Text style={[styles.noteModalBtnSaveText, { color: colors.onAccent }]}>
-                    {t('Save Note')}
-                  </Text>
+                  <LinearGradient
+                    colors={tokens.goldGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.noteModalBtnSave}
+                  >
+                    <Text style={[styles.noteModalBtnSaveText, { color: tokens.onGold }]}>
+                      {t('Save Note')}
+                    </Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             </View>
@@ -4889,7 +5024,7 @@ export default function QuranReaderScreen({
         </View>
       )}
 
-    </View>
+    </DetailScreen>
   );
 }
 
@@ -5049,11 +5184,6 @@ const styles = StyleSheet.create({
     maxWidth: 380,
     width: '100%',
     maxHeight: '88%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 16,
   },
   toolsMenuDragPill: {
     width: 36,
@@ -5447,11 +5577,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderTopWidth: 1,
     overflow: 'hidden',
-    elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
   },
   modalDragPill: {
     width: 36,
@@ -5567,7 +5692,7 @@ const styles = StyleSheet.create({
     top: 0,
     width: 360,
     padding: 20,
-    backgroundColor: '#F4EEDE',
+    backgroundColor: 'transparent',
   },
   shareCard: {
     borderRadius: 20,
@@ -5617,7 +5742,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E6DFC9',
+    borderTopColor: 'transparent',
     gap: 8,
   },
   shareCardLogoWrap: {
@@ -5653,7 +5778,7 @@ const styles = StyleSheet.create({
   surahBannerArabicName: { fontFamily: 'Amiri_700Bold', fontSize: 24, textAlign: 'center' },
   surahBannerMetaText: { fontFamily: 'Manrope_500Medium', fontSize: 11, marginTop: 4 },
   bismillahContainer: { alignItems: 'center', paddingVertical: 10 },
-  mushafInlineSelectedToolbar: { position: 'absolute', left: 4, right: 4, zIndex: 100, elevation: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8 },
+  mushafInlineSelectedToolbar: { position: 'absolute', left: 4, right: 4, zIndex: 100, elevation: 12 },
   mushafSelectedToolbar: { borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 10 },
   mushafSelectedMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   mushafSelectedRef: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
@@ -5702,11 +5827,6 @@ const styles = StyleSheet.create({
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderRightWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 20,
-    elevation: 20,
   },
   noteModalHeader: {
     flexDirection: 'row',

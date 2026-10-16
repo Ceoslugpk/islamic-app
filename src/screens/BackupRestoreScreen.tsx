@@ -3,18 +3,18 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Alert,
-  ScrollView,
-  ActivityIndicator,
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { useThemeTokens } from '../theme/tokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard, PrimaryButton, Chip } from '../components/ui';
 import {
   buildBackupPayload,
   validateBackup,
@@ -43,7 +43,7 @@ interface BackupActivityInfo {
 
 export function BackupRestoreScreen({ onBack }: Props) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
   const [lastInfo, setLastInfo] = useState<BackupActivityInfo | null>(null);
 
@@ -126,6 +126,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
   const handleRestore = async () => {
     if (busy) return;
     setBusy('import');
+    let awaitingConfirmation = false;
     try {
       let text: string;
       if (Platform.OS === 'web') {
@@ -172,11 +173,12 @@ export function BackupRestoreScreen({ onBack }: Props) {
           t('Confirm restore'),
           `${t('Backup from')}: ${info.exportedAt}\n${t('App version')}: ${info.appVersion}\n\n${t('Includes')}:\n${info.tables}\n\n${t("Note: For your privacy, Women's Worship PIN is never included in backups and must be configured on this device.")}\n\n${t('This will OVERWRITE your current local data. This cannot be undone.')}`,
           [
-            { text: t('Cancel'), style: 'cancel' },
+            { text: t('Cancel'), style: 'cancel', onPress: () => setBusy(null) },
             {
               text: t('Restore data'),
               style: 'destructive',
               onPress: async () => {
+                setBusy('import');
                 try {
                   await applyRestore(p);
                   setLastInfo({
@@ -193,6 +195,8 @@ export function BackupRestoreScreen({ onBack }: Props) {
                   );
                 } catch (e2) {
                   Alert.alert(t('Restore failed'), e2 instanceof Error ? e2.message : t('Could not restore backup.'));
+                } finally {
+                  setBusy(null);
                 }
               },
             },
@@ -200,12 +204,13 @@ export function BackupRestoreScreen({ onBack }: Props) {
         );
       };
 
+      awaitingConfirmation = true;
       if (isNewer) {
         Alert.alert(
           t('Newer App Version Detected'),
           `This backup was created on a newer app version (v${p.appVersion}, current version is v${currentVersion}).\n\n${t('Some newer fields or settings may not be recognized by this version of Islamic.')}\n\n${t('Restore anyway')}?`,
           [
-            { text: t('Cancel'), style: 'cancel' },
+            { text: t('Cancel'), style: 'cancel', onPress: () => setBusy(null) },
             {
               text: t('Restore anyway'),
               style: 'destructive',
@@ -224,181 +229,184 @@ export function BackupRestoreScreen({ onBack }: Props) {
           : t('This file could not be restored (it may be corrupted or not an Islamic backup).')
       );
     } finally {
-      setBusy(null);
+      if (!awaitingConfirmation) {
+        setBusy(null);
+      }
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader
-        title={t('Backup & Restore')}
-        subtitle={t('Local only — no account needed')}
-        onBack={onBack}
+    <View style={styles.container}>
+      <LinearGradient
+        colors={tokens.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
       />
-
-      <ScrollView contentContainerStyle={styles.content} style={{ flex: 1 }}>
+      <DetailScreen
+        style={styles.detailScreen}
+        includeTopInset
+        header={
+          <SubHeader
+            title={t('Backup & Restore')}
+            subtitle={t('Local only — no account needed')}
+            eyebrow={t('Preferences')}
+            onBack={onBack}
+            backLabel={t('Settings')}
+            borderBottom
+          />
+        }
+      >
+      <DetailScreen.ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.contentWrap}>
         {/* Export Card */}
-        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+        <PremiumCard style={styles.card}>
           <View style={styles.cardHeader}>
-            <View style={[styles.iconWrap, { backgroundColor: colors.iconCircleBg }]}>
-              <Ionicons name="cloud-upload-outline" size={22} color={colors.iconCircleFg} />
+            <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
+              <Ionicons name="cloud-upload-outline" size={22} color={tokens.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{t('Export backup')}</Text>
-              <Text style={[styles.cardSub, { color: colors.textMuted }]}>
+              <Text style={[styles.cardTitle, { color: tokens.text }]}>{t('Export backup')}</Text>
+              <Text style={[styles.cardSub, { color: tokens.muted }]}>
                 {t('Saves your prayer history, Quran bookmarks, notes, study tags, reading plans, Hifz, settings, and more to a file.')}
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={[
-              styles.actionBtn,
-              { backgroundColor: colors.forestGreen },
-              busy !== null && { opacity: 0.6 },
-            ]}
+          <PrimaryButton
+            title={busy === 'export' ? t('Exporting backup...') : t('Export to file')}
+            icon={busy === 'export' ? undefined : 'share-outline'}
+            loading={busy === 'export'}
             onPress={handleExport}
             disabled={busy !== null}
-            accessibilityRole="button"
             accessibilityLabel={t('Export backup')}
             accessibilityHint={t('Creates a JSON backup file with your prayers, bookmarks, notes, and settings')}
-          >
-            {busy === 'export' ? (
-              <>
-                <ActivityIndicator color={colors.onAccent} size="small" />
-                <Text style={[styles.actionText, { color: colors.onAccent }]}>{t('Exporting backup...')}</Text>
-              </>
-            ) : (
-              <>
-                <Ionicons name="share-outline" size={16} color={colors.onAccent} />
-                <Text style={[styles.actionText, { color: colors.onAccent }]}>{t('Export to file')}</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+          />
+        </PremiumCard>
 
         {/* Restore Card */}
-        <View style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+        <PremiumCard style={styles.card}>
           <View style={styles.cardHeader}>
-            <View style={[styles.iconWrap, { backgroundColor: colors.iconCircleBg }]}>
-              <Ionicons name="cloud-download-outline" size={22} color={colors.iconCircleFg} />
+            <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
+              <Ionicons name="cloud-download-outline" size={22} color={tokens.accent} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>{t('Restore backup')}</Text>
-              <Text style={[styles.cardSub, { color: colors.textMuted }]}>
+              <Text style={[styles.cardTitle, { color: tokens.text }]}>{t('Restore backup')}</Text>
+              <Text style={[styles.cardSub, { color: tokens.muted }]}>
                 {t('Pick a backup file. It is validated before restoring, and your current data is overwritten only after you review and confirm.')}
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={[
-              styles.actionBtn,
-              { backgroundColor: colors.forestGreen },
-              busy !== null && { opacity: 0.6 },
-            ]}
+          <PrimaryButton
+            title={busy === 'import' ? t('Reading backup...') : t('Choose backup file')}
+            icon={busy === 'import' ? undefined : 'folder-open-outline'}
+            loading={busy === 'import'}
             onPress={handleRestore}
             disabled={busy !== null}
-            accessibilityRole="button"
             accessibilityLabel={t('Restore backup')}
             accessibilityHint={t('Pick a JSON backup file to validate and restore')}
-          >
-            {busy === 'import' ? (
-              <>
-                <ActivityIndicator color={colors.onAccent} size="small" />
-                <Text style={[styles.actionText, { color: colors.onAccent }]}>{t('Reading backup...')}</Text>
-              </>
-            ) : (
-              <>
-                <Ionicons name="folder-open-outline" size={16} color={colors.onAccent} />
-                <Text style={[styles.actionText, { color: colors.onAccent }]}>{t('Choose backup file')}</Text>
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+          />
+        </PremiumCard>
+
+        {/* Included Data Categories */}
+        <PremiumCard style={styles.card}>
+          <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 8 }]}>
+            {t('Included in Backup')}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+            <Chip label={t('Prayer History')} selected={false} />
+            <Chip label={t('Quran Bookmarks')} selected={false} />
+            <Chip label={t('Notes & Reflections')} selected={false} />
+            <Chip label={t('Fasting Logs')} selected={false} />
+            <Chip label={t('Hifz Progress')} selected={false} />
+            <Chip label={t('App Settings')} selected={false} />
+          </View>
+        </PremiumCard>
 
         {/* Session Activity or Empty State */}
         {lastInfo ? (
-          <View style={[styles.infoCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
+          <PremiumCard style={styles.infoCard}>
             <View style={styles.infoHeader}>
-              <View style={[styles.infoBadge, { backgroundColor: colors.sagePill }]}>
+              <View style={[styles.infoBadge, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
                 <Ionicons
                   name={lastInfo.type === 'export' ? 'cloud-upload' : 'cloud-download'}
                   size={14}
-                  color={colors.forestGreen}
+                  color={tokens.success}
                 />
-                <Text style={[styles.infoBadgeText, { color: colors.forestGreen }]}>
+                <Text style={[styles.infoBadgeText, { color: tokens.success }]}>
                   {lastInfo.type === 'export' ? t('Recent Export') : t('Recent Restore')}
                 </Text>
               </View>
-              <Text style={[styles.infoMeta, { color: colors.textMuted }]}>
+              <Text style={[styles.infoMeta, { color: tokens.muted }]}>
                 v{lastInfo.version} · format v{BACKUP_FORMAT_VERSION}
               </Text>
             </View>
 
             {lastInfo.fileName ? (
-              <Text style={[styles.infoFileName, { color: colors.textPrimary }]}>
+              <Text style={[styles.infoFileName, { color: tokens.text }]}>
                 {lastInfo.fileName}
               </Text>
             ) : null}
 
-            <Text style={[styles.infoDetail, { color: colors.textSecondary }]}>
+            <Text style={[styles.infoDetail, { color: tokens.muted }]}>
               {lastInfo.summary}
             </Text>
 
             <View style={styles.infoFooter}>
-              <Ionicons name="time-outline" size={13} color={colors.textMuted} />
-              <Text style={[styles.infoTimestamp, { color: colors.textMuted }]}>
+              <Ionicons name="time-outline" size={13} color={tokens.muted} />
+              <Text style={[styles.infoTimestamp, { color: tokens.muted }]}>
                 {lastInfo.at}
               </Text>
             </View>
-          </View>
+          </PremiumCard>
         ) : (
-          <View style={[styles.emptyCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <Ionicons name="shield-checkmark-outline" size={20} color={colors.accent} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                {t('Ready for on-device backup')}
-              </Text>
-              <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-                {t('No backup activity yet in this session. Export a file anytime to keep your prayer history, bookmarks, and notes secure.')}
-              </Text>
+          <PremiumCard style={styles.emptyCard}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Ionicons name="shield-checkmark-outline" size={20} color={tokens.accent} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.emptyTitle, { color: tokens.text }]}>
+                  {t('Ready for on-device backup')}
+                </Text>
+                <Text style={[styles.emptySub, { color: tokens.muted }]}>
+                  {t('No backup activity yet in this session. Export a file anytime to keep your prayer history, bookmarks, and notes secure.')}
+                </Text>
+              </View>
             </View>
-          </View>
+          </PremiumCard>
         )}
 
-        <Text style={[styles.footnote, { color: colors.textMuted }]}>
+        <Text style={[styles.footnote, { color: tokens.muted }]}>
           {t('Backups are stored on your device only. No data is uploaded to any server. Audio files, prayer caches, and downloads are never included.')}
         </Text>
-      </ScrollView>
+        </View>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 20, paddingBottom: 40 },
+  container: {
+    flex: 1,
+  },
+  detailScreen: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  content: { padding: 20, paddingTop: 10 },
+  contentWrap: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+  },
   card: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
     marginBottom: 16,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
   iconWrap: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontFamily: 'Manrope_700Bold', fontSize: 15 },
   cardSub: { fontFamily: 'Manrope_400Regular', fontSize: 12, lineHeight: 17, marginTop: 2 },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    minHeight: 46,
-    borderRadius: 16,
-  },
-  actionText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
   infoCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 14,
     marginBottom: 16,
     gap: 8,
   },
@@ -443,12 +451,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   emptyCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 14,
     marginBottom: 16,
   },
   emptyTitle: {
