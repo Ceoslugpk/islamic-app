@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  BackHandler,
   FlatList,
   KeyboardAvoidingView,
   Linking,
@@ -16,10 +17,16 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
+import { useThemeTokens } from '../theme/tokens';
 import { useHaptics } from '../lib/haptics';
 import { iconSizes } from '../lib/iconMap';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { getCardShadow, getFloatingCardShadow, getPillShadow } from '../lib/homeThemeTokens';
+import { TAB_PAD_BOTTOM, NAV_BOTTOM, NAV_HEIGHT } from '../components/layout/layout.constants';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { AudioPlayerModal } from '../components/AudioPlayerModal';
 import { EmptyState } from '../components/EmptyState';
 import { SkeletonCard } from '../components/Skeleton';
@@ -90,6 +97,8 @@ interface QuranAudioScreenProps {
 
 function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
+  const insets = useSafeAreaInsets();
   const { haptic } = useHaptics();
   const { width } = useWindowDimensions();
   const isNarrow = width < 380;
@@ -152,6 +161,28 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   useEffect(() => {
     setTransAudioEnabled(appSettings.translationAudioEnabled);
   }, [appSettings.translationAudioEnabled]);
+
+  // Android hardware back: close modals or return from selected playlist before exiting Audio Center
+  useEffect(() => {
+    if (!audioModalOpen && !newPlaylistModalOpen && !selectedPlaylist) return;
+    const onBackPress = () => {
+      if (audioModalOpen) {
+        setAudioModalOpen(false);
+        return true;
+      }
+      if (newPlaylistModalOpen) {
+        setNewPlaylistModalOpen(false);
+        return true;
+      }
+      if (selectedPlaylist) {
+        setSelectedPlaylist(null);
+        return true;
+      }
+      return false;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [audioModalOpen, newPlaylistModalOpen, selectedPlaylist]);
 
   const handleToggleTranslationAudio = (val: boolean) => {
     setTransAudioEnabled(val);
@@ -458,23 +489,30 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
   ] as const;
 
   const paddingH = isNarrow ? 16 : 20;
+  const bottomClearance = playback
+    ? NAV_BOTTOM(insets.bottom) + NAV_HEIGHT + 68 + 16
+    : TAB_PAD_BOTTOM(insets.bottom);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      customPadBottom={bottomClearance}
+      header={
+        <SubHeader
+          eyebrow={t('Audio Center')}
+          title={t('Quran Audio')}
+          subtitle={t('Recitations, audio translations, playlists & player settings')}
+          onBack={onBack}
+          backLabel={t('Quran')}
+          borderBottom
+        />
+      }
+    >
       <View style={styles.contentWrap}>
-        {/* Header */}
-        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
-          <ScreenHeader
-            eyebrow={t('Audio Center')}
-            title={t('Quran Audio')}
-            onBack={onBack}
-            backLabel={t('Quran')}
-          />
-        </View>
 
 
         {/* Sub-navigation Tabs */}
-        <View style={[styles.tabBar, { borderBottomColor: colors.borderSubtle }]}>
+        <View style={[styles.tabBar, { borderBottomColor: tokens.cardBorder }]}>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -489,7 +527,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   style={[
                     styles.tabItem,
                     {
-                      borderBottomColor: isTabActive ? colors.accent : 'transparent',
+                      borderBottomColor: isTabActive ? tokens.accent : 'transparent',
                     },
                   ]}
                   accessibilityRole="tab"
@@ -498,12 +536,12 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   <Ionicons
                     name={tItem.icon as any}
                     size={15}
-                    color={isTabActive ? colors.accent : colors.textMuted}
+                    color={isTabActive ? tokens.accent : tokens.muted}
                   />
                   <Text
                     style={[
                       styles.tabLabel,
-                      { color: isTabActive ? colors.accent : colors.textMuted },
+                      { color: isTabActive ? tokens.goldText : tokens.muted },
                     ]}
                   >
                     {tItem.label}
@@ -513,14 +551,14 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       style={[
                         styles.tabBadge,
                         {
-                          backgroundColor: isTabActive ? colors.accent : colors.borderSubtle,
+                          backgroundColor: isTabActive ? tokens.gold : tokens.ringFill,
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.tabBadgeText,
-                          { color: isTabActive ? colors.onAccent : colors.textSecondary },
+                          { color: isTabActive ? tokens.onGold : tokens.muted },
                         ]}
                       >
                         {tItem.badge}
@@ -539,7 +577,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             data={Array.from({ length: 6 })}
             keyExtractor={(_, i) => `skeleton-${i}`}
             renderItem={() => <SkeletonCard lines={3} lineHeight={15} avatar avatarSize={36} style={styles.skeletonCard} />}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[styles.listContent, { paddingBottom: bottomClearance }]}
           />
         ) : error ? (
           <EmptyState
@@ -556,9 +594,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <View
               style={[
                 styles.searchBar,
+                getCardShadow(mode),
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
                 },
               ]}
             >
@@ -590,7 +629,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <FlatList
               data={filteredReciters}
               keyExtractor={(item) => item.identifier}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={[styles.listContent, { paddingBottom: bottomClearance }]}
               keyboardShouldPersistTaps="handled"
               keyboardDismissMode="on-drag"
               initialNumToRender={15}
@@ -610,9 +649,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   <View
                     style={[
                       styles.reciterCard,
+                      getCardShadow(mode),
                       {
-                        backgroundColor: isSelected ? colors.accentDim : colors.bgSurface,
-                        borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                        backgroundColor: isSelected ? tokens.ringFill : tokens.cardTop,
+                        borderColor: isSelected ? tokens.accent : tokens.cardBorder,
                       },
                     ]}
                   >
@@ -626,16 +666,16 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       >
                         <View style={styles.radioArea}>
                           {isSelected ? (
-                            <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
+                            <Ionicons name="checkmark-circle" size={20} color={tokens.accent} />
                           ) : (
-                            <Ionicons name="ellipse-outline" size={20} color={colors.borderSubtle} />
+                            <Ionicons name="ellipse-outline" size={20} color={tokens.cardBorder} />
                           )}
                         </View>
                         <View style={styles.reciterNameCol}>
                           <Text
                             style={[
                               styles.reciterName,
-                              { color: isSelected ? colors.accent : colors.textPrimary },
+                              { color: isSelected ? tokens.accent : colors.textPrimary },
                             ]}
                             numberOfLines={1}
                             ellipsizeMode="tail"
@@ -664,7 +704,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         style={[
                           styles.sampleBtn,
                           {
-                            backgroundColor: isSamplingThis ? colors.accent : colors.accentDim,
+                            backgroundColor: isSamplingThis ? tokens.gold : tokens.ringFill,
                           },
                         ]}
                         accessibilityRole="button"
@@ -677,12 +717,12 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         <Ionicons
                           name={isSamplingThis ? 'pause' : 'volume-medium'}
                           size={14}
-                          color={isSamplingThis ? colors.onAccent : colors.accent}
+                          color={isSamplingThis ? tokens.onGold : tokens.goldText}
                         />
                         <Text
                           style={[
                             styles.sampleBtnText,
-                            { color: isSamplingThis ? colors.onAccent : colors.accent },
+                            { color: isSamplingThis ? tokens.onGold : tokens.goldText },
                           ]}
                         >
                           {isSamplingThis ? t('Playing') : t('Sample')}
@@ -696,19 +736,20 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
           </View>
         ) : activeTab === 'translations' ? (
           /* Translation Audio Tab (Non-Arabic editions - strictly separate) */
-          <ScrollView contentContainerStyle={styles.translationTabScroll}>
+          <ScrollView contentContainerStyle={[styles.translationTabScroll, { paddingBottom: bottomClearance }]}>
             {/* Active Translation Status Card */}
             <View
               style={[
                 styles.translationStatusCard,
+                getCardShadow(mode),
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
                 },
               ]}
             >
               <View style={styles.translationStatusHeader}>
-                <View style={[styles.translationStatusFlagWrap, { backgroundColor: colors.accentDim }]}>
+                <View style={[styles.translationStatusFlagWrap, { backgroundColor: tokens.ringFill }]}>
                   <Text style={{ fontSize: 24 }}>{getLanguageFlag(audioLanguage)}</Text>
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
@@ -718,13 +759,13 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   <Text style={[styles.translationStatusName, { color: colors.textPrimary }]}>
                     {audioLangName} ({audioLanguage.toUpperCase()})
                   </Text>
-                  <Text style={[styles.translationStatusVoice, { color: colors.accent }]}>
+                  <Text style={[styles.translationStatusVoice, { color: tokens.accent }]}>
                     {t('Voice')}: {getLocalizedTranslatorName(audioEdition.identifier, audioEdition.englishName || audioEdition.name)}
                   </Text>
                 </View>
               </View>
 
-              <View style={[styles.translationToggleRow, { borderTopColor: colors.borderSubtle }]}>
+              <View style={[styles.translationToggleRow, { borderTopColor: tokens.cardBorder }]}>
                 <View style={{ flex: 1, marginRight: 12 }}>
                   <Text style={[styles.settingTitle, { color: colors.textPrimary }]}>
                     {t('Play translation after Arabic')}
@@ -736,8 +777,8 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 <Switch
                   value={transAudioEnabled}
                   onValueChange={handleToggleTranslationAudio}
-                  trackColor={{ false: colors.borderSubtle, true: colors.accent }}
-                  thumbColor="#FFFFFF"
+                  trackColor={{ false: tokens.cardBorder, true: tokens.gold }}
+                  thumbColor={tokens.cardTop}
                   accessibilityLabel={t('Toggle play translation audio after Arabic')}
                 />
               </View>
@@ -769,9 +810,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     key={item.identifier}
                     style={[
                       styles.reciterCard,
+                      getCardShadow(mode),
                       {
-                        backgroundColor: colors.bgSurface,
-                        borderColor: isSelectedEdition ? colors.accent : colors.borderSubtle,
+                        backgroundColor: isSelectedEdition ? tokens.ringFill : tokens.cardTop,
+                        borderColor: isSelectedEdition ? tokens.accent : tokens.cardBorder,
                       },
                     ]}
                   >
@@ -787,12 +829,12 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                           style={[
                             styles.radioCircle,
                             {
-                              borderColor: isSelectedEdition ? colors.accent : colors.borderSubtle,
+                              borderColor: isSelectedEdition ? tokens.gold : tokens.cardBorder,
                             },
                           ]}
                         >
                           {isSelectedEdition && (
-                            <View style={[styles.radioDot, { backgroundColor: colors.accent }]} />
+                            <View style={[styles.radioDot, { backgroundColor: tokens.gold }]} />
                           )}
                         </View>
                         <View style={styles.reciterNameCol}>
@@ -809,15 +851,15 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               style={[
                                 styles.langTag,
                                 {
-                                  backgroundColor: isSelectedEdition ? colors.accent : colors.accentDim,
-                                  borderColor: colors.accent,
+                                  backgroundColor: isSelectedEdition ? tokens.gold : tokens.ringFill,
+                                  borderColor: isSelectedEdition ? tokens.gold : tokens.ringBorder,
                                 },
                               ]}
                             >
                               <Text
                                 style={[
                                   styles.langTagText,
-                                  { color: isSelectedEdition ? colors.onAccent : colors.accent },
+                                  { color: isSelectedEdition ? tokens.onGold : tokens.goldText },
                                 ]}
                               >
                                 {item.language.toUpperCase()}
@@ -841,7 +883,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         style={[
                           styles.sampleBtn,
                           {
-                            backgroundColor: isSamplingThis ? colors.accent : colors.accentDim,
+                            backgroundColor: isSamplingThis ? tokens.gold : tokens.ringFill,
                           },
                         ]}
                         accessibilityRole="button"
@@ -854,12 +896,12 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         <Ionicons
                           name={isSamplingThis ? 'pause' : 'volume-medium'}
                           size={14}
-                          color={isSamplingThis ? colors.onAccent : colors.accent}
+                          color={isSamplingThis ? tokens.onGold : tokens.goldText}
                         />
                         <Text
                           style={[
                             styles.sampleBtnText,
-                            { color: isSamplingThis ? colors.onAccent : colors.accent },
+                            { color: isSamplingThis ? tokens.onGold : tokens.goldText },
                           ]}
                         >
                           {isSamplingThis ? t('Playing') : t('Sample')}
@@ -877,7 +919,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <FlatList
               data={recentList}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={[styles.listContent, { paddingBottom: bottomClearance }]}
               ListEmptyComponent={
                 <EmptyState
                   icon="musical-notes-outline"
@@ -899,9 +941,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     onPress={() => handlePlayRecent(item)}
                     style={[
                       styles.recentCard,
+                      getCardShadow(mode),
                       {
-                        backgroundColor: colors.bgSurface,
-                        borderColor: isItemPlaying ? colors.accent : colors.borderSubtle,
+                        backgroundColor: tokens.cardTop,
+                        borderColor: isItemPlaying ? tokens.accent : tokens.cardBorder,
                       },
                     ]}
                     accessibilityRole="button"
@@ -925,14 +968,14 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       style={[
                         styles.playCircleIcon,
                         {
-                          backgroundColor: isItemPlaying ? colors.accent : colors.accentDim,
+                          backgroundColor: isItemPlaying ? tokens.gold : tokens.ringFill,
                         },
                       ]}
                     >
                       <Ionicons
                         name={isItemPlaying ? 'pause' : 'play'}
                         size={16}
-                        color={isItemPlaying ? colors.onAccent : colors.accent}
+                        color={isItemPlaying ? tokens.onGold : tokens.goldText}
                       />
                     </View>
                   </TouchableOpacity>
@@ -952,7 +995,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                     accessibilityRole="button"
                     accessibilityLabel={t('Back to all playlists')}
                   >
-                    <Text style={[styles.backToPlaylistsText, { color: colors.accent }]}>
+                    <Text style={[styles.backToPlaylistsText, { color: tokens.accent }]}>
                       ← {t('All Playlists')}
                     </Text>
                   </TouchableOpacity>
@@ -960,12 +1003,19 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   <TouchableOpacity
                     onPress={() => handlePlayPlaylistItem(selectedPlaylist.items[0], selectedPlaylist, 0)}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                    style={[styles.playAllBtn, { backgroundColor: colors.accent }]}
+                    style={{ borderRadius: 18, overflow: 'hidden' }}
                     accessibilityRole="button"
                     accessibilityLabel={`Play all ${selectedPlaylist.items.length} tracks`}
                   >
-                    <Ionicons name="play" size={14} color={colors.onAccent} />
-                    <Text style={[styles.playAllBtnText, { color: colors.onAccent }]}>{t('Play All')}</Text>
+                    <LinearGradient
+                      colors={tokens.goldGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.playAllBtn}
+                    >
+                      <Ionicons name="play" size={14} color={tokens.onGold} />
+                      <Text style={[styles.playAllBtnText, { color: tokens.onGold }]}>{t('Play All')}</Text>
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
 
@@ -980,15 +1030,16 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 <FlatList
                   data={selectedPlaylist.items}
                   keyExtractor={(_, i) => String(i)}
-                  contentContainerStyle={styles.listContent}
+                  contentContainerStyle={[styles.listContent, { paddingBottom: bottomClearance }]}
                   renderItem={({ item, index }) => (
                     <TouchableOpacity
                       onPress={() => handlePlayPlaylistItem(item, selectedPlaylist, index)}
                       style={[
                         styles.playlistTrackRow,
+                        getCardShadow(mode),
                         {
-                          backgroundColor: colors.bgSurface,
-                          borderColor: colors.borderSubtle,
+                          backgroundColor: tokens.cardTop,
+                          borderColor: tokens.cardBorder,
                         },
                       ]}
                       accessibilityRole="button"
@@ -1002,13 +1053,13 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                       <Text style={[styles.trackTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                         {item.title}
                       </Text>
-                      <Ionicons name="play-circle-outline" size={iconSizes.action} color={colors.accent} />
+                      <Ionicons name="play-circle-outline" size={iconSizes.action} color={tokens.accent} />
                     </TouchableOpacity>
                   )}
                 />
               </View>
             ) : (
-              <ScrollView contentContainerStyle={styles.playlistsScrollContent}>
+              <ScrollView contentContainerStyle={[styles.playlistsScrollContent, { paddingBottom: bottomClearance }]}>
                 {/* Section 1: Curated Presets */}
                 <View style={styles.playlistSectionHeaderRow}>
                   <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
@@ -1027,9 +1078,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         key={preset.id}
                         style={[
                           styles.presetCard,
+                          getCardShadow(mode),
                           {
-                            backgroundColor: colors.bgSurface,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: tokens.cardTop,
+                            borderColor: tokens.cardBorder,
                           },
                         ]}
                       >
@@ -1067,8 +1119,8 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               style={[
                                 styles.presetSaveBtn,
                                 {
-                                  borderColor: isSaved ? colors.accent : colors.borderSubtle,
-                                  backgroundColor: isSaved ? colors.accentDim : 'transparent',
+                                  borderColor: isSaved ? tokens.accent : tokens.cardBorder,
+                                  backgroundColor: isSaved ? tokens.ringFill : 'transparent',
                                 },
                               ]}
                               accessibilityRole="button"
@@ -1077,19 +1129,26 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                               <Ionicons
                                 name={isSaved ? 'checkmark' : 'bookmark-outline'}
                                 size={14}
-                                color={isSaved ? colors.accent : colors.textMuted}
+                                color={isSaved ? tokens.accent : colors.textMuted}
                               />
                             </TouchableOpacity>
 
                             <TouchableOpacity
                               onPress={() => handlePlayPreset(preset)}
                               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                              style={[styles.presetPlayBtn, { backgroundColor: colors.accent }]}
+                              style={{ borderRadius: 18, overflow: 'hidden' }}
                               accessibilityRole="button"
                               accessibilityLabel={`Play preset: ${preset.title}`}
                             >
-                              <Ionicons name="play" size={14} color={colors.onAccent} />
-                              <Text style={[styles.presetPlayBtnText, { color: colors.onAccent }]}>{t('Play')}</Text>
+                              <LinearGradient
+                                colors={tokens.goldGradient}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.presetPlayBtn}
+                              >
+                                <Ionicons name="play" size={14} color={tokens.onGold} />
+                                <Text style={[styles.presetPlayBtnText, { color: tokens.onGold }]}>{t('Play')}</Text>
+                              </LinearGradient>
                             </TouchableOpacity>
                           </View>
                         </View>
@@ -1111,12 +1170,19 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   <TouchableOpacity
                     onPress={() => setNewPlaylistModalOpen(true)}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                    style={[styles.createBtn, { backgroundColor: colors.accent }]}
+                    style={{ borderRadius: 18, overflow: 'hidden' }}
                     accessibilityRole="button"
                     accessibilityLabel={t('Create a new playlist')}
                   >
-                    <Ionicons name="add" size={16} color={colors.onAccent} />
-                    <Text style={[styles.createBtnText, { color: colors.onAccent }]}>{t('New')}</Text>
+                    <LinearGradient
+                      colors={tokens.goldGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.createBtn}
+                    >
+                      <Ionicons name="add" size={16} color={tokens.onGold} />
+                      <Text style={[styles.createBtnText, { color: tokens.onGold }]}>{t('New')}</Text>
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
 
@@ -1135,9 +1201,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         key={item.id}
                         style={[
                           styles.playlistCard,
+                          getCardShadow(mode),
                           {
-                            backgroundColor: colors.bgSurface,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: tokens.cardTop,
+                            borderColor: tokens.cardBorder,
                           },
                         ]}
                       >
@@ -1159,11 +1226,11 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                           <TouchableOpacity
                             onPress={() => handlePlayPlaylistItem(item.items[0], item, 0)}
                             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                            style={[styles.smallPlayBtn, { backgroundColor: colors.accentDim }]}
+                            style={[styles.smallPlayBtn, { backgroundColor: tokens.ringFill }]}
                             accessibilityRole="button"
                             accessibilityLabel={`Play playlist ${item.name}`}
                           >
-                            <Ionicons name="play" size={14} color={colors.accent} />
+                            <Ionicons name="play" size={14} color={tokens.accent} />
                           </TouchableOpacity>
 
                           <TouchableOpacity
@@ -1198,9 +1265,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 <View
                   style={[
                     styles.modalBox,
+                    getFloatingCardShadow(mode),
                     {
-                      backgroundColor: colors.bgSurface,
-                      borderColor: colors.borderSubtle,
+                      backgroundColor: tokens.cardTop,
+                      borderColor: tokens.cardBorder,
                     },
                   ]}
                 >
@@ -1289,9 +1357,17 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 
                       <TouchableOpacity
                         onPress={handleCreatePlaylist}
-                        style={[styles.modalSubmitBtn, { backgroundColor: colors.accent }]}
+                        style={[styles.modalSubmitBtn, { overflow: 'hidden' }]}
                       >
-                        <Text style={styles.modalSubmitText}>{t('Create Playlist')}</Text>
+                        <LinearGradient
+                          colors={tokens.goldGradient}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={StyleSheet.absoluteFill}
+                        />
+                        <Text style={[styles.modalSubmitText, { color: tokens.onGold }]}>
+                          {t('Create Playlist')}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                     </View>
@@ -1326,7 +1402,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <FlatList
               data={queue}
               keyExtractor={(_, i) => String(i)}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={[styles.listContent, { paddingBottom: bottomClearance }]}
               ListEmptyComponent={
                 <View style={styles.emptyBox}>
                   <Ionicons name="play-skip-forward-outline" size={40} color={colors.textMuted} />
@@ -1350,9 +1426,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         onPress={() => handleAddToQueue(item.num)}
                         style={[
                           styles.quickAddBtn,
+                          getPillShadow(mode),
                           {
-                            backgroundColor: colors.bgSurface,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: tokens.cardTop,
+                            borderColor: tokens.cardBorder,
                           },
                         ]}
                       >
@@ -1373,9 +1450,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                   <View
                     style={[
                       styles.queueCard,
+                      getCardShadow(mode),
                       {
-                        backgroundColor: colors.bgSurface,
-                        borderColor: isCurrentQueueItem ? colors.accent : colors.borderSubtle,
+                        backgroundColor: tokens.cardTop,
+                        borderColor: isCurrentQueueItem ? tokens.accent : tokens.cardBorder,
                       },
                     ]}
                   >
@@ -1459,7 +1537,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
           </View>
         ) : (
           /* Settings Tab */
-          <ScrollView contentContainerStyle={styles.settingsContent}>
+          <ScrollView contentContainerStyle={[styles.settingsContent, { paddingBottom: bottomClearance }]}>
             <Text style={[styles.settingsGroupTitle, { color: colors.accent }]}>
               {t('RECITER & PLAYBACK PREFERENCES')}
             </Text>
@@ -1468,9 +1546,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <View
               style={[
                 styles.settingRowCard,
+                getCardShadow(mode),
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
                 },
               ]}
             >
@@ -1497,9 +1576,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <View
               style={[
                 styles.settingRowCard,
+                getCardShadow(mode),
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
                 },
               ]}
             >
@@ -1514,8 +1594,8 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               <Switch
                 value={settings.autoplayNext}
                 onValueChange={handleToggleAutoplay}
-                trackColor={{ false: colors.borderSubtle, true: colors.accent }}
-                thumbColor="#FFFFFF"
+                trackColor={{ false: colors.borderSubtle, true: tokens.gold }}
+                thumbColor={tokens.cardTop}
                 accessibilityLabel={t('Toggle autoplay next track')}
               />
             </View>
@@ -1524,9 +1604,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <View
               style={[
                 styles.settingRowCard,
+                getCardShadow(mode),
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
                 },
               ]}
             >
@@ -1539,7 +1620,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 6 }}>
                   <Text style={{ fontSize: 13 }}>{getLanguageFlag(audioEdition.language)}</Text>
-                  <Text style={[styles.settingSub, { color: colors.accent, fontFamily: 'Manrope_600SemiBold' }]}>
+                  <Text style={[styles.settingSub, { color: tokens.goldText, fontFamily: 'Manrope_600SemiBold' }]}>
                     {getLocalizedLanguageName(audioLangName)} · {getLocalizedTranslatorName(audioEdition.identifier, audioEdition.englishName)}
                   </Text>
                 </View>
@@ -1548,11 +1629,11 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 </Text>
                 <TouchableOpacity
                   onPress={() => setActiveTab('translations')}
-                  style={[styles.settingsBrowseBtn, { backgroundColor: colors.accentDim, marginTop: 10 }]}
+                  style={[styles.settingsBrowseBtn, { backgroundColor: tokens.ringFill, marginTop: 10 }]}
                   accessibilityRole="button"
                   accessibilityLabel={t('Browse non-Arabic translation audio editions')}
                 >
-                  <Text style={[styles.settingsBrowseBtnText, { color: colors.accent }]}>
+                  <Text style={[styles.settingsBrowseBtnText, { color: tokens.goldText }]}>
                     {t('Browse Translation Editions')} ({NON_ARABIC_AUDIO_EDITIONS.length}) →
                   </Text>
                 </TouchableOpacity>
@@ -1560,8 +1641,8 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               <Switch
                 value={transAudioEnabled}
                 onValueChange={handleToggleTranslationAudio}
-                trackColor={{ false: colors.borderSubtle, true: colors.accent }}
-                thumbColor="#FFFFFF"
+                trackColor={{ false: colors.borderSubtle, true: tokens.gold }}
+                thumbColor={tokens.cardTop}
                 accessibilityLabel={t('Toggle play translation audio after Arabic')}
               />
             </View>
@@ -1570,9 +1651,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <View
               style={[
                 styles.repeatRowCard,
+                getCardShadow(mode),
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
                 },
               ]}
             >
@@ -1589,30 +1671,31 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 </Text>
               </View>
               <View style={styles.repeatButtons}>
-                {(['none', 'all', 'one'] as const).map((mode) => {
-                  const isSelected = settings.repeatMode === mode;
+                {(['none', 'all', 'one'] as const).map((rMode) => {
+                  const isSelected = settings.repeatMode === rMode;
                   return (
                     <TouchableOpacity
-                      key={`repeat-${mode}`}
-                      onPress={() => handleSetRepeatMode(mode)}
+                      key={`repeat-${rMode}`}
+                      onPress={() => handleSetRepeatMode(rMode)}
                       hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       style={[
                         styles.repeatBtn,
+                        getPillShadow(mode),
                         {
-                          backgroundColor: isSelected ? colors.accent : colors.bgBase,
-                          borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                          backgroundColor: isSelected ? tokens.gold : tokens.cardTop,
+                          borderColor: isSelected ? tokens.gold : tokens.cardBorder,
                         },
                       ]}
                       accessibilityRole="button"
-                      accessibilityLabel={`Set repeat mode to ${mode}`}
+                      accessibilityLabel={`Set repeat mode to ${rMode}`}
                     >
                       <Text
                         style={[
                           styles.repeatBtnText,
-                          { color: isSelected ? colors.onAccent : colors.textSecondary },
+                          { color: isSelected ? tokens.onGold : colors.textSecondary },
                         ]}
                       >
-                        {mode === 'none' ? t('OFF') : mode === 'all' ? t('ALL') : t('REPEAT 1')}
+                        {rMode === 'none' ? t('OFF') : rMode === 'all' ? t('ALL') : t('REPEAT 1')}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -1624,9 +1707,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
             <View
               style={[
                 styles.settingRowCard,
+                getCardShadow(mode),
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
                 },
               ]}
             >
@@ -1676,9 +1760,11 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
           <TouchableOpacity
             style={[
               styles.floatingMiniBar,
+              getFloatingCardShadow(mode),
               {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
+                bottom: NAV_BOTTOM(insets.bottom) + NAV_HEIGHT + 10,
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
               },
             ]}
             onPress={() => setAudioModalOpen(true)}
@@ -1727,8 +1813,14 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 {playback.reciterName}
               </Text>
             </View>
-            <View style={[styles.floatingMiniOpenBtn, { backgroundColor: colors.accent }]}>
-              <Ionicons name="chevron-up" size={16} color={colors.onAccent} />
+            <View style={[styles.floatingMiniOpenBtn, { overflow: 'hidden' }]}>
+              <LinearGradient
+                colors={tokens.goldGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <Ionicons name="chevron-up" size={16} color={tokens.onGold} />
             </View>
           </TouchableOpacity>
         )}
@@ -1739,7 +1831,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
           onClose={() => setAudioModalOpen(false)}
         />
       </View>
-    </View>
+    </DetailScreen>
   );
 }
 
@@ -1808,6 +1900,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
+    paddingVertical: 0,
+    minWidth: 0,
+    ...(Platform.OS === 'web' ? { outlineStyle: 'none', outlineWidth: 0 } as any : {}),
   },
   filterChipScroll: {
     paddingHorizontal: 16,
@@ -1827,7 +1922,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     gap: 10,
-    paddingBottom: 40,
+    paddingBottom: 16,
   },
   reciterCard: {
     padding: 12,
@@ -1953,7 +2048,7 @@ const styles = StyleSheet.create({
   },
   playlistsScrollContent: {
     padding: 16,
-    paddingBottom: 40,
+    paddingBottom: 16,
   },
   playlistSectionHeaderRow: {
     marginBottom: 10,
@@ -2169,7 +2264,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     gap: 10,
   },
@@ -2226,7 +2321,7 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 7,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
   },
   quickAddText: {
@@ -2245,7 +2340,7 @@ const styles = StyleSheet.create({
   },
   settingRowCard: {
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
@@ -2254,7 +2349,7 @@ const styles = StyleSheet.create({
   },
   repeatRowCard: {
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
   },
   settingTitle: {
@@ -2344,11 +2439,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     overflow: 'hidden',
     maxHeight: '92%',
-    elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
     paddingBottom: 24,
   },
   modalHeader: {
@@ -2457,7 +2547,7 @@ const styles = StyleSheet.create({
   translationTabScroll: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 60,
+    paddingBottom: 16,
     gap: 14,
   },
   translationStatusCard: {
@@ -2524,13 +2614,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
   },
   floatingMiniIconWrap: {
     width: 34,

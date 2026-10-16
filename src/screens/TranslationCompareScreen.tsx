@@ -1,17 +1,23 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
+import { TAB_PAD_BOTTOM } from '../components/layout/layout.constants';
 import { getBackIcon, getForwardIcon, iconSizes } from '../lib/iconMap';
 import { t } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { ArabicText } from '../components/ArabicText';
 import { fetchAyahEditions, fetchSurahList, SurahMeta } from '../lib/quran';
 import {
@@ -46,7 +52,11 @@ export default function TranslationCompareScreen({
   onBack,
   onOpenReader,
 }: TranslationCompareScreenProps) {
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const isCompact = width < 380;
+  const paddingH = isCompact ? 14 : 20;
   const [surahs, setSurahs] = useState<SurahMeta[]>([]);
   const [currentSurah, setCurrentSurah] = useState<number>(initialSurah);
   const [currentAyah, setCurrentAyah] = useState<number>(initialAyah);
@@ -58,6 +68,17 @@ export default function TranslationCompareScreen({
   const [langC, setLangC] = useState<string>('id');
 
   const [pickerSlot, setPickerSlot] = useState<'A' | 'B' | 'C' | null>(null);
+
+  // Android hardware back: close open language picker modal
+  useEffect(() => {
+    if (pickerSlot === null) return;
+    const onBackPress = () => {
+      setPickerSlot(null);
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [pickerSlot]);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,22 +175,36 @@ export default function TranslationCompareScreen({
     pickerSlot === 'A' ? langA : pickerSlot === 'B' ? langB : langC;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader
-        eyebrow={t('Comparative Study')}
-        title={t('Translation Compare')}
-        onBack={onBack}
-        backLabel={t('Quran')}
-      />
-
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
+          eyebrow={t('Comparative Study')}
+          title={t('Translation Compare')}
+          subtitle={t('Side-by-side comparative study of translations')}
+          onBack={onBack}
+          backLabel={t('Quran')}
+          borderBottom
+        />
+      }
+    >
+      <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
+            {
+              paddingHorizontal: paddingH,
+              paddingBottom: TAB_PAD_BOTTOM(insets.bottom),
+            },
+          ]}
+        >
           {/* Navigation & Surah Picker Row */}
           <View
             style={[
               styles.selectorCard,
+              getCardShadow(mode),
               {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
               },
             ]}
           >
@@ -177,6 +212,7 @@ export default function TranslationCompareScreen({
               <TouchableOpacity
                 onPress={handlePrevAyah}
                 disabled={currentSurah === 1 && currentAyah === 1}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={[
                   styles.navArrow,
                   { opacity: currentSurah === 1 && currentAyah === 1 ? 0.3 : 1 },
@@ -184,14 +220,14 @@ export default function TranslationCompareScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t('Previous Ayah')}
               >
-                <Ionicons name={getBackIcon()} size={20} color={colors.accent} />
+                <Ionicons name={getBackIcon()} size={20} color={tokens.goldText} />
               </TouchableOpacity>
 
               <View style={styles.positionInfo}>
-                <Text style={[styles.surahName, { color: colors.textPrimary }]}>
+                <Text style={[styles.surahName, { color: tokens.text }]}>
                   {selectedSurahMeta ? selectedSurahMeta.englishName : `${t('Surah')} ${currentSurah}`}
                 </Text>
-                <Text style={[styles.ayahNumber, { color: colors.accent }]}>
+                <Text style={[styles.ayahNumber, { color: tokens.goldText }]}>
                   {t('Ayah')} {currentAyah} {t('of')} {maxAyahs}
                 </Text>
               </View>
@@ -199,6 +235,7 @@ export default function TranslationCompareScreen({
               <TouchableOpacity
                 onPress={handleNextAyah}
                 disabled={currentSurah === 114 && currentAyah === maxAyahs}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 style={[
                   styles.navArrow,
                   { opacity: currentSurah === 114 && currentAyah === maxAyahs ? 0.3 : 1 },
@@ -206,7 +243,7 @@ export default function TranslationCompareScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t('Next Ayah')}
               >
-                <Ionicons name={getForwardIcon()} size={20} color={colors.accent} />
+                <Ionicons name={getForwardIcon()} size={20} color={tokens.goldText} />
               </TouchableOpacity>
             </View>
           </View>
@@ -216,19 +253,19 @@ export default function TranslationCompareScreen({
             {/* Slot A */}
             <View style={styles.editionCol}>
               <View style={styles.slotHeaderRow}>
-                <Text style={[styles.editionLabel, { color: colors.accent }]}>
+                <Text style={[styles.editionLabel, { color: tokens.goldText }]}>
                   {t('TRANSLATION')} A · {flagA} {getLocalizedLanguageName(edA.language).toUpperCase()}
                 </Text>
                 <TouchableOpacity
-                  style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
+                  style={[styles.chooseBtn, { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder }]}
                   onPress={() => setPickerSlot('A')}
                   accessibilityRole="button"
                   accessibilityLabel={t('Choose Translation A Language')}
                 >
-                  <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
+                  <Text style={[styles.chooseBtnText, { color: tokens.goldText }]}>
                     {t('All Languages...')}
                   </Text>
-                  <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={colors.accent} />
+                  <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={tokens.goldText} />
                 </TouchableOpacity>
               </View>
 
@@ -246,16 +283,17 @@ export default function TranslationCompareScreen({
                       onPress={() => setLangA(ql.code)}
                       style={[
                         styles.choicePill,
+                        getPillShadow(mode),
                         {
-                          backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                          borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                          backgroundColor: isSelected ? tokens.gold : tokens.cardTop,
+                          borderColor: isSelected ? tokens.goldBorder : tokens.cardBorder,
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.choicePillText,
-                          { color: isSelected ? colors.onAccent : colors.textSecondary },
+                          { color: isSelected ? tokens.onGold : tokens.muted },
                         ]}
                       >
                         {ql.flag} {t(ql.label)}
@@ -269,19 +307,19 @@ export default function TranslationCompareScreen({
             {/* Slot B */}
             <View style={styles.editionCol}>
               <View style={styles.slotHeaderRow}>
-                <Text style={[styles.editionLabel, { color: colors.accent }]}>
+                <Text style={[styles.editionLabel, { color: tokens.goldText }]}>
                   {t('TRANSLATION')} B · {flagB} {getLocalizedLanguageName(edB.language).toUpperCase()}
                 </Text>
                 <TouchableOpacity
-                  style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
+                  style={[styles.chooseBtn, { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder }]}
                   onPress={() => setPickerSlot('B')}
                   accessibilityRole="button"
                   accessibilityLabel={t('Choose Translation B Language')}
                 >
-                  <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
+                  <Text style={[styles.chooseBtnText, { color: tokens.goldText }]}>
                     {t('All Languages...')}
                   </Text>
-                  <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={colors.accent} />
+                  <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={tokens.goldText} />
                 </TouchableOpacity>
               </View>
 
@@ -299,16 +337,17 @@ export default function TranslationCompareScreen({
                       onPress={() => setLangB(ql.code)}
                       style={[
                         styles.choicePill,
+                        getPillShadow(mode),
                         {
-                          backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                          borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                          backgroundColor: isSelected ? tokens.gold : tokens.cardTop,
+                          borderColor: isSelected ? tokens.goldBorder : tokens.cardBorder,
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.choicePillText,
-                          { color: isSelected ? colors.onAccent : colors.textSecondary },
+                          { color: isSelected ? tokens.onGold : tokens.muted },
                         ]}
                       >
                         {ql.flag} {t(ql.label)}
@@ -323,19 +362,19 @@ export default function TranslationCompareScreen({
             {showThird && (
               <View style={styles.editionCol}>
                 <View style={styles.slotHeaderRow}>
-                  <Text style={[styles.editionLabel, { color: colors.accent }]}>
+                  <Text style={[styles.editionLabel, { color: tokens.goldText }]}>
                     {t('TRANSLATION')} C · {flagC} {getLocalizedLanguageName(edC.language).toUpperCase()}
                   </Text>
                   <TouchableOpacity
-                    style={[styles.chooseBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
+                    style={[styles.chooseBtn, { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder }]}
                     onPress={() => setPickerSlot('C')}
                     accessibilityRole="button"
                     accessibilityLabel={t('Choose Translation C Language')}
                   >
-                    <Text style={[styles.chooseBtnText, { color: colors.accent }]}>
+                    <Text style={[styles.chooseBtnText, { color: tokens.goldText }]}>
                       {t('All Languages...')}
                     </Text>
-                    <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={colors.accent} />
+                    <Ionicons name={getForwardIcon()} size={iconSizes.badge} color={tokens.goldText} />
                   </TouchableOpacity>
                 </View>
 
@@ -353,16 +392,17 @@ export default function TranslationCompareScreen({
                         onPress={() => setLangC(ql.code)}
                         style={[
                           styles.choicePill,
+                          getPillShadow(mode),
                           {
-                            backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                            borderColor: isSelected ? colors.accent : colors.borderSubtle,
+                            backgroundColor: isSelected ? tokens.gold : tokens.cardTop,
+                            borderColor: isSelected ? tokens.goldBorder : tokens.cardBorder,
                           },
                         ]}
                       >
                         <Text
                           style={[
                             styles.choicePillText,
-                            { color: isSelected ? colors.onAccent : colors.textSecondary },
+                            { color: isSelected ? tokens.onGold : tokens.muted },
                           ]}
                         >
                           {ql.flag} {t(ql.label)}
@@ -378,9 +418,10 @@ export default function TranslationCompareScreen({
             <TouchableOpacity
               style={[
                 styles.toggleThirdBtn,
+                getCardShadow(mode),
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
                 },
               ]}
               onPress={() => setShowThird((prev) => !prev)}
@@ -390,9 +431,9 @@ export default function TranslationCompareScreen({
               <Ionicons
                 name={showThird ? 'remove-circle-outline' : 'add-circle-outline'}
                 size={16}
-                color={colors.accent}
+                color={tokens.goldText}
               />
-              <Text style={[styles.toggleThirdText, { color: colors.accent }]}>
+              <Text style={[styles.toggleThirdText, { color: tokens.goldText }]}>
                 {showThird ? t('Compare 2 Translations') : t('+ Compare 3 Translations')}
               </Text>
             </TouchableOpacity>
@@ -401,18 +442,18 @@ export default function TranslationCompareScreen({
           {/* Content Box */}
           {loading ? (
             <View style={styles.centerBox}>
-              <ActivityIndicator size="large" color={colors.accent} />
+              <ActivityIndicator size="large" color={tokens.goldText} />
             </View>
           ) : error ? (
             <View style={styles.centerBox}>
-              <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+              <Text style={[styles.errorText, { color: tokens.textSecondary }]}>
                 {error}
               </Text>
               <TouchableOpacity
                 onPress={loadAyah}
-                style={[styles.retryBtn, { borderColor: colors.accent }]}
+                style={[styles.retryBtn, { borderColor: tokens.goldBorder, backgroundColor: tokens.ringFill }]}
               >
-                <Text style={[styles.retryBtnText, { color: colors.accent }]}>
+                <Text style={[styles.retryBtnText, { color: tokens.goldText }]}>
                   {t('Retry')}
                 </Text>
               </TouchableOpacity>
@@ -423,17 +464,18 @@ export default function TranslationCompareScreen({
               <View
                 style={[
                   styles.arabicCard,
+                  getCardShadow(mode),
                   {
-                    backgroundColor: colors.bgSurface,
-                    borderColor: colors.borderSubtle,
+                    backgroundColor: tokens.cardTop,
+                    borderColor: tokens.cardBorder,
                   },
                 ]}
               >
                 <View style={styles.cardEyebrowRow}>
-                  <Text style={[styles.cardEyebrow, { color: colors.accent }]}>
+                  <Text style={[styles.cardEyebrow, { color: tokens.goldText }]}>
                     {t('ORIGINAL ARABIC')}
                   </Text>
-                  <Text style={[styles.ayahBadge, { color: colors.textMuted }]}>
+                  <Text style={[styles.ayahBadge, { color: tokens.textMuted }]}>
                     {currentSurah}:{currentAyah}
                   </Text>
                 </View>
@@ -446,9 +488,10 @@ export default function TranslationCompareScreen({
               <View
                 style={[
                   styles.transCard,
+                  getCardShadow(mode),
                   {
-                    backgroundColor: colors.bgSurface,
-                    borderColor: colors.borderSubtle,
+                    backgroundColor: tokens.cardTop,
+                    borderColor: tokens.cardBorder,
                   },
                 ]}
               >
@@ -456,19 +499,19 @@ export default function TranslationCompareScreen({
                   <View style={styles.authorRow}>
                     <Text style={styles.flagEmoji}>{flagA}</Text>
                     <View>
-                      <Text style={[styles.transAuthor, { color: colors.accent }]}>
+                      <Text style={[styles.transAuthor, { color: tokens.goldText }]}>
                         {getLocalizedLanguageName(edA.language)} · {getLocalizedTranslatorName(edA.editionIdentifier, edA.name)}
                       </Text>
-                      <Text style={[styles.editionCode, { color: colors.textMuted }]}>
+                      <Text style={[styles.editionCode, { color: tokens.textMuted }]}>
                         {edA.editionIdentifier}
                       </Text>
                     </View>
                   </View>
-                  <View style={[styles.tag, { backgroundColor: colors.accentDim }]}>
-                    <Text style={[styles.tagText, { color: colors.accent }]}>A</Text>
+                  <View style={[styles.tag, { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder, borderWidth: cardTokens.borderWidth }]}>
+                    <Text style={[styles.tagText, { color: tokens.goldText }]}>A</Text>
                   </View>
                 </View>
-                <Text style={[styles.transBody, { color: colors.textPrimary }, isRtlScript(langA) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
+                <Text style={[styles.transBody, { color: tokens.textPrimary }, isRtlScript(langA) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
                   {trans1Text}
                 </Text>
               </View>
@@ -477,9 +520,10 @@ export default function TranslationCompareScreen({
               <View
                 style={[
                   styles.transCard,
+                  getCardShadow(mode),
                   {
-                    backgroundColor: colors.bgSurface,
-                    borderColor: colors.borderSubtle,
+                    backgroundColor: tokens.cardTop,
+                    borderColor: tokens.cardBorder,
                   },
                 ]}
               >
@@ -487,19 +531,19 @@ export default function TranslationCompareScreen({
                   <View style={styles.authorRow}>
                     <Text style={styles.flagEmoji}>{flagB}</Text>
                     <View>
-                      <Text style={[styles.transAuthor, { color: colors.accent }]}>
+                      <Text style={[styles.transAuthor, { color: tokens.goldText }]}>
                         {getLocalizedLanguageName(edB.language)} · {getLocalizedTranslatorName(edB.editionIdentifier, edB.name)}
                       </Text>
-                      <Text style={[styles.editionCode, { color: colors.textMuted }]}>
+                      <Text style={[styles.editionCode, { color: tokens.textMuted }]}>
                         {edB.editionIdentifier}
                       </Text>
                     </View>
                   </View>
-                  <View style={[styles.tag, { backgroundColor: colors.accentDim }]}>
-                    <Text style={[styles.tagText, { color: colors.accent }]}>B</Text>
+                  <View style={[styles.tag, { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder, borderWidth: cardTokens.borderWidth }]}>
+                    <Text style={[styles.tagText, { color: tokens.goldText }]}>B</Text>
                   </View>
                 </View>
-                <Text style={[styles.transBody, { color: colors.textPrimary }, isRtlScript(langB) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
+                <Text style={[styles.transBody, { color: tokens.textPrimary }, isRtlScript(langB) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
                   {trans2Text}
                 </Text>
               </View>
@@ -509,9 +553,10 @@ export default function TranslationCompareScreen({
                 <View
                   style={[
                     styles.transCard,
+                    getCardShadow(mode),
                     {
-                      backgroundColor: colors.bgSurface,
-                      borderColor: colors.borderSubtle,
+                      backgroundColor: tokens.cardTop,
+                      borderColor: tokens.cardBorder,
                     },
                   ]}
                 >
@@ -519,19 +564,19 @@ export default function TranslationCompareScreen({
                     <View style={styles.authorRow}>
                       <Text style={styles.flagEmoji}>{flagC}</Text>
                       <View>
-                        <Text style={[styles.transAuthor, { color: colors.accent }]}>
+                        <Text style={[styles.transAuthor, { color: tokens.goldText }]}>
                           {getLocalizedLanguageName(edC.language)} · {getLocalizedTranslatorName(edC.editionIdentifier, edC.name)}
                         </Text>
-                        <Text style={[styles.editionCode, { color: colors.textMuted }]}>
+                        <Text style={[styles.editionCode, { color: tokens.textMuted }]}>
                           {edC.editionIdentifier}
                         </Text>
                       </View>
                     </View>
-                    <View style={[styles.tag, { backgroundColor: colors.accentDim }]}>
-                      <Text style={[styles.tagText, { color: colors.accent }]}>C</Text>
+                    <View style={[styles.tag, { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder, borderWidth: cardTokens.borderWidth }]}>
+                      <Text style={[styles.tagText, { color: tokens.goldText }]}>C</Text>
                     </View>
                   </View>
-                  <Text style={[styles.transBody, { color: colors.textPrimary }, isRtlScript(langC) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
+                  <Text style={[styles.transBody, { color: tokens.textPrimary }, isRtlScript(langC) ? { textAlign: 'right', writingDirection: 'rtl' } : null]}>
                     {trans3Text}
                   </Text>
                 </View>
@@ -543,13 +588,14 @@ export default function TranslationCompareScreen({
                   onPress={() => onOpenReader(currentSurah, currentAyah)}
                   style={[
                     styles.openReaderBtn,
+                    getCardShadow(mode),
                     {
-                      backgroundColor: colors.accentDim,
-                      borderColor: colors.accent,
+                      backgroundColor: tokens.cardTop,
+                      borderColor: tokens.cardBorder,
                     },
                   ]}
                 >
-                  <Text style={[styles.openReaderBtnText, { color: colors.accent }]}>
+                  <Text style={[styles.openReaderBtnText, { color: tokens.goldText }]}>
                     {t('Open in Surah Reader →')}
                   </Text>
                 </TouchableOpacity>
@@ -567,7 +613,7 @@ export default function TranslationCompareScreen({
         title={`${t('Select Translation')} ${pickerSlot || ''}`}
         subtitle={t('Choose any language & edition to compare')}
       />
-    </View>
+    </DetailScreen>
   );
 }
 
@@ -604,8 +650,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   selectorCard: {
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: cardTokens.borderWidth,
     padding: 14,
     marginBottom: 16,
   },
@@ -617,8 +663,8 @@ const styles = StyleSheet.create({
   },
   navArrow: {
     padding: 8,
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -658,11 +704,13 @@ const styles = StyleSheet.create({
   chooseBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    minHeight: 34,
+    borderRadius: 8,
+    borderWidth: cardTokens.borderWidth,
   },
   chooseBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -674,11 +722,14 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   choicePill: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 6,
-    borderWidth: 1,
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    minHeight: 36,
+    borderRadius: 20,
+    borderWidth: cardTokens.borderWidth,
     flexShrink: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   choicePillText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -689,10 +740,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderStyle: 'dashed',
+    paddingVertical: 10,
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: cardTokens.borderWidth,
     marginTop: 4,
   },
   toggleThirdText: {
@@ -713,7 +764,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
   },
   retryBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -724,8 +775,8 @@ const styles = StyleSheet.create({
   },
   arabicCard: {
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: cardTokens.borderWidth,
   },
   cardEyebrowRow: {
     flexDirection: 'row',
@@ -751,8 +802,8 @@ const styles = StyleSheet.create({
   },
   transCard: {
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: cardTokens.borderWidth,
   },
   authorRow: {
     flexDirection: 'row',
@@ -790,9 +841,11 @@ const styles = StyleSheet.create({
   },
   openReaderBtn: {
     padding: 14,
-    borderRadius: 8,
-    borderWidth: 1,
+    minHeight: 48,
+    borderRadius: 14,
+    borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: 6,
   },
   openReaderBtnText: {

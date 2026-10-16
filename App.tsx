@@ -1018,9 +1018,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
             onOpenSettings={() => setSettingsOpen(true)}
             showBismillah={tab === 'home'}
           />
-        ) : (
-          <View style={{ paddingTop: insets.top + HEADER_TOP_INSET_EXTRA }} />
-        )}
+        ) : insets.top > 0 ? (
+          <View style={{ paddingTop: insets.top }} />
+        ) : null}
         {!isOnline && <OfflineBanner />}
         <View style={styles.screenWrap}>
           {/* Home Tab */}

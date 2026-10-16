@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -8,8 +7,11 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { useThemeTokens } from '../theme/tokens';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard } from '../components/ui';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { QURAN_TOPICS, QuranTopic, TopicVerse } from '../lib/quranTopics';
@@ -24,10 +26,10 @@ export default function QuranTopicsScreen({
   onBack,
   onOpenSurah,
 }: QuranTopicsScreenProps) {
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
-  const paddingH = isCompact ? 16 : 20;
+  const paddingH = isCompact ? 14 : 20;
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(QURAN_TOPICS[0].id);
 
   const toggleTopic = (id: string) => {
@@ -42,29 +44,30 @@ export default function QuranTopicsScreen({
         onPress={() => onOpenSurah(verse.surah, verse.ayah)}
         style={[
           styles.verseCard,
+          getCardShadow(mode),
           {
-            backgroundColor: colors.bgBase,
-            borderColor: colors.borderSubtle,
+            backgroundColor: tokens.cardTop,
+            borderColor: tokens.cardBorder,
           },
         ]}
       >
         <View style={styles.verseHeader}>
-          <View style={[styles.refBadge, { backgroundColor: colors.sagePill || '#DBE7E1' }]}>
-            <Text style={[styles.refBadgeText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>
+          <View style={[styles.refBadge, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
+            <Text style={[styles.refBadgeText, { color: tokens.gold }]}>
               {verse.surahName} {verse.surah}:{verse.ayah}
             </Text>
           </View>
-          <Text style={[styles.openLinkText, { color: colors.accent }]}>
+          <Text style={[styles.openLinkText, { color: tokens.goldText }]}>
             {t('Read in Surah →')}
           </Text>
         </View>
 
-        <ArabicText size={20} style={styles.verseArabic}>
+        <ArabicText size={20} style={[styles.verseArabic, { color: tokens.text }]}>
           {verse.arabicExcerpt}
         </ArabicText>
 
-        <Text style={[styles.verseTranslation, { color: colors.textSecondary }]}>
-          "{verse.translation}"
+        <Text style={[styles.verseTranslation, { color: tokens.muted }]}>
+          {`"${verse.translation}"`}
         </Text>
       </TouchableOpacity>
     );
@@ -73,14 +76,10 @@ export default function QuranTopicsScreen({
   const renderTopicCard = ({ item }: { item: QuranTopic }) => {
     const isExpanded = selectedTopicId === item.id;
     return (
-      <View
-        style={[
-          styles.topicCard,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: isExpanded ? colors.accent : colors.borderSubtle,
-          },
-        ]}
+      <PremiumCard
+        style={styles.topicCard}
+        padded={false}
+        borderColor={isExpanded ? tokens.gold : tokens.cardBorder}
       >
         <TouchableOpacity
           activeOpacity={0.8}
@@ -94,36 +93,36 @@ export default function QuranTopicsScreen({
               style={[
                 styles.iconWrap,
                 {
-                  backgroundColor: isExpanded ? (colors.forestGreen || colors.accent) : (colors.iconCircleBg || '#E0EAE5'),
-                  borderColor: 'transparent',
+                  backgroundColor: isExpanded ? tokens.gold : tokens.ringFill,
+                  borderColor: isExpanded ? tokens.gold : tokens.ringBorder,
                 },
               ]}
             >
               <Ionicons
                 name={item.icon as any}
                 size={18}
-                color={isExpanded ? colors.onAccent : (colors.iconCircleFg || colors.forestGreen || colors.accent)}
+                color={isExpanded ? tokens.onGold : tokens.goldText}
               />
             </View>
             <View style={styles.topicTextWrap}>
-              <Text style={[styles.topicTitle, { color: colors.textPrimary }]}>
+              <Text style={[styles.topicTitle, { color: tokens.text }]}>
                 {t(item.title)}
               </Text>
-              <ArabicText size={16} style={styles.topicArabicTitle}>
+              <ArabicText size={16} style={[styles.topicArabicTitle, { color: tokens.arabicName }]}>
                 {item.arabicTitle}
               </ArabicText>
             </View>
           </View>
           <View style={styles.topicActionWrap}>
-            <View style={[styles.countPill, { backgroundColor: colors.sagePill || '#DBE7E1' }]}>
-              <Text style={[styles.countPillText, { color: colors.forestDark || colors.forestGreen || colors.textSecondary }]}>
+            <View style={[styles.countPill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
+              <Text style={[styles.countPillText, { color: tokens.gold }]}>
                 {item.verses.length} {t('verses')}
               </Text>
             </View>
             <Ionicons
               name={isExpanded ? 'chevron-up' : 'chevron-down'}
               size={18}
-              color={colors.textMuted}
+              color={tokens.muted}
             />
           </View>
         </TouchableOpacity>
@@ -131,7 +130,7 @@ export default function QuranTopicsScreen({
         {isExpanded && (
           <View style={styles.expandedContent}>
             <Hairline style={styles.divider} />
-            <Text style={[styles.topicDesc, { color: colors.textSecondary }]}>
+            <Text style={[styles.topicDesc, { color: tokens.muted }]}>
               {t(item.description)}
             </Text>
             <View style={styles.versesList}>
@@ -139,31 +138,36 @@ export default function QuranTopicsScreen({
             </View>
           </View>
         )}
-      </View>
+      </PremiumCard>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
+          eyebrow={t('Thematic Quran')}
+          title={t('Quran Topics')}
+          subtitle={t('Curated Quranic passages arranged by core themes of life, faith, and spirituality.')}
+          onBack={onBack}
+          backLabel={t('Quran')}
+          borderBottom
+        />
+      }
+    >
       <View style={styles.contentWrap}>
-        <View style={[styles.header, { paddingHorizontal: paddingH }]}>
-          <ScreenHeader
-            eyebrow={t('Thematic Quran')}
-            title={t('Quran Topics')}
-            subtitle={t('Curated Quranic passages arranged by core themes of life, faith, and spirituality.')}
-            onBack={onBack}
-            backLabel={t('Quran')}
-          />
-        </View>
-
-        <FlatList
+        <DetailScreen.FlatList
           data={QURAN_TOPICS}
           keyExtractor={(item) => item.id}
           renderItem={renderTopicCard}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingHorizontal: paddingH },
+          ]}
         />
       </View>
-    </View>
+    </DetailScreen>
   );
 }
 
@@ -189,21 +193,18 @@ const styles = StyleSheet.create({
     lineHeight: 19,
   },
   listContent: {
-    padding: 20,
     paddingTop: 8,
     gap: 12,
-    paddingBottom: 40,
   },
   topicCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    overflow: 'hidden',
+    borderRadius: 14,
   },
   topicHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
+    minHeight: 48,
     gap: 10,
   },
   topicTitleRow: {

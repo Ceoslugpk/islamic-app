@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
+  BackHandler,
   FlatList,
   Modal,
   StyleSheet,
@@ -11,11 +12,14 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
+import { TAB_PAD_BOTTOM } from '../components/layout/layout.constants';
 import { t } from '../lib/i18n';
 import { getLocalizedSurahName, normalizeSearchText } from '../lib/surahNamesLocalized';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { SkeletonCard } from '../components/Skeleton';
@@ -36,7 +40,7 @@ export default function TafsirScreen({
   onBack,
   onOpenReader,
 }: TafsirScreenProps) {
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const insets = useSafeAreaInsets();
   const { settings, setTafsirSourceId } = useSettings();
   const { width } = useWindowDimensions();
@@ -54,6 +58,24 @@ export default function TafsirScreen({
   const [searchQuery, setSearchQuery] = useState<string>('');
   // Tafsir source selector modal state
   const [tafsirSourcePickerOpen, setTafsirSourcePickerOpen] = useState<boolean>(false);
+
+  // Android hardware back: close open picker modals
+  useEffect(() => {
+    if (!pickerOpen && !tafsirSourcePickerOpen) return;
+    const onBackPress = () => {
+      if (pickerOpen) {
+        setPickerOpen(false);
+        return true;
+      }
+      if (tafsirSourcePickerOpen) {
+        setTafsirSourcePickerOpen(false);
+        return true;
+      }
+      return false;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [pickerOpen, tafsirSourcePickerOpen]);
 
   const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
   const tafsirIdentifier = currentTafsirSource.identifier;
@@ -119,15 +141,24 @@ export default function TafsirScreen({
       <View
         style={[
           styles.card,
+          getCardShadow(mode),
           {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
+            backgroundColor: tokens.cardTop,
+            borderColor: tokens.cardBorder,
           },
         ]}
       >
         <View style={styles.cardHeader}>
-          <View style={[styles.ayahBadge, { backgroundColor: colors.accentDim }]}>
-            <Text style={[styles.ayahBadgeText, { color: colors.accent }]}>
+          <View
+            style={[
+              styles.ayahBadge,
+              {
+                backgroundColor: tokens.ringFill,
+                borderColor: tokens.ringBorder,
+              },
+            ]}
+          >
+            <Text style={[styles.ayahBadgeText, { color: tokens.goldText }]}>
               {t('Ayah')} {item.ayahNumber}
             </Text>
           </View>
@@ -135,10 +166,11 @@ export default function TafsirScreen({
             <TouchableOpacity
               onPress={() => onOpenReader(currentSurah, item.ayahNumber)}
               style={styles.readerLink}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel={`${t('Ayah')} ${item.ayahNumber} · ${t('Reader')}`}
             >
-              <Text style={[styles.readerLinkText, { color: colors.accent }]}>
+              <Text style={[styles.readerLinkText, { color: tokens.goldText }]}>
                 {t('Reader')} →
               </Text>
             </TouchableOpacity>
@@ -154,7 +186,7 @@ export default function TafsirScreen({
         <Hairline style={styles.cardHairline} />
 
         <View style={styles.tafsirWrap}>
-          <Text style={[styles.tafsirLabel, { color: colors.textMuted }]}>
+          <Text style={[styles.tafsirLabel, { color: tokens.muted }]}>
             {currentTafsirSource.name} ({currentTafsirSource.language})
           </Text>
           {isArabic ? (
@@ -164,7 +196,7 @@ export default function TafsirScreen({
           ) : (
             <Text style={[
               styles.tafsirBody,
-              { color: colors.textPrimary, fontFamily: 'Manrope_400Regular' },
+              { color: tokens.text, fontFamily: 'Manrope_400Regular' },
               currentTafsirSource.languageCode === 'ar' || isRtlScript(currentTafsirSource.languageCode) ? { textAlign: 'right', writingDirection: 'rtl' } : { textAlign: 'left', writingDirection: 'ltr' }
             ]}>
               {item.text}
@@ -176,23 +208,29 @@ export default function TafsirScreen({
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <View style={styles.contentWrap}>
-        <ScreenHeader
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
           eyebrow={t('Exegesis & Commentary')}
           title={currentTafsirSource.name}
+          subtitle={t('Verse-by-verse scholarly exegesis')}
           onBack={onBack}
           backLabel={t('Quran')}
+          borderBottom
         />
-
-        <View style={{ paddingHorizontal: paddingH }}>
+      }
+    >
+      <View style={styles.contentWrap}>
+        <View style={{ paddingHorizontal: paddingH, paddingTop: 12 }}>
           {/* Surah Selector Trigger */}
           <TouchableOpacity
             style={[
               styles.selectorBtn,
+              getCardShadow(mode),
               {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
               },
             ]}
             onPress={() => setPickerOpen(true)}
@@ -200,11 +238,11 @@ export default function TafsirScreen({
             accessibilityLabel={t('Change Surah')}
           >
             <View style={styles.selectorBtnMain}>
-              <Text style={[styles.selectorEyebrow, { color: colors.accent }]}>
+              <Text style={[styles.selectorEyebrow, { color: tokens.goldText }]}>
                 {t('SURAH')} {currentSurah}
               </Text>
               <Text
-                style={[styles.selectorTitle, { color: colors.textPrimary }]}
+                style={[styles.selectorTitle, { color: tokens.text }]}
                 numberOfLines={1}
               >
                 {selectedSurahMeta ? getLocalizedSurahName(selectedSurahMeta.number, selectedSurahMeta.englishName) : `${t('Surah')} ${currentSurah}`}
@@ -212,10 +250,10 @@ export default function TafsirScreen({
               </Text>
             </View>
             <View style={styles.selectorBtnRight}>
-              <Text style={[styles.selectorSurahArabic, { color: colors.accent }]}>
+              <Text style={[styles.selectorSurahArabic, { color: tokens.arabicName }]}>
                 {selectedSurahMeta?.name}
               </Text>
-              <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
+              <Ionicons name="chevron-down" size={18} color={tokens.muted} />
             </View>
           </TouchableOpacity>
 
@@ -223,9 +261,10 @@ export default function TafsirScreen({
           <TouchableOpacity
             style={[
               styles.selectorBtn,
+              getCardShadow(mode),
               {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
               },
             ]}
             onPress={() => setTafsirSourcePickerOpen(true)}
@@ -233,19 +272,19 @@ export default function TafsirScreen({
             accessibilityLabel={t('Change Tafsir Source')}
           >
             <View style={styles.selectorBtnMain}>
-              <Text style={[styles.selectorEyebrow, { color: colors.accent }]}>
+              <Text style={[styles.selectorEyebrow, { color: tokens.goldText }]}>
                 {t('TAFSIR SOURCE')}
               </Text>
               <Text
-                style={[styles.selectorTitle, { color: colors.textPrimary }]}
+                style={[styles.selectorTitle, { color: tokens.text }]}
                 numberOfLines={1}
               >
                 {currentTafsirSource.name}
               </Text>
             </View>
             <View style={styles.selectorBtnRight}>
-              <Ionicons name="book-outline" size={20} color={colors.accent} />
-              <Ionicons name="chevron-down" size={18} color={colors.textMuted} />
+              <Ionicons name="book-outline" size={20} color={tokens.goldText} />
+              <Ionicons name="chevron-down" size={18} color={tokens.muted} />
             </View>
           </TouchableOpacity>
         </View>
@@ -255,7 +294,13 @@ export default function TafsirScreen({
             data={Array.from({ length: 5 })}
             keyExtractor={(_, i) => `skeleton-${i}`}
             renderItem={() => <SkeletonCard lines={4} lineHeight={16} style={styles.skeletonCard} />}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              {
+                paddingHorizontal: paddingH,
+                paddingBottom: TAB_PAD_BOTTOM(insets.bottom),
+              },
+            ]}
           />
         ) : error ? (
           <EmptyState
@@ -270,7 +315,13 @@ export default function TafsirScreen({
             data={tafsirList}
             keyExtractor={(item) => String(item.ayahNumber)}
             renderItem={renderAyahItem}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              {
+                paddingHorizontal: paddingH,
+                paddingBottom: TAB_PAD_BOTTOM(insets.bottom),
+              },
+            ]}
           />
         )}
       </View>
@@ -283,39 +334,40 @@ export default function TafsirScreen({
         onRequestClose={() => setPickerOpen(false)}
         statusBarTranslucent
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { backgroundColor: tokens.overlay }]}>
           <TouchableWithoutFeedback onPress={() => setPickerOpen(false)}>
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
-            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+          <View style={[styles.modalSheet, { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            <View style={[styles.dragPill, { backgroundColor: tokens.cardBorder }]} />
+            <View style={[styles.modalHeader, { borderBottomColor: tokens.cardBorder }]}>
+              <Text style={[styles.modalTitle, { color: tokens.text }]}>
                 {t('Select Surah')}
               </Text>
               <TouchableOpacity
                 onPress={() => setPickerOpen(false)}
                 style={styles.closeBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={t('Close')}
               >
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Ionicons name="close" size={24} color={tokens.text} />
               </TouchableOpacity>
             </View>
 
             <View style={styles.modalSearchWrap}>
               <TextInput
                 placeholder={t('Search Surah by name or number...')}
-                placeholderTextColor={colors.textMuted}
+                placeholderTextColor={tokens.muted}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
                 style={[
                   styles.modalSearchInput,
                   {
-                    color: colors.textPrimary,
-                    backgroundColor: colors.bgBase,
-                    borderColor: colors.borderSubtle,
+                    color: tokens.text,
+                    backgroundColor: tokens.inset,
+                    borderColor: tokens.cardBorder,
                   },
                 ]}
               />
@@ -337,8 +389,8 @@ export default function TafsirScreen({
                     style={[
                       styles.surahOptionRow,
                       {
-                        borderBottomColor: colors.borderSubtle,
-                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                        borderBottomColor: tokens.cardBorder,
+                        backgroundColor: isSelected ? tokens.ringFill : 'transparent',
                       },
                     ]}
                     onPress={() => {
@@ -351,15 +403,15 @@ export default function TafsirScreen({
                         style={[
                           styles.surahOptionNum,
                           {
-                            backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: isSelected ? tokens.gold : tokens.ringFill,
+                            borderColor: isSelected ? tokens.goldBorder : tokens.ringBorder,
                           },
                         ]}
                       >
                         <Text
                           style={[
                             styles.surahOptionNumText,
-                            { color: isSelected ? colors.onAccent : colors.textSecondary },
+                            { color: isSelected ? tokens.onGold : tokens.goldText },
                           ]}
                         >
                           {item.number}
@@ -367,13 +419,13 @@ export default function TafsirScreen({
                       </View>
                       <View style={styles.surahOptionTextCol}>
                         <Text
-                          style={[styles.surahOptionName, { color: colors.textPrimary }]}
+                          style={[styles.surahOptionName, { color: tokens.text }]}
                           numberOfLines={1}
                         >
                           {getLocalizedSurahName(item.number, item.englishName)}
                         </Text>
                         <Text
-                          style={[styles.surahOptionTrans, { color: colors.textMuted }]}
+                          style={[styles.surahOptionTrans, { color: tokens.muted }]}
                           numberOfLines={1}
                         >
                           {item.englishNameTranslation} · {item.numberOfAyahs} {t('ayahs')}
@@ -399,24 +451,25 @@ export default function TafsirScreen({
         onRequestClose={() => setTafsirSourcePickerOpen(false)}
         statusBarTranslucent
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { backgroundColor: tokens.overlay }]}>
           <TouchableWithoutFeedback onPress={() => setTafsirSourcePickerOpen(false)}>
             <View style={styles.modalBackdrop} />
           </TouchableWithoutFeedback>
 
-          <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
-            <View style={[styles.modalHeader, { borderBottomColor: colors.borderSubtle }]}>
-              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+          <View style={[styles.modalSheet, { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            <View style={[styles.dragPill, { backgroundColor: tokens.cardBorder }]} />
+            <View style={[styles.modalHeader, { borderBottomColor: tokens.cardBorder }]}>
+              <Text style={[styles.modalTitle, { color: tokens.text }]}>
                 {t('Select Tafsir Source')}
               </Text>
               <TouchableOpacity
                 onPress={() => setTafsirSourcePickerOpen(false)}
                 style={styles.closeBtn}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="button"
                 accessibilityLabel={t('Close')}
               >
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+                <Ionicons name="close" size={24} color={tokens.text} />
               </TouchableOpacity>
             </View>
 
@@ -431,8 +484,8 @@ export default function TafsirScreen({
                     style={[
                       styles.surahOptionRow,
                       {
-                        borderBottomColor: colors.borderSubtle,
-                        backgroundColor: isSelected ? colors.accentDim : 'transparent',
+                        borderBottomColor: tokens.cardBorder,
+                        backgroundColor: isSelected ? tokens.ringFill : 'transparent',
                       },
                     ]}
                     onPress={() => handleTafsirSourceChange(item.id)}
@@ -444,15 +497,15 @@ export default function TafsirScreen({
                         style={[
                           styles.surahOptionNum,
                           {
-                            backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                            borderColor: colors.borderSubtle,
+                            backgroundColor: isSelected ? tokens.gold : tokens.ringFill,
+                            borderColor: isSelected ? tokens.goldBorder : tokens.ringBorder,
                           },
                         ]}
                       >
                         <Text
                           style={[
                             styles.surahOptionNumText,
-                            { color: isSelected ? colors.onAccent : colors.textSecondary },
+                            { color: isSelected ? tokens.onGold : tokens.goldText },
                           ]}
                         >
                           {TAFSIR_SOURCES.indexOf(item) + 1}
@@ -460,20 +513,20 @@ export default function TafsirScreen({
                       </View>
                       <View style={styles.surahOptionTextCol}>
                         <Text
-                          style={[styles.surahOptionName, { color: colors.textPrimary }]}
+                          style={[styles.surahOptionName, { color: tokens.text }]}
                           numberOfLines={1}
                         >
                           {item.name}
                         </Text>
                         <Text
-                          style={[styles.surahOptionTrans, { color: colors.textMuted }]}
+                          style={[styles.surahOptionTrans, { color: tokens.muted }]}
                           numberOfLines={1}
                         >
                           {item.language} · {item.author}
                         </Text>
                       </View>
                     </View>
-                    {isSelected && <Ionicons name="checkmark" size={20} color={colors.accent} />}
+                    {isSelected && <Ionicons name="checkmark" size={20} color={tokens.goldText} />}
                   </TouchableOpacity>
                 );
               }}
@@ -481,7 +534,7 @@ export default function TafsirScreen({
           </View>
         </View>
       </Modal>
-    </View>
+    </DetailScreen>
   );
 }
 
@@ -504,11 +557,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginTop: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
+    borderWidth: cardTokens.borderWidth,
+    marginTop: 6,
+    minHeight: 52,
     gap: 10,
   },
   selectorBtnMain: {
@@ -542,15 +596,14 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   skeletonCard: {
-    borderWidth: 1,
-    borderColor: 'rgba(127,127,127,0.14)',
-    borderRadius: 12,
+    borderWidth: cardTokens.borderWidth,
+    borderRadius: 16,
     padding: 16,
   },
   card: {
     padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
+    borderRadius: 16,
+    borderWidth: cardTokens.borderWidth,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -562,7 +615,8 @@ const styles = StyleSheet.create({
   ayahBadge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 8,
+    borderWidth: cardTokens.borderWidth,
     flexShrink: 0,
   },
   ayahBadgeText: {
@@ -570,10 +624,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   readerLink: {
-    padding: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     flexShrink: 0,
-    minHeight: 32,
+    minHeight: 44,
+    minWidth: 44,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   readerLinkText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -603,7 +660,6 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
@@ -620,13 +676,9 @@ const styles = StyleSheet.create({
     maxHeight: '92%',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    borderTopWidth: 1,
+    borderTopWidth: cardTokens.borderWidth,
     overflow: 'hidden',
-    elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
+    elevation: 16,
   },
   dragPill: {
     width: 36,
@@ -643,16 +695,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 4,
     paddingBottom: 14,
-    borderBottomWidth: 1,
+    borderBottomWidth: cardTokens.borderWidth,
   },
   modalTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
   },
   closeBtn: {
-    padding: 6,
-    minWidth: 40,
-    minHeight: 40,
+    padding: 8,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -666,7 +718,7 @@ const styles = StyleSheet.create({
   modalSearchInput: {
     height: 44,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     paddingHorizontal: 14,
     fontFamily: 'Manrope_400Regular',
     fontSize: 14,
@@ -677,7 +729,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 14,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
+    borderBottomWidth: cardTokens.borderWidth,
     gap: 10,
   },
   surahOptionLeft: {
@@ -688,10 +740,10 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   surahOptionNum: {
-    width: 32,
-    height: 32,
-    borderRadius: 6,
-    borderWidth: 1,
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,

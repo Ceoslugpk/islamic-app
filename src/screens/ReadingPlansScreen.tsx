@@ -3,18 +3,18 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
   TouchableOpacity,
-  FlatList,
   useWindowDimensions,
   BackHandler,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useThemeTokens } from '../theme/tokens';
+import { getCardShadow, getHeroCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { t } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Hairline } from '../components/Hairline';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard } from '../components/ui';
 import { savePlanDay, loadPlanProgress } from '../lib/db';
 
 export interface PlanDayItem {
@@ -101,18 +101,14 @@ const PLANS: ReadingPlan[] = [
 ];
 
 export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) {
-  const { colors } = useTheme();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [progressMap, setProgressMap] = useState<Record<string, Record<number, boolean>>>({});
-
-  // Load progress for all plans on mount
-  useEffect(() => {
+  const [progressMap, setProgressMap] = useState<Record<string, Record<number, boolean>>>(() => {
     const loaded: Record<string, Record<number, boolean>> = {};
     for (const plan of PLANS) {
       loaded[plan.id] = loadPlanProgress(plan.id);
     }
-    setProgressMap(loaded);
-  }, []);
+    return loaded;
+  });
 
   // Return from plan detail to plan list on Android hardware back
   useEffect(() => {
@@ -156,9 +152,10 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
     return Object.values(p).filter(Boolean).length;
   };
 
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
-  const paddingH = isCompact ? 16 : 20;
+  const paddingH = isCompact ? 14 : 20;
 
   // If a plan is selected, show detail view
   if (selectedPlan) {
@@ -167,213 +164,240 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
     const percent = Math.round((completedCount / selectedPlan.durationDays) * 100);
 
     return (
-      <View style={[styles.container, { backgroundColor: colors.bgBase, paddingHorizontal: paddingH }]}>
-        <View style={styles.contentWrap}>
-          <ScreenHeader
+      <DetailScreen
+        style={[styles.container, { backgroundColor: tokens.bgTop }]}
+        header={
+          <SubHeader
             eyebrow={t(selectedPlan.pace)}
             title={t(selectedPlan.title)}
+            subtitle={t('Khatmah milestone progress & daily readings')}
             onBack={() => setSelectedPlanId(null)}
             backLabel={t('All Plans')}
+            borderBottom
           />
-
-        {/* Progress Card */}
-        <View
-          style={[
-            styles.progressCard,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
-            },
-          ]}
-        >
-          <View style={styles.progressHeader}>
-            <Text style={[styles.progressTitle, { color: colors.textPrimary }]}>
-              {completedCount} {t('of')} {selectedPlan.durationDays} {t('completed')}
-            </Text>
-            <Text style={[styles.progressPercent, { color: colors.accent }]}>
-              {percent}%
-            </Text>
-          </View>
-
-          {/* Progress Bar */}
-          <View style={[styles.progressBarTrack, { backgroundColor: colors.borderSubtle }]}>
-            <View
-              style={[
-                styles.progressBarFill,
-                {
-                  backgroundColor: colors.accent,
-                  width: `${percent}%`,
-                },
-              ]}
-            />
-          </View>
-
-          <Text style={[styles.planDesc, { color: colors.textMuted }]}>
-            {t(selectedPlan.description)}
-          </Text>
-        </View>
-
-        {/* Daily Checklist */}
-        <FlatList
-          data={selectedPlan.days}
-          keyExtractor={(item) => item.day.toString()}
-          ItemSeparatorComponent={Hairline}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.daysList}
-          renderItem={({ item }) => {
-            const isCompleted = currentPlanProgress[item.day] === true;
-            const displayLabel = item.label.replace('Day', t('Day')).replace('Milestone', t('Milestone'));
-            const displayPortion = item.portion.replace('Juz', t('Juz')).replace('Part', t('Part'));
-            return (
-              <TouchableOpacity
-                style={styles.dayRow}
-                onPress={() => toggleDay(selectedPlan.id, item.day)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: isCompleted }}
-                accessibilityLabel={`${displayLabel}: ${displayPortion}. ${isCompleted ? t('Completed') : t('Not completed')}`}
-              >
+        }
+      >
+        <View style={styles.contentWrap}>
+          <DetailScreen.FlatList
+            data={selectedPlan.days}
+            keyExtractor={(item) => item.day.toString()}
+            contentContainerStyle={[
+              styles.daysList,
+              {
+                paddingHorizontal: paddingH,
+              },
+            ]}
+            ListHeaderComponent={
+              <View style={{ paddingTop: 12, paddingBottom: 12 }}>
                 <View
                   style={[
-                    styles.checkCircle,
+                    styles.progressCard,
+                    getHeroCardShadow(mode),
                     {
-                      borderColor: isCompleted ? (colors.forestGreen || colors.accent) : colors.borderSubtle,
-                      backgroundColor: isCompleted ? (colors.forestGreen || colors.accent) : 'transparent',
+                      backgroundColor: tokens.cardTop,
+                      borderColor: tokens.cardBorder,
                     },
                   ]}
                 >
-                  {isCompleted && (
-                    <Ionicons name="checkmark" size={14} color={colors.onAccent} />
-                  )}
-                </View>
+                  <View style={styles.progressHeader}>
+                    <Text style={[styles.progressTitle, { color: tokens.text }]}>
+                      {completedCount} {t('of')} {selectedPlan.durationDays} {t('completed')}
+                    </Text>
+                    <Text style={[styles.progressPercent, { color: tokens.goldText }]}>
+                      {percent}%
+                    </Text>
+                  </View>
 
-                <View style={styles.dayTextWrap}>
-                  <Text
+                  {/* Progress Bar */}
+                  <View style={[styles.progressBarTrack, { backgroundColor: tokens.trackColor }]}>
+                    <View
+                      style={[
+                        styles.progressBarFill,
+                        {
+                          backgroundColor: tokens.gold,
+                          width: `${percent}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+
+                  <Text style={[styles.planDesc, { color: tokens.muted }]}>
+                    {t(selectedPlan.description)}
+                  </Text>
+                </View>
+              </View>
+            }
+            renderItem={({ item }) => {
+              const isCompleted = currentPlanProgress[item.day] === true;
+              const displayLabel = item.label.replace('Day', t('Day')).replace('Milestone', t('Milestone'));
+              const displayPortion = item.portion.replace('Juz', t('Juz')).replace('Part', t('Part'));
+              return (
+                <TouchableOpacity
+                  style={[
+                    styles.dayCard,
+                    getCardShadow(mode),
+                    {
+                      backgroundColor: tokens.cardTop,
+                      borderColor: tokens.cardBorder,
+                    },
+                  ]}
+                  onPress={() => toggleDay(selectedPlan.id, item.day)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isCompleted }}
+                  accessibilityLabel={`${displayLabel}: ${displayPortion}. ${isCompleted ? t('Completed') : t('Not completed')}`}
+                >
+                  <View
                     style={[
-                      styles.dayLabel,
+                      styles.checkCircle,
                       {
-                        color: isCompleted ? colors.textMuted : colors.textPrimary,
-                        textDecorationLine: isCompleted ? 'line-through' : 'none',
+                        borderColor: isCompleted ? tokens.gold : tokens.cardBorder,
+                        backgroundColor: isCompleted ? tokens.gold : tokens.ringFill,
                       },
                     ]}
                   >
-                    {displayLabel}
-                  </Text>
-                  <Text style={[styles.dayPortion, { color: colors.textSecondary }]}>
-                    {displayPortion}
-                  </Text>
-                </View>
+                    {isCompleted && (
+                      <Ionicons name="checkmark" size={14} color={tokens.onGold} />
+                    )}
+                  </View>
 
-                {isCompleted && (
-                  <Text style={[styles.doneTag, { color: colors.accent }]}>{t('Done')}</Text>
-                )}
-              </TouchableOpacity>
-            );
-          }}
-        />
+                  <View style={styles.dayTextWrap}>
+                    <Text
+                      style={[
+                        styles.dayLabel,
+                        {
+                          color: isCompleted ? tokens.muted : tokens.text,
+                          textDecorationLine: isCompleted ? 'line-through' : 'none',
+                        },
+                      ]}
+                    >
+                      {displayLabel}
+                    </Text>
+                    <Text style={[styles.dayPortion, { color: tokens.muted }]}>
+                      {displayPortion}
+                    </Text>
+                  </View>
+
+                  {isCompleted && (
+                    <View style={[styles.doneTagPill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
+                      <Text style={[styles.doneTag, { color: tokens.goldText }]}>{t('Done')}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+          />
         </View>
-      </View>
+      </DetailScreen>
     );
   }
 
   // Plans List View
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
-    >
-      <View style={styles.contentWrap}>
-        <ScreenHeader
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
           eyebrow={t('Khatmah')}
           title={t('Reading Plans')}
+          subtitle={t('Structured schedules to recite the Holy Quran at your own pace')}
           onBack={onBack}
           backLabel={t('Quran')}
+          borderBottom
         />
+      }
+    >
+      <DetailScreen.ScrollView
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingHorizontal: paddingH,
+          },
+        ]}
+      >
+        <View style={styles.contentWrap}>
+          <Text style={[styles.introText, { color: tokens.muted }]}>
+            {t('Choose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.')}
+          </Text>
 
-      <Text style={[styles.introText, { color: colors.textSecondary }]}>
-        {t('Choose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.')}
-      </Text>
+          <View style={styles.planCards}>
+            {PLANS.map((plan) => {
+              const completedCount = getPlanCompletedCount(plan);
+              const percent = Math.round((completedCount / plan.durationDays) * 100);
 
-      <View style={styles.planCards}>
-        {PLANS.map((plan) => {
-          const completedCount = getPlanCompletedCount(plan);
-          const percent = Math.round((completedCount / plan.durationDays) * 100);
-
-          return (
-            <TouchableOpacity
-              key={plan.id}
-              style={[
-                styles.planCard,
-                {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
-                },
-              ]}
-              onPress={() => setSelectedPlanId(plan.id)}
-              accessibilityRole="button"
-              accessibilityLabel={`${t('Select reading plan')} ${t(plan.title)}`}
-            >
-              <View style={styles.planCardTop}>
-                <View style={styles.planTitleCol}>
-                  <Text style={[styles.planCardTitle, { color: colors.textPrimary }]}>
-                    {t(plan.title)}
-                  </Text>
-                  <Text style={[styles.planCardSub, { color: colors.textMuted }]}>
-                    {t(plan.subtitle)}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.paceBadge,
-                    {
-                      backgroundColor: colors.sagePill || '#DBE7E1',
-                      borderColor: 'transparent',
-                    },
-                  ]}
+              return (
+                <PremiumCard
+                  key={plan.id}
+                  onPress={() => setSelectedPlanId(plan.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('Select reading plan')} ${t(plan.title)}`}
+                  padded={false}
+                  style={styles.planCard}
                 >
-                  <Text style={[styles.paceBadgeText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>
-                    {t(plan.pace)}
-                  </Text>
-                </View>
-              </View>
+                  <View style={styles.planCardInner}>
+                    <View style={styles.planCardTop}>
+                      <View style={styles.planTitleCol}>
+                        <Text style={[styles.planCardTitle, { color: tokens.text }]}>
+                          {t(plan.title)}
+                        </Text>
+                        <Text style={[styles.planCardSub, { color: tokens.muted }]}>
+                          {t(plan.subtitle)}
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.paceBadge,
+                          getPillShadow(mode),
+                          {
+                            backgroundColor: tokens.ringFill,
+                            borderColor: tokens.ringBorder,
+                            borderWidth: 1,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.paceBadgeText, { color: tokens.goldText }]}>
+                          {t(plan.pace)}
+                        </Text>
+                      </View>
+                    </View>
 
-              <Text style={[styles.planCardDesc, { color: colors.textSecondary }]}>
-                {t(plan.description)}
-              </Text>
+                    <Text style={[styles.planCardDesc, { color: tokens.muted }]}>
+                      {t(plan.description)}
+                    </Text>
 
-              {/* Progress Bar & Status */}
-              <View style={styles.planCardFooter}>
-                <View style={[styles.progressBarTrack, { backgroundColor: colors.borderSubtle, flex: 1 }]}>
-                  <View
-                    style={[
-                      styles.progressBarFill,
-                      {
-                        backgroundColor: colors.forestGreen || colors.accent,
-                        width: `${percent}%`,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={[styles.percentText, { color: colors.forestGreen || colors.accent }]}>
-                  {completedCount}/{plan.durationDays} ({percent}%)
-                </Text>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-      </View>
-    </ScrollView>
+                    {/* Progress Bar & Status */}
+                    <View style={styles.planCardFooter}>
+                      <View style={[styles.progressBarTrack, { backgroundColor: tokens.trackColor, flex: 1 }]}>
+                        <View
+                          style={[
+                            styles.progressBarFill,
+                            {
+                              backgroundColor: tokens.gold,
+                              width: `${percent}%`,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text style={[styles.percentText, { color: tokens.goldText }]}>
+                        {completedCount}/{plan.durationDays} ({percent}%)
+                      </Text>
+                    </View>
+                  </View>
+                </PremiumCard>
+              );
+            })}
+          </View>
+        </View>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingVertical: 20,
-    paddingBottom: 0,
   },
   content: {
-    paddingVertical: 10,
+    paddingTop: 10,
     paddingBottom: 40,
   },
   contentWrap: {
@@ -389,11 +413,12 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   planCards: {
-    gap: 16,
+    gap: 14,
   },
   planCard: {
-    borderWidth: 1,
-    borderRadius: 20,
+    borderRadius: 14,
+  },
+  planCardInner: {
     padding: 18,
   },
   planCardTop: {
@@ -476,19 +501,22 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   daysList: {
-    paddingBottom: 30,
+    paddingTop: 4,
+    gap: 10,
   },
-  dayRow: {
+  dayCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
     gap: 14,
   },
   checkCircle: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    borderWidth: 2,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -503,6 +531,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 2,
+  },
+  doneTagPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    borderWidth: 1,
   },
   doneTag: {
     fontFamily: 'Manrope_600SemiBold',
