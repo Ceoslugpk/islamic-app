@@ -1,12 +1,11 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  I18nManager,
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
   ScrollView,
-  FlatList,
   TextInput,
   ActivityIndicator,
   Share,
@@ -19,11 +18,13 @@ import {
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeTokens } from '../theme/tokens';
+import { getPillShadow } from '../lib/homeThemeTokens';
 import { isRTL, t } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { SectionHeader } from '../components/SectionHeader';
-import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
@@ -71,10 +72,11 @@ type SubView =
 
 interface HadithLibraryScreenProps {
   onBack?: () => void;
+  backLabel?: string;
 }
 
-export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps) {
-  const { colors, mode } = useTheme();
+export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel }: HadithLibraryScreenProps) {
+  const { tokens, mode } = useThemeTokens();
   const { refreshKey } = useConnectivity();
 
   const shareCardRef = useRef<View>(null);
@@ -489,91 +491,162 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
   const backLabel = useMemo(() => {
     if (activeTab !== 'collections') {
       if (view.type === 'detail') return t('Back');
-      return t('Library');
+      return customBackLabel ? t(customBackLabel) : t('Library');
     }
     if (view.type === 'detail') {
       return view.from === 'hadiths' ? t('Hadiths') : t('Back');
     }
     if (view.type === 'hadiths') return t('Books');
     if (view.type === 'books') return t('Collections');
-    return t('Library');
-  }, [activeTab, view]);
+    return customBackLabel ? t(customBackLabel) : t('Library');
+  }, [activeTab, view, customBackLabel]);
 
   // Total read hadiths count
   const totalRead = useMemo(() => {
     return Object.values(readCounts).reduce((acc, v) => acc + v, 0);
   }, [readCounts]);
 
+  const headerInfo = useMemo(() => {
+    if (view.type === 'detail') {
+      return {
+        eyebrow: view.collection.nameEn || t('Hadith'),
+        title: view.hadith.hadithNumber ? `${t('Hadith')} ${view.hadith.hadithNumber}` : t('Hadith Detail'),
+        subtitle: view.book?.nameEn || t('Authentic Narration'),
+      };
+    }
+    if (view.type === 'hadiths') {
+      return {
+        eyebrow: view.collection.name?.en || t('Hadiths'),
+        title: view.book.name?.en || t('Hadiths'),
+        subtitle: t('Browse narrations in this book'),
+      };
+    }
+    if (view.type === 'books') {
+      return {
+        eyebrow: t('Collection'),
+        title: view.collection.name?.en || t('Books'),
+        subtitle: t('Browse books in this collection'),
+      };
+    }
+    if (activeTab === 'saved') {
+      return {
+        eyebrow: t('Bookmarks'),
+        title: t('Saved Hadiths'),
+        subtitle: `${savedList.length} ${t('saved narrations')}`,
+      };
+    }
+    if (activeTab === 'recent') {
+      return {
+        eyebrow: t('History'),
+        title: t('Recent Hadiths'),
+        subtitle: `${recentList.length} ${t('recently viewed narrations')}`,
+      };
+    }
+    if (activeTab === 'progress') {
+      return {
+        eyebrow: t('Reading Stats'),
+        title: t('Reading Progress'),
+        subtitle: `${totalRead} ${t('hadiths read across collections')}`,
+      };
+    }
+    return {
+      eyebrow: t('Library'),
+      title: t('Hadith Library'),
+      subtitle: t('Browse 17 canonical collections, books & authentic narrations'),
+    };
+  }, [activeTab, view, savedList.length, recentList.length, totalRead]);
+
   const { width } = useWindowDimensions();
-  const isCompact = width < 380;
   const isWide = width >= 600;
-  const paddingH = isCompact ? 16 : 20;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      {/* Top Header Row with Back Button */}
-      <ScreenHeader
-        eyebrow={t('Library')}
-        title={t('Hadith Library')}
-        backLabel={backLabel}
-        onBack={handleBack}
-        borderBottom
+    <View style={styles.screenContainer}>
+      <LinearGradient
+        colors={tokens.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
       />
+      <DetailScreen
+        style={[styles.container, styles.detailScreen]}
+        header={
+          <SubHeader
+            eyebrow={headerInfo.eyebrow}
+            title={headerInfo.title}
+            subtitle={headerInfo.subtitle}
+            backLabel={backLabel}
+            onBack={handleBack}
+            borderBottom
+            showFade
+          />
+        }
+      >
 
-      {/* Main Tabs (Collections | Saved | Recent | Progress) */}
-      <View style={[styles.tabsWrap, { borderBottomColor: colors.borderSubtle }]}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.tabsScroll, hScrollRTLStyle()]}
-        >
-          {(
-            [
-              { key: 'collections', label: t('Collections'), icon: 'albums' },
-              { key: 'saved', label: `${t('Saved')} (${savedList.length})`, icon: 'bookmark' },
-              { key: 'recent', label: t('Recent'), icon: 'time' },
-              { key: 'progress', label: t('Progress'), icon: 'analytics' },
-            ] as const
-          ).map((tabItem) => {
-            const isActive = activeTab === tabItem.key && (tabItem.key !== 'collections' || view.type === 'collections');
-            return (
-              <TouchableOpacity
-                key={tabItem.key}
-                onPress={() => handleTabChange(tabItem.key)}
-                style={[
-                  styles.tabChip,
-                  {
-                    backgroundColor: isActive ? colors.accent : colors.bgSurface,
-                    borderColor: isActive ? colors.accent : colors.borderSubtle,
-                  },
-                ]}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isActive }}
-              >
-                <Ionicons
-                  name={tabItem.icon as any}
-                  size={14}
-                  color={isActive ? colors.onAccent : colors.textMuted}
-                />
-                <Text
+        {/* Main Tabs (Collections | Saved | Recent | Progress) */}
+        <View style={[styles.tabsWrap, { borderBottomColor: tokens.cardBorder }]}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.tabsScroll, hScrollRTLStyle()]}
+          >
+            {(
+              [
+                { key: 'collections', label: t('Collections'), icon: 'albums' },
+                { key: 'saved', label: `${t('Saved')} (${savedList.length})`, icon: 'bookmark' },
+                { key: 'recent', label: t('Recent'), icon: 'time' },
+                { key: 'progress', label: t('Progress'), icon: 'analytics' },
+              ] as const
+            ).map((tabItem) => {
+              const isActive = activeTab === tabItem.key && (tabItem.key !== 'collections' || view.type === 'collections');
+              return (
+                <TouchableOpacity
+                  key={tabItem.key}
+                  onPress={() => handleTabChange(tabItem.key)}
                   style={[
-                    styles.tabChipText,
-                    { color: isActive ? colors.onAccent : colors.textPrimary },
+                    styles.tabChip,
+                    getPillShadow(mode),
+                    {
+                      backgroundColor: isActive ? 'transparent' : tokens.cardTop,
+                      borderColor: isActive ? tokens.goldBorder : tokens.cardBorder,
+                      overflow: 'hidden',
+                    },
                   ]}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isActive }}
                 >
-                  {tabItem.label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
+                  {isActive && (
+                    <LinearGradient
+                      colors={tokens.goldGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
+                  )}
+                  <Ionicons
+                    name={tabItem.icon as any}
+                    size={14}
+                    color={isActive ? tokens.onGold : tokens.muted}
+                  />
+                  <Text
+                    style={[
+                      styles.tabChipText,
+                      { color: isActive ? tokens.onGold : tokens.text },
+                    ]}
+                  >
+                    {tabItem.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </View>
 
       {/* CONTENT AREA */}
       <View style={styles.flex1}>
         {/* TAB: SAVED HADITHS */}
         {activeTab === 'saved' && (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <DetailScreen.ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
               compact
               eyebrow={t('Library')}
@@ -614,8 +687,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       activeOpacity={0.7}
                     >
                       <View style={styles.metaRow}>
-                        <View style={[styles.badge, { backgroundColor: colors.accentDim }]}>
-                          <Text style={[styles.badgeText, { color: colors.accent }]}>
+                        <View style={[styles.badge, { backgroundColor: tokens.ringFill }]}>
+                          <Text style={[styles.badgeText, { color: tokens.goldText }]}>
                             {item.collectionName || item.collection} · {t('Book')} {item.bookNumber} : #
                             {item.hadithNumber}
                           </Text>
@@ -624,10 +697,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                           <View
                             style={[
                               styles.gradeBadge,
-                              { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
+                              { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill },
                             ]}
                           >
-                            <Text style={[styles.gradeText, { color: colors.textMuted }]}>
+                            <Text style={[styles.gradeText, { color: tokens.muted }]}>
                               {item.grade}
                             </Text>
                           </View>
@@ -642,7 +715,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
                       {item.englishText ? (
                         <Text
-                          style={[styles.savedEnglish, { color: colors.textSecondary }]}
+                          style={[styles.savedEnglish, { color: tokens.muted }]}
                           numberOfLines={3}
                         >
                           {item.englishText}
@@ -650,7 +723,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       ) : null}
 
                       <View style={styles.cardActionRow}>
-                        <Text style={[styles.cardTapHint, { color: colors.accent }]}>
+                        <Text style={[styles.cardTapHint, { color: tokens.goldText }]}>
                           {t('Read full hadith')} →
                         </Text>
                         <TouchableOpacity
@@ -661,7 +734,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                           style={styles.unsaveBtn}
                           accessibilityLabel={t('Remove from saved')}
                         >
-                          <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                          <Ionicons name="trash-outline" size={16} color={tokens.muted} />
                         </TouchableOpacity>
                       </View>
                     </TouchableOpacity>
@@ -670,12 +743,12 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 ))}
               </View>
             )}
-          </ScrollView>
+          </DetailScreen.ScrollView>
         )}
 
         {/* TAB: RECENTLY READ */}
         {activeTab === 'recent' && (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <DetailScreen.ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
               compact
               eyebrow={t('Library')}
@@ -712,13 +785,13 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       activeOpacity={0.7}
                     >
                       <View style={styles.metaRow}>
-                        <View style={[styles.badge, { backgroundColor: colors.accentDim }]}>
-                          <Text style={[styles.badgeText, { color: colors.accent }]}>
+                        <View style={[styles.badge, { backgroundColor: tokens.ringFill }]}>
+                          <Text style={[styles.badgeText, { color: tokens.goldText }]}>
                             {item.collectionName || item.collection} · {t('Book')} {item.bookNumber} : #
                             {item.hadithNumber}
                           </Text>
                         </View>
-                        <Text style={[styles.dateText, { color: colors.textMuted }]}>
+                        <Text style={[styles.dateText, { color: tokens.muted }]}>
                           {new Date(item.readAt).toLocaleDateString(undefined, {
                             month: 'short',
                             day: 'numeric',
@@ -734,14 +807,14 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
                       {item.englishText ? (
                         <Text
-                          style={[styles.savedEnglish, { color: colors.textSecondary }]}
+                          style={[styles.savedEnglish, { color: tokens.muted }]}
                           numberOfLines={2}
                         >
                           {item.englishText}
                         </Text>
                       ) : null}
 
-                      <Text style={[styles.cardTapHint, { color: colors.accent, marginTop: 8 }]}>
+                      <Text style={[styles.cardTapHint, { color: tokens.goldText, marginTop: 8 }]}>
                         {t('Read full hadith')} →
                       </Text>
                     </TouchableOpacity>
@@ -750,12 +823,12 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 ))}
               </View>
             )}
-          </ScrollView>
+          </DetailScreen.ScrollView>
         )}
 
         {/* TAB: READING PROGRESS */}
         {activeTab === 'progress' && (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <DetailScreen.ScrollView contentContainerStyle={styles.scrollContent}>
             <SectionHeader
               compact
               eyebrow={t('Library')}
@@ -766,24 +839,24 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {/* Scorecard Header */}
             <View style={styles.scoreRow}>
               <Card padded style={styles.scoreCard}>
-                <Text style={[styles.scoreNumber, { color: colors.accent }]}>{totalRead}</Text>
-                <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>{t('Hadiths Read')}</Text>
+                <Text style={[styles.scoreNumber, { color: tokens.goldText }]}>{totalRead}</Text>
+                <Text style={[styles.scoreLabel, { color: tokens.muted }]}>{t('Hadiths Read')}</Text>
               </Card>
               <Card padded style={styles.scoreCard}>
-                <Text style={[styles.scoreNumber, { color: colors.textPrimary }]}>
+                <Text style={[styles.scoreNumber, { color: tokens.text }]}>
                   {Object.keys(readCounts).length}
                 </Text>
-                <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>
+                <Text style={[styles.scoreLabel, { color: tokens.muted }]}>
                   {t('Collections Explored')}
                 </Text>
               </Card>
             </View>
 
             <View style={styles.sectionDivider}>
-              <Text style={[styles.sectionDividerTitle, { color: colors.textPrimary }]}>
+              <Text style={[styles.sectionDividerTitle, { color: tokens.text }]}>
                 {t('Collections Breakdown')}
               </Text>
-              <Text style={[styles.sectionDividerSub, { color: colors.textMuted }]}>
+              <Text style={[styles.sectionDividerSub, { color: tokens.muted }]}>
                 {t('Tap any collection to jump directly to its books')}
               </Text>
             </View>
@@ -806,15 +879,15 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     >
                       <View style={styles.progressHeaderRow}>
                         <View style={styles.flex1}>
-                          <Text style={[styles.colTitle, { color: colors.textPrimary }]}>
+                          <Text style={[styles.colTitle, { color: tokens.text }]}>
                             {col.name.en}
                           </Text>
-                          <Text style={[styles.progressMeta, { color: colors.textMuted }]}>
+                          <Text style={[styles.progressMeta, { color: tokens.muted }]}>
                             {count} {t('of')} {total.toLocaleString()} {t('read')}
                           </Text>
                         </View>
                         <View style={styles.pctBadge}>
-                          <Text style={[styles.pctText, { color: colors.accent }]}>{pct}%</Text>
+                          <Text style={[styles.pctText, { color: tokens.goldText }]}>{pct}%</Text>
                         </View>
                       </View>
 
@@ -822,14 +895,16 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       <View
                         style={[
                           styles.progressBarBg,
-                          { backgroundColor: colors.borderSubtle },
+                          { backgroundColor: tokens.cardBorder },
                         ]}
                       >
-                        <View
+                        <LinearGradient
+                          colors={tokens.goldGradient}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
                           style={[
                             styles.progressBarFill,
                             {
-                              backgroundColor: colors.accent,
                               width: `${Math.max(pct > 0 ? 3 : 0, pct)}%`,
                             },
                           ]}
@@ -841,12 +916,12 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 );
               })}
             </View>
-          </ScrollView>
+          </DetailScreen.ScrollView>
         )}
 
         {/* TAB: COLLECTIONS BROWSING FLOW */}
         {activeTab === 'collections' && view.type === 'collections' && (
-          <ScrollView
+          <DetailScreen.ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -857,31 +932,24 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                   setCollectionsRefreshing(true);
                   loadCollections(true);
                 }}
-                tintColor={colors.accent}
+                tintColor={tokens.accent}
               />
             }
           >
-            <SectionHeader
-              compact
-              eyebrow={t('Library')}
-              title={t('Hadith Library')}
-              subtitle={t('Browse 17 canonical collections, books & authentic narrations')}
-            />
-
             {/* Search Filter */}
             <View
               style={[
                 styles.searchBox,
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
               ]}
             >
-              <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
+              <Ionicons name="search" size={16} color={tokens.muted} style={styles.searchIcon} />
               <TextInput
                 value={collectionFilter}
                 onChangeText={setCollectionFilter}
                 placeholder={t('Search collections...')}
-                placeholderTextColor={colors.textMuted}
-                style={[styles.searchInput, { color: colors.textPrimary }]}
+                placeholderTextColor={tokens.muted}
+                style={[styles.searchInput, { color: tokens.text }]}
                 clearButtonMode="while-editing"
                 returnKeyType="search"
                 onSubmitEditing={() => {
@@ -891,7 +959,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
               />
               {collectionFilter.length > 0 && (
                 <TouchableOpacity onPress={() => setCollectionFilter('')}>
-                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                  <Ionicons name="close-circle" size={16} color={tokens.muted} />
                 </TouchableOpacity>
               )}
             </View>
@@ -900,14 +968,14 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {collectionHistory.length > 0 && !collectionFilter && (
               <View style={styles.recentWrap}>
                 <View style={styles.recentHeader}>
-                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
+                  <Text style={[styles.recentLabel, { color: tokens.muted }]}>{t('Recent searches')}</Text>
                   <TouchableOpacity
                     onPress={clearCollectionHistory}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     accessibilityRole="button"
                     accessibilityLabel={t('Clear hadith collection search history')}
                   >
-                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>{t('Clear')}</Text>
+                    <Text style={[styles.recentClearText, { color: tokens.muted }]}>{t('Clear')}</Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView
@@ -920,7 +988,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       key={item}
                       style={[
                         styles.recentChip,
-                        { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                        { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                       ]}
                     >
                       <TouchableOpacity
@@ -932,8 +1000,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                         accessibilityRole="button"
                         accessibilityLabel={`Search for ${item}`}
                       >
-                        <Ionicons name="time-outline" size={13} color={colors.accent} />
-                        <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                        <Ionicons name="time-outline" size={13} color={tokens.accent} />
+                        <Text style={[styles.recentChipText, { color: tokens.text }]} numberOfLines={1}>
                           {item}
                         </Text>
                       </TouchableOpacity>
@@ -944,7 +1012,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                         accessibilityLabel={`${t('Remove')} ${item} ${t('from search history')}`}
                         hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
                       >
-                        <Ionicons name="close" size={12} color={colors.textMuted} />
+                        <Ionicons name="close" size={12} color={tokens.muted} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -988,10 +1056,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     >
                       <View style={styles.colTop}>
                         <View style={styles.flex1}>
-                          <Text style={[styles.colTitle, { color: colors.textPrimary }]}>
+                          <Text style={[styles.colTitle, { color: tokens.text }]}>
                             {item.name.en}
                           </Text>
-                          <Text style={[styles.colHadithCount, { color: colors.textMuted }]}>
+                          <Text style={[styles.colHadithCount, { color: tokens.goldText }]}>
                             {total > 0 ? `${total.toLocaleString()} ${t('hadiths')}` : t('Collection')}
                             {readCount > 0 ? ` · ${readCount} ${t('read')}` : ''}
                           </Text>
@@ -1005,7 +1073,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
                       {item.intro?.en ? (
                         <Text
-                          style={[styles.colIntro, { color: colors.textSecondary }]}
+                          style={[styles.colIntro, { color: tokens.muted }]}
                           numberOfLines={2}
                         >
                           {item.intro.en}
@@ -1013,10 +1081,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       ) : null}
 
                       <View style={styles.colFooter}>
-                        <Text style={[styles.browseBooksText, { color: colors.accent }]}>
+                        <Text style={[styles.browseBooksText, { color: tokens.goldText }]}>
                           {t('Browse Books')} →
                         </Text>
-                        <Text style={[styles.arrow, { color: colors.accent }]}>{isRTL() ? '‹' : '›'}</Text>
+                        <Text style={[styles.arrow, { color: tokens.goldText }]}>{isRTL() ? '‹' : '›'}</Text>
                       </View>
                     </TouchableOpacity>
                   </Card>
@@ -1034,12 +1102,12 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 onAction={() => setCollectionFilter('')}
               />
             )}
-          </ScrollView>
+          </DetailScreen.ScrollView>
         )}
 
         {/* SUBVIEW: BOOKS IN COLLECTION */}
         {activeTab === 'collections' && view.type === 'books' && (
-          <ScrollView
+          <DetailScreen.ScrollView
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
@@ -1050,7 +1118,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                   setBooksRefreshing(true);
                   openCollection(view.collection, true);
                 }}
-                tintColor={colors.accent}
+                tintColor={tokens.accent}
               />
             }
           >
@@ -1069,16 +1137,16 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             <View
               style={[
                 styles.searchBox,
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
               ]}
             >
-              <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
+              <Ionicons name="search" size={16} color={tokens.muted} style={styles.searchIcon} />
               <TextInput
                 value={bookFilter}
                 onChangeText={setBookFilter}
                 placeholder={t('Search books by title or number...')}
-                placeholderTextColor={colors.textMuted}
-                style={[styles.searchInput, { color: colors.textPrimary }]}
+                placeholderTextColor={tokens.muted}
+                style={[styles.searchInput, { color: tokens.text }]}
                 clearButtonMode="while-editing"
                 returnKeyType="search"
                 onSubmitEditing={() => {
@@ -1088,7 +1156,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
               />
               {bookFilter.length > 0 && (
                 <TouchableOpacity onPress={() => setBookFilter('')}>
-                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                  <Ionicons name="close-circle" size={16} color={tokens.muted} />
                 </TouchableOpacity>
               )}
             </View>
@@ -1097,14 +1165,14 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {bookHistory.length > 0 && !bookFilter && (
               <View style={styles.recentWrap}>
                 <View style={styles.recentHeader}>
-                  <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
+                  <Text style={[styles.recentLabel, { color: tokens.muted }]}>{t('Recent searches')}</Text>
                   <TouchableOpacity
                     onPress={clearBookHistory}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                     accessibilityRole="button"
                     accessibilityLabel={t('Clear hadith book search history')}
                   >
-                    <Text style={[styles.recentClearText, { color: colors.textMuted }]}>{t('Clear')}</Text>
+                    <Text style={[styles.recentClearText, { color: tokens.muted }]}>{t('Clear')}</Text>
                   </TouchableOpacity>
                 </View>
                 <ScrollView
@@ -1117,7 +1185,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                       key={item}
                       style={[
                         styles.recentChip,
-                        { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                        { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                       ]}
                     >
                       <TouchableOpacity
@@ -1129,8 +1197,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                         accessibilityRole="button"
                         accessibilityLabel={`Search for ${item}`}
                       >
-                        <Ionicons name="time-outline" size={13} color={colors.accent} />
-                        <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                        <Ionicons name="time-outline" size={13} color={tokens.accent} />
+                        <Text style={[styles.recentChipText, { color: tokens.text }]} numberOfLines={1}>
                           {item}
                         </Text>
                       </TouchableOpacity>
@@ -1141,7 +1209,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                         accessibilityLabel={`Remove ${item} from search history`}
                         hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
                       >
-                        <Ionicons name="close" size={12} color={colors.textMuted} />
+                        <Ionicons name="close" size={12} color={tokens.muted} />
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -1180,17 +1248,17 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     accessibilityLabel={`Book ${item.bookNumber}: ${item.name.en}`}
                   >
                     <View style={styles.bookHeaderRow}>
-                      <View style={[styles.badge, { backgroundColor: colors.accentDim }]}>
-                        <Text style={[styles.badgeText, { color: colors.accent }]}>
+                      <View style={[styles.badge, { backgroundColor: tokens.ringFill }]}>
+                        <Text style={[styles.badgeText, { color: tokens.goldText }]}>
                           Book {item.bookNumber}
                         </Text>
                       </View>
-                      <Text style={[styles.bookCountText, { color: colors.textMuted }]}>
+                      <Text style={[styles.bookCountText, { color: tokens.muted }]}>
                         {item.hadithCount} hadith{item.hadithCount !== 1 ? 's' : ''}
                       </Text>
                     </View>
 
-                    <Text style={[styles.bookTitleEn, { color: colors.textPrimary }]}>
+                    <Text style={[styles.bookTitleEn, { color: tokens.text }]}>
                       {item.name.en || `Book ${item.bookNumber}`}
                     </Text>
 
@@ -1201,13 +1269,13 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     ) : null}
 
                     {item.hadithStartNumber && item.hadithEndNumber ? (
-                      <Text style={[styles.hadithRange, { color: colors.textMuted }]}>
+                      <Text style={[styles.hadithRange, { color: tokens.muted }]}>
                         Hadiths {item.hadithStartNumber} – {item.hadithEndNumber}
                       </Text>
                     ) : null}
 
                     <View style={styles.bookFooter}>
-                      <Text style={[styles.readHint, { color: colors.accent }]}>
+                      <Text style={[styles.readHint, { color: tokens.goldText }]}>
                         View hadiths →
                       </Text>
                     </View>
@@ -1226,12 +1294,12 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 onAction={() => setBookFilter('')}
               />
             )}
-          </ScrollView>
+          </DetailScreen.ScrollView>
         )}
 
         {/* SUBVIEW: HADITHS IN BOOK */}
         {activeTab === 'collections' && view.type === 'hadiths' && (
-          <FlatList
+          <DetailScreen.FlatList
             data={hadiths}
             keyExtractor={(item) => `${item.collection}:${item.bookNumber}:${item.hadithNumber}`}
             contentContainerStyle={styles.scrollContent}
@@ -1242,7 +1310,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                   setHadithsRefreshing(true);
                   openBook(view.collection, view.book, true);
                 }}
-                tintColor={colors.accent}
+                tintColor={tokens.accent}
               />
             }
             ListHeaderComponent={
@@ -1294,8 +1362,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     activeOpacity={0.7}
                   >
                     <View style={styles.hadithRowTop}>
-                      <View style={[styles.badge, { backgroundColor: colors.accentDim }]}>
-                        <Text style={[styles.badgeText, { color: colors.accent }]}>
+                      <View style={[styles.badge, { backgroundColor: tokens.ringFill }]}>
+                        <Text style={[styles.badgeText, { color: tokens.goldText }]}>
                           Hadith #{item.hadithNumber}
                         </Text>
                       </View>
@@ -1303,10 +1371,10 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                         <View
                           style={[
                             styles.gradeBadge,
-                            { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
+                            { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill },
                           ]}
                         >
-                          <Text style={[styles.gradeText, { color: colors.textMuted }]}>
+                          <Text style={[styles.gradeText, { color: tokens.muted }]}>
                             {grade}
                           </Text>
                         </View>
@@ -1315,7 +1383,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
                     {item.chapterTitle?.en ? (
                       <Text
-                        style={[styles.chapterTitle, { color: colors.textMuted }]}
+                        style={[styles.chapterTitle, { color: tokens.muted }]}
                         numberOfLines={1}
                       >
                         Chapter: {item.chapterTitle.en}
@@ -1330,14 +1398,14 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
                     {enText ? (
                       <Text
-                        style={[styles.hadithEnPreview, { color: colors.textSecondary }]}
+                        style={[styles.hadithEnPreview, { color: tokens.muted }]}
                         numberOfLines={3}
                       >
                         {enText}
                       </Text>
                     ) : null}
 
-                    <Text style={[styles.cardTapHint, { color: colors.accent, marginTop: 10 }]}>
+                    <Text style={[styles.cardTapHint, { color: tokens.goldText, marginTop: 10 }]}>
                       Tap for full text & actions →
                     </Text>
                   </TouchableOpacity>
@@ -1352,13 +1420,13 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                     disabled={hadithsLoadingMore}
                     style={[
                       styles.loadMoreBtn,
-                      { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                      { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                     ]}
                   >
                     {hadithsLoadingMore ? (
-                      <ActivityIndicator size="small" color={colors.accent} />
+                      <ActivityIndicator size="small" color={tokens.accent} />
                     ) : (
-                      <Text style={[styles.loadMoreText, { color: colors.textPrimary }]}>
+                      <Text style={[styles.loadMoreText, { color: tokens.text }]}>
                         Load More ({hadiths.length} of {hadithsTotal})
                       </Text>
                     )}
@@ -1371,7 +1439,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
 
         {/* SUBVIEW: HADITH DETAIL */}
         {view.type === 'detail' && (
-          <ScrollView contentContainerStyle={styles.scrollContent}>
+          <DetailScreen.ScrollView contentContainerStyle={styles.scrollContent}>
             {/* Header info */}
             <SectionHeader
               compact
@@ -1383,11 +1451,11 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {/* Chapter title if available */}
             {view.hadith.chapterTitle?.en || view.hadith.chapterTitle?.ar ? (
               <Card padded style={styles.mb16}>
-                <Text style={[styles.chapterHeaderLabel, { color: colors.accent }]}>
+                <Text style={[styles.chapterHeaderLabel, { color: tokens.goldText }]}>
                   CHAPTER {view.hadith.chapterNumber ? `#${view.hadith.chapterNumber}` : ''}
                 </Text>
                 {view.hadith.chapterTitle?.en ? (
-                  <Text style={[styles.chapterTitleEn, { color: colors.textPrimary }]}>
+                  <Text style={[styles.chapterTitleEn, { color: tokens.text }]}>
                     {view.hadith.chapterTitle.en}
                   </Text>
                 ) : null}
@@ -1402,8 +1470,8 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {/* Authenticity Grade */}
             {getHadithGrade(view.hadith) ? (
               <View style={styles.gradeBanner}>
-                <Ionicons name="shield-checkmark" size={16} color={colors.accent} />
-                <Text style={[styles.gradeBannerText, { color: colors.textPrimary }]}>
+                <Ionicons name="shield-checkmark" size={16} color={tokens.accent} />
+                <Text style={[styles.gradeBannerText, { color: tokens.text }]}>
                   Authenticity: {getHadithGrade(view.hadith)}
                 </Text>
               </View>
@@ -1412,7 +1480,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {/* Full Arabic Text Card */}
             <Card padded style={styles.mb16}>
               <View style={styles.cardHeaderRow}>
-                <Text style={[styles.languageTag, { color: colors.textMuted }]}>{t('ARABIC')}</Text>
+                <Text style={[styles.languageTag, { color: tokens.muted }]}>{t('ARABIC')}</Text>
               </View>
               <ArabicText size={26} style={styles.detailArabicText}>
                 {cleanHadithText(view.hadith.ar?.text, view.hadith.ar?.body)}
@@ -1422,9 +1490,9 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
             {/* Full English Translation Card */}
             <Card padded style={styles.mb20}>
               <View style={styles.cardHeaderRow}>
-                <Text style={[styles.languageTag, { color: colors.textMuted }]}>{t('TRANSLATION')}</Text>
+                <Text style={[styles.languageTag, { color: tokens.muted }]}>{t('TRANSLATION')}</Text>
               </View>
-              <Text style={[styles.detailEnglishText, { color: colors.textPrimary }]}>
+              <Text style={[styles.detailEnglishText, { color: tokens.text }]}>
                 {cleanHadithText(view.hadith.en?.text, view.hadith.en?.body)}
               </Text>
             </Card>
@@ -1436,22 +1504,31 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 style={[
                   styles.actionBtn,
                   {
-                    backgroundColor: isCurrentSaved ? colors.accent : colors.bgSurface,
-                    borderColor: isCurrentSaved ? colors.accent : colors.borderSubtle,
+                    backgroundColor: isCurrentSaved ? 'transparent' : tokens.cardTop,
+                    borderColor: isCurrentSaved ? tokens.goldBorder : tokens.cardBorder,
+                    overflow: 'hidden',
                   },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={isCurrentSaved ? t('Unsave hadith') : t('Save hadith')}
               >
+                {isCurrentSaved && (
+                  <LinearGradient
+                    colors={tokens.goldGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                )}
                 <Ionicons
                   name={isCurrentSaved ? 'bookmark' : 'bookmark-outline'}
                   size={18}
-                  color={isCurrentSaved ? colors.onAccent : colors.textPrimary}
+                  color={isCurrentSaved ? tokens.onGold : tokens.text}
                 />
                 <Text
                   style={[
                     styles.actionBtnText,
-                    { color: isCurrentSaved ? colors.onAccent : colors.textPrimary },
+                    { color: isCurrentSaved ? tokens.onGold : tokens.text },
                   ]}
                 >
                   {isCurrentSaved ? t('Saved') : t('Save')}
@@ -1463,32 +1540,32 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
                 disabled={isSharingImage}
                 style={[
                   styles.actionBtn,
-                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel={t('Share hadith')}
               >
                 {isSharingImage ? (
-                  <ActivityIndicator size="small" color={colors.textPrimary} />
+                  <ActivityIndicator size="small" color={tokens.text} />
                 ) : (
-                  <Ionicons name="share-outline" size={18} color={colors.textPrimary} />
+                  <Ionicons name="share-outline" size={18} color={tokens.text} />
                 )}
-                <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>{t('Share')}</Text>
+                <Text style={[styles.actionBtnText, { color: tokens.text }]}>{t('Share')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Source Reference Footer */}
             <View style={styles.sourceFooter}>
-              <Text style={[styles.sourceText, { color: colors.textMuted }]}>
+              <Text style={[styles.sourceText, { color: tokens.muted }]}>
                 Reference: {view.collection.nameEn || view.collection.slug} Book{' '}
                 {view.book?.bookNumber || view.hadith.bookNumber || '1'}, Hadith{' '}
                 {view.hadith.hadithNumber}
               </Text>
-              <Text style={[styles.recordedBadge, { color: colors.textMuted }]}>
+              <Text style={[styles.recordedBadge, { color: tokens.muted }]}>
                 ✓ Recorded in Recently Read & Progress
               </Text>
             </View>
-          </ScrollView>
+          </DetailScreen.ScrollView>
         )}
       </View>
 
@@ -1498,28 +1575,33 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
           <View
             ref={shareCardRef}
             collapsable={false}
-            style={[styles.shareCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+            style={[styles.shareCard, { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}
           >
-            <Text style={[styles.shareCardEyebrow, { color: colors.accent }]}>
+            <Text style={[styles.shareCardEyebrow, { color: tokens.goldText }]}>
               {shareHadithData.collectionName}
             </Text>
             {shareHadithData.arabicText ? (
-              <Text style={[styles.shareCardArabic, { color: colors.textPrimary }]}>
+              <Text style={[styles.shareCardArabic, { color: tokens.text }]}>
                 {shareHadithData.arabicText}
               </Text>
             ) : null}
-            <View style={[styles.shareCardRule, { backgroundColor: colors.accent }]} />
+            <LinearGradient
+              colors={tokens.goldGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.shareCardRule}
+            />
             {shareHadithData.englishText ? (
-              <Text style={[styles.shareCardTrans, { color: colors.textSecondary }]}>
+              <Text style={[styles.shareCardTrans, { color: tokens.text }]}>
                 {shareHadithData.englishText}
               </Text>
             ) : null}
-            <Text style={[styles.shareCardRef, { color: colors.textMuted }]}>
+            <Text style={[styles.shareCardRef, { color: tokens.muted }]}>
               {shareHadithData.source}
             </Text>
 
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}
-            <View style={styles.shareCardBrandFooter} collapsable={false}>
+            <View style={[styles.shareCardBrandFooter, { borderTopColor: tokens.cardBorder }]} collapsable={false}>
               <View collapsable={false} style={styles.shareCardLogoWrap}>
                 <Image
                   source={
@@ -1535,7 +1617,7 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
-                  { color: colors.textPrimary },
+                  { color: tokens.text },
                 ]}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
@@ -1544,13 +1626,25 @@ export default function HadithLibraryScreen({ onBack }: HadithLibraryScreenProps
           </View>
         </View>
       )}
+    </DetailScreen>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+  },
+  detailScreen: {
+    backgroundColor: 'transparent',
+  },
   container: {
     flex: 1,
+  },
+  card: {
+    borderRadius: 14,
+    borderWidth: 0.75,
+    padding: 16,
   },
   flex1: {
     flex: 1,
@@ -1558,7 +1652,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingTop: 10,
-    paddingBottom: 40,
+    paddingBottom: 16,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
@@ -1571,7 +1665,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 4,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.75,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
@@ -1588,7 +1682,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   tabsWrap: {
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.75,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
@@ -1606,7 +1700,7 @@ const styles = StyleSheet.create({
     height: 28,
     paddingHorizontal: 10,
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   tabChipText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1615,12 +1709,12 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    height: 38,
+    borderWidth: 0.75,
+    borderRadius: 22,
+    paddingHorizontal: 14,
+    height: 42,
     marginBottom: 10,
-    gap: 6,
+    gap: 8,
   },
   searchIcon: {
     marginRight: 2,
@@ -1630,6 +1724,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     padding: 0,
+    minWidth: 0,
+    ...(Platform.OS === 'web' ? { outlineStyle: 'none', outlineWidth: 0 } as any : {}),
   },
   recentWrap: {
     marginBottom: 10,
@@ -1659,7 +1755,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.75,
     paddingLeft: 8,
     paddingRight: 4,
     height: 28,
@@ -1826,7 +1922,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   gradeBadge: {
-    borderWidth: 1,
+    borderWidth: 0.75,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
@@ -1865,7 +1961,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   loadMoreText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1927,7 +2023,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   actionBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2047,11 +2143,10 @@ const styles = StyleSheet.create({
     top: 0,
     width: 360,
     padding: 20,
-    backgroundColor: '#F4EEDE',
   },
   shareCard: {
     borderRadius: 20,
-    borderWidth: 1,
+    borderWidth: 0.75,
     padding: 24,
     alignItems: 'stretch',
   },
@@ -2097,7 +2192,6 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E6DFC9',
     gap: 8,
   },
   shareCardLogoWrap: {

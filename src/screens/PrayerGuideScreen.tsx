@@ -3,17 +3,19 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useThemeTokens } from '../theme/tokens';
 import { t } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard, Chip } from '../components/ui';
+import { fontRoles } from '../theme/tokens';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
+import { hScrollRTLStyle } from '../lib/rtl';
 import {
   PRAYER_GUIDE_SECTIONS,
   SECTION_ICONS,
@@ -22,13 +24,20 @@ import {
   type PrayerGuideItem,
 } from '../lib/prayerGuide';
 
-export default function PrayerGuideScreen({ onBack }: { onBack?: () => void }) {
-  const { colors } = useTheme();
+export default function PrayerGuideScreen({
+  onBack,
+  backLabel = 'Library',
+}: {
+  onBack?: () => void;
+  backLabel?: string;
+}) {
+  const { tokens } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
 
+  const [selectedSectionId, setSelectedSectionId] = useState<string>(PRAYER_GUIDE_SECTIONS[0]?.id || '');
   const [updates, setUpdates] = useState<Record<string, GuideUpdate>>({});
 
   const allItems = useMemo(
@@ -54,137 +63,175 @@ export default function PrayerGuideScreen({ onBack }: { onBack?: () => void }) {
     const translation = update?.translation ?? item.translation;
     const grades = update?.grades ?? item.grades;
     return (
-      <Card key={item.id} style={styles.itemCard}>
-        <Text style={[styles.itemTitle, { color: colors.forestGreen || colors.accent }]}>{t(item.title)}</Text>
+      <PremiumCard key={item.id} style={styles.itemCard} padded>
+        <Text style={[styles.itemTitle, { color: tokens.textPrimary }]}>{t(item.title)}</Text>
         {arabic ? (
-          <ArabicText style={[styles.itemArabic, { color: colors.textPrimary }]}>
+          <ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
             {arabic}
           </ArabicText>
         ) : null}
         {item.transliteration ? (
-          <Text style={[styles.itemTranslit, { color: colors.textSecondary }]}>
+          <Text style={[styles.itemTranslit, { color: tokens.textSecondary }]}>
             {item.transliteration}
           </Text>
         ) : null}
-        <Text style={[styles.itemTranslation, { color: colors.textSecondary }]}>
+        <Text style={[styles.itemTranslation, { color: tokens.textSecondary }]}>
           {t(translation)}
         </Text>
         <View style={styles.refRow}>
-          <Ionicons name="book-outline" size={12} color={colors.textMuted} />
-          <Text style={[styles.itemRef, { color: colors.textMuted }]}>{item.reference}</Text>
+          <Ionicons name="book-outline" size={12} color={tokens.textMuted} />
+          <Text style={[styles.itemRef, { color: tokens.textMuted }]}>{item.reference}</Text>
           {grades ? (
             <View
               style={[
                 styles.gradePill,
-                { backgroundColor: colors.sagePill || '#DBE7E1', borderColor: 'transparent' },
+                { backgroundColor: tokens.sagePill, borderColor: 'transparent' },
               ]}
             >
-              <Text style={[styles.gradePillText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>{grades}</Text>
+              <Text style={[styles.gradePillText, { color: tokens.goldText }]}>{grades}</Text>
             </View>
           ) : null}
         </View>
-      </Card>
+      </PremiumCard>
     );
   };
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[
-        styles.content,
-        { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
-      ]}
+    <DetailScreen
+      style={{ backgroundColor: tokens.bgBase }}
+      header={
+        <SubHeader
+          title={t('Prayer Guide (Fiqh)')}
+          eyebrow={t('Guides')}
+          subtitle={t('Wudu, Salah, praying in congregation, Janazah, Istikhara, Eid and Taraweeh — every narration verified with its collection, number and grade.')}
+          onBack={onBack}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
+        />
+      }
     >
-      <ScreenHeader
-        title={t('Prayer Guide (Fiqh)')}
-        eyebrow={t('Guides')}
-        subtitle={t('Wudu, Salah, praying in congregation, Janazah, Istikhara, Eid and Taraweeh — every narration verified with its collection, number and grade.')}
-        onBack={onBack}
-        backLabel={t('Library')}
-      />
+      <DetailScreen.ScrollView
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={[
+          styles.content,
+          { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
+        ]}
+      >
+        {/* Section Quick Jump Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.chipsScroll, hScrollRTLStyle()]}
+        >
+          {PRAYER_GUIDE_SECTIONS.map((sec) => (
+            <Chip
+              key={sec.id}
+              label={t(sec.title.replace('Purification: ', ''))}
+              selected={selectedSectionId === sec.id}
+              onPress={() => setSelectedSectionId(sec.id)}
+            />
+          ))}
+        </ScrollView>
 
-      {PRAYER_GUIDE_SECTIONS.map((section, si) => (
-        <View key={section.id} style={styles.sectionWrap}>
-          <View style={styles.sectionHeadRow}>
-            <View
-              style={[
-                styles.sectionIcon,
-                { backgroundColor: colors.iconCircleBg || '#E0EAE5', borderColor: 'transparent' },
-              ]}
-            >
-              <Ionicons
-                name={
-                  (SECTION_ICONS[section.id] ?? 'book-outline') as keyof typeof Ionicons.glyphMap
-                }
-                size={16}
-                color={colors.iconCircleFg || colors.forestGreen || colors.accent}
-              />
+        {PRAYER_GUIDE_SECTIONS.map((section, si) => (
+          <View key={section.id} style={styles.sectionWrap}>
+            <View style={styles.sectionHeadRow}>
+              <View
+                style={[
+                  styles.sectionIcon,
+                  { backgroundColor: tokens.iconCircleBg, borderColor: 'transparent' },
+                ]}
+              >
+                <Ionicons
+                  name={
+                    (SECTION_ICONS[section.id] ?? 'book-outline') as keyof typeof Ionicons.glyphMap
+                  }
+                  size={17}
+                  color={tokens.iconCircleFg}
+                />
+              </View>
+              <View style={styles.sectionTitleCol}>
+                <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
+                  {t(section.title)}
+                </Text>
+                {section.arabicTitle ? (
+                  <ArabicText align="left" size={13} style={{ color: tokens.text }}>
+                    {section.arabicTitle}
+                  </ArabicText>
+                ) : null}
+              </View>
             </View>
-            <View style={styles.sectionTitleCol}>
-              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-                {t(section.title)}
-              </Text>
-              {section.arabicTitle ? (
-                <ArabicText align="left" size={13} style={{ color: colors.textMuted }}>
-                  {section.arabicTitle}
-                </ArabicText>
-              ) : null}
-            </View>
+            {section.items.map(renderItem)}
+            {si < PRAYER_GUIDE_SECTIONS.length - 1 ? (
+              <Hairline style={styles.sectionDivider} />
+            ) : null}
           </View>
-          {section.items.map(renderItem)}
-          {si < PRAYER_GUIDE_SECTIONS.length - 1 ? (
-            <Hairline style={styles.sectionDivider} />
-          ) : null}
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 10, paddingBottom: 40 },
-  sectionWrap: { marginBottom: 18 },
+  content: { paddingTop: 12 },
+  chipsScroll: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+    paddingRight: 4,
+  },
+  sectionWrap: { marginBottom: 20 },
   sectionHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
   sectionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sectionTitleCol: { flex: 1 },
-  sectionTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 15 },
-  sectionDivider: { marginTop: 14 },
-  itemCard: { marginBottom: 10, padding: 14 },
+  sectionTitle: {
+    fontFamily: fontRoles.title,
+    fontSize: 18,
+    letterSpacing: 0.2,
+  },
+  sectionDivider: { marginTop: 16, marginBottom: 6 },
+  itemCard: { marginBottom: 12 },
   itemTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13.5,
+    fontFamily: fontRoles.uiBold,
+    fontSize: 14.5,
     letterSpacing: 0.2,
     marginBottom: 6,
   },
-  itemArabic: { fontSize: 17, lineHeight: 27, marginBottom: 6 },
+  itemArabic: {
+    fontFamily: fontRoles.arabic,
+    fontSize: 18,
+    lineHeight: 28,
+    marginBottom: 6,
+  },
   itemTranslit: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontFamily: fontRoles.ui,
+    fontSize: 12,
     fontStyle: 'italic',
-    lineHeight: 17,
+    lineHeight: 18,
     marginBottom: 4,
   },
-  itemTranslation: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19 },
+  itemTranslation: { fontFamily: fontRoles.ui, fontSize: 13.5, lineHeight: 20 },
   refRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
     gap: 6,
-    marginTop: 8,
+    marginTop: 10,
   },
-  itemRef: { fontFamily: 'Manrope_500Medium', fontSize: 10.5, maxWidth: '70%' },
+  itemRef: { fontFamily: fontRoles.ui, fontSize: 11, maxWidth: '70%' },
   gradePill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
     borderWidth: 1,
   },
-  gradePillText: { fontFamily: 'Manrope_600SemiBold', fontSize: 9.5, letterSpacing: 0.3 },
+  gradePillText: { fontFamily: fontRoles.uiBold, fontSize: 9.5, letterSpacing: 0.3 },
 });

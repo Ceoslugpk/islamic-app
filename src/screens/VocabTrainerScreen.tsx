@@ -10,8 +10,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
+import { getPillShadow, getCardShadow } from '../lib/homeThemeTokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard } from '../components/ui';
 import { ArabicText } from '../components/ArabicText';
 import { VOCAB_WORDS, VocabWord, TIER_LABELS, getDailyWord, getDailyWords } from '../lib/vocab';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -40,9 +43,10 @@ interface Props {
 
 export function VocabTrainerScreen({ onBack, backLabel }: Props) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
+  const paddingH = isCompact ? 14 : 20;
 
   const [known, setKnown] = useState<Record<string, boolean>>({});
   const [revealed, setRevealed] = useState(false);
@@ -113,250 +117,352 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
   const progressPercent = Math.round((knownCount / VOCAB_WORDS.length) * 100);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader
-        title={t('Quran Vocabulary')}
-        subtitle={t('Most frequent words of the Quran')}
-        eyebrow={t('Learn')}
-        backLabel={backLabel ? t(backLabel) : t('Library')}
-        onBack={onBack}
-      />
-
-      <ScrollView contentContainerStyle={styles.content} style={{ flex: 1 }}>
-        {/* Progress */}
-        <View style={styles.statsRow}>
-          <View style={[styles.statChip, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>
-              {knownCount}/{VOCAB_WORDS.length} {t('known')}
-            </Text>
-          </View>
-          <View style={[styles.statChip, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <Ionicons name="trending-up" size={14} color={colors.accent} />
-            <Text style={[styles.statText, { color: colors.textSecondary }]}>{progressPercent}%</Text>
-          </View>
-        </View>
-
-        {/* Today's Word Card (Prominently featured Quranic word of the day) */}
-        <View
-          style={[
-            styles.dailyCard,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
-            },
+    <DetailScreen
+      style={{ backgroundColor: tokens.bgTop }}
+      header={
+        <SubHeader
+          title={t('Quran Vocabulary')}
+          subtitle={t('Most frequent words of the Quran')}
+          eyebrow={t('Learn')}
+          backLabel={backLabel ? t(backLabel) : t('Library')}
+          onBack={onBack}
+          borderBottom
+          showFade
+        />
+      }
+    >
+      <View style={styles.contentWrap}>
+        <DetailScreen.ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingHorizontal: paddingH },
           ]}
+          style={{ flex: 1 }}
         >
-          <View style={styles.dailyTopRow}>
-            <View style={[styles.dailyBadge, { backgroundColor: colors.accentDim }]}>
-              <Ionicons name="sparkles" size={12} color={colors.accent} />
-              <Text style={[styles.dailyBadgeText, { color: colors.accent }]}>{t("TODAY'S WORD")}</Text>
-            </View>
-            <View style={[styles.tierBadge, { backgroundColor: colors.accentDim }]}>
-              <Text style={[styles.tierText, { color: colors.accent }]}>
-                {t(TIER_LABELS[dailyWord.tier])}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.dailyBody}>
-            <ArabicText size={34} align="center" style={styles.dailyArabic}>
-              {dailyWord.arabic}
-            </ArabicText>
-            <Text style={[styles.dailyTranslit, { color: colors.textSecondary }]}>
-              {dailyWord.transliteration}
-            </Text>
-            <Text style={[styles.dailyMeaning, { color: colors.textPrimary }]}>
-              &quot;{t(dailyWord.meaning)}&quot;
-            </Text>
-            <Text style={[styles.dailyRef, { color: colors.textMuted }]}>
-              Quran {dailyWord.ref}
-            </Text>
-          </View>
-
-          <View style={styles.dailyFooter}>
-            <TouchableOpacity
-              onPress={() => {
-                setTierFilter(null);
-                const foundIdx = VOCAB_WORDS.findIndex((w) => w.arabic === dailyWord.arabic);
-                if (foundIdx >= 0) {
-                  setIndex(foundIdx);
-                  setRevealed(false);
-                }
-              }}
+          {/* Progress */}
+          <View style={styles.statsRow}>
+            <View
               style={[
-                styles.dailyActionBtn,
-                { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Practice ${dailyWord.transliteration} in flashcards`}
-            >
-              <Ionicons name="school-outline" size={14} color={colors.accent} />
-              <Text style={[styles.dailyActionBtnText, { color: colors.accent }]}>
-                {t('Practice in Trainer')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={async () => {
-                const isK = !!known[dailyWord.arabic];
-                const nextK = { ...known, [dailyWord.arabic]: !isK };
-                setKnown(nextK);
-                await persist(nextK, index);
-              }}
-              style={[
-                styles.dailyActionBtn,
+                styles.statChip,
+                getPillShadow(mode),
                 {
-                  backgroundColor: known[dailyWord.arabic] ? colors.accentDim : colors.bgBase,
-                  borderColor: known[dailyWord.arabic] ? colors.accent : colors.borderSubtle,
+                  backgroundColor: tokens.ringFill,
+                  borderColor: tokens.ringBorder,
                 },
               ]}
-              accessibilityRole="button"
-              accessibilityLabel={known[dailyWord.arabic] ? t('Mark as unlearned') : t('Mark as known')}
             >
-              <Ionicons
-                name={known[dailyWord.arabic] ? 'checkmark-circle' : 'checkmark-circle-outline'}
-                size={14}
-                color={known[dailyWord.arabic] ? colors.accent : colors.textMuted}
-              />
-              <Text
-                style={[
-                  styles.dailyActionBtnText,
-                  { color: known[dailyWord.arabic] ? colors.accent : colors.textSecondary },
-                ]}
-              >
-                {known[dailyWord.arabic] ? t('Learned ✓') : t('Mark Known')}
+              <Ionicons name="checkmark-circle" size={14} color={tokens.goldText} />
+              <Text style={[styles.statText, { color: tokens.text }]}>
+                {knownCount}/{VOCAB_WORDS.length} {t('known')}
               </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Tier filter */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterRow, hScrollRTLStyle()]}>
-          {[
-            { id: null, label: t('All') },
-            { id: 'daily' as const, label: t("Today's Set") },
-            { id: 1, label: t(TIER_LABELS[1]) },
-            { id: 2, label: t(TIER_LABELS[2]) },
-            { id: 3, label: t(TIER_LABELS[3]) },
-          ].map((item) => (
-            <TouchableOpacity
-              key={String(item.id)}
-              onPress={() => {
-                setTierFilter(item.id);
-                setIndex(0);
-                setRevealed(false);
-              }}
+            </View>
+            <View
               style={[
-                styles.filterChip,
+                styles.statChip,
+                getPillShadow(mode),
                 {
-                  backgroundColor: tierFilter === item.id ? colors.accent : colors.bgSurface,
-                  borderColor: tierFilter === item.id ? colors.accent : colors.borderSubtle,
+                  backgroundColor: tokens.ringFill,
+                  borderColor: tokens.ringBorder,
                 },
               ]}
-              accessibilityRole="button"
             >
-              <Text
+              <Ionicons name="trending-up" size={14} color={tokens.goldText} />
+              <Text style={[styles.statText, { color: tokens.text }]}>{progressPercent}%</Text>
+            </View>
+          </View>
+
+          {/* Today's Word Card (Prominently featured Quranic word of the day) */}
+          <PremiumCard
+            padded={false}
+            style={styles.dailyCard}
+            contentStyle={styles.dailyCardContent}
+          >
+            <View style={styles.dailyTopRow}>
+              <View
                 style={[
-                  styles.filterText,
-                  { color: tierFilter === item.id ? colors.onAccent : colors.textSecondary },
+                  styles.dailyBadge,
+                  getPillShadow(mode),
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                    borderWidth: cardTokens.borderWidth,
+                  },
                 ]}
               >
-                {item.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        {/* Flashcard */}
-        {current ? (
-          <TouchableOpacity
-            onPress={() => setRevealed((r) => !r)}
-            activeOpacity={0.92}
-            style={[styles.card, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
-            accessibilityRole="button"
-            accessibilityLabel={`Vocabulary card ${index + 1} of ${words.length}. Tap to flip.`}
-          >
-            <View style={styles.cardTopRow}>
-              <Text style={[styles.cardCount, { color: colors.textMuted }]}>
-                {index + 1} / {words.length}
-              </Text>
-              <View style={[styles.tierBadge, { backgroundColor: colors.accentDim }]}>
-                <Text style={[styles.tierText, { color: colors.accent }]}>{t(TIER_LABELS[current.tier])}</Text>
+                <Ionicons name="sparkles" size={12} color={tokens.goldText} />
+                <Text style={[styles.dailyBadgeText, { color: tokens.goldText }]}>{t("TODAY'S WORD")}</Text>
+              </View>
+              <View
+                style={[
+                  styles.tierBadge,
+                  getPillShadow(mode),
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                    borderWidth: cardTokens.borderWidth,
+                  },
+                ]}
+              >
+                <Text style={[styles.tierText, { color: tokens.goldText }]}>
+                  {t(TIER_LABELS[dailyWord.tier])}
+                </Text>
               </View>
             </View>
 
-            {!revealed ? (
-              <View style={styles.cardFace}>
-                <ArabicText size={44} align="center" style={styles.cardArabic}>
-                  {current.arabic}
-                </ArabicText>
-                <Text style={[styles.cardHint, { color: colors.textMuted }]}>
-                  {t('Tap to reveal meaning')}
+            <View style={styles.dailyBody}>
+              <ArabicText size={34} align="center" style={[styles.dailyArabic, { color: tokens.arabicName }]}>
+                {dailyWord.arabic}
+              </ArabicText>
+              <Text style={[styles.dailyTranslit, { color: tokens.muted }]}>
+                {dailyWord.transliteration}
+              </Text>
+              <Text style={[styles.dailyMeaning, { color: tokens.text }]}>
+                &quot;{t(dailyWord.meaning)}&quot;
+              </Text>
+              <Text style={[styles.dailyRef, { color: tokens.muted }]}>
+                Quran {dailyWord.ref}
+              </Text>
+            </View>
+
+            <View style={styles.dailyFooter}>
+              <TouchableOpacity
+                onPress={() => {
+                  setTierFilter(null);
+                  const foundIdx = VOCAB_WORDS.findIndex((w) => w.arabic === dailyWord.arabic);
+                  if (foundIdx >= 0) {
+                    setIndex(foundIdx);
+                    setRevealed(false);
+                  }
+                }}
+                style={[
+                  styles.dailyActionBtn,
+                  getPillShadow(mode),
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Practice ${dailyWord.transliteration} in flashcards`}
+              >
+                <Ionicons name="school-outline" size={14} color={tokens.goldText} />
+                <Text style={[styles.dailyActionBtnText, { color: tokens.goldText }]}>
+                  {t('Practice in Trainer')}
                 </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={async () => {
+                  const isK = !!known[dailyWord.arabic];
+                  const nextK = { ...known, [dailyWord.arabic]: !isK };
+                  setKnown(nextK);
+                  await persist(nextK, index);
+                }}
+                style={[
+                  styles.dailyActionBtn,
+                  getPillShadow(mode),
+                  {
+                    backgroundColor: known[dailyWord.arabic] ? tokens.gold : tokens.ringFill,
+                    borderColor: known[dailyWord.arabic] ? tokens.goldBorder : tokens.ringBorder,
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={known[dailyWord.arabic] ? t('Mark as unlearned') : t('Mark as known')}
+              >
+                <Ionicons
+                  name={known[dailyWord.arabic] ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                  size={14}
+                  color={known[dailyWord.arabic] ? tokens.onGold : tokens.goldText}
+                />
+                <Text
+                  style={[
+                    styles.dailyActionBtnText,
+                    {
+                      color: known[dailyWord.arabic] ? tokens.onGold : tokens.goldText,
+                    },
+                  ]}
+                >
+                  {known[dailyWord.arabic] ? t('Learned ✓') : t('Mark Known')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </PremiumCard>
+
+          {/* Tier filter */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterRow, hScrollRTLStyle()]}>
+            {[
+              { id: null, label: t('All') },
+              { id: 'daily' as const, label: t("Today's Set") },
+              { id: 1, label: t(TIER_LABELS[1]) },
+              { id: 2, label: t(TIER_LABELS[2]) },
+              { id: 3, label: t(TIER_LABELS[3]) },
+            ].map((item) => {
+              const isSelected = tierFilter === item.id;
+              return (
+                <TouchableOpacity
+                  key={String(item.id)}
+                  onPress={() => {
+                    setTierFilter(item.id);
+                    setIndex(0);
+                    setRevealed(false);
+                  }}
+                  style={[
+                    styles.filterChip,
+                    getPillShadow(mode),
+                    {
+                      backgroundColor: isSelected ? tokens.gold : tokens.cardTop,
+                      borderColor: isSelected ? tokens.goldBorder : tokens.cardBorder,
+                    },
+                  ]}
+                  accessibilityRole="button"
+                >
+                  <Text
+                    style={[
+                      styles.filterText,
+                      { color: isSelected ? tokens.onGold : tokens.muted },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          {/* Flashcard */}
+          {current ? (
+            <PremiumCard
+              onPress={() => setRevealed((r) => !r)}
+              activeOpacity={0.92}
+              padded={false}
+              style={styles.card}
+              contentStyle={styles.cardContent}
+              accessibilityRole="button"
+              accessibilityLabel={`Vocabulary card ${index + 1} of ${words.length}. Tap to flip.`}
+            >
+              <View style={styles.cardTopRow}>
+                <Text style={[styles.cardCount, { color: tokens.muted }]}>
+                  {index + 1} / {words.length}
+                </Text>
+                <View
+                  style={[
+                    styles.tierBadge,
+                    getPillShadow(mode),
+                    {
+                      backgroundColor: tokens.ringFill,
+                      borderColor: tokens.ringBorder,
+                      borderWidth: cardTokens.borderWidth,
+                    },
+                  ]}
+                >
+                  <Text style={[styles.tierText, { color: tokens.goldText }]}>{t(TIER_LABELS[current.tier])}</Text>
+                </View>
               </View>
-            ) : (
-              <View style={styles.cardFace}>
-                <ArabicText size={30} align="center" style={styles.cardArabic}>
-                  {current.arabic}
-                </ArabicText>
-                <Text style={[styles.cardTranslit, { color: colors.textSecondary }]}>
-                  {current.transliteration}
-                </Text>
-                <View style={[styles.meaningRule, { backgroundColor: colors.accent }]} />
-                <Text style={[styles.cardMeaning, { color: colors.textPrimary }]}>
-                  {t(current.meaning)}
-                </Text>
-                <Text style={[styles.cardRef, { color: colors.textMuted }]}>
-                  Quran {current.ref}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        ) : null}
 
-        {/* Controls */}
-        <View style={styles.controlsRow}>
-          <TouchableOpacity
-            style={[styles.ctrlBtn, { borderColor: colors.borderSubtle }]}
-            onPress={prev}
-            accessibilityRole="button"
-            accessibilityLabel={t('Previous word')}
-          >
-            <Ionicons name={getBackIcon()} size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
+              {!revealed ? (
+                <View style={styles.cardFace}>
+                  <ArabicText size={44} align="center" style={[styles.cardArabic, { color: tokens.arabicName }]}>
+                    {current.arabic}
+                  </ArabicText>
+                  <Text style={[styles.cardHint, { color: tokens.muted }]}>
+                    {t('Tap to reveal meaning')}
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.cardFace}>
+                  <ArabicText size={30} align="center" style={[styles.cardArabic, { color: tokens.arabicName }]}>
+                    {current.arabic}
+                  </ArabicText>
+                  <Text style={[styles.cardTranslit, { color: tokens.muted }]}>
+                    {current.transliteration}
+                  </Text>
+                  <View style={[styles.meaningRule, { backgroundColor: tokens.goldBorder }]} />
+                  <Text style={[styles.cardMeaning, { color: tokens.text }]}>
+                    {t(current.meaning)}
+                  </Text>
+                  <Text style={[styles.cardRef, { color: tokens.muted }]}>
+                    Quran {current.ref}
+                  </Text>
+                </View>
+              )}
+            </PremiumCard>
+          ) : null}
 
-          <TouchableOpacity
-            style={[styles.knowBtn, { backgroundColor: colors.accent }]}
-            onPress={markKnown}
-            accessibilityRole="button"
-            accessibilityLabel={t('Mark this word as known')}
-          >
-            <Ionicons name="checkmark" size={18} color={colors.onAccent} />
-            <Text style={[styles.knowBtnText, { color: colors.onAccent }]}>{t('I know this')}</Text>
-          </TouchableOpacity>
+          {/* Controls */}
+          <View style={styles.controlsRow}>
+            <TouchableOpacity
+              style={[
+                styles.ctrlBtn,
+                getPillShadow(mode),
+                {
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
+                },
+              ]}
+              onPress={prev}
+              accessibilityRole="button"
+              accessibilityLabel={t('Previous word')}
+            >
+              <Ionicons name={getBackIcon()} size={20} color={tokens.text} />
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.ctrlBtn, { borderColor: colors.borderSubtle }]}
-            onPress={next}
-            accessibilityRole="button"
-            accessibilityLabel={t('Next word')}
-          >
-            <Ionicons name={getForwardIcon()} size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity
+              style={[
+                styles.knowBtn,
+                getPillShadow(mode),
+                {
+                  backgroundColor: tokens.gold,
+                  borderColor: tokens.goldBorder,
+                },
+              ]}
+              onPress={markKnown}
+              accessibilityRole="button"
+              accessibilityLabel={t('Mark this word as known')}
+            >
+              <Ionicons name="checkmark" size={18} color={tokens.onGold} />
+              <Text style={[styles.knowBtnText, { color: tokens.onGold }]}>{t('I know this')}</Text>
+            </TouchableOpacity>
 
-        <Text style={[styles.sessionHint, { color: colors.textMuted }]}>
-          {sessionKnown} {t('marked known this session')}
-        </Text>
-      </ScrollView>
-    </View>
+            <TouchableOpacity
+              style={[
+                styles.ctrlBtn,
+                getPillShadow(mode),
+                {
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
+                },
+              ]}
+              onPress={next}
+              accessibilityRole="button"
+              accessibilityLabel={t('Next word')}
+            >
+              <Ionicons name={getForwardIcon()} size={20} color={tokens.text} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={[styles.sessionHint, { color: tokens.muted }]}>
+            {sessionKnown} {t('marked known this session')}
+          </Text>
+        </DetailScreen.ScrollView>
+      </View>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 20, paddingBottom: 40 },
+  contentWrap: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
+  },
+  headerWrap: {
+    paddingTop: 4,
+  },
+  content: {
+    paddingTop: 12,
+  },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   statChip: {
     flexDirection: 'row',
@@ -365,7 +471,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 18,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
   },
   statText: { fontFamily: 'Manrope_500Medium', fontSize: 12 },
   filterRow: { gap: 8, marginBottom: 18 },
@@ -373,13 +479,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     marginRight: 8,
   },
   filterText: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
   card: {
     borderRadius: 20,
-    borderWidth: 1,
+    minHeight: 240,
+  },
+  cardContent: {
     padding: 22,
     minHeight: 240,
     justifyContent: 'center',
@@ -400,7 +508,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -412,14 +520,16 @@ const styles = StyleSheet.create({
     minHeight: 46,
     paddingHorizontal: 22,
     borderRadius: 23,
+    borderWidth: cardTokens.borderWidth,
   },
-  knowBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14, color: '#FFF' },
+  knowBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
   sessionHint: { fontFamily: 'Manrope_400Regular', fontSize: 12, textAlign: 'center', marginTop: 14 },
   dailyCard: {
     borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
     marginBottom: 16,
+  },
+  dailyCardContent: {
+    padding: 18,
   },
   dailyTopRow: {
     flexDirection: 'row',

@@ -5,7 +5,7 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  FlatList,
+  type FlatList,
   TextInput,
   useWindowDimensions,
   Platform,
@@ -15,12 +15,16 @@ import {
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeTokens } from '../theme/tokens';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { t, isRTL } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { EmptyState } from '../components/EmptyState';
+import { PremiumCard } from '../components/ui';
 import { useSearchHistory } from '../lib/searchHistory';
 import {
   DUAS_DATA,
@@ -32,8 +36,14 @@ import {
 import { DuaCardSkeleton } from '../components/Skeleton';
 import { hScrollRTLStyle } from '../lib/rtl';
 
-export default function DuasScreen({ onBack }: { onBack?: () => void }) {
-  const { colors, mode } = useTheme();
+export default function DuasScreen({
+  onBack,
+  backLabel = 'Library',
+}: {
+  onBack?: () => void;
+  backLabel?: string;
+}) {
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
@@ -46,7 +56,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
 
   const shareCardRef = useRef<View>(null);
   const [shareDuaItem, setShareDuaItem] = useState<DuaItem | null>(null);
-  const [isSharingImage, setIsSharingImage] = useState(false);
+  const [, setIsSharingImage] = useState(false);
 
   const {
     history: searchHistory,
@@ -141,37 +151,39 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
   const renderItem = ({ item }: { item: DuaItem }) => {
     const isHighlighted = item.id === highlightedId;
     return (
-      <View
+      <PremiumCard
+        key={item.id}
+        padded={false}
+        borderRadius={14}
         style={[
           styles.duaCard,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: isHighlighted ? colors.accent : colors.borderSubtle,
-          },
           isHighlighted && {
-            shadowColor: colors.accent,
+            borderColor: tokens.goldBorder,
+            shadowColor: tokens.gold,
             shadowOpacity: 0.55,
             shadowRadius: 9,
             shadowOffset: { width: 0, height: 0 },
             elevation: 5,
           },
         ]}
+        contentStyle={styles.duaCardContent}
       >
         {/* Top Header of Card */}
         <View style={styles.cardHeader}>
-          <Text style={[styles.duaTitle, { color: colors.textPrimary }]}>
+          <Text style={[styles.duaTitle, { color: tokens.text }]}>
             {t(item.title)}
           </Text>
           <View
             style={[
               styles.categoryBadge,
+              getPillShadow(mode),
               {
-                backgroundColor: colors.sagePill,
-                borderColor: colors.borderSubtle,
+                backgroundColor: tokens.ringFill,
+                borderColor: tokens.ringBorder,
               },
             ]}
           >
-            <Text style={[styles.categoryBadgeText, { color: colors.forestGreen }]}>
+            <Text style={[styles.categoryBadgeText, { color: tokens.goldText }]}>
               {t(item.category)}
             </Text>
           </View>
@@ -179,26 +191,26 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
 
         {/* Arabic Text */}
         <View style={styles.arabicWrap}>
-          <ArabicText size={26} align="right" style={styles.arabic}>
+          <ArabicText size={26} align="right" style={[styles.arabic, { color: tokens.text }]}>
             {item.arabic}
           </ArabicText>
         </View>
 
-        <Hairline style={{ marginVertical: 12 }} />
+        <Hairline style={{ marginVertical: 12, backgroundColor: tokens.cardBorder }} />
 
         {/* Transliteration */}
-        <Text style={[styles.translit, { color: colors.textSecondary }]}>
+        <Text style={[styles.translit, { color: tokens.muted }]}>
           {item.transliteration}
         </Text>
 
         {/* Translation */}
-        <Text style={[styles.translation, { color: colors.textPrimary }]}>
-          "{item.translation}"
+        <Text style={[styles.translation, { color: tokens.text }]}>
+          {`"${item.translation}"`}
         </Text>
 
         {/* Reference Footnote & Share Button */}
         <View style={styles.refRow}>
-          <Text style={[styles.refText, { color: colors.textMuted }]}>
+          <Text style={[styles.refText, { color: tokens.muted }]}>
             {t('Source')}: {item.reference}
           </Text>
           <TouchableOpacity
@@ -208,101 +220,137 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
             style={styles.shareBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="share-outline" size={16} color={colors.textMuted} />
+            <Ionicons name="share-outline" size={16} color={tokens.muted} />
           </TouchableOpacity>
         </View>
-      </View>
+      </PremiumCard>
     );
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader
-        title={t('Duas & Adhkar')}
-        eyebrow={t('Supplications')}
-        onBack={onBack}
-        backLabel={t('Library')}
+    <View style={styles.container}>
+      <LinearGradient
+        colors={tokens.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
       />
-      <View style={[styles.contentWrap, { paddingHorizontal: paddingH }]}>
+      <DetailScreen
+        style={styles.detailScreen}
+        header={
+          <SubHeader
+            title={t('Duas & Adhkar')}
+            eyebrow={t('Supplications')}
+            subtitle={t('Authentic supplications from the Quran and Sunnah')}
+            onBack={onBack}
+            backLabel={t(backLabel)}
+            borderBottom
+            showFade
+          />
+        }
+      >
+        <View style={[styles.contentWrap, { paddingHorizontal: paddingH }]}>
 
-      {/* Category Filter Chips + Random Dua */}
-      <View style={styles.filterRow}>
-        <View style={styles.chipsWrap}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={[styles.categoryScroll, hScrollRTLStyle()]}
-          >
-            {DUA_CATEGORIES.map((cat) => {
-              const isSelected = cat === selectedCategory;
-              return (
-                <TouchableOpacity
-                  key={cat}
-                  style={[
-                    styles.categoryChip,
-                    {
-                      backgroundColor: isSelected
-                        ? colors.accent
-                        : colors.bgSurface,
-                      borderColor: isSelected
-                        ? colors.accent
-                        : colors.borderSubtle,
-                    },
-                  ]}
-                  onPress={() => setSelectedCategory(cat)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                >
-                  <Text
+        {/* Category Filter Chips + Random Dua */}
+        <View style={styles.filterRow}>
+          <View style={styles.chipsWrap}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.categoryScroll, hScrollRTLStyle()]}
+            >
+              {DUA_CATEGORIES.map((cat) => {
+                const isSelected = cat === selectedCategory;
+                return (
+                  <TouchableOpacity
+                    key={cat}
                     style={[
-                      styles.categoryChipText,
-                      { color: isSelected ? colors.onAccent : colors.textSecondary },
+                      styles.categoryChip,
+                      getPillShadow(mode),
+                      {
+                        backgroundColor: isSelected
+                          ? undefined
+                          : tokens.cardTop,
+                        borderColor: isSelected
+                          ? tokens.goldBorder
+                          : tokens.cardBorder,
+                      },
                     ]}
+                    onPress={() => setSelectedCategory(cat)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
                   >
-                    {t(cat)} ({DUA_COUNTS[cat]})
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+                    {isSelected ? (
+                      <LinearGradient
+                        colors={tokens.goldGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={styles.categoryChipGradient}
+                      >
+                        <Text
+                          style={[
+                            styles.categoryChipText,
+                            { color: tokens.onGold },
+                          ]}
+                        >
+                          {t(cat)} ({DUA_COUNTS[cat]})
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <Text
+                        style={[
+                          styles.categoryChipText,
+                          { color: tokens.text },
+                        ]}
+                      >
+                        {t(cat)} ({DUA_COUNTS[cat]})
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
 
-        <TouchableOpacity
-          style={[
-            styles.randomBtn,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.accent,
-            },
-          ]}
-          onPress={handleRandomDua}
-          disabled={filteredDuas.length === 0}
-          accessibilityRole="button"
-          accessibilityLabel={t('Show a random dua from the current filter')}
-        >
-          <Text style={[styles.randomBtnText, { color: colors.accent }]}>
-            🎲 {t('Random')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={[
+              styles.randomBtn,
+              getPillShadow(mode),
+              {
+                backgroundColor: 'transparent',
+                borderColor: tokens.goldBorder,
+              },
+            ]}
+            onPress={handleRandomDua}
+            disabled={filteredDuas.length === 0}
+            accessibilityRole="button"
+            accessibilityLabel={t('Show a random dua from the current filter')}
+          >
+            <Text style={[styles.randomBtnText, { color: tokens.goldText }]}>
+              🎲 {t('Random')}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
       {/* Search Bar */}
       <View
         style={[
           styles.searchWrap,
+          getCardShadow(mode),
           {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
+            backgroundColor: tokens.cardTop,
+            borderColor: tokens.cardBorder,
           },
         ]}
       >
-        <Ionicons name="search" size={16} color={colors.textMuted} style={styles.searchIcon} />
+        <Ionicons name="search" size={16} color={tokens.muted} style={styles.searchIcon} />
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
-          placeholder={t('Search duas by title, transliteration, or meaning...')}
-          placeholderTextColor={colors.textMuted}
-          style={[styles.searchInput, { color: colors.textPrimary }]}
+          placeholder={isCompact ? t('Search duas...') : t('Search duas by title, transliteration, or meaning...')}
+          placeholderTextColor={tokens.muted}
+          style={[styles.searchInput, { color: tokens.text }]}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
@@ -311,7 +359,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+            <Ionicons name="close-circle" size={16} color={tokens.muted} />
           </TouchableOpacity>
         )}
       </View>
@@ -320,14 +368,14 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
       {searchHistory.length > 0 && !searchQuery && (
         <View style={styles.recentWrap}>
           <View style={styles.recentHeader}>
-            <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
+            <Text style={[styles.recentLabel, { color: tokens.muted }]}>{t('Recent searches')}</Text>
             <TouchableOpacity
               onPress={clearSearchHistory}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
               accessibilityLabel={t('Clear duas search history')}
             >
-              <Text style={[styles.clearAllText, { color: colors.textMuted }]}>{t('Clear')}</Text>
+              <Text style={[styles.clearAllText, { color: tokens.muted }]}>{t('Clear')}</Text>
             </TouchableOpacity>
           </View>
           <ScrollView
@@ -340,7 +388,8 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
                 key={item}
                 style={[
                   styles.recentChip,
-                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+                  getPillShadow(mode),
+                  { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
                 ]}
               >
                 <TouchableOpacity
@@ -352,8 +401,8 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
                   accessibilityRole="button"
                   accessibilityLabel={`${t('Search for')} ${item}`}
                 >
-                  <Ionicons name="time-outline" size={13} color={colors.accent} />
-                  <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
+                  <Ionicons name="time-outline" size={13} color={tokens.accent} />
+                  <Text style={[styles.recentChipText, { color: tokens.text }]} numberOfLines={1}>
                     {item}
                   </Text>
                 </TouchableOpacity>
@@ -364,7 +413,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
                   accessibilityLabel={`${t('Remove')} ${item}`}
                   hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
                 >
-                  <Ionicons name="close" size={12} color={colors.textMuted} />
+                  <Ionicons name="close" size={12} color={tokens.muted} />
                 </TouchableOpacity>
               </View>
             ))}
@@ -374,7 +423,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
 
       {/* Duas List */}
       {showSkeleton ? (
-        <FlatList
+        <DetailScreen.FlatList
           data={Array.from({ length: 6 })}
           keyExtractor={(_, i) => `skeleton-${i}`}
           renderItem={() => <DuaCardSkeleton compact={isCompact} />}
@@ -382,7 +431,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           contentContainerStyle={styles.listContent}
         />
       ) : (
-        <FlatList
+        <DetailScreen.FlatList
           ref={listRef}
           data={filteredDuas}
           keyExtractor={(item) => item.id}
@@ -427,32 +476,32 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           <View
             ref={shareCardRef}
             collapsable={false}
-            style={[styles.shareCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
+            style={[styles.shareCard, { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}
           >
-            <Text style={[styles.shareCardEyebrow, { color: colors.accent }]}>
+            <Text style={[styles.shareCardEyebrow, { color: tokens.goldText }]}>
               {shareDuaItem.category} · Duas & Adhkar
             </Text>
-            <Text style={[styles.shareCardTitle, { color: colors.textPrimary }]}>
+            <Text style={[styles.shareCardTitle, { color: tokens.text }]}>
               {shareDuaItem.title}
             </Text>
-            <Text style={[styles.shareCardArabic, { color: colors.textPrimary }]}>
+            <Text style={[styles.shareCardArabic, { color: tokens.text }]}>
               {shareDuaItem.arabic}
             </Text>
-            <View style={[styles.shareCardRule, { backgroundColor: colors.accent }]} />
+            <View style={[styles.shareCardRule, { backgroundColor: tokens.gold }]} />
             {shareDuaItem.transliteration ? (
-              <Text style={[styles.shareCardTranslit, { color: colors.textSecondary }]}>
+              <Text style={[styles.shareCardTranslit, { color: tokens.muted }]}>
                 {shareDuaItem.transliteration}
               </Text>
             ) : null}
-            <Text style={[styles.shareCardTrans, { color: colors.textPrimary }]}>
-              "{shareDuaItem.translation}"
+            <Text style={[styles.shareCardTrans, { color: tokens.text }]}>
+              {`"${shareDuaItem.translation}"`}
             </Text>
-            <Text style={[styles.shareCardRef, { color: colors.textMuted }]}>
+            <Text style={[styles.shareCardRef, { color: tokens.muted }]}>
               Source: {shareDuaItem.reference}
             </Text>
 
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}
-            <View style={styles.shareCardBrandFooter} collapsable={false}>
+            <View style={[styles.shareCardBrandFooter, { borderTopColor: tokens.cardBorder }]} collapsable={false}>
               <View collapsable={false} style={styles.shareCardLogoWrap}>
                 <Image
                   source={
@@ -468,7 +517,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
               <Text
                 style={[
                   styles.shareCardBrandWordmark,
-                  { color: colors.textPrimary },
+                  { color: tokens.text },
                 ]}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
@@ -477,6 +526,7 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
           </View>
         </View>
       )}
+    </DetailScreen>
     </View>
   );
 }
@@ -484,6 +534,10 @@ export default function DuasScreen({ onBack }: { onBack?: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  detailScreen: {
+    flex: 1,
+    backgroundColor: 'transparent',
   },
   contentWrap: {
     flex: 1,
@@ -509,7 +563,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     height: 28,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -519,9 +573,16 @@ const styles = StyleSheet.create({
   },
   categoryChip: {
     height: 28,
-    paddingHorizontal: 10,
     borderRadius: 999,
-    borderWidth: 1,
+    borderWidth: 0.75,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  categoryChipGradient: {
+    height: '100%',
+    width: '100%',
+    paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -530,13 +591,13 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
   },
   listContent: {
-    paddingBottom: 30,
+    paddingBottom: 16,
     gap: 16,
   },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0.75,
     borderRadius: 22,
     paddingHorizontal: 14,
     height: 42,
@@ -550,6 +611,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     paddingVertical: 0,
+    minWidth: 0,
+    ...(Platform.OS === 'web' ? { outlineStyle: 'none', outlineWidth: 0 } as any : {}),
   },
   clearBtn: {
     padding: 4,
@@ -605,8 +668,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   duaCard: {
-    borderWidth: 1,
     borderRadius: 20,
+    overflow: 'hidden',
+  },
+  duaCardContent: {
     padding: 18,
   },
   cardHeader: {
@@ -672,7 +737,6 @@ const styles = StyleSheet.create({
     top: 0,
     width: 360,
     padding: 20,
-    backgroundColor: '#F4EEDE',
   },
   shareCard: {
     borderRadius: 20,
@@ -736,7 +800,6 @@ const styles = StyleSheet.create({
     marginTop: 18,
     paddingTop: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#E6DFC9',
     gap: 8,
   },
   shareCardLogoWrap: {
