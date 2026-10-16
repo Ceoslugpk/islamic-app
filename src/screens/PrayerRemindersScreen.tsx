@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -10,11 +9,18 @@ import {
   Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
+import { useThemeTokens } from '../theme/tokens';
 import { useSettings, PrayerNameKey, QuranGoalType } from '../lib/settings';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import {
+  PremiumCard,
+  OutlineButton,
+  Chip,
+} from '../components/ui';
 import { Hairline } from '../components/Hairline';
-import { Card } from '../components/Card';
 import {
   notificationsRescheduled,
   notificationsRescheduleFailed,
@@ -55,7 +61,7 @@ import {
 } from '../lib/quranProgress';
 import { getContinueReadingPosition } from '../lib/continuing';
 import { buildDeepLink } from '../lib/deeplinks';
-import { getForwardIcon, getBackIcon } from '../lib/iconMap';
+import { getForwardIcon } from '../lib/iconMap';
 
 const REMINDER_OFFSETS = [
   { label: 'Off', value: 0 },
@@ -75,8 +81,15 @@ const PRAYER_LIST: { key: PrayerNameKey; arabic: string; icon: keyof typeof Ioni
   { key: 'Isha', arabic: 'العشاء', icon: 'moon-outline' },
 ];
 
-export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void }) {
+export default function PrayerRemindersScreen({
+  onBack,
+  backLabel = 'Tools',
+}: {
+  onBack?: () => void;
+  backLabel?: string;
+}) {
   const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const {
     settings,
     setReminders,
@@ -412,170 +425,175 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
   const isGoalMet = quranProgress?.completed || progressRatio >= 1;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
-    >
-      <View style={styles.contentWrap}>
-        <ScreenHeader
-          title={t('Prayer Reminders')}
-          eyebrow={t('Tools')}
-          subtitle={t('Manage daily prayer alarms, adhan voices & Quran reading habit')}
-          onBack={onBack}
-          backLabel={t('Tools')}
-        />
-
-        {testStatusMessage && (
-          <View style={[styles.bannerBox, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
-            <Ionicons name="information-circle" size={18} color={colors.accent} />
-            <Text style={[styles.bannerText, { color: colors.textPrimary }]}>{testStatusMessage}</Text>
-          </View>
-        )}
-
-        {/* Master Reminder Card */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{t('Prayer reminders')}</Text>
-        <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-          <View style={styles.row}>
-            <View style={styles.rowFlex}>
-              <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{t('Prayer reminders')}</Text>
-              <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
-                {t('Alarms before and at each prayer time — on time even when the app is closed')}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.toggle, { borderColor: colors.accent }]}
-              onPress={onToggleReminders}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: remindersEnabled }}
-            >
-              <View
-                style={[
-                  styles.toggleKnob,
-                  {
-                    backgroundColor: colors.accent,
-                    alignSelf: remindersEnabled ? 'flex-end' : 'flex-start',
-                  },
-                ]}
-              />
-            </TouchableOpacity>
-          </View>
-
-          {permissionError && (
-            <View style={[styles.errorBox, { backgroundColor: colors.accentDim }]}>
-              <Ionicons name="alert-circle-outline" size={18} color={colors.accent} />
-              <Text style={[styles.errorText, { color: colors.textPrimary }]}>{permissionError}</Text>
-              <TouchableOpacity
-                onPress={() => Linking.openSettings().catch(() => {})}
-                style={[styles.errorAction, { borderColor: colors.accent }]}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={t('Open device settings to enable notifications')}
-              >
-                <Ionicons name="settings-outline" size={14} color={colors.accent} />
-                <Text style={[styles.errorActionText, { color: colors.accent }]}>{t('Open Settings')}</Text>
-              </TouchableOpacity>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={tokens.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <DetailScreen
+        style={styles.detailScreen}
+        header={
+          <SubHeader
+            title={t('Prayer Reminders')}
+            eyebrow={t('Tools')}
+            subtitle={t('Manage daily prayer alarms, adhan voices & Quran reading habit')}
+            onBack={onBack}
+            backLabel={t(backLabel)}
+            borderBottom
+            showFade
+          />
+        }
+      >
+        <DetailScreen.ScrollView
+          style={{ flex: 1, backgroundColor: 'transparent' }}
+          contentContainerStyle={[
+            styles.content,
+            { alignSelf: 'center', width: '100%', maxWidth: 680, paddingHorizontal: paddingH },
+          ]}
+        >
+        <View style={styles.contentWrap}>
+          {testStatusMessage && (
+            <View style={[styles.bannerBox, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
+              <Ionicons name="information-circle" size={18} color={colors.accent} />
+              <Text style={[styles.bannerText, { color: colors.textPrimary }]}>{testStatusMessage}</Text>
             </View>
           )}
 
-          <Hairline />
-
-          {/* Health & status row */}
-          {isLoadingHealth ? (
-            <View style={styles.healthLoading}>
-              <ActivityIndicator size="small" color={colors.accent} />
-              <Text style={[styles.healthLoadingText, { color: colors.textMuted }]}>
-                {t('Checking your alarms…')}
-              </Text>
+          {/* Master Reminder Card */}
+          <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{t('Prayer reminders')}</Text>
+          <PremiumCard style={styles.groupCard} padded={false}>
+            <View style={styles.row}>
+              <View style={styles.rowFlex}>
+                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{t('Prayer reminders')}</Text>
+                <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+                  {t('Alarms before and at each prayer time — on time even when the app is closed')}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.toggle, { borderColor: colors.accent }]}
+                onPress={onToggleReminders}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: remindersEnabled }}
+              >
+                <View
+                  style={[
+                    styles.toggleKnob,
+                    {
+                      backgroundColor: colors.accent,
+                      alignSelf: remindersEnabled ? 'flex-end' : 'flex-start',
+                    },
+                  ]}
+                />
+              </TouchableOpacity>
             </View>
-          ) : (
-            <View style={styles.healthRow}>
-              <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Status')}</Text>
-                <View style={styles.healthStatusRow}>
-                  <View
-                    style={[
-                      styles.statusDot,
-                      {
-                        backgroundColor:
-                          health?.status === 'active'
-                            ? (colors.forestGreen || colors.accent)
-                            : health?.status === 'permission-needed'
-                            ? '#F59E0B'
-                            : colors.textMuted,
-                      },
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.healthValue,
-                      {
-                        color:
-                          health?.status === 'active'
-                            ? (colors.forestGreen || colors.accent)
-                            : health?.status === 'permission-needed'
-                            ? '#F59E0B'
-                            : colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {health?.status === 'active'
-                      ? t('Active')
-                      : health?.status === 'permission-needed'
-                      ? t('Permission needed')
-                      : t('Paused')}
+
+            {permissionError && (
+              <View style={[styles.errorBox, { backgroundColor: colors.accentDim }]}>
+                <Ionicons name="alert-circle-outline" size={18} color={colors.accent} />
+                <Text style={[styles.errorText, { color: colors.textPrimary }]}>{permissionError}</Text>
+                <TouchableOpacity
+                  onPress={() => Linking.openSettings().catch(() => {})}
+                  style={[styles.errorAction, { borderColor: colors.accent }]}
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Open device settings to enable notifications')}
+                >
+                  <Ionicons name="settings-outline" size={14} color={colors.accent} />
+                  <Text style={[styles.errorActionText, { color: colors.accent }]}>{t('Open Settings')}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            <Hairline />
+
+            {/* Health & status row */}
+            {isLoadingHealth ? (
+              <View style={styles.healthLoading}>
+                <ActivityIndicator size="small" color={colors.accent} />
+                <Text style={[styles.healthLoadingText, { color: colors.textMuted }]}>
+                  {t('Checking your alarms…')}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.healthRow}>
+                <View style={styles.healthItem}>
+                  <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Status')}</Text>
+                  <View style={styles.healthStatusRow}>
+                    <View
+                      style={[
+                        styles.statusDot,
+                        {
+                          backgroundColor:
+                            health?.status === 'active'
+                              ? (colors.forestGreen || colors.accent)
+                              : health?.status === 'permission-needed'
+                              ? tokens.goldText
+                              : colors.textMuted,
+                        },
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        styles.healthValue,
+                        {
+                          color:
+                            health?.status === 'active'
+                              ? (colors.forestGreen || colors.accent)
+                              : health?.status === 'permission-needed'
+                              ? tokens.goldText
+                              : colors.textSecondary,
+                        },
+                      ]}
+                    >
+                      {health?.status === 'active'
+                        ? t('Active')
+                        : health?.status === 'permission-needed'
+                        ? t('Permission needed')
+                        : t('Paused')}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.healthItem}>
+                  <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Next prayer')}</Text>
+                  <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
+                    {health?.nextPrayer ? `${health.nextPrayer.name} · ${health.nextPrayer.time}` : '—'}
+                  </Text>
+                </View>
+
+                <View style={styles.healthItem}>
+                  <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Today')}</Text>
+                  <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
+                    {health ? `${health.scheduledCounts.today} ${t('today')}` : '—'}
                   </Text>
                 </View>
               </View>
+            )}
 
-              <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Next prayer')}</Text>
-                <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
-                  {health?.nextPrayer ? `${health.nextPrayer.name} · ${health.nextPrayer.time}` : '—'}
-                </Text>
-              </View>
+            <Hairline />
 
-              <View style={styles.healthItem}>
-                <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Today')}</Text>
-                <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
-                  {health ? `${health.scheduledCounts.today} ${t('today')}` : '—'}
-                </Text>
-              </View>
+            <View style={styles.rescheduleRow}>
+              <OutlineButton
+                title={isRescheduling ? t('Scheduling alarms…') : t('Re-schedule now')}
+                icon={isRescheduling ? undefined : 'refresh'}
+                loading={isRescheduling}
+                disabled={isRescheduling}
+                onPress={onReschedulePress}
+                accessibilityLabel={t('Re-schedule alarms now')}
+                style={{ flex: 1 }}
+              />
+              <OutlineButton
+                title={t('Snooze 10m')}
+                icon="time-outline"
+                onPress={onSnoozePress}
+                accessibilityLabel={t('Snooze 10 minutes')}
+                style={{ minWidth: 110 }}
+              />
             </View>
-          )}
-
-          <Hairline />
-
-          <View style={styles.rescheduleRow}>
-            <TouchableOpacity
-              style={[styles.rescheduleBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
-              onPress={onReschedulePress}
-              disabled={isRescheduling}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel={t('Re-schedule alarms now')}
-            >
-              {isRescheduling ? (
-                <ActivityIndicator size="small" color={colors.accent} />
-              ) : (
-                <Ionicons name="refresh" size={16} color={colors.accent} />
-              )}
-              <Text style={[styles.rescheduleBtnText, { color: colors.accent }]}>
-                {isRescheduling ? t('Scheduling alarms…') : t('Re-schedule now')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.snoozeBtn, { borderColor: colors.borderSubtle }]}
-              onPress={onSnoozePress}
-              activeOpacity={0.75}
-              accessibilityRole="button"
-              accessibilityLabel={t('Snooze 10 minutes')}
-            >
-              <Ionicons name="time-outline" size={16} color={colors.textPrimary} />
-              <Text style={[styles.snoozeBtnText, { color: colors.textPrimary }]}>{t('Snooze 10m')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          </PremiumCard>
 
         {/* Floating/Active Adhan Playback Banner */}
         {isPlayingAdhan && (
@@ -588,14 +606,21 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               </View>
             </View>
             <TouchableOpacity
-              style={[styles.stopAdhanBtn, { backgroundColor: colors.accent }]}
+              style={[styles.stopAdhanBtn, { overflow: 'hidden' }]}
               onPress={() => stopAdhanPlayback()}
               activeOpacity={0.75}
               accessibilityRole="button"
               accessibilityLabel={t('Stop adhan playback')}
             >
-              <Ionicons name="stop" size={16} color={colors.bgBase} />
-              <Text style={[styles.stopAdhanText, { color: colors.bgBase }]}>{t('Stop Adhan')}</Text>
+              <LinearGradient
+                pointerEvents="none"
+                colors={tokens.goldGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={StyleSheet.absoluteFill}
+              />
+              <Ionicons name="stop" size={16} color={tokens.onGold} />
+              <Text style={[styles.stopAdhanText, { color: tokens.onGold }]}>{t('Stop Adhan')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -604,7 +629,7 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
           {t('Per-prayer alerts & audio')}
         </Text>
-        <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+        <PremiumCard style={styles.groupCard} padded={false}>
           {PRAYER_LIST.map((p, idx) => {
             const config = prayerConfigs[p.key] || { enabled: true, adhan: true, vibration: true };
             const time = timingsData?.timings ? (timingsData.timings as any)[p.key] : null;
@@ -725,13 +750,13 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               </View>
             );
           })}
-        </View>
+        </PremiumCard>
 
         {/* Pre-Prayer Advance Notice Offset */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
           {t('Pre-prayer advance notice')} — {reminderOffsetMinutes === 0 ? t('off') : `${reminderOffsetMinutes} ${t('min before')}`}
         </Text>
-        <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+        <PremiumCard style={styles.groupCard} padded={false}>
           <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>
             {t('Send an early heads-up before each prayer so you can prepare wudu. Choose "Off" for alerts only at prayer time.')}
           </Text>
@@ -739,43 +764,24 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
             {REMINDER_OFFSETS.map((item) => {
               const isSelected = reminderOffsetMinutes === item.value;
               return (
-                <TouchableOpacity
+                <Chip
                   key={item.label}
-                  style={[
-                    styles.seg,
-                    { borderColor: colors.borderSubtle },
-                    isSelected && { backgroundColor: colors.accentDim, borderColor: colors.accent },
-                  ]}
-                  onPress={() => onSelectOffset(item.value)}
+                  label={t(item.label)}
+                  selected={isSelected}
                   disabled={!remindersEnabled}
-                  accessibilityRole="button"
+                  onPress={() => onSelectOffset(item.value)}
                   accessibilityLabel={item.value === 0 ? t('Off') : `${item.value} ${t('minutes before')}`}
-                >
-                  <Text
-                    style={[
-                      styles.segLabel,
-                      {
-                        color: isSelected
-                          ? colors.accent
-                          : !remindersEnabled
-                          ? colors.textMuted
-                          : colors.textSecondary,
-                      },
-                    ]}
-                  >
-                    {t(item.label)}
-                  </Text>
-                </TouchableOpacity>
+                />
               );
             })}
           </View>
-        </View>
+        </PremiumCard>
 
         {/* Adhan Reciter Choice */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
           {t('Adhan reciter')}
         </Text>
-        <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+        <PremiumCard style={styles.groupCard} padded={false}>
           <TouchableOpacity
             style={styles.row}
             onPress={() => setAdhanModalOpen(true)}
@@ -812,23 +818,33 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               style={[
                 styles.reciterActionBtn,
                 {
-                  backgroundColor: isPlayingAdhan ? colors.accent : colors.accentDim,
-                  borderColor: colors.accent,
+                  backgroundColor: isPlayingAdhan ? undefined : colors.accentDim,
+                  borderColor: isPlayingAdhan ? tokens.goldBorder : colors.accent,
+                  overflow: 'hidden',
                 },
               ]}
               onPress={onTestAdhanSound}
               accessibilityRole="button"
               accessibilityLabel={isPlayingAdhan ? t('Stop adhan playback') : t('Test adhan sound')}
             >
+              {isPlayingAdhan && (
+                <LinearGradient
+                  pointerEvents="none"
+                  colors={tokens.goldGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+              )}
               <Ionicons
                 name={isPlayingAdhan ? 'stop' : 'volume-high'}
                 size={16}
-                color={isPlayingAdhan ? colors.bgBase : colors.accent}
+                color={isPlayingAdhan ? tokens.onGold : colors.accent}
               />
               <Text
                 style={[
                   styles.reciterActionBtnText,
-                  { color: isPlayingAdhan ? colors.bgBase : colors.accent },
+                  { color: isPlayingAdhan ? tokens.onGold : colors.accent },
                 ]}
               >
                 {isPlayingAdhan ? t('Stop Playing') : `${t('Preview')} ${currentReciter.name}`}
@@ -845,13 +861,13 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               <Text style={[styles.stopIconBtnText, { color: colors.textPrimary }]}>{t('Stop Adhan')}</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </PremiumCard>
 
         {/* Test Notification Buttons */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
           {t('Test notifications')}
         </Text>
-        <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+        <PremiumCard style={styles.groupCard} padded={false}>
           <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>
             {t('Send a test alert to try sounds, vibration, and notification buttons (Mark Prayed, Stop Adhan, Snooze 10m).')}
           </Text>
@@ -896,13 +912,13 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </PremiumCard>
 
         {/* Daily Quran Reminder & Reading Goal */}
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
           {t('Daily Quran reminder & reading goal')}
         </Text>
-        <View style={[styles.group, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
+        <PremiumCard style={styles.groupCard} padded={false}>
           {/* Quran Reminder Master Toggle */}
           <View style={styles.row}>
             <View style={styles.rowFlex}>
@@ -944,31 +960,18 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
               {QURAN_REMINDER_PRESETS.map((tVal) => {
                 const isSelected = quranReminderTime === tVal;
                 return (
-                  <TouchableOpacity
+                  <Chip
                     key={tVal}
-                    style={[
-                      styles.timePill,
-                      { borderColor: colors.borderSubtle },
-                      isSelected && { backgroundColor: colors.accentDim, borderColor: colors.accent },
-                    ]}
+                    label={tVal}
+                    selected={isSelected}
                     onPress={() => {
                       setQuranReminderTime(tVal);
                       if (quranReminderEnabled) {
                         scheduleQuranReminder(tVal, quranGoal);
                       }
                     }}
-                    accessibilityRole="button"
                     accessibilityLabel={`Set Quran reminder to ${tVal}`}
-                  >
-                    <Text
-                      style={[
-                        styles.timePillText,
-                        { color: isSelected ? colors.accent : colors.textSecondary },
-                      ]}
-                    >
-                      {tVal}
-                    </Text>
-                  </TouchableOpacity>
+                  />
                 );
               })}
             </View>
@@ -988,29 +991,16 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                 const isSelected = quranGoal?.type === type;
                 const label = type === 'minutes' ? t('Minutes') : type === 'pages' ? t('Pages') : t('Ayahs');
                 return (
-                  <TouchableOpacity
+                  <Chip
                     key={type}
-                    style={[
-                      styles.goalTypePill,
-                      { borderColor: colors.borderSubtle },
-                      isSelected && { backgroundColor: colors.accentDim, borderColor: colors.accent },
-                    ]}
+                    label={label}
+                    selected={isSelected}
                     onPress={() => {
                       const defaultTarget = type === 'minutes' ? 15 : type === 'pages' ? 5 : 10;
                       setQuranGoal({ type, target: quranGoal?.type === type ? quranGoal.target : defaultTarget });
                     }}
-                    accessibilityRole="button"
                     accessibilityLabel={`Goal type: ${label}`}
-                  >
-                    <Text
-                      style={[
-                        styles.goalTypePillText,
-                        { color: isSelected ? colors.accent : colors.textSecondary },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </TouchableOpacity>
+                  />
                 );
               })}
             </View>
@@ -1116,21 +1106,28 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={[styles.readNowBtn, { backgroundColor: colors.forestGreen || colors.accent }]}
                   onPress={onOpenQuranReaderNow}
                   accessibilityRole="button"
                   accessibilityLabel={t('Read Quran now at saved position')}
+                  style={{ borderRadius: 18, overflow: 'hidden' }}
                 >
-                  <Ionicons name="book" size={14} color={colors.onAccent || '#FFFFFF'} />
-                  <Text style={[styles.readNowText, { color: colors.onAccent || '#FFFFFF' }]}>{t('Read Now')}</Text>
+                  <LinearGradient
+                    colors={tokens.goldGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.readNowBtn}
+                  >
+                    <Ionicons name="book" size={14} color={tokens.onGold} />
+                    <Text style={[styles.readNowText, { color: tokens.onGold }]}>{t('Read Now')}</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
-        </View>
+        </PremiumCard>
 
         {/* Android Reliability Info Card */}
-        <Card style={styles.infoCard} padded>
+        <PremiumCard style={styles.groupCard} padded>
           <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>
             {t('How your reminders work')}
           </Text>
@@ -1141,7 +1138,8 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
             • <Text style={{ color: colors.textPrimary }}>{t('Recovers on its own:')}</Text> {t('Alarms come back after a device restart and adjust automatically for timezone changes and new days.')}{'\n\n'}
             • <Text style={{ color: colors.textPrimary }}>{t('Goal-aware:')}</Text> {t('Once you finish your daily reading goal (minutes, pages, or ayahs), the Quran reminder stays quiet for the rest of the day.')}
           </Text>
-        </Card>
+        </PremiumCard>
+        </View>
 
         <AdhanReciterModal
           visible={adhanModalOpen}
@@ -1149,13 +1147,21 @@ export default function PrayerRemindersScreen({ onBack }: { onBack?: () => void 
           selectedReciterId={adhanReciterId}
           onSelectReciter={(id) => setAdhanReciterId(id)}
         />
-      </View>
-    </ScrollView>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingTop: 10, paddingBottom: 40 },
+  container: {
+    flex: 1,
+  },
+  detailScreen: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  content: { paddingHorizontal: 20, paddingTop: 10 },
   contentWrap: {
     maxWidth: 680,
     width: '100%',
@@ -1182,6 +1188,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     overflow: 'hidden',
+  },
+  groupCard: {
+    marginBottom: 14,
   },
   row: {
     flexDirection: 'row',

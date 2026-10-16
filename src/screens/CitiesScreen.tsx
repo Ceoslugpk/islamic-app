@@ -3,23 +3,28 @@ import {
   StyleSheet,
   Text,
   View,
-  TextInput,
-  FlatList,
-  TouchableOpacity,
   Animated,
   Easing,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeTokens } from '../theme/tokens';
 import { useSettings } from '../lib/settings';
 import { CITIES, City, getLocalizedCityName, getLocalizedCountryName } from '../lib/cities';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Hairline } from '../components/Hairline';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { SearchField, PremiumCard } from '../components/ui';
 import { t } from '../lib/i18n';
 
-export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
-  const { colors } = useTheme();
+export default function CitiesScreen({
+  onBack,
+  backLabel = 'Tools',
+}: {
+  onBack?: () => void;
+  backLabel?: string;
+}) {
+  const { tokens, mode } = useThemeTokens();
   const { settings, setManualLocation, setLocationMode } = useSettings();
   const language = settings.language;
   const [query, setQuery] = useState('');
@@ -86,84 +91,116 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
     );
   };
 
-  const renderItem = ({ item, index }: { item: City; index: number }) => {
-    const isSelected = isCitySelected(item);
-
-    return (
-      <View style={isWide && styles.itemCell}>
-        {index > 0 && !isWide && <Hairline />}
-        <TouchableOpacity
-          style={[
-            styles.row,
-            isSelected && { backgroundColor: colors.accentDim },
-          ]}
-          onPress={() => handleSelectCity(item)}
-          accessibilityRole="button"
-          accessibilityLabel={`${t('Select')} ${getLocalizedCityName(item.name, language)}, ${getLocalizedCountryName(item.country, language)}`}
-          accessibilityState={{ selected: isSelected }}
-        >
-          <View style={styles.rowLeft}>
-            <View
-              style={[
-                styles.cityIconBox,
-                {
-                  borderColor: isSelected ? colors.forestGreen : colors.borderSubtle,
-                  backgroundColor: isSelected ? colors.forestGreen : colors.iconCircleBg,
-                },
-              ]}
-            >
-              <Ionicons
-                name={isSelected ? 'checkmark' : 'business'}
-                size={16}
-                color={isSelected ? colors.onAccent : colors.iconCircleFg}
-              />
-            </View>
-            <View style={styles.textWrap}>
-              <Text style={[styles.cityName, { color: colors.textPrimary }]} numberOfLines={1} ellipsizeMode="tail">
-                {getLocalizedCityName(item.name, language)}
-              </Text>
-              <Text style={[styles.countryName, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
-                {getLocalizedCountryName(item.country, language)}
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.rowRight}>
-            <Text style={[styles.coordsText, { color: colors.textMuted }]}>
-              {item.latitude.toFixed(2)}°, {item.longitude.toFixed(2)}°
-            </Text>
-            {isSelected && (
-              <View
-                style={[
-                  styles.activeBadge,
-                  { backgroundColor: colors.sagePill, borderColor: colors.borderSubtle },
-                ]}
-              >
-                <Text style={[styles.activeBadgeText, { color: colors.forestGreen }]}>
-                  {t('Active')}
-                </Text>
-              </View>
-            )}
-          </View>
-        </TouchableOpacity>
-      </View>
-    );
-  };
-
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const isWide = width >= 600;
   const paddingH = isCompact ? 16 : 20;
 
+  const renderItem = ({ item }: { item: City; index: number }) => {
+    const isSelected = isCitySelected(item);
+
+    return (
+      <View style={[styles.itemWrapper, isWide && styles.itemCell]}>
+        <PremiumCard
+          padded={false}
+          onPress={() => handleSelectCity(item)}
+          style={[
+            styles.cityCard,
+            isSelected && { borderColor: tokens.goldBorder },
+          ]}
+          contentStyle={[
+            styles.cityCardContent,
+            isSelected && { backgroundColor: tokens.ringFill },
+          ]}
+        >
+          <View style={styles.row}>
+            <View style={styles.rowLeft}>
+              <View
+                style={[
+                  styles.cityIconBox,
+                  {
+                    borderColor: isSelected ? tokens.goldBorder : tokens.cardBorder,
+                    backgroundColor: isSelected ? undefined : tokens.ringFill,
+                  },
+                ]}
+              >
+                {isSelected && (
+                  <LinearGradient
+                    colors={tokens.goldGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                )}
+                <Ionicons
+                  name={isSelected ? 'checkmark' : 'business'}
+                  size={16}
+                  color={isSelected ? tokens.onGold : tokens.muted}
+                />
+              </View>
+              <View style={styles.textWrap}>
+                <Text style={[styles.cityName, { color: tokens.text }]} numberOfLines={1} ellipsizeMode="tail">
+                  {getLocalizedCityName(item.name, language)}
+                </Text>
+                <Text style={[styles.countryName, { color: tokens.muted }]} numberOfLines={1} ellipsizeMode="tail">
+                  {getLocalizedCountryName(item.country, language)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.rowRight}>
+              <Text style={[styles.coordsText, { color: tokens.muted }]}>
+                {item.latitude.toFixed(2)}°, {item.longitude.toFixed(2)}°
+              </Text>
+              {isSelected && (
+                <View
+                  style={[
+                    styles.activeBadge,
+                    { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder },
+                  ]}
+                >
+                  <Text style={[styles.activeBadgeText, { color: tokens.goldText }]}>
+                    {t('Active')}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        </PremiumCard>
+      </View>
+    );
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={tokens.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <DetailScreen
+        style={styles.detailScreen}
+        header={
+          <SubHeader
+            eyebrow={t('Directory')}
+            title={t('Cities')}
+            subtitle={t('Pick a city to set your location')}
+            onBack={onBack}
+            backLabel={t(backLabel)}
+            borderBottom
+            showFade
+          />
+        }
+      >
       {showSuccess && successCity && (
         <Animated.View
           style={[
             styles.successBanner,
             {
-              backgroundColor: colors.accentDim,
-              borderColor: colors.accent,
+              backgroundColor: tokens.ringFill,
+              borderColor: tokens.cardBorder,
               opacity: successAnim,
               transform: [
                 {
@@ -177,53 +214,24 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
           ]}
         >
           <View style={styles.successBannerContent}>
-            <Ionicons name="checkmark-circle" size={18} color={colors.accent} />
-            <Text style={[styles.successBannerText, { color: colors.accent }]}>
+            <Ionicons name="checkmark-circle" size={18} color={tokens.success} />
+            <Text style={[styles.successBannerText, { color: tokens.text }]}>
               {t('Location set to')} {successCity.name}, {successCity.country}
             </Text>
           </View>
         </Animated.View>
       )}
 
-      <ScreenHeader
-        eyebrow={t('Directory')}
-        title={t('Cities')}
-        subtitle={t('Pick a city to set your location')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
-
       <View style={[styles.searchArea, { paddingHorizontal: paddingH }]}>
-        {/* Search Bar */}
-        <View
-          style={[
-            styles.searchWrap,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
-            },
-          ]}
-        >
-          <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 13 : 14 }]}
-            placeholder={t('Search city or country…')}
-            placeholderTextColor={colors.textMuted}
-            value={query}
-            onChangeText={setQuery}
-            autoCorrect={false}
-            clearButtonMode="while-editing"
-          />
-          {query.length > 0 && (
-            <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
-              <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
-        </View>
+        <SearchField
+          value={query}
+          onChangeText={setQuery}
+          placeholder={t('Search city or country…')}
+        />
       </View>
 
       {/* Cities FlatList */}
-      <FlatList
+      <DetailScreen.FlatList
         key={isWide ? 'cities-grid' : 'cities-list'}
         numColumns={isWide ? 2 : 1}
         data={filtered}
@@ -237,12 +245,13 @@ export default function CitiesScreen({ onBack }: { onBack?: () => void }) {
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+            <Text style={[styles.emptyText, { color: tokens.muted }]}>
               {t('No matches for')} &ldquo;{query}&rdquo;
             </Text>
           </View>
         }
       />
+    </DetailScreen>
     </View>
   );
 }
@@ -251,56 +260,46 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  detailScreen: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   searchArea: {
-    paddingTop: 4,
-    paddingBottom: 4,
+    paddingTop: 8,
+    paddingBottom: 6,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 22,
-    paddingHorizontal: 14,
-    height: 42,
-    marginBottom: 6,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 14,
-    height: '100%',
-  },
-  clearBtn: {
-    padding: 4,
-  },
   listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingTop: 4,
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
   listGrid: {
-    gap: 12,
+    gap: 10,
+  },
+  itemWrapper: {
+    marginBottom: 8,
   },
   itemCell: {
     flexBasis: 0,
     flexGrow: 1,
     minWidth: 0,
+    marginBottom: 0,
+  },
+  cityCard: {
+    width: '100%',
+  },
+  cityCardContent: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    borderRadius: 14,
   },
   rowLeft: {
     flexDirection: 'row',
@@ -312,9 +311,10 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    borderWidth: 1,
+    borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   textWrap: {
     flex: 1,
@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   activeBadge: {
-    borderWidth: 1,
+    borderWidth: 0.75,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -360,7 +360,6 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderRadius: 0,
   },
   successBannerContent: {
     flexDirection: 'row',

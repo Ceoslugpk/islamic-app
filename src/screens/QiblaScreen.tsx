@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Platform,
-  ScrollView,
   useWindowDimensions,
 } from 'react-native';
 import * as Location from 'expo-location';
@@ -25,21 +24,24 @@ import {
   shortestAngleDelta,
   formatDistanceToKaaba,
   checkMagneticInterference,
-  resetInterferenceHistory,
   getCalibrationGuidance,
   CalibrationGuidance,
 } from '../lib/qibla';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { useThemeTokens } from '../theme/tokens';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { Card } from '../components/Card';
+import { PremiumCard } from '../components/ui';
 import { Hairline } from '../components/Hairline';
 import { GeometricPattern } from '../components/GeometricPattern';
 import { QiblaCompass } from '../components/QiblaCompass';
 import { useLocation } from '../lib/useLocation';
 import { useSettings } from '../lib/settings';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NAV_BOTTOM, NAV_HEIGHT } from '../components/layout/layout.constants';
 import { t } from '../lib/i18n';
-
-const KAABA_LABEL = 'Holy Kaaba, Makkah';
 
 type CompassSource = 'expo-location' | 'magnetometer' | 'static';
 type CompassAccuracy = 'high' | 'medium' | 'low' | 'uncalibrated' | 'unknown';
@@ -61,11 +63,14 @@ function mapAccuracy(acc: number): CompassAccuracy {
 export default function QiblaScreen({
   onBack,
   onOpenCities,
+  backLabel = 'Tools',
 }: {
   onBack?: () => void;
   onOpenCities?: () => void;
+  backLabel?: string;
 } = {}) {
   const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const compassSize = Math.min(280, width - 40);
   const { haptic } = useHaptics();
@@ -118,7 +123,6 @@ export default function QiblaScreen({
   const magSubRef = useRef<{ remove: () => void } | null>(null);
   const watchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const wasAlignedRef = useRef<boolean>(false);
   const latRef = useRef<number | null>(null);
   const lngRef = useRef<number | null>(null);
   const interferenceCheckTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -456,349 +460,373 @@ export default function QiblaScreen({
 
   const isStaticMode = Platform.OS === 'web' || source === 'static';
   const showFigure8Prompt = !isStaticMode && (accuracy === 'uncalibrated' || accuracy === 'low');
+  const insets = useSafeAreaInsets();
+  const bottomClearance = NAV_BOTTOM(insets.bottom) + NAV_HEIGHT + 32;
 
   return (
-    <View style={[styles.wrap, { backgroundColor: colors.bgBase }]}>
+    <View style={[styles.wrap, { backgroundColor: tokens.bgTop }]}>
       <GeometricPattern size={320} opacity={0.04} style={styles.pattern} />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <ScreenHeader
-          eyebrow={t('Direct Line of Prayer')}
-          title={t('Qibla Compass')}
-          subtitle={t('True bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas.')}
-          onBack={onBack}
-          backLabel={t('Tools')}
-        />
-
-        {/* Error / Compass Notice Banner */}
-        {error && (
-          <Card style={styles.errorCard} padded>
-            <View style={styles.errorHeader}>
-              <Ionicons name="warning-outline" size={20} color={colors.accent} />
-              <Text style={[styles.errorTitle, { color: colors.textPrimary }]}>
-                {t('Compass Notice')}
-              </Text>
-            </View>
-            <Text style={[styles.errorDescription, { color: colors.textSecondary }]}>
-              {error}
-            </Text>
-          </Card>
-        )}
-
-        {/* Location Permission Note */}
-        {(locStatus === 'denied' || locStatus === 'unavailable') && (
-          <LocationPermissionNote
-            status={locStatus}
-            onEnable={async () => {
-              const loc = await requestLocation(true);
-              if (loc && settings.locationMode === 'auto') {
-                setAutoLocation(loc, Date.now());
-              }
-            }}
-            onChooseCity={onOpenCities}
-            loading={locLoading}
-            fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
+      <DetailScreen
+        style={styles.detailScreen}
+        customPadBottom={bottomClearance}
+        header={
+          <SubHeader
+            eyebrow={t('Direction of Prayer')}
+            title={t('Qibla Compass')}
+            subtitle={t('True bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas.')}
+            onBack={onBack}
+            backLabel={t(backLabel)}
+            borderBottom
+            showFade
           />
-        )}
+        }
+      >
+        <DetailScreen.ScrollView
+          style={{ flex: 1, backgroundColor: 'transparent' }}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+        <View style={styles.contentWrap}>
+          {/* Error / Compass Notice Banner */}
+          {error && (
+            <Card style={[styles.errorCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} padded>
+              <View style={styles.errorHeader}>
+                <Ionicons name="warning-outline" size={20} color={tokens.accent} />
+                <Text style={[styles.errorTitle, { color: tokens.text }]}>
+                  {t('Compass Notice')}
+                </Text>
+              </View>
+              <Text style={[styles.errorDescription, { color: tokens.muted }]}>
+                {error}
+              </Text>
+            </Card>
+          )}
 
-        {/* Status Pill */}
-        <View style={styles.statusRow}>
-          <View
-            style={[
-              styles.statusPill,
-              {
-                backgroundColor: colors.bgSurface,
-                borderColor: isAligned
-                  ? colors.accent
-                  : colors.borderSubtle,
-              },
-            ]}
-          >
+          {/* Location Permission Note */}
+          {(locStatus === 'denied' || locStatus === 'unavailable') && (
+            <LocationPermissionNote
+              status={locStatus}
+              onEnable={async () => {
+                const loc = await requestLocation(true);
+                if (loc && settings.locationMode === 'auto') {
+                  setAutoLocation(loc, Date.now());
+                }
+              }}
+              onChooseCity={onOpenCities}
+              loading={locLoading}
+              fallbackCity={settings.manualLocation.label || 'Makkah, Saudi Arabia'}
+            />
+          )}
+
+          {/* Status Pill */}
+          <View style={styles.statusRow}>
             <View
               style={[
-                styles.statusDot,
+                styles.statusPill,
+                getPillShadow(mode),
                 {
-                  backgroundColor: calibrating && heading === null
-                    ? colors.textMuted
-                    : isAligned
-                    ? colors.accent
-                    : heading !== null
-                    ? (colors.forestGreen || colors.accent) // active tracking
-                    : colors.textSecondary,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: isAligned ? tokens.gold : tokens.cardBorder,
                 },
               ]}
-            />
-            <Text style={[styles.statusText, { color: colors.textSecondary }]}>
-              {calibrating && heading === null
-                ? t('Calibrating compass…')
-                : isAligned
-                ? t('Aligned with Qibla')
-                : heading === null
-                ? t('Rotate device to calibrate')
-                : source === 'expo-location'
-                ? `${t('Live Compass')} (${t(accuracy)})`
-                : source === 'magnetometer'
-                ? t('Live Compass (Magnetometer)')
-                : t('Static Direction Mode')}
-            </Text>
-          </View>
-
-          {/* Recalibrate button */}
-          {!isStaticMode && !calibrating && (
-            <TouchableOpacity
-              style={[
-                styles.recalibrateBtn,
-                { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-              ]}
-              onPress={handleRecalibrate}
-              activeOpacity={0.7}
-              disabled={recalibrating}
             >
-              {recalibrating ? (
-                <ActivityIndicator size="small" color={colors.accent} />
-              ) : (
-                <>
-                  <Ionicons name="refresh" size={13} color={colors.accent} />
-                  <Text style={[styles.recalibrateText, { color: colors.accent }]}>
-                    {t('Recalibrate')}
+              <View
+                style={[
+                  styles.statusDot,
+                  {
+                    backgroundColor: calibrating && heading === null
+                      ? tokens.muted
+                      : isAligned
+                      ? tokens.gold
+                      : heading !== null
+                      ? tokens.gold // active tracking
+                      : tokens.muted,
+                  },
+                ]}
+              />
+              <Text style={[styles.statusText, { color: tokens.muted }]}>
+                {calibrating && heading === null
+                  ? t('Calibrating compass…')
+                  : isAligned
+                  ? t('Aligned with Qibla')
+                  : heading === null
+                  ? t('Rotate device to calibrate')
+                  : source === 'expo-location'
+                  ? `${t('Live Compass')} (${t(accuracy)})`
+                  : source === 'magnetometer'
+                  ? t('Live Compass (Magnetometer)')
+                  : t('Static Direction Mode')}
+              </Text>
+            </View>
+
+            {/* Recalibrate button */}
+            {!isStaticMode && !calibrating && (
+              <TouchableOpacity
+                style={[
+                  styles.recalibrateBtn,
+                  getPillShadow(mode),
+                  { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
+                ]}
+                onPress={handleRecalibrate}
+                activeOpacity={0.7}
+                disabled={recalibrating}
+              >
+                {recalibrating ? (
+                  <ActivityIndicator size="small" color={tokens.goldText} />
+                ) : (
+                  <>
+                    <Ionicons name="refresh" size={13} color={tokens.goldText} />
+                    <Text style={[styles.recalibrateText, { color: tokens.goldText }]}>
+                      {t('Recalibrate')}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Uncalibrated / Figure-8 Banner */}
+          {showFigure8Prompt && (
+            <PremiumCard style={styles.bannerCard} padded>
+              <View style={styles.bannerContent}>
+                <View style={[styles.bannerIconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
+                  <Ionicons name="infinite" size={20} color={tokens.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.bannerTitle, { color: tokens.text }]}>
+                    {t('Compass Calibration Required')}
                   </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Uncalibrated / Figure-8 Banner */}
-        {showFigure8Prompt && (
-          <View
-            style={[
-              styles.figure8Banner,
-              { backgroundColor: colors.bgRaised, borderColor: colors.borderLine },
-            ]}
-          >
-            <Ionicons name="infinite" size={18} color={colors.accent} />
-            <Text style={[styles.figure8Text, { color: colors.textSecondary }]}>
-              {t('Compass accuracy is low. Wave phone slowly in a figure-8 motion to calibrate.')}
-            </Text>
-          </View>
-        )}
-
-        {/* Static mode explanation */}
-        {isStaticMode && !error && (
-          <View
-            style={[
-              styles.figure8Banner,
-              { backgroundColor: colors.bgRaised, borderColor: colors.borderLine },
-            ]}
-          >
-            <Ionicons name="compass-outline" size={18} color={colors.accent} />
-            <Text style={[styles.figure8Text, { color: colors.textSecondary }]}>
-              {t('Hardware compass is not available on this platform. Align the top of your device toward')}{' '}
-              <Text style={{ fontFamily: 'Manrope_700Bold', color: colors.textPrimary }}>
-                {bearing !== null ? `${Math.round(bearing)}°` : '--'}
-              </Text>{' '}
-              {t('relative to true north.')}
-            </Text>
-          </View>
-        )}
-
-        {/* Calibration Guidance Card */}
-        {!isStaticMode && !error && (
-          <Card style={styles.calibrationCard} padded>
-            <View style={styles.calibrationHeader}>
-              <View style={[styles.calibrationIconWrap, { backgroundColor: colors.iconCircleBg || '#E0EAE5' }]}>
-                <Ionicons
-                  name={calibrationGuidance.icon as any}
-                  size={20}
-                  color={colors.iconCircleFg || colors.forestGreen || colors.accent}
-                />
-              </View>
-              <View style={styles.calibrationTextWrap}>
-                <Text style={[styles.calibrationTitle, { color: colors.textPrimary }]}>
-                  {t(calibrationGuidance.title)}
-                </Text>
-                <Text style={[styles.calibrationDescription, { color: colors.textSecondary }]}>
-                  {t(calibrationGuidance.description)}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.calibrationProgressWrap}>
-              <View style={[styles.calibrationProgressTrack, { backgroundColor: colors.borderSubtle }]}>
-                <View
-                  style={[
-                    styles.calibrationProgressFill,
-                    {
-                      backgroundColor: colors.accent,
-                      width: `${Math.round(calibrationGuidance.progress * 100)}%`,
-                    },
-                  ]}
-                />
-              </View>
-              <Text style={[styles.calibrationStepText, { color: colors.textMuted }]}>
-                {t('Step')} {['Hold Flat', 'Rotate Slowly', 'Align', 'Ready'].indexOf(
-                  calibrationGuidance.step.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                ) + 1} {t('of')} 4
-              </Text>
-            </View>
-          </Card>
-        )}
-
-        {/* Magnetic Interference Banner */}
-        {interference.hasInterference && !isStaticMode && (
-          <View
-            style={[
-              styles.interferenceBanner,
-              {
-                backgroundColor:
-                  interference.level === 'high'
-                    ? colors.accent + '20'
-                    : interference.level === 'medium'
-                    ? colors.accent + '15'
-                    : colors.bgRaised,
-                borderColor:
-                  interference.level === 'high'
-                    ? colors.accent
-                    : interference.level === 'medium'
-                    ? colors.accent + '80'
-                    : colors.borderLine,
-              },
-            ]}
-          >
-            <Ionicons
-              name={
-                interference.level === 'high'
-                  ? 'alert-circle-outline'
-                  : interference.level === 'medium'
-                  ? 'warning-outline'
-                  : 'magnet-outline'
-              }
-              size={18}
-              color={
-                interference.level === 'high'
-                  ? colors.accent
-                  : interference.level === 'medium'
-                  ? colors.accent
-                  : colors.textSecondary
-              }
-            />
-            <Text style={[styles.interferenceText, { color: colors.textSecondary }]}>
-              {interference.details}
-            </Text>
-          </View>
-        )}
-
-        {/* Compass Dial Area */}
-        <View style={styles.compassWrapper}>
-          {calibrating && heading === null && bearing === null ? (
-            <View style={[styles.loadingCompass, { height: compassSize }]}>
-              <ActivityIndicator size="large" color={colors.accent} />
-              <Text style={[styles.loadingText, { color: colors.textMuted }]}>
-                {t('Calibrating directional sensors…')}
-              </Text>
-            </View>
-          ) : (
-            <QiblaCompass
-              rotation={rotation}
-              bearing={bearing}
-              heading={heading}
-              isAligned={isAligned}
-              isStaticMode={isStaticMode}
-              size={compassSize}
-            />
-          )}
-        </View>
-
-        {/* Prominent Instrument Serif Bearing Readout */}
-        <View style={styles.bearingHero}>
-          <Text style={[styles.bearingValue, { color: colors.textPrimary }]}>
-            {bearing !== null ? `${Math.round(bearing)}°` : '--'}
-          </Text>
-          <Text style={[styles.bearingSubtitle, { color: colors.accent }]}>
-            {t('Qibla Bearing')}
-          </Text>
-          {distance !== null && (
-            <Text style={[styles.distanceHero, { color: colors.textSecondary }]}>
-              {formatDistanceToKaaba(distance)}
-            </Text>
-          )}
-        </View>
-
-        {/* Information & Telemetry Card */}
-        <Card style={styles.telemetryCard} padded>
-          {/* Location row */}
-          <View style={styles.telemetryRow}>
-            <View style={styles.telemetryLabelWrap}>
-              <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-              <Text style={[styles.telemetryLabel, { color: colors.textMuted }]}>
-                {t('Location')}
-              </Text>
-            </View>
-            <Text style={[styles.telemetryValue, { color: colors.textPrimary }]} numberOfLines={1}>
-              {locLabel}
-            </Text>
-          </View>
-
-          <Hairline style={styles.cardDivider} />
-
-          {/* Live Heading row */}
-          <View style={styles.telemetryRow}>
-            <View style={styles.telemetryLabelWrap}>
-              <Ionicons name="navigate-outline" size={16} color={colors.textMuted} />
-              <Text style={[styles.telemetryLabel, { color: colors.textMuted }]}>
-                {t('Current Heading')}
-              </Text>
-            </View>
-            <Text style={[styles.telemetryValue, { color: colors.textPrimary }]}>
-              {heading !== null
-                ? `${Math.round(heading)}° (${getCardinalDirection(heading)})`
-                : t('Unavailable (rotate device)')}
-            </Text>
-          </View>
-
-          <Hairline style={styles.cardDivider} />
-
-          {/* Coordinates & Declination row */}
-          <View style={styles.telemetryRow}>
-            <View style={styles.telemetryLabelWrap}>
-              <Ionicons name="globe-outline" size={16} color={colors.textMuted} />
-              <Text style={[styles.telemetryLabel, { color: colors.textMuted }]}>
-                {t('Coordinates')}
-              </Text>
-            </View>
-            <Text style={[styles.telemetryValueSub, { color: colors.textSecondary }]}>
-              {coords
-                ? `${coords.lat.toFixed(4)}°, ${coords.lng.toFixed(4)}°`
-                : '--'}
-            </Text>
-          </View>
-
-          {declination !== 0 && (
-            <>
-              <Hairline style={styles.cardDivider} />
-              <View style={styles.telemetryRow}>
-                <View style={styles.telemetryLabelWrap}>
-                  <Ionicons name="magnet-outline" size={16} color={colors.textMuted} />
-                  <Text style={[styles.telemetryLabel, { color: colors.textMuted }]}>
-                    {t('Magnetic Declination')}
+                  <Text style={[styles.bannerText, { color: tokens.muted }]}>
+                    {t('Compass accuracy is low. Wave phone slowly in a figure-8 motion to calibrate.')}
                   </Text>
                 </View>
-                <Text style={[styles.telemetryValueSub, { color: colors.textSecondary }]}>
-                  {`${declination >= 0 ? '+' : ''}${declination.toFixed(1)}°`}
+              </View>
+            </PremiumCard>
+          )}
+
+          {/* Static mode explanation */}
+          {isStaticMode && !error && (
+            <PremiumCard style={styles.bannerCard} padded>
+              <View style={styles.bannerContent}>
+                <View style={[styles.bannerIconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
+                  <Ionicons name="compass-outline" size={20} color={tokens.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.bannerTitle, { color: tokens.text }]}>
+                    {t('Static Direction Mode')}
+                  </Text>
+                  <Text style={[styles.bannerText, { color: tokens.muted }]}>
+                    {t('Hardware compass is not available on this platform. Align the top of your device toward')}{' '}
+                    <Text style={{ fontFamily: 'Manrope_700Bold', color: tokens.accent }}>
+                      {bearing !== null ? `${Math.round(bearing)}°` : '--'}
+                    </Text>{' '}
+                    {t('relative to true north.')}
+                  </Text>
+                </View>
+              </View>
+            </PremiumCard>
+          )}
+
+          {/* Calibration Guidance Card */}
+          {!isStaticMode && !error && (
+            <PremiumCard style={styles.calibrationCard} padded>
+              <View style={styles.calibrationHeader}>
+                <View style={[styles.calibrationIconWrap, { backgroundColor: tokens.ringFill }]}>
+                  <Ionicons
+                    name={calibrationGuidance.icon as any}
+                    size={20}
+                    color={colors.forestGreen || tokens.accent}
+                  />
+                </View>
+                <View style={styles.calibrationTextWrap}>
+                  <Text style={[styles.calibrationTitle, { color: tokens.text }]}>
+                    {t(calibrationGuidance.title)}
+                  </Text>
+                  <Text style={[styles.calibrationDescription, { color: tokens.muted }]}>
+                    {t(calibrationGuidance.description)}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.calibrationProgressWrap}>
+                <View style={[styles.calibrationProgressTrack, { backgroundColor: tokens.ringBorder }]}>
+                  <View
+                    style={[
+                      styles.calibrationProgressFill,
+                      {
+                        backgroundColor: tokens.gold,
+                        width: `${Math.round(calibrationGuidance.progress * 100)}%`,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={[styles.calibrationStepText, { color: tokens.muted }]}>
+                  {t('Step')} {['Hold Flat', 'Rotate Slowly', 'Align', 'Ready'].indexOf(
+                    calibrationGuidance.step.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                  ) + 1} {t('of')} 4
                 </Text>
               </View>
-            </>
+            </PremiumCard>
           )}
-        </Card>
 
-        {/* Guidance Footer */}
-        <View style={styles.footerNoteWrap}>
-          <Text style={[styles.footerNote, { color: colors.textMuted }]}>
-            {t('Hold phone level with the ground. Turn your body until the amber needle points straight forward into the top notch marker.')}
-          </Text>
+          {/* Magnetic Interference Banner */}
+          {interference.hasInterference && !isStaticMode && (
+            <View
+              style={[
+                styles.interferenceBanner,
+                {
+                  backgroundColor:
+                    interference.level === 'high'
+                      ? tokens.accent + '20'
+                      : interference.level === 'medium'
+                      ? tokens.accent + '15'
+                      : colors.bgRaised,
+                  borderColor:
+                    interference.level === 'high'
+                      ? tokens.accent
+                      : interference.level === 'medium'
+                      ? tokens.accent + '80'
+                      : tokens.cardBorder,
+                },
+              ]}
+            >
+              <Ionicons
+                name={
+                  interference.level === 'high'
+                    ? 'alert-circle-outline'
+                    : interference.level === 'medium'
+                    ? 'warning-outline'
+                    : 'magnet-outline'
+                }
+                size={18}
+                color={
+                  interference.level === 'high'
+                    ? tokens.accent
+                    : interference.level === 'medium'
+                    ? tokens.accent
+                    : tokens.muted
+                }
+              />
+              <Text style={[styles.interferenceText, { color: tokens.muted }]}>
+                {interference.details}
+              </Text>
+            </View>
+          )}
+
+          {/* Compass Hero Card */}
+          <PremiumCard style={styles.compassHeroCard} padded>
+            {/* Compass Dial Area */}
+            <View style={styles.compassWrapper}>
+              {calibrating && heading === null && bearing === null ? (
+                <View style={[styles.loadingCompass, { height: compassSize }]}>
+                  <ActivityIndicator size="large" color={tokens.accent} />
+                  <Text style={[styles.loadingText, { color: tokens.muted }]}>
+                    {t('Calibrating directional sensors…')}
+                  </Text>
+                </View>
+              ) : (
+                <QiblaCompass
+                  rotation={rotation}
+                  bearing={bearing}
+                  heading={heading}
+                  isAligned={isAligned}
+                  isStaticMode={isStaticMode}
+                  size={compassSize}
+                />
+              )}
+            </View>
+
+            {/* Prominent Instrument Serif Bearing Readout */}
+            <View style={styles.bearingHero} testID="qibla-bearing-hero">
+              <Text style={[styles.bearingValue, { color: tokens.text }]}>
+                {bearing !== null ? `${Math.round(bearing)}°` : '--'}
+              </Text>
+              <Text style={[styles.bearingSubtitle, { color: tokens.goldText }]}>
+                {t('Qibla Bearing')}
+              </Text>
+              {distance !== null && (
+                <Text style={[styles.distanceHero, { color: tokens.muted }]}>
+                  {formatDistanceToKaaba(distance)}
+                </Text>
+              )}
+            </View>
+          </PremiumCard>
+
+          {/* Information & Telemetry Card */}
+          <PremiumCard style={styles.telemetryCard} padded testID="qibla-telemetry-card">
+            {/* Location row */}
+            <View style={styles.telemetryRow}>
+              <View style={styles.telemetryLabelWrap}>
+                <Ionicons name="location-outline" size={16} color={tokens.muted} />
+                <Text style={[styles.telemetryLabel, { color: tokens.muted }]}>
+                  {t('Location')}
+                </Text>
+              </View>
+              <Text style={[styles.telemetryValue, { color: tokens.text }]} numberOfLines={1}>
+                {locLabel}
+              </Text>
+            </View>
+
+            <Hairline style={[styles.cardDivider, { backgroundColor: tokens.cardBorder }]} />
+
+            {/* Live Heading row */}
+            <View style={styles.telemetryRow}>
+              <View style={styles.telemetryLabelWrap}>
+                <Ionicons name="navigate-outline" size={16} color={tokens.muted} />
+                <Text style={[styles.telemetryLabel, { color: tokens.muted }]}>
+                  {t('Current Heading')}
+                </Text>
+              </View>
+              <Text style={[styles.telemetryValue, { color: tokens.text }]}>
+                {heading !== null
+                  ? `${Math.round(heading)}° (${getCardinalDirection(heading)})`
+                  : t('Unavailable (rotate device)')}
+              </Text>
+            </View>
+
+            <Hairline style={[styles.cardDivider, { backgroundColor: tokens.cardBorder }]} />
+
+            {/* Coordinates & Declination row */}
+            <View style={styles.telemetryRow}>
+              <View style={styles.telemetryLabelWrap}>
+                <Ionicons name="globe-outline" size={16} color={tokens.muted} />
+                <Text style={[styles.telemetryLabel, { color: tokens.muted }]}>
+                  {t('Coordinates')}
+                </Text>
+              </View>
+              <Text style={[styles.telemetryValueSub, { color: tokens.muted }]}>
+                {coords
+                  ? `${coords.lat.toFixed(4)}°, ${coords.lng.toFixed(4)}°`
+                  : '--'}
+              </Text>
+            </View>
+
+            {declination !== 0 && (
+              <>
+                <Hairline style={[styles.cardDivider, { backgroundColor: tokens.cardBorder }]} />
+                <View style={styles.telemetryRow}>
+                  <View style={styles.telemetryLabelWrap}>
+                    <Ionicons name="magnet-outline" size={16} color={tokens.muted} />
+                    <Text style={[styles.telemetryLabel, { color: tokens.muted }]}>
+                      {t('Magnetic Declination')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.telemetryValueSub, { color: tokens.muted }]}>
+                    {`${declination >= 0 ? '+' : ''}${declination.toFixed(1)}°`}
+                  </Text>
+                </View>
+              </>
+            )}
+          </PremiumCard>
+
+          {/* Guidance Footer */}
+          <View style={styles.footerNoteWrap} testID="qibla-guidance-footer">
+            <Text style={[styles.footerNote, { color: tokens.muted }]}>
+              {t('Hold phone level with the ground. Turn your body until the amber needle points straight forward into the top notch marker.')}
+            </Text>
+          </View>
         </View>
-      </ScrollView>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
     </View>
   );
 }
@@ -808,14 +836,22 @@ const styles = StyleSheet.create({
     flex: 1,
     overflow: 'hidden',
   },
+  detailScreen: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  contentWrap: {
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+    paddingTop: 12,
+  },
   pattern: {
     top: -20,
     right: -80,
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 48,
   },
   statusRow: {
     flexDirection: 'row',
@@ -871,6 +907,32 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     flex: 1,
   },
+  bannerCard: {
+    marginBottom: 16,
+  },
+  bannerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  bannerIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bannerTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  bannerText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12,
+    lineHeight: 17,
+  },
   errorCard: {
     marginBottom: 20,
     gap: 10,
@@ -903,10 +965,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
     fontSize: 13,
   },
+  compassHeroCard: {
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingVertical: 14,
+  },
   compassWrapper: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 14,
+    marginVertical: 4,
   },
   loadingCompass: {
     height: 280,
@@ -921,8 +988,8 @@ const styles = StyleSheet.create({
   bearingHero: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 18,
-    marginBottom: 22,
+    marginTop: 12,
+    marginBottom: 8,
   },
   bearingValue: {
     fontFamily: 'InstrumentSerif_400Regular',

@@ -1,6 +1,6 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -9,7 +9,9 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeTokens } from '../theme/tokens';
+import { getCardShadow } from '../lib/homeThemeTokens';
 import { t } from '../lib/i18n';
 import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
@@ -21,8 +23,9 @@ import {
   computeStreak,
   getSalahHistory,
 } from '../lib/db';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard } from '../components/ui';
 import { Hairline } from '../components/Hairline';
 import { EmptyState } from '../components/EmptyState';
 
@@ -39,8 +42,14 @@ function getTodayIso(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
 
-export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) {
-  const { colors } = useTheme();
+export default function SalahTrackerScreen({
+  onBack,
+  backLabel = 'Tools',
+}: {
+  onBack?: () => void;
+  backLabel?: string;
+}) {
+  const { tokens, mode } = useThemeTokens();
   const { settings } = useSettings();
   const { location: gpsLocation } = useLocation(false);
 
@@ -121,179 +130,208 @@ export default function SalahTrackerScreen({ onBack }: { onBack?: () => void }) 
   const paddingH = isCompact ? 16 : 20;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
-    >
-      <View style={styles.contentWrap}>
-        <ScreenHeader
-          eyebrow={t('Daily Obligations')}
-          title={t('Salah Tracker')}
-          subtitle={t('Track your daily 5 prayers and build a consistent habit')}
-          onBack={onBack}
-          backLabel={t('Tools')}
-        />
-
-      {/* Summary Scorecard */}
-      <View style={styles.statsRow}>
-        <Card style={styles.statCard} padded>
-          <Text style={[styles.statValue, { color: colors.textPrimary }]}>
-            {completedCount}<Text style={{ fontSize: 16, color: colors.textMuted }}>/5</Text>
-          </Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t("Today's Prayers")}</Text>
-          <View style={[styles.progressBarTrack, { backgroundColor: colors.borderSubtle }]}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { backgroundColor: colors.forestGreen || colors.accent, width: `${progressPercent}%` },
-              ]}
-            />
-          </View>
-        </Card>
-
-        <Card style={styles.statCard} padded>
-          <View style={styles.streakWrap}>
-            <Text style={[styles.statValue, { color: colors.forestGreen || colors.accent }]}>{streak}</Text>
-            <Ionicons name="flame" size={20} color={colors.forestGreen || colors.accent} />
-          </View>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('Day Streak')}</Text>
-          <Text style={[styles.streakHint, { color: colors.textSecondary }]}>
-            {streak === 0 ? t('Start your streak today') : `${streak} ${t('continuous days')}`}
-          </Text>
-        </Card>
-      </View>
-
-      {/* Today's Checklist */}
-      <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{t("TODAY'S PRAYERS")}</Text>
-      <View style={[styles.listContainer, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-        {loading && !data ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator color={colors.accent} />
-          </View>
-        ) : fetchFailed && !data ? (
-          <EmptyState
-            icon="cloud-offline-outline"
-            title={t('Prayer times unavailable')}
-            subtitle={t("Couldn't load today's prayer times. Check your connection or location, then try again.")}
-            actionLabel={t('Retry')}
-            onAction={() => {
-              setLoading(true);
-              setFetchFailed(false);
-              fetchPrayerTimes(effectiveLocation, settings.methodId)
-                .then((res) => {
-                  setData(res);
-                  setLoading(false);
-                })
-                .catch(() => {
-                  setLoading(false);
-                  setFetchFailed(true);
-                });
-            }}
+    <View style={styles.container}>
+      <LinearGradient
+        colors={tokens.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <DetailScreen
+        style={styles.detailScreen}
+        header={
+          <SubHeader
+            eyebrow={t('Daily Obligations')}
+            title={t('Salah Tracker')}
+            subtitle={t('Track your daily 5 prayers and build a consistent habit')}
+            onBack={onBack}
+            backLabel={t(backLabel)}
+            borderBottom
+            showFade
           />
-        ) : (
-          PRAYERS.map((p, i) => {
-            const isDone = !!completed[p.key];
-            const rawTime = data?.timings[p.key] || '--:--';
-            const formatted = data ? formatTime(rawTime, settings.timeFormat) : '--:--';
-
-            return (
-              <View key={p.key}>
-                {i > 0 && <Hairline />}
-                <TouchableOpacity
+        }
+      >
+        <DetailScreen.ScrollView
+          style={{ flex: 1, backgroundColor: 'transparent' }}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingHorizontal: paddingH,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+        <View style={styles.contentWrap}>
+          {/* Summary Scorecard */}
+          <View style={styles.statsRow}>
+            <PremiumCard style={styles.statCard} padded>
+              <Text style={[styles.statValue, { color: tokens.text }]}>
+                {completedCount}<Text style={{ fontSize: 16, color: tokens.muted }}>/5</Text>
+              </Text>
+              <Text style={[styles.statLabel, { color: tokens.muted }]}>{t("Today's Prayers")}</Text>
+              <View style={[styles.progressBarTrack, { backgroundColor: tokens.ringBorder }]}>
+                <View
                   style={[
-                    styles.prayerRow,
-                    isDone && { backgroundColor: colors.sagePill || colors.accentDim },
+                    styles.progressBarFill,
+                    { backgroundColor: tokens.gold, width: `${progressPercent}%` },
                   ]}
-                  onPress={() => togglePrayer(p.key)}
-                  activeOpacity={0.7}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isDone }}
-                  accessibilityLabel={`${p.label} at ${formatted}, ${isDone ? t('completed') : t('not completed')}`}
-                >
-                  <View style={styles.rowLeft}>
-                    <View
-                      style={[
-                        styles.checkbox,
-                        { borderColor: isDone ? (colors.forestGreen || colors.accent) : colors.borderStrong },
-                        isDone && { backgroundColor: colors.forestGreen || colors.accent },
-                      ]}
-                    >
-                      {isDone && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
-                    </View>
-                    <View>
-                      <Text
-                        style={[
-                          styles.prayerName,
-                          { color: colors.textPrimary },
-                          isDone && { textDecorationLine: 'line-through', color: colors.textSecondary },
-                        ]}
-                      >
-                        {t(p.label)}
-                      </Text>
-                      <Text style={[styles.prayerStatus, { color: isDone ? (colors.forestGreen || colors.accent) : colors.textMuted }]}>
-                        {isDone ? t('Completed') : t('Pending')}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text style={[styles.prayerTime, { color: colors.textPrimary }]}>
-                    {formatted}
-                  </Text>
-                </TouchableOpacity>
+                />
               </View>
-            );
-          })
-        )}
-      </View>
+            </PremiumCard>
 
-      {/* Past 7 Days Activity */}
-      {recentHistory.length > 0 && (
-        <>
-          <Text style={[styles.sectionTitle, { color: colors.textMuted, marginTop: 28 }]}>
-            {t('RECENT DAYS HISTORY')}
-          </Text>
-          <View style={[styles.historyContainer, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-            {recentHistory.map((item, idx) => {
-              const dayPrayers = Object.values(item.completed || {}).filter(Boolean).length;
-              return (
-                <View key={item.date}>
-                  {idx > 0 && <Hairline />}
-                  <View style={styles.historyRow}>
-                    <Text style={[styles.historyDate, { color: colors.textPrimary }]}>
-                      {item.date}
-                    </Text>
-                    <View style={styles.historyRight}>
-                      <Text style={[styles.historyCount, { color: colors.textSecondary }]}>
-                        {dayPrayers}/5
-                      </Text>
-                      <View
-                        style={[
-                          styles.historyIndicator,
-                          {
-                            backgroundColor:
-                              dayPrayers === 5
-                                ? (colors.forestGreen || colors.accent)
-                                : dayPrayers > 0
-                                ? (colors.sagePill || colors.accentDim)
-                                : colors.borderSubtle,
-                          },
-                        ]}
-                      />
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
+            <PremiumCard style={styles.statCard} padded>
+              <View style={styles.streakWrap}>
+                <Text style={[styles.statValue, { color: tokens.goldText }]}>{streak}</Text>
+                <Ionicons name="flame" size={20} color={tokens.goldText} />
+              </View>
+              <Text style={[styles.statLabel, { color: tokens.muted }]}>{t('Day Streak')}</Text>
+              <Text style={[styles.streakHint, { color: tokens.muted }]}>
+                {streak === 0 ? t('Start your streak today') : `${streak} ${t('continuous days')}`}
+              </Text>
+            </PremiumCard>
           </View>
-        </>
-      )}
-      </View>
-    </ScrollView>
+
+          {/* Today's Checklist */}
+          <Text style={[styles.sectionTitle, { color: tokens.muted }]}>{t("TODAY'S PRAYERS")}</Text>
+          <PremiumCard style={styles.listContainer} padded={false}>
+            {loading && !data ? (
+              <View style={styles.loadingWrap}>
+                <ActivityIndicator color={tokens.goldText} />
+              </View>
+            ) : fetchFailed && !data ? (
+              <EmptyState
+                icon="cloud-offline-outline"
+                title={t('Prayer times unavailable')}
+                subtitle={t("Couldn't load today's prayer times. Check your connection or location, then try again.")}
+                actionLabel={t('Retry')}
+                onAction={() => {
+                  setLoading(true);
+                  setFetchFailed(false);
+                  fetchPrayerTimes(effectiveLocation, settings.methodId)
+                    .then((res) => {
+                      setData(res);
+                      setLoading(false);
+                    })
+                    .catch(() => {
+                      setLoading(false);
+                      setFetchFailed(true);
+                    });
+                }}
+              />
+            ) : (
+              PRAYERS.map((p, i) => {
+                const isDone = !!completed[p.key];
+                const rawTime = data?.timings[p.key] || '--:--';
+                const formatted = data ? formatTime(rawTime, settings.timeFormat) : '--:--';
+
+                return (
+                  <View key={p.key}>
+                    {i > 0 && <Hairline style={{ backgroundColor: tokens.cardBorder }} />}
+                    <TouchableOpacity
+                      style={[
+                        styles.prayerRow,
+                        isDone && { backgroundColor: tokens.ringFill },
+                      ]}
+                      onPress={() => togglePrayer(p.key)}
+                      activeOpacity={0.7}
+                      accessibilityRole="checkbox"
+                      accessibilityState={{ checked: isDone }}
+                      accessibilityLabel={`${p.label} at ${formatted}, ${isDone ? t('completed') : t('not completed')}`}
+                    >
+                      <View style={styles.rowLeft}>
+                        <View
+                          style={[
+                            styles.checkbox,
+                            { borderColor: isDone ? tokens.gold : tokens.cardBorder },
+                            isDone && { backgroundColor: tokens.gold },
+                          ]}
+                        >
+                          {isDone && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
+                        </View>
+                        <View>
+                          <Text
+                            style={[
+                              styles.prayerName,
+                              { color: tokens.text },
+                              isDone && { textDecorationLine: 'line-through', color: tokens.muted },
+                            ]}
+                          >
+                            {t(p.label)}
+                          </Text>
+                          <Text style={[styles.prayerStatus, { color: isDone ? tokens.goldText : tokens.muted }]}>
+                            {isDone ? t('Completed') : t('Pending')}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <Text style={[styles.prayerTime, { color: tokens.text }]}>
+                        {formatted}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
+            )}
+          </PremiumCard>
+
+          {/* Past 7 Days Activity */}
+          {recentHistory.length > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { color: tokens.muted, marginTop: 28 }]}>
+                {t('RECENT DAYS HISTORY')}
+              </Text>
+              <PremiumCard style={styles.historyContainer} padded={false}>
+                {recentHistory.map((item, idx) => {
+                  const dayPrayers = Object.values(item.completed || {}).filter(Boolean).length;
+                  return (
+                    <View key={item.date}>
+                      {idx > 0 && <Hairline style={{ backgroundColor: tokens.cardBorder }} />}
+                      <View style={styles.historyRow}>
+                        <Text style={[styles.historyDate, { color: tokens.text }]}>
+                          {item.date}
+                        </Text>
+                        <View style={styles.historyRight}>
+                          <Text style={[styles.historyCount, { color: tokens.muted }]}>
+                            {dayPrayers}/5
+                          </Text>
+                          <View
+                            style={[
+                              styles.historyIndicator,
+                              {
+                                backgroundColor:
+                                  dayPrayers === 5
+                                    ? tokens.gold
+                                    : dayPrayers > 0
+                                    ? tokens.ringFill
+                                    : tokens.cardBorder,
+                              },
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })}
+              </PremiumCard>
+            </>
+          )}
+        </View>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingTop: 10, paddingBottom: 40 },
+  container: {
+    flex: 1,
+  },
+  detailScreen: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  content: { paddingVertical: 12 },
   contentWrap: {
     maxWidth: 680,
     width: '100%',
