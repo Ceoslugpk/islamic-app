@@ -1,20 +1,20 @@
 import React from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { useThemeTokens } from '../theme/tokens';
+import { getPillShadow } from '../lib/homeThemeTokens';
+import { TAB_PAD_BOTTOM } from '../components/layout/layout.constants';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard } from '../components/ui';
 import { ArabicText } from '../components/ArabicText';
-import { getBackIcon } from '../lib/iconMap';
-import { touchTargetTokens } from '../lib/buttonTokens';
 import {
   WORSHIP_GUIDELINES,
   BLEEDING_TYPES,
@@ -23,136 +23,159 @@ import {
 
 interface WomenGuidanceScreenProps {
   onBack?: () => void;
+  backLabel?: string;
   onOpenPurity?: () => void;
 }
 
-export default function WomenGuidanceScreen({ onBack, onOpenPurity }: WomenGuidanceScreenProps) {
+export default function WomenGuidanceScreen({
+  onBack,
+  backLabel = 'Tools',
+  onOpenPurity,
+}: WomenGuidanceScreenProps) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
+          eyebrow={t("Women's Worship")}
+          title={t('Worship Guidance')}
+          subtitle={t('Authentic fiqh on exemptions, permitted worship, bleeding types & scholarly references.')}
+          onBack={onBack}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
+        />
+      }
     >
-      <ScreenHeader
-        eyebrow={t("Women's Worship")}
-        title={t('Worship Guidance')}
-        subtitle={t('Authentic fiqh on exemptions, permitted worship, bleeding types & scholarly references.')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
+      <DetailScreen.ScrollView
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={[
+          styles.content,
+          {
+            alignSelf: 'center',
+            width: '100%',
+            maxWidth: maxW,
+            paddingHorizontal: paddingH,
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Discreet Privacy Note */}
+        <View style={[styles.privacyBadge, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+          <Ionicons name="shield-checkmark" size={14} color={tokens.goldText} />
+          <Text style={[styles.privacyText, { color: tokens.muted }]}>
+            {t('Private & verified · Mainstream classical and contemporary fiqh')}
+          </Text>
+        </View>
 
-      {/* Discreet Privacy Note */}
-      <View style={[styles.privacyBadge, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-        <Ionicons name="shield-checkmark" size={14} color={colors.accent} />
-        <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
-          {t('Private & verified · Mainstream classical and contemporary fiqh')}
+        {/* Rulings During Menses & Postpartum */}
+        <Text style={[styles.sectionTitle, { color: tokens.text }]}>
+          {t('Rulings During Menses & Postpartum')}
         </Text>
-      </View>
+        <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+          {t('Authentic guidance on exemptions, permitted devotional acts, and divine mercy.')}
+        </Text>
 
-      {/* Rulings During Menses & Postpartum */}
-      <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-        {t('Rulings During Menses & Postpartum')}
-      </Text>
-      <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        {t('Authentic guidance on exemptions, permitted devotional acts, and divine mercy.')}
-      </Text>
+        {WORSHIP_GUIDELINES.map((item) => {
+          const statusConfig = {
+            restricted: { color: tokens.danger, icon: 'close-circle', label: 'Exempt / Restricted' },
+            permitted: { color: tokens.muted, icon: 'checkmark-circle', label: 'Permitted' },
+            recommended: { color: tokens.goldText, icon: 'star', label: 'Highly Encouraged' },
+          }[item.status];
 
-      {WORSHIP_GUIDELINES.map((item) => {
-        const statusConfig = {
-          restricted: { color: colors.destructive, icon: 'close-circle', label: 'Exempt / Restricted' },
-          permitted: { color: colors.sage || colors.accent, icon: 'checkmark-circle', label: 'Permitted' },
-          recommended: { color: colors.forestGreen || colors.accent, icon: 'star', label: 'Highly Encouraged' },
-        }[item.status];
+          return (
+            <PremiumCard key={item.id} style={{ marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <Text style={[styles.worshipTopic, { color: tokens.text }]}>{item.topic}</Text>
+                <View style={[styles.worshipBadge, { borderColor: statusConfig.color }]}>
+                  <Ionicons name={statusConfig.icon as any} size={12} color={statusConfig.color} />
+                  <Text style={[styles.worshipBadgeText, { color: statusConfig.color }]}>
+                    {t(statusConfig.label)}
+                  </Text>
+                </View>
+              </View>
+              <Text style={[styles.worshipRuling, { color: tokens.goldText }]}>{item.ruling}</Text>
+              <Text style={[styles.worshipDetails, { color: tokens.muted }]}>{item.details}</Text>
+              <Text style={[styles.worshipEvidence, { color: tokens.muted }]}>
+                {t('Source')}: {item.evidence}
+              </Text>
+            </PremiumCard>
+          );
+        })}
 
-        return (
-          <Card key={item.id} style={{ marginBottom: 12, padding: 14 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-              <Text style={[styles.worshipTopic, { color: colors.textPrimary }]}>{item.topic}</Text>
-              <View style={[styles.worshipBadge, { borderColor: statusConfig.color }]}>
-                <Ionicons name={statusConfig.icon as any} size={12} color={statusConfig.color} />
-                <Text style={[styles.worshipBadgeText, { color: statusConfig.color }]}>
-                  {t(statusConfig.label)}
-                </Text>
+        {/* Hayd vs Nifas vs Istihadha */}
+        <Text style={[styles.sectionTitle, { color: tokens.text, marginTop: 18 }]}>
+          {t('Hayd, Nifas & Istihadha (Irregular Bleeding)')}
+        </Text>
+        <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+          {t('Definitions, standard durations, and jurisprudence across bleeding types.')}
+        </Text>
+
+        {BLEEDING_TYPES.map((b) => (
+          <PremiumCard key={b.name} style={{ marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <Text style={[styles.bleedingName, { color: tokens.text }]}>{b.name}</Text>
+              <ArabicText size={18} style={{ lineHeight: 26 }}>{b.arabic}</ArabicText>
+            </View>
+            <Text style={[styles.bleedingDef, { color: tokens.muted }]}>{b.definition}</Text>
+            <View style={styles.bleedingRow}>
+              <Text style={[styles.bleedingLabel, { color: tokens.goldText }]}>{t('Duration: ')}</Text>
+              <Text style={[styles.bleedingVal, { color: tokens.text }]}>{b.duration}</Text>
+            </View>
+            <View style={styles.bleedingRow}>
+              <Text style={[styles.bleedingLabel, { color: tokens.goldText }]}>{t('Rulings: ')}</Text>
+              <Text style={[styles.bleedingVal, { color: tokens.text }]}>{b.rulings}</Text>
+            </View>
+          </PremiumCard>
+        ))}
+
+        {/* Recommended Reading List */}
+        <Text style={[styles.sectionTitle, { color: tokens.text, marginTop: 18 }]}>
+          {t('Recommended Fiqh References')}
+        </Text>
+        <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+          {t("Classical and contemporary authoritative works on women's jurisprudence.")}
+        </Text>
+
+        {WOMENS_FIQH_RESOURCES.map((res) => (
+          <PremiumCard key={res.id} style={{ marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={[styles.resourceTitle, { color: tokens.text }]}>{res.title}</Text>
+              <View style={[styles.catBadge, { borderColor: tokens.cardBorder }]}>
+                <Text style={[styles.catBadgeText, { color: tokens.goldText }]}>{res.category}</Text>
               </View>
             </View>
-            <Text style={[styles.worshipRuling, { color: colors.accent }]}>{item.ruling}</Text>
-            <Text style={[styles.worshipDetails, { color: colors.textSecondary }]}>{item.details}</Text>
-            <Text style={[styles.worshipEvidence, { color: colors.textMuted }]}>
-              {t('Source')}: {item.evidence}
-            </Text>
-          </Card>
-        );
-      })}
+            <Text style={[styles.resourceAuthor, { color: tokens.goldText }]}>{res.author}</Text>
+            <Text style={[styles.resourceDesc, { color: tokens.muted }]}>{res.description}</Text>
+          </PremiumCard>
+        ))}
 
-      {/* Hayd vs Nifas vs Istihadha */}
-      <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 18 }]}>
-        {t('Hayd, Nifas & Istihadha (Irregular Bleeding)')}
-      </Text>
-      <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        {t('Definitions, standard durations, and jurisprudence across bleeding types.')}
-      </Text>
-
-      {BLEEDING_TYPES.map((b) => (
-        <Card key={b.name} style={{ marginBottom: 10, padding: 14 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <Text style={[styles.bleedingName, { color: colors.textPrimary }]}>{b.name}</Text>
-            <ArabicText size={18} style={{ lineHeight: 26 }}>{b.arabic}</ArabicText>
-          </View>
-          <Text style={[styles.bleedingDef, { color: colors.textSecondary }]}>{b.definition}</Text>
-          <View style={styles.bleedingRow}>
-            <Text style={[styles.bleedingLabel, { color: colors.accent }]}>{t('Duration: ')}</Text>
-            <Text style={[styles.bleedingVal, { color: colors.textPrimary }]}>{b.duration}</Text>
-          </View>
-          <View style={styles.bleedingRow}>
-            <Text style={[styles.bleedingLabel, { color: colors.accent }]}>{t('Rulings: ')}</Text>
-            <Text style={[styles.bleedingVal, { color: colors.textPrimary }]}>{b.rulings}</Text>
-          </View>
-        </Card>
-      ))}
-
-      {/* Recommended Reading List */}
-      <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 18 }]}>
-        {t('Recommended Fiqh References')}
-      </Text>
-      <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        {t("Classical and contemporary authoritative works on women's jurisprudence.")}
-      </Text>
-
-      {WOMENS_FIQH_RESOURCES.map((res) => (
-        <Card key={res.id} style={{ marginBottom: 10, padding: 14 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={[styles.resourceTitle, { color: colors.textPrimary }]}>{res.title}</Text>
-            <View style={[styles.catBadge, { borderColor: colors.borderSubtle }]}>
-              <Text style={[styles.catBadgeText, { color: colors.accent }]}>{res.category}</Text>
-            </View>
-          </View>
-          <Text style={[styles.resourceAuthor, { color: colors.accent }]}>{res.author}</Text>
-          <Text style={[styles.resourceDesc, { color: colors.textSecondary }]}>{res.description}</Text>
-        </Card>
-      ))}
-
-      {/* Scholar Consultation Disclaimer */}
-      <Card style={{ ...styles.disclaimerCard, borderColor: colors.borderSubtle }}>
-        <Ionicons name="medical-outline" size={20} color={colors.accent} />
-        <Text style={[styles.disclaimerCardText, { color: colors.textSecondary }]}>
-          {t('Rulings on bleeding duration and irregularities vary according to individual circumstances and classical legal schools (Madhhabs). If you encounter irregular bleeding exceeding 15 days, or medical complications, please consult both a qualified Islamic scholar and a physician.')}
-        </Text>
-      </Card>
-    </ScrollView>
+        {/* Scholar Consultation Disclaimer */}
+        <PremiumCard style={styles.disclaimerCard}>
+          <Ionicons name="medical-outline" size={20} color={tokens.goldText} />
+          <Text style={[styles.disclaimerCardText, { color: tokens.muted }]}>
+            {t('Rulings on bleeding duration and irregularities vary according to individual circumstances and classical legal schools (Madhhabs). If you encounter irregular bleeding exceeding 15 days, or medical complications, please consult both a qualified Islamic scholar and a physician.')}
+          </Text>
+        </PremiumCard>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   content: {
-    padding: 20,
     paddingTop: 10,
-    paddingBottom: 60,
   },
   backBtn: {
     alignSelf: 'flex-start',

@@ -1,21 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   Platform,
   Linking,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { useThemeTokens } from '../theme/tokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard, ScreenTabs, OutlineButton, Chip } from '../components/ui';
 import { ArabicText } from '../components/ArabicText';
-import { Hairline } from '../components/Hairline';
 import { LiveVideoPlayer } from '../components/LiveVideoPlayer';
 import { getHijriDate, HIJRI_MONTH_NAMES } from '../lib/fasting';
 
@@ -23,9 +21,15 @@ import { getHijriDate, HIJRI_MONTH_NAMES } from '../lib/fasting';
 const AL_EKHBARIYA_CHANNEL_ID = 'UCV01ajGl6nt09h40iDoHDNg'; // Official Saudi News & Live Hajj Broadcaster
 const MINISTRY_HAJJ_CHANNEL_ID = 'UCA15eDKjLMPaCLpkwXlx0Fw'; // Ministry of Hajj & Umrah (وزارة الحج والعمرة)
 
-export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
+export default function HajjLiveScreen({
+  onBack,
+  backLabel = 'Tools',
+}: {
+  onBack?: () => void;
+  backLabel?: string;
+}) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 720);
   const isCompact = width < 380;
@@ -40,17 +44,22 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
   const activeChannelId =
     selectedChannel === 'ekhbariya' ? AL_EKHBARIYA_CHANNEL_ID : MINISTRY_HAJJ_CHANNEL_ID;
 
-  const embedUrl = `https://www.youtube.com/embed/live_stream?channel=${activeChannelId}&autoplay=1&mute=0`;
-  const liveUrl = `https://www.youtube.com/channel/${activeChannelId}/live`;
+  const embedUrl = isHajjSeason
+    ? `https://www.youtube.com/embed/live_stream?channel=${activeChannelId}&autoplay=1&mute=0`
+    : undefined;
+  const liveUrl = isHajjSeason
+    ? `https://www.youtube.com/channel/${activeChannelId}/live`
+    : undefined;
   const channelUrl = `https://www.youtube.com/channel/${activeChannelId}`;
 
   const openYouTubeLive = () => {
+    if (!liveUrl) return;
     Linking.openURL(liveUrl).catch(() => {
       Linking.openURL(channelUrl);
     });
   };
 
-  const openChannel = () => {
+  const openOfficialChannel = () => {
     Linking.openURL(channelUrl);
   };
 
@@ -58,201 +67,191 @@ export default function HajjLiveScreen({ onBack }: { onBack?: () => void }) {
   const monthsRemaining = hijri.month === 12 && hijri.day > 13 ? 12 : 12 - hijri.month;
   const currentHijriString = `${hijri.day} ${HIJRI_MONTH_NAMES[hijri.month - 1]} ${hijri.year} AH`;
 
+  const channelTabs = [
+    { id: 'ekhbariya', label: t('Al Ekhbariya (Live News)') },
+    { id: 'ministry', label: t('Ministry of Hajj & Umrah') },
+  ];
+
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[
-        styles.content,
-        { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
-      ]}
+    <DetailScreen
+      style={{ backgroundColor: tokens.bgTop }}
+      header={
+        <SubHeader
+          eyebrow={t('Hajj & Umrah')}
+          title={t('Hajj Live')}
+          subtitle={t('Official broadcasts from the Holy Sites of Mina, Arafat, Muzdalifah & Jamarat.')}
+          onBack={onBack}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
+        />
+      }
     >
-      <ScreenHeader
-        eyebrow={t('Hajj & Umrah')}
-        title={t('Hajj Live')}
-        subtitle={t('Official broadcasts from the Holy Sites of Mina, Arafat, Muzdalifah & Jamarat.')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
+      <DetailScreen.ScrollView
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={[
+          styles.content,
+          { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
+        ]}
+      >
+        {/* Channel Switcher Tabs at top */}
+        <View style={{ marginBottom: 12 }}>
+          <ScreenTabs
+            tabs={channelTabs}
+            activeTab={selectedChannel}
+            onChange={(id) => setSelectedChannel(id as 'ekhbariya' | 'ministry')}
+          />
+        </View>
 
-      {/* Season Status Indicator */}
-      <View style={styles.seasonBanner}>
-        {isHajjSeason ? (
-          <View style={[styles.statusBadge, { backgroundColor: colors.sagePill || colors.accentDim, borderColor: colors.forestGreen || colors.accent }]}>
-            <View style={[styles.pulseDot, { backgroundColor: colors.forestGreen || colors.accent }]} />
-            <Text style={[styles.statusBadgeText, { color: colors.forestGreen || colors.accent }]}>
-              {t('HAJJ SEASON ACTIVE · 8–13 DHU AL-HIJJAH')}
-            </Text>
-          </View>
-        ) : (
-          <View style={[styles.statusBadge, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-            <Ionicons name="calendar-outline" size={13} color={colors.accent} />
-            <Text style={[styles.statusBadgeText, { color: colors.textSecondary }]}>
-              {t('Today')}: {currentHijriString}
-            </Text>
-          </View>
-        )}
-      </View>
+        {/* Season Status Indicator Chips */}
+        <View style={[styles.seasonBanner, { marginBottom: 12 }]}>
+          <Chip
+            label={isHajjSeason ? t('HAJJ SEASON ACTIVE · 8–13 DHU AL-HIJJAH') : `${t('Today')}: ${currentHijriString}`}
+            selected={isHajjSeason}
+          />
+        </View>
 
-      {/* Off-season Explanatory Notice Card */}
-      {!isHajjSeason && (
-        <Card style={{ marginBottom: 14, padding: 16 }}>
-          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-            <Ionicons name="information-circle-outline" size={20} color={colors.accent} style={{ marginTop: 2 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.noticeTitle, { color: colors.textPrimary }]}>
-                {t('Hajj Live Broadcast Notice')}
-              </Text>
-              <Text style={[styles.noticeBody, { color: colors.textSecondary }]}>
-                {t('Continuous multi-site live coverage across Mina, Mount Arafat, Muzdalifah, and the Jamarat bridge broadcasts during the sacred Hajj days (8–13 Dhu al-Hijjah).')}
-              </Text>
-              <Text style={[styles.noticeNextHajj, { color: colors.accent }]}>
-                {t('Next Hajj Season: 8–13 Dhu al-Hijjah')} {hijri.year + (hijri.month === 12 && hijri.day > 13 ? 1 : 0)} AH (approx. {monthsRemaining} month{monthsRemaining === 1 ? '' : 's'} away).
-              </Text>
-              <Text style={[styles.noticeNote, { color: colors.textMuted }]}>
-                {t('The live stream below provides official 24/7 Saudi national broadcasts, Grand Mosque coverage, and Hajj Ministry documentation throughout the year.')}
-              </Text>
+        {/* Off-season Explanatory Notice Card */}
+        {!isHajjSeason && (
+          <PremiumCard style={{ marginBottom: 14, padding: 16 }}>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+              <Ionicons name="information-circle-outline" size={20} color={tokens.goldText} style={{ marginTop: 2 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.noticeTitle, { color: tokens.text }]}>
+                  {t('Hajj Live Broadcast Notice')}
+                </Text>
+                <Text style={[styles.noticeBody, { color: tokens.muted }]}>
+                  {t('Continuous multi-site live coverage across Mina, Mount Arafat, Muzdalifah, and the Jamarat bridge broadcasts during the sacred Hajj days (8–13 Dhu al-Hijjah).')}
+                </Text>
+                <Text style={[styles.noticeNextHajj, { color: tokens.goldText }]}>
+                  {t('Next Hajj Season: 8–13 Dhu al-Hijjah')} {hijri.year + (hijri.month === 12 && hijri.day > 13 ? 1 : 0)} AH (approx. {monthsRemaining} month{monthsRemaining === 1 ? '' : 's'} away).
+                </Text>
+                <Text style={[styles.noticeNote, { color: tokens.muted }]}>
+                  {t('Hajj live broadcasts are active exclusively during the pilgrimage season (8–13 Dhu al-Hijjah). Outside this window, recorded broadcasts and documentaries are available via the official channel.')}
+                </Text>
+              </View>
             </View>
-          </View>
-        </Card>
-      )}
+          </PremiumCard>
+        )}
 
-      {/* Channel Switcher */}
-      <View style={styles.channelSwitcher}>
-        <TouchableOpacity
-          style={[
-            styles.switchBtn,
-            {
-              backgroundColor: selectedChannel === 'ekhbariya' ? colors.forestGreen : colors.bgSurface,
-              borderColor: selectedChannel === 'ekhbariya' ? colors.forestGreen : colors.borderSubtle,
-            },
-          ]}
-          onPress={() => setSelectedChannel('ekhbariya')}
-        >
-          <Text
-            style={[
-              styles.switchBtnText,
-              { color: selectedChannel === 'ekhbariya' ? colors.onAccent : colors.textPrimary },
-            ]}
-          >
-            {t('Al Ekhbariya (Live News & Events)')}
-          </Text>
-        </TouchableOpacity>
+        {/* Video Container: Mini Live Player when in season, or honest off-season card when out of season */}
+        {isHajjSeason && embedUrl && liveUrl ? (
+          <>
+            <LiveVideoPlayer
+              key={reloadKey}
+              id="hajj"
+              embedUrl={embedUrl}
+              watchUrl={liveUrl}
+              title={selectedChannel === 'ekhbariya' ? t('Al Ekhbariya Official Feed') : t('Ministry of Hajj & Umrah')}
+              subtitle={t('Official broadcasting channel for Hajj proceedings')}
+            />
 
-        <TouchableOpacity
-          style={[
-            styles.switchBtn,
-            {
-              backgroundColor: selectedChannel === 'ministry' ? colors.forestGreen : colors.bgSurface,
-              borderColor: selectedChannel === 'ministry' ? colors.forestGreen : colors.borderSubtle,
-            },
-          ]}
-          onPress={() => setSelectedChannel('ministry')}
-        >
-          <Text
-            style={[
-              styles.switchBtnText,
-              { color: selectedChannel === 'ministry' ? colors.onAccent : colors.textPrimary },
-            ]}
-          >
-            {t('Ministry of Hajj & Umrah')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+            {/* Stream Controls for Web */}
+            {Platform.OS === 'web' && (
+              <View style={styles.webControls}>
+                <OutlineButton
+                  title={t('Reload Stream')}
+                  icon="refresh"
+                  onPress={() => setReloadKey((k) => k + 1)}
+                  style={styles.controlBtn}
+                />
 
-      {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
-      <LiveVideoPlayer
-        id="hajj"
-        embedUrl={embedUrl}
-        watchUrl={liveUrl}
-        title={selectedChannel === 'ekhbariya' ? t('Al Ekhbariya Official Feed') : t('Ministry of Hajj & Umrah')}
-        subtitle={t('Official broadcasting channel for Hajj proceedings')}
-      />
+                <OutlineButton
+                  title={t('Open in YouTube')}
+                  icon="open-outline"
+                  onPress={openYouTubeLive}
+                  style={styles.controlBtn}
+                />
+              </View>
+            )}
+          </>
+        ) : (
+          <PremiumCard style={{ marginBottom: 18, padding: 18 }}>
+            <View style={styles.offSeasonHeader}>
+              <View style={[styles.tvIconWrap, { backgroundColor: tokens.cardTop }]}>
+                <Ionicons name="videocam-off-outline" size={22} color={tokens.goldText} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.offSeasonTitle, { color: tokens.text }]}>
+                  {selectedChannel === 'ekhbariya' ? t('Al Ekhbariya Official Feed') : t('Ministry of Hajj & Umrah')}
+                </Text>
+                <Text style={[styles.offSeasonSub, { color: tokens.muted }]}>
+                  {t('Hajj live streams are unavailable outside Hajj season')}
+                </Text>
+              </View>
+            </View>
 
-      {/* Stream Controls for Web */}
-      {Platform.OS === 'web' && (
-        <View style={styles.webControls}>
-          <TouchableOpacity
-            style={[styles.controlBtn, { borderColor: colors.borderSubtle }]}
-            onPress={() => setReloadKey((k) => k + 1)}
-          >
-            <Ionicons name="refresh" size={14} color={colors.accent} />
-            <Text style={[styles.controlBtnText, { color: colors.textSecondary }]}>
-              {t('Reload Stream')}
+            <Text style={[styles.offSeasonBody, { color: tokens.muted }]}>
+              {t('Official multi-site broadcasts from Mina, Mount Arafat, Muzdalifah, and the Jamarat bridge air exclusively during the sacred Hajj pilgrimage (8–13 Dhu al-Hijjah). During the off-season, you can visit the verified official channel for news, documentaries, and archival coverage.')}
             </Text>
-          </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.controlBtn, { borderColor: colors.borderSubtle }]}
-            onPress={openYouTubeLive}
-          >
-            <Ionicons name="open-outline" size={14} color={colors.accent} />
-            <Text style={[styles.controlBtnText, { color: colors.textSecondary }]}>
-              {t('Open in YouTube')}
+            <View style={{ marginTop: 14 }}>
+              <OutlineButton
+                title={t('Visit Official Channel')}
+                icon="open-outline"
+                onPress={openOfficialChannel}
+                accessibilityLabel={t('Visit Official Channel')}
+              />
+            </View>
+          </PremiumCard>
+        )}
+
+        {/* The Holy Sites of Hajj Overview */}
+        <Text style={[styles.cardLead, { color: tokens.goldText, marginBottom: 8, paddingHorizontal: 4 }]}>
+          {t('SACRED GEOGRAPHY')}
+        </Text>
+        {[
+          {
+            title: t('1. Mina (منى) — The City of Tents'),
+            badge: t('8, 10–13 Dhu al-Hijjah'),
+            desc: t('Located 8 km east of Makkah. More than 100,000 air-conditioned white Teflon-coated tents house millions of pilgrims on the 8th, 10th, 11th, 12th, and 13th of Dhu al-Hijjah. Site of the Jamarat stoning bridge.'),
+          },
+          {
+            title: t('2. Mount Arafat & Plain of Arafah (جبل عرفات)'),
+            badge: t('9th Dhu al-Hijjah'),
+            desc: t('20 km southeast of Makkah. The granite hill of Jabal ar-Rahmah (Mount of Mercy) rises in the plain where Prophet Muhammad ﷺ delivered the Farewell Sermon. Pilgrims assemble here on the 9th of Dhu al-Hijjah from midday to sunset.'),
+          },
+          {
+            title: t('3. Muzdalifah (مزدلفة)'),
+            badge: t('Night of 9th Dhu al-Hijjah'),
+            desc: t("An open plain between Mina and Arafah. Pilgrims arrive here after sunset on the 9th to pray Maghrib and Isha combined, rest under the stars, collect Jamarat pebbles, and make supplication at Al-Mash'ar al-Haram."),
+          },
+        ].map((site) => (
+          <PremiumCard key={site.title} style={{ marginBottom: 12, padding: 16 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <Text style={[styles.siteName, { color: tokens.text, flex: 1, marginRight: 8 }]}>
+                {site.title}
+              </Text>
+              <Chip label={site.badge} selected={false} style={{ height: 26, paddingHorizontal: 8 }} />
+            </View>
+            <Text style={[styles.siteDesc, { color: tokens.muted }]}>
+              {site.desc}
             </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+          </PremiumCard>
+        ))}
 
-      {/* The Holy Sites of Hajj Overview */}
-      <Card style={{ marginBottom: 14, padding: 16 }}>
-        <Text style={[styles.cardLead, { color: colors.accent }]}>{t('SACRED GEOGRAPHY')}</Text>
-        <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 8 }]}>
-          {t('The Holy Sites of Hajj')}
-        </Text>
-
-        <View style={styles.siteItem}>
-          <Text style={[styles.siteName, { color: colors.textPrimary }]}>
-            {t('1. Mina (منى) — The City of Tents')}
+        {/* The Farewell Sermon Reflection */}
+        <PremiumCard style={{ marginBottom: 20, padding: 16 }}>
+          <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 6 }]}>
+            {t("From the Farewell Sermon (Khutbat al-Wada')")}
           </Text>
-          <Text style={[styles.siteDesc, { color: colors.textSecondary }]}>
-            {t('Located 8 km east of Makkah. More than 100,000 air-conditioned white Teflon-coated tents house millions of pilgrims on the 8th, 10th, 11th, 12th, and 13th of Dhu al-Hijjah. Site of the Jamarat stoning bridge.')}
+          <ArabicText style={[styles.sermonArabic, { color: tokens.text }]}>
+            يَا أَيُّهَا النَّاسُ، إِنَّ رَبَّكُمْ وَاحِدٌ، وَإِنَّ أَبَاكُمْ وَاحِدٌ، كُلُّكُمْ لِآدَمَ، وَآدَمُ مِنْ تُرَابٍ، لَا فَضْلَ لِعَرَبِيٍّ عَلَىٰ أَعْجَمِيٍّ، وَلَا لِعَجَمِيٍّ عَلَىٰ عَرَبِيٍّ، وَلَا لِأَحْمَرَ عَلَىٰ أَسْوَدَ، وَلَا لِأَسْوَدَ عَلَىٰ أَحْمَرَ إِلَّا بِالتَّقْوَىٰ
+          </ArabicText>
+          <Text style={[styles.sermonTrans, { color: tokens.muted }]}>
+            {t('"O people, indeed your Lord is One, and your father is one. All of you are from Adam, and Adam was made from dust. An Arab has no superiority over a non-Arab, nor does a non-Arab have any superiority over an Arab; nor does a red person have superiority over a black person, nor a black person over a red person, except by piety."')}
           </Text>
-        </View>
-
-        <Hairline style={{ marginVertical: 10 }} />
-
-        <View style={styles.siteItem}>
-          <Text style={[styles.siteName, { color: colors.textPrimary }]}>
-            {t('2. Mount Arafat & Plain of Arafah (جبل عرفات)')}
+          <Text style={[styles.sermonRef, { color: tokens.muted }]}>
+            {t('Musnad Ahmad 23489 · Authentic (Sahih)')}
           </Text>
-          <Text style={[styles.siteDesc, { color: colors.textSecondary }]}>
-            {t('20 km southeast of Makkah. The granite hill of Jabal ar-Rahmah (Mount of Mercy) rises in the plain where Prophet Muhammad ﷺ delivered the Farewell Sermon. Pilgrims assemble here on the 9th of Dhu al-Hijjah from midday to sunset.')}
-          </Text>
-        </View>
-
-        <Hairline style={{ marginVertical: 10 }} />
-
-        <View style={styles.siteItem}>
-          <Text style={[styles.siteName, { color: colors.textPrimary }]}>
-            {t('3. Muzdalifah (مزدلفة)')}
-          </Text>
-          <Text style={[styles.siteDesc, { color: colors.textSecondary }]}>
-            {t("An open plain between Mina and Arafah. Pilgrims arrive here after sunset on the 9th to pray Maghrib and Isha combined, rest under the stars, collect Jamarat pebbles, and make supplication at Al-Mash'ar al-Haram.")}
-          </Text>
-        </View>
-      </Card>
-
-      {/* The Farewell Sermon Reflection */}
-      <Card style={{ marginBottom: 20, padding: 16 }}>
-        <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 6 }]}>
-          {t("From the Farewell Sermon (Khutbat al-Wada')")}
-        </Text>
-        <ArabicText style={[styles.sermonArabic, { color: colors.textPrimary }]}>
-          يَا أَيُّهَا النَّاسُ، إِنَّ رَبَّكُمْ وَاحِدٌ، وَإِنَّ أَبَاكُمْ وَاحِدٌ، كُلُّكُمْ لِآدَمَ، وَآدَمُ مِنْ تُرَابٍ، لَا فَضْلَ لِعَرَبِيٍّ عَلَىٰ أَعْجَمِيٍّ، وَلَا لِعَجَمِيٍّ عَلَىٰ عَرَبِيٍّ، وَلَا لِأَحْمَرَ عَلَىٰ أَسْوَدَ، وَلَا لِأَسْوَدَ عَلَىٰ أَحْمَرَ إِلَّا بِالتَّقْوَىٰ
-        </ArabicText>
-        <Text style={[styles.sermonTrans, { color: colors.textSecondary }]}>
-          {t('"O people, indeed your Lord is One, and your father is one. All of you are from Adam, and Adam was made from dust. An Arab has no superiority over a non-Arab, nor does a non-Arab have any superiority over an Arab; nor does a red person have superiority over a black person, nor a black person over a red person, except by piety."')}
-        </Text>
-        <Text style={[styles.sermonRef, { color: colors.textMuted }]}>
-          {t('Musnad Ahmad 23489 · Authentic (Sahih)')}
-        </Text>
-      </Card>
-    </ScrollView>
+        </PremiumCard>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 10, paddingBottom: 40 },
+  content: { paddingTop: 10 },
   seasonBanner: {
     flexDirection: 'row',
     marginBottom: 8,
@@ -297,51 +296,7 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 16,
   },
-  channelSwitcher: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 12,
-  },
-  switchBtn: {
-    flex: 1,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderRadius: 14,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  switchBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-    textAlign: 'center',
-  },
-  playerContainer: {
-    width: '100%',
-    aspectRatio: 16 / 9,
-    borderRadius: 10,
-    overflow: 'hidden',
-    borderWidth: 1,
-    marginBottom: 10,
-  },
-  webControls: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 18,
-  },
-  controlBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  controlBtnText: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
-  },
-  nativeCardHeader: {
+  offSeasonHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -354,50 +309,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  nativeTitle: {
+  offSeasonTitle: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
   },
-  nativeSub: {
+  offSeasonSub: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 2,
   },
-  nativeBody: {
+  offSeasonBody: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     lineHeight: 19,
-    marginBottom: 14,
   },
-  nativeActions: {
+  webControls: {
     flexDirection: 'row',
     gap: 10,
+    marginVertical: 12,
   },
-  primaryActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  primaryActionText: {
-    color: '#FFFFFF',
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
-  },
-  secondaryActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  secondaryActionText: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 12.5,
+  controlBtn: {
+    flex: 1,
   },
   cardLead: {
     fontFamily: 'Manrope_600SemiBold',

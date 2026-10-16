@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -11,9 +10,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { useThemeTokens } from '../theme/tokens';
+import { getPillShadow } from '../lib/homeThemeTokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard } from '../components/ui';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { LiveVideoPlayer } from '../components/LiveVideoPlayer';
@@ -23,11 +24,16 @@ const MADINAH_EMBED_URL = `https://www.youtube.com/embed/live_stream?channel=${M
 const MADINAH_LIVE_URL = `https://www.youtube.com/channel/${MADINAH_CHANNEL_ID}/live`;
 const MADINAH_CHANNEL_URL = `https://www.youtube.com/channel/${MADINAH_CHANNEL_ID}`;
 
-export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
+export default function MadinahLiveScreen({
+  onBack,
+  backLabel = 'Tools',
+}: {
+  onBack?: () => void;
+  backLabel?: string;
+}) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
-  const maxW = Math.min(width, 720);
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
   const [reloadKey, setReloadKey] = useState(0);
@@ -38,131 +44,152 @@ export default function MadinahLiveScreen({ onBack }: { onBack?: () => void }) {
     });
   };
 
-  const openChannel = () => {
-    Linking.openURL(MADINAH_CHANNEL_URL);
-  };
-
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[
-        styles.content,
-        { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
-      ]}
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
+          eyebrow={t('Hajj & Umrah')}
+          title={t('Madinah Live')}
+          subtitle={t('24/7 Official High-Definition Live Broadcast from Al-Masjid an-Nabawi.')}
+          onBack={onBack}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
+        />
+      }
     >
-      <ScreenHeader
-        eyebrow={t('Hajj & Umrah')}
-        title={t('Madinah Live')}
-        subtitle={t('24/7 Official High-Definition Live Broadcast from Al-Masjid an-Nabawi.')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
+      <View style={styles.contentWrap}>
+        <DetailScreen.ScrollView
+          key={reloadKey}
+          contentContainerStyle={[
+            styles.content,
+            { paddingHorizontal: paddingH },
+          ]}
+          style={{ flex: 1 }}
+        >
+          {/* Virtues of the Prophet's Mosque */}
+          <PremiumCard style={{ marginBottom: 14 }}>
+            <Text style={[styles.cardLead, { color: tokens.goldText }]}>{t('CITY OF THE MESSENGER ﷺ')}</Text>
+            <Text style={[styles.cardTitle, { color: tokens.text }]}>
+              {t('Virtues of Al-Masjid an-Nabawi')}
+            </Text>
+            <ArabicText style={[styles.hadithArabic, { color: tokens.muted }]}>
+              صَلَاةٌ فِي مَسْجِدِي هَذَا أَفْضَلُ مِنْ أَلْفِ صَلَاةٍ فِيمَا سِوَاهُ إِلَّا الْمَسْجِدَ الْحَرَامَ
+            </ArabicText>
+            <Text style={[styles.hadithTranslation, { color: tokens.muted }]}>
+              {t('The Messenger of Allah ﷺ said: "One prayer in this mosque of mine is better than one thousand prayers elsewhere, except the Sacred Mosque in Makkah."')}
+            </Text>
+            <Text style={[styles.hadithRef, { color: tokens.muted }]}>
+              {t('Sahih al-Bukhari 1190 · Sahih Muslim 1394')}
+            </Text>
+          </PremiumCard>
 
-      {/* Live Badge Bar */}
-      <View style={styles.statusBar}>
-        <View style={styles.liveIndicator}>
-          <View style={styles.liveDot} />
-          <Text style={styles.liveText}>{t('LIVE STREAM')}</Text>
-        </View>
-        <Text style={[styles.channelTag, { color: colors.textSecondary }]}>
-          {t('قناة السنة النبوية · Saudi Sunnah TV')}
-        </Text>
+          {/* Live Badge Bar */}
+          <View style={styles.statusBar}>
+            <View style={[styles.liveIndicator, { backgroundColor: tokens.danger + '20' }]}>
+              <View style={[styles.liveDot, { backgroundColor: tokens.danger }]} />
+              <Text style={[styles.liveText, { color: tokens.danger }]}>{t('LIVE STREAM')}</Text>
+            </View>
+            <Text style={[styles.channelTag, { color: tokens.muted }]}>
+              {t('قناة السنة النبوية · Saudi Sunnah TV')}
+            </Text>
+          </View>
+
+          {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
+          <LiveVideoPlayer
+            id="madinah"
+            embedUrl={MADINAH_EMBED_URL}
+            watchUrl={MADINAH_LIVE_URL}
+            title={t('Live Stream from Madinah')}
+            subtitle={t('Official 24/7 HD feed from Al-Masjid an-Nabawi')}
+          />
+
+          {/* Stream Controls for Web */}
+          {Platform.OS === 'web' && (
+            <View style={styles.webControls}>
+              <TouchableOpacity
+                style={[styles.controlBtn, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}
+                onPress={() => setReloadKey((k) => k + 1)}
+                accessibilityRole="button"
+                accessibilityLabel={t('Reload Stream')}
+              >
+                <Ionicons name="refresh" size={14} color={tokens.goldText} />
+                <Text style={[styles.controlBtnText, { color: tokens.text }]}>
+                  {t('Reload Stream')}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.controlBtn, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}
+                onPress={openYouTubeLive}
+                accessibilityRole="button"
+                accessibilityLabel={t('Open in YouTube')}
+              >
+                <Ionicons name="open-outline" size={14} color={tokens.goldText} />
+                <Text style={[styles.controlBtnText, { color: tokens.text }]}>
+                  {t('Open in YouTube')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Ar-Rawdah ash-Sharifah */}
+          <PremiumCard style={{ marginBottom: 14 }}>
+            <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 8 }]}>
+              {t('Ar-Rawdah ash-Sharifah (الروضة الشريفة)')}
+            </Text>
+            <ArabicText style={[styles.hadithArabic, { color: tokens.muted }]}>
+              مَا بَيْنَ بَيْتِي وَمِنْبَرِي رَوْضَةٌ مِنْ رِيَاضِ الْجَنَّةِ، وَمِنْبَرِي عَلَىٰ حَوْضِي
+            </ArabicText>
+            <Text style={[styles.hadithTranslation, { color: tokens.muted }]}>
+              {t('The Prophet ﷺ said: "Between my house and my pulpit is a garden from the gardens of Paradise, and my pulpit is above my pool (Al-Kawthar)."')}
+            </Text>
+            <Text style={[styles.hadithRef, { color: tokens.muted }]}>
+              {t('Sahih al-Bukhari 1196 · Sahih Muslim 1391')}
+            </Text>
+
+            <Hairline style={{ marginVertical: 12 }} />
+
+            <Text style={[styles.landmarkDesc, { color: tokens.muted }]}>
+              {t("The Rawdah is recognized in the mosque by its distinct green carpeting, contrasting with the dark red carpets throughout the rest of the Prophet's Mosque. Pilgrims visit to offer voluntary prayers and make personal supplications in this heavenly sanctuary.")}
+            </Text>
+          </PremiumCard>
+
+          {/* Salawat and Greeting upon the Prophet */}
+          <PremiumCard style={{ marginBottom: 20 }}>
+            <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 6 }]}>
+              {t('Salawat & Greeting Upon the Beloved ﷺ')}
+            </Text>
+            <ArabicText style={[styles.hadithArabic, { color: tokens.text }]}>
+              السَّلَامُ عَلَيْكَ يَا رَسُولَ اللَّهِ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ، أَشْهَدُ أَنَّكَ قَدْ بَلَّغْتَ الرِّسَالَةَ، وَأَدَّيْتَ الْأَمَانَةَ، وَنَصَحْتَ الْأُمَّةَ
+            </ArabicText>
+            <Text style={[styles.hadithTranslation, { color: tokens.muted }]}>
+              {t('"Peace be upon you, O Messenger of Allah, and the mercy of Allah and His blessings. I bear witness that you have conveyed the message, fulfilled the trust, and advised the nation faithfully."')}
+            </Text>
+            <Text style={[styles.hadithRef, { color: tokens.muted }]}>
+              {t("Sunnah greeting when passing the Prophet's noble chamber")}
+            </Text>
+          </PremiumCard>
+        </DetailScreen.ScrollView>
       </View>
-
-      {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
-      <LiveVideoPlayer
-        id="madinah"
-        embedUrl={MADINAH_EMBED_URL}
-        watchUrl={MADINAH_LIVE_URL}
-        title={t('Live Stream from Madinah')}
-        subtitle={t('Official 24/7 HD feed from Al-Masjid an-Nabawi')}
-      />
-
-      {/* Stream Controls for Web */}
-      {Platform.OS === 'web' && (
-        <View style={styles.webControls}>
-          <TouchableOpacity
-            style={[styles.controlBtn, { borderColor: colors.borderSubtle }]}
-            onPress={() => setReloadKey((k) => k + 1)}
-          >
-            <Ionicons name="refresh" size={14} color={colors.accent} />
-            <Text style={[styles.controlBtnText, { color: colors.textSecondary }]}>
-              {t('Reload Stream')}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.controlBtn, { borderColor: colors.borderSubtle }]}
-            onPress={openYouTubeLive}
-          >
-            <Ionicons name="open-outline" size={14} color={colors.accent} />
-            <Text style={[styles.controlBtnText, { color: colors.textSecondary }]}>
-              {t('Open in YouTube')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Virtues of the Prophet's Mosque */}
-      <Card style={{ marginBottom: 14, padding: 16 }}>
-        <Text style={[styles.cardLead, { color: colors.accent }]}>{t('CITY OF THE MESSENGER ﷺ')}</Text>
-        <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-          {t('Virtues of Al-Masjid an-Nabawi')}
-        </Text>
-        <ArabicText style={[styles.hadithArabic, { color: colors.textSecondary }]}>
-          صَلَاةٌ فِي مَسْجِدِي هَذَا أَفْضَلُ مِنْ أَلْفِ صَلَاةٍ فِيمَا سِوَاهُ إِلَّا الْمَسْجِدَ الْحَرَامَ
-        </ArabicText>
-        <Text style={[styles.hadithTranslation, { color: colors.textSecondary }]}>
-          {t('The Messenger of Allah ﷺ said: "One prayer in this mosque of mine is better than one thousand prayers elsewhere, except the Sacred Mosque in Makkah."')}
-        </Text>
-        <Text style={[styles.hadithRef, { color: colors.textMuted }]}>
-          {t('Sahih al-Bukhari 1190 · Sahih Muslim 1394')}
-        </Text>
-      </Card>
-
-      {/* Ar-Rawdah ash-Sharifah */}
-      <Card style={{ marginBottom: 14, padding: 16 }}>
-        <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 8 }]}>
-          {t('Ar-Rawdah ash-Sharifah (الروضة الشريفة)')}
-        </Text>
-        <ArabicText style={[styles.hadithArabic, { color: colors.textSecondary }]}>
-          مَا بَيْنَ بَيْتِي وَمِنْبَرِي رَوْضَةٌ مِنْ رِيَاضِ الْجَنَّةِ، وَمِنْبَرِي عَلَىٰ حَوْضِي
-        </ArabicText>
-        <Text style={[styles.hadithTranslation, { color: colors.textSecondary }]}>
-          {t('The Prophet ﷺ said: "Between my house and my pulpit is a garden from the gardens of Paradise, and my pulpit is above my pool (Al-Kawthar)."')}
-        </Text>
-        <Text style={[styles.hadithRef, { color: colors.textMuted }]}>
-          {t('Sahih al-Bukhari 1196 · Sahih Muslim 1391')}
-        </Text>
-
-        <Hairline style={{ marginVertical: 12 }} />
-
-        <Text style={[styles.landmarkDesc, { color: colors.textSecondary }]}>
-          {t("The Rawdah is recognized in the mosque by its distinct green carpeting, contrasting with the dark red carpets throughout the rest of the Prophet's Mosque. Pilgrims visit to offer voluntary prayers and make personal supplications in this heavenly sanctuary.")}
-        </Text>
-      </Card>
-
-      {/* Salawat and Greeting upon the Prophet */}
-      <Card style={{ marginBottom: 20, padding: 16 }}>
-        <Text style={[styles.cardTitle, { color: colors.textPrimary, marginBottom: 6 }]}>
-          {t('Salawat & Greeting Upon the Beloved ﷺ')}
-        </Text>
-        <ArabicText style={[styles.hadithArabic, { color: colors.textPrimary }]}>
-          السَّلَامُ عَلَيْكَ يَا رَسُولَ اللَّهِ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ، أَشْهَدُ أَنَّكَ قَدْ بَلَّغْتَ الرِّسَالَةَ، وَأَدَّيْتَ الْأَمَانَةَ، وَنَصَحْتَ الْأُمَّةَ
-        </ArabicText>
-        <Text style={[styles.hadithTranslation, { color: colors.textSecondary }]}>
-          {t('"Peace be upon you, O Messenger of Allah, and the mercy of Allah and His blessings. I bear witness that you have conveyed the message, fulfilled the trust, and advised the nation faithfully."')}
-        </Text>
-        <Text style={[styles.hadithRef, { color: colors.textMuted }]}>
-          {t("Sunnah greeting when passing the Prophet's noble chamber")}
-        </Text>
-      </Card>
-    </ScrollView>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 10, paddingBottom: 40 },
+  container: {
+    flex: 1,
+  },
+  contentWrap: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 720,
+    alignSelf: 'center',
+  },
+  content: {
+    paddingTop: 10,
+  },
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -173,7 +200,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#EF444420',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -182,10 +208,8 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#EF4444',
   },
   liveText: {
-    color: '#EF4444',
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 0.8,
@@ -205,7 +229,8 @@ const styles = StyleSheet.create({
   webControls: {
     flexDirection: 'row',
     gap: 10,
-    marginBottom: 18,
+    marginTop: 6,
+    marginBottom: 16,
   },
   controlBtn: {
     flexDirection: 'row',
@@ -219,64 +244,6 @@ const styles = StyleSheet.create({
   controlBtnText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
-  },
-  nativeCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 10,
-  },
-  tvIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nativeTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 15,
-  },
-  nativeSub: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  nativeBody: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 14,
-  },
-  nativeActions: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  primaryActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
-  },
-  primaryActionText: {
-    color: '#FFFFFF',
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
-  },
-  secondaryActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  secondaryActionText: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 12.5,
   },
   cardLead: {
     fontFamily: 'Manrope_600SemiBold',

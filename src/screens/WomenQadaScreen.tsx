@@ -6,7 +6,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -17,12 +16,15 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { useThemeTokens } from '../theme/tokens';
+import { getPillShadow } from '../lib/homeThemeTokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard } from '../components/ui';
 import { EmptyState } from '../components/EmptyState';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
-import { getBackIcon } from '../lib/iconMap';
 import { buttonTokens, touchTargetTokens } from '../lib/buttonTokens';
 import {
   MissedFastItem,
@@ -35,12 +37,17 @@ import { formatYMD, isValidYMD } from '../lib/womensFiqh';
 
 interface WomenQadaScreenProps {
   onBack?: () => void;
+  backLabel?: string;
   onOpenCycle?: () => void;
 }
 
-function WomenQadaScreen({ onBack, onOpenCycle }: WomenQadaScreenProps) {
+function WomenQadaScreen({
+  onBack,
+  backLabel = 'Tools',
+  onOpenCycle,
+}: WomenQadaScreenProps) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const { saveUndoState } = useUndoToast();
@@ -64,6 +71,8 @@ function WomenQadaScreen({ onBack, onOpenCycle }: WomenQadaScreenProps) {
   }, []);
 
   useEffect(() => {
+    // Preserve the existing local DB hydration lifecycle.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refreshData();
   }, [refreshData]);
 
@@ -144,216 +153,253 @@ function WomenQadaScreen({ onBack, onOpenCycle }: WomenQadaScreenProps) {
   const paddingH = isCompact ? 16 : 20;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
-      keyboardShouldPersistTaps="handled"
-    >
-      <ScreenHeader
-        eyebrow={t("Women's Worship")}
-        title={t('Qada Fasts')}
-        subtitle={t('Track and make up missed Ramadan fasts due to menstruation or postpartum.')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
-
-      {/* Discreet Privacy Note */}
-      <View style={[styles.privacyBadge, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-        <Ionicons name="shield-checkmark" size={14} color={colors.accent} />
-        <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
-          {t('Private & synchronized · Stored safely in your local fasting database')}
-        </Text>
-      </View>
-
-      {/* Explicit Recording Reassurance */}
-      <View style={[styles.explicitBadge, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-        <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-        <Text style={[styles.explicitText, { color: colors.textMuted }]}>
-          {t('Explicit recording only: Missed fasts are only logged when you manually add them. Predictions never auto-create records.')}
-        </Text>
-      </View>
-
-      {/* Stats Bar */}
-      <View style={styles.qadaStatsRow}>
-        <View style={[styles.qadaStatBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-          <Text style={[styles.qadaStatNum, { color: colors.accent }]}>{qadaStats.total}</Text>
-          <Text style={[styles.qadaStatLbl, { color: colors.textMuted }]}>{t('Logged Fasts')}</Text>
-        </View>
-        <View style={[styles.qadaStatBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-          <Text style={[styles.qadaStatNum, { color: colors.forestGreen || colors.accent }]}>{qadaStats.completed}</Text>
-          <Text style={[styles.qadaStatLbl, { color: colors.textMuted }]}>{t('Made Up (Qada)')}</Text>
-        </View>
-        <View style={[styles.qadaStatBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-          <Text style={[styles.qadaStatNum, { color: qadaStats.pending > 0 ? colors.destructive : colors.textPrimary }]}>
-            {qadaStats.pending}
-          </Text>
-          <Text style={[styles.qadaStatLbl, { color: colors.textMuted }]}>{t('Remaining Days')}</Text>
-        </View>
-      </View>
-
-      {/* Quick Add Button */}
-      {!showAddQada && (
-        <TouchableOpacity
-          style={[styles.primaryBtn, { backgroundColor: colors.accent, marginVertical: 14 }]}
-          onPress={() => setShowAddQada(true)}
-          accessibilityRole="button"
-          accessibilityLabel={t('Log Missed Ramadan Fast')}
-        >
-          <Ionicons name="add-circle" size={18} color={colors.onAccent} />
-          <Text style={[styles.primaryBtnText, { color: colors.onAccent }]}>
-            {t('Log Missed Ramadan Fast')}
-          </Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Add Form */}
-      {showAddQada && (
-        <Card style={styles.formCard}>
-          <Text style={[styles.formTitle, { color: colors.textPrimary }]}>
-            {t('Log Missed Fast Day')}
-          </Text>
-          <View style={styles.labelRow}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Date (YYYY-MM-DD)')}</Text>
-            <View style={styles.quickPillsRow}>
-              <TouchableOpacity
-                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-                onPress={() => setQadaDate(todayStr)}
-              >
-                <Text style={[styles.quickPillText, { color: colors.accent }]}>{t('Today')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-                onPress={() => setQadaDate(yesterdayStr)}
-              >
-                <Text style={[styles.quickPillText, { color: colors.textSecondary }]}>{t('Yesterday')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <TextInput
-            style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-            value={qadaDate}
-            onChangeText={setQadaDate}
-            placeholder={t('YYYY-MM-DD')}
-            placeholderTextColor={colors.textMuted}
-            keyboardType="numbers-and-punctuation"
-          />
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Reason')}</Text>
-          <TextInput
-            style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-            value={qadaReason}
-            onChangeText={setQadaReason}
-            placeholder={t('Reason')}
-            placeholderTextColor={colors.textMuted}
-          />
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Notes (Optional)')}</Text>
-          <TextInput
-            style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-            value={qadaNote}
-            onChangeText={setQadaNote}
-            placeholder={t('e.g. Ramadan Day 4')}
-            placeholderTextColor={colors.textMuted}
-          />
-          <View style={styles.formBtnRow}>
-            <TouchableOpacity
-              style={[styles.cancelBtn, { borderColor: colors.borderSubtle }]}
-              onPress={() => setShowAddQada(false)}
-              accessibilityRole="button"
-              accessibilityLabel={t('Cancel')}
-            >
-              <Text style={{ color: colors.textMuted, fontSize: 13, fontFamily: 'Manrope_600SemiBold' }}>
-                {t('Cancel')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: colors.accent }]}
-              onPress={handleSaveQada}
-              accessibilityRole="button"
-              accessibilityLabel={t('Save Missed Fast')}
-            >
-              <Text style={{ color: colors.onAccent, fontSize: 13, fontFamily: 'Manrope_700Bold' }}>
-                {t('Save Fast')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-      )}
-
-      {/* Fast List */}
-      <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 8 }]}>
-        {t('Missed Fast Ledger')}
-      </Text>
-      <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-        {t('Tap checkbox once made up. Synchronized with your central fasting records.')}
-      </Text>
-
-      {womenMissedFasts.length === 0 ? (
-        <EmptyState
-          icon="moon-outline"
-          title={t('No missed fasts recorded')}
-          subtitle={t('Days missed during Ramadan due to menstruation or postpartum can be recorded here.')}
-          actionLabel={t('+ Log Missed Fast')}
-          onAction={() => setShowAddQada(true)}
-          iconSize={40}
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
+          eyebrow={t("Women's Worship")}
+          title={t('Qada Fasts')}
+          subtitle={t('Track and make up missed Ramadan fasts due to menstruation or postpartum.')}
+          onBack={onBack}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
         />
-      ) : (
-        womenMissedFasts.map((fast) => (
-          <Card key={fast.id} style={{ marginBottom: 10, padding: 14 }}>
-            <View style={styles.qadaRow}>
-              <TouchableOpacity
-                style={[
-                  styles.checkbox,
-                  { borderColor: fast.madeUp ? (colors.forestGreen || colors.accent) : colors.borderSubtle },
-                  fast.madeUp && { backgroundColor: colors.forestGreen || colors.accent },
-                ]}
-                onPress={() => handleToggleQada(fast.id, fast.madeUp)}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: fast.madeUp }}
-                accessibilityLabel={`Mark fast from ${fast.date} as ${fast.madeUp ? 'unmade' : 'made up'}`}
-              >
-                {fast.madeUp && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
-              </TouchableOpacity>
-              <View style={{ flex: 1 }}>
-                <Text
-                  style={[
-                    styles.qadaDate,
-                    { color: fast.madeUp ? colors.textMuted : colors.textPrimary },
-                    fast.madeUp && { textDecorationLine: 'line-through' },
-                  ]}
+      }
+    >
+      <DetailScreen.ScrollView
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={[
+          styles.content,
+          {
+            alignSelf: 'center',
+            width: '100%',
+            maxWidth: maxW,
+            paddingHorizontal: paddingH,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Discreet Privacy Note */}
+        <View style={[styles.privacyBadge, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+          <Ionicons name="shield-checkmark" size={14} color={tokens.goldText} />
+          <Text style={[styles.privacyText, { color: tokens.muted }]}>
+            {t('Private & synchronized · Stored safely in your local fasting database')}
+          </Text>
+        </View>
+
+        {/* Explicit Recording Reassurance */}
+        <View style={[styles.explicitBadge, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder }]}>
+          <Ionicons name="information-circle-outline" size={14} color={tokens.muted} />
+          <Text style={[styles.explicitText, { color: tokens.muted }]}>
+            {t('Explicit recording only: Missed fasts are only logged when you manually add them. Predictions never auto-create records.')}
+          </Text>
+        </View>
+
+        {/* Stats Bar */}
+        <View style={styles.qadaStatsRow}>
+          <PremiumCard padded={false} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
+            <Text style={[styles.qadaStatNum, { color: tokens.goldText }]}>{qadaStats.total}</Text>
+            <Text style={[styles.qadaStatLbl, { color: tokens.muted }]}>{t('Logged Fasts')}</Text>
+          </PremiumCard>
+          <PremiumCard padded={false} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
+            <Text style={[styles.qadaStatNum, { color: mode === 'paper' ? tokens.accent : tokens.success }]}>{qadaStats.completed}</Text>
+            <Text style={[styles.qadaStatLbl, { color: tokens.muted }]}>{t('Made Up (Qada)')}</Text>
+          </PremiumCard>
+          <PremiumCard padded={false} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
+            <Text style={[styles.qadaStatNum, { color: qadaStats.pending > 0 ? tokens.danger : tokens.text }]}>
+              {qadaStats.pending}
+            </Text>
+            <Text style={[styles.qadaStatLbl, { color: tokens.muted }]}>{t('Remaining Days')}</Text>
+          </PremiumCard>
+        </View>
+
+        {/* Quick Add Button */}
+        {!showAddQada && (
+          <TouchableOpacity
+            style={[styles.primaryBtn, getPillShadow(mode), { borderColor: tokens.goldBorder, marginVertical: 14 }]}
+            onPress={() => setShowAddQada(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t('Log Missed Ramadan Fast')}
+          >
+            <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
+            <Ionicons name="add-circle" size={18} color={tokens.onGold} />
+            <Text style={[styles.primaryBtnText, { color: tokens.onGold }]}>
+              {t('Log Missed Ramadan Fast')}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Add Form */}
+        {showAddQada && (
+          <PremiumCard padded={false} style={styles.formCard} contentStyle={styles.formCardContent}>
+            <Text style={[styles.formTitle, { color: tokens.text }]}>
+              {t('Log Missed Fast Day')}
+            </Text>
+            <View style={styles.labelRow}>
+              <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Date (YYYY-MM-DD)')}</Text>
+              <View style={styles.quickPillsRow}>
+                <TouchableOpacity
+                  style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+                  onPress={() => setQadaDate(todayStr)}
                 >
-                  {fast.date}
-                </Text>
-                <Text style={[styles.qadaReason, { color: colors.textSecondary }]}>
-                  {fast.reason}
-                </Text>
-                {fast.madeUpDate && (
-                  <Text style={[styles.qadaMadeUpNote, { color: colors.forestGreen || colors.accent }]}>
-                    {t('Made up on')} {fast.madeUpDate}
-                  </Text>
-                )}
+                  <Text style={[styles.quickPillText, { color: tokens.goldText }]}>{t('Today')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+                  onPress={() => setQadaDate(yesterdayStr)}
+                >
+                  <Text style={[styles.quickPillText, { color: tokens.muted }]}>{t('Yesterday')}</Text>
+                </TouchableOpacity>
               </View>
+            </View>
+            <TextInput
+              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              value={qadaDate}
+              onChangeText={setQadaDate}
+              placeholder={t('YYYY-MM-DD')}
+              placeholderTextColor={tokens.muted}
+              keyboardType="numbers-and-punctuation"
+            />
+            <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Reason')}</Text>
+            <TextInput
+              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              value={qadaReason}
+              onChangeText={setQadaReason}
+              placeholder={t('Reason')}
+              placeholderTextColor={tokens.muted}
+            />
+            <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Notes (Optional)')}</Text>
+            <TextInput
+              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              value={qadaNote}
+              onChangeText={setQadaNote}
+              placeholder={t('e.g. Ramadan Day 4')}
+              placeholderTextColor={tokens.muted}
+            />
+            <View style={styles.formBtnRow}>
               <TouchableOpacity
-                onPress={() => handleDeleteQada(fast)}
+                style={[styles.cancelBtn, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+                onPress={() => setShowAddQada(false)}
                 accessibilityRole="button"
-                accessibilityLabel={`Delete missed fast for ${fast.date}`}
-                hitSlop={touchTargetTokens.hitSlop10}
+                accessibilityLabel={t('Cancel')}
               >
-                <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                <Text style={{ color: tokens.muted, fontSize: 13, fontFamily: 'Manrope_600SemiBold' }}>
+                  {t('Cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitBtn, getPillShadow(mode), { borderColor: tokens.goldBorder }]}
+                onPress={handleSaveQada}
+                accessibilityRole="button"
+                accessibilityLabel={t('Save Missed Fast')}
+              >
+                <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
+                <Text style={{ color: tokens.onGold, fontSize: 13, fontFamily: 'Manrope_700Bold' }}>
+                  {t('Save Fast')}
+                </Text>
               </TouchableOpacity>
             </View>
-          </Card>
-        ))
-      )}
-    </ScrollView>
+          </PremiumCard>
+        )}
+
+        {/* Fast List */}
+        <Text style={[styles.sectionTitle, { color: tokens.text, marginTop: 8 }]}>
+          {t('Missed Fast Ledger')}
+        </Text>
+        <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+          {t('Tap checkbox once made up. Synchronized with your central fasting records.')}
+        </Text>
+
+        {womenMissedFasts.length === 0 ? (
+          <PremiumCard padded={false} style={styles.emptyCard} contentStyle={styles.emptyCardContent}>
+            <EmptyState
+              icon="moon-outline"
+              title={t('No missed fasts recorded')}
+              subtitle={t('Days missed during Ramadan due to menstruation or postpartum can be recorded here.')}
+              iconSize={40}
+            />
+            <PrimaryButton title={t('+ Log Missed Fast')} onPress={() => setShowAddQada(true)} style={{ alignSelf: 'center', marginBottom: 12 }} />
+          </PremiumCard>
+        ) : (
+          womenMissedFasts.map((fast) => (
+            <PremiumCard
+              key={fast.id}
+              padded={false}
+              style={[styles.fastCard, { marginBottom: 10 }]}
+              contentStyle={styles.fastCardContent}
+            >
+              <View style={styles.qadaRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.checkbox,
+                    { borderColor: fast.madeUp ? tokens.success : tokens.cardBorder },
+                    fast.madeUp && { backgroundColor: tokens.success },
+                  ]}
+                  onPress={() => handleToggleQada(fast.id, fast.madeUp)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: fast.madeUp }}
+                  accessibilityLabel={`Mark fast from ${fast.date} as ${fast.madeUp ? 'unmade' : 'made up'}`}
+                >
+                  {fast.madeUp && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.qadaDate,
+                      { color: fast.madeUp ? tokens.muted : tokens.text },
+                      fast.madeUp && { textDecorationLine: 'line-through' },
+                    ]}
+                  >
+                    {fast.date}
+                  </Text>
+                  <Text style={[styles.qadaReason, { color: tokens.muted }]}>
+                    {fast.reason}
+                  </Text>
+                  {fast.madeUpDate && (
+                    <Text style={[styles.qadaMadeUpNote, { color: mode === 'paper' ? tokens.accent : tokens.success }]}>
+                      {t('Made up on')} {fast.madeUpDate}
+                    </Text>
+                  )}
+                </View>
+                <TouchableOpacity
+                  onPress={() => handleDeleteQada(fast)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Delete missed fast for ${fast.date}`}
+                  hitSlop={touchTargetTokens.hitSlop10}
+                >
+                  <Ionicons name="trash-outline" size={16} color={tokens.muted} />
+                </TouchableOpacity>
+              </View>
+            </PremiumCard>
+          ))
+        )}
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 export default withUndoToast(WomenQadaScreen);
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   content: {
-    padding: 20,
     paddingTop: 10,
-    paddingBottom: 60,
+  },
+  fastCard: {
+    borderRadius: 16,
+  },
+  fastCardContent: {
+    padding: 14,
+  },
+  emptyCard: {
+    borderRadius: 20,
+    marginTop: 8,
+  },
+  emptyCardContent: {
+    padding: 20,
   },
   backBtn: {
     alignSelf: 'flex-start',
@@ -407,9 +453,10 @@ const styles = StyleSheet.create({
   },
   qadaStatBox: {
     flex: 1,
+    borderRadius: 16,
+  },
+  qadaStatBoxContent: {
     padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
     alignItems: 'center',
   },
   qadaStatNum: {
@@ -434,9 +481,12 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
   },
   formCard: {
+    borderRadius: 20,
+    marginBottom: 14,
+  },
+  formCardContent: {
     padding: 16,
     gap: 8,
-    marginBottom: 14,
   },
   formTitle: {
     fontFamily: 'Manrope_700Bold',

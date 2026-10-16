@@ -9,7 +9,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -20,12 +19,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { EmptyState } from '../components/EmptyState';
+import { PrimaryButton } from '../components/ui/PrimaryButton';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
-import { getBackIcon } from '../lib/iconMap';
 import { buttonTokens, touchTargetTokens } from '../lib/buttonTokens';
 import {
   PeriodEntry,
@@ -46,6 +47,7 @@ import {
 
 interface WomenCycleScreenProps {
   onBack?: () => void;
+  backLabel?: string;
   onOpenPurity?: () => void;
   onOpenQada?: () => void;
   onOpenGuidance?: () => void;
@@ -53,17 +55,18 @@ interface WomenCycleScreenProps {
 
 function WomenCycleScreen({
   onBack,
+  backLabel = 'Tools',
   onOpenPurity,
   onOpenQada,
   onOpenGuidance,
 }: WomenCycleScreenProps) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const { saveUndoState } = useUndoToast();
 
-  const [periodEntries, setPeriodEntries] = useState<PeriodEntry[]>([]);
+  const [periodEntries, setPeriodEntries] = useState<PeriodEntry[]>(() => loadPeriodEntries());
   const [showLogPeriod, setShowLogPeriod] = useState(false);
   const [newStartDate, setNewStartDate] = useState(formatYMD(new Date()));
   const [newEndDate, setNewEndDate] = useState('');
@@ -79,10 +82,6 @@ function WomenCycleScreen({
   const refreshData = useCallback(() => {
     setPeriodEntries(loadPeriodEntries());
   }, []);
-
-  useEffect(() => {
-    refreshData();
-  }, [refreshData]);
 
   // Active period calculation
   const activePeriod = useMemo(() => {
@@ -114,133 +113,85 @@ function WomenCycleScreen({
     return getCycleDay(latestStart);
   }, [latestStart]);
 
-  const todayRecordedStatus = useMemo(() => {
+  const todayRecordedStatus = useMemo<PurityStatus | undefined>(() => {
     if (!activePeriod) return undefined;
     return activePeriod.purityDays?.[todayStr] || (activePeriod.startDate === todayStr ? 'menstruating' : undefined);
   }, [activePeriod, todayStr]);
 
   // Handlers
-  const proceedSavePeriod = (startDate: string, endDate?: string, notes?: string) => {
-    const entry: PeriodEntry = {
-      id: `period_${Date.now()}`,
-      startDate,
-      endDate: endDate || undefined,
-      notes: notes || undefined,
-      purityDays: {},
+  const handleSavePeriod = () => {
+    if (!isValidYMD(newStartDate)) {
+      Alert.alert(t('Invalid Start Date'), t('Please enter a valid start date (YYYY-MM-DD).'));
+      return;
+    }
+    if (newEndDate && !isValidYMD(newEndDate)) {
+      Alert.alert(t('Invalid End Date'), t('Please enter a valid end date (YYYY-MM-DD) or leave it blank.'));
+      return;
+    }
+    if (newEndDate && newEndDate < newStartDate) {
+      Alert.alert(t('Date Order Error'), t('End date cannot be earlier than start date.'));
+      return;
+    }
+
+    const newEntry: PeriodEntry = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      startDate: newStartDate,
+      endDate: newEndDate || undefined,
+      notes: newNotes.trim() || undefined,
+      purityDays: {
+        [newStartDate]: 'menstruating',
+      },
       createdAt: Date.now(),
     };
-    savePeriodEntry(entry);
+
+    savePeriodEntry(newEntry);
+    refreshData();
     setShowLogPeriod(false);
-    setNewStartDate(formatYMD(new Date()));
+    setNewStartDate(todayStr);
     setNewEndDate('');
     setNewNotes('');
-    refreshData();
-  };
-
-  const handleSavePeriod = () => {
-    const cleanStart = newStartDate.trim();
-    const cleanEnd = newEndDate.trim();
-    const cleanNotes = newNotes.trim();
-
-    if (!cleanStart) {
-      Alert.alert(t('Start Date Required'), t('Please provide a valid start date for this period.'));
-      return;
-    }
-
-    if (!isValidYMD(cleanStart)) {
-      Alert.alert(t('Invalid Start Date'), t('Please enter start date in YYYY-MM-DD format (e.g. 2026-10-05).'));
-      return;
-    }
-
-    if (cleanEnd && !isValidYMD(cleanEnd)) {
-      Alert.alert(t('Invalid End Date'), t('Please enter end date in YYYY-MM-DD format (e.g. 2026-10-10).'));
-      return;
-    }
-
-    if (cleanEnd && cleanEnd < cleanStart) {
-      Alert.alert(t('Invalid Range'), t('End date cannot be earlier than start date.'));
-      return;
-    }
-
-    // Check if an ongoing active period exists
-    if (!cleanEnd && activePeriod && activePeriod.startDate !== cleanStart) {
-      Alert.alert(
-        t('Active Period in Progress'),
-        t('An active cycle is currently open. Would you like to end the previous cycle and start this new entry?'),
-        [
-          { text: t('Cancel'), style: 'cancel' },
-          {
-            text: t('End Previous & Start New'),
-            onPress: () => {
-              const closedPrevious: PeriodEntry = {
-                ...activePeriod,
-                endDate: cleanStart,
-              };
-              savePeriodEntry(closedPrevious);
-              proceedSavePeriod(cleanStart, cleanEnd, cleanNotes);
-            },
-          },
-        ]
-      );
-      return;
-    }
-
-    proceedSavePeriod(cleanStart, cleanEnd, cleanNotes);
   };
 
   const handleEndPeriod = (entry: PeriodEntry) => {
-    const today = formatYMD(new Date());
-    const updated: PeriodEntry = {
-      ...entry,
-      endDate: today,
-    };
-    savePeriodEntry(updated);
-    refreshData();
     Alert.alert(
-      t('Period Ended · Purity Resumed'),
-      t('Remember to perform Ghusl (ritual purification) before resuming your daily prayers and fasting.'),
-      [
-        { text: t('Later'), style: 'cancel' },
-        ...(onOpenPurity
-          ? [
-              {
-                text: t('View Ghusl Guide'),
-                onPress: () => onOpenPurity(),
-              },
-            ]
-          : [{ text: t('OK') }]),
-      ]
-    );
-  };
-
-  const handleDeletePeriod = (item: PeriodEntry) => {
-    Alert.alert(
-      t('Delete Period Entry?'),
-      t('Are you sure you want to delete this period record?'),
+      t('Mark Period Ended?'),
+      t('This will set today as the end date of your active cycle. You should perform Ghusl before resuming Salah & fasting.'),
       [
         { text: t('Cancel'), style: 'cancel' },
         {
-          text: t('Delete'),
-          style: 'destructive',
+          text: t('End & Mark Pure'),
           onPress: () => {
-            deletePeriodEntry(item.id);
-            refreshData();
-            saveUndoState({
-              id: item.id,
-              action: t('Period entry deleted'),
-              revert: () => {
-                savePeriodEntry(item);
-                refreshData();
+            const updated: PeriodEntry = {
+              ...entry,
+              endDate: todayStr,
+              purityDays: {
+                ...(entry.purityDays || {}),
+                [todayStr]: 'pure',
               },
-            });
+            };
+            savePeriodEntry(updated);
+            refreshData();
           },
         },
       ]
     );
   };
 
+  const handleDeletePeriod = (entry: PeriodEntry) => {
+    deletePeriodEntry(entry.id);
+    refreshData();
+    saveUndoState({
+      id: entry.id,
+      action: t('Period entry deleted'),
+      revert: () => {
+        savePeriodEntry(entry);
+        refreshData();
+      },
+    });
+  };
+
   const handleToggleDayPurity = (entry: PeriodEntry, dateKey: string) => {
-    const current = entry.purityDays?.[dateKey] || 'menstruating';
+    const current: PurityStatus = entry.purityDays?.[dateKey] || 'menstruating';
     const nextStatus: Record<PurityStatus, PurityStatus> = {
       menstruating: 'spotting',
       spotting: 'pure',
@@ -262,414 +213,432 @@ function WomenCycleScreen({
   const paddingH = isCompact ? 16 : 20;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH }]}
-      keyboardShouldPersistTaps="handled"
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
+          eyebrow={t("Women's Worship")}
+          title={t('Cycle Tracker')}
+          subtitle={t('Period logging, cycle duration, predictions & daily purity status.')}
+          onBack={onBack}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
+        />
+      }
     >
-      <ScreenHeader
-        eyebrow={t("Women's Worship")}
-        title={t('Cycle Tracker')}
-        subtitle={t('Period logging, cycle duration, predictions & daily purity status.')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
-
-      {/* Discreet Privacy Note */}
-      <View style={[styles.privacyBadge, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-        <Ionicons name="shield-checkmark" size={14} color={colors.accent} />
-        <Text style={[styles.privacyText, { color: colors.textSecondary }]}>
-          {t('Private & local · Stored securely on your device only · Never sent to servers')}
-        </Text>
-      </View>
-
-      {/* Active Status Hero Card */}
-      <Card style={styles.heroCard}>
-        <View style={styles.heroHeader}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.heroEyebrow, { color: colors.accent }]}>
-              {activePeriod ? t('ACTIVE CYCLE') : t('PURITY STATE')}
-            </Text>
-            <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
-              {activePeriod
-                ? `${t('Menstruating · Day')} ${getCycleDay(activePeriod.startDate)}`
-                : `${t('Ritual Purity (Tuhr) · Day')} ${cycleDay}`}
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.statusPill,
-              {
-                backgroundColor: activePeriod ? '#991B1B20' : colors.accentDim,
-                borderColor: activePeriod ? colors.destructive : colors.accent,
-              },
-            ]}
-          >
-            <Ionicons
-              name={activePeriod ? 'water' : 'sparkles'}
-              size={13}
-              color={activePeriod ? colors.destructive : colors.accent}
-            />
-            <Text
-              style={[
-                styles.statusPillText,
-                { color: activePeriod ? colors.destructive : colors.accent },
-              ]}
-            >
-              {activePeriod ? t('Exempt from Salah') : t('Normal Worship')}
-            </Text>
-          </View>
+      <DetailScreen.ScrollView
+        contentContainerStyle={[
+          styles.content,
+          {
+            alignSelf: 'center',
+            width: '100%',
+            maxWidth: maxW,
+            paddingHorizontal: paddingH,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Discreet Privacy Note */}
+        <View style={[styles.privacyBadge, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+          <Ionicons name="shield-checkmark" size={14} color={tokens.goldText} />
+          <Text style={[styles.privacyText, { color: tokens.muted }]}>
+            {t('Private & local · Stored securely on your device only · Never sent to servers')}
+          </Text>
         </View>
 
-        {activePeriod ? (
-          <View style={styles.heroBody}>
-            <Text style={[styles.heroDesc, { color: colors.textSecondary }]}>
-              {t('Started on')} {activePeriod.startDate}. {t('Prayer and fasting are exempt out of divine mercy.')}
-            </Text>
-
-            {/* Explicit-recording driven status reminder */}
-            {todayRecordedStatus === 'menstruating' && (
-              <View style={[styles.recordedReminderChip, { backgroundColor: '#EF444415', borderColor: '#EF444450' }]}>
-                <Ionicons name="information-circle" size={15} color={colors.destructive} />
-                <Text style={[styles.recordedReminderText, { color: colors.textPrimary }]}>
-                  {t('Recorded as Flow today:')} <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Exempt from fasting; record qada makeup days later.')}</Text>
-                </Text>
-              </View>
-            )}
-            {todayRecordedStatus === 'pure' && (
-              <View style={[styles.recordedReminderChip, { backgroundColor: colors.sagePill || colors.accentDim, borderColor: colors.forestGreen || colors.accent }]}>
-                <Ionicons name="sparkles" size={15} color={colors.forestGreen || colors.accent} />
-                <Text style={[styles.recordedReminderText, { color: colors.textPrimary }]}>
-                  {t('Recorded as Pure today:')} <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Perform Ghusl before resuming Salah & fasting.')}</Text>
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.heroBtnRow}>
-              <TouchableOpacity
-                style={[styles.primaryBtn, { backgroundColor: colors.accent }]}
-                onPress={() => handleEndPeriod(activePeriod)}
-                accessibilityRole="button"
-                accessibilityLabel={t('End Period and Mark Pure')}
+        {/* Active Status Hero Card */}
+        <View style={[styles.heroCard, activePeriod ? styles.heroCardActive : styles.heroCardEmpty, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: activePeriod ? tokens.goldBorder : tokens.cardBorder, borderWidth: cardTokens.borderWidth, borderRadius: 20 }]}>
+          <LinearGradient pointerEvents="none" colors={tokens.cardGradient} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+          <View style={styles.heroHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.heroEyebrow, { color: tokens.goldText }]}>
+                {activePeriod ? t('ACTIVE CYCLE') : t('PURITY STATE')}
+              </Text>
+              <Text style={[styles.heroTitle, { color: tokens.text }]}>
+                {activePeriod
+                  ? `${t('Menstruating · Day')} ${getCycleDay(activePeriod.startDate)}`
+                  : `${t('Ritual Purity (Tuhr) · Day')} ${cycleDay}`}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.statusPill,
+                getPillShadow(mode),
+                {
+                  backgroundColor: activePeriod ? (tokens.danger + '20') : tokens.ringFill,
+                  borderColor: activePeriod ? tokens.danger : tokens.goldBorder,
+                },
+              ]}
+            >
+              <Ionicons
+                name={activePeriod ? 'water' : 'sparkles'}
+                size={13}
+                color={activePeriod ? tokens.danger : tokens.goldText}
+              />
+              <Text
+                style={[
+                  styles.statusPillText,
+                  { color: activePeriod ? tokens.danger : tokens.goldText },
+                ]}
               >
-                <Ionicons name="checkmark-done" size={16} color={colors.onAccent} />
-                <Text style={[styles.primaryBtnText, { color: colors.onAccent }]}>
-                  {t('End Period / Mark Pure')}
-                </Text>
-              </TouchableOpacity>
-              {onOpenPurity && (
-                <TouchableOpacity
-                  style={[styles.guideLinkBtn, { borderColor: colors.borderSubtle }]}
-                  onPress={onOpenPurity}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('View Ghusl Guide')}
-                >
-                  <Ionicons name="water-outline" size={15} color={colors.accent} />
-                  <Text style={[styles.guideLinkText, { color: colors.accent }]}>{t('Ghusl Guide')}</Text>
-                </TouchableOpacity>
-              )}
+                {activePeriod ? t('Exempt from Salah') : t('Normal Worship')}
+              </Text>
             </View>
           </View>
-        ) : (
-          <View style={styles.heroBody}>
-            {prediction && (
-              <View style={[styles.predictionBox, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-                <Ionicons name="calendar-outline" size={16} color={colors.accent} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.predictionTitle, { color: colors.textPrimary }]}>
-                    {t('Next predicted cycle in ~')}{prediction.daysRemaining > 0 ? `${prediction.daysRemaining} ${t('days')}` : t('soon')}
-                  </Text>
-                  <Text style={[styles.predictionSub, { color: colors.textMuted }]}>
-                    {t('Estimated:')} {prediction.nextDate} · {t('Average interval:')} {avgCycle} {t('days')}
+
+          {activePeriod ? (
+            <View style={styles.heroBody}>
+              <Text style={[styles.heroDesc, { color: tokens.muted }]}>
+                {t('Started on')} {activePeriod.startDate}. {t('Prayer and fasting are exempt out of divine mercy.')}
+              </Text>
+
+              {/* Explicit-recording driven status reminder */}
+              {todayRecordedStatus === 'menstruating' && (
+                <View style={[styles.recordedReminderChip, { backgroundColor: tokens.danger + '15', borderColor: tokens.danger + '50' }]}>
+                  <Ionicons name="information-circle" size={15} color={tokens.danger} />
+                  <Text style={[styles.recordedReminderText, { color: tokens.text }]}>
+                    {t('Recorded as Flow today:')} <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Exempt from fasting; record qada makeup days later.')}</Text>
                   </Text>
                 </View>
-              </View>
-            )}
-
-            {fertileWindow && (
-              <View style={[styles.fertileBadge, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-                <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-                <Text style={[styles.fertileText, { color: colors.textSecondary }]}>
-                  {t('Estimated fertile window:')} {fertileWindow.start} {t('to')} {fertileWindow.end}
-                </Text>
-              </View>
-            )}
-            <Text style={[styles.disclaimerText, { color: colors.textMuted }]}>
-              {t('Predictions are informational estimates computed strictly from past entries. Not for medical diagnosis or contraception.')}
-            </Text>
-
-            <View style={[styles.explicitRuleBox, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}>
-              <Ionicons name="shield-checkmark-outline" size={14} color={colors.accent} />
-              <Text style={[styles.explicitRuleText, { color: colors.textMuted }]}>
-                {t('Explicit recording rule: Predictions never auto-change prayer schedules, reminders, or fasting records.')}
-              </Text>
-            </View>
-
-            <View style={styles.heroBtnRow}>
-              <TouchableOpacity
-                style={[styles.secondaryBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim, flex: 1 }]}
-                onPress={() => setShowLogPeriod(true)}
-                accessibilityRole="button"
-                accessibilityLabel={t('Log New Period Start')}
-              >
-                <Ionicons name="add-circle-outline" size={16} color={colors.accent} />
-                <Text style={[styles.secondaryBtnText, { color: colors.accent }]}>
-                  {t('Log Period Start')}
-                </Text>
-              </TouchableOpacity>
-              {onOpenPurity && (
-                <TouchableOpacity
-                  style={[styles.guideLinkBtn, { borderColor: colors.borderSubtle }]}
-                  onPress={onOpenPurity}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('View Ghusl Guide')}
-                >
-                  <Ionicons name="water-outline" size={15} color={colors.accent} />
-                  <Text style={[styles.guideLinkText, { color: colors.accent }]}>{t('Ghusl Guide')}</Text>
-                </TouchableOpacity>
               )}
-            </View>
-          </View>
-        )}
-      </Card>
+              {todayRecordedStatus === 'pure' && (
+                <View style={[styles.recordedReminderChip, { backgroundColor: tokens.ringFill, borderColor: tokens.success }]}>
+                  <Ionicons name="sparkles" size={15} color={tokens.success} />
+                  <Text style={[styles.recordedReminderText, { color: tokens.text }]}>
+                    {t('Recorded as Pure today:')} <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Perform Ghusl before resuming Salah & fasting.')}</Text>
+                  </Text>
+                </View>
+              )}
 
-      {/* Current Period Day-by-Day Purity Chips */}
-      {activePeriod && (
-        <Card style={styles.sectionCard}>
-          <View style={styles.cardHeaderRow}>
-            <Ionicons name="flower-outline" size={16} color={colors.accent} />
-            <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>
-              {t('Daily Purity Status')}
-            </Text>
-          </View>
-          <Text style={[styles.cardSub, { color: colors.textSecondary }]}>
-            {t('Tap any day to toggle status: Flow → Spotting → Pure')}
-          </Text>
-          <View style={styles.chipsGrid}>
-            {Array.from({ length: Math.min(15, Math.max(7, getCycleDay(activePeriod.startDate))) }).map(
-              (_, idx) => {
-                const dayNum = idx + 1;
-                const d = parseYMD(activePeriod.startDate);
-                d.setDate(d.getDate() + idx);
-                const dStr = formatYMD(d);
-                const status = activePeriod.purityDays?.[dStr] || (dayNum <= getCycleDay(activePeriod.startDate) ? 'menstruating' : 'pure');
-
-                const statusColors = {
-                  menstruating: { bg: '#991B1B20', border: colors.destructive, text: colors.destructive, label: t('Flow') },
-                  spotting: { bg: '#D9770620', border: '#D97706', text: '#F59E0B', label: t('Spot') },
-                  pure: { bg: colors.sagePill || '#DBE7E1', border: colors.forestGreen || '#105A4B', text: colors.forestGreen || '#105A4B', label: t('Pure') },
-                }[status];
-
-                return (
-                  <TouchableOpacity
-                    key={dStr}
-                    style={[
-                      styles.dayChip,
-                      { backgroundColor: statusColors.bg, borderColor: statusColors.border },
-                    ]}
-                    onPress={() => handleToggleDayPurity(activePeriod, dStr)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${t('Day')} ${dayNum}, ${dStr}, ${statusColors.label}`}
-                  >
-                    <Text style={[styles.dayChipNum, { color: colors.textPrimary }]}>
-                      D{dayNum}
-                    </Text>
-                    <Text style={[styles.dayChipStatus, { color: statusColors.text }]}>
-                      {statusColors.label}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              }
-            )}
-          </View>
-          <View style={[styles.legendRow, { borderTopColor: colors.borderSubtle }]}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.destructive }]} />
-              <Text style={[styles.legendText, { color: colors.textMuted }]}>{t('Flow (Bleeding)')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#F59E0B' }]} />
-              <Text style={[styles.legendText, { color: colors.textMuted }]}>{t('Spotting')}</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: colors.forestGreen || colors.accent }]} />
-              <Text style={[styles.legendText, { color: colors.textMuted }]}>{t('Pure (Dry / Tuhr)')}</Text>
-            </View>
-          </View>
-        </Card>
-      )}
-
-      {/* Log Period Form */}
-      {showLogPeriod && (
-        <Card style={styles.formCard}>
-          <Text style={[styles.formTitle, { color: colors.textPrimary }]}>{t('Log Period Entry')}</Text>
-          
-          <View style={styles.labelRow}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Start Date (YYYY-MM-DD)')}</Text>
-            <View style={styles.quickPillsRow}>
-              <TouchableOpacity
-                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-                onPress={() => setNewStartDate(todayStr)}
-              >
-                <Text style={[styles.quickPillText, { color: colors.accent }]}>{t('Today')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-                onPress={() => setNewStartDate(yesterdayStr)}
-              >
-                <Text style={[styles.quickPillText, { color: colors.textSecondary }]}>{t('Yesterday')}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          <TextInput
-            style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-            value={newStartDate}
-            onChangeText={setNewStartDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="numbers-and-punctuation"
-          />
-
-          <View style={styles.labelRow}>
-            <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('End Date (Optional, leave blank if active)')}</Text>
-            <View style={styles.quickPillsRow}>
-              <TouchableOpacity
-                style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-                onPress={() => setNewEndDate(todayStr)}
-              >
-                <Text style={[styles.quickPillText, { color: colors.accent }]}>{t('Today')}</Text>
-              </TouchableOpacity>
-              {newEndDate ? (
+              <View style={styles.heroBtnRow}>
                 <TouchableOpacity
-                  style={[styles.quickPill, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-                  onPress={() => setNewEndDate('')}
+                  style={[styles.primaryBtn, getPillShadow(mode), { borderColor: tokens.goldBorder }]}
+                  onPress={() => handleEndPeriod(activePeriod)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('End Period and Mark Pure')}
                 >
-                  <Text style={[styles.quickPillText, { color: colors.textMuted }]}>{t('Clear')}</Text>
+                  <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
+                  <Ionicons name="checkmark-done" size={16} color={tokens.onGold} />
+                  <Text style={[styles.primaryBtnText, { color: tokens.onGold }]}>
+                    {t('End Period / Mark Pure')}
+                  </Text>
                 </TouchableOpacity>
-              ) : null}
+                {onOpenPurity && (
+                  <TouchableOpacity
+                    style={[styles.guideLinkBtn, getPillShadow(mode), { borderColor: tokens.goldBorder, backgroundColor: tokens.cardTop }]}
+                    onPress={onOpenPurity}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('View Ghusl Guide')}
+                  >
+                    <Ionicons name="water-outline" size={15} color={tokens.goldText} />
+                    <Text style={[styles.guideLinkText, { color: tokens.goldText }]}>{t('Ghusl Guide')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
-          <TextInput
-            style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-            value={newEndDate}
-            onChangeText={setNewEndDate}
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={colors.textMuted}
-            keyboardType="numbers-and-punctuation"
-          />
+          ) : (
+            <View style={styles.heroBody}>
+              {prediction && (
+                <View style={[styles.predictionBox, { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}>
+                  <Ionicons name="calendar-outline" size={16} color={tokens.goldText} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.predictionTitle, { color: tokens.text }]}>
+                      {t('Next predicted cycle in ~')}{prediction.daysRemaining > 0 ? `${prediction.daysRemaining} ${t('days')}` : t('soon')}
+                    </Text>
+                    <Text style={[styles.predictionSub, { color: tokens.muted }]}>
+                      {t('Estimated:')} {prediction.nextDate} · {t('Average interval:')} {avgCycle} {t('days')}
+                    </Text>
+                  </View>
+                </View>
+              )}
 
-          <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Notes (Optional)')}</Text>
-          <TextInput
-            style={[styles.textInput, { color: colors.textPrimary, borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}
-            value={newNotes}
-            onChangeText={setNewNotes}
-            placeholder={t('Cycle notes, flow intensity, pain...')}
-            placeholderTextColor={colors.textMuted}
-          />
-          <View style={styles.formBtnRow}>
-            <TouchableOpacity
-              style={[styles.cancelBtn, { borderColor: colors.borderSubtle }]}
-              onPress={() => setShowLogPeriod(false)}
-              accessibilityRole="button"
-              accessibilityLabel={t('Cancel')}
-            >
-              <Text style={{ color: colors.textMuted, fontFamily: 'Manrope_600SemiBold', fontSize: 13 }}>
-                {t('Cancel')}
+              {fertileWindow && (
+                <View style={[styles.fertileBadge, { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}>
+                  <Ionicons name="information-circle-outline" size={14} color={tokens.muted} />
+                  <Text style={[styles.fertileText, { color: tokens.muted }]}>
+                    {t('Estimated fertile window:')} {fertileWindow.start} {t('to')} {fertileWindow.end}
+                  </Text>
+                </View>
+              )}
+              <Text style={[styles.disclaimerText, { color: tokens.muted }]}>
+                {t('Predictions are informational estimates computed strictly from past entries. Not for medical diagnosis or contraception.')}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: colors.accent }]}
-              onPress={handleSavePeriod}
-              accessibilityRole="button"
-              accessibilityLabel={t('Save Period Entry')}
-            >
-              <Text style={{ color: colors.onAccent, fontFamily: 'Manrope_700Bold', fontSize: 13 }}>
-                {t('Save Entry')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-      )}
 
-      {/* Recent Cycles History */}
-      <View style={styles.historySection}>
-        <View style={styles.historyHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{t('Recent History')}</Text>
-          {!showLogPeriod && (
-            <TouchableOpacity onPress={() => setShowLogPeriod(true)}>
-              <Text style={[styles.actionLink, { color: colors.accent }]}>{t('+ Add Past Entry')}</Text>
-            </TouchableOpacity>
+              <View style={[styles.explicitRuleBox, { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}>
+                <Ionicons name="shield-checkmark-outline" size={14} color={tokens.goldText} />
+                <Text style={[styles.explicitRuleText, { color: tokens.muted }]}>
+                  {t('Explicit recording rule: Predictions never auto-change prayer schedules, reminders, or fasting records.')}
+                </Text>
+              </View>
+
+              <View style={styles.heroBtnRow}>
+                <TouchableOpacity
+                  style={[styles.primaryBtn, getPillShadow(mode), { borderColor: tokens.goldBorder, flex: 1 }]}
+                  onPress={() => setShowLogPeriod(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('Log New Period Start')}
+                >
+                  <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
+                  <Ionicons name="add-circle-outline" size={16} color={tokens.onGold} />
+                  <Text style={[styles.primaryBtnText, { color: tokens.onGold }]}>
+                    {t('Log Period Start')}
+                  </Text>
+                </TouchableOpacity>
+                {onOpenPurity && (
+                  <TouchableOpacity
+                    style={[styles.guideLinkBtn, getPillShadow(mode), { borderColor: tokens.goldBorder, backgroundColor: tokens.cardTop }]}
+                    onPress={onOpenPurity}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('View Ghusl Guide')}
+                  >
+                    <Ionicons name="water-outline" size={15} color={tokens.goldText} />
+                    <Text style={[styles.guideLinkText, { color: tokens.goldText }]}>{t('Ghusl Guide')}</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
           )}
         </View>
 
-        {periodEntries.length === 0 ? (
-          <EmptyState
-            icon="calendar-outline"
-            title={t('No periods recorded yet')}
-            subtitle={t('Log the start of your cycle to track duration, predictions, and purity markers.')}
-            actionLabel={t('+ Log Period Start')}
-            onAction={() => setShowLogPeriod(true)}
-            iconSize={40}
-          />
-        ) : (
-          periodEntries.map((item) => (
-            <Card key={item.id} style={{ marginBottom: 10, padding: 14 }}>
-              <View style={styles.historyRow}>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={[styles.historyDates, { color: colors.textPrimary }]}>
-                      {item.startDate} {item.endDate ? `→ ${item.endDate}` : `· (${t('Active')})`}
-                    </Text>
-                    {!item.endDate && (
-                      <View style={[styles.liveBadge, { backgroundColor: '#EF444420', borderColor: colors.destructive, borderWidth: 1 }]}>
-                        <Text style={{ color: colors.destructive, fontSize: 9.5, fontFamily: 'Manrope_700Bold' }}>
-                          {t('ACTIVE')}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                  {item.notes && (
-                    <Text style={[styles.historyNotes, { color: colors.textMuted }]}>{item.notes}</Text>
-                  )}
-                </View>
+        {/* Current Period Day-by-Day Purity Chips */}
+        {activePeriod && (
+          <View style={[styles.sectionCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, borderWidth: cardTokens.borderWidth, borderRadius: 20 }]}>
+            <LinearGradient pointerEvents="none" colors={tokens.cardGradient} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+            <View style={styles.cardHeaderRow}>
+              <Ionicons name="flower-outline" size={16} color={tokens.goldText} />
+              <Text style={[styles.cardTitle, { color: tokens.text }]}>
+                {t('Daily Purity Status')}
+              </Text>
+            </View>
+            <Text style={[styles.cardSub, { color: tokens.muted }]}>
+              {t('Tap any day to toggle status: Flow → Spotting → Pure')}
+            </Text>
+            <View style={styles.chipsGrid}>
+              {Array.from({ length: Math.min(15, Math.max(7, getCycleDay(activePeriod.startDate))) }).map(
+                (_, idx) => {
+                  const dayNum = idx + 1;
+                  const d = parseYMD(activePeriod.startDate);
+                  d.setDate(d.getDate() + idx);
+                  const dStr = formatYMD(d);
+                  const status = activePeriod.purityDays?.[dStr] || (dayNum <= getCycleDay(activePeriod.startDate) ? 'menstruating' : 'pure');
+
+                  const statusColors = {
+                    menstruating: { bg: tokens.danger + '20', border: tokens.danger, text: tokens.danger, label: t('Flow') },
+                    spotting: { bg: tokens.gold + '20', border: tokens.goldText, text: tokens.goldText, label: t('Spot') },
+                    pure: { bg: tokens.ringFill, border: tokens.success, text: mode === 'paper' ? tokens.accent : tokens.success, label: t('Pure') },
+                  }[status];
+
+                  return (
+                    <TouchableOpacity
+                      key={dStr}
+                      style={[
+                        styles.dayChip,
+                        { backgroundColor: statusColors.bg, borderColor: statusColors.border },
+                      ]}
+                      onPress={() => handleToggleDayPurity(activePeriod, dStr)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t('Day')} ${dayNum}, ${dStr}, ${statusColors.label}`}
+                    >
+                      <Text style={[styles.dayChipNum, { color: tokens.text }]}>
+                        D{dayNum}
+                      </Text>
+                      <Text style={[styles.dayChipStatus, { color: statusColors.text }]}>
+                        {statusColors.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                }
+              )}
+            </View>
+            <View style={[styles.legendRow, { borderTopColor: tokens.cardBorder }]}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: tokens.danger }]} />
+                <Text style={[styles.legendText, { color: tokens.muted }]}>{t('Flow (Bleeding)')}</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: tokens.goldText }]} />
+                <Text style={[styles.legendText, { color: tokens.muted }]}>{t('Spotting')}</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: tokens.success }]} />
+                <Text style={[styles.legendText, { color: tokens.muted }]}>{t('Pure (Dry / Tuhr)')}</Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Log Period Form */}
+        {showLogPeriod && (
+          <View style={[styles.formCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, borderWidth: cardTokens.borderWidth, borderRadius: 20 }]}>
+            <LinearGradient pointerEvents="none" colors={tokens.cardGradient} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+            <Text style={[styles.formTitle, { color: tokens.text }]}>{t('Log Period Entry')}</Text>
+
+            <View style={styles.labelRow}>
+              <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Start Date (YYYY-MM-DD)')}</Text>
+              <View style={styles.quickPillsRow}>
                 <TouchableOpacity
-                  onPress={() => handleDeletePeriod(item)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${t('Delete')} ${item.startDate}`}
-                  hitSlop={touchTargetTokens.hitSlop10}
+                  style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+                  onPress={() => setNewStartDate(todayStr)}
                 >
-                  <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
+                  <Text style={[styles.quickPillText, { color: tokens.goldText }]}>{t('Today')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+                  onPress={() => setNewStartDate(yesterdayStr)}
+                >
+                  <Text style={[styles.quickPillText, { color: tokens.muted }]}>{t('Yesterday')}</Text>
                 </TouchableOpacity>
               </View>
-            </Card>
-          ))
+            </View>
+            <TextInput
+              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              value={newStartDate}
+              onChangeText={setNewStartDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={tokens.muted}
+              keyboardType="numbers-and-punctuation"
+            />
+
+            <View style={styles.labelRow}>
+              <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('End Date (Optional, leave blank if active)')}</Text>
+              <View style={styles.quickPillsRow}>
+                <TouchableOpacity
+                  style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+                  onPress={() => setNewEndDate(todayStr)}
+                >
+                  <Text style={[styles.quickPillText, { color: tokens.goldText }]}>{t('Today')}</Text>
+                </TouchableOpacity>
+                {newEndDate ? (
+                  <TouchableOpacity
+                    style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+                    onPress={() => setNewEndDate('')}
+                  >
+                    <Text style={[styles.quickPillText, { color: tokens.muted }]}>{t('Clear')}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </View>
+            <TextInput
+              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              value={newEndDate}
+              onChangeText={setNewEndDate}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={tokens.muted}
+              keyboardType="numbers-and-punctuation"
+            />
+
+            <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Notes (Optional)')}</Text>
+            <TextInput
+              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              value={newNotes}
+              onChangeText={setNewNotes}
+              placeholder={t('Cycle notes, flow intensity, pain...')}
+              placeholderTextColor={tokens.muted}
+            />
+            <View style={styles.formBtnRow}>
+              <TouchableOpacity
+                style={[styles.cancelBtn, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+                onPress={() => setShowLogPeriod(false)}
+                accessibilityRole="button"
+                accessibilityLabel={t('Cancel')}
+              >
+                <Text style={{ color: tokens.muted, fontFamily: 'Manrope_600SemiBold', fontSize: 13 }}>
+                  {t('Cancel')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitBtn, getPillShadow(mode), { borderColor: tokens.goldBorder }]}
+                onPress={handleSavePeriod}
+                accessibilityRole="button"
+                accessibilityLabel={t('Save Period Entry')}
+              >
+                <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
+                <Text style={{ color: tokens.onGold, fontFamily: 'Manrope_700Bold', fontSize: 13 }}>
+                  {t('Save Entry')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         )}
-      </View>
-    </ScrollView>
+
+        {/* Recent Cycles History */}
+        <View style={styles.historySection}>
+          <View style={styles.historyHeader}>
+            <Text style={[styles.sectionTitle, { color: tokens.text }]}>{t('Recent History')}</Text>
+            {!showLogPeriod && (
+              <TouchableOpacity onPress={() => setShowLogPeriod(true)}>
+                <Text style={[styles.actionLink, { color: tokens.goldText }]}>{t('+ Add Past Entry')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {periodEntries.length === 0 ? (
+            <View style={[styles.emptyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, borderWidth: cardTokens.borderWidth, borderRadius: 24, padding: 20 }]}>
+              <LinearGradient pointerEvents="none" colors={tokens.cardGradient} style={[StyleSheet.absoluteFill, { borderRadius: 24 }]} />
+              <EmptyState
+                icon="calendar-outline"
+                title={t('No periods recorded yet')}
+                subtitle={t('Log the start of your cycle to track duration, predictions, and purity markers.')}
+                iconSize={40}
+              />
+              <PrimaryButton title={t('+ Log Period Start')} onPress={() => setShowLogPeriod(true)} style={{ alignSelf: 'center', marginBottom: 12 }} />
+            </View>
+          ) : (
+            periodEntries.map((item) => (
+              <View key={item.id} style={[styles.historyCard, getCardShadow(mode), { backgroundColor: item.id === activePeriod?.id ? tokens.ringFill : tokens.cardTop, borderColor: item.id === activePeriod?.id ? tokens.goldBorder : tokens.cardBorder, borderWidth: cardTokens.borderWidth, borderRadius: 20, marginBottom: 10, padding: 16 }]}>
+                <LinearGradient pointerEvents="none" colors={tokens.cardGradient} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
+                <View style={styles.historyRow}>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={[styles.historyDates, { color: tokens.text }]}>
+                        {item.startDate} {item.endDate ? `→ ${item.endDate}` : `· (${t('Active')})`}
+                      </Text>
+                      {!item.endDate && (
+                        <View style={[styles.liveBadge, { backgroundColor: tokens.danger + '20', borderColor: tokens.danger, borderWidth: 1 }]}>
+                          <Text style={{ color: tokens.danger, fontSize: 9.5, fontFamily: 'Manrope_700Bold' }}>
+                            {t('ACTIVE')}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    {item.notes && (
+                      <Text style={[styles.historyNotes, { color: tokens.muted }]}>{item.notes}</Text>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleDeletePeriod(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('Delete')} ${item.startDate}`}
+                    hitSlop={touchTargetTokens.hitSlop10}
+                  >
+                    <Ionicons name="trash-outline" size={16} color={tokens.muted} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 export default withUndoToast(WomenCycleScreen);
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
   content: {
-    padding: 20,
     paddingTop: 10,
-    paddingBottom: 60,
   },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    paddingRight: 10,
-    marginBottom: 4,
+  historyCard: {
+    borderRadius: 20,
   },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+  emptyCard: {
+    borderRadius: 20,
   },
   privacyBadge: {
     flexDirection: 'row',
@@ -690,6 +659,12 @@ const styles = StyleSheet.create({
   heroCard: {
     padding: 18,
     marginBottom: 14,
+  },
+  heroCardActive: {
+    borderLeftWidth: 4,
+  },
+  heroCardEmpty: {
+    paddingBottom: 20,
   },
   heroHeader: {
     flexDirection: 'row',
@@ -732,8 +707,7 @@ const styles = StyleSheet.create({
   },
   heroBtnRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    gap: 10,
     marginTop: 4,
   },
   primaryBtn: {
@@ -741,23 +715,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    minHeight: buttonTokens.md.minHeight,
-    paddingHorizontal: 14,
-    borderRadius: buttonTokens.md.borderRadius,
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   primaryBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13.5,
+    fontSize: 13,
   },
   secondaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    minHeight: buttonTokens.md.minHeight,
-    paddingHorizontal: 14,
-    borderRadius: buttonTokens.md.borderRadius,
+    paddingVertical: 10,
+    borderRadius: 8,
     borderWidth: 1,
   },
   secondaryBtnText: {
@@ -768,9 +740,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    minHeight: buttonTokens.md.minHeight,
     paddingHorizontal: 12,
-    borderRadius: buttonTokens.md.borderRadius,
+    paddingVertical: 10,
+    borderRadius: 8,
     borderWidth: 1,
   },
   guideLinkText: {
