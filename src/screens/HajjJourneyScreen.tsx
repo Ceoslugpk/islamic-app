@@ -4,14 +4,15 @@ import {
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { useThemeTokens } from '../theme/tokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard, PrimaryButton, Chip } from '../components/ui';
+import { fontRoles } from '../theme/tokens';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -289,12 +290,14 @@ const HAJJ_DAYS: HajjDay[] = [
 export default function HajjJourneyScreen({
   onBack,
   onOpenDuas,
+  backLabel = 'Tools',
 }: {
   onBack?: () => void;
   onOpenDuas?: () => void;
+  backLabel?: string;
 }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const isCompact = width < 380;
@@ -302,306 +305,335 @@ export default function HajjJourneyScreen({
   const [selectedDayId, setSelectedDayId] = useState<string>('day-8');
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[
-        styles.content,
-        { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
-      ]}
+    <DetailScreen
+      style={{ backgroundColor: tokens.bgTop }}
+      header={
+        <SubHeader
+          eyebrow={t('Sacred Pilgrimage')}
+          title={t('Hajj Journey')}
+          subtitle={t('Day-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba.')}
+          onBack={onBack}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
+        />
+      }
     >
-      <ScreenHeader
-        eyebrow={t('Hajj & Umrah')}
-        title={t('Hajj Journey')}
-        subtitle={t('The day-by-day pilgrimage chronicle: from Yawm al-Tarwiyah to the Farewell Tawaf.')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
-
-      {/* Quick Day Chips */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.chipsScroll, hScrollRTLStyle()]}
+      <DetailScreen.ScrollView
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={[
+          styles.content,
+          { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
+        ]}
       >
-        {HAJJ_DAYS.map((d) => {
-          const isActive = d.id === selectedDayId;
+        {/* Quick Day Chips */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.chipsScroll, hScrollRTLStyle()]}
+        >
+          {HAJJ_DAYS.map((d) => {
+            const isActive = d.id === selectedDayId;
+            return (
+              <Chip
+                key={d.id}
+                label={`${t(d.dayNumber)} · ${t(d.hijriDate)}`}
+                selected={isActive}
+                onPress={() => setSelectedDayId(d.id)}
+                style={styles.dayChip}
+              />
+            );
+          })}
+        </ScrollView>
+
+        {/* Hajj Pillars Summary Card */}
+        <PremiumCard
+          style={styles.pillarsCard}
+          padded
+        >
+          <View style={styles.pillarsHeaderRow}>
+            <View style={[styles.badge, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
+              <Ionicons name="sparkles" size={13} color={tokens.goldText} />
+              <Text style={[styles.badgeText, { color: tokens.goldText }]}>
+                {t('THE 4 PILLARS OF HAJJ (ARKAN)')}
+              </Text>
+            </View>
+          </View>
+          <Text style={[styles.pillarsTitle, { color: tokens.text }]}>
+            {t('Essential Foundations of the Pilgrimage')}
+          </Text>
+          <Text style={[styles.pillarsBody, { color: tokens.muted }]}>
+            {t("1. Ihram (Intention) · 2. Wuquf at Arafah (Standing on 9th) · 3. Tawaf al-Ifadah (Circumambulation on 10th) · 4. Sa'i between Safa and Marwah. Missing any pillar invalidates Hajj.")}
+          </Text>
+        </PremiumCard>
+
+        {/* Days Details */}
+        {HAJJ_DAYS.map((day) => {
+          const isSelected = day.id === selectedDayId;
           return (
-            <TouchableOpacity
-              key={d.id}
+            <PremiumCard
+              key={day.id}
               style={[
-                styles.dayChip,
-                {
-                  backgroundColor: isActive ? colors.accent : colors.bgSurface,
-                  borderColor: isActive ? colors.accent : colors.borderSubtle,
+                styles.dayCard,
+                isSelected && {
+                  borderColor: tokens.gold,
                 },
               ]}
-              onPress={() => setSelectedDayId(d.id)}
+              padded
             >
-              <Text
-                style={[
-                  styles.dayChipNum,
-                  { color: isActive ? colors.onAccent : colors.accent },
-                ]}
-              >
-                {t(d.dayNumber)}
-              </Text>
-              <Text
-                style={[
-                  styles.dayChipDate,
-                  { color: isActive ? colors.onAccent : colors.textPrimary },
-                ]}
-              >
-                {t(d.hijriDate)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {/* Hajj Pillars Summary Card */}
-      <Card style={{ marginBottom: 18, padding: 16 }}>
-        <Text style={[styles.pillarsLead, { color: colors.accent }]}>
-          {t('THE 4 PILLARS OF HAJJ (ARKAN)')}
-        </Text>
-        <Text style={[styles.pillarsTitle, { color: colors.textPrimary }]}>
-          {t('Essential Foundations of the Pilgrimage')}
-        </Text>
-        <Text style={[styles.pillarsBody, { color: colors.textSecondary }]}>
-          {t("1. Ihram (Intention) · 2. Wuquf at Arafah (Standing on 9th) · 3. Tawaf al-Ifadah (Circumambulation on 10th) · 4. Sa'i between Safa and Marwah. Missing any pillar invalidates Hajj.")}
-        </Text>
-      </Card>
-
-      {/* Days Details */}
-      {HAJJ_DAYS.map((day) => {
-        const isSelected = day.id === selectedDayId;
-        return (
-          <Card
-            key={day.id}
-            style={{
-              marginBottom: 18,
-              padding: 18,
-              borderWidth: isSelected ? 1.5 : 1,
-              borderColor: isSelected ? colors.accent : colors.borderSubtle,
-            }}
-          >
-            {/* Header */}
-            <View style={styles.dayTopRow}>
-              <View
-                style={[
-                  styles.dayTag,
-                  { backgroundColor: colors.accent + '20', borderColor: colors.accent },
-                ]}
-              >
-                <Text style={[styles.dayTagText, { color: colors.accent }]}>
-                  {t(day.dayNumber).toUpperCase()} · {t(day.hijriDate)}
-                </Text>
-              </View>
-            </View>
-
-            <Text style={[styles.dayTitle, { color: colors.textPrimary }]}>
-              {t(day.title)}
-            </Text>
-
-            <ArabicText style={[styles.dayArabicTitle, { color: colors.textSecondary }]}>
-              {day.arabicTitle}
-            </ArabicText>
-
-            {/* Location Banner */}
-            <View
-              style={[
-                styles.locationBanner,
-                { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-              ]}
-            >
-              <Ionicons name="navigate-outline" size={14} color={colors.accent} />
-              <Text style={[styles.locationBannerText, { color: colors.textSecondary }]}>
-                {t(day.location)}
-              </Text>
-            </View>
-
-            <Text style={[styles.daySummary, { color: colors.textSecondary }]}>
-              {day.summary}
-            </Text>
-
-            <Hairline style={{ marginVertical: 14 }} />
-
-            {/* Key Rituals */}
-            <Text style={[styles.sectionSubtitle, { color: colors.textPrimary }]}>
-              {t('Day Rituals & Fiqh Obligations')}
-            </Text>
-            {day.rituals.map((r, ri) => {
-              const obligationColor =
-                r.obligation === 'Pillar (Rukn)'
-                  ? '#EF4444'
-                  : r.obligation === 'Obligatory (Wajib)'
-                  ? colors.accent
-                  : (colors.forestGreen || colors.accent);
-
-              return (
-                <View key={ri} style={styles.ritualCard}>
-                  <View style={styles.ritualHeader}>
-                    <Text style={[styles.ritualName, { color: colors.textPrimary }]}>
-                      {r.name}
-                    </Text>
-                    <View style={[styles.obligationBadge, { borderColor: obligationColor }]}>
-                      <Text style={[styles.obligationText, { color: obligationColor }]}>
-                        {t(r.obligation)}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[styles.ritualDesc, { color: colors.textSecondary }]}>
-                    {r.description}
-                  </Text>
-                </View>
-              );
-            })}
-
-            {/* Duas Section */}
-            {day.duas && day.duas.length > 0 && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={[styles.sectionSubtitle, { color: colors.textPrimary, marginTop: 10 }]}>
-                  {t('Pivotal Supplications')}
-                </Text>
-                {day.duas.map((d, di) => (
-                  <View
-                    key={di}
+              {/* Header */}
+              <View style={styles.dayTopRow}>
+                <View
+                  style={[
+                    styles.dayTag,
+                    {
+                      backgroundColor: isSelected ? tokens.gold : tokens.cardTop,
+                      borderColor: isSelected ? tokens.gold : tokens.cardBorder,
+                    },
+                  ]}
+                >
+                  <Text
                     style={[
-                      styles.duaBox,
-                      { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
+                      styles.dayTagText,
+                      { color: isSelected ? tokens.onGold : tokens.goldText },
                     ]}
                   >
-                    <Text style={[styles.duaBoxTitle, { color: colors.accent }]}>
-                      {d.title}
-                    </Text>
-                    <ArabicText style={[styles.duaBoxArabic, { color: colors.textPrimary }]}>
-                      {d.arabic}
-                    </ArabicText>
-                    <Text style={[styles.duaBoxTranslit, { color: colors.textSecondary }]}>
-                      {d.transliteration}
-                    </Text>
-                    <Text style={[styles.duaBoxTrans, { color: colors.textMuted }]}>
-                      &quot;{d.translation}&quot;
-                    </Text>
-                    <Text style={[styles.duaBoxRef, { color: colors.textMuted }]}>
-                      {t('Source')}: {d.reference}
+                    {t(day.dayNumber).toUpperCase()} · {t(day.hijriDate)}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={[styles.dayTitle, { color: tokens.text }]}>
+                {t(day.title)}
+              </Text>
+
+              <ArabicText style={[styles.dayArabicTitle, { color: tokens.muted }]}>
+                {day.arabicTitle}
+              </ArabicText>
+
+              {/* Location Banner */}
+              <View
+                style={[
+                  styles.locationBanner,
+                  {
+                    backgroundColor: tokens.inset,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="navigate-outline" size={14} color={tokens.goldText} />
+                <Text style={[styles.locationBannerText, { color: tokens.muted }]}>
+                  {t(day.location)}
+                </Text>
+              </View>
+
+              <Text style={[styles.daySummary, { color: tokens.muted }]}>
+                {day.summary}
+              </Text>
+
+              <Hairline style={{ marginVertical: 14 }} />
+
+              {/* Key Rituals */}
+              <Text style={[styles.sectionSubtitle, { color: tokens.text }]}>
+                {t('Day Rituals & Fiqh Obligations')}
+              </Text>
+              {day.rituals.map((r, ri) => {
+                const obligationColor =
+                  r.obligation === 'Pillar (Rukn)'
+                    ? tokens.danger
+                    : r.obligation === 'Obligatory (Wajib)'
+                    ? tokens.goldText
+                    : tokens.success;
+
+                return (
+                  <View
+                    key={ri}
+                    style={[
+                      styles.ritualCard,
+                      {
+                        backgroundColor: tokens.inset,
+                        borderColor: tokens.cardBorder,
+                      },
+                    ]}
+                  >
+                    <View style={styles.ritualHeader}>
+                      <Text style={[styles.ritualName, { color: tokens.text }]}>
+                        {r.name}
+                      </Text>
+                      <View style={[styles.obligationBadge, { borderColor: obligationColor }]}>
+                        <Text style={[styles.obligationText, { color: obligationColor }]}>
+                          {t(r.obligation)}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={[styles.ritualDesc, { color: tokens.muted }]}>
+                      {r.description}
                     </Text>
                   </View>
+                );
+              })}
+
+              {/* Duas Section */}
+              {day.duas && day.duas.length > 0 && (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={[styles.sectionSubtitle, { color: tokens.text, marginTop: 10 }]}>
+                    {t('Pivotal Supplications')}
+                  </Text>
+                  {day.duas.map((d, di) => (
+                    <View
+                      key={di}
+                      style={[
+                        styles.duaBox,
+                        {
+                          backgroundColor: tokens.inset,
+                          borderColor: tokens.cardBorder,
+                        },
+                      ]}
+                    >
+                      <Text style={[styles.duaBoxTitle, { color: tokens.goldText }]}>
+                        {d.title}
+                      </Text>
+                      <ArabicText style={[styles.duaBoxArabic, { color: tokens.text }]}>
+                        {d.arabic}
+                      </ArabicText>
+                      <Text style={[styles.duaBoxTranslit, { color: tokens.muted }]}>
+                        {d.transliteration}
+                      </Text>
+                      <Text style={[styles.duaBoxTrans, { color: tokens.muted }]}>
+                        &quot;{d.translation}&quot;
+                      </Text>
+                      <Text style={[styles.duaBoxRef, { color: tokens.muted }]}>
+                        {t('Source')}: {d.reference}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* Practical Notes */}
+              <View
+                style={[
+                  styles.tipsBox,
+                  {
+                    backgroundColor: tokens.inset,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <Ionicons name="compass-outline" size={15} color={tokens.goldText} />
+                  <Text style={[styles.tipsBoxTitle, { color: tokens.goldText }]}>
+                    {t('Pilgrim Logistics & Advice')}
+                  </Text>
+                </View>
+                {day.practicalNotes.map((pn, pni) => (
+                  <Text key={pni} style={[styles.tipsBoxText, { color: tokens.muted }]}>
+                    • {pn}
+                  </Text>
                 ))}
               </View>
-            )}
+            </PremiumCard>
+          );
+        })}
 
-            {/* Practical Notes */}
-            <View
-              style={[
-                styles.tipsBox,
-                { backgroundColor: colors.bgBase, borderColor: colors.accent + '30' },
-              ]}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                <Ionicons name="compass-outline" size={15} color={colors.accent} />
-                <Text style={[styles.tipsBoxTitle, { color: colors.accent }]}>
-                  {t('Pilgrim Logistics & Advice')}
+        {/* Library link card */}
+        {onOpenDuas && (
+          <PremiumCard style={{ marginBottom: 20, padding: 16 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={[styles.footerCardTitle, { color: tokens.text }]}>
+                  {t('Full Supplications Repository')}
+                </Text>
+                <Text style={[styles.footerCardSub, { color: tokens.muted }]}>
+                  {t('Explore the complete Hajj & Umrah Duas collection with audio and translations.')}
                 </Text>
               </View>
-              {day.practicalNotes.map((pn, pni) => (
-                <Text key={pni} style={[styles.tipsBoxText, { color: colors.textSecondary }]}>
-                  • {pn}
-                </Text>
-              ))}
+              <PrimaryButton
+                title={t('Explore Duas')}
+                onPress={onOpenDuas}
+                accessibilityLabel={t('Open Hajj Duas')}
+              />
             </View>
-          </Card>
-        );
-      })}
-
-      {/* Library link card */}
-      {onOpenDuas && (
-        <Card style={{ marginBottom: 20, padding: 16 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={[styles.footerCardTitle, { color: colors.textPrimary }]}>
-                {t('Full Supplications Repository')}
-              </Text>
-              <Text style={[styles.footerCardSub, { color: colors.textMuted }]}>
-                {t('Explore the complete Hajj & Umrah Duas collection with audio and translations.')}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.footerCardBtn, { backgroundColor: colors.forestGreen }]}
-              onPress={onOpenDuas}
-              accessibilityRole="button"
-              accessibilityLabel={t('Open Hajj Duas')}
-            >
-              <Text style={[styles.footerCardBtnText, { color: colors.onAccent }]}>{t('Explore Duas')}</Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-      )}
-    </ScrollView>
+          </PremiumCard>
+        )}
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 10, paddingBottom: 40 },
+  content: { paddingTop: 10 },
   chipsScroll: {
     flexDirection: 'row',
-    gap: 6,
-    paddingBottom: 10,
+    gap: 8,
+    paddingBottom: 12,
   },
   dayChip: {
-    height: 28,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: 1,
+    marginRight: 6,
+  },
+  pillarsCard: {
+    marginBottom: 18,
+  },
+  pillarsHeaderRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
   },
-  dayChipNum: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-  },
-  dayChipDate: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
+  badgeText: {
+    fontFamily: fontRoles.uiBold,
+    fontSize: 10,
+    letterSpacing: 0.8,
   },
   pillarsLead: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.eyebrow,
     fontSize: 10,
     letterSpacing: 1.2,
     marginBottom: 4,
   },
   pillarsTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 21,
-    marginBottom: 4,
+    fontFamily: fontRoles.title,
+    fontSize: 20,
+    marginBottom: 6,
   },
   pillarsBody: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12.5,
     lineHeight: 18,
+  },
+  dayCard: {
+    marginBottom: 18,
   },
   dayTopRow: {
     flexDirection: 'row',
     marginBottom: 6,
   },
   dayTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
   },
   dayTagText: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.uiBold,
     fontSize: 10,
-    letterSpacing: 1,
+    letterSpacing: 0.8,
   },
   dayTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 17,
+    fontFamily: fontRoles.title,
+    fontSize: 18,
     marginTop: 4,
   },
   dayArabicTitle: {
-    fontSize: 16,
+    fontFamily: fontRoles.arabic,
+    fontSize: 18,
     textAlign: 'left',
     marginTop: 4,
     marginBottom: 8,
@@ -611,40 +643,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
     borderWidth: 1,
     marginBottom: 10,
   },
   locationBannerText: {
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: fontRoles.ui,
     fontSize: 12,
   },
   daySummary: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 13,
     lineHeight: 19,
   },
   sectionSubtitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontFamily: fontRoles.eyebrow,
+    fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     marginBottom: 8,
   },
   ritualCard: {
-    marginBottom: 10,
-    paddingVertical: 2,
+    marginBottom: 8,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
   },
   ritualHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: 4,
   },
   ritualName: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13.5,
+    fontFamily: fontRoles.uiBold,
+    fontSize: 13,
     flex: 1,
   },
   obligationBadge: {
@@ -655,80 +689,72 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   obligationText: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.uiBold,
     fontSize: 10,
   },
   ritualDesc: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12.5,
-    lineHeight: 18,
+    fontFamily: fontRoles.ui,
+    fontSize: 12,
+    lineHeight: 17,
   },
   duaBox: {
     padding: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     marginBottom: 10,
   },
   duaBoxTitle: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.uiBold,
     fontSize: 12,
     marginBottom: 4,
   },
   duaBoxArabic: {
-    fontSize: 17,
-    lineHeight: 26,
+    fontFamily: fontRoles.arabic,
+    fontSize: 18,
+    lineHeight: 28,
     marginVertical: 4,
   },
   duaBoxTranslit: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12,
     fontStyle: 'italic',
     lineHeight: 18,
     marginBottom: 4,
   },
   duaBoxTrans: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12,
     lineHeight: 18,
     marginBottom: 4,
   },
   duaBoxRef: {
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: fontRoles.ui,
     fontSize: 10.5,
   },
   tipsBox: {
     padding: 12,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
     marginTop: 10,
   },
   tipsBoxTitle: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.uiBold,
     fontSize: 12,
   },
   tipsBoxText: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12,
     lineHeight: 17,
     marginTop: 3,
   },
   footerCardTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontFamily: fontRoles.title,
+    fontSize: 15,
   },
   footerCardSub: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12,
     marginTop: 2,
-  },
-  footerCardBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-  },
-  footerCardBtnText: {
-    color: '#FFFFFF',
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    lineHeight: 17,
   },
 });

@@ -9,10 +9,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
-import { ArabicText } from '../components/ArabicText';
+import { useThemeTokens } from '../theme/tokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard, Chip, PrimaryButton } from '../components/ui';
+import { fontRoles } from '../theme/tokens';
 import { Hairline } from '../components/Hairline';
 import { hScrollRTLStyle } from '../lib/rtl';
 
@@ -153,12 +154,14 @@ const FIRST_TIMER_TIPS = [
 export default function UmrahResourcesScreen({
   onBack,
   onOpenDuas,
+  backLabel = 'Tools',
 }: {
   onBack?: () => void;
   onOpenDuas?: () => void;
+  backLabel?: string;
 }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const isCompact = width < 380;
@@ -174,372 +177,340 @@ export default function UmrahResourcesScreen({
   const packedCount = Object.values(packedIds).filter(Boolean).length;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[
-        styles.content,
-        { alignSelf: 'center', width: '100%', maxWidth: maxW, paddingHorizontal: paddingH },
-      ]}
+    <DetailScreen
+      style={{ backgroundColor: tokens.bgTop }}
+      header={
+        <SubHeader
+          eyebrow={t('Hajj & Umrah')}
+          title={t('Umrah Resources')}
+          subtitle={t('Essential packing checklist, etiquette, common errors, tips & scholarly references.')}
+          onBack={onBack}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
+        />
+      }
     >
-      <ScreenHeader
-        eyebrow={t('Hajj & Umrah')}
-        title={t('Umrah Resources')}
-        subtitle={t('Essential packing checklist, etiquette, common errors, tips & scholarly references.')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
-
-      {/* Tab Selectors */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.tabScroll, hScrollRTLStyle()]}
+      <DetailScreen.ScrollView
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={[
+          styles.content,
+          {
+            alignSelf: 'center',
+            width: '100%',
+            maxWidth: maxW,
+            paddingHorizontal: paddingH,
+          },
+        ]}
       >
-        {[
-          { key: 'checklist', label: 'Packing Checklist' },
-          { key: 'tips', label: 'First-Timer Tips' },
-          { key: 'etiquette', label: 'Sacred Etiquette' },
-          { key: 'mistakes', label: 'Common Errors' },
-          { key: 'books', label: 'Books & Guides' },
-        ].map((item) => {
-          const isActive = activeTab === item.key;
-          return (
-            <TouchableOpacity
+        {/* Tab Selectors */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.tabScroll, hScrollRTLStyle()]}
+        >
+          {[
+            { key: 'checklist', label: 'Packing Checklist' },
+            { key: 'tips', label: 'First-Timer Tips' },
+            { key: 'etiquette', label: 'Sacred Etiquette' },
+            { key: 'mistakes', label: 'Common Errors' },
+            { key: 'books', label: 'Books & Guides' },
+          ].map((item) => (
+            <Chip
               key={item.key}
-              style={[
-                styles.tabPill,
-                {
-                  backgroundColor: isActive ? colors.accent : colors.bgSurface,
-                  borderColor: isActive ? colors.accent : colors.borderSubtle,
-                },
-              ]}
+              label={t(item.label)}
+              selected={activeTab === item.key}
               onPress={() => setActiveTab(item.key as any)}
-            >
-              <Text
-                style={[
-                  styles.tabPillText,
-                  { color: isActive ? colors.onAccent : colors.textPrimary },
-                ]}
-              >
-                {t(item.label)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+              accessibilityLabel={t(item.label)}
+            />
+          ))}
+        </ScrollView>
 
-      {/* Duas Quick Jump Card */}
-      {onOpenDuas && (
-        <Card style={{ marginBottom: 16, padding: 14 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flex: 1, paddingRight: 8 }}>
-              <Text style={[styles.cardLead, { color: colors.accent }]}>{t('SUPPLICATIONS READY')}</Text>
-              <Text style={[styles.cardTitleSm, { color: colors.textPrimary }]}>
-                {t('Need Key Duas in Your Hand?')}
+        {/* Duas Quick Jump Card */}
+        {onOpenDuas && (
+          <PremiumCard style={styles.quickDuaCard} padded>
+            <View style={styles.quickDuaRow}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={[styles.cardLead, { color: tokens.goldText }]}>{t('SUPPLICATIONS READY')}</Text>
+                <Text style={[styles.cardTitleSm, { color: tokens.text }]}>
+                  {t('Need Key Duas in Your Hand?')}
+                </Text>
+                <Text style={[styles.cardDescSm, { color: tokens.muted }]}>
+                  {t('Talbiyah, Tawaf, Safa & Marwah duas with Arabic text and audio in the Library tab.')}
+                </Text>
+              </View>
+              <PrimaryButton
+                title={t('Open Duas')}
+                onPress={onOpenDuas}
+                accessibilityLabel={t('Open Duas Screen')}
+              />
+            </View>
+          </PremiumCard>
+        )}
+
+        {/* TAB 1: PACKING CHECKLIST */}
+        {activeTab === 'checklist' && (
+          <View>
+            <View style={styles.progressHeader}>
+              <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+                {t('Pilgrim Packing Checklist')}
               </Text>
-              <Text style={[styles.cardDescSm, { color: colors.textSecondary }]}>
-                {t('Talbiyah, Tawaf, Safa & Marwah duas with Arabic text and audio in the Library tab.')}
+              <Text style={[styles.progressBadge, { color: tokens.goldText }]}>
+                {packedCount} {t('of')} {PACKING_ITEMS.length} {t('packed')}
               </Text>
             </View>
-            <TouchableOpacity
-              style={[styles.quickDuaBtn, { backgroundColor: colors.accent }]}
-              onPress={onOpenDuas}
-              accessibilityRole="button"
-              accessibilityLabel={t('Open Duas Screen')}
-            >
-              <Text style={[styles.quickDuaBtnText, { color: colors.onAccent }]}>{t('Open Duas')}</Text>
-            </TouchableOpacity>
-          </View>
-        </Card>
-      )}
-
-      {/* TAB 1: PACKING CHECKLIST */}
-      {activeTab === 'checklist' && (
-        <View>
-          <View style={styles.progressHeader}>
-            <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-              {t('Pilgrim Packing Checklist')}
+            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+              {t('Tap items to mark as packed. Everything curated for comfort, compliance with Ihram rules, and ease.')}
             </Text>
-            <Text style={[styles.progressBadge, { color: colors.accent }]}>
-              {packedCount} {t('of')} {PACKING_ITEMS.length} {t('packed')}
-            </Text>
-          </View>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            {t('Tap items to mark as packed. Everything curated for comfort, compliance with Ihram rules, and ease.')}
-          </Text>
 
-          {['Ihram & Clothing', 'Toiletries & Hygiene', 'Health & Essentials', 'Travel & Utilities'].map((cat) => {
-            const items = PACKING_ITEMS.filter((i) => i.category === cat);
-            return (
-              <View key={cat} style={{ marginBottom: 14 }}>
-                <Text style={[styles.catHeader, { color: colors.accent }]}>
-                  {t(cat).toUpperCase()}
-                </Text>
-                {items.map((item) => {
-                  const isChecked = !!packedIds[item.id];
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      style={[
-                        styles.checkRow,
-                        {
-                          backgroundColor: colors.bgSurface,
-                          borderColor: isChecked ? colors.accent : colors.borderSubtle,
-                        },
-                      ]}
-                      onPress={() => togglePacked(item.id)}
-                      activeOpacity={0.7}
-                    >
-                      <View
-                        style={[
-                          styles.checkBox,
-                          {
-                            backgroundColor: isChecked ? colors.accent : 'transparent',
-                            borderColor: isChecked ? colors.accent : colors.textMuted,
-                          },
-                        ]}
-                      >
-                        {isChecked && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text
-                          style={[
-                            styles.checkItemTitle,
-                            {
-                              color: isChecked ? colors.textMuted : colors.textPrimary,
-                              textDecorationLine: isChecked ? 'line-through' : 'none',
-                            },
-                          ]}
+            {['Ihram & Clothing', 'Toiletries & Hygiene', 'Health & Essentials', 'Travel & Utilities'].map((cat) => {
+              const items = PACKING_ITEMS.filter((i) => i.category === cat);
+              return (
+                <PremiumCard key={cat} style={styles.catCard} padded>
+                  <Text style={[styles.catHeader, { color: tokens.goldText }]}>
+                    {t(cat).toUpperCase()}
+                  </Text>
+                  {items.map((item, idx) => {
+                    const isChecked = !!packedIds[item.id];
+                    return (
+                      <View key={item.id}>
+                        {idx > 0 && <Hairline style={{ marginVertical: 8 }} />}
+                        <TouchableOpacity
+                          style={styles.checkRow}
+                          onPress={() => togglePacked(item.id)}
+                          activeOpacity={0.7}
                         >
-                          {t(item.item)}
-                        </Text>
-                        <Text style={[styles.checkItemNote, { color: colors.textMuted }]}>
-                          {t(item.note)}
-                        </Text>
+                          <View
+                            style={[
+                              styles.checkBox,
+                              {
+                                backgroundColor: isChecked ? tokens.gold : 'transparent',
+                                borderColor: isChecked ? tokens.gold : tokens.cardBorder,
+                              },
+                            ]}
+                          >
+                            {isChecked && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={[
+                                styles.checkItemTitle,
+                                {
+                                  color: isChecked ? tokens.muted : tokens.text,
+                                  textDecorationLine: isChecked ? 'line-through' : 'none',
+                                },
+                              ]}
+                            >
+                              {t(item.item)}
+                            </Text>
+                            <Text style={[styles.checkItemNote, { color: tokens.muted }]}>
+                              {t(item.note)}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
                       </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            );
-          })}
-        </View>
-      )}
+                    );
+                  })}
+                </PremiumCard>
+              );
+            })}
+          </View>
+        )}
 
-      {/* TAB 2: FIRST-TIMER TIPS */}
-      {activeTab === 'tips' && (
-        <View>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-            {t('Practical Tips for First-Time Pilgrims')}
-          </Text>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            {t('Field-tested insights to make your pilgrimage smooth, spiritually focused, and safe.')}
-          </Text>
+        {/* TAB 2: FIRST-TIMER TIPS */}
+        {activeTab === 'tips' && (
+          <View>
+            <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+              {t('Practical Tips for First-Time Pilgrims')}
+            </Text>
+            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+              {t('Field-tested insights to make your pilgrimage smooth, spiritually focused, and safe.')}
+            </Text>
 
-          {FIRST_TIMER_TIPS.map((tip, idx) => (
-            <Card key={idx} style={{ marginBottom: 12, padding: 14 }}>
-              <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
-                <View
-                  style={[
-                    styles.iconBox,
-                    { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle },
-                  ]}
-                >
-                  <Ionicons name={tip.icon} size={20} color={colors.accent} />
+            {FIRST_TIMER_TIPS.map((tip, idx) => (
+              <PremiumCard key={idx} style={styles.tipCard} padded>
+                <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
+                  <View
+                    style={[
+                      styles.iconBox,
+                      { backgroundColor: tokens.inset, borderColor: tokens.cardBorder },
+                    ]}
+                  >
+                    <Ionicons name={tip.icon} size={20} color={tokens.goldText} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.tipTitle, { color: tokens.text }]}>
+                      {t(tip.title)}
+                    </Text>
+                    <Text style={[styles.tipDetail, { color: tokens.muted }]}>
+                      {t(tip.detail)}
+                    </Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.tipTitle, { color: colors.textPrimary }]}>
-                    {t(tip.title)}
-                  </Text>
-                  <Text style={[styles.tipDetail, { color: colors.textSecondary }]}>
-                    {t(tip.detail)}
+              </PremiumCard>
+            ))}
+          </View>
+        )}
+
+        {/* TAB 3: SACRED ETIQUETTE */}
+        {activeTab === 'etiquette' && (
+          <View>
+            <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+              {t('Etiquette in the Two Holy Sanctuaries')}
+            </Text>
+            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+              {t('Adab (spiritual courtesy) transforms physical travel into an accepted, beloved act of devotion.')}
+            </Text>
+
+            <PremiumCard style={styles.etiquetteCard} padded>
+              <Text style={[styles.etiquetteTitle, { color: tokens.text }]}>
+                {t('Inner State & Spiritual Presence')}
+              </Text>
+              <Text style={[styles.etiquetteBody, { color: tokens.muted }]}>
+                {t('Remember that you are an invited guest (Dhayf ar-Rahman) of the Lord of the worlds. Cultivate gratitude, humility, and patience when experiencing exhaustion, delays, or dense crowds.')}
+              </Text>
+            </PremiumCard>
+
+            <PremiumCard style={styles.etiquetteCard} padded>
+              <Text style={[styles.etiquetteTitle, { color: tokens.text }]}>
+                {t('Patience with Fellow Pilgrims')}
+              </Text>
+              <Text style={[styles.etiquetteBody, { color: tokens.muted }]}>
+                {t('Pilgrims arrive from every nation, language, and culture. Treat the elderly, women, and children with gentleness. Forgive accidental bumps or steps on your heels; responding with warmth earns monumental reward.')}
+              </Text>
+            </PremiumCard>
+
+            <PremiumCard style={styles.etiquetteCard} padded>
+              <Text style={[styles.etiquetteTitle, { color: tokens.text }]}>
+                {t('Protecting the Tranquility of the Sanctuary')}
+              </Text>
+              <Text style={[styles.etiquetteBody, { color: tokens.muted }]}>
+                {t('Lower your voice and avoid loud personal arguments or commercial conversations. Refrain from taking selfie videos during circuits, which detracts from personal khushu and blocks the flow of pilgrims.')}
+              </Text>
+            </PremiumCard>
+
+            <PremiumCard style={styles.etiquetteCard} padded>
+              <Text style={[styles.etiquetteTitle, { color: tokens.text }]}>
+                {t('Cleanliness and Civic Care')}
+              </Text>
+              <Text style={[styles.etiquetteBody, { color: tokens.muted }]}>
+                {t('Throw all tissues, empty cups, and bottles in designated recycling bins. Never leave spilled water on marble pathways where it poses an immediate slip hazard to elderly worshippers.')}
+              </Text>
+            </PremiumCard>
+          </View>
+        )}
+
+        {/* TAB 4: COMMON MISTAKES */}
+        {activeTab === 'mistakes' && (
+          <View>
+            <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+              {t('Common Errors & Misconceptions')}
+            </Text>
+            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+              {t('Review these frequent pitfalls to ensure your Umrah adheres faithfully to the authentic prophetic Sunnah.')}
+            </Text>
+
+            {COMMON_MISTAKES.map((item, idx) => (
+              <PremiumCard key={idx} style={styles.mistakeCard} padded>
+                <View style={styles.mistakeHeader}>
+                  <Ionicons name="alert-circle-outline" size={16} color={tokens.danger} />
+                  <Text style={[styles.mistakeTopic, { color: tokens.danger }]}>
+                    {t(item.topic)}
                   </Text>
                 </View>
-              </View>
-            </Card>
-          ))}
-        </View>
-      )}
 
-      {/* TAB 3: SACRED ETIQUETTE */}
-      {activeTab === 'etiquette' && (
-        <View>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-            {t('Etiquette in the Two Holy Sanctuaries')}
-          </Text>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            {t('Adab (spiritual courtesy) transforms physical travel into an accepted, beloved act of devotion.')}
-          </Text>
-
-          <Card style={{ marginBottom: 12, padding: 16 }}>
-            <Text style={[styles.etiquetteTitle, { color: colors.textPrimary }]}>
-              {t('Inner State & Spiritual Presence')}
-            </Text>
-            <Text style={[styles.etiquetteBody, { color: colors.textSecondary }]}>
-              {t('Remember that you are an invited guest (Dhayf ar-Rahman) of the Lord of the worlds. Cultivate gratitude, humility, and patience when experiencing exhaustion, delays, or dense crowds.')}
-            </Text>
-          </Card>
-
-          <Card style={{ marginBottom: 12, padding: 16 }}>
-            <Text style={[styles.etiquetteTitle, { color: colors.textPrimary }]}>
-              {t('Patience with Fellow Pilgrims')}
-            </Text>
-            <Text style={[styles.etiquetteBody, { color: colors.textSecondary }]}>
-              {t('Pilgrims arrive from every nation, language, and culture. Treat the elderly, women, and children with gentleness. Forgive accidental bumps or steps on your heels; responding with warmth earns monumental reward.')}
-            </Text>
-          </Card>
-
-          <Card style={{ marginBottom: 12, padding: 16 }}>
-            <Text style={[styles.etiquetteTitle, { color: colors.textPrimary }]}>
-              {t('Protecting the Tranquility of the Sanctuary')}
-            </Text>
-            <Text style={[styles.etiquetteBody, { color: colors.textSecondary }]}>
-              {t('Lower your voice and avoid loud personal arguments or commercial conversations. Refrain from taking selfie videos during circuits, which detracts from personal khushu and blocks the flow of pilgrims.')}
-            </Text>
-          </Card>
-
-          <Card style={{ marginBottom: 12, padding: 16 }}>
-            <Text style={[styles.etiquetteTitle, { color: colors.textPrimary }]}>
-              {t('Cleanliness and Civic Care')}
-            </Text>
-            <Text style={[styles.etiquetteBody, { color: colors.textSecondary }]}>
-              {t('Throw all tissues, empty cups, and bottles in designated recycling bins. Never leave spilled water on marble pathways where it poses an immediate slip hazard to elderly worshippers.')}
-            </Text>
-          </Card>
-        </View>
-      )}
-
-      {/* TAB 4: COMMON MISTAKES */}
-      {activeTab === 'mistakes' && (
-        <View>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-            {t('Common Errors & Misconceptions')}
-          </Text>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            {t('Review these frequent pitfalls to ensure your Umrah adheres faithfully to the authentic prophetic Sunnah.')}
-          </Text>
-
-          {COMMON_MISTAKES.map((item, idx) => (
-            <Card key={idx} style={{ marginBottom: 12, padding: 14 }}>
-              <View style={styles.mistakeHeader}>
-                <Ionicons name="alert-circle-outline" size={16} color="#EF4444" />
-                <Text style={[styles.mistakeTopic, { color: '#EF4444' }]}>
-                  {t(item.topic)}
+                <Text style={[styles.mistakeText, { color: tokens.text }]}>
+                  {t('Mistake')}: {item.mistake}
                 </Text>
-              </View>
 
-              <Text style={[styles.mistakeText, { color: colors.textPrimary }]}>
-                {t('Mistake')}: {item.mistake}
-              </Text>
+                <Hairline style={{ marginVertical: 8 }} />
 
-              <Hairline style={{ marginVertical: 8 }} />
+                <View style={styles.correctHeader}>
+                  <Ionicons name="checkmark-circle-outline" size={16} color={tokens.success} />
+                  <Text style={[styles.correctText, { color: tokens.muted }]}>
+                    {t('Correct Practice')}: {item.correctAction}
+                  </Text>
+                </View>
+              </PremiumCard>
+            ))}
+          </View>
+        )}
 
-              <View style={styles.correctHeader}>
-                <Ionicons name="checkmark-circle-outline" size={16} color={colors.accent} />
-                <Text style={[styles.correctText, { color: colors.textSecondary }]}>
-                  {t('Correct Practice')}: {item.correctAction}
+        {/* TAB 5: RECOMMENDED BOOKS */}
+        {activeTab === 'books' && (
+          <View>
+            <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+              {t('Recommended Books & Study Guides')}
+            </Text>
+            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+              {t('Classic and contemporary scholarly publications providing in-depth analysis of pilgrimage rites.')}
+            </Text>
+
+            {RECOMMENDED_BOOKS.map((book, idx) => (
+              <PremiumCard key={idx} style={styles.bookCard} padded>
+                <Text style={[styles.bookFocus, { color: tokens.goldText }]}>
+                  {t(book.focus).toUpperCase()}
                 </Text>
-              </View>
-            </Card>
-          ))}
-        </View>
-      )}
-
-      {/* TAB 5: RECOMMENDED BOOKS */}
-      {activeTab === 'books' && (
-        <View>
-          <Text style={[styles.sectionHeading, { color: colors.textPrimary }]}>
-            {t('Recommended Books & Study Guides')}
-          </Text>
-          <Text style={[styles.sectionDesc, { color: colors.textSecondary }]}>
-            {t('Classic and contemporary scholarly publications providing in-depth analysis of pilgrimage rites.')}
-          </Text>
-
-          {RECOMMENDED_BOOKS.map((book, idx) => (
-            <Card key={idx} style={{ marginBottom: 12, padding: 16 }}>
-              <Text style={[styles.bookFocus, { color: colors.accent }]}>
-                {t(book.focus).toUpperCase()}
-              </Text>
-              <Text style={[styles.bookTitle, { color: colors.textPrimary }]}>
-                {book.title}
-              </Text>
-              <Text style={[styles.bookAuthor, { color: colors.textSecondary }]}>
-                {t('By')} {book.author}
-              </Text>
-              <Text style={[styles.bookDesc, { color: colors.textMuted }]}>
-                {t(book.description)}
-              </Text>
-            </Card>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+                <Text style={[styles.bookTitle, { color: tokens.text }]}>
+                  {book.title}
+                </Text>
+                <Text style={[styles.bookAuthor, { color: tokens.muted }]}>
+                  {t('By')} {book.author}
+                </Text>
+                <Text style={[styles.bookDesc, { color: tokens.muted }]}>
+                  {t(book.description)}
+                </Text>
+              </PremiumCard>
+            ))}
+          </View>
+        )}
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 10, paddingBottom: 40 },
-  backBtn: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
+  content: { paddingTop: 14 },
   tabScroll: {
     flexDirection: 'row',
-    gap: 6,
-    paddingBottom: 10,
-  },
-  tabPill: {
-    height: 28,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabPillText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    gap: 8,
+    paddingBottom: 12,
   },
   progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
     marginBottom: 4,
+    marginTop: 4,
   },
   sectionHeading: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 15,
+    fontFamily: fontRoles.title,
+    fontSize: 16,
   },
   progressBadge: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.uiBold,
     fontSize: 12,
   },
   sectionDesc: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 13,
     lineHeight: 19,
     marginBottom: 14,
   },
+  catCard: {
+    marginBottom: 14,
+  },
   catHeader: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.eyebrow,
     fontSize: 11,
     letterSpacing: 1.2,
-    marginBottom: 8,
-    marginTop: 6,
+    marginBottom: 10,
   },
   checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginBottom: 8,
+    paddingVertical: 6,
   },
   checkBox: {
     width: 22,
@@ -550,39 +521,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkItemTitle: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.uiBold,
     fontSize: 13.5,
   },
   checkItemNote: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 11.5,
     marginTop: 2,
     lineHeight: 16,
   },
+  quickDuaCard: {
+    marginBottom: 16,
+  },
+  quickDuaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   cardLead: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.eyebrow,
     fontSize: 10,
     letterSpacing: 1,
   },
   cardTitleSm: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
+    fontFamily: fontRoles.title,
+    fontSize: 15,
     marginTop: 2,
   },
   cardDescSm: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12,
     marginTop: 2,
+    lineHeight: 16,
   },
-  quickDuaBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 6,
-  },
-  quickDuaBtnText: {
-    color: '#FFFFFF',
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+  tipCard: {
+    marginBottom: 12,
   },
   iconBox: {
     width: 38,
@@ -593,24 +566,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tipTitle: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.uiBold,
     fontSize: 14,
     marginBottom: 3,
   },
   tipDetail: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12.5,
     lineHeight: 18,
   },
+  etiquetteCard: {
+    marginBottom: 12,
+  },
   etiquetteTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14.5,
+    fontFamily: fontRoles.title,
+    fontSize: 15,
     marginBottom: 6,
   },
   etiquetteBody: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 13,
     lineHeight: 19,
+  },
+  mistakeCard: {
+    marginBottom: 12,
   },
   mistakeHeader: {
     flexDirection: 'row',
@@ -619,13 +598,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mistakeTopic: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontFamily: fontRoles.eyebrow,
+    fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   mistakeText: {
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: fontRoles.uiBold,
     fontSize: 13,
     lineHeight: 19,
   },
@@ -636,28 +615,31 @@ const styles = StyleSheet.create({
   },
   correctText: {
     flex: 1,
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12.5,
     lineHeight: 18,
   },
+  bookCard: {
+    marginBottom: 12,
+  },
   bookFocus: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: fontRoles.eyebrow,
     fontSize: 10,
     letterSpacing: 1.2,
     marginBottom: 3,
   },
   bookTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 19,
+    fontFamily: fontRoles.title,
+    fontSize: 18,
     marginBottom: 2,
   },
   bookAuthor: {
-    fontFamily: 'Manrope_500Medium',
+    fontFamily: fontRoles.uiBold,
     fontSize: 12.5,
     marginBottom: 6,
   },
   bookDesc: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: fontRoles.ui,
     fontSize: 12.5,
     lineHeight: 18,
   },

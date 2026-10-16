@@ -14,20 +14,20 @@ import {
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { useThemeTokens } from '../theme/tokens';
+import { LinearGradient } from 'expo-linear-gradient';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import {
   SUPPORTED_CURRENCIES,
-  CurrencyConfig,
   getCurrencyConfig,
   calculateZakat,
   formatCurrencyAmount,
-  NISAB_GOLD_GRAMS,
-  NISAB_SILVER_GRAMS,
 } from '../lib/zakat';
 import {
   ZakatCalculation,
@@ -35,13 +35,18 @@ import {
   loadZakatCalculations,
   deleteZakatCalculation,
 } from '../lib/db';
-import { hScrollRTLStyle } from '../lib/rtl';
 
 type ZakatSubTab = 'calculator' | 'history' | 'guide';
 
-function ZakatScreen({ onBack }: { onBack?: () => void }) {
+function ZakatScreen({
+  onBack,
+  backLabel = 'Tools',
+}: {
+  onBack?: () => void;
+  backLabel?: string;
+}) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const { saveUndoState } = useUndoToast();
@@ -68,19 +73,7 @@ function ZakatScreen({ onBack }: { onBack?: () => void }) {
   const [silverPriceInput, setSilverPriceInput] = useState(String(currencyConfig.silverPricePerGram));
 
   // History state
-  const [history, setHistory] = useState<ZakatCalculation[]>([]);
-
-  // Update gold/silver prices when currency changes
-  useEffect(() => {
-    const cfg = getCurrencyConfig(selectedCurrencyCode);
-    setGoldPriceInput(String(cfg.goldPricePerGram));
-    setSilverPriceInput(String(cfg.silverPricePerGram));
-  }, [selectedCurrencyCode]);
-
-  // Load history on mount
-  useEffect(() => {
-    setHistory(loadZakatCalculations());
-  }, []);
+  const [history, setHistory] = useState<ZakatCalculation[]>(() => loadZakatCalculations());
 
   // Parse input helper
   const parseNum = (val: string): number => {
@@ -172,7 +165,7 @@ function ZakatScreen({ onBack }: { onBack?: () => void }) {
     setJustSaved(true);
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => setJustSaved(false), 1800);
-  }, [evaluation, selectedCurrencyCode, nisabStandard]);
+  }, [evaluation, selectedCurrencyCode, nisabStandard, t]);
 
   // Delete history item
   const [justDeleted, setJustDeleted] = useState<string | null>(null);
@@ -205,655 +198,712 @@ function ZakatScreen({ onBack }: { onBack?: () => void }) {
         },
       });
     }
-  }, [history, saveUndoState]);
+  }, [history, saveUndoState, t]);
 
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.scroll, { paddingHorizontal: paddingH }]}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={[styles.container, { maxWidth: maxW }]}>
-        <ScreenHeader
+    <DetailScreen
+      style={[styles.screenContainer, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
           eyebrow={t('Worship & Charity')}
           title={t('Zakat')}
+          subtitle={t('Wealth assessment, nisab thresholds & calculation')}
           onBack={onBack}
-          backLabel={t('Tools')}
+          backLabel={t(backLabel)}
+          borderBottom
+          showFade
         />
-
-        {/* Tab Navigation */}
-        <View style={[styles.tabBar, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-          {(['calculator', 'history', 'guide'] as ZakatSubTab[]).map((tab) => {
-            const isSelected = activeTab === tab;
-            const labels: Record<ZakatSubTab, string> = {
-              calculator: t('Calculator'),
-              history: t('History'),
-              guide: t('Nisab Guide'),
-            };
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={[
-                  styles.tabBtn,
-                  isSelected && { backgroundColor: colors.accentDim, borderColor: colors.accent },
-                ]}
-                onPress={() => setActiveTab(tab)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isSelected }}
-              >
-                <Text
-                  style={[
-                    styles.tabBtnText,
-                    { color: isSelected ? colors.accent : colors.textMuted },
-                  ]}
-                >
-                  {labels[tab]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* ─── TAB 1: CALCULATOR ──────────────────────────────────── */}
-        {activeTab === 'calculator' && (
-          <View style={styles.tabContent}>
-            {/* Currency Selector Bar */}
-            <Card style={styles.currencyCard}>
-              <View style={styles.currencyRow}>
-                <View>
-                  <Text style={[styles.controlLabel, { color: colors.textMuted }]}>
-                    {t('Active Currency')}
-                  </Text>
-                  <Text style={[styles.currencyName, { color: colors.textPrimary }]}>
-                    {currencyConfig.code} — {currencyConfig.name} ({currencyConfig.symbol})
-                  </Text>
-                </View>
-
+      }
+    >
+      <DetailScreen.ScrollView
+        contentContainerStyle={[styles.scroll, { paddingHorizontal: paddingH }]}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={[styles.container, { maxWidth: maxW }]}>
+          {/* Tab Navigation */}
+          <View style={[styles.tabBar, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            {(['calculator', 'history', 'guide'] as ZakatSubTab[]).map((tab) => {
+              const isSelected = activeTab === tab;
+              const labels: Record<ZakatSubTab, string> = {
+                calculator: t('Calculator'),
+                history: t('History'),
+                guide: t('Nisab Guide'),
+              };
+              return (
                 <TouchableOpacity
-                  style={[styles.currencyChangeBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
-                  onPress={() => setShowCurrencyModal(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('Change currency')}
+                  key={tab}
+                  style={[
+                    styles.tabBtn,
+                    isSelected && [
+                      getPillShadow(mode),
+                      { borderColor: tokens.goldBorder },
+                    ],
+                  ]}
+                  onPress={() => setActiveTab(tab)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isSelected }}
                 >
-                  <Ionicons name="swap-horizontal" size={14} color={colors.accent} />
-                  <Text style={[styles.currencyChangeText, { color: colors.accent }]}>
-                    {t('Change')}
+                  {isSelected && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />}
+                  <Text
+                    style={[
+                      styles.tabBtnText,
+                      { color: isSelected ? tokens.onGold : tokens.muted },
+                    ]}
+                  >
+                    {labels[tab]}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            </Card>
+              );
+            })}
+          </View>
 
-            {/* Nisab Standard Selector */}
-            <Card style={styles.nisabCard}>
-              <View style={styles.nisabHeader}>
-                <Text style={[styles.controlLabel, { color: colors.textMuted }]}>
-                  {t('Nisab Standard')}
-                </Text>
-                <Text style={[styles.nisabThresholdValue, { color: colors.accent }]}>
-                  {t('Threshold:')} {currencyConfig.symbol} {formatCurrencyAmount(evaluation.nisabThreshold, selectedCurrencyCode)}
-                </Text>
-              </View>
+          {/* ─── TAB 1: CALCULATOR ──────────────────────────────────── */}
+          {activeTab === 'calculator' && (
+            <View style={styles.tabContent}>
+              {/* Currency Selector Bar */}
+              <Card style={[styles.currencyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <View style={styles.currencyRow}>
+                  <View>
+                    <Text style={[styles.controlLabel, { color: tokens.muted }]}>
+                      {t('Active Currency')}
+                    </Text>
+                    <Text style={[styles.currencyName, { color: tokens.text }]}>
+                      {currencyConfig.code} — {currencyConfig.name} ({currencyConfig.symbol})
+                    </Text>
+                  </View>
 
-              <View style={styles.nisabToggleRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.nisabOption,
-                    {
-                      backgroundColor: nisabStandard === 'gold' ? colors.accent : colors.bgBase,
-                      borderColor: nisabStandard === 'gold' ? colors.accent : colors.borderSubtle,
-                    },
-                  ]}
-                  onPress={() => setNisabStandard('gold')}
-                >
-                  <Text
-                    style={[
-                      styles.nisabOptionTitle,
-                      { color: nisabStandard === 'gold' ? colors.onAccent : colors.textPrimary },
-                    ]}
+                  <TouchableOpacity
+                    style={[styles.currencyChangeBtn, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.goldBorder }]}
+                    onPress={() => setShowCurrencyModal(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Change currency')}
                   >
-                    {t('Gold (85g)')}
+                    <Ionicons name="swap-horizontal" size={14} color={tokens.goldText} />
+                    <Text style={[styles.currencyChangeText, { color: tokens.goldText }]}>
+                      {t('Change')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </Card>
+
+              {/* Nisab Standard Selector */}
+              <Card style={[styles.nisabCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <View style={styles.nisabHeader}>
+                  <Text style={[styles.controlLabel, { color: tokens.muted }]}>
+                    {t('Nisab Standard')}
                   </Text>
-                  <Text
+                  <Text style={[styles.nisabThresholdValue, { color: tokens.goldText }]}>
+                    {t('Threshold:')} {currencyConfig.symbol} {formatCurrencyAmount(evaluation.nisabThreshold, selectedCurrencyCode)}
+                  </Text>
+                </View>
+
+                <View style={styles.nisabToggleRow}>
+                  <TouchableOpacity
                     style={[
-                      styles.nisabOptionSub,
-                      { color: nisabStandard === 'gold' ? colors.onAccent : colors.textMuted },
+                      styles.nisabOption,
+                      getPillShadow(mode),
+                      {
+                        backgroundColor: nisabStandard === 'gold' ? 'transparent' : tokens.ringFill,
+                        borderColor: nisabStandard === 'gold' ? tokens.goldBorder : tokens.cardBorder,
+                      },
                     ]}
+                    onPress={() => setNisabStandard('gold')}
                   >
-                    {t('Recommended standard')}
-                  </Text>
-                </TouchableOpacity>
+                    {nisabStandard === 'gold' && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />}
+                    <Text
+                      style={[
+                        styles.nisabOptionTitle,
+                        { color: nisabStandard === 'gold' ? tokens.onGold : tokens.text },
+                      ]}
+                    >
+                      {t('Gold (85g)')}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.nisabOptionSub,
+                        { color: nisabStandard === 'gold' ? tokens.onGold : tokens.muted },
+                      ]}
+                    >
+                      {t('Recommended standard')}
+                    </Text>
+                  </TouchableOpacity>
 
-                <TouchableOpacity
-                  style={[
-                    styles.nisabOption,
-                    {
-                      backgroundColor: nisabStandard === 'silver' ? colors.accent : colors.bgBase,
-                      borderColor: nisabStandard === 'silver' ? colors.accent : colors.borderSubtle,
-                    },
-                  ]}
-                  onPress={() => setNisabStandard('silver')}
-                >
-                  <Text
+                  <TouchableOpacity
                     style={[
-                      styles.nisabOptionTitle,
-                      { color: nisabStandard === 'silver' ? colors.onAccent : colors.textPrimary },
+                      styles.nisabOption,
+                      getPillShadow(mode),
+                      {
+                        backgroundColor: nisabStandard === 'silver' ? 'transparent' : tokens.ringFill,
+                        borderColor: nisabStandard === 'silver' ? tokens.goldBorder : tokens.cardBorder,
+                      },
                     ]}
+                    onPress={() => setNisabStandard('silver')}
                   >
-                    {t('Silver (595g)')}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.nisabOptionSub,
-                      { color: nisabStandard === 'silver' ? colors.onAccent : colors.textMuted },
-                    ]}
-                  >
-                    {t('Lower threshold')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Price per gram inputs */}
-              <View style={styles.ratesEditRow}>
-                <View style={styles.rateField}>
-                  <Text style={[styles.rateFieldLabel, { color: colors.textMuted }]}>
-                    {t('Gold / g')} ({currencyConfig.symbol})
-                  </Text>
-                  <TextInput
-                    style={[styles.rateInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                    value={goldPriceInput}
-                    onChangeText={setGoldPriceInput}
-                    keyboardType="numeric"
-                  />
-                </View>
-                <View style={styles.rateField}>
-                  <Text style={[styles.rateFieldLabel, { color: colors.textMuted }]}>
-                    {t('Silver / g')} ({currencyConfig.symbol})
-                  </Text>
-                  <TextInput
-                    style={[styles.rateInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                    value={silverPriceInput}
-                    onChangeText={setSilverPriceInput}
-                    keyboardType="numeric"
-                  />
-                </View>
-              </View>
-            </Card>
-
-            {/* Results Banner Card */}
-            <Card
-              style={{
-                ...styles.resultsCard,
-                borderColor: evaluation.isEligibleForZakat ? colors.accent : colors.borderSubtle,
-              }}
-            >
-              <View style={styles.resultsTopRow}>
-                <View>
-                  <Text style={[styles.resultsEyebrow, { color: colors.textMuted }]}>
-                    {t('Zakat Due (2.5%)')}
-                  </Text>
-                  <Text style={[styles.resultsTotalDue, { color: colors.accent }]}>
-                    {currencyConfig.symbol} {formatCurrencyAmount(evaluation.zakatDue, selectedCurrencyCode)}
-                  </Text>
+                    {nisabStandard === 'silver' && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />}
+                    <Text
+                      style={[
+                        styles.nisabOptionTitle,
+                        { color: nisabStandard === 'silver' ? tokens.onGold : tokens.text },
+                      ]}
+                    >
+                      {t('Silver (595g)')}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.nisabOptionSub,
+                        { color: nisabStandard === 'silver' ? tokens.onGold : tokens.muted },
+                      ]}
+                    >
+                      {t('Lower threshold')}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
 
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor: evaluation.isEligibleForZakat ? colors.accentDim : colors.bgBase,
-                      borderColor: evaluation.isEligibleForZakat ? colors.accent : colors.borderSubtle,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={evaluation.isEligibleForZakat ? 'checkmark-circle' : 'information-circle-outline'}
-                    size={14}
-                    color={evaluation.isEligibleForZakat ? colors.accent : colors.textMuted}
-                  />
-                  <Text
-                    style={[
-                      styles.statusBadgeText,
-                      { color: evaluation.isEligibleForZakat ? colors.accent : colors.textMuted },
-                    ]}
-                  >
-                    {evaluation.isEligibleForZakat ? t('Nisab Met') : t('Below Nisab')}
-                  </Text>
-                </View>
-              </View>
-
-              <Hairline style={{ marginVertical: 10 }} />
-
-              <View style={styles.summaryStatsRow}>
-                <View style={styles.summaryCol}>
-                  <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{t('Gross Assets')}</Text>
-                  <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
-                    {currencyConfig.symbol} {formatCurrencyAmount(evaluation.totalGrossAssets, selectedCurrencyCode)}
-                  </Text>
-                </View>
-                <View style={styles.summaryCol}>
-                  <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{t('Liabilities')}</Text>
-                  <Text style={[styles.summaryVal, { color: colors.textMuted }]}>
-                    - {currencyConfig.symbol} {formatCurrencyAmount(evaluation.totalLiabilities, selectedCurrencyCode)}
-                  </Text>
-                </View>
-                <View style={styles.summaryCol}>
-                  <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{t('Net Wealth')}</Text>
-                  <Text style={[styles.summaryVal, { color: colors.textPrimary }]}>
-                    {currencyConfig.symbol} {formatCurrencyAmount(evaluation.netZakatableWealth, selectedCurrencyCode)}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Multi-currency equivalent conversion strip */}
-              {evaluation.zakatDue > 0 && evaluation.convertedDue.length > 0 && (
-                <View style={[styles.conversionBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-                  <Text style={[styles.conversionTitle, { color: colors.textMuted }]}>
-                    {t('Equivalent in Major Currencies:')}
-                  </Text>
-                  <View style={styles.conversionRow}>
-                    {evaluation.convertedDue.map((conv) => (
-                      <View key={conv.code} style={styles.convChip}>
-                        <Text style={[styles.convChipCode, { color: colors.textSecondary }]}>
-                          {conv.code}:
-                        </Text>
-                        <Text style={[styles.convChipVal, { color: colors.accent }]}>
-                          {conv.symbol} {formatCurrencyAmount(conv.amount, conv.code)}
-                        </Text>
-                      </View>
-                    ))}
+                {/* Price per gram inputs */}
+                <View style={styles.ratesEditRow}>
+                  <View style={styles.rateField}>
+                    <Text style={[styles.rateFieldLabel, { color: tokens.muted }]}>
+                      {t('Gold / g')} ({currencyConfig.symbol})
+                    </Text>
+                    <TextInput
+                      style={[styles.rateInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                      value={goldPriceInput}
+                      onChangeText={setGoldPriceInput}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                  <View style={styles.rateField}>
+                    <Text style={[styles.rateFieldLabel, { color: tokens.muted }]}>
+                      {t('Silver / g')} ({currencyConfig.symbol})
+                    </Text>
+                    <TextInput
+                      style={[styles.rateInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                      value={silverPriceInput}
+                      onChangeText={setSilverPriceInput}
+                      keyboardType="numeric"
+                    />
                   </View>
                 </View>
-              )}
+              </Card>
 
-              {/* Action Buttons */}
-              <View style={styles.resultsActions}>
-                <TouchableOpacity
-                  style={[
-                    styles.saveCalcBtn,
-                    {
-                      backgroundColor: justSaved ? colors.accent : colors.accentDim,
-                      borderColor: colors.accent,
-                    },
-                  ]}
-                  onPress={handleSaveCalculation}
-                  accessibilityRole="button"
-                  accessibilityLabel={justSaved ? t('Calculation saved') : t('Save calculation')}
-                >
-                  <Ionicons
-                    name={justSaved ? 'checkmark-circle' : 'bookmark-outline'}
-                    size={15}
-                    color={justSaved ? colors.onAccent : colors.accent}
-                  />
-                  <Text
+              {/* Results Banner Card */}
+              <Card
+                style={[
+                  styles.resultsCard,
+                  getCardShadow(mode),
+                  {
+                    backgroundColor: tokens.cardTop,
+                    borderColor: evaluation.isEligibleForZakat ? tokens.goldBorder : tokens.cardBorder,
+                  },
+                ]}
+              >
+                <View style={styles.resultsTopRow}>
+                  <View>
+                    <Text style={[styles.resultsEyebrow, { color: tokens.muted }]}>
+                      {t('Zakat Due (2.5%)')}
+                    </Text>
+                    <Text style={[styles.resultsTotalDue, { color: tokens.goldText }]}>
+                      {currencyConfig.symbol} {formatCurrencyAmount(evaluation.zakatDue, selectedCurrencyCode)}
+                    </Text>
+                  </View>
+
+                  <View
                     style={[
-                      styles.saveCalcBtnText,
-                      { color: justSaved ? colors.onAccent : colors.accent },
+                      styles.statusBadge,
+                      getPillShadow(mode),
+                      {
+                        backgroundColor: evaluation.isEligibleForZakat ? tokens.ringFill : tokens.cardTop,
+                        borderColor: evaluation.isEligibleForZakat ? tokens.goldBorder : tokens.cardBorder,
+                      },
                     ]}
                   >
-                    {justSaved ? t('Saved ✓') : t('Save Calculation')}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.resetBtn, { borderColor: colors.borderSubtle }]}
-                  onPress={handleReset}
-                  accessibilityRole="button"
-                >
-                  <Ionicons name="refresh-outline" size={15} color={colors.textMuted} />
-                  <Text style={[styles.resetBtnText, { color: colors.textMuted }]}>
-                    {t('Clear')}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </Card>
-
-            {/* Asset Inputs Form */}
-            <Text style={[styles.sectionHeading, { color: colors.textSecondary }]}>
-              {t('Assets & Liabilities')}
-            </Text>
-
-            {/* 1. Cash */}
-            <Card style={styles.inputCard}>
-              <View style={styles.inputCardTop}>
-                <View style={styles.inputCardLabelWrap}>
-                  <Ionicons name="cash-outline" size={17} color={colors.accent} />
-                  <Text style={[styles.inputCardTitle, { color: colors.textPrimary }]}>
-                    {t('Cash & Bank Balances')}
-                  </Text>
-                </View>
-                <Text style={[styles.inputCardSub, { color: colors.textMuted }]}>
-                  {t('In hand, savings, checking accounts')}
-                </Text>
-              </View>
-              <TextInput
-                style={[styles.mainInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                value={cashInput}
-                onChangeText={setCashInput}
-                keyboardType="numeric"
-                placeholder={`0 ${currencyConfig.symbol}`}
-                placeholderTextColor={colors.textMuted}
-              />
-            </Card>
-
-            {/* 2. Gold */}
-            <Card style={styles.inputCard}>
-              <View style={styles.inputCardTop}>
-                <View style={styles.inputCardLabelWrap}>
-                  <Ionicons name="sparkles-outline" size={17} color={colors.accent} />
-                  <Text style={[styles.inputCardTitle, { color: colors.textPrimary }]}>
-                    {t('Gold (Grams)')}
-                  </Text>
-                </View>
-                <Text style={[styles.inputCardSub, { color: colors.textMuted }]}>
-                  {evaluation.goldValue > 0
-                    ? `${t('Value:')} ${currencyConfig.symbol} ${formatCurrencyAmount(evaluation.goldValue, selectedCurrencyCode)}`
-                    : t('Jewelry (beyond customary use), coins, bars')}
-                </Text>
-              </View>
-              <TextInput
-                style={[styles.mainInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                value={goldGramsInput}
-                onChangeText={setGoldGramsInput}
-                keyboardType="numeric"
-                placeholder={t('0 grams')}
-                placeholderTextColor={colors.textMuted}
-              />
-            </Card>
-
-            {/* 3. Silver */}
-            <Card style={styles.inputCard}>
-              <View style={styles.inputCardTop}>
-                <View style={styles.inputCardLabelWrap}>
-                  <Ionicons name="disc-outline" size={17} color={colors.accent} />
-                  <Text style={[styles.inputCardTitle, { color: colors.textPrimary }]}>
-                    {t('Silver (Grams)')}
-                  </Text>
-                </View>
-                <Text style={[styles.inputCardSub, { color: colors.textMuted }]}>
-                  {evaluation.silverValue > 0
-                    ? `${t('Value:')} ${currencyConfig.symbol} ${formatCurrencyAmount(evaluation.silverValue, selectedCurrencyCode)}`
-                    : t('Coins, utensils, decorative bullion')}
-                </Text>
-              </View>
-              <TextInput
-                style={[styles.mainInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                value={silverGramsInput}
-                onChangeText={setSilverGramsInput}
-                keyboardType="numeric"
-                placeholder={t('0 grams')}
-                placeholderTextColor={colors.textMuted}
-              />
-            </Card>
-
-            {/* 4. Investments */}
-            <Card style={styles.inputCard}>
-              <View style={styles.inputCardTop}>
-                <View style={styles.inputCardLabelWrap}>
-                  <Ionicons name="trending-up-outline" size={17} color={colors.accent} />
-                  <Text style={[styles.inputCardTitle, { color: colors.textPrimary }]}>
-                    {t('Investments, Stocks & Crypto')}
-                  </Text>
-                </View>
-                <Text style={[styles.inputCardSub, { color: colors.textMuted }]}>
-                  {t('Shares, mutual funds, merchandise for sale')}
-                </Text>
-              </View>
-              <TextInput
-                style={[styles.mainInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                value={investmentsInput}
-                onChangeText={setInvestmentsInput}
-                keyboardType="numeric"
-                placeholder={`0 ${currencyConfig.symbol}`}
-                placeholderTextColor={colors.textMuted}
-              />
-            </Card>
-
-            {/* 5. Other Assets */}
-            <Card style={styles.inputCard}>
-              <View style={styles.inputCardTop}>
-                <View style={styles.inputCardLabelWrap}>
-                  <Ionicons name="wallet-outline" size={17} color={colors.accent} />
-                  <Text style={[styles.inputCardTitle, { color: colors.textPrimary }]}>
-                    {t('Other Assets & Receivables')}
-                  </Text>
-                </View>
-                <Text style={[styles.inputCardSub, { color: colors.textMuted }]}>
-                  {t('Money owed to you expected soon, business cash')}
-                </Text>
-              </View>
-              <TextInput
-                style={[styles.mainInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                value={otherAssetsInput}
-                onChangeText={setOtherAssetsInput}
-                keyboardType="numeric"
-                placeholder={`0 ${currencyConfig.symbol}`}
-                placeholderTextColor={colors.textMuted}
-              />
-            </Card>
-
-            {/* 6. Liabilities */}
-            <Card style={styles.inputCard}>
-              <View style={styles.inputCardTop}>
-                <View style={styles.inputCardLabelWrap}>
-                  <Ionicons name="remove-circle-outline" size={17} color="#E53E3E" />
-                  <Text style={[styles.inputCardTitle, { color: colors.textPrimary }]}>
-                    {t('Deductible Liabilities & Debts')}
-                  </Text>
-                </View>
-                <Text style={[styles.inputCardSub, { color: colors.textMuted }]}>
-                  {t('Immediate bills, unpaid rent, short-term debt due now')}
-                </Text>
-              </View>
-              <TextInput
-                style={[styles.mainInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                value={liabilitiesInput}
-                onChangeText={setLiabilitiesInput}
-                keyboardType="numeric"
-                placeholder={`0 ${currencyConfig.symbol}`}
-                placeholderTextColor={colors.textMuted}
-              />
-            </Card>
-          </View>
-        )}
-
-        {/* ─── TAB 2: HISTORY ─────────────────────────────────────── */}
-        {activeTab === 'history' && (
-          <View style={styles.tabContent}>
-            <Text style={[styles.sectionHeading, { color: colors.textSecondary }]}>
-              {t('Past Saved Calculations')}
-            </Text>
-
-            {history.length === 0 ? (
-              <EmptyState
-                icon="wallet-outline"
-                title={t('No saved calculations yet')}
-                subtitle={t('Calculate your Zakat and tap "Save Calculation" to record it here.')}
-                actionLabel={t('Open calculator')}
-                onAction={() => setActiveTab('calculator')}
-              />
-            ) : (
-              history.map((item) => {
-                const itemCfg = getCurrencyConfig(item.currency);
-                return (
-                  <Card key={item.id} style={styles.historyCard}>
-                    <View style={styles.historyHeader}>
-                      <View>
-                        <Text style={[styles.historyDate, { color: colors.textMuted }]}>
-                          {item.date} • {item.nisabStandard === 'gold' ? t('Gold Nisab') : t('Silver Nisab')}
-                        </Text>
-                        <Text style={[styles.historyDueAmount, { color: colors.accent }]}>
-                          {t('Zakat:')} {itemCfg.symbol} {formatCurrencyAmount(item.zakatDue, item.currency)}
-                        </Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[styles.deleteHistoryBtn, justDeleted === item.id && { opacity: 0.45 }]}
-                        onPress={() => handleDeleteHistory(item.id)}
-                        accessibilityLabel={justDeleted === item.id ? t('Record deleted') : t('Delete record')}
-                      >
-                        <Ionicons
-                          name={justDeleted === item.id ? 'checkmark' : 'trash-outline'}
-                          size={16}
-                          color={justDeleted === item.id ? colors.accent : colors.textMuted}
-                        />
-                      </TouchableOpacity>
-                    </View>
-
-                    <Hairline style={{ marginVertical: 8 }} />
-
-                    <View style={styles.historyBreakdownRow}>
-                      <Text style={[styles.historyBreakdownText, { color: colors.textSecondary }]}>
-                        {t('Total Net Wealth:')} {itemCfg.symbol} {formatCurrencyAmount(item.totalWealth, item.currency)}
-                      </Text>
-                    </View>
-                  </Card>
-                );
-              })
-            )}
-          </View>
-        )}
-
-        {/* ─── TAB 3: NISAB & FIQH GUIDE ──────────────────────────── */}
-        {activeTab === 'guide' && (
-          <View style={styles.tabContent}>
-            <Card style={styles.guideCard}>
-              <Text style={[styles.guideHeading, { color: colors.textPrimary }]}>
-                {t('What is Nisab?')}
-              </Text>
-              <Text style={[styles.guideBody, { color: colors.textSecondary }]}>
-                {t('Nisab is the minimum threshold of net wealth a Muslim must possess for one full lunar year (Hawl) before Zakat becomes obligatory.')}
-              </Text>
-
-              <Hairline style={{ marginVertical: 12 }} />
-
-              <Text style={[styles.guideSubheading, { color: colors.textPrimary }]}>
-                {t('Gold vs Silver Standard:')}
-              </Text>
-              <Text style={[styles.guideBody, { color: colors.textSecondary }]}>
-                • <Text style={{ fontFamily: 'Manrope_600SemiBold', color: colors.textPrimary }}>{t('Gold Standard (85g):')}</Text> {t('Widely recommended by modern contemporary scholars for cash, business wealth, and equities, as the price of gold has maintained historical purchasing power.')}
-              </Text>
-              <Text style={[styles.guideBody, { color: colors.textSecondary, marginTop: 8 }]}>
-                • <Text style={{ fontFamily: 'Manrope_600SemiBold', color: colors.textPrimary }}>{t('Silver Standard (595g):')}</Text> {t('Classical Hanafi standard, resulting in a significantly lower threshold that allows more Muslims to support the needy.')}
-              </Text>
-
-              <Hairline style={{ marginVertical: 12 }} />
-
-              <Text style={[styles.guideSubheading, { color: colors.textPrimary }]}>
-                {t('Zakat Rate:')}
-              </Text>
-              <Text style={[styles.guideBody, { color: colors.textSecondary }]}>
-                {t('The universal rate is')} <Text style={{ fontFamily: 'Manrope_600SemiBold', color: colors.accent }}>{t('2.5% (1/40th)')}</Text> {t('of your eligible net wealth exceeding Nisab.')}
-              </Text>
-            </Card>
-          </View>
-        )}
-
-        {/* Currency Selector Modal */}
-        <Modal
-          visible={showCurrencyModal}
-          animationType="fade"
-          transparent
-          onRequestClose={() => setShowCurrencyModal(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => setShowCurrencyModal(false)}>
-              <View style={styles.modalBackdrop} />
-            </TouchableWithoutFeedback>
-            <View style={[styles.modalSheet, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-              <View style={[styles.dragPill, { backgroundColor: colors.borderSubtle }]} />
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-                  {t('Select Currency')}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowCurrencyModal(false)}
-                  style={styles.modalCloseBtn}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('Close currency selector')}
-                >
-                  <Ionicons name="close" size={20} color={colors.textMuted} />
-                </TouchableOpacity>
-              </View>
-
-              <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
-                {SUPPORTED_CURRENCIES.map((c) => {
-                  const isChosen = c.code === selectedCurrencyCode;
-                  return (
-                    <TouchableOpacity
-                      key={c.code}
+                    <Ionicons
+                      name={evaluation.isEligibleForZakat ? 'checkmark-circle' : 'information-circle-outline'}
+                      size={14}
+                      color={evaluation.isEligibleForZakat ? tokens.goldText : tokens.muted}
+                    />
+                    <Text
                       style={[
-                        styles.currencyItem,
-                        {
-                          backgroundColor: isChosen ? colors.accentDim : 'transparent',
-                          borderColor: colors.borderSubtle,
-                        },
+                        styles.statusBadgeText,
+                        { color: evaluation.isEligibleForZakat ? tokens.goldText : tokens.muted },
                       ]}
-                      onPress={() => {
-                        setSelectedCurrencyCode(c.code);
-                        setShowCurrencyModal(false);
-                      }}
                     >
-                      <View>
-                        <Text style={[styles.currencyItemCode, { color: colors.textPrimary }]}>
-                          {c.code} ({c.symbol})
+                      {evaluation.isEligibleForZakat ? t('Nisab Met') : t('Below Nisab')}
+                    </Text>
+                  </View>
+                </View>
+
+                <Hairline style={{ marginVertical: 10 }} />
+
+                <View style={styles.summaryStatsRow}>
+                  <View style={styles.summaryCol}>
+                    <Text style={[styles.summaryLabel, { color: tokens.muted }]}>{t('Gross Assets')}</Text>
+                    <Text style={[styles.summaryVal, { color: tokens.text }]}>
+                      {currencyConfig.symbol} {formatCurrencyAmount(evaluation.totalGrossAssets, selectedCurrencyCode)}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryCol}>
+                    <Text style={[styles.summaryLabel, { color: tokens.muted }]}>{t('Liabilities')}</Text>
+                    <Text style={[styles.summaryVal, { color: tokens.muted }]}>
+                      - {currencyConfig.symbol} {formatCurrencyAmount(evaluation.totalLiabilities, selectedCurrencyCode)}
+                    </Text>
+                  </View>
+                  <View style={styles.summaryCol}>
+                    <Text style={[styles.summaryLabel, { color: tokens.muted }]}>{t('Net Wealth')}</Text>
+                    <Text style={[styles.summaryVal, { color: tokens.text }]}>
+                      {currencyConfig.symbol} {formatCurrencyAmount(evaluation.netZakatableWealth, selectedCurrencyCode)}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Multi-currency equivalent conversion strip */}
+                {evaluation.zakatDue > 0 && evaluation.convertedDue.length > 0 && (
+                  <View style={[styles.conversionBox, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder }]}>
+                    <Text style={[styles.conversionTitle, { color: tokens.muted }]}>
+                      {t('Equivalent in Major Currencies:')}
+                    </Text>
+                    <View style={styles.conversionRow}>
+                      {evaluation.convertedDue.map((conv) => (
+                        <View key={conv.code} style={styles.convChip}>
+                          <Text style={[styles.convChipCode, { color: tokens.text }]}>
+                            {conv.code}:
+                          </Text>
+                          <Text style={[styles.convChipVal, { color: tokens.goldText }]}>
+                            {conv.symbol} {formatCurrencyAmount(conv.amount, conv.code)}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
+
+                {/* Action Buttons */}
+                <View style={styles.resultsActions}>
+                  <TouchableOpacity
+                    style={[
+                      styles.saveCalcBtn,
+                      getPillShadow(mode),
+                      {
+                        backgroundColor: justSaved ? 'transparent' : tokens.cardTop,
+                        borderColor: tokens.goldBorder,
+                      },
+                    ]}
+                    onPress={handleSaveCalculation}
+                    accessibilityRole="button"
+                    accessibilityLabel={justSaved ? t('Calculation saved') : t('Save calculation')}
+                  >
+                    {justSaved && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />}
+                    <Ionicons
+                      name={justSaved ? 'checkmark-circle' : 'bookmark-outline'}
+                      size={15}
+                      color={justSaved ? tokens.onGold : tokens.goldText}
+                    />
+                    <Text
+                      style={[
+                        styles.saveCalcBtnText,
+                        { color: justSaved ? tokens.onGold : tokens.goldText },
+                      ]}
+                    >
+                      {justSaved ? t('Saved ✓') : t('Save Calculation')}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.resetBtn, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop }]}
+                    onPress={handleReset}
+                    accessibilityRole="button"
+                  >
+                    <Ionicons name="refresh-outline" size={15} color={tokens.muted} />
+                    <Text style={[styles.resetBtnText, { color: tokens.muted }]}>
+                      {t('Clear')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </Card>
+
+              {/* Asset Inputs Form */}
+              <Text style={[styles.sectionHeading, { color: tokens.muted }]}>
+                {t('Assets & Liabilities')}
+              </Text>
+
+              {/* 1. Cash */}
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <View style={styles.inputCardTop}>
+                  <View style={styles.inputCardLabelWrap}>
+                    <Ionicons name="cash-outline" size={17} color={tokens.goldText} />
+                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                      {t('Cash & Bank Balances')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                    {t('In hand, savings, checking accounts')}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  value={cashInput}
+                  onChangeText={setCashInput}
+                  keyboardType="numeric"
+                  placeholder={`0 ${currencyConfig.symbol}`}
+                  placeholderTextColor={tokens.muted}
+                />
+              </Card>
+
+              {/* 2. Gold */}
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <View style={styles.inputCardTop}>
+                  <View style={styles.inputCardLabelWrap}>
+                    <Ionicons name="sparkles-outline" size={17} color={tokens.goldText} />
+                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                      {t('Gold (Grams)')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                    {evaluation.goldValue > 0
+                      ? `${t('Value:')} ${currencyConfig.symbol} ${formatCurrencyAmount(evaluation.goldValue, selectedCurrencyCode)}`
+                      : t('Jewelry (beyond customary use), coins, bars')}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  value={goldGramsInput}
+                  onChangeText={setGoldGramsInput}
+                  keyboardType="numeric"
+                  placeholder={t('0 grams')}
+                  placeholderTextColor={tokens.muted}
+                />
+              </Card>
+
+              {/* 3. Silver */}
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <View style={styles.inputCardTop}>
+                  <View style={styles.inputCardLabelWrap}>
+                    <Ionicons name="disc-outline" size={17} color={tokens.goldText} />
+                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                      {t('Silver (Grams)')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                    {evaluation.silverValue > 0
+                      ? `${t('Value:')} ${currencyConfig.symbol} ${formatCurrencyAmount(evaluation.silverValue, selectedCurrencyCode)}`
+                      : t('Coins, utensils, decorative bullion')}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  value={silverGramsInput}
+                  onChangeText={setSilverGramsInput}
+                  keyboardType="numeric"
+                  placeholder={t('0 grams')}
+                  placeholderTextColor={tokens.muted}
+                />
+              </Card>
+
+              {/* 4. Investments */}
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <View style={styles.inputCardTop}>
+                  <View style={styles.inputCardLabelWrap}>
+                    <Ionicons name="trending-up-outline" size={17} color={tokens.goldText} />
+                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                      {t('Investments, Stocks & Crypto')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                    {t('Shares, mutual funds, merchandise for sale')}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  value={investmentsInput}
+                  onChangeText={setInvestmentsInput}
+                  keyboardType="numeric"
+                  placeholder={`0 ${currencyConfig.symbol}`}
+                  placeholderTextColor={tokens.muted}
+                />
+              </Card>
+
+              {/* 5. Other Assets */}
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <View style={styles.inputCardTop}>
+                  <View style={styles.inputCardLabelWrap}>
+                    <Ionicons name="wallet-outline" size={17} color={tokens.goldText} />
+                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                      {t('Other Assets & Receivables')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                    {t('Money owed to you expected soon, business cash')}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  value={otherAssetsInput}
+                  onChangeText={setOtherAssetsInput}
+                  keyboardType="numeric"
+                  placeholder={`0 ${currencyConfig.symbol}`}
+                  placeholderTextColor={tokens.muted}
+                />
+              </Card>
+
+              {/* 6. Liabilities */}
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <View style={styles.inputCardTop}>
+                  <View style={styles.inputCardLabelWrap}>
+                    <Ionicons name="remove-circle-outline" size={17} color={tokens.danger} />
+                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                      {t('Deductible Liabilities & Debts')}
+                    </Text>
+                  </View>
+                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                    {t('Immediate bills, unpaid rent, short-term debt due now')}
+                  </Text>
+                </View>
+                <TextInput
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  value={liabilitiesInput}
+                  onChangeText={setLiabilitiesInput}
+                  keyboardType="numeric"
+                  placeholder={`0 ${currencyConfig.symbol}`}
+                  placeholderTextColor={tokens.muted}
+                />
+              </Card>
+            </View>
+          )}
+
+          {/* ─── TAB 2: HISTORY ─────────────────────────────────────── */}
+          {activeTab === 'history' && (
+            <View style={styles.tabContent}>
+              <Text style={[styles.sectionHeading, { color: tokens.muted }]}>
+                {t('Past Saved Calculations')}
+              </Text>
+
+              {history.length === 0 ? (
+                <EmptyState
+                  icon="wallet-outline"
+                  title={t('No saved calculations yet')}
+                  subtitle={t('Calculate your Zakat and tap "Save Calculation" to record it here.')}
+                  actionLabel={t('Open calculator')}
+                  onAction={() => setActiveTab('calculator')}
+                />
+              ) : (
+                <>
+                  {history.map((item) => {
+                    const itemCfg = getCurrencyConfig(item.currency);
+                    return (
+                      <Card key={item.id} style={[styles.historyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                        <View style={styles.historyHeader}>
+                          <View>
+                            <Text style={[styles.historyDate, { color: tokens.muted }]}>
+                              {item.date} • {item.nisabStandard === 'gold' ? t('Gold Nisab') : t('Silver Nisab')}
+                            </Text>
+                            <Text style={[styles.historyDueAmount, { color: tokens.goldText }]}>
+                              {t('Zakat:')} {itemCfg.symbol} {formatCurrencyAmount(item.zakatDue, item.currency)}
+                            </Text>
+                          </View>
+                          <TouchableOpacity
+                            style={[styles.deleteHistoryBtn, justDeleted === item.id && { opacity: 0.45 }]}
+                            onPress={() => handleDeleteHistory(item.id)}
+                            accessibilityLabel={justDeleted === item.id ? t('Record deleted') : t('Delete record')}
+                          >
+                            <Ionicons
+                              name={justDeleted === item.id ? 'checkmark' : 'trash-outline'}
+                              size={16}
+                              color={justDeleted === item.id ? tokens.danger : tokens.muted}
+                            />
+                          </TouchableOpacity>
+                        </View>
+
+                        <Hairline style={{ marginVertical: 8 }} />
+
+                        <View style={[styles.historyBreakdownRow, { backgroundColor: tokens.ringFill, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }]}>
+                          <Text style={[styles.historyBreakdownText, { color: tokens.text }]}>
+                            {t('Total Net Wealth:')} {itemCfg.symbol} {formatCurrencyAmount(item.totalWealth, item.currency)}
+                          </Text>
+                        </View>
+                      </Card>
+                    );
+                  })}
+
+                  <Card style={[styles.hawlGuideCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, marginTop: 12 }]}>
+                    <View style={styles.hawlHeader}>
+                      <View style={[styles.hawlIconWrap, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, borderWidth: 1 }]}>
+                        <Ionicons name="calendar-outline" size={16} color={tokens.goldText} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.hawlTitle, { color: tokens.text }]}>
+                          {t('Annual Hawl Tracking')}
                         </Text>
-                        <Text style={[styles.currencyItemName, { color: colors.textMuted }]}>
-                          {c.name}
+                        <Text style={[styles.hawlSub, { color: tokens.muted }]}>
+                          {t('Zakat is due once per lunar year on wealth maintained above Nisab')}
                         </Text>
                       </View>
-                      {isChosen && <Ionicons name="checkmark" size={18} color={colors.accent} />}
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
+                    </View>
+                    <Hairline style={{ marginVertical: 10 }} />
+                    <Text style={[styles.hawlBody, { color: tokens.text }]}>
+                      {t('Set a fixed annual calculation date (such as Ramadan or Muharram). Comparing your saved calculations year-over-year ensures timely discharge and helps verify whether your Hawl has completed.')}
+                    </Text>
+                  </Card>
+                </>
+              )}
             </View>
-          </View>
-        </Modal>
+          )}
 
-        <View style={styles.bottomSpacer} />
-      </View>
-    </ScrollView>
+          {/* ─── TAB 3: NISAB & FIQH GUIDE ──────────────────────────── */}
+          {activeTab === 'guide' && (
+            <View style={styles.tabContent}>
+              <Card style={[styles.guideCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                <Text style={[styles.guideHeading, { color: tokens.text }]}>
+                  {t('What is Nisab?')}
+                </Text>
+                <Text style={[styles.guideBody, { color: tokens.text }]}>
+                  {t('Nisab is the minimum threshold of net wealth a Muslim must possess for one full lunar year (Hawl) before Zakat becomes obligatory.')}
+                </Text>
+
+                <Hairline style={{ marginVertical: 12 }} />
+
+                <Text style={[styles.guideSubheading, { color: tokens.text }]}>
+                  {t('Gold vs Silver Standard:')}
+                </Text>
+                <Text style={[styles.guideBody, { color: tokens.text }]}>
+                  • <Text style={{ fontFamily: 'Manrope_600SemiBold', color: tokens.text }}>{t('Gold Standard (85g):')}</Text> {t('Widely recommended by modern contemporary scholars for cash, business wealth, and equities, as the price of gold has maintained historical purchasing power.')}
+                </Text>
+                <Text style={[styles.guideBody, { color: tokens.text, marginTop: 8 }]}>
+                  • <Text style={{ fontFamily: 'Manrope_600SemiBold', color: tokens.text }}>{t('Silver Standard (595g):')}</Text> {t('Classical Hanafi standard, resulting in a significantly lower threshold that allows more Muslims to support the needy.')}
+                </Text>
+
+                <Hairline style={{ marginVertical: 12 }} />
+
+                <Text style={[styles.guideSubheading, { color: tokens.text }]}>
+                  {t('Zakat Rate:')}
+                </Text>
+                <Text style={[styles.guideBody, { color: tokens.text }]}>
+                  {t('The universal rate is')} <Text style={{ fontFamily: 'Manrope_600SemiBold', color: tokens.goldText }}>{t('2.5% (1/40th)')}</Text> {t('of your eligible net wealth exceeding Nisab.')}
+                </Text>
+              </Card>
+            </View>
+          )}
+
+          {/* Currency Selector Modal */}
+          <Modal
+            visible={showCurrencyModal}
+            animationType="fade"
+            transparent
+            onRequestClose={() => setShowCurrencyModal(false)}
+          >
+            <View style={[styles.modalOverlay, { backgroundColor: tokens.overlay }]}>
+              <TouchableWithoutFeedback onPress={() => setShowCurrencyModal(false)}>
+                <View style={styles.modalBackdrop} />
+              </TouchableWithoutFeedback>
+              <View
+                style={[
+                  styles.modalSheet,
+                  getCardShadow(mode),
+                  {
+                    backgroundColor: tokens.cardTop,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+              >
+                <View style={[styles.dragPill, { backgroundColor: tokens.cardBorder }]} />
+                <View style={styles.modalHeader}>
+                  <Text style={[styles.modalTitle, { color: tokens.text }]}>
+                    {t('Select Currency')}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowCurrencyModal(false)}
+                    style={styles.modalCloseBtn}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Close currency selector')}
+                  >
+                    <Ionicons name="close" size={20} color={tokens.muted} />
+                  </TouchableOpacity>
+                </View>
+
+                <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+                  {SUPPORTED_CURRENCIES.map((c) => {
+                    const isChosen = c.code === selectedCurrencyCode;
+                    return (
+                      <TouchableOpacity
+                        key={c.code}
+                        style={[
+                          styles.currencyItem,
+                          {
+                            backgroundColor: isChosen
+                              ? tokens.gold
+                              : tokens.ringFill,
+                            borderColor: isChosen ? tokens.goldBorder : tokens.cardBorder,
+                          },
+                        ]}
+                        onPress={() => {
+                          setSelectedCurrencyCode(c.code);
+                          const cfg = getCurrencyConfig(c.code);
+                          setGoldPriceInput(String(cfg.goldPricePerGram));
+                          setSilverPriceInput(String(cfg.silverPricePerGram));
+                          setShowCurrencyModal(false);
+                        }}
+                      >
+                        <View>
+                          <Text
+                            style={[
+                              styles.currencyItemCode,
+                              { color: isChosen ? tokens.onGold : tokens.text },
+                            ]}
+                          >
+                            {c.code} ({c.symbol})
+                          </Text>
+                          <Text
+                            style={[
+                              styles.currencyItemName,
+                              { color: isChosen ? tokens.onGold : tokens.muted },
+                            ]}
+                          >
+                            {c.name}
+                          </Text>
+                        </View>
+                        {isChosen && <Ionicons name="checkmark" size={18} color={tokens.onGold} />}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </View>
+          </Modal>
+        </View>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
+export default withUndoToast(ZakatScreen);
+
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+  },
   scroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingVertical: 8,
   },
   container: {
     width: '100%',
     alignSelf: 'center',
     paddingTop: 8,
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
-  },
-
   /* Tabs */
   tabBar: {
     flexDirection: 'row',
-    borderRadius: 8,
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 3,
-    marginBottom: 12,
+    padding: 4,
+    marginBottom: 14,
   },
   tabBtn: {
     flex: 1,
-    paddingVertical: 6,
-    borderRadius: 6,
+    paddingVertical: 8,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'transparent',
     alignItems: 'center',
@@ -869,7 +919,9 @@ const styles = StyleSheet.create({
 
   /* Currency Card */
   currencyCard: {
-    padding: 14,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   currencyRow: {
     flexDirection: 'row',
@@ -893,7 +945,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 999,
     borderWidth: 1,
   },
   currencyChangeText: {
@@ -904,6 +956,8 @@ const styles = StyleSheet.create({
   /* Nisab Card */
   nisabCard: {
     padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
     gap: 12,
   },
   nisabHeader: {
@@ -921,8 +975,8 @@ const styles = StyleSheet.create({
   },
   nisabOption: {
     flex: 1,
-    padding: 10,
-    borderRadius: 8,
+    padding: 12,
+    borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
   },
@@ -950,7 +1004,7 @@ const styles = StyleSheet.create({
   },
   rateInput: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 6,
     fontFamily: 'Manrope_600SemiBold',
@@ -960,6 +1014,7 @@ const styles = StyleSheet.create({
   /* Results Card */
   resultsCard: {
     padding: 18,
+    borderRadius: 20,
     borderWidth: 1.5,
   },
   resultsTopRow: {
@@ -984,7 +1039,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
   },
   statusBadgeText: {
@@ -1010,7 +1065,7 @@ const styles = StyleSheet.create({
   conversionBox: {
     marginTop: 12,
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
   },
   conversionTitle: {
@@ -1049,7 +1104,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   saveCalcBtnText: {
@@ -1062,7 +1117,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
   },
   resetBtnText: {
@@ -1079,7 +1134,9 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   inputCard: {
-    padding: 14,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
     gap: 10,
   },
   inputCardTop: {
@@ -1100,7 +1157,7 @@ const styles = StyleSheet.create({
   },
   mainInput: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 8,
     fontFamily: 'Manrope_600SemiBold',
@@ -1109,7 +1166,9 @@ const styles = StyleSheet.create({
 
   /* History */
   historyCard: {
-    padding: 14,
+    padding: 16,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   historyHeader: {
     flexDirection: 'row',
@@ -1139,6 +1198,8 @@ const styles = StyleSheet.create({
   /* Guide */
   guideCard: {
     padding: 18,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   guideHeading: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -1152,82 +1213,93 @@ const styles = StyleSheet.create({
   },
   guideBody: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12.5,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
   },
 
   /* Modal */
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
-    alignItems: 'center',
   },
   modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFill,
   },
   modalSheet: {
-    width: '100%',
-    maxWidth: 640,
-    maxHeight: '88%',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    borderTopWidth: 1,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderWidth: 1,
     padding: 20,
-    paddingTop: 10,
-    elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
+    paddingBottom: 34,
   },
   dragPill: {
     width: 36,
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 8,
+    marginBottom: 14,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 14,
   },
   modalTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 20,
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 17,
   },
   modalCloseBtn: {
     padding: 4,
   },
   currencyItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 12,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginBottom: 4,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
   },
   currencyItemCode: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope_700Bold',
     fontSize: 14,
   },
   currencyItemName: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
-    marginTop: 1,
+    marginTop: 2,
   },
-
-  bottomSpacer: {
-    height: 30,
+  hawlGuideCard: {
+    padding: 16,
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  hawlHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  hawlIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hawlTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 14,
+  },
+  hawlSub: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 11.5,
+    marginTop: 2,
+  },
+  hawlBody: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 12.5,
+    lineHeight: 18,
   },
 });
-
-export default withUndoToast(ZakatScreen);
-

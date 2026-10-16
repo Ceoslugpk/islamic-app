@@ -4,19 +4,20 @@ import {
   Text,
   View,
   TouchableOpacity,
-  ScrollView,
   TextInput,
   useWindowDimensions,
   Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemeTokens } from '../theme/tokens';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Hairline } from '../components/Hairline';
-import { Card } from '../components/Card';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard } from '../components/ui';
 import { EmptyState } from '../components/EmptyState';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import { ArabicText } from '../components/ArabicText';
@@ -70,10 +71,15 @@ export function isWomenSpecificReason(reason: string | undefined): boolean {
 interface FastingScreenProps {
   onBack?: () => void;
   womenUnlocked?: boolean;
+  backLabel?: string;
 }
 
-function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
-  const { colors } = useTheme();
+function FastingScreen({
+  onBack,
+  womenUnlocked = false,
+  backLabel = 'Tools',
+}: FastingScreenProps) {
+  const { tokens, mode } = useThemeTokens();
   const { settings } = useSettings();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -311,324 +317,731 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
   const paddingH = isCompact ? 16 : 20;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.scroll, { paddingHorizontal: paddingH }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <ScreenHeader
-        eyebrow={t('Worship & Tracker')}
-        title={t('Fasting')}
-        onBack={onBack}
-        backLabel={t('Tools')}
+    <View style={styles.screenContainer}>
+      <LinearGradient
+        colors={tokens.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
       />
-      <View style={[styles.container, { maxWidth: maxW }]}>
+      <DetailScreen
+        style={[styles.screen, styles.detailScreen]}
+        header={
+          <SubHeader
+            eyebrow={t('Worship & Tracker')}
+            title={t('Fasting')}
+            subtitle={t('Suhoor & iftar countdowns, sunnah fasts & qada logs')}
+            onBack={onBack}
+            backLabel={t(backLabel)}
+            borderBottom
+            showFade
+          />
+        }
+      >
+        <DetailScreen.ScrollView
+          style={{ flex: 1, backgroundColor: 'transparent' }}
+          contentContainerStyle={[
+            styles.scroll,
+            {
+              paddingHorizontal: paddingH,
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.container, { maxWidth: maxW }]}>
 
-        {/* Tab Navigation */}
-        <View style={[styles.tabBar, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-          {(['tracker', 'voluntary', 'qada', 'history'] as FastingSubTab[]).map((tab) => {
-            const isSelected = activeTab === tab;
-            const labels: Record<FastingSubTab, string> = {
-              tracker: t('Today'),
-              voluntary: t('Sunnah'),
-              qada: t('Qada'),
-              history: t('History'),
-            };
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={[
-                  styles.tabBtn,
-                  isSelected && { backgroundColor: colors.accentDim, borderColor: colors.accent },
-                ]}
-                onPress={() => setActiveTab(tab)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: isSelected }}
-              >
-                <Text
-                  style={[
-                    styles.tabBtnText,
-                    { color: isSelected ? colors.accent : colors.textMuted },
-                  ]}
-                >
-                  {labels[tab]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* ─── TAB 1: TODAY TRACKER ───────────────────────────────── */}
-        {activeTab === 'tracker' && (
-          <View style={styles.tabContent}>
-            {/* Small Stats Row */}
-            <View style={styles.statsRow}>
-              <View style={[styles.statBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-                <Text style={[styles.statNumber, { color: colors.accent }]}>
-                  {daysFastedThisMonth}
-                </Text>
-                <Text style={[styles.statText, { color: colors.textMuted }]}>
-                  {t('This Month')}
-                </Text>
-              </View>
-              <View style={[styles.statBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-                <Text style={[styles.statNumber, { color: colors.textPrimary }]}>
-                  {streak}d
-                </Text>
-                <Text style={[styles.statText, { color: colors.textMuted }]}>
-                  {t('Streak')}
-                </Text>
-              </View>
-              <View style={[styles.statBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-                <Text style={[styles.statNumber, { color: qadaPendingCount > 0 ? colors.accent : colors.textPrimary }]}>
-                  {qadaPendingCount}
-                </Text>
-                <Text style={[styles.statText, { color: colors.textMuted }]}>
-                  {t('Qada Left')}
-                </Text>
-              </View>
-            </View>
-
-            {/* Clear TODAY Card */}
-            <Card style={styles.todayCard}>
-              <View style={styles.todayCardHeader}>
-                <View>
-                  <Text style={[styles.todayCardEyebrow, { color: colors.accent }]}>
-                    {todayHijri.day} {HIJRI_MONTH_NAMES[todayHijri.month - 1]} {todayHijri.year} AH
-                  </Text>
-                  <Text style={[styles.todayCardTitle, { color: colors.textPrimary }]}>
-                    {t("Today's Fast")}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    {
-                      backgroundColor: todayEntry.fasting ? colors.accentDim : colors.bgBase,
-                      borderColor: todayEntry.fasting ? colors.accent : colors.borderSubtle,
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={todayEntry.fasting ? 'checkmark-circle' : 'moon-outline'}
-                    size={14}
-                    color={todayEntry.fasting ? colors.accent : colors.textMuted}
-                  />
-                  <Text
-                    style={[
-                      styles.statusBadgeText,
-                      { color: todayEntry.fasting ? colors.accent : colors.textMuted },
-                    ]}
-                  >
-                    {todayEntry.fasting ? t('Fasting Active') : t('Not Fasting')}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.todayStatusBox}>
-                <Text style={[styles.todayStatusMessage, { color: colors.textSecondary }]}>
-                  {todayEntry.fasting
-                    ? t('Alhamdulillah, your fast is recorded for today.')
-                    : t('Tap below to record your fast and track your habit.')}
-                </Text>
-
-                {todayEntry.fasting ? (
-                  <View style={styles.fastTypeContainer}>
-                    <Text style={[styles.typeSelectLabel, { color: colors.textSecondary }]}>
-                      {t('Intention / Category:')}
-                    </Text>
-                    <View style={styles.typeButtonsRow}>
-                      {(['ramadan', 'voluntary', 'qada'] as FastingType[]).map((type) => {
-                        const isChosen = todayEntry.type === type;
-                        const typeLabels: Record<FastingType, string> = {
-                          ramadan: t('Ramadan'),
-                          voluntary: t('Sunnah'),
-                          qada: t('Qada (Makeup)'),
-                        };
-                        return (
-                          <TouchableOpacity
-                            key={type}
-                            style={[
-                              styles.typeBtn,
-                              {
-                                backgroundColor: isChosen ? colors.accent : colors.bgBase,
-                                borderColor: isChosen ? colors.accent : colors.borderSubtle,
-                              },
-                            ]}
-                            onPress={() => handleChangeType(type)}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: isChosen }}
-                          >
-                            <Text
-                              style={[
-                                styles.typeBtnText,
-                                { color: isChosen ? colors.onAccent : colors.textPrimary },
-                              ]}
-                            >
-                              {typeLabels[type]}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </View>
-                ) : null}
-
+          {/* Tab Navigation */}
+          <View style={[styles.tabBar, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+            {(['tracker', 'voluntary', 'qada', 'history'] as FastingSubTab[]).map((tab) => {
+              const isSelected = activeTab === tab;
+              const labels: Record<FastingSubTab, string> = {
+                tracker: t('Today'),
+                voluntary: t('Sunnah'),
+                qada: t('Qada'),
+                history: t('History'),
+              };
+              return (
                 <TouchableOpacity
+                  key={tab}
                   style={[
-                    styles.primaryCtaBtn,
+                    styles.tabBtn,
                     {
-                      backgroundColor: todayEntry.fasting ? 'transparent' : colors.forestGreen,
-                      borderColor: todayEntry.fasting ? colors.borderSubtle : colors.forestGreen,
+                      borderColor: isSelected ? tokens.goldBorder : 'transparent',
+                      backgroundColor: 'transparent',
                     },
                   ]}
-                  onPress={handleToggleFasting}
-                  accessibilityRole="button"
-                  accessibilityLabel={todayEntry.fasting ? t('Mark as not fasting') : t('Mark as fasting today')}
+                  onPress={() => setActiveTab(tab)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: isSelected }}
                 >
-                  <Ionicons
-                    name={todayEntry.fasting ? 'close-circle-outline' : 'checkmark-circle'}
-                    size={18}
-                    color={todayEntry.fasting ? colors.textMuted : colors.onAccent}
-                  />
+                  {isSelected && (
+                    <LinearGradient
+                      colors={tokens.goldGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={StyleSheet.absoluteFill}
+                    />
+                  )}
                   <Text
                     style={[
-                      styles.primaryCtaBtnText,
-                      { color: todayEntry.fasting ? colors.textSecondary : colors.onAccent },
+                      styles.tabBtnText,
+                      { color: isSelected ? tokens.onGold : tokens.muted },
                     ]}
                   >
-                    {todayEntry.fasting ? t('Cancel / Not Fasting Today') : t('I am Fasting Today')}
+                    {labels[tab]}
                   </Text>
                 </TouchableOpacity>
-              </View>
-            </Card>
+              );
+            })}
+          </View>
 
-            {/* Suhoor & Iftar Times Card */}
-            <Card style={styles.heroCard}>
-              <View style={styles.heroHeader}>
-                <View>
-                  <Text style={[styles.heroEyebrow, { color: colors.accent }]}>
-                    {t("Today's Prayer Schedule")}
+          {/* ─── TAB 1: TODAY TRACKER ───────────────────────────────── */}
+          {activeTab === 'tracker' && (
+            <View style={styles.tabContent}>
+              {/* Small Stats Row */}
+              <View style={styles.statsRow}>
+                <View style={[styles.statBox, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                  <Text style={[styles.statNumber, { color: tokens.goldText }]}>
+                    {daysFastedThisMonth}
                   </Text>
-                  <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
-                    {t('Suhoor & Iftar Timings')}
-                  </Text>
-                </View>
-                <View style={[styles.phasePill, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
-                  <Ionicons
-                    name={countdown.phase === 'fasting' ? 'sunny' : 'moon'}
-                    size={13}
-                    color={colors.accent}
-                  />
-                  <Text style={[styles.phasePillText, { color: colors.accent }]}>
-                    {countdown.label}
+                  <Text style={[styles.statText, { color: tokens.muted }]}>
+                    {t('This Month')}
                   </Text>
                 </View>
-              </View>
-
-              <View style={styles.timesRow}>
-                <View style={[styles.timeBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-                  <View style={styles.timeLabelWrap}>
-                    <Ionicons name="moon-outline" size={15} color={colors.textMuted} />
-                    <Text style={[styles.timeBoxLabel, { color: colors.textMuted }]}>{t('Suhoor Ends')}</Text>
-                  </View>
-                  <Text style={[styles.timeBoxValue, { color: colors.textPrimary }]}>
-                    {suhoorFormatted}
+                <View style={[styles.statBox, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                  <Text style={[styles.statNumber, { color: tokens.text }]}>
+                    {streak}d
                   </Text>
-                  <Text style={[styles.timeBoxSub, { color: colors.textMuted }]}>{t('Fajr Dawn')}</Text>
-                </View>
-
-                <View style={[styles.timeBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-                  <View style={styles.timeLabelWrap}>
-                    <Ionicons name="sunny-outline" size={15} color={colors.accent} />
-                    <Text style={[styles.timeBoxLabel, { color: colors.textMuted }]}>{t('Iftar Time')}</Text>
-                  </View>
-                  <Text style={[styles.timeBoxValue, { color: colors.accent }]}>
-                    {iftarFormatted}
-                  </Text>
-                  <Text style={[styles.timeBoxSub, { color: colors.textMuted }]}>{t('Maghrib Dusk')}</Text>
-                </View>
-              </View>
-            </Card>
-
-            {/* Missed Fasts (Qada) Section */}
-            <Card style={styles.qadaOverviewCard}>
-              <View style={styles.qadaSectionHeader}>
-                <View>
-                  <Text style={[styles.qadaSectionEyebrow, { color: colors.accent }]}>
-                    {t('Obligatory Makeup')}
-                  </Text>
-                  <Text style={[styles.qadaSectionTitle, { color: colors.textPrimary }]}>
-                    {t('Missed Fasts (Qada)')}
+                  <Text style={[styles.statText, { color: tokens.muted }]}>
+                    {t('Streak')}
                   </Text>
                 </View>
-                <View style={styles.qadaActionBtnsRow}>
-                  <TouchableOpacity
-                    style={[styles.stepperBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
-                    onPress={handleQuickAddMissed}
-                    accessibilityRole="button"
-                    accessibilityLabel={t('Add missed fast')}
-                  >
-                    <Ionicons name="add" size={15} color={colors.accent} />
-                    <Text style={[styles.stepperBtnText, { color: colors.accent }]}>{t('Add')}</Text>
-                  </TouchableOpacity>
-                  {qadaPendingCount > 0 ? (
-                    <TouchableOpacity
-                      style={[styles.stepperBtn, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}
-                      onPress={handleQuickRemoveMissed}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('Make up one missed fast')}
-                    >
-                      <Ionicons name="checkmark" size={14} color={colors.textPrimary} />
-                      <Text style={[styles.stepperBtnText, { color: colors.textPrimary }]}>{t('-1 Made Up')}</Text>
-                    </TouchableOpacity>
-                  ) : null}
+                <View style={[styles.statBox, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                  <Text style={[styles.statNumber, { color: qadaPendingCount > 0 ? tokens.goldText : tokens.text }]}>
+                    {qadaPendingCount}
+                  </Text>
+                  <Text style={[styles.statText, { color: tokens.muted }]}>
+                    {t('Qada Left')}
+                  </Text>
                 </View>
               </View>
 
-              {visibleMissedList.length === 0 ? (
-                <EmptyState
-                  icon="checkmark-done-circle-outline"
-                  title={t('All caught up!')}
-                  subtitle={t('No missed fasts recorded in your ledger.')}
+              {/* Clear TODAY Card */}
+              <View style={[styles.todayCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
+                <LinearGradient
+                  colors={tokens.cardGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
                 />
-              ) : (
-                <View style={styles.qadaQuickList}>
-                  {visibleMissedList.slice(0, 3).map((item) => (
-                    <View
-                      key={item.id}
+                <View style={styles.todayCardHeader}>
+                  <View>
+                    <Text style={[styles.todayCardEyebrow, { color: tokens.goldText }]}>
+                      {todayHijri.day} {HIJRI_MONTH_NAMES[todayHijri.month - 1]} {todayHijri.year} AH
+                    </Text>
+                    <Text style={[styles.todayCardTitle, { color: tokens.text }]}>
+                      {t("Today's Fast")}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      getPillShadow(mode),
+                      {
+                        backgroundColor: todayEntry.fasting ? tokens.ringFill : tokens.inset,
+                        borderColor: todayEntry.fasting ? tokens.goldBorder : tokens.cardBorder,
+                      },
+                    ]}
+                  >
+                    <Ionicons
+                      name={todayEntry.fasting ? 'checkmark-circle' : 'moon-outline'}
+                      size={14}
+                      color={todayEntry.fasting ? tokens.accent : tokens.muted}
+                    />
+                    <Text
                       style={[
-                        styles.missedQuickRow,
-                        { borderColor: colors.borderSubtle },
+                        styles.statusBadgeText,
+                        { color: todayEntry.fasting ? tokens.goldText : tokens.muted },
                       ]}
                     >
+                      {todayEntry.fasting ? t('Fasting Active') : t('Not Fasting')}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.todayStatusBox}>
+                  <Text style={[styles.todayStatusMessage, { color: tokens.muted }]}>
+                    {todayEntry.fasting
+                      ? t('Alhamdulillah, your fast is recorded for today.')
+                      : t('Tap below to record your fast and track your habit.')}
+                  </Text>
+
+                  {todayEntry.fasting ? (
+                    <View style={styles.fastTypeContainer}>
+                      <Text style={[styles.typeSelectLabel, { color: tokens.muted }]}>
+                        {t('Intention / Category:')}
+                      </Text>
+                      <View style={styles.typeButtonsRow}>
+                        {(['ramadan', 'voluntary', 'qada'] as FastingType[]).map((type) => {
+                          const isChosen = todayEntry.type === type;
+                          const typeLabels: Record<FastingType, string> = {
+                            ramadan: t('Ramadan'),
+                            voluntary: t('Sunnah'),
+                            qada: t('Qada (Makeup)'),
+                          };
+                          return (
+                            <TouchableOpacity
+                              key={type}
+                              style={[
+                                styles.typeBtn,
+                                getPillShadow(mode),
+                                {
+                                  backgroundColor: isChosen ? 'transparent' : tokens.inset,
+                                  borderColor: isChosen ? tokens.goldBorder : tokens.cardBorder,
+                                  overflow: 'hidden',
+                                },
+                              ]}
+                              onPress={() => handleChangeType(type)}
+                              accessibilityRole="button"
+                              accessibilityState={{ selected: isChosen }}
+                            >
+                              {isChosen && (
+                                <LinearGradient
+                                  colors={tokens.goldGradient}
+                                  start={{ x: 0, y: 0 }}
+                                  end={{ x: 1, y: 1 }}
+                                  style={StyleSheet.absoluteFill}
+                                />
+                              )}
+                              <Text
+                                style={[
+                                  styles.typeBtnText,
+                                  { color: isChosen ? tokens.onGold : tokens.text },
+                                ]}
+                              >
+                                {typeLabels[type]}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  ) : null}
+
+                  <TouchableOpacity
+                    style={[
+                      getPillShadow(mode),
+                      { borderRadius: 10, overflow: 'hidden' },
+                    ]}
+                    onPress={handleToggleFasting}
+                    accessibilityRole="button"
+                    accessibilityLabel={todayEntry.fasting ? t('Mark as not fasting') : t('Mark as fasting today')}
+                  >
+                    {todayEntry.fasting ? (
+                      <View
+                        style={[
+                          styles.primaryCtaBtn,
+                          {
+                            backgroundColor: 'transparent',
+                            borderColor: tokens.danger,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name="close-circle-outline"
+                          size={18}
+                          color={tokens.danger}
+                        />
+                        <Text
+                          style={[
+                            styles.primaryCtaBtnText,
+                            { color: tokens.danger },
+                          ]}
+                        >
+                          {t('Cancel / Not Fasting Today')}
+                        </Text>
+                      </View>
+                    ) : (
+                      <LinearGradient
+                        colors={tokens.goldGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={[styles.primaryCtaBtn, { borderWidth: 0 }]}
+                      >
+                        <Ionicons
+                          name="checkmark-circle"
+                          size={18}
+                          color={tokens.onGold}
+                        />
+                        <Text
+                          style={[
+                            styles.primaryCtaBtnText,
+                            { color: tokens.onGold },
+                          ]}
+                        >
+                          {t('I am Fasting Today')}
+                        </Text>
+                      </LinearGradient>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Suhoor & Iftar Times Card */}
+              <View style={[styles.heroCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
+                <LinearGradient
+                  colors={tokens.cardGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
+                <View style={styles.heroHeader}>
+                  <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                    <Text style={[styles.heroEyebrow, { color: tokens.goldText }]} numberOfLines={1}>
+                      {t("Today's Prayer Schedule")}
+                    </Text>
+                    <Text style={[styles.heroTitle, { color: tokens.text }]} numberOfLines={1}>
+                      {t('Suhoor & Iftar Timings')}
+                    </Text>
+                  </View>
+                  <View style={[styles.phasePill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, flexShrink: 0 }]}>
+                    <Ionicons
+                      name={countdown.phase === 'fasting' ? 'sunny' : 'moon'}
+                      size={13}
+                      color={tokens.goldText}
+                    />
+                    <Text style={[styles.phasePillText, { color: tokens.goldText }]} numberOfLines={1}>
+                      {countdown.label}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.timesRow}>
+                  <View style={[styles.timeBox, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
+                    <View style={styles.timeLabelWrap}>
+                      <Ionicons name="moon-outline" size={15} color={tokens.muted} />
+                      <Text style={[styles.timeBoxLabel, { color: tokens.muted }]}>{t('Suhoor Ends')}</Text>
+                    </View>
+                    <Text style={[styles.timeBoxValue, { color: tokens.text }]}>
+                      {suhoorFormatted}
+                    </Text>
+                    <Text style={[styles.timeBoxSub, { color: tokens.muted }]}>{t('Fajr Dawn')}</Text>
+                  </View>
+
+                  <View style={[styles.timeBox, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
+                    <View style={styles.timeLabelWrap}>
+                      <Ionicons name="sunny-outline" size={15} color={tokens.goldText} />
+                      <Text style={[styles.timeBoxLabel, { color: tokens.muted }]}>{t('Iftar Time')}</Text>
+                    </View>
+                    <Text style={[styles.timeBoxValue, { color: tokens.goldText }]}>
+                      {iftarFormatted}
+                    </Text>
+                    <Text style={[styles.timeBoxSub, { color: tokens.muted }]}>{t('Maghrib Dusk')}</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Missed Fasts (Qada) Section */}
+              <View style={[styles.qadaOverviewCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
+                <LinearGradient
+                  colors={tokens.cardGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                  pointerEvents="none"
+                />
+                <View style={styles.qadaSectionHeader}>
+                  <View>
+                    <Text style={[styles.qadaSectionEyebrow, { color: tokens.goldText }]}>
+                      {t('Obligatory Makeup')}
+                    </Text>
+                    <Text style={[styles.qadaSectionTitle, { color: tokens.text }]}>
+                      {t('Missed Fasts (Qada)')}
+                    </Text>
+                  </View>
+                  <View style={styles.qadaActionBtnsRow}>
+                    <TouchableOpacity
+                      style={[styles.stepperBtn, getPillShadow(mode), { backgroundColor: 'transparent', borderColor: tokens.goldBorder }]}
+                      onPress={handleQuickAddMissed}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('Add missed fast')}
+                    >
+                      <Ionicons name="add" size={15} color={tokens.goldText} />
+                      <Text style={[styles.stepperBtnText, { color: tokens.goldText }]}>{t('Add')}</Text>
+                    </TouchableOpacity>
+                    {qadaPendingCount > 0 ? (
+                      <TouchableOpacity
+                        style={[styles.stepperBtn, getPillShadow(mode), { backgroundColor: 'transparent', borderColor: tokens.cardBorder }]}
+                        onPress={handleQuickRemoveMissed}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Make up one missed fast')}
+                      >
+                        <Ionicons name="checkmark" size={14} color={tokens.text} />
+                        <Text style={[styles.stepperBtnText, { color: tokens.text }]}>{t('-1 Made Up')}</Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                </View>
+
+                {visibleMissedList.length === 0 ? (
+                  <EmptyState
+                    icon="checkmark-done-circle-outline"
+                    title={t('All caught up!')}
+                    subtitle={t('No missed fasts recorded in your ledger.')}
+                  />
+                ) : (
+                  <View style={styles.qadaQuickList}>
+                    {visibleMissedList.slice(0, 3).map((item) => (
+                      <View
+                        key={item.id}
+                        style={[
+                          styles.missedQuickRow,
+                          { borderColor: tokens.cardBorder },
+                        ]}
+                      >
+                        <TouchableOpacity
+                          style={[
+                            styles.checkbox,
+                            {
+                              backgroundColor: 'transparent',
+                              borderColor: item.madeUp ? tokens.goldBorder : tokens.cardBorder,
+                              overflow: 'hidden',
+                            },
+                          ]}
+                          onPress={() => handleToggleMadeUp(item.id, item.madeUp)}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: item.madeUp }}
+                        >
+                          {item.madeUp && (
+                            <LinearGradient
+                              colors={tokens.goldGradient}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={StyleSheet.absoluteFill}
+                            />
+                          )}
+                          {item.madeUp && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
+                        </TouchableOpacity>
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={[
+                              styles.missedDate,
+                              {
+                                color: tokens.text,
+                                textDecorationLine: item.madeUp ? 'line-through' : 'none',
+                              },
+                            ]}
+                          >
+                            {item.date}
+                          </Text>
+                          <Text style={[styles.missedReason, { color: tokens.muted }]}>
+                            {(!womenUnlocked && isWomenSpecificReason(item.reason))
+                              ? t('Excused (Private)')
+                              : t(item.reason)}{' '}
+                            {item.madeUp && item.madeUpDate ? `• ${t('Made up on')} ${item.madeUpDate}` : ''}
+                          </Text>
+                        </View>
+                      </View>
+                    ))}
+
+                    <TouchableOpacity
+                      style={[styles.viewAllLedgerBtn, { borderColor: tokens.cardBorder }]}
+                      onPress={() => setActiveTab('qada')}
+                      accessibilityRole="button"
+                    >
+                      <Text style={[styles.viewAllLedgerText, { color: tokens.goldText }]}>
+                        {visibleMissedList.length > 3
+                          ? `${t('View all')} ${visibleMissedList.length} ${t('records in Qada ledger →')}`
+                          : t('Open full Qada ledger →')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            </View>
+          )}
+
+          {/* ─── TAB 2: VOLUNTARY (SUNNAH) FASTS ────────────────────── */}
+          {activeTab === 'voluntary' && (
+            <View style={styles.tabContent}>
+              <Text style={[styles.sectionHeading, { color: tokens.muted }]}>
+                {t('Recommended Voluntary Fasts')}
+              </Text>
+
+              {voluntaryRecommendations.map((rec) => (
+                <View key={rec.id} style={[styles.recCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
+                  <LinearGradient
+                    colors={tokens.cardGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                    pointerEvents="none"
+                  />
+                  <View style={styles.recCardHeader}>
+                    <View style={styles.recTitleWrap}>
+                      <Text style={[styles.recName, { color: tokens.text }]}>
+                        {rec.name}
+                      </Text>
+                      <ArabicText style={[styles.recArabic, { color: tokens.arabicName }]}>
+                        {rec.arabicName}
+                      </ArabicText>
+                    </View>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        getPillShadow(mode),
+                        {
+                          backgroundColor: rec.isActiveToday ? tokens.ringFill : tokens.inset,
+                          borderColor: rec.isActiveToday ? tokens.goldBorder : tokens.cardBorder,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.statusPillText,
+                          { color: rec.isActiveToday ? tokens.goldText : tokens.muted },
+                        ]}
+                      >
+                        {rec.upcomingDateLabel}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <Text style={[styles.recDesc, { color: tokens.muted }]}>
+                    {rec.description}
+                  </Text>
+
+                  <View style={[styles.virtueBox, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
+                    <Ionicons name="sparkles" size={13} color={tokens.goldText} style={{ marginTop: 2 }} />
+                    <Text style={[styles.virtueText, { color: tokens.muted }]}>
+                      {rec.virtue}
+                    </Text>
+                  </View>
+
+                  {rec.isActiveToday && !todayEntry.fasting && (
+                    <TouchableOpacity
+                      style={[styles.fastTodayActionBtn, getPillShadow(mode), { backgroundColor: 'transparent', borderColor: tokens.goldBorder }]}
+                      onPress={() => {
+                        setTodayEntry({
+                          date: todayStr,
+                          fasting: true,
+                          type: 'voluntary',
+                          notes: rec.name,
+                        });
+                        saveFastingEntry({
+                          date: todayStr,
+                          fasting: true,
+                          type: 'voluntary',
+                          notes: rec.name,
+                        });
+                        setHistory(loadFastingHistory());
+                      }}
+                      accessibilityRole="button"
+                    >
+                      <Ionicons name="checkmark-circle-outline" size={16} color={tokens.goldText} />
+                      <Text style={[styles.fastTodayActionText, { color: tokens.goldText }]}>
+                        {t('Fast')} {rec.name} {t('Today')}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* ─── TAB 3: QADA (MISSED FASTS) ─────────────────────────── */}
+          {activeTab === 'qada' && (
+            <View style={styles.tabContent}>
+              {/* Scorecard */}
+              <View style={styles.qadaScorecard}>
+                <PremiumCard style={styles.qadaStatBox} padded>
+                  <Text style={[styles.qadaStatNumber, { color: tokens.goldText }]}>
+                    {qadaPendingCount}
+                  </Text>
+                  <Text style={[styles.qadaStatText, { color: tokens.muted }]}>
+                    {t('Fasts to Make Up')}
+                  </Text>
+                </PremiumCard>
+                <PremiumCard style={styles.qadaStatBox} padded>
+                  <Text style={[styles.qadaStatNumber, { color: tokens.text }]}>
+                    {qadaMadeUpCount}
+                  </Text>
+                  <Text style={[styles.qadaStatText, { color: tokens.muted }]}>
+                    {t('Made Up (Completed)')}
+                  </Text>
+                </PremiumCard>
+              </View>
+
+              {/* Add Missed Fast Button */}
+              {!showAddMissed ? (
+                <TouchableOpacity
+                  style={[styles.addMissedBtn, getPillShadow(mode), { backgroundColor: 'transparent', borderColor: tokens.goldBorder }]}
+                  onPress={() => setShowAddMissed(true)}
+                  accessibilityRole="button"
+                >
+                  <Ionicons
+                    name={justLogged ? 'checkmark-circle' : 'add-circle-outline'}
+                    size={17}
+                    color={tokens.goldText}
+                  />
+                  <Text style={[styles.addMissedBtnText, { color: tokens.goldText }]}>
+                    {justLogged ? t('Logged ✓') : t('+ Log Missed Fast')}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={[styles.addMissedForm, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
+                  <LinearGradient
+                    colors={tokens.cardGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                    pointerEvents="none"
+                  />
+                  <Text style={[styles.formTitle, { color: tokens.text }]}>
+                    {t('Log a Missed Fast')}
+                  </Text>
+
+                  <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Date (YYYY-MM-DD):')}</Text>
+                  <TextInput
+                    style={[styles.textInput, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder, color: tokens.text }]}
+                    value={missedDateInput}
+                    onChangeText={setMissedDateInput}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor={tokens.muted}
+                  />
+
+                  <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Reason:')}</Text>
+                  <View style={styles.reasonPillsRow}>
+                    {availableMissedReasons.map((r) => {
+                      const isSelected = missedReasonInput === r;
+                      return (
+                        <TouchableOpacity
+                          key={r}
+                          style={[
+                            styles.reasonPill,
+                            getPillShadow(mode),
+                            {
+                              backgroundColor: isSelected ? 'transparent' : tokens.inset,
+                              borderColor: isSelected ? tokens.goldBorder : tokens.cardBorder,
+                              overflow: 'hidden',
+                            },
+                          ]}
+                          onPress={() => setMissedReasonInput(r)}
+                        >
+                          {isSelected && (
+                            <LinearGradient
+                              colors={tokens.goldGradient}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={StyleSheet.absoluteFill}
+                            />
+                          )}
+                          <Text
+                            style={[
+                              styles.reasonPillText,
+                              { color: isSelected ? tokens.onGold : tokens.text },
+                            ]}
+                          >
+                            {t(r)}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+
+                  <View style={styles.formActions}>
+                    <TouchableOpacity
+                      style={[styles.formBtn, { borderColor: tokens.cardBorder }]}
+                      onPress={() => setShowAddMissed(false)}
+                    >
+                      <Text style={{ color: tokens.muted }}>{t('Cancel')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.formBtn, getPillShadow(mode), { overflow: 'hidden', paddingVertical: 0, paddingHorizontal: 0, borderWidth: 0 }]}
+                      onPress={handleAddMissedFast}
+                    >
+                      <LinearGradient
+                        colors={tokens.goldGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{ paddingVertical: 8, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Text
+                          style={{
+                            color: tokens.onGold,
+                            fontFamily: 'Manrope_600SemiBold',
+                          }}
+                        >
+                          {justLogged ? t('Saved ✓') : t('Save Record')}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {/* List of Missed Fasts */}
+              <Text style={[styles.sectionHeading, { color: tokens.muted, marginTop: 14 }]}>
+                {t('Missed Fasts Ledger')}
+              </Text>
+
+              {visibleMissedList.length === 0 ? (
+                <PremiumCard style={styles.emptyCard} padded>
+                  <View style={styles.emptyWrap}>
+                    <View style={[styles.emptyIconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
+                      <Ionicons name="checkmark-done-circle-outline" size={28} color={tokens.accent} />
+                    </View>
+                    <Text style={[styles.emptyTitle, { color: tokens.text }]}>
+                      {t('All caught up!')}
+                    </Text>
+                    <Text style={[styles.emptySubtitle, { color: tokens.muted }]}>
+                      {t('No missed fasts recorded in your ledger.')}
+                    </Text>
+                  </View>
+                </PremiumCard>
+              ) : (
+                visibleMissedList.map((item) => (
+                  <PremiumCard key={item.id} style={styles.missedItemCard} padded>
+                    <View style={styles.missedItemLeft}>
                       <TouchableOpacity
                         style={[
                           styles.checkbox,
                           {
-                            backgroundColor: item.madeUp ? colors.accent : 'transparent',
-                            borderColor: item.madeUp ? colors.accent : colors.borderSubtle,
+                            backgroundColor: 'transparent',
+                            borderColor: item.madeUp ? tokens.goldBorder : tokens.cardBorder,
+                            overflow: 'hidden',
                           },
                         ]}
                         onPress={() => handleToggleMadeUp(item.id, item.madeUp)}
                         accessibilityRole="checkbox"
                         accessibilityState={{ checked: item.madeUp }}
                       >
-                        {item.madeUp && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
+                        {item.madeUp && (
+                          <LinearGradient
+                            colors={tokens.goldGradient}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 1 }}
+                            style={StyleSheet.absoluteFill}
+                          />
+                        )}
+                        {item.madeUp && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
                       </TouchableOpacity>
-                      <View style={{ flex: 1 }}>
+                      <View style={styles.missedItemText}>
                         <Text
                           style={[
                             styles.missedDate,
                             {
-                              color: colors.textPrimary,
+                              color: tokens.text,
                               textDecorationLine: item.madeUp ? 'line-through' : 'none',
                             },
                           ]}
                         >
                           {item.date}
                         </Text>
-                        <Text style={[styles.missedReason, { color: colors.textMuted }]}>
+                        <Text style={[styles.missedReason, { color: tokens.muted }]}>
                           {(!womenUnlocked && isWomenSpecificReason(item.reason))
                             ? t('Excused (Private)')
                             : t(item.reason)}{' '}
@@ -636,372 +1049,150 @@ function FastingScreen({ onBack, womenUnlocked = false }: FastingScreenProps) {
                         </Text>
                       </View>
                     </View>
-                  ))}
 
-                  <TouchableOpacity
-                    style={[styles.viewAllLedgerBtn, { borderColor: colors.borderSubtle }]}
-                    onPress={() => setActiveTab('qada')}
-                    accessibilityRole="button"
-                  >
-                    <Text style={[styles.viewAllLedgerText, { color: colors.accent }]}>
-                      {visibleMissedList.length > 3
-                        ? `${t('View all')} ${visibleMissedList.length} ${t('records in Qada ledger →')}`
-                        : t('Open full Qada ledger →')}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </Card>
-          </View>
-        )}
-
-        {/* ─── TAB 2: VOLUNTARY (SUNNAH) FASTS ────────────────────── */}
-        {activeTab === 'voluntary' && (
-          <View style={styles.tabContent}>
-            <Text style={[styles.sectionHeading, { color: colors.textSecondary }]}>
-              {t('Recommended Voluntary Fasts')}
-            </Text>
-
-            {voluntaryRecommendations.map((rec) => (
-              <Card key={rec.id} style={styles.recCard}>
-                <View style={styles.recCardHeader}>
-                  <View style={styles.recTitleWrap}>
-                    <Text style={[styles.recName, { color: colors.textPrimary }]}>
-                      {rec.name}
-                    </Text>
-                    <ArabicText style={[styles.recArabic, { color: colors.accent }]}>
-                      {rec.arabicName}
-                    </ArabicText>
-                  </View>
-                  <View
-                    style={[
-                      styles.statusPill,
-                      {
-                        backgroundColor: rec.isActiveToday ? colors.sagePill : colors.bgBase,
-                        borderColor: colors.borderSubtle,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.statusPillText,
-                        { color: rec.isActiveToday ? colors.forestGreen : colors.textMuted },
-                      ]}
-                    >
-                      {rec.upcomingDateLabel}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={[styles.recDesc, { color: colors.textSecondary }]}>
-                  {rec.description}
-                </Text>
-
-                <View style={[styles.virtueBox, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
-                  <Ionicons name="sparkles" size={13} color={colors.accent} style={{ marginTop: 2 }} />
-                  <Text style={[styles.virtueText, { color: colors.textMuted }]}>
-                    {rec.virtue}
-                  </Text>
-                </View>
-
-                {rec.isActiveToday && !todayEntry.fasting && (
-                  <TouchableOpacity
-                    style={[styles.fastTodayActionBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
-                    onPress={() => {
-                      setTodayEntry({
-                        date: todayStr,
-                        fasting: true,
-                        type: 'voluntary',
-                        notes: rec.name,
-                      });
-                      saveFastingEntry({
-                        date: todayStr,
-                        fasting: true,
-                        type: 'voluntary',
-                        notes: rec.name,
-                      });
-                      setHistory(loadFastingHistory());
-                    }}
-                    accessibilityRole="button"
-                  >
-                    <Ionicons name="checkmark-circle-outline" size={16} color={colors.accent} />
-                    <Text style={[styles.fastTodayActionText, { color: colors.accent }]}>
-                      {t('Fast')} {rec.name} {t('Today')}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </Card>
-            ))}
-          </View>
-        )}
-
-        {/* ─── TAB 3: QADA (MISSED FASTS) ─────────────────────────── */}
-        {activeTab === 'qada' && (
-          <View style={styles.tabContent}>
-            {/* Scorecard */}
-            <View style={styles.qadaScorecard}>
-              <View style={[styles.qadaStatBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-                <Text style={[styles.qadaStatNumber, { color: colors.accent }]}>
-                  {qadaPendingCount}
-                </Text>
-                <Text style={[styles.qadaStatText, { color: colors.textMuted }]}>
-                  {t('Fasts to Make Up')}
-                </Text>
-              </View>
-              <View style={[styles.qadaStatBox, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
-                <Text style={[styles.qadaStatNumber, { color: colors.textPrimary }]}>
-                  {qadaMadeUpCount}
-                </Text>
-                <Text style={[styles.qadaStatText, { color: colors.textMuted }]}>
-                  {t('Made Up (Completed)')}
-                </Text>
-              </View>
-            </View>
-
-            {/* Add Missed Fast Button */}
-            {!showAddMissed ? (
-              <TouchableOpacity
-                style={[styles.addMissedBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
-                onPress={() => setShowAddMissed(true)}
-                accessibilityRole="button"
-              >
-                <Ionicons
-                  name={justLogged ? 'checkmark-circle' : 'add-circle-outline'}
-                  size={17}
-                  color={colors.accent}
-                />
-                <Text style={[styles.addMissedBtnText, { color: colors.accent }]}>
-                  {justLogged ? t('Logged ✓') : t('+ Log Missed Fast')}
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <Card style={styles.addMissedForm}>
-                <Text style={[styles.formTitle, { color: colors.textPrimary }]}>
-                  {t('Log a Missed Fast')}
-                </Text>
-
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Date (YYYY-MM-DD):')}</Text>
-                <TextInput
-                  style={[styles.textInput, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle, color: colors.textPrimary }]}
-                  value={missedDateInput}
-                  onChangeText={setMissedDateInput}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor={colors.textMuted}
-                />
-
-                <Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{t('Reason:')}</Text>
-                <View style={styles.reasonPillsRow}>
-                  {availableMissedReasons.map((r) => {
-                    const isSelected = missedReasonInput === r;
-                    return (
-                      <TouchableOpacity
-                        key={r}
-                        style={[
-                          styles.reasonPill,
-                          {
-                            backgroundColor: isSelected ? colors.accentDim : colors.bgBase,
-                            borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                          },
-                        ]}
-                        onPress={() => setMissedReasonInput(r)}
-                      >
-                        <Text
-                          style={[
-                            styles.reasonPillText,
-                            { color: isSelected ? colors.accent : colors.textPrimary },
-                          ]}
-                        >
-                          {t(r)}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-
-                <View style={styles.formActions}>
-                  <TouchableOpacity
-                    style={[styles.formBtn, { borderColor: colors.borderSubtle }]}
-                    onPress={() => setShowAddMissed(false)}
-                  >
-                    <Text style={{ color: colors.textMuted }}>{t('Cancel')}</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.formBtn, { backgroundColor: colors.accent, borderColor: colors.accent }]}
-                    onPress={handleAddMissedFast}
-                  >
-                    <Text
-                      style={{
-                        color: colors.onAccent,
-                        fontFamily: 'Manrope_600SemiBold',
-                      }}
-                    >
-                      {justLogged ? t('Saved ✓') : t('Save Record')}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </Card>
-            )}
-
-            {/* List of Missed Fasts */}
-            <Text style={[styles.sectionHeading, { color: colors.textSecondary, marginTop: 14 }]}>
-              {t('Missed Fasts Ledger')}
-            </Text>
-
-            {visibleMissedList.length === 0 ? (
-              <EmptyState
-                icon="checkmark-done-circle-outline"
-                title={t('All caught up!')}
-                subtitle={t('No missed fasts recorded in your ledger.')}
-              />
-            ) : (
-              visibleMissedList.map((item) => (
-                <Card key={item.id} style={styles.missedItemCard}>
-                  <View style={styles.missedItemLeft}>
                     <TouchableOpacity
                       style={[
-                        styles.checkbox,
-                        {
-                          backgroundColor: item.madeUp ? colors.accent : 'transparent',
-                          borderColor: item.madeUp ? colors.accent : colors.borderSubtle,
-                        },
+                        styles.deleteBtn,
+                        justDeletedMissed === item.id && { opacity: 0.45 },
                       ]}
-                      onPress={() => handleToggleMadeUp(item.id, item.madeUp)}
-                      accessibilityRole="checkbox"
-                      accessibilityState={{ checked: item.madeUp }}
+                      onPress={() => handleDeleteMissed(item.id)}
+                      accessibilityLabel={justDeletedMissed === item.id ? t('Missed fast deleted') : t('Delete missed fast')}
                     >
-                      {item.madeUp && <Ionicons name="checkmark" size={14} color={colors.onAccent} />}
-                    </TouchableOpacity>
-                    <View style={styles.missedItemText}>
-                      <Text
-                        style={[
-                          styles.missedDate,
-                          {
-                            color: colors.textPrimary,
-                            textDecorationLine: item.madeUp ? 'line-through' : 'none',
-                          },
-                        ]}
-                      >
-                        {item.date}
-                      </Text>
-                      <Text style={[styles.missedReason, { color: colors.textMuted }]}>
-                        {(!womenUnlocked && isWomenSpecificReason(item.reason))
-                          ? t('Excused (Private)')
-                          : t(item.reason)}{' '}
-                        {item.madeUp && item.madeUpDate ? `• ${t('Made up on')} ${item.madeUpDate}` : ''}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.deleteBtn,
-                      justDeletedMissed === item.id && { opacity: 0.45 },
-                    ]}
-                    onPress={() => handleDeleteMissed(item.id)}
-                    accessibilityLabel={justDeletedMissed === item.id ? t('Missed fast deleted') : t('Delete missed fast')}
-                  >
-                    <Ionicons
-                      name={justDeletedMissed === item.id ? 'checkmark' : 'trash-outline'}
-                      size={16}
-                      color={justDeletedMissed === item.id ? colors.accent : colors.textMuted}
-                    />
-                  </TouchableOpacity>
-                </Card>
-              ))
-            )}
-          </View>
-        )}
-
-        {/* ─── TAB 4: HISTORY & STREAK ────────────────────────────── */}
-        {activeTab === 'history' && (
-          <View style={styles.tabContent}>
-            {/* Streak & Aggregate Scorecard */}
-            <Card style={styles.statsCard}>
-              <View style={styles.historyStatsRow}>
-                <View style={styles.statCol}>
-                  <Text style={[styles.statBig, { color: colors.accent }]}>{streak}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('Current Streak')}</Text>
-                </View>
-                <View style={styles.statCol}>
-                  <Text style={[styles.statBig, { color: colors.textPrimary }]}>{totalFastedDays}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('Total Fasted')}</Text>
-                </View>
-                <View style={styles.statCol}>
-                  <Text style={[styles.statBig, { color: colors.textPrimary }]}>{ramadanFastsCount}</Text>
-                  <Text style={[styles.statLabel, { color: colors.textMuted }]}>{t('Ramadan Days')}</Text>
-                </View>
-              </View>
-            </Card>
-
-            <Text style={[styles.sectionHeading, { color: colors.textSecondary }]}>
-              {t('Fasting Log')}
-            </Text>
-
-            {history.length === 0 ? (
-              <EmptyState
-                icon="calendar-outline"
-                title={t('No fasting records yet')}
-                subtitle={t('Mark your fasts on the Today tab to start building your streak.')}
-                actionLabel={t('Go to Today')}
-                onAction={() => setActiveTab('tracker')}
-              />
-            ) : (
-              history.map((entry) => {
-                const typeBadgeColors: Record<FastingType, { bg: string; text: string }> = {
-                  ramadan: { bg: colors.accentDim, text: colors.accent },
-                  voluntary: { bg: colors.bgBase, text: colors.textPrimary },
-                  qada: { bg: colors.bgBase, text: colors.textSecondary },
-                };
-                const badge = typeBadgeColors[entry.type] || typeBadgeColors.voluntary;
-
-                return (
-                  <Card key={entry.date} style={styles.historyRow}>
-                    <View style={styles.historyLeft}>
                       <Ionicons
-                        name={entry.fasting ? 'checkmark-circle' : 'close-circle'}
-                        size={18}
-                        color={entry.fasting ? colors.accent : colors.textMuted}
+                        name={justDeletedMissed === item.id ? 'checkmark' : 'trash-outline'}
+                        size={16}
+                        color={justDeletedMissed === item.id ? tokens.danger : tokens.muted}
                       />
-                      <View>
-                        <Text style={[styles.historyDate, { color: colors.textPrimary }]}>
-                          {entry.date} {entry.date === todayStr ? t('(Today)') : ''}
+                    </TouchableOpacity>
+                  </PremiumCard>
+                ))
+              )}
+            </View>
+          )}
+
+          {/* ─── TAB 4: HISTORY & STREAK ────────────────────────────── */}
+          {activeTab === 'history' && (
+            <View style={styles.tabContent}>
+              {/* Streak & Aggregate Scorecard */}
+              <PremiumCard style={styles.statsCard} padded>
+                <View style={styles.historyStatsRow}>
+                  <View style={styles.statCol}>
+                    <Text style={[styles.statBig, { color: tokens.goldText }]}>{streak}</Text>
+                    <Text style={[styles.statLabel, { color: tokens.muted }]}>{t('Current Streak')}</Text>
+                  </View>
+                  <View style={styles.statCol}>
+                    <Text style={[styles.statBig, { color: tokens.text }]}>{totalFastedDays}</Text>
+                    <Text style={[styles.statLabel, { color: tokens.muted }]}>{t('Total Fasted')}</Text>
+                  </View>
+                  <View style={styles.statCol}>
+                    <Text style={[styles.statBig, { color: tokens.text }]}>{ramadanFastsCount}</Text>
+                    <Text style={[styles.statLabel, { color: tokens.muted }]}>{t('Ramadan Days')}</Text>
+                  </View>
+                </View>
+              </PremiumCard>
+
+              <Text style={[styles.sectionHeading, { color: tokens.muted }]}>
+                {t('Fasting Log')}
+              </Text>
+
+              {history.length === 0 ? (
+                <PremiumCard style={styles.emptyCard} padded>
+                  <View style={styles.emptyWrap}>
+                    <View style={[styles.emptyIconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
+                      <Ionicons name="calendar-outline" size={28} color={tokens.accent} />
+                    </View>
+                    <Text style={[styles.emptyTitle, { color: tokens.text }]}>
+                      {t('No fasting records yet')}
+                    </Text>
+                    <Text style={[styles.emptySubtitle, { color: tokens.muted }]}>
+                      {t('Mark your fasts on the Today tab to start building your streak.')}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setActiveTab('tracker')}
+                      style={[styles.emptyActionBtn, { overflow: 'hidden', paddingHorizontal: 0, paddingVertical: 0 }]}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('Go to Today')}
+                      activeOpacity={0.85}
+                    >
+                      <LinearGradient
+                        colors={tokens.goldGradient}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 1 }}
+                        style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 14, alignItems: 'center' }}
+                      >
+                        <Text style={[styles.emptyActionText, { color: tokens.onGold }]}>
+                          {t('Go to Today')}
                         </Text>
-                        {entry.notes ? (
-                          <Text style={[styles.historyNote, { color: colors.textMuted }]}>
-                            {entry.notes}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
+                </PremiumCard>
+              ) : (
+                history.map((entry) => {
+                  const typeBadgeColors: Record<FastingType, { bg: string; text: string }> = {
+                    ramadan: { bg: tokens.ringFill, text: tokens.goldText },
+                    voluntary: { bg: tokens.inset, text: tokens.text },
+                    qada: { bg: tokens.inset, text: tokens.muted },
+                  };
+                  const badge = typeBadgeColors[entry.type] || typeBadgeColors.voluntary;
+
+                  return (
+                    <PremiumCard key={entry.date} style={styles.historyRow} padded>
+                      <View style={styles.historyLeft}>
+                        <Ionicons
+                          name={entry.fasting ? 'checkmark-circle' : 'close-circle'}
+                          size={18}
+                          color={entry.fasting ? tokens.accent : tokens.muted}
+                        />
+                        <View>
+                          <Text style={[styles.historyDate, { color: tokens.text }]}>
+                            {entry.date} {entry.date === todayStr ? t('(Today)') : ''}
                           </Text>
-                        ) : null}
+                          {entry.notes ? (
+                            <Text style={[styles.historyNote, { color: tokens.muted }]}>
+                              {entry.notes}
+                            </Text>
+                          ) : null}
+                        </View>
                       </View>
-                    </View>
 
-                    <View style={[styles.typeBadge, { backgroundColor: badge.bg, borderColor: colors.borderSubtle }]}>
-                      <Text style={[styles.typeBadgeText, { color: badge.text }]}>
-                        {entry.fasting
-                          ? entry.type === 'ramadan'
-                            ? t('Ramadan')
-                            : entry.type === 'qada'
-                            ? t('Qada')
-                            : t('Sunnah')
-                          : t('Not Fasting')}
-                      </Text>
-                    </View>
-                  </Card>
-                );
-              })
-            )}
-          </View>
-        )}
+                      <View style={[styles.typeBadge, getPillShadow(mode), { backgroundColor: badge.bg, borderColor: tokens.cardBorder }]}>
+                        <Text style={[styles.typeBadgeText, { color: badge.text }]}>
+                          {entry.fasting
+                            ? entry.type === 'ramadan'
+                              ? t('Ramadan')
+                              : entry.type === 'qada'
+                              ? t('Qada')
+                              : t('Sunnah')
+                            : t('Not Fasting')}
+                        </Text>
+                      </View>
+                    </PremiumCard>
+                  );
+                })
+              )}
+            </View>
+          )}
 
-        <View style={styles.bottomSpacer} />
-      </View>
-    </ScrollView>
+        </View>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    flex: 1,
+  },
+  detailScreen: {
+    backgroundColor: 'transparent',
+  },
+  screen: {
+    flex: 1,
+  },
   scroll: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
   },
   container: {
     width: '100%',
@@ -1012,19 +1203,20 @@ const styles = StyleSheet.create({
   /* Tab Navigation */
   tabBar: {
     flexDirection: 'row',
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderWidth: 0.75,
     padding: 3,
     marginBottom: 12,
   },
   tabBtn: {
     flex: 1,
     paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
+    borderRadius: 10,
+    borderWidth: 0.75,
     borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   tabBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1063,7 +1255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   phasePillText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1076,8 +1268,8 @@ const styles = StyleSheet.create({
   timeBox: {
     flex: 1,
     padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderWidth: 0.75,
   },
   timeLabelWrap: {
     flexDirection: 'row',
@@ -1110,8 +1302,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 8,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 14,
+    borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1158,7 +1350,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   statusBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1179,7 +1371,7 @@ const styles = StyleSheet.create({
     gap: 8,
     minHeight: 46,
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 0.75,
     paddingHorizontal: 16,
   },
   primaryCtaBtnText: {
@@ -1203,7 +1395,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 6,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1244,7 +1436,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   stepperBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1258,14 +1450,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     paddingVertical: 8,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.75,
   },
   viewAllLedgerBtn: {
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.75,
     marginTop: 6,
   },
   viewAllLedgerText: {
@@ -1306,7 +1498,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   statusPillText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1322,7 +1514,7 @@ const styles = StyleSheet.create({
     gap: 8,
     padding: 10,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 0.75,
     alignItems: 'flex-start',
   },
   virtueText: {
@@ -1339,7 +1531,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 10,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 0.75,
     marginTop: 4,
   },
   fastTodayActionText: {
@@ -1354,9 +1546,6 @@ const styles = StyleSheet.create({
   },
   qadaStatBox: {
     flex: 1,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
     alignItems: 'center',
   },
   qadaStatNumber: {
@@ -1375,7 +1564,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 12,
     borderRadius: 14,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   addMissedBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1395,7 +1584,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   textInput: {
-    borderWidth: 1,
+    borderWidth: 0.75,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -1411,7 +1600,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   reasonPillText: {
     fontFamily: 'Manrope_400Regular',
@@ -1427,13 +1616,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 8,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   missedItemCard: {
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 10,
   },
   missedItemLeft: {
     flexDirection: 'row',
@@ -1445,7 +1635,7 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 6,
-    borderWidth: 1,
+    borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1491,6 +1681,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 10,
   },
   historyLeft: {
     flexDirection: 'row',
@@ -1511,15 +1702,53 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    borderWidth: 1,
+    borderWidth: 0.75,
   },
   typeBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
   },
-
-  bottomSpacer: {
-    height: 30,
+  emptyCard: {
+    marginTop: 12,
+  },
+  emptyWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 36,
+    paddingHorizontal: 20,
+  },
+  emptyIconCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 0.75,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  emptyTitle: {
+    fontFamily: 'Lora_500Medium',
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 18,
+    maxWidth: 280,
+  },
+  emptyActionBtn: {
+    marginTop: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 14,
+    alignItems: 'center',
+  },
+  emptyActionText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
   },
 });
 

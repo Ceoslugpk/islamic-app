@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
-  FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -9,10 +8,15 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeTokens } from '../theme/tokens';
 import { t } from '../lib/i18n';
 import { iconSizes } from '../lib/iconMap';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { PremiumCard, PrimaryButton, OutlineButton, ScreenTabs, SearchField } from '../components/ui';
+import { NAV_BOTTOM, NAV_HEIGHT } from '../components/layout/layout.constants';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import {
@@ -42,14 +46,19 @@ import { useQuranLanguage } from '../lib/quranLanguageState';
 import { getLocalizedTranslatorName } from '../lib/quranLanguages';
 import { useSettings } from '../lib/settings';
 
-
 interface DownloadsScreenProps {
   onBack: () => void;
   onOpenSurah?: (surah: number) => void;
+  backLabel?: string;
 }
 
-function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
-  const { colors } = useTheme();
+function DownloadsScreen({
+  onBack,
+  onOpenSurah,
+  backLabel = 'Library',
+}: DownloadsScreenProps) {
+  const { tokens, mode } = useThemeTokens();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width <= 360;
   const isNarrow = width < 380;
@@ -62,7 +71,30 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
   const { setQuranPreloadRequested } = useSettings();
   const [textVerification, setTextVerification] = useState<QuranPreloadVerification | null>(null);
   const [verifyingText, setVerifyingText] = useState(false);
+  const [activeTab, setActiveTab] = useState<'all' | 'audio' | 'text'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const { saveUndoState } = useUndoToast();
+
+  const bottomClearance = playback
+    ? NAV_BOTTOM(insets.bottom) + NAV_HEIGHT + 68 + 16
+    : undefined;
+
+  const filteredSurahs = useMemo(() => {
+    if (activeTab === 'text') return [];
+    let list = downloadedSurahs;
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      list = list.filter((item) => {
+        const summary = SURAHS_114[item.surah - 1];
+        const eng = (item.surahEnglishName || summary?.englishName || '').toLowerCase();
+        const ar = (item.surahName || summary?.name || '').toLowerCase();
+        const num = String(item.surah);
+        const reciter = resolveReciterName(item.edition).toLowerCase();
+        return eng.includes(q) || ar.includes(q) || num.includes(q) || reciter.includes(q);
+      });
+    }
+    return list;
+  }, [downloadedSurahs, activeTab, searchQuery]);
 
   // When everything claims to be cached, prove it by reading the local cache only.
   const autoVerifyDone = useRef(false);
@@ -132,8 +164,6 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
   };
 
   const handleRemoveItem = (item: DownloadedSurahMeta) => {
-    const summary = SURAHS_114[item.surah - 1];
-    const name = item.surahEnglishName || summary?.englishName || `Surah ${item.surah}`;
     removeSurahDownload(item.edition, item.surah, item.bitrate).catch(() => {});
     saveUndoState({
       id: `${item.edition}:${item.surah}:${item.bitrate}`,
@@ -166,231 +196,242 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
     }
   };
 
-  return (
-    <View style={[styles.wrap, { backgroundColor: colors.bgBase }]}>
-      <View style={styles.contentWrap}>
-        {/* Header */}
-        <ScreenHeader
-          eyebrow={t('Offline')}
-          title={t('Downloads')}
-          onBack={onBack}
-          backLabel={t('Library')}
-        />
+  const headerComponent = (
+    <View style={{ marginBottom: 12 }}>
+      {/* Category Tabs */}
+      <ScreenTabs
+        tabs={[
+          { id: 'all', label: t('All Downloads') },
+          { id: 'audio', label: t('Audio Surahs'), badge: downloadedSurahs.length },
+          { id: 'text', label: t('Quran Text'), badge: `${preloadProgress.cached}/114` },
+        ]}
+        activeTab={activeTab}
+        onChange={(id) => setActiveTab(id as any)}
+        style={{ marginBottom: 12 }}
+      />
 
-        {/* Quran Text Preload — offline reading data (NOT audio) */}
-        <View
-          style={[
-            styles.textCard,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
-              marginHorizontal: paddingH,
-            },
-          ]}
-        >
-          <View style={styles.textCardHeader}>
+      {/* Search Field */}
+      <View style={{ marginBottom: 12 }}>
+        <SearchField
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder={t('Search downloads…')}
+          onClear={() => setSearchQuery('')}
+        />
+      </View>
+
+      {/* Quran Text Preload — offline reading data (NOT audio) */}
+      {activeTab !== 'audio' && (
+        <PremiumCard style={styles.textCard}>
+        <View style={styles.textCardHeader}>
+          <View
+            style={[
+              styles.textIconWrap,
+              {
+                backgroundColor: tokens.ringFill,
+              },
+            ]}
+          >
+            <Ionicons
+              name={
+                preloadProgress.isComplete
+                  ? 'book'
+                  : preloadProgress.isRunning
+                  ? 'cloud-download'
+                  : 'book-outline'
+              }
+              size={18}
+              color={tokens.accent}
+            />
+          </View>
+          <View style={styles.textHeaderMain}>
+            <Text style={[styles.textTitle, { color: tokens.text }]}>
+              {t('Quran Text & Translation')}
+            </Text>
+            <Text style={[styles.textSubtitle, { color: tokens.muted }]} numberOfLines={2}>
+              {t('For offline reading (not audio)')} · {flag} {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}
+            </Text>
+          </View>
+          <OutlineButton
+            title={
+              preloadProgress.isRunning
+                ? t('Pause')
+                : preloadProgress.cached > 0
+                ? t('Resume')
+                : t('Preload')
+            }
+            onPress={handleQuranTextAction}
+            style={styles.textActionBtn}
+            accessibilityLabel={
+              preloadProgress.isRunning
+                ? t('Pause')
+                : preloadProgress.cached > 0
+                ? t('Resume')
+                : t('Preload')
+            }
+          />
+        </View>
+
+        <View style={styles.textStatusRow}>
+          <Text style={[styles.textStatus, { color: tokens.muted }]}>
+            {preloadProgress.isRunning
+              ? `${t('Downloading text…')} ${preloadProgress.cached}/114` +
+                (preloadProgress.currentSurah
+                  ? ` · ${t('Surah')} ${preloadProgress.currentSurah}`
+                  : '')
+              : preloadProgress.isComplete
+              ? t('All 114 surahs available offline')
+              : `${preloadProgress.cached}/114 ${t('surahs cached')}`}
+          </Text>
+          {!preloadProgress.isRunning && (
+            <TouchableOpacity
+              onPress={handleVerifyText}
+              disabled={verifyingText}
+              accessibilityRole="button"
+              accessibilityLabel={t('Verify locally stored Quran text')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              activeOpacity={0.75}
+              style={verifyingText ? { opacity: 0.6 } : undefined}
+            >
+              <Text style={[styles.textVerifyBtn, { color: tokens.goldText }]}>
+                {verifyingText ? t('Checking…') : t('Verify')}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {preloadProgress.isRunning && (
+          <View style={[styles.textTrack, { backgroundColor: tokens.bgTop }]}>
             <View
               style={[
-                styles.textIconWrap,
+                styles.textFill,
                 {
-                  backgroundColor: colors.iconCircleBg,
+                  width: `${Math.max(2, Math.round((preloadProgress.cached / 114) * 100))}%`,
+                  overflow: 'hidden',
                 },
               ]}
             >
-              <Ionicons
-                name={
-                  preloadProgress.isComplete
-                    ? 'book'
-                    : preloadProgress.isRunning
-                    ? 'cloud-download'
-                    : 'book-outline'
-                }
-                size={18}
-                color={colors.iconCircleFg}
+              <LinearGradient
+                colors={tokens.goldGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={StyleSheet.absoluteFill}
               />
             </View>
-            <View style={styles.textHeaderMain}>
-              <Text style={[styles.textTitle, { color: colors.textPrimary }]}>
-                {t('Quran Text & Translation')}
-              </Text>
-              <Text style={[styles.textSubtitle, { color: colors.textMuted }]} numberOfLines={2}>
-                {t('For offline reading (not audio)')} · {flag} {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[
-                styles.textActionBtn,
-                {
-                  backgroundColor: preloadProgress.isRunning ? colors.bgRaised : colors.sagePill,
-                  borderColor: colors.borderSubtle,
-                },
-              ]}
-              onPress={handleQuranTextAction}
-              accessibilityRole="button"
-              accessibilityLabel={
-                preloadProgress.isRunning
-                  ? t('Pause')
-                  : preloadProgress.cached > 0
-                  ? t('Resume')
-                  : t('Preload')
-              }
-            >
-              <Text
-                style={[
-                  styles.textActionText,
-                  { color: preloadProgress.isRunning ? colors.textSecondary : colors.forestGreen },
-                ]}
-              >
-                {preloadProgress.isRunning
-                  ? t('Pause')
-                  : preloadProgress.cached > 0
-                  ? t('Resume')
-                  : t('Preload')}
-              </Text>
-            </TouchableOpacity>
           </View>
+        )}
 
-          <View style={styles.textStatusRow}>
-            <Text style={[styles.textStatus, { color: colors.textSecondary }]}>
-              {preloadProgress.isRunning
-                ? `${t('Downloading text…')} ${preloadProgress.cached}/114` +
-                  (preloadProgress.currentSurah
-                    ? ` · ${t('Surah')} ${preloadProgress.currentSurah}`
-                    : '')
-                : preloadProgress.isComplete
-                ? t('All 114 surahs available offline')
-                : `${preloadProgress.cached}/114 ${t('surahs cached')}`}
+        {textVerification && !textVerification.ok && (
+          <View style={[styles.verifyNote, { borderColor: tokens.cardBorder }]}>
+            <Text style={[styles.verifyNoteText, { color: tokens.muted }]}>
+              {textVerification.valid + textVerification.invalidSurahs.length}/114 {t('verified')} ·{' '}
+              {textVerification.missingSurahs.length} {t('missing')} ·{' '}
+              {textVerification.invalidSurahs.length} {t('incomplete')}
             </Text>
-            {!preloadProgress.isRunning && (
-              <TouchableOpacity
-                onPress={handleVerifyText}
-                disabled={verifyingText}
-                accessibilityRole="button"
-                accessibilityLabel={t('Verify locally stored Quran text')}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                activeOpacity={0.75}
-                style={verifyingText ? { opacity: 0.6 } : undefined}
-              >
-                <Text style={[styles.textVerifyBtn, { color: colors.accent }]}>
-                  {verifyingText ? t('Checking…') : t('Verify')}
-                </Text>
-              </TouchableOpacity>
-            )}
+            <OutlineButton
+              title={t('Repair')}
+              onPress={handleRepairText}
+              style={styles.repairBtn}
+              accessibilityLabel={t('Re-download incomplete surahs')}
+            />
           </View>
+        )}
+        {textVerification && textVerification.ok && (
+          <Text style={[styles.verifyOkText, { color: tokens.goldText }]}>
+            {t('Verified offline')} · {textVerification.valid}/114 {t('surahs valid')}
+          </Text>
+        )}
+      </PremiumCard>
+      )}
 
-          {preloadProgress.isRunning && (
-            <View style={[styles.textTrack, { backgroundColor: colors.bgBase }]}>
-              <View
-                style={[
-                  styles.textFill,
-                  {
-                    backgroundColor: colors.accent,
-                    width: `${Math.max(2, Math.round((preloadProgress.cached / 114) * 100))}%`,
-                  },
-                ]}
-              />
-            </View>
-          )}
-
-          {textVerification && !textVerification.ok && (
-            <View style={[styles.verifyNote, { borderColor: colors.borderSubtle }]}>
-              <Text style={[styles.verifyNoteText, { color: colors.textMuted }]}>
-                {textVerification.valid + textVerification.invalidSurahs.length}/114 {t('verified')} ·{' '}
-                {textVerification.missingSurahs.length} {t('missing')} ·{' '}
-                {textVerification.invalidSurahs.length} {t('incomplete')}
-              </Text>
-              <TouchableOpacity
-                style={[styles.repairBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
-                onPress={handleRepairText}
-                accessibilityRole="button"
-                accessibilityLabel={t('Re-download incomplete surahs')}
-              >
-                <Text style={[styles.repairText, { color: colors.accent }]}>{t('Repair')}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          {textVerification && textVerification.ok && (
-            <Text style={[styles.verifyOkText, { color: colors.accent }]}>
-              {t('Verified offline')} · {textVerification.valid}/114 {t('surahs valid')}
+      {/* Storage Summary Card */}
+      {activeTab !== 'text' && (
+      <PremiumCard style={styles.storageCard}>
+        <View style={styles.storageInfo}>
+          <View style={styles.storageHeaderRow}>
+            <Ionicons name="cloud-done-outline" size={16} color={tokens.accent} />
+            <Text style={[styles.storageTitle, { color: tokens.text }]}>
+              {t('Storage Used')}: {formatBytes(totalStorageUsed)}
             </Text>
-          )}
+          </View>
+          <Text style={[styles.storageSub, { color: tokens.muted }]}>
+            {downloadedSurahs.length} {t('surahs saved for offline playback')}
+          </Text>
         </View>
+        {downloadedSurahs.length > 0 && (
+          <OutlineButton
+            title={t('Clear All')}
+            onPress={handleClearAll}
+            style={styles.clearAllBtn}
+            accessibilityLabel={t('Clear all downloads')}
+          />
+        )}
+      </PremiumCard>
+      )}
+    </View>
+  );
 
-        {/* Storage Summary Card */}
-        <View
-          style={[
-            styles.storageCard,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
-              marginHorizontal: paddingH,
-            },
-          ]}
-        >
-          <View style={styles.storageInfo}>
-            <View style={styles.storageHeaderRow}>
-              <Ionicons name="cloud-done-outline" size={16} color={colors.accent} />
-              <Text style={[styles.storageTitle, { color: colors.textPrimary }]}>
-                {t('Storage Used')}: {formatBytes(totalStorageUsed)}
-              </Text>
-            </View>
-            <Text style={[styles.storageSub, { color: colors.textMuted }]}>
-              {downloadedSurahs.length} {t('surahs saved for offline playback')}
-            </Text>
-          </View>
-          {downloadedSurahs.length > 0 && (
-            <TouchableOpacity
-              style={[
-                styles.clearAllBtn,
-                { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
-              ]}
-              onPress={handleClearAll}
-              accessibilityRole="button"
-              accessibilityLabel={t('Clear all downloads')}
-            >
-              <Text style={[styles.clearAllText, { color: colors.textSecondary }]}>{t('Clear All')}</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* List */}
-        <FlatList
-          data={downloadedSurahs}
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={tokens.bgGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <DetailScreen
+        style={styles.detailScreen}
+        customPadBottom={bottomClearance}
+        header={
+          <SubHeader
+            eyebrow={t('Offline')}
+            title={t('Downloads')}
+            subtitle={t('Manage offline audio surahs and cached Quran text')}
+            onBack={onBack}
+            backLabel={t(backLabel)}
+            borderBottom
+            showFade
+          />
+        }
+      >
+      <View style={styles.contentWrap}>
+        <DetailScreen.FlatList
+          data={filteredSurahs}
           keyExtractor={(item) => `${item.edition}:${item.surah}:${item.bitrate}`}
-          contentContainerStyle={[styles.listContent, { paddingHorizontal: paddingH }]}
-          ItemSeparatorComponent={() => <Hairline />}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingHorizontal: paddingH },
+          ]}
+          ListHeaderComponent={headerComponent}
+          ItemSeparatorComponent={() => null}
           ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <View
-                style={[
-                  styles.emptyIconCircle,
-                  { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-                ]}
-              >
-                <Ionicons name="cloud-download-outline" size={iconSizes.emptyState} color={colors.textMuted} />
-              </View>
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                {t('No Downloads Yet')}
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                {t('You can download full surahs from the Quran screen to listen offline without internet.')}
-              </Text>
-              {onOpenSurah && (
-                <TouchableOpacity
+            <PremiumCard style={styles.emptyCard} padded>
+              <View style={styles.emptyWrap}>
+                <View
                   style={[
-                    styles.exploreBtn,
-                    { backgroundColor: colors.accent, borderColor: colors.accent },
+                    styles.emptyIconCircle,
+                    { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder },
                   ]}
-                  onPress={() => onOpenSurah(1)}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('Browse Quran Surahs')}
                 >
-                  <Text style={[styles.exploreBtnText, { color: colors.onAccent }]}>
-                    {t('Browse Surahs')}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
+                  <Ionicons name="cloud-download-outline" size={iconSizes.emptyState} color={tokens.accent} />
+                </View>
+                <Text style={[styles.emptyTitle, { color: tokens.text }]}>
+                  {t('No Downloads Yet')}
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: tokens.muted }]}>
+                  {t('You can download full surahs from the Quran screen to listen offline without internet.')}
+                </Text>
+                {onOpenSurah && (
+                  <PrimaryButton
+                    title={t('Browse Surahs')}
+                    onPress={() => onOpenSurah(1)}
+                    accessibilityLabel={t('Browse Quran Surahs')}
+                    style={{ alignSelf: 'center', minWidth: 160, marginTop: 14 }}
+                  />
+                )}
+              </View>
+            </PremiumCard>
           }
           renderItem={({ item }) => {
             const summary = SURAHS_114[item.surah - 1];
@@ -407,124 +448,141 @@ function DownloadsScreen({ onBack, onOpenSurah }: DownloadsScreenProps) {
               status.isPlaying;
 
             return (
-              <View
-                style={[
-                  styles.row,
-                  { paddingVertical: isCompact ? 12 : 14, gap: isCompact ? 10 : 12 },
-                ]}
-              >
-                {/* Number Badge */}
+              <PremiumCard style={styles.surahCard} padded>
                 <View
                   style={[
-                    styles.numberBadge,
-                    {
-                      borderColor: colors.borderSubtle,
-                      backgroundColor: colors.bgSurface,
-                      width: isCompact ? 32 : 36,
-                      height: isCompact ? 32 : 36,
-                      borderRadius: isCompact ? 16 : 18,
-                    },
+                    styles.row,
+                    { gap: isCompact ? 10 : 12 },
                   ]}
                 >
-                  <Text
+                  {/* Number Badge */}
+                  <View
                     style={[
-                      styles.number,
-                      { color: colors.accent, fontSize: isCompact ? 12 : 13 },
+                      styles.numberBadge,
+                      {
+                        borderColor: tokens.ringBorder,
+                        backgroundColor: tokens.ringFill,
+                        width: isCompact ? 32 : 36,
+                        height: isCompact ? 32 : 36,
+                        borderRadius: isCompact ? 16 : 18,
+                      },
                     ]}
                   >
-                    {item.surah}
-                  </Text>
-                </View>
-
-                {/* Details */}
-                <TouchableOpacity
-                  style={styles.rowMain}
-                  onPress={() => onOpenSurah?.(item.surah)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.nameRow}>
                     <Text
                       style={[
-                        styles.englishName,
-                        { color: colors.textPrimary, fontSize: isCompact ? 14 : 15 },
+                        styles.number,
+                        { color: tokens.goldText, fontSize: isCompact ? 12 : 13 },
+                      ]}
+                    >
+                      {item.surah}
+                    </Text>
+                  </View>
+
+                  {/* Details */}
+                  <TouchableOpacity
+                    style={styles.rowMain}
+                    onPress={() => onOpenSurah?.(item.surah)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.nameRow}>
+                      <Text
+                        style={[
+                          styles.englishName,
+                          { color: tokens.text, fontSize: isCompact ? 14 : 15 },
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {englishName}
+                      </Text>
+                      {arabicName ? (
+                        <ArabicText size={isCompact ? 15 : 16} style={[styles.arabicName, { color: tokens.arabicName }]}>
+                          {arabicName}
+                        </ArabicText>
+                      ) : null}
+                    </View>
+                    <Text
+                      style={[
+                        styles.metadataText,
+                        { color: tokens.muted, fontSize: isCompact ? 11 : 12 },
                       ]}
                       numberOfLines={1}
                     >
-                      {englishName}
+                      {reciterLabel} · {item.bitrate} kbps · {formatBytes(item.size)}
                     </Text>
-                    {arabicName ? (
-                      <ArabicText size={isCompact ? 15 : 16} style={styles.arabicName}>
-                        {arabicName}
-                      </ArabicText>
-                    ) : null}
+                  </TouchableOpacity>
+
+                  {/* Actions */}
+                  <View style={styles.actionsRow}>
+                    <TouchableOpacity
+                      style={[
+                        styles.playBtn,
+                        {
+                          backgroundColor: isPlaying ? undefined : tokens.ringFill,
+                          borderColor: isPlaying ? tokens.goldBorder : tokens.ringBorder,
+                        },
+                      ]}
+                      onPress={() => handleTogglePlay(item)}
+                      accessibilityRole="button"
+                      accessibilityLabel={isPlaying ? t('Pause audio') : t('Play audio')}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      {isPlaying && (
+                        <LinearGradient
+                          colors={tokens.goldGradient}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 1 }}
+                          style={StyleSheet.absoluteFill}
+                        />
+                      )}
+                      <Ionicons
+                        name={isPlaying ? 'pause' : 'play'}
+                        size={14}
+                        color={isPlaying ? tokens.onGold : tokens.goldText}
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.removeBtn,
+                        { borderColor: tokens.cardBorder, backgroundColor: 'transparent' },
+                      ]}
+                      onPress={() => handleRemoveItem(item)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t('Remove')} ${englishName}`}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    >
+                      <Ionicons name="trash-outline" size={iconSizes.small} color={tokens.muted} />
+                    </TouchableOpacity>
                   </View>
-                  <Text
-                    style={[
-                      styles.metadataText,
-                      { color: colors.textMuted, fontSize: isCompact ? 11 : 12 },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {reciterLabel} · {item.bitrate} kbps · {formatBytes(item.size)}
-                  </Text>
-                </TouchableOpacity>
-
-                {/* Actions */}
-                <View style={styles.actionsRow}>
-                  <TouchableOpacity
-                    style={[
-                      styles.playBtn,
-                      {
-                        backgroundColor: isPlaying ? colors.accent : colors.bgSurface,
-                        borderColor: isPlaying ? colors.accent : colors.borderSubtle,
-                      },
-                    ]}
-                    onPress={() => handleTogglePlay(item)}
-                    accessibilityRole="button"
-                    accessibilityLabel={isPlaying ? t('Pause audio') : t('Play audio')}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons
-                      name={isPlaying ? 'pause' : 'play'}
-                      size={14}
-                      color={isPlaying ? colors.onAccent : colors.accent}
-                    />
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.removeBtn,
-                      { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface },
-                    ]}
-                    onPress={() => handleRemoveItem(item)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${t('Remove')} ${englishName}`}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="trash-outline" size={iconSizes.small} color={colors.textMuted} />
-                  </TouchableOpacity>
                 </View>
-              </View>
+              </PremiumCard>
             );
           }}
         />
       </View>
+    </DetailScreen>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1 },
+  container: {
+    flex: 1,
+  },
+  detailScreen: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
   },
+  surahCard: {
+    marginBottom: 10,
+  },
   textCard: {
-    padding: 14,
-    borderRadius: 20,
-    borderWidth: 1,
     marginBottom: 12,
   },
   textCardHeader: {
@@ -554,15 +612,11 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   textActionBtn: {
+    minHeight: 34,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderRadius: 14,
-    borderWidth: 1,
     flexShrink: 0,
-  },
-  textActionText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
   },
   textStatusRow: {
     flexDirection: 'row',
@@ -605,15 +659,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   repairBtn: {
+    minHeight: 30,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 8,
-    borderWidth: 1,
     flexShrink: 0,
-  },
-  repairText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
   },
   verifyOkText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -624,9 +674,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 20,
-    borderWidth: 1,
     marginBottom: 12,
     gap: 12,
   },
@@ -648,18 +695,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   clearAllBtn: {
+    minHeight: 34,
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderRadius: 14,
-    borderWidth: 1,
   },
-  clearAllText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
-  },
-  listContent: {
-    paddingBottom: 40,
-  },
+  listContent: {},
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -706,17 +747,21 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   removeBtn: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    borderWidth: 1,
+    borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyCard: {
+    marginTop: 8,
   },
   emptyWrap: {
     paddingVertical: 48,
@@ -746,17 +791,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     maxWidth: 320,
   },
-  exploreBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 16,
-    borderWidth: 1,
-  },
-  exploreBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14,
-  },
 });
 
 export default withUndoToast(DownloadsScreen);
-
