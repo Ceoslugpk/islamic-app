@@ -29,7 +29,7 @@ export interface ContinueReadingCardProps {
   style?: any;
 }
 
-export function ContinueReadingCard({
+export const ContinueReadingCard = React.memo(function ContinueReadingCard({
   onOpenReader,
   onOpenQuranTab,
   style,
@@ -305,7 +305,7 @@ export function ContinueReadingCard({
       </View>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

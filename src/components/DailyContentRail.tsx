@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
 import { getFloatingCardShadow } from '../lib/homeThemeTokens';
 import { useHaptics } from '../lib/haptics';
@@ -45,7 +44,7 @@ export interface DailyContentRailProps {
   style?: any;
 }
 
-export function DailyContentRail({
+export const DailyContentRail = React.memo(function DailyContentRail({
   ayah,
   hadith,
   nameOfDay,
@@ -236,10 +235,6 @@ export function DailyContentRail({
                 ])}
                 padded={false}
               >
-                <LinearGradient
-                  colors={[homeTokens.cardTop, homeTokens.cardBottom]}
-                  style={StyleSheet.absoluteFill}
-                />
                 <GeometricPattern
                   variant="tessellation"
                   tileSize={40}
@@ -549,7 +544,7 @@ export function DailyContentRail({
       </Animated.ScrollView>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   root: {

@@ -145,7 +145,7 @@ function ActionButton({ icon, label, subtitle, onPress }: ActionItemProps) {
   );
 }
 
-export function QuickActionsStrip({
+export const QuickActionsStrip = React.memo(function QuickActionsStrip({
   onOpenQibla,
   onOpenDuas,
   onOpenHadith,
@@ -186,7 +186,7 @@ export function QuickActionsStrip({
       ))}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
