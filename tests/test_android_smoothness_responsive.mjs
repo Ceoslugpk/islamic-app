@@ -60,8 +60,14 @@ assert.ok(
 
 // HomeScreen invariants
 assert.ok(
-  homeSrc.includes('isActive={isHomeVisible && isScrolled}'),
-  'HomeScreen must pass isActive={isHomeVisible && isScrolled} to CompactPrayerBar'
+  homeSrc.includes('isActive={isHomeVisible && isScrolled && !isHomeScrolling}'),
+  'HomeScreen must pause the pinned countdown during scroll gestures'
+);
+assert.ok(
+  homeSrc.includes('isActive={isHomeVisible && !isScrolled && !isHomeScrolling}') &&
+  homeSrc.includes('onScrollBeginDrag={beginHomeScroll}') &&
+  homeSrc.includes('onMomentumScrollEnd={endHomeScroll}'),
+  'HomeScreen must pause the hero countdown while scrolling and activate only the visible countdown when idle'
 );
 
 // ToolsScreen invariants

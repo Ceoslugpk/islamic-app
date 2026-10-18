@@ -576,6 +576,10 @@ const HomeScreen = React.memo(function HomeScreen({
   const [scrollY] = useState(() => new Animated.Value(0));
   const scrollRef = useRef<ScrollView>(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isHomeScrolling, setIsHomeScrolling] = useState(false);
+
+  const beginHomeScroll = useCallback(() => setIsHomeScrolling(true), []);
+  const endHomeScroll = useCallback(() => setIsHomeScrolling(false), []);
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -826,7 +830,7 @@ const HomeScreen = React.memo(function HomeScreen({
           prayerName={next ? next.name : 'Fajr'}
           prayerTime={formatTime(next ? next.time : data.timings.Fajr, fmt)}
           targetTime={next ? next.time : data.timings.Fajr}
-          isActive={isHomeVisible && isScrolled}
+          isActive={isHomeVisible && isScrolled && !isHomeScrolling}
           onPress={() => {
             haptic('light');
             scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -843,6 +847,10 @@ const HomeScreen = React.memo(function HomeScreen({
         // Keep native-driven visual interpolation at display refresh rate while
         // limiting JS scroll notifications to the pinned-bar threshold check.
         scrollEventThrottle={64}
+        onScrollBeginDrag={beginHomeScroll}
+        onScrollEndDrag={endHomeScroll}
+        onMomentumScrollBegin={beginHomeScroll}
+        onMomentumScrollEnd={endHomeScroll}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           {
@@ -1078,7 +1086,7 @@ const HomeScreen = React.memo(function HomeScreen({
                     tileBorder={mode === 'paper' ? 'rgba(212, 163, 89, 0.3)' : 'rgba(196, 160, 86, 0.4)'}
                     labelColor={mode === 'ink' ? homeTokens.muted : HOME_THEME_TOKENS.hero.mintLight}
                     separatorColor={homeTokens.gold}
-                    isActive={isHomeVisible}
+                    isActive={isHomeVisible && !isScrolled && !isHomeScrolling}
                     onExpire={handlePrayerExpire}
                   />
                   <AppText
