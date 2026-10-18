@@ -100,8 +100,8 @@ android {
         applicationId 'com.qashi.islamic'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 90
-        versionName "1.1.71"
+        versionCode 91
+        versionName "1.1.72"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -199,3 +199,35 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// Flatten splash artwork over its exact brand background before Android packages resources.
+def flattenSplashBitmaps = tasks.register("flattenSplashBitmaps") {
+  doLast {
+    def densities = ["mdpi","hdpi","xhdpi","xxhdpi","xxxhdpi"]
+    def variants = [[qualifier: "", color: 0xFFF4EEDE], [qualifier: "-night", color: 0xFF0E1214]]
+    variants.each { variant ->
+      densities.each { density ->
+        def imageFile = file("src/main/res/drawable${variant.qualifier}-${density}/splashscreen_logo.png")
+        if (!imageFile.exists()) return
+        def image = javax.imageio.ImageIO.read(imageFile)
+        int[] pixels = image.getRGB(0, 0, image.width, image.height, null, 0, image.width)
+        int background = variant.color as int
+        int backgroundRed = (background >>> 16) & 0xff
+        int backgroundGreen = (background >>> 8) & 0xff
+        int backgroundBlue = background & 0xff
+        for (int index = 0; index < pixels.length; index++) {
+          int pixel = pixels[index]
+          int alpha = (pixel >>> 24) & 0xff
+          int inverseAlpha = 255 - alpha
+          int red = Math.floorDiv(((((pixel >>> 16) & 0xff) * alpha) + (backgroundRed * inverseAlpha) + 127), 255)
+          int green = Math.floorDiv(((((pixel >>> 8) & 0xff) * alpha) + (backgroundGreen * inverseAlpha) + 127), 255)
+          int blue = Math.floorDiv((((pixel & 0xff) * alpha) + (backgroundBlue * inverseAlpha) + 127), 255)
+          pixels[index] = 0xff000000 | (red << 16) | (green << 8) | blue
+        }
+        image.setRGB(0, 0, image.width, image.height, pixels, 0, image.width)
+        javax.imageio.ImageIO.write(image, "png", imageFile)
+      }
+    }
+  }
+}
+tasks.named("preBuild").configure { dependsOn(flattenSplashBitmaps) }

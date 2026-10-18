@@ -363,7 +363,7 @@ export async function clearAllDownloads(): Promise<void> {
 }
 
 /** React hook for components to subscribe to downloads changes */
-export function useSurahDownloads(): {
+export function useSurahDownloads(isActive = true): {
   downloadedSurahs: DownloadedSurahMeta[];
   totalStorageUsed: number;
   isDownloaded: (edition: string, surah: number, bitrate?: string | number) => boolean;
@@ -372,10 +372,11 @@ export function useSurahDownloads(): {
   const [, setTick] = useState(0);
 
   useEffect(() => {
+    if (!isActive) return;
     return addDownloadsListener(() => {
       setTick((t) => t + 1);
     });
-  }, []);
+  }, [isActive]);
 
   return {
     downloadedSurahs: getDownloadedSurahs(),

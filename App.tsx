@@ -765,10 +765,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const isAudioCenter = tab === 'quran' && quran.screen === 'audio';
   const showMiniPlayer = visible && playback !== null && !isAudioCenter;
 
-  const handleOpenAudio = () => {
+  const handleOpenAudio = useCallback(() => {
     setQuran({ screen: 'audio' });
     setTab('quran');
-  };
+  }, []);
 
   const switchTab = useCallback((next: TabKey) => {
     if (next === tab) {
@@ -868,6 +868,73 @@ function Root({ splashDone }: { splashDone: boolean }) {
     setTab('tools');
   }, []);
 
+  const openQuranSurah = useCallback((surah: number, ayah?: number, page?: number) => {
+    let initialAyah = ayah;
+    let initialPage = page;
+    if (!initialPage) {
+      const marker = getReadingMarkerSync();
+      if (marker && marker.surah === surah && (!initialAyah || marker.ayah === initialAyah)) {
+        initialAyah = initialAyah || marker.ayah;
+        initialPage = marker.page;
+      } else {
+        const position = getReadingPositionSync();
+        if (position && position.surah === surah && (!initialAyah || position.ayah === initialAyah)) {
+          initialAyah = initialAyah || position.ayah;
+          initialPage = position.page;
+        } else {
+          initialPage = getMushafPageForAyah(surah, initialAyah || 1);
+          initialAyah = initialAyah || 1;
+        }
+      }
+    }
+    setQuran({ screen: 'reader', surah, initialAyah, initialPage });
+    setTab('quran');
+  }, []);
+
+  const openQuran = useCallback((surah?: number, ayah?: number, page?: number) => {
+    if (surah) {
+      openQuranSurah(surah, ayah, page);
+      return;
+    }
+    setQuran({ screen: 'home' });
+    setTab('quran');
+  }, [openQuranSurah]);
+
+  const openHomeNames = useCallback(() => {
+    setLibrary({ screen: 'names' });
+    setTab('library');
+  }, []);
+  const openHomeHadith = useCallback(() => {
+    setLibrary({ screen: 'hadith' });
+    setTab('library');
+  }, []);
+  const openHomeQibla = useCallback(() => {
+    setTools({ screen: 'qibla' });
+    setTab('tools');
+  }, []);
+  const openHomeDuas = useCallback(() => {
+    setLibrary({ screen: 'duas' });
+    setTab('library');
+  }, []);
+  const openHomeTasbih = useCallback(() => {
+    setLibrary({ screen: 'tasbih' });
+    setTab('library');
+  }, []);
+  const openHomeCities = useCallback(() => {
+    setCitiesReturnTab('home');
+    setTools({ screen: 'cities' });
+    setTab('tools');
+  }, []);
+
+  const openQuranAudio = useCallback(() => setQuran({ screen: 'audio' }), []);
+  const openQuranTafsir = useCallback(() => setQuran({ screen: 'tafsir' }), []);
+  const openQuranTopics = useCallback(() => setQuran({ screen: 'topics' }), []);
+  const openQuranCompare = useCallback(() => setQuran({ screen: 'compare' }), []);
+  const openQuranBookmarks = useCallback(() => setQuran({ screen: 'bookmarks' }), []);
+  const openQuranNotes = useCallback(() => setQuran({ screen: 'notes' }), []);
+  const openQuranPlans = useCallback(() => setQuran({ screen: 'plans' }), []);
+  const openQuranHifz = useCallback(() => setQuran({ screen: 'hifz' }), []);
+
   const isTopLevel = isTopLevelScreen(tab, quran, library, tools);
   useLayoutAudit(isTopLevel ? tab : '');
 
@@ -899,79 +966,14 @@ function Root({ splashDone }: { splashDone: boolean }) {
             <TabScreen header={sharedTabHeader}>
               <HomeScreen
                 isActive={tab === 'home'}
-                onOpenNames={() => {
-                  setLibrary({ screen: 'names' });
-                  setTab('library');
-                }}
-                onOpenReader={(surah, ayah, page) => {
-                  let initialAyah = ayah;
-                  let initialPage = page;
-                  if (!initialPage) {
-                    const marker = getReadingMarkerSync();
-                    if (marker && marker.surah === surah && (!initialAyah || marker.ayah === initialAyah)) {
-                      initialAyah = initialAyah || marker.ayah;
-                      initialPage = marker.page;
-                    } else {
-                      const pos = getReadingPositionSync();
-                      if (pos && pos.surah === surah && (!initialAyah || pos.ayah === initialAyah)) {
-                        initialAyah = initialAyah || pos.ayah;
-                        initialPage = pos.page;
-                      } else {
-                        initialPage = getMushafPageForAyah(surah, initialAyah || 1);
-                        initialAyah = initialAyah || 1;
-                      }
-                    }
-                  }
-                  setQuran({ screen: 'reader', surah, initialAyah, initialPage });
-                  setTab('quran');
-                }}
-                onOpenQuran={(surah, ayah, page) => {
-                  if (surah) {
-                    let initialAyah = ayah;
-                    let initialPage = page;
-                    if (!initialPage) {
-                      const marker = getReadingMarkerSync();
-                      if (marker && marker.surah === surah && (!initialAyah || marker.ayah === initialAyah)) {
-                        initialAyah = initialAyah || marker.ayah;
-                        initialPage = marker.page;
-                      } else {
-                        const pos = getReadingPositionSync();
-                        if (pos && pos.surah === surah && (!initialAyah || pos.ayah === initialAyah)) {
-                          initialAyah = initialAyah || pos.ayah;
-                          initialPage = pos.page;
-                        } else {
-                          initialPage = getMushafPageForAyah(surah, initialAyah || 1);
-                          initialAyah = initialAyah || 1;
-                        }
-                      }
-                    }
-                    setQuran({ screen: 'reader', surah, initialAyah, initialPage });
-                  } else {
-                    setQuran({ screen: 'home' });
-                  }
-                  setTab('quran');
-                }}
-                onOpenHadith={() => {
-                  setLibrary({ screen: 'hadith' });
-                  setTab('library');
-                }}
-                onOpenQibla={() => {
-                  setTools({ screen: 'qibla' });
-                  setTab('tools');
-                }}
-                onOpenDuas={() => {
-                  setLibrary({ screen: 'duas' });
-                  setTab('library');
-                }}
-                onOpenTasbih={() => {
-                  setLibrary({ screen: 'tasbih' });
-                  setTab('library');
-                }}
-                onOpenCities={() => {
-                  setCitiesReturnTab('home');
-                  setTools({ screen: 'cities' });
-                  setTab('tools');
-                }}
+                onOpenNames={openHomeNames}
+                onOpenReader={openQuranSurah}
+                onOpenQuran={openQuran}
+                onOpenHadith={openHomeHadith}
+                onOpenQibla={openHomeQibla}
+                onOpenDuas={openHomeDuas}
+                onOpenTasbih={openHomeTasbih}
+                onOpenCities={openHomeCities}
               />
             </TabScreen>
           </View>
@@ -982,35 +984,15 @@ function Root({ splashDone }: { splashDone: boolean }) {
               <TabScreen header={sharedTabHeader}>
                 <QuranHomeScreen
                   isActive={tab === 'quran' && quran.screen === 'home'}
-                  onOpenSurah={(n, a, p) => {
-                    let initialAyah = a;
-                    let initialPage = p;
-                    if (!initialPage) {
-                      const marker = getReadingMarkerSync();
-                      if (marker && marker.surah === n && (!initialAyah || marker.ayah === initialAyah)) {
-                        initialAyah = initialAyah || marker.ayah;
-                        initialPage = marker.page;
-                      } else {
-                        const pos = getReadingPositionSync();
-                        if (pos && pos.surah === n && (!initialAyah || pos.ayah === initialAyah)) {
-                          initialAyah = initialAyah || pos.ayah;
-                          initialPage = pos.page;
-                        } else {
-                          initialPage = getMushafPageForAyah(n, initialAyah || 1);
-                          initialAyah = initialAyah || 1;
-                        }
-                      }
-                    }
-                    setQuran({ screen: 'reader', surah: n, initialAyah, initialPage });
-                  }}
-                  onOpenAudio={() => setQuran({ screen: 'audio' })}
-                  onOpenTafsir={() => setQuran({ screen: 'tafsir' })}
-                  onOpenTopics={() => setQuran({ screen: 'topics' })}
-                  onOpenCompare={() => setQuran({ screen: 'compare' })}
-                  onOpenBookmarks={() => setQuran({ screen: 'bookmarks' })}
-                  onOpenNotes={() => setQuran({ screen: 'notes' })}
-                  onOpenPlans={() => setQuran({ screen: 'plans' })}
-                  onOpenHifz={() => setQuran({ screen: 'hifz' })}
+                  onOpenSurah={openQuranSurah}
+                  onOpenAudio={openQuranAudio}
+                  onOpenTafsir={openQuranTafsir}
+                  onOpenTopics={openQuranTopics}
+                  onOpenCompare={openQuranCompare}
+                  onOpenBookmarks={openQuranBookmarks}
+                  onOpenNotes={openQuranNotes}
+                  onOpenPlans={openQuranPlans}
+                  onOpenHifz={openQuranHifz}
                 />
               </TabScreen>
             </View>

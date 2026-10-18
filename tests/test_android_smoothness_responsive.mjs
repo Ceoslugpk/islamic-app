@@ -37,6 +37,7 @@ const compactBarSrc = fs.readFileSync(path.resolve('src/components/CompactPrayer
 const homeSrc = fs.readFileSync(path.resolve('src/screens/HomeScreen.tsx'), 'utf-8');
 const toolsSrc = fs.readFileSync(path.resolve('src/screens/ToolsScreen.tsx'), 'utf-8');
 const librarySrc = fs.readFileSync(path.resolve('src/screens/LibraryScreen.tsx'), 'utf-8');
+const surahDownloadsSrc = fs.readFileSync(path.resolve('src/lib/surahDownloads.ts'), 'utf-8');
 const appSrc = fs.readFileSync(path.resolve('App.tsx'), 'utf-8');
 
 // CompactPrayerBar invariants
@@ -95,6 +96,12 @@ assert.ok(
 assert.ok(
   librarySrc.includes('isActive = true,'),
   'LibraryScreen must accept isActive with default true'
+);
+assert.ok(
+  librarySrc.includes('useSurahDownloads(isActive)') &&
+  surahDownloadsSrc.includes('useSurahDownloads(isActive = true)') &&
+  surahDownloadsSrc.includes('if (!isActive) return;'),
+  'LibraryScreen must only subscribe to Quran download updates while its hub is active'
 );
 
 // App.tsx tab wiring invariants

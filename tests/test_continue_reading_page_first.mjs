@@ -27,13 +27,14 @@ assert.ok(
 
 // (c) App.tsx wires onOpenReader and onOpenQuran to preserve initialPage
 assert.ok(
-  appCode.includes('onOpenReader={(surah, ayah, page) => {') &&
+  appCode.includes('onOpenReader={openQuranSurah}') &&
+  appCode.includes('const openQuranSurah = useCallback((surah: number, ayah?: number, page?: number) =>') &&
   appCode.includes("setQuran({ screen: 'reader', surah, initialAyah, initialPage });"),
   'App.tsx wires HomeScreen onOpenReader and sets initialPage in reader state'
 );
 assert.ok(
-  appCode.includes('onOpenQuran={(surah, ayah, page) => {') &&
-  appCode.includes('initialPage = page;'),
+  appCode.includes('const openQuran = useCallback((surah?: number, ayah?: number, page?: number) =>') &&
+  appCode.includes('openQuranSurah(surah, ayah, page);'),
   'App.tsx onOpenQuran preserves incoming page parameter'
 );
 
@@ -55,8 +56,8 @@ assert.ok(
 
 // (e) App.tsx wires QuranHomeScreen onOpenSurah with initialPage propagation
 assert.ok(
-  appCode.includes('onOpenSurah={(n, a, p) => {') &&
-  appCode.includes('let initialPage = p;'),
+  appCode.includes('onOpenSurah={openQuranSurah}') &&
+  appCode.includes('let initialPage = page;'),
   'App.tsx QuranHomeScreen onOpenSurah receives and preserves p as initialPage'
 );
 console.log('  ✓ Page passed through ContinueReadingCard -> Home/QuranHome -> App.tsx -> QuranReaderScreen');

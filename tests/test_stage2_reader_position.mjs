@@ -222,8 +222,9 @@ assert.ok(
   'QuranHomeScreen passes freshPos page to onOpenSurah'
 );
 assert.ok(
-  appCode.includes('onOpenSurah={(n, a, p) =>') &&
-  appCode.includes("setQuran({ screen: 'reader', surah: n, initialAyah, initialPage })"),
+  appCode.includes('onOpenSurah={openQuranSurah}') &&
+  appCode.includes('const openQuranSurah = useCallback((surah: number, ayah?: number, page?: number)') &&
+  appCode.includes("setQuran({ screen: 'reader', surah, initialAyah, initialPage })"),
   'App.tsx propagates initialPage from QuranHomeScreen to QuranView reader state'
 );
 assert.ok(
@@ -236,7 +237,8 @@ assert.ok(
   'HomeScreen propagates page parameter in handleOpenReader'
 );
 assert.ok(
-  appCode.includes('onOpenQuran={(surah, ayah, page) =>') &&
+  appCode.includes('onOpenReader={openQuranSurah}') &&
+  appCode.includes('const openQuranSurah = useCallback((surah: number, ayah?: number, page?: number)') &&
   appCode.includes("setQuran({ screen: 'reader', surah, initialAyah, initialPage })"),
   'App.tsx propagates initialPage from HomeScreen to QuranView reader state'
 );
