@@ -1,6 +1,6 @@
 {
   "name": "scaffold",
-  "version": "1.1.77",
+  "version": "1.1.78",
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/amiri": "^0.4.1",
@@ -51,6 +51,9 @@
     "eslint": "^9.0.0",
     "eslint-config-expo": "~57.0.2",
     "typescript": "~6.0.3"
+  },
+  "overrides": {
+    "uuid": "11.1.1"
   },
   "scripts": {
     "start": "expo start",

@@ -244,7 +244,22 @@ const settings = fs.readFileSync('src/lib/settings.tsx', 'utf8');
 // App.tsx navigation contract
 assert.match(appTsx, /export type QuranView =[\s\S]*?pageOnly\?: boolean/, 'App.tsx QuranView union must support pageOnly?: boolean');
 assert.match(appTsx, /<QuranReaderScreen[\s\S]*?pageOnly=\{quran\.pageOnly\}/, 'App.tsx must pass pageOnly prop to QuranReaderScreen');
-assert.match(appTsx, /onOpenSurah=\{\(n, a, p\) =>[\s\S]*?setQuran\(\{ screen: 'reader', surah: n, initialAyah, initialPage \}\)/, 'App.tsx onOpenSurah must propagate initialAyah and initialPage');
+assert.match(
+  appTsx,
+  /const openQuranSurah = useCallback\(\(surah: number, ayah\?: number, page\?: number\) =>/,
+  'App.tsx must route Quran entry through the shared openQuranSurah helper'
+);
+assert.match(
+  appTsx,
+  /setQuran\(\{ screen: 'reader', surah, initialAyah, initialPage \}\)/,
+  'openQuranSurah must preserve the resolved ayah and page in reader state'
+);
+assert.match(appTsx, /setTab\('quran'\);/, 'Opening a Surah must select the Quran tab');
+assert.match(
+  appTsx,
+  /initialPage = getMushafPageForAyah\(surah, initialAyah \|\| 1\)/,
+  'Opening without an explicit page must resolve the page from the ayah'
+);
 
 // QuranReaderScreen restoration contracts
 assert.match(reader, /resolveMushafRestorationTarget/, 'QuranReaderScreen must wire resolveMushafRestorationTarget');

@@ -5,7 +5,7 @@
  *  1. Sequential and round-trip transitions:
  *     - English -> Urdu -> Arabic -> English
  *     - English -> Arabic -> Urdu -> English
- *     - Cross transitions across all 6 registered locales (en, ur, ar, hi, ml, si)
+ *     - Cross transitions across all 11 registered app locales
  *  2. Concurrency & rapid tap protection:
  *     - Synchronous double-tap suppression via isSwitchingLanguageRef
  *     - Rapid sequential taps converging on final selected language
@@ -19,8 +19,8 @@
  *     - Error surfaced to user state
  *  5. Layout direction & reload ordering:
  *     - prepareNativeLayoutDirection called AFTER persistent verification and IMMEDIATELY before reload
- *     - Native forceRTL(true) and allowRTL(true) for RTL (ur, ar)
- *     - Native forceRTL(false) and allowRTL(false) for LTR (en, hi, ml, si)
+ *     - Native forceRTL(true) and allowRTL(true) for RTL (ur, ar, ps)
+ *     - Native forceRTL(false) and allowRTL(false) for LTR locales
  *     - Unmount during in-flight switch preserves pending reload
  */
 
@@ -132,7 +132,8 @@ class MockStorage {
 const STORAGE_KEY = 'islamic-settings';
 
 function isRtlLanguage(lang) {
-  return lang === 'ur' || lang === 'ar';
+  const normalized = String(lang).toLowerCase();
+  return ['ur', 'ar', 'ps'].some((code) => normalized === code || normalized.startsWith(`${code}-`) || normalized.startsWith(`${code}_`));
 }
 
 function computeNextSettings(prev, nextLang) {

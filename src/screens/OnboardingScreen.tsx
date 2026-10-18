@@ -68,6 +68,11 @@ const APP_LANGUAGES_LIST: { code: AppLanguage; name: string; nativeName: string;
   { code: 'hi', name: 'Hindi', nativeName: 'हिन्दी', flag: '🇮🇳' },
   { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം', flag: '🇮🇳' },
   { code: 'si', name: 'Sinhala', nativeName: 'සිංහල', flag: '🇱🇰' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', flag: '🇧🇩' },
+  { code: 'ms', name: 'Malay', nativeName: 'Bahasa Melayu', flag: '🇲🇾' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', flag: '🇮🇳' },
+  { code: 'id', name: 'Indonesian', nativeName: 'Bahasa Indonesia', flag: '🇮🇩' },
+  { code: 'ps', name: 'Pashto', nativeName: 'پښتو', flag: '🇦🇫' },
 ];
 
 let appReloader = () => Updates.reloadAsync();
@@ -366,6 +371,14 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const selectedStrings: OnboardingDemoStrings = ONBOARDING_LOCALES[selectedAppLang] || ONBOARDING_LOCALES.en;
   const currentStrings = isDemoActive ? demoStrings : selectedStrings;
   const isDemoRtl = isDemoActive ? demoStrings.isRtl : selectedStrings.isRtl;
+  const rtlRegularFont = currentStrings.langCode === 'ps' ? 'NotoNaskhArabic_400Regular' : 'Amiri_400Regular';
+  const rtlBoldFont = currentStrings.langCode === 'ps' ? 'NotoNaskhArabic_700Bold' : 'Amiri_700Bold';
+  const capabilityNote = currentStrings.capabilityNote ||
+    (currentStrings.langCode === 'ur'
+      ? '40+ ترجمے کی زبانیں · 10+ آڈیو زبانیں'
+      : isDemoRtl
+      ? 'أكثر من 40 لغة ترجمة · أكثر من 10 لغات صوتية'
+      : '40+ translation languages · 10+ audio languages');
 
   // Real selected names
   const activeAppLangObj = useMemo(
@@ -620,7 +633,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               highlight
               style={[
                 styles.eyebrow,
-                isDemoRtl && { textAlign: 'right', fontFamily: 'Amiri_700Bold', fontSize: 14 },
+                isDemoRtl && { textAlign: 'right', fontFamily: rtlBoldFont, fontSize: 14 },
               ]}
             >
               {isDemoRtl ? currentStrings.welcome : 'ASSALAM O ALAIKUM'}
@@ -634,7 +647,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 isCompact && styles.headlineCompact,
                 isDemoRtl && {
                   textAlign: 'right',
-                  fontFamily: 'Amiri_700Bold',
+                  fontFamily: rtlBoldFont,
                   fontSize: isCompact ? 28 : 34,
                   lineHeight: isCompact ? 36 : 44,
                 },
@@ -653,7 +666,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               style={[
                 styles.subtitle,
                 isCompact && styles.subtitleCompact,
-                isDemoRtl && { textAlign: 'right', fontFamily: 'Amiri_400Regular', fontSize: isCompact ? 13 : 15 },
+                isDemoRtl && { textAlign: 'right', fontFamily: rtlRegularFont, fontSize: isCompact ? 13 : 15 },
               ]}
             >
               {isDemoRtl ? currentStrings.subtitle : 'Choose how you read and listen.'}
@@ -889,11 +902,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                 isCompact && styles.capabilityPillTextCompact,
               ]}
             >
-              {selectedAppLang === 'ur'
-                ? '40+ ترجمے کی زبانیں · 10+ آڈیو زبانیں'
-                : (isDemoRtl
-                  ? 'أكثر من 40 لغة ترجمة · أكثر من 10 لغات صوتية'
-                  : '40+ translation languages · 10+ audio languages')}
+              {capabilityNote}
             </AppText>
           </View>
         </ScrollView>

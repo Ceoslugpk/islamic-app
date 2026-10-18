@@ -51,7 +51,7 @@ ok('en->ur: language persisted before Updates.reloadAsync — reload boots in Ur
 
 // (c) ur->en: English content defaults restored (quran translation, tafsir, audio)
 assert.ok(
-  settingsCode.includes("if (currentQuranLang === 'ur') {\n            await setQuranTranslationLanguage('en');"),
+  settingsCode.includes("if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {\n            await setQuranTranslationLanguage('en');"),
   'ur->en restores quran translation language to en'
 );
 assert.ok(
@@ -71,8 +71,8 @@ assert.ok(
   'setLanguage has symmetric ur and en branches'
 );
 assert.ok(
-  settingsCode.includes("if (currentQuranLang === 'en')"),
-  'ur branch only switches quran lang when currently en (no redundant writes)'
+  settingsCode.includes('CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)'),
+  'language changes only switch Quran translation when it is in the canonical app-language set'
 );
 ok('repeated switches: symmetric ur/en branches with state guards');
 

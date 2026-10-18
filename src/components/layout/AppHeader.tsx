@@ -18,20 +18,16 @@ import { HeaderRingButton } from './HeaderRingButton';
 
 export interface AppHeaderProps {
   onOpenSettings: () => void;
-  onOpenNotifications?: () => void;
-  hasNotificationBadge?: boolean;
   testID?: string;
   transparent?: boolean;
 }
 
 export function AppHeader({
   onOpenSettings,
-  onOpenNotifications,
-  hasNotificationBadge,
   testID,
   transparent = false,
 }: AppHeaderProps) {
-  const { mode } = useTheme();
+  const { mode, toggle } = useTheme();
   const tokens = HOME_THEME_TOKENS[mode];
   const insets = useSafeAreaInsets();
   const safeTop = insets.top;
@@ -116,14 +112,12 @@ export function AppHeader({
         >
           <HeaderRingButton
             variant="card"
-            iconName="notifications-outline"
+            iconName="sunny-outline"
             iconSize={14}
             iconColor={tokens.gold}
-            badge={hasNotificationBadge}
-            badgeColor={tokens.gold}
-            onPress={onOpenNotifications}
-            accessibilityLabel={t('Notifications')}
-            testID="app-header-bell"
+            onPress={toggle}
+            accessibilityLabel={t('Appearance')}
+            testID="app-header-appearance"
           />
 
           <HeaderRingButton

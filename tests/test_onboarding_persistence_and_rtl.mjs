@@ -20,8 +20,8 @@ console.log('--- 1. Static Contract & Source Audits ---');
 
 const onboardingSource = fs.readFileSync('src/screens/OnboardingScreen.tsx', 'utf8');
 
-// 1.1 Registered locales contract: exactly 6 registered app locales (en, ar, ur, hi, ml, si)
-const registeredLocales = ['en', 'ar', 'ur', 'hi', 'ml', 'si'];
+// 1.1 Registered locales contract: all 11 wired app locales.
+const registeredLocales = ['en', 'ar', 'ur', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps'];
 for (const loc of registeredLocales) {
   assert.ok(
     onboardingSource.includes(`code: '${loc}'`),
@@ -30,7 +30,7 @@ for (const loc of registeredLocales) {
 }
 assert.ok(!onboardingSource.includes("code: 'fr'"), 'Does not register unregistered locale fr as app language');
 assert.ok(!onboardingSource.includes("code: 'tr'"), 'Does not register unregistered locale tr as app language');
-console.log('  ✓ 1.1 Exactly six registered app locales (en, ar, ur, hi, ml, si) verified');
+console.log('  ✓ 1.1 All 11 registered app locales verified');
 
 // 1.2 Canonical color anchors: #105A4B (primary brand green) & #F4EEDE (paper ivory base)
 assert.ok(onboardingSource.includes('#105A4B'), 'Canonical #105A4B brand green anchor present');
@@ -331,6 +331,11 @@ const prodQuranLanguageModule = loadTsModule('src/lib/quranLanguageState.ts', {
       { languageCode: 'hi', language: 'Hindi' },
       { languageCode: 'ml', language: 'Malayalam' },
       { languageCode: 'si', language: 'Sinhala' },
+      { languageCode: 'bn', language: 'Bengali' },
+      { languageCode: 'ms', language: 'Malay' },
+      { languageCode: 'ta', language: 'Tamil' },
+      { languageCode: 'id', language: 'Indonesian' },
+      { languageCode: 'ps', language: 'Pashto' },
     ],
     getEditionForLanguage: () => ({}),
     getLanguageFlag: () => '🇬🇧',
@@ -407,7 +412,11 @@ function createRealSettingsProviderHarness() {
     './names99': { VALID_NAMES_LANGS: new Set(['en', 'ar', 'ur']) },
     './quranAudio': prodQuranAudioModule,
     './quranLanguageState': prodQuranLanguageModule,
-    './i18n': { getBootLanguage: () => 'en', setAppLanguage: () => {} },
+    './i18n': {
+      getBootLanguage: () => 'en',
+      setAppLanguage: () => {},
+      isAppLanguage: (value) => ['en', 'ur', 'ar', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps'].includes(value),
+    },
     './audio': { setActiveAdhanReciterId: () => {} },
     './useLocation': { setCachedLocation: () => {} },
     './tafsirSources': { TAFSIR_SOURCES: [], VALID_TAFSIR_SOURCES: new Set(['jalalayn']) },
@@ -465,7 +474,7 @@ const prodOnboardingModule = loadTsModule('src/screens/OnboardingScreen.tsx', {
     resolveDeviceAppLanguage: () => 'en',
     setAppLanguage: async () => {},
     prepareNativeLayoutDirection: () => {},
-    isRtlLanguage: (l) => l === 'ar' || l === 'ur',
+    isRtlLanguage: (l) => l === 'ar' || l === 'ur' || l === 'ps',
     t: (s) => s,
   },
   'expo-localization': { getLocales: () => [{ languageCode: 'en' }] },
@@ -533,7 +542,7 @@ const realOnboardingScreenModule = loadTsModule('src/screens/OnboardingScreen.ts
     resolveDeviceAppLanguage: () => 'en',
     setAppLanguage: async () => {},
     prepareNativeLayoutDirection: () => {},
-    isRtlLanguage: (l) => l === 'ar' || l === 'ur',
+    isRtlLanguage: (l) => l === 'ar' || l === 'ur' || l === 'ps',
     t: (s) => s,
   },
   'expo-localization': { getLocales: () => [{ languageCode: 'en' }] },
@@ -1868,6 +1877,45 @@ function createProductionOnboardingDoneHarness(storage) {
     assert.equal(reloadInvocations, 0, 'Zero reload invocations on native same-direction');
     assert.deepEqual(sideEffectOrder, ['onComplete'], 'Only onComplete side effect called');
     console.log('    ✓ Real production same-direction success verified (direct onComplete, zero reload)');
+  }
+
+  // 4. Production settings accepts new locale codes after write and on a cold boot.
+  console.log('  --- Y.4 Real production settings persistence + Quran translation auto-linking ---');
+  {
+    const storage = new ProductionMockStorage();
+    activeAsyncStorage = storage;
+    prodQuranLanguageModule._resetQuranLanguageStateForTesting(storage);
+    prodQuranAudioModule._resetQuranAudioStateForTesting(storage);
+    await prodQuranLanguageModule.bootstrapQuranLanguage();
+    await prodQuranAudioModule.bootstrapAudioTranslation();
+
+    const firstHarness = createRealSettingsProviderHarness();
+    const firstSettings = await firstHarness.mount();
+    await firstSettings.setLanguage('ps');
+    assert.equal(JSON.parse(await storage.getItem('islamic-settings')).language, 'ps', 'Real settings persist Pashto');
+    assert.equal(await storage.getItem('quran-translation-language'), 'ps', 'Real settings select the Pashto Quran edition');
+
+    const coldBootHarness = createRealSettingsProviderHarness();
+    const coldBootSettings = await coldBootHarness.mount();
+    assert.equal(coldBootSettings.settings.language, 'ps', 'Cold boot retains persisted Pashto instead of falling back to English');
+
+    for (const language of ['bn', 'ms', 'ta', 'id', 'ps']) {
+      await coldBootSettings.setLanguage(language);
+      assert.equal(
+        JSON.parse(await storage.getItem('islamic-settings')).language,
+        language,
+        `Real settings persist ${language}`
+      );
+      assert.equal(
+        await storage.getItem('quran-translation-language'),
+        language,
+        `Switching to ${language} automatically selects the matching Quran translation`
+      );
+    }
+
+    await coldBootSettings.setLanguage('en');
+    assert.equal(await storage.getItem('quran-translation-language'), 'en', 'Switching back to English restores English Quran translation');
+    console.log('    ✓ Real settings persisted and linked Quran editions across Bengali, Malay, Tamil, Indonesian, Pashto, and English');
   }
 
   console.log('  ✓ Test Y passed: real production modules exercised together through onboarding submit transaction');

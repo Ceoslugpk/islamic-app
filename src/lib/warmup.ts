@@ -26,7 +26,7 @@ export const HADITH_WARMUP_PROGRESS_KEY = 'hadith-warmup-progress';
 const HADITH_PAGE_LIMIT = 20;
 const HADITH_REQUEST_DELAY_MS = 350; // 350ms delay between requests (~170 req/min, islamic.app limit is 600/min)
 const PRIORITY_COLLECTIONS = ['bukhari', 'muslim'];
-const MAIN_LANGUAGES = ['ar', 'ur', 'id', 'tr', 'fr', 'de', 'es', 'ru', 'bn', 'ms', 'fa', 'hi', 'ml', 'si'];
+const MAIN_LANGUAGES = ['ar', 'ur', 'id', 'tr', 'fr', 'de', 'es', 'ru', 'bn', 'ms', 'ta', 'ps', 'fa', 'hi', 'ml', 'si'];
 
 export interface WarmupProgress {
   step: string;

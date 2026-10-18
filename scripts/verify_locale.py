@@ -21,7 +21,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 LOCALES_DIR = os.path.join(ROOT, "src", "locales")
 EN_PATH = os.path.join(LOCALES_DIR, "en.json")
 
-REGISTERED_LOCALES = ["en", "ur", "ar", "hi", "ml", "si"]
+REGISTERED_LOCALES = ["en", "ur", "ar", "hi", "ml", "si", "bn", "ms", "ta", "id", "ps"]
 
 # Legitimate protected content permitted to remain identical to English:
 # Proper nouns, technical identifiers, Arabic quotations/transliterations, URLs, numbers.

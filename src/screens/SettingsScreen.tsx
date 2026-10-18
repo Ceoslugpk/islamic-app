@@ -134,6 +134,11 @@ export const APP_LANGUAGE_OPTIONS: readonly AppLanguageOption[] = [
   { value: 'hi', label: 'हिन्दी', nativeLabel: 'हिन्दी', englishName: 'Hindi', direction: 'LTR' },
   { value: 'ml', label: 'മലയാളം', nativeLabel: 'മലയാളം', englishName: 'Malayalam', direction: 'LTR' },
   { value: 'si', label: 'සිංහල', nativeLabel: 'සිංහල', englishName: 'Sinhala', direction: 'LTR' },
+  { value: 'bn', label: 'বাংলা', nativeLabel: 'বাংলা', englishName: 'Bengali', direction: 'LTR' },
+  { value: 'ms', label: 'Bahasa Melayu', nativeLabel: 'Bahasa Melayu', englishName: 'Malay', direction: 'LTR' },
+  { value: 'ta', label: 'தமிழ்', nativeLabel: 'தமிழ்', englishName: 'Tamil', direction: 'LTR' },
+  { value: 'id', label: 'Bahasa Indonesia', nativeLabel: 'Bahasa Indonesia', englishName: 'Indonesian', direction: 'LTR' },
+  { value: 'ps', label: 'پښتو', nativeLabel: 'پښتو', englishName: 'Pashto', direction: 'RTL', fontFamily: 'NotoNaskhArabic_700Bold' },
 ];
 
 const QURAN_FONT_OPTIONS: { key: QuranArabicFont; label: string; desc: string }[] = [
@@ -1040,7 +1045,7 @@ export default function SettingsScreen({
       >
         <View style={[styles.contentWrap, { maxWidth: layout.maxW }]}>
 
-        {/* Language — English / اردو / العربية / हिन्दी */}
+        {/* App language and writing direction */}
         <Section
           label={t('Language / زبان')}
           collapsible
@@ -1061,6 +1066,16 @@ export default function SettingsScreen({
                 ? 'മലയാളം (Malayalam) · ഇടത്തുനിന്ന് വലത്തോട്ട് (LTR)'
                 : settings.language === 'si'
                 ? 'සිංහල (Sinhala) · වමේ සිට දකුණට (LTR)'
+                : settings.language === 'bn'
+                ? 'বাংলা (Bengali) · বাম থেকে ডানে (LTR)'
+                : settings.language === 'ms'
+                ? 'Bahasa Melayu · Kiri ke kanan (LTR)'
+                : settings.language === 'ta'
+                ? 'தமிழ் (Tamil) · இடமிருந்து வலம் (LTR)'
+                : settings.language === 'id'
+                ? 'Bahasa Indonesia · Kiri ke kanan (LTR)'
+                : settings.language === 'ps'
+                ? 'پښتو (Pashto) · له ښي څخه چپ ته (RTL)'
                 : t('English · Left to Right (LTR)')
             }
             accessibilityRole="text"
@@ -1073,7 +1088,7 @@ export default function SettingsScreen({
               const localizedName = getLocalizedLanguageName(opt.englishName);
               const directionBadge = opt.direction;
               const nextLang = opt.value;
-              const isArabicScript = opt.value === 'ar' || opt.value === 'ur';
+              const isArabicScript = opt.value === 'ar' || opt.value === 'ur' || opt.value === 'ps';
 
               return (
                 <View key={opt.value}>

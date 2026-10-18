@@ -569,6 +569,34 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
 
     return (
       <View style={styles.headerArea}>
+        {/* Match the title hierarchy used by the Home, Library, and Tools tabs. */}
+        <View style={[styles.titleSection, { paddingStart: Math.max(0, 26 - horizontalPadding) }]}>
+          <AppText
+            variant="eyebrow"
+            style={[
+              styles.titleEyebrow,
+              {
+                fontFamily: isRTL() ? 'Amiri_400Regular' : 'Poppins_500Medium',
+                letterSpacing: isRTL() ? 0 : 2.2,
+                textTransform: isRTL() ? 'none' : 'uppercase',
+              },
+            ]}
+            maxFontSizeMultiplier={1.2}
+          >
+            {t('Read')}
+          </AppText>
+          <AppText
+            variant="screenTitle"
+            style={[
+              styles.titleMain,
+              { fontFamily: isRTL() ? 'Amiri_700Bold' : 'Lora_500Medium' },
+            ]}
+            maxFontSizeMultiplier={1.2}
+          >
+            {t('Quran')}
+          </AppText>
+        </View>
+
         {/* 1. Search Bar (pill card matching reference) */}
         <View
           style={[
@@ -1511,7 +1539,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
       </View>
     );
   }, [
-    tokens, mode, isCompact,
+    tokens, mode, isCompact, horizontalPadding,
     inputQuery, searchHistory, searchFilter, verseRef,
     preloadProgress, startPreload, pausePreload, setQuranPreloadRequested,
     bookmarkCount, noteCount, filteredSurahs,
@@ -1655,6 +1683,20 @@ const styles = StyleSheet.create({
   },
   headerArea: {
     marginBottom: 4,
+  },
+  titleSection: {
+    marginBottom: 12,
+  },
+  titleEyebrow: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 2.2,
+    textTransform: 'uppercase',
+  },
+  titleMain: {
+    fontSize: 33.5,
+    lineHeight: 38,
+    marginTop: 2,
   },
 
   /* 1. Search Bar (pill card matching reference) */

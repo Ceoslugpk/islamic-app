@@ -72,6 +72,12 @@ assert.ok(
   settingsCode.includes("nextLang === 'si'") && settingsCode.includes("setQuranTranslationLanguage('si')"),
   'setLanguage must auto-link Sinhala Quran translation language'
 );
+assert.ok(
+  settingsCode.includes("nextLang === 'bn' || nextLang === 'ms' || nextLang === 'ta' || nextLang === 'id' || nextLang === 'ps'") &&
+    settingsCode.includes('await setQuranTranslationLanguage(nextLang)'),
+  'setLanguage must auto-link Bengali, Malay, Tamil, Indonesian, and Pashto Quran translations'
+);
+assert.ok(i18nCode.includes("['ur', 'ar', 'ps'].some"), 'Pashto must use RTL layout direction');
 
 // (b) durable write & readback remain atomic inside the shared writer queue
 assert.ok(
@@ -280,7 +286,8 @@ const DEFAULT_SETTINGS = {
 
 function sanitizeMockSettings(raw) {
   if (!raw || typeof raw !== 'object') return { ...DEFAULT_SETTINGS };
-  const lang = raw.language === 'ur' || raw.language === 'ar' || raw.language === 'hi' || raw.language === 'ml' || raw.language === 'si' || raw.language === 'en' ? raw.language : 'en';
+  const supported = ['en', 'ur', 'ar', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps'];
+  const lang = supported.includes(raw.language) ? raw.language : 'en';
   return {
     ...DEFAULT_SETTINGS,
     ...raw,
@@ -290,7 +297,7 @@ function sanitizeMockSettings(raw) {
 }
 
 const CANONICAL_TAFSIRS = new Set(['jalalayn', 'api-ibn-kathir-urdu', 'api-ibn-kathir-ar']);
-const CANONICAL_QURAN_LANGS = new Set(['en', 'ur', 'ar', 'hi', 'ml', 'si']);
+const CANONICAL_QURAN_LANGS = new Set(['en', 'ur', 'ar', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps']);
 
 function computeNextSettings(prev, nextLang) {
   let tafsirSourceId = prev.tafsirSourceId;
@@ -327,7 +334,7 @@ class SettingsHarness {
     const raw = await this.storage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && (parsed.language === 'en' || parsed.language === 'ur' || parsed.language === 'ar' || parsed.language === 'hi' || parsed.language === 'ml' || parsed.language === 'si')) {
+      if (parsed && CANONICAL_QURAN_LANGS.has(parsed.language)) {
         this.bootLang = parsed.language;
       }
     }
@@ -336,11 +343,11 @@ class SettingsHarness {
     if (!raw || !JSON.parse(raw).language) {
       this.settings.language = this.bootLang;
     }
-    this.i18n.isRTL = this.bootLang === 'ur' || this.bootLang === 'ar';
+    this.i18n.isRTL = ['ur', 'ar', 'ps'].includes(this.bootLang);
   }
 
   prepareNativeLayoutDirection(lang) {
-    const isRtl = lang === 'ur' || lang === 'ar';
+    const isRtl = ['ur', 'ar', 'ps'].includes(lang);
     this.i18n.allowRTL(true);
     this.i18n.forceRTL(isRtl);
     this.operationLog.push(`forceRTL:${isRtl}`);
@@ -364,6 +371,9 @@ class SettingsHarness {
       } else if (nextLang === 'si') {
         await this.storage.setItem('quran-translation-language', 'si');
         this.sideEffectsRun.push('quran-lang:si');
+      } else if (['bn', 'ms', 'ta', 'id', 'ps'].includes(nextLang)) {
+        await this.storage.setItem('quran-translation-language', nextLang);
+        this.sideEffectsRun.push(`quran-lang:${nextLang}`);
       } else {
         await this.storage.setItem('quran-translation-language', 'en');
         this.sideEffectsRun.push('quran-lang:en');
@@ -2043,6 +2053,26 @@ class SettingsHarness {
 
   console.log('  ✓ Test 8 passed: Quran reading position keys preserved across language changes.');
 }
+
+// ---------------------------------------------------------------------------
+// Test 9: All newly wired languages persist, auto-link Quran translation, and set direction
+// ---------------------------------------------------------------------------
+for (const language of ['bn', 'ms', 'ta', 'id', 'ps']) {
+  const storage = new MockStorage();
+  const i18n = new MockI18nManager(false);
+  const harness = new SettingsHarness(storage, i18n);
+  await harness.boot();
+  await harness.setLanguage(language);
+  assert.strictEqual(harness.settings.language, language, `${language} persists as an app language`);
+  assert.strictEqual(storage.dump(STORAGE_KEY).language, language, `${language} survives settings readback`);
+  assert.strictEqual(await storage.getItem('quran-translation-language'), language, `${language} auto-links its Quran translation`);
+  harness.prepareNativeLayoutDirection(language);
+  assert.strictEqual(i18n.isRTL, language === 'ps', `${language} has the expected layout direction`);
+
+  await harness.setLanguage('en');
+  assert.strictEqual(await storage.getItem('quran-translation-language'), 'en', `${language}->en restores English Quran translation`);
+}
+console.log('  ✓ Test 9 passed: new app languages persist, auto-link their Quran editions, and handle LTR/RTL transitions.');
 
 console.log('\n========================================================');
 console.log('ALL LANGUAGE SWITCHING & PERSISTENCE TESTS PASSED!');

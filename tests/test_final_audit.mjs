@@ -7,18 +7,27 @@ console.log('=== RUNNING FINAL STABILITY AUDIT VERIFICATION ===\n');
 // 1. Verify build.gradle versions and namespace
 const buildGradlePath = path.resolve('android/app/build.gradle');
 const buildGradle = fs.readFileSync(buildGradlePath, 'utf8');
+const appConfig = JSON.parse(fs.readFileSync(path.resolve('app.json'), 'utf8')).expo;
 
-assert(buildGradle.includes("versionCode 68"), "versionCode must be 68");
-assert(buildGradle.includes('versionName "1.1.49"'), 'versionName must be "1.1.49"');
+assert(buildGradle.includes(`versionCode ${appConfig.android.versionCode}`), 'Android versionCode must match app.json');
+assert(buildGradle.includes(`versionName "${appConfig.version}"`), 'Android versionName must match app.json');
 assert(buildGradle.includes("namespace 'com.qashi.islamic'") || buildGradle.includes("applicationId 'com.qashi.islamic'"), "Application ID must be com.qashi.islamic");
-console.log('✓ (1) Version code 68, version name 1.1.49, application ID com.qashi.islamic verified in build.gradle');
+assert(buildGradle.includes(`applicationId '${appConfig.android.package}'`), 'Android applicationId must match app.json');
+console.log(`✓ (1) Version ${appConfig.version} (code ${appConfig.android.versionCode}) and application ID ${appConfig.android.package} verified`);
 
 // 2. Verify AndroidManifest permissions
 const manifestPath = path.resolve('android/app/src/main/AndroidManifest.xml');
 const manifest = fs.readFileSync(manifestPath, 'utf8');
 
-assert(!manifest.includes('android.permission.RECORD_AUDIO'), 'RECORD_AUDIO must NOT be present in manifest');
-assert(!manifest.includes('android.permission.SYSTEM_ALERT_WINDOW'), 'SYSTEM_ALERT_WINDOW must NOT be present in manifest');
+function hasActivePermission(permission) {
+  const declarations = manifest.match(/<uses-permission\b[^>]*\/>/g) || [];
+  return declarations.some((declaration) =>
+    declaration.includes(`android:name="${permission}"`) && !declaration.includes('tools:node="remove"')
+  );
+}
+
+assert(!hasActivePermission('android.permission.RECORD_AUDIO'), 'RECORD_AUDIO must be removed from the merged manifest');
+assert(!hasActivePermission('android.permission.SYSTEM_ALERT_WINDOW'), 'SYSTEM_ALERT_WINDOW must be removed from the merged manifest');
 assert(manifest.includes('android.permission.ACTIVITY_RECOGNITION" tools:node="remove"'), 'ACTIVITY_RECOGNITION must be tools:node="remove"');
 assert(manifest.includes('android.permission.FOREGROUND_SERVICE'), 'FOREGROUND_SERVICE must be present');
 assert(manifest.includes('android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK'), 'FOREGROUND_SERVICE_MEDIA_PLAYBACK must be present');

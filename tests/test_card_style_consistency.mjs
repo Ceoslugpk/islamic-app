@@ -175,11 +175,13 @@ assert.ok(
   homeSrc.includes('duaCardSlide: {\r\n    borderRadius: 14,'),
   'HomeScreen duaCardSlide must have canonical borderRadius: 14'
 );
-assert.ok(
-  homeSrc.includes('duaAfterPrayerCard: {\n    position: \'relative\',\n    overflow: \'hidden\',\n    minHeight: 210,\n    padding: 18,\n    borderRadius: 14,') ||
-  homeSrc.includes('duaAfterPrayerCard: {\r\n    position: \'relative\',\r\n    overflow: \'hidden\',\r\n    minHeight: 210,\r\n    padding: 18,\r\n    borderRadius: 14,'),
-  'HomeScreen duaAfterPrayerCard must have canonical borderRadius: 14'
-);
+const duaAfterPrayerCardStyles = homeSrc.match(/duaAfterPrayerCard:\s*\{([^}]*)\}/)?.[1] ?? '';
+assert.match(duaAfterPrayerCardStyles, /position:\s*'relative'/, 'Dua after prayer card must keep its positioned card wrapper');
+assert.match(duaAfterPrayerCardStyles, /overflow:\s*'hidden'/, 'Dua after prayer card must clip its decorative content');
+assert.match(duaAfterPrayerCardStyles, /minHeight:\s*280/, 'Dua after prayer card must preserve the redesigned 280dp minimum height');
+assert.match(duaAfterPrayerCardStyles, /borderRadius:\s*14/, 'Dua after prayer card must keep the shared 14dp card radius');
+assert.doesNotMatch(duaAfterPrayerCardStyles, /padding:/, 'Dua card content spacing belongs to the inner pressable, not the outer card');
+assert.ok(homeSrc.includes('styles.duaCardPressable'), 'Dua card content must use the dedicated inner pressable spacing');
 console.log('  ✓ Test 6 passed: HomeScreen cards (hero, tiles, streak, sunrise, duas) verified');
 
 // ---------------------------------------------------------------------------

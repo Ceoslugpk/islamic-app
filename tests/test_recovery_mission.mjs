@@ -36,7 +36,7 @@ assert.ok(prayerReminders.includes('getContinueReadingPosition'), 'PrayerReminde
 console.log('  [ok] Universal resolver: notifications + PrayerReminders honor the marker');
 
 // 5. ur -> en restores English content defaults
-assert.ok(settings.includes("currentQuranLang === 'ur'"), 'en branch must restore quran translation to en');
+assert.ok(settings.includes('CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)'), 'en branch must restore a canonically linked quran translation to en');
 assert.ok(settings.includes("savedAudioEdition === 'ur.everyayah-shamshad'"), 'en branch must restore audio edition');
 console.log('  [ok] ur->en: restores English quran/tafsir/audio defaults');
 

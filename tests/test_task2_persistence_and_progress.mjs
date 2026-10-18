@@ -147,7 +147,7 @@ function verifyQuranProgressIntact(stageName) {
 
 async function runTestSuite() {
   console.log('--- 1. Pairwise Language Transitions with Progress Invariance ---');
-  const registeredLanguages = ['en', 'ur', 'ar', 'hi', 'ml', 'si'];
+  const registeredLanguages = ['en', 'ur', 'ar', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps'];
 
   // Pairwise transitions across all registered languages
   for (let i = 0; i < registeredLanguages.length; i++) {

@@ -9,16 +9,27 @@ import ar from '../locales/ar.json';
 import hi from '../locales/hi.json';
 import ml from '../locales/ml.json';
 import si from '../locales/si.json';
+import bn from '../locales/bn.json';
+import ms from '../locales/ms.json';
+import ta from '../locales/ta.json';
+import id from '../locales/id.json';
+import ps from '../locales/ps.json';
 
-export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi' | 'ml' | 'si';
+export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi' | 'ml' | 'si' | 'bn' | 'ms' | 'ta' | 'id' | 'ps';
+
+function matchesLanguageTag(code: string, language: string): boolean {
+  return code === language || code.startsWith(`${language}-`) || code.startsWith(`${language}_`);
+}
 
 export function isRtlLanguage(lang: AppLanguage | string | null | undefined): boolean {
   if (!lang) return false;
-  return lang === 'ur' || lang === 'ar' || lang.startsWith('ur-') || lang.startsWith('ur_') || lang.startsWith('ar-') || lang.startsWith('ar_');
+  const normalized = lang.toLowerCase();
+  return ['ur', 'ar', 'ps'].some((language) => matchesLanguageTag(normalized, language));
 }
 
 export function isAppLanguage(value: unknown): value is AppLanguage {
-  return value === 'en' || value === 'ur' || value === 'ar' || value === 'hi' || value === 'ml' || value === 'si';
+  return value === 'en' || value === 'ur' || value === 'ar' || value === 'hi' || value === 'ml' || value === 'si' ||
+    value === 'bn' || value === 'ms' || value === 'ta' || value === 'id' || value === 'ps';
 }
 
 const locales = Localization.getLocales();
@@ -27,11 +38,16 @@ const deviceLanguageCode = locales && locales.length > 0 ? locales[0].languageCo
 export function resolveDeviceAppLanguage(code: string | null | undefined): AppLanguage {
   if (!code) return 'en';
   const lower = code.toLowerCase();
-  if (lower === 'ar' || lower.startsWith('ar-') || lower.startsWith('ar_')) return 'ar';
-  if (lower === 'ur' || lower.startsWith('ur-') || lower.startsWith('ur_')) return 'ur';
-  if (lower === 'hi' || lower.startsWith('hi-') || lower.startsWith('hi_')) return 'hi';
-  if (lower === 'ml' || lower.startsWith('ml-') || lower.startsWith('ml_')) return 'ml';
-  if (lower === 'si' || lower.startsWith('si-') || lower.startsWith('si_')) return 'si';
+  if (matchesLanguageTag(lower, 'ar')) return 'ar';
+  if (matchesLanguageTag(lower, 'ur')) return 'ur';
+  if (matchesLanguageTag(lower, 'hi')) return 'hi';
+  if (matchesLanguageTag(lower, 'ml')) return 'ml';
+  if (matchesLanguageTag(lower, 'si')) return 'si';
+  if (matchesLanguageTag(lower, 'bn')) return 'bn';
+  if (matchesLanguageTag(lower, 'ms')) return 'ms';
+  if (matchesLanguageTag(lower, 'ta')) return 'ta';
+  if (matchesLanguageTag(lower, 'id')) return 'id';
+  if (matchesLanguageTag(lower, 'ps')) return 'ps';
   return 'en';
 }
 
@@ -85,6 +101,11 @@ i18nextUse(initReactI18next).init({
     hi: { translation: hi },
     ml: { translation: ml },
     si: { translation: si },
+    bn: { translation: bn },
+    ms: { translation: ms },
+    ta: { translation: ta },
+    id: { translation: id },
+    ps: { translation: ps },
   },
   lng: initialLanguage,
   fallbackLng: 'en',
@@ -117,8 +138,7 @@ export function applyRTL(isRTL: boolean): void {
   }
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-    const current = getCurrentLanguage();
-    document.documentElement.lang = isRTL ? (isRtlLanguage(current) ? current : getBootLanguage()) : 'en';
+    document.documentElement.lang = getCurrentLanguage();
   }
 }
 
@@ -170,11 +190,17 @@ export function setAppLanguage(lang: AppLanguage): void {
 export function getCurrentLanguage(): AppLanguage {
   const lng = i18n.language;
   if (!lng) return 'en';
-  if (lng === 'ar' || lng.startsWith('ar-') || lng.startsWith('ar_')) return 'ar';
-  if (lng === 'ur' || lng.startsWith('ur-') || lng.startsWith('ur_')) return 'ur';
-  if (lng === 'hi' || lng.startsWith('hi-') || lng.startsWith('hi_')) return 'hi';
-  if (lng === 'ml' || lng.startsWith('ml-') || lng.startsWith('ml_')) return 'ml';
-  if (lng === 'si' || lng.startsWith('si-') || lng.startsWith('si_')) return 'si';
+  const normalized = lng.toLowerCase();
+  if (matchesLanguageTag(normalized, 'ar')) return 'ar';
+  if (matchesLanguageTag(normalized, 'ur')) return 'ur';
+  if (matchesLanguageTag(normalized, 'hi')) return 'hi';
+  if (matchesLanguageTag(normalized, 'ml')) return 'ml';
+  if (matchesLanguageTag(normalized, 'si')) return 'si';
+  if (matchesLanguageTag(normalized, 'bn')) return 'bn';
+  if (matchesLanguageTag(normalized, 'ms')) return 'ms';
+  if (matchesLanguageTag(normalized, 'ta')) return 'ta';
+  if (matchesLanguageTag(normalized, 'id')) return 'id';
+  if (matchesLanguageTag(normalized, 'ps')) return 'ps';
   return 'en';
 }
 

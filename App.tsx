@@ -946,10 +946,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
       <AppHeader
         transparent
         onOpenSettings={handleOpenSettings}
-        onOpenNotifications={handleOpenNotifications}
       />
     );
-  }, [isTopLevel, handleOpenSettings, handleOpenNotifications]);
+  }, [isTopLevel, handleOpenSettings]);
 
     return (
       <View style={[styles.safe, { backgroundColor: homeTokens.bgTop }]}>

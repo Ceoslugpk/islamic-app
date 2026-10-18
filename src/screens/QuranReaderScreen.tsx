@@ -1145,6 +1145,12 @@ export default function QuranReaderScreen({
   // Fetch Surah data (cache-first: instant display from cache, graceful background refresh if forced)
   const loadSurah = useCallback(async (force = false, targetSurahNumber?: number) => {
     const sNum = targetSurahNumber || safeSurahNumber;
+    // Record the visit as soon as the reader opens so Recently Read also works
+    // when Quran content must load from cache or the network is unavailable.
+    const visitMeta = getBundledSurahs114().find((item) => item.number === sNum);
+    if (visitMeta) {
+      void recordSurahVisit(sNum, visitMeta.englishName, visitMeta.name);
+    }
     const key = `surah:${sNum}:${edition?.editionIdentifier || 'en.sahih'}`;
     const cached = !force ? loadQuranCache<SurahDetail>(key) : null;
     const isCached = Boolean(cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0);
@@ -1185,10 +1191,6 @@ export default function QuranReaderScreen({
         if (!prevPos || (prevPos.surah === sNum ? startAyah > prevPos.ayah : true)) {
           saveReadingPosition(sNum, startAyah);
         }
-      }
-
-      if (data) {
-        recordSurahVisit(sNum, data.englishName || `Surah ${sNum}`, data.name || '');
       }
 
       // Auto-fetch on open: if this translation edition was NOT cached,

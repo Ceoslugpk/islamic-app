@@ -137,6 +137,27 @@ assert(hi['Yawm Arafah (The Pinnacle of Hajj)'] === 'यौम-ए-अरफ़�
 assert(ml['Yawm Arafah (The Pinnacle of Hajj)'] === 'യൗമു അറഫ (ഹജ്ജിന്റെ പ്രധാന ഘട്ടം)', 'Malayalam authentic translation for Yawm Arafah');
 assert(si['Yawm Arafah (The Pinnacle of Hajj)'] === 'යව්ම් අරෆා (හජ් වන්දනාවේ උච්චතම දිනය)', 'Sinhala authentic translation for Yawm Arafah');
 
+// 7. Newly wired app languages have complete, non-English UI dictionaries and app registration.
+const newAppLanguages = ['bn', 'ms', 'ta', 'id', 'ps'];
+const i18nSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'lib', 'i18n.ts'), 'utf8');
+const settingsSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'screens', 'SettingsScreen.tsx'), 'utf8');
+const onboardingSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'screens', 'OnboardingScreen.tsx'), 'utf8');
+for (const language of newAppLanguages) {
+  const locale = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, `${language}.json`), 'utf8'));
+  assert(Object.keys(locale).length === totalEnKeys, `${language} has all ${totalEnKeys} locale keys`);
+  for (const key of ['Home', 'Settings', 'Continue Reading']) {
+    assert(locale[key] !== en[key], `${language} translates the ${key} UI label`);
+  }
+  assert(i18nSource.includes(`import ${language} from '../locales/${language}.json'`), `${language} dictionary is imported`);
+  assert(i18nSource.includes(`${language}: { translation: ${language} }`), `${language} dictionary is registered with i18next`);
+  assert(i18nSource.includes(`matchesLanguageTag(lower, '${language}')`), `${language} device locale is recognized`);
+  assert(settingsSource.includes(`value: '${language}'`), `${language} is selectable in Settings`);
+  assert(onboardingSource.includes(`code: '${language}'`), `${language} is selectable during onboarding`);
+}
+assert(i18nSource.includes("['ur', 'ar', 'ps'].some"), 'Pashto, Urdu and Arabic share RTL direction handling');
+assert(i18nSource.includes('document.documentElement.lang = getCurrentLanguage()'), 'Web document language follows the selected LTR or RTL app language');
+console.log('  ✓ Bengali, Malay, Tamil, Indonesian and Pashto are fully registered with localized UI labels');
+
 console.log('\n--------------------------------------------------------');
 if (failures > 0) {
   console.error(`FAILED: ${failures} assertions failed.`);

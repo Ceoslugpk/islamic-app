@@ -26,7 +26,8 @@ import zlib from 'node:zlib';
 
 console.log('=== RUNNING TASK 4 BUNDLE & CHUNK MANIFEST ANALYSIS ===\n');
 
-const distJsDir = path.resolve('dist/_expo/static/js/web');
+const webExportDir = path.resolve(process.env.WEB_EXPORT_DIR || 'dist');
+const distJsDir = path.join(webExportDir, '_expo/static/js/web');
 assert.ok(fs.existsSync(distJsDir), `dist/_expo/static/js/web must exist at ${distJsDir}`);
 
 const files = fs.readdirSync(distJsDir).filter((f) => f.endsWith('.js'));

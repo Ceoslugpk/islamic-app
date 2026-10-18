@@ -1,5 +1,7 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
 import { ACCENT_KEYS, accentThemes, DEFAULT_ACCENT, getLocalizedAccentName } from '../src/lib/accents.ts';
 
 console.log('=== URDU I18N & AUTO-LINK ARCHITECTURE TEST SUITE ===\n');
@@ -29,7 +31,7 @@ const settingsCode = fs.readFileSync('src/lib/settings.tsx', 'utf8');
 
 assert.ok(settingsCode.includes("language: AppLanguage"), 'AppSettings includes language field');
 assert.ok(settingsCode.includes("language: 'en'"), 'DEFAULTS.language defaults to "en"');
-assert.ok(settingsCode.includes("p.language === 'ur'"), 'sanitizeSettings handles "ur" and defaults to "en"');
+assert.ok(settingsCode.includes('isAppLanguage(p.language)'), 'sanitizeSettings accepts only languages from the app registry');
 assert.ok(settingsCode.includes("setLanguage: (lang: AppLanguage) => Promise<void>"), 'SettingsContextValue exposes setLanguage');
 
 console.log('  ✓ Settings schema & sanitization: AppLanguage and defaults verified');
@@ -86,9 +88,13 @@ assert.ok(i18nCode.includes("import ar from '../locales/ar.json'"), 'i18n.ts imp
 assert.ok(i18nCode.includes("import hi from '../locales/hi.json'"), 'i18n.ts imports hi.json');
 assert.ok(i18nCode.includes("import ml from '../locales/ml.json'"), 'i18n.ts imports ml.json');
 assert.ok(i18nCode.includes("import si from '../locales/si.json'"), 'i18n.ts imports si.json');
-assert.ok(i18nCode.includes("export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi' | 'ml' | 'si'"), 'AppLanguage includes hi, ml, and si');
+for (const code of ['bn', 'ms', 'ta', 'id', 'ps']) {
+  assert.ok(i18nCode.includes(`import ${code} from '../locales/${code}.json'`), `i18n.ts imports ${code}.json`);
+  assert.ok(i18nCode.includes(`'${code}'`), `AppLanguage registry includes ${code}`);
+}
+assert.ok(i18nCode.includes("export type AppLanguage = 'en' | 'ur' | 'ar' | 'hi' | 'ml' | 'si' | 'bn' | 'ms' | 'ta' | 'id' | 'ps'"), 'AppLanguage includes all 11 app languages');
 assert.ok(i18nCode.includes("export function isRtlLanguage("), 'isRtlLanguage helper exported');
-assert.ok(i18nCode.includes("lang === 'ur' || lang === 'ar'"), 'isRtlLanguage returns true only for ur and ar');
+assert.ok(i18nCode.includes("['ur', 'ar', 'ps'].some"), 'isRtlLanguage treats Urdu, Arabic, and Pashto as RTL');
 assert.ok(i18nCode.includes("resolveDeviceAppLanguage"), 'resolveDeviceAppLanguage helper present');
 assert.ok(settingsScreenCode.includes("value: 'ar'") && settingsScreenCode.includes("label: 'العربية'"), 'SettingsScreen exposes Arabic with native label');
 assert.ok(settingsScreenCode.includes("value: 'hi'") && settingsScreenCode.includes("label: 'हिन्दी'"), 'SettingsScreen exposes Hindi with native label');
@@ -176,16 +182,21 @@ console.log(`  ✓ Sinhala dictionary parity: exact ${siKeys.length} matching ke
 
 // RTL/LTR transitions verification across all 6 languages
 function testIsRtl(lang) {
-  return lang === 'ur' || lang === 'ar';
+  const normalized = lang.toLowerCase();
+  return ['ur', 'ar', 'ps'].some((code) => normalized === code || normalized.startsWith(`${code}-`) || normalized.startsWith(`${code}_`));
 }
 assert.strictEqual(testIsRtl('en'), false, 'en is LTR');
 assert.strictEqual(testIsRtl('ur'), true, 'ur is RTL');
 assert.strictEqual(testIsRtl('ar'), true, 'ar is RTL');
+assert.strictEqual(testIsRtl('ps'), true, 'ps is RTL');
+assert.strictEqual(testIsRtl('ps-AF'), true, 'ps-AF is RTL');
+assert.strictEqual(testIsRtl('PS_pk'), true, 'case-insensitive Pashto regional tag is RTL');
 assert.strictEqual(testIsRtl('hi'), false, 'hi is LTR');
 assert.strictEqual(testIsRtl('ml'), false, 'ml is LTR');
 assert.strictEqual(testIsRtl('si'), false, 'si is LTR');
+for (const lang of ['bn', 'ms', 'ta', 'id']) assert.strictEqual(testIsRtl(lang), false, `${lang} is LTR`);
 
-const allLangs = ['en', 'ur', 'ar', 'hi', 'ml', 'si'];
+const allLangs = ['en', 'ur', 'ar', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps'];
 const pairwiseTransitions = [];
 for (const from of allLangs) {
   for (const to of allLangs) {
@@ -203,7 +214,81 @@ for (const t of pairwiseTransitions) {
   assert.strictEqual(testIsRtl(t.from), t.rtlFrom, `Transition ${t.from}->${t.to} initial RTL mismatch`);
   assert.strictEqual(testIsRtl(t.to), t.rtlTo, `Transition ${t.from}->${t.to} target RTL mismatch`);
 }
-console.log(`  ✓ RTL/LTR transitions: all ${pairwiseTransitions.length} pairwise transitions across [en, ur, ar, hi, ml, si] verified`);
+console.log(`  ✓ RTL/LTR transitions: all ${pairwiseTransitions.length} pairwise transitions across all 11 app languages verified`);
+
+// Load the actual i18n module with lightweight platform mocks so the language
+// registry, locale detection, and web/native direction functions are exercised.
+const i18nSource = fs.readFileSync('src/lib/i18n.ts', 'utf8');
+const compiledI18n = ts.transpileModule(i18nSource, {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
+}).outputText;
+const runtimeI18n = {
+  language: 'en',
+  use() { return this; },
+  init(options) { this.options = options; this.language = options.lng; return this; },
+};
+const nativeDirection = {
+  isRTL: false,
+  allowRTL(value) { this.allowed = value; },
+  forceRTL(value) { this.isRTL = value; },
+};
+const documentElement = { dir: '', lang: '' };
+const asyncStorageMock = { getItem: async () => null };
+const i18nextMock = {
+  __esModule: true,
+  default: runtimeI18n,
+  use: () => runtimeI18n,
+  changeLanguage: (language) => { runtimeI18n.language = language; },
+  t: (key) => key,
+};
+const runtimeModule = { exports: {} };
+const runtimeRequire = (id) => {
+  if (id === 'i18next') return i18nextMock;
+  if (id === 'react-i18next') return { initReactI18next: {}, useTranslation: () => ({ t: (key) => key }) };
+  if (id === 'expo-localization') return { getLocales: () => [{ languageCode: 'en' }] };
+  if (id === '@react-native-async-storage/async-storage') return asyncStorageMock;
+  if (id === 'react-native') return { I18nManager: nativeDirection, Platform: { OS: 'web' } };
+  if (id.startsWith('../locales/')) {
+    const code = id.split('/').pop().replace('.json', '');
+    return JSON.parse(fs.readFileSync(`src/locales/${code}.json`, 'utf8'));
+  }
+  throw new Error(`Unexpected runtime import: ${id}`);
+};
+vm.runInNewContext(compiledI18n, {
+  module: runtimeModule,
+  exports: runtimeModule.exports,
+  require: runtimeRequire,
+  document: { documentElement },
+});
+const liveI18n = runtimeModule.exports;
+for (const language of allLangs) {
+  assert.strictEqual(liveI18n.isAppLanguage(language), true, `${language} is accepted by the production app-language guard`);
+  assert.strictEqual(runtimeI18n.options.resources[language].translation['Home'], JSON.parse(fs.readFileSync(`src/locales/${language}.json`, 'utf8'))['Home'], `${language} is active in the production i18next resource table`);
+  const rtl = ['ur', 'ar', 'ps'].includes(language);
+  assert.strictEqual(liveI18n.isRtlLanguage(language), rtl, `${language} has the production RTL/LTR classification`);
+  liveI18n.prepareNativeLayoutDirection(language);
+  assert.strictEqual(nativeDirection.isRTL, rtl, `${language} prepares the correct native layout direction`);
+  assert.deepStrictEqual([documentElement.dir, documentElement.lang], [rtl ? 'rtl' : 'ltr', language], `${language} prepares the correct web direction and lang attribute`);
+}
+for (const [deviceCode, expected] of [['bn-BD', 'bn'], ['ms-MY', 'ms'], ['ta-IN', 'ta'], ['id-ID', 'id'], ['ps-AF', 'ps'], ['ps_PK', 'ps']]) {
+  assert.strictEqual(liveI18n.resolveDeviceAppLanguage(deviceCode), expected, `${deviceCode} device locale resolves to ${expected}`);
+}
+assert.strictEqual(liveI18n.isAppLanguage('tr'), false, 'Unwired locale files remain unavailable as app UI languages');
+assert.strictEqual(liveI18n.resolveDeviceAppLanguage('fr-FR'), 'en', 'Unsupported device locales still fall back to English');
+assert.strictEqual(liveI18n.isRtlLanguage('ps-AF'), true, 'Pashto regional locale is RTL in production');
+assert.strictEqual(liveI18n.isRtlLanguage('bn-BD'), false, 'Bengali regional locale remains LTR in production');
+liveI18n.setAppLanguage('bn');
+assert.deepStrictEqual([documentElement.dir, documentElement.lang], ['ltr', 'bn'], 'Web Bengali direction and document language are LTR/Bengali');
+liveI18n.setAppLanguage('ps');
+assert.deepStrictEqual([documentElement.dir, documentElement.lang], ['rtl', 'ps'], 'Web Pashto direction and document language are RTL/Pashto');
+liveI18n.prepareNativeLayoutDirection('ps');
+assert.strictEqual(nativeDirection.isRTL, true, 'Native Pashto layout enables RTL');
+liveI18n.prepareNativeLayoutDirection('ta');
+assert.strictEqual(nativeDirection.isRTL, false, 'Native Tamil layout disables RTL');
+liveI18n.setAppLanguage('ta');
+liveI18n.applyRTL(false);
+assert.deepStrictEqual([documentElement.dir, documentElement.lang], ['ltr', 'ta'], 'Boot direction reconciliation retains the selected LTR document language');
+console.log('  ✓ Production i18n runtime: all 11 resources, regional device tags, and LTR/RTL switching verified');
 
 // 7. Durable Light/Dark Theme Persistence
 console.log('\n--- Task 2: Durable Light/Dark Theme Persistence ---');

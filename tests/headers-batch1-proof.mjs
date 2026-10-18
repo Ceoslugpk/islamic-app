@@ -268,7 +268,7 @@ try {
 
         if (isAppHeader) {
           const appHeader = document.querySelector('[data-testid="app-header-container"]');
-          const bell = document.querySelector('[data-testid="app-header-bell"]');
+          const appearance = document.querySelector('[data-testid="app-header-appearance"]');
           const gear = document.querySelector('[data-testid="app-header-gear"]');
           const subHeaders = document.querySelectorAll('[data-testid="sub-header"]');
           const legacyHeaders = document.querySelectorAll('[data-testid*="screen-header"]');
@@ -294,7 +294,7 @@ try {
             hasAppHeader: !!appHeader,
             subHeaderCount: subHeaders.length,
             legacyHeaderCount: legacyHeaders.length,
-            bellMetrics: inspectBtn(bell),
+            appearanceMetrics: inspectBtn(appearance),
             gearMetrics: inspectBtn(gear),
           };
         } else {
@@ -424,13 +424,13 @@ try {
           measured: `headerCount=${evaluation.headerCount}, hasAppHeader=${evaluation.hasAppHeader}`,
         });
 
-        // Assert bell button geometry
-        const bell = evaluation.bellMetrics;
-        const bellGeomPass = bell && bell.width === 32 && bell.height === 32 && bell.borderRadius === 16;
+        // Assert appearance button geometry
+        const appearance = evaluation.appearanceMetrics;
+        const appearanceGeomPass = appearance && appearance.width === 32 && appearance.height === 32 && appearance.borderRadius === 16;
         assertions.push({
-          name: 'AppHeader Bell 32x32, radius 16, 0.75px/1px border',
-          pass: bellGeomPass,
-          measured: JSON.stringify(bell),
+          name: 'AppHeader Appearance 32x32, radius 16, 0.75px/1px border',
+          pass: appearanceGeomPass,
+          measured: JSON.stringify(appearance),
         });
 
         // Assert gear button geometry

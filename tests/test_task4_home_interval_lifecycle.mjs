@@ -6,7 +6,7 @@
  *    - HomeScreenProps specifies `isActive?: boolean`
  *    - HomeScreen computes `isHomeVisible = Boolean(isActive && isAppActive)`
  *    - Clock interval clears when `isHomeVisible` is false, restarts with fresh Date when true
- *    - PrayerCountdown accepts `isActive` and pauses its 1-second interval
+ *    - PrayerCountdown accepts `isActive` and pauses its 1-second interval while Home is scrolled or animating
  *    - App.tsx passes `isActive={tab === 'home'}` to HomeScreen
  * 2. Strict Behavioral Lifecycle:
  *    - Mount on active Home: strict active interval count
@@ -68,8 +68,8 @@ assert.ok(
 
 // PrayerCountdown integration
 assert.ok(
-  homeScreenSrc.includes('isActive={isHomeVisible}'),
-  'HomeScreen must pass isActive={isHomeVisible} to PrayerCountdown'
+  homeScreenSrc.includes('isActive={isHomeVisible && !isScrolled && !isHomeScrolling}'),
+  'HomeScreen must pause PrayerCountdown while scrolled or while the scroll animation is active'
 );
 assert.ok(
   countdownSrc.includes('isActive?: boolean;'),
@@ -125,7 +125,12 @@ class SimulatedHomeScreen {
   constructor(tracker, { initialTab = 'home', initialAppActive = true } = {}) {
     this.tracker = tracker;
     this.props = { isActive: initialTab === 'home' };
-    this.state = { isAppActive: initialAppActive, now: new Date(1000) };
+    this.state = {
+      isAppActive: initialAppActive,
+      isScrolled: false,
+      isHomeScrolling: false,
+      now: new Date(1000),
+    };
     this.countdownState = { digits: null };
     this.homeClockTimerId = null;
     this.countdownTimerId = null;
@@ -156,6 +161,12 @@ class SimulatedHomeScreen {
 
   setAppActive(active) {
     this.state.isAppActive = active;
+    this.syncEffects();
+  }
+
+  setScrollState({ isScrolled, isHomeScrolling }) {
+    if (typeof isScrolled === 'boolean') this.state.isScrolled = isScrolled;
+    if (typeof isHomeScrolling === 'boolean') this.state.isHomeScrolling = isHomeScrolling;
     this.syncEffects();
   }
 
@@ -191,7 +202,7 @@ class SimulatedHomeScreen {
     }
 
     // PrayerCountdown interval effect [targetTime, onExpire, isActive]
-    const countdownActive = this.isHomeVisible;
+    const countdownActive = this.isHomeVisible && !this.state.isScrolled && !this.state.isHomeScrolling;
     if (!countdownActive) {
       if (this.countdownTimerId !== null) {
         this.tracker.clearInterval(this.countdownTimerId);
@@ -214,6 +225,15 @@ const screen = new SimulatedHomeScreen(tracker, { initialTab: 'home', initialApp
 assert.equal(tracker.activeCount, 2, 'Active Home must have exactly 2 active intervals (clock: 30s, countdown: 1s)');
 assert.equal(screen.setNowCallCount, 1, 'Mounting on Home immediately syncs `now`');
 console.log('  ✓ Mount on Home: exactly 2 active intervals registered, clock synced');
+
+// Scrolling keeps the low-frequency clock alive but pauses the per-second countdown.
+screen.setScrollState({ isScrolled: true });
+assert.equal(tracker.activeCount, 1, 'Scrolled Home must pause the 1-second countdown interval');
+screen.setScrollState({ isScrolled: false, isHomeScrolling: true });
+assert.equal(tracker.activeCount, 1, 'Active Home scroll animation must pause the countdown interval');
+screen.setScrollState({ isHomeScrolling: false });
+assert.equal(tracker.activeCount, 2, 'Returning to the top after scrolling must restore the countdown interval');
+console.log('  ✓ Home scrolling pauses the countdown timer and resumes it at rest');
 
 // Step B: Navigate to Quran
 screen.setTab('quran');

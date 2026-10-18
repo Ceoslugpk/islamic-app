@@ -10,7 +10,7 @@ import {
   AUDIO_TRANSLATION_EDITION_KEY,
 } from './quranAudio';
 import { getQuranTranslationLanguage, setQuranTranslationLanguage } from './quranLanguageState';
-import { AppLanguage, setAppLanguage, getBootLanguage } from './i18n';
+import { AppLanguage, setAppLanguage, getBootLanguage, isAppLanguage } from './i18n';
 import { setActiveAdhanReciterId } from './audio';
 import { setCachedLocation } from './useLocation';
 import { TAFSIR_SOURCES } from './tafsirSources';
@@ -430,9 +430,8 @@ export function sanitizeSettings(raw: unknown): AppSettings {
   const quranPreloadRequested =
     typeof p.quranPreloadRequested === 'boolean' ? p.quranPreloadRequested : DEFAULTS.quranPreloadRequested;
 
-  // 31. language ('en' | 'ur' | 'ar' | 'hi' | 'ml' | 'si')
-  const language: AppLanguage =
-    p.language === 'ur' || p.language === 'ar' || p.language === 'hi' || p.language === 'ml' || p.language === 'si' || p.language === 'en' ? p.language : DEFAULTS.language;
+  // 31. App language is validated by the same registry used at boot.
+  const language: AppLanguage = isAppLanguage(p.language) ? p.language : DEFAULTS.language;
 
   return {
     settingsVersion,
@@ -482,6 +481,11 @@ export const CANONICAL_AUTO_LINKED_QURAN_LANGS: ReadonlySet<string> = new Set([
   'hi',
   'ml',
   'si',
+  'bn',
+  'ms',
+  'ta',
+  'id',
+  'ps',
 ]);
 
 /**
@@ -498,7 +502,7 @@ export function getAutoLinkedTafsir(currentTafsirId: string, nextLang: AppLangua
   if (nextLang === 'ur') {
     return 'api-ibn-kathir-urdu';
   }
-  if (nextLang === 'en' || nextLang === 'hi' || nextLang === 'ml' || nextLang === 'si') {
+  if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(nextLang)) {
     return 'jalalayn';
   }
   return undefined;
@@ -640,7 +644,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         preloadRequestedMem = next.quranPreloadRequested;
 
         // If storage did not explicitly specify a valid language, preserve boot language
-        if (parsed.language !== 'en' && parsed.language !== 'ur' && parsed.language !== 'ar' && parsed.language !== 'hi' && parsed.language !== 'ml' && parsed.language !== 'si') {
+        if (!isAppLanguage(parsed.language)) {
           next.language = getBootLanguage();
         }
 
@@ -861,15 +865,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       if (nextLang === 'ur') {
         try {
           const currentQuranLang = getQuranTranslationLanguage();
-          if (currentQuranLang === 'en') {
-            await setQuranTranslationLanguage('ur');
-          } else if (currentQuranLang === 'ar') {
-            await setQuranTranslationLanguage('ur');
-          } else if (currentQuranLang === 'hi') {
-            await setQuranTranslationLanguage('ur');
-          } else if (currentQuranLang === 'ml') {
-            await setQuranTranslationLanguage('ur');
-          } else if (currentQuranLang === 'si') {
+          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
             await setQuranTranslationLanguage('ur');
           }
         } catch {}
@@ -887,7 +883,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       } else if (nextLang === 'ar') {
         try {
           const currentQuranLang = getQuranTranslationLanguage();
-          if (currentQuranLang === 'en' || currentQuranLang === 'ur' || currentQuranLang === 'hi' || currentQuranLang === 'ml' || currentQuranLang === 'si') {
+          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
             await setQuranTranslationLanguage('ar');
           }
         } catch {}
@@ -905,7 +901,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       } else if (nextLang === 'hi') {
         try {
           const currentQuranLang = getQuranTranslationLanguage();
-          if (currentQuranLang === 'en' || currentQuranLang === 'ur' || currentQuranLang === 'ar' || currentQuranLang === 'ml' || currentQuranLang === 'si') {
+          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
             await setQuranTranslationLanguage('hi');
           }
         } catch {}
@@ -923,7 +919,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       } else if (nextLang === 'ml') {
         try {
           const currentQuranLang = getQuranTranslationLanguage();
-          if (currentQuranLang === 'en' || currentQuranLang === 'ur' || currentQuranLang === 'ar' || currentQuranLang === 'hi' || currentQuranLang === 'si') {
+          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
             await setQuranTranslationLanguage('ml');
           }
         } catch {}
@@ -941,7 +937,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       } else if (nextLang === 'si') {
         try {
           const currentQuranLang = getQuranTranslationLanguage();
-          if (currentQuranLang === 'en' || currentQuranLang === 'ur' || currentQuranLang === 'ar' || currentQuranLang === 'hi' || currentQuranLang === 'ml') {
+          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
             await setQuranTranslationLanguage('si');
           }
         } catch {}
@@ -956,19 +952,30 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
             await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
           }
         } catch {}
-      } else {
-        // Switching back to English (from ur, ar, hi, ml, or si)
+
+      } else if (nextLang === 'bn' || nextLang === 'ms' || nextLang === 'ta' || nextLang === 'id' || nextLang === 'ps') {
         try {
           const currentQuranLang = getQuranTranslationLanguage();
-          if (currentQuranLang === 'ur') {
-            await setQuranTranslationLanguage('en');
-          } else if (currentQuranLang === 'ar') {
-            await setQuranTranslationLanguage('en');
-          } else if (currentQuranLang === 'hi') {
-            await setQuranTranslationLanguage('en');
-          } else if (currentQuranLang === 'ml') {
-            await setQuranTranslationLanguage('en');
-          } else if (currentQuranLang === 'si') {
+          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
+            await setQuranTranslationLanguage(nextLang);
+          }
+        } catch {}
+
+        if (currentSnapshot.tafsirSourceId === 'jalalayn' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-urdu' || currentSnapshot.tafsirSourceId === 'api-ibn-kathir-ar') {
+          nextTafsir = 'jalalayn';
+        }
+
+        try {
+          const savedAudioEdition = await AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+          if (savedAudioEdition === 'ur.everyayah-shamshad') {
+            await setAudioTranslationEdition(DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
+          }
+        } catch {}
+      } else {
+        // Switching back to English from an app language with a linked Quran translation.
+        try {
+          const currentQuranLang = getQuranTranslationLanguage();
+          if (CANONICAL_AUTO_LINKED_QURAN_LANGS.has(currentQuranLang)) {
             await setQuranTranslationLanguage('en');
           }
         } catch {}

@@ -369,13 +369,13 @@ for (const vp of VIEWPORTS) {
 
           // Readability & contrast
           const wordmark = appHeader.querySelector('[data-testid="app-header-wordmark"]');
-          const bell = appHeader.querySelector('[data-testid="app-header-bell"]');
+          const appearance = appHeader.querySelector('[data-testid="app-header-appearance"]');
           const gear = appHeader.querySelector('[data-testid="app-header-gear"]');
 
           const isWordmarkReadable = Boolean(wordmark && isVisible(wordmark) && (wordmark.textContent || '').trim().length > 0);
-          const isBellReadable = Boolean(bell && isVisible(bell));
+          const isAppearanceReadable = Boolean(appearance && isVisible(appearance));
           const isGearReadable = Boolean(gear && isVisible(gear));
-          const readabilityPass = isWordmarkReadable && isBellReadable && isGearReadable;
+          const readabilityPass = isWordmarkReadable && isAppearanceReadable && isGearReadable;
 
           // No decorative overlap
           const headerRow = appHeader.querySelector('[data-testid="app-header-row"]') || appHeader;

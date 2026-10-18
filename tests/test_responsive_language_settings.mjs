@@ -5,7 +5,7 @@
  *  2. Clean row layout across viewports (narrow phone 320px through desktop/web 1024px).
  *  3. Linear scalability with 6, 7, 8, 10, and 12 languages without orphan cells or asymmetrical wrapping.
  *  4. Accessibility contract (touch targets >= 44, role='radio', accessibilityState, labels, hitSlop).
- *  5. Authentic script typography & RTL/LTR direction metadata for en, ur, ar, hi, ml, si.
+ *  5. Authentic script typography & RTL/LTR direction metadata for all 11 wired app languages.
  *  6. Visual states (selected checkmark, unselected radio, active switching spinner, direction badge, error banner).
  *  7. Concurrency contract (guards, setLanguage promise chain, prepareNativeLayoutDirection, reload timer).
  */
@@ -33,8 +33,8 @@ const registeredLanguages = appLanguageMatch[1]
 
 assert.deepStrictEqual(
   registeredLanguages.sort(),
-  ['ar', 'en', 'hi', 'ml', 'si', 'ur'].sort(),
-  'Registered languages in i18n.ts must exactly be en, ur, ar, hi, ml, si'
+  ['ar', 'bn', 'en', 'hi', 'id', 'ml', 'ms', 'ps', 'si', 'ta', 'ur'].sort(),
+  'Registered languages in i18n.ts must include the 11 wired app languages'
 );
 console.log('  ✓ i18n AppLanguage union verified: ' + registeredLanguages.join(', '));
 
@@ -50,7 +50,7 @@ for (const lang of registeredLanguages) {
     `SettingsScreen APP_LANGUAGE_OPTIONS must contain language "${lang}"`
   );
 }
-console.log('  ✓ All 6 registered languages present in APP_LANGUAGE_OPTIONS');
+console.log('  ✓ All 11 registered languages present in APP_LANGUAGE_OPTIONS');
 
 // (c) Native script labels & Noto Naskh font for Arabic script
 assert.ok(settingsScreenCode.includes("nativeLabel: 'English'") && settingsScreenCode.includes("label: 'English'"));
@@ -59,6 +59,11 @@ assert.ok(settingsScreenCode.includes("nativeLabel: 'العربية'") && settin
 assert.ok(settingsScreenCode.includes("nativeLabel: 'हिन्दी'") && settingsScreenCode.includes("label: 'हिन्दी'"));
 assert.ok(settingsScreenCode.includes("nativeLabel: 'മലയാളം'") && settingsScreenCode.includes("label: 'മലയാളം'"));
 assert.ok(settingsScreenCode.includes("nativeLabel: 'සිංහල'") && settingsScreenCode.includes("label: 'සිංහල'"));
+assert.ok(settingsScreenCode.includes("nativeLabel: 'বাংলা'") && settingsScreenCode.includes("label: 'বাংলা'"));
+assert.ok(settingsScreenCode.includes("nativeLabel: 'Bahasa Melayu'") && settingsScreenCode.includes("label: 'Bahasa Melayu'"));
+assert.ok(settingsScreenCode.includes("nativeLabel: 'தமிழ்'") && settingsScreenCode.includes("label: 'தமிழ்'"));
+assert.ok(settingsScreenCode.includes("nativeLabel: 'Bahasa Indonesia'") && settingsScreenCode.includes("label: 'Bahasa Indonesia'"));
+assert.ok(settingsScreenCode.includes("nativeLabel: 'پښتو'") && settingsScreenCode.includes("label: 'پښتو'"));
 
 assert.ok(
   settingsScreenCode.includes("value: 'ur'") && settingsScreenCode.includes("fontFamily: 'NotoNaskhArabic_700Bold'"),
@@ -67,6 +72,10 @@ assert.ok(
 assert.ok(
   settingsScreenCode.includes("value: 'ar'") && settingsScreenCode.includes("fontFamily: 'NotoNaskhArabic_700Bold'"),
   'Arabic must configure NotoNaskhArabic_700Bold for authentic naskh script shaping'
+);
+assert.ok(
+  settingsScreenCode.includes("value: 'ps'") && settingsScreenCode.includes("fontFamily: 'NotoNaskhArabic_700Bold'"),
+  'Pashto must configure Arabic-script typography'
 );
 console.log('  ✓ Authentic native scripts and Arabic typography bindings verified');
 
@@ -136,11 +145,11 @@ for (const vp of testViewports) {
 }
 
 // (c) Scalability: verify linear scaling without grid gaps or orphan cards
-for (const count of [6, 7, 8, 10, 12]) {
+for (const count of [6, 7, 8, 10, 11, 12]) {
   const totalHeight = count * 54;
   assert.ok(totalHeight > 0, `Language count ${count} scales cleanly as ${count} vertical rows`);
 }
-console.log('  ✓ Scalability verified: Scales linearly across 6, 7, 8, 10, 12 languages without awkward grid wrapping');
+console.log('  ✓ Scalability verified: Scales linearly across 6, 7, 8, 10, 11, 12 languages without awkward grid wrapping');
 
 // ---------------------------------------------------------------------------
 // 3. Accessibility, RTL, Visual States & Concurrency

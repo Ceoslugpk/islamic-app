@@ -40,13 +40,16 @@ for (const code of ['en', 'ar', 'ur', 'hi', 'tr', 'fr', 'id']) {
   assert.ok(demoDataCode.includes(`langCode: '${code}'`), `Demo data contains locale "${code}"`);
 }
 assert.ok(demoDataCode.includes('ONBOARDING_LOCALES'), 'exports ONBOARDING_LOCALES');
-for (const code of ['en', 'ar', 'ur', 'hi', 'ml', 'si']) {
+for (const code of ['en', 'ar', 'ur', 'hi', 'ml', 'si', 'bn', 'ms', 'ta', 'id', 'ps']) {
   assert.ok(demoDataCode.includes(`${code}:`), `ONBOARDING_LOCALES covers app language "${code}"`);
 }
-console.log('  ✓ 2. Demo locales coverage (en, ar, ur, hi, tr, fr, id) & app languages (en, ar, ur, hi, ml, si) verified');
+assert.ok(demoDataCode.includes("nativeName: 'پښتو'") && demoDataCode.includes("capabilityNote: 'د ژباړې ۴۰+ ژبې · د غږ ۱۰+ ژبې'"), 'Pashto onboarding copy and direction-aware RTL text are present');
+console.log('  ✓ 2. Demo locales and all 11 wired app language locales verified');
 
 // 3. Screen design & component checks
 const screenCode = fs.readFileSync('src/screens/OnboardingScreen.tsx', 'utf8');
+assert.ok(screenCode.includes("currentStrings.langCode === 'ps' ? 'NotoNaskhArabic_400Regular'"), 'Pashto onboarding uses Noto Naskh Arabic body typography');
+assert.ok(screenCode.includes("currentStrings.langCode === 'ps' ? 'NotoNaskhArabic_700Bold'"), 'Pashto onboarding uses Noto Naskh Arabic title typography');
 assert.ok(screenCode.includes("Ionicons name=\"globe-outline\""), 'Card 1 uses globe-outline');
 assert.ok(screenCode.includes("Ionicons name=\"book-outline\""), 'Card 2 uses book-outline');
 assert.ok(screenCode.includes("Ionicons name=\"headset-outline\""), 'Card 3 uses headset-outline');

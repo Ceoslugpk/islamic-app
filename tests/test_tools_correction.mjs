@@ -2,12 +2,24 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 
-const playwrightPath = '/home/ubuntu/.npm/_npx/e41f203b7505f1fb/node_modules/playwright';
-const { chromium } = await import(`file://${playwrightPath}/index.mjs`);
+const require = createRequire(import.meta.url);
+let playwright;
+try {
+  playwright = process.env.PLAYWRIGHT_MODULE
+    ? require(path.resolve(process.env.PLAYWRIGHT_MODULE))
+    : require('playwright');
+} catch (error) {
+  throw new Error(
+    'Playwright is required for this browser proof. Install it in the project or set PLAYWRIGHT_MODULE to its entry file.',
+    { cause: error }
+  );
+}
+const { chromium } = playwright;
 
-const DIST_DIR = path.resolve('dist');
-const SCREENSHOTS_DIR = path.resolve('screenshots/tools_hub_verification');
+const DIST_DIR = path.resolve(process.env.WEB_EXPORT_DIR || 'dist');
+const SCREENSHOTS_DIR = path.resolve(process.env.SCREENSHOTS_DIR || 'screenshots/tools_hub_verification');
 fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 
 const MIME_TYPES = {
@@ -47,6 +59,9 @@ console.log(`[Verification] Static server running on port ${port}`);
 const browser = await chromium.launch({
   headless: true,
   args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  ...(process.env.PLAYWRIGHT_EXECUTABLE_PATH
+    ? { executablePath: process.env.PLAYWRIGHT_EXECUTABLE_PATH }
+    : {}),
 });
 
 const viewports = [

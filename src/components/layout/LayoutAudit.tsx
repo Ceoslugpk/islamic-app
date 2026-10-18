@@ -27,7 +27,7 @@ export interface TabAuditRecord {
   row: AuditRect | null;
   logo: AuditRect | null;
   wordmark: AuditRect | null;
-  bell: AuditRect | null;
+  appearance: AuditRect | null;
   gear: AuditRect | null;
   nav: AuditRect | null;
   columns: Record<string, AuditRect | null>;
@@ -117,8 +117,8 @@ export function computeAuditAssertions(
   checkMaxDiff('Header row height identity', (r) => r.row?.height);
   checkMaxDiff('Logo width identity', (r) => r.logo?.width);
   checkMaxDiff('Logo height identity', (r) => r.logo?.height);
-  checkMaxDiff('Bell button width identity', (r) => r.bell?.width);
-  checkMaxDiff('Bell button height identity', (r) => r.bell?.height);
+  checkMaxDiff('Appearance button width identity', (r) => r.appearance?.width);
+  checkMaxDiff('Appearance button height identity', (r) => r.appearance?.height);
   checkMaxDiff('Gear button width identity', (r) => r.gear?.width);
   checkMaxDiff('Gear button height identity', (r) => r.gear?.height);
   checkMaxDiff('Floating nav width identity', (r) => r.nav?.width);
@@ -230,7 +230,7 @@ export function computeAuditAssertions(
     ['Header Row', 'top / height', (r) => (r.row ? `${r.row.top} / ${r.row.height}` : '—')],
     ['Brand Logo', 'w × h', (r) => (r.logo ? `${r.logo.width} × ${r.logo.height}` : '—')],
     ['Wordmark', 'height', (r) => (r.wordmark ? `${r.wordmark.height}` : '—')],
-    ['Bell Action', 'w × h', (r) => (r.bell ? `${r.bell.width} × ${r.bell.height}` : '—')],
+    ['Appearance Action', 'w × h', (r) => (r.appearance ? `${r.appearance.width} × ${r.appearance.height}` : '—')],
     ['Gear Action', 'w × h', (r) => (r.gear ? `${r.gear.width} × ${r.gear.height}` : '—')],
     ['Floating Nav', 'top / bottom', (r) => (r.nav ? `${r.nav.top} / ${r.nav.bottom}` : '—')],
     ['Floating Nav', 'width × height', (r) => (r.nav ? `${r.nav.width} × ${r.nav.height}` : '—')],
@@ -323,7 +323,7 @@ export function useLayoutAudit(activeTab: string) {
         row: getElementRect('app-header-row'),
         logo: getElementRect('app-header-logo'),
         wordmark: getElementRect('app-header-wordmark'),
-        bell: getElementRect('app-header-bell'),
+        appearance: getElementRect('app-header-appearance'),
         gear: getElementRect('app-header-gear'),
         nav: getElementRect('floating-nav-container'),
         columns,
