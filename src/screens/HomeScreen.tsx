@@ -1545,8 +1545,8 @@ const HomeScreen = React.memo(function HomeScreen({
           <View style={styles.duaRailHeaderRow}>
             <View style={styles.duaRailHeaderLeft}>
               <AppText
-                variant="eyebrow"
-                style={[styles.duaAfterPrayerEyebrow, { textAlign: isRTL() ? 'right' : 'left' }]}
+                variant="sectionTitle"
+                style={[styles.duaAfterPrayerEyebrow, { textAlign: isRTL() ? 'right' : 'left', fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular' }]}
               >
                 {t('Dua After Prayer')}
               </AppText>
@@ -1559,7 +1559,7 @@ const HomeScreen = React.memo(function HomeScreen({
             </View>
 
             {/* Pagination indicator: 1 of N + dots */}
-            <View style={[styles.duaPaginationWrap, { alignItems: isRTL() ? 'flex-start' : 'flex-end' }]}>
+            <View style={[styles.duaPaginationWrap, { backgroundColor: homeTokens.ringFill, alignItems: isRTL() ? 'flex-start' : 'flex-end' }]}>
               <AppText
                 variant="caption"
                 style={[styles.duaPaginationText, { textAlign: isRTL() ? 'right' : 'left' }]}
@@ -1590,6 +1590,7 @@ const HomeScreen = React.memo(function HomeScreen({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            testID="home-after-prayer-scroll"
             snapToInterval={duaSnapInterval}
             decelerationRate="fast"
             nestedScrollEnabled
@@ -1630,14 +1631,9 @@ const HomeScreen = React.memo(function HomeScreen({
                     ])}
                     padded={false}
                   >
-                    <GeometricPattern
-                      variant="tessellation"
-                      tileSize={40}
-                      color={homeTokens.accent}
-                      opacity={mode === 'ink' ? 0.045 : 0.025}
-                    />
+                    <View style={[styles.duaAccent, { backgroundColor: homeTokens.gold }]} />
                     <TouchableOpacity
-                      activeOpacity={0.88}
+                      activeOpacity={0.92}
                       style={styles.duaCardPressable}
                       onPress={() => {
                         haptic('light');
@@ -1645,113 +1641,74 @@ const HomeScreen = React.memo(function HomeScreen({
                       }}
                       accessibilityRole="button"
                       accessibilityState={{ expanded: isExpanded }}
-                      accessibilityLabel={`${t('Dua')} ${idx + 1} ${t('of')} ${allAfterPrayerDuas.length}. ${isExpanded ? t('Less') : t('More')}.`}
+                      aria-expanded={isExpanded}
+                      testID={'home-after-prayer-dua-' + (idx + 1)}
+                      accessibilityLabel={[t('Dua'), idx + 1, t('of'), allAfterPrayerDuas.length + '.', isExpanded ? t('Less') : t('More')].join(' ')}
                     >
                       <View style={styles.duaAfterPrayerHeader}>
                         <View style={styles.duaBadgeRow}>
-                          <View
-                            style={[
-                              styles.duaNumberBadge,
-                              {
-                                backgroundColor: homeTokens.ringFill,
-                                borderColor: homeTokens.ringBorder,
-                                borderWidth: 1,
-                              },
-                            ]}
-                          >
-                            <AppText variant="caption" highlight style={styles.duaNumberBadgeText}>
-                              {idx + 1}
+                          <View style={[styles.duaNumberBadge, { backgroundColor: homeTokens.ringFill }]}>
+                            <AppText variant="numeral" highlight style={styles.duaNumberBadgeText}>
+                              {String(idx + 1).padStart(2, '0')}
                             </AppText>
                           </View>
-                          {isForPrayer && (
-                            <View
-                              style={[
-                                styles.duaForPrayerTag,
-                                {
-                                  backgroundColor: homeTokens.ringFill,
-                                  borderColor: homeTokens.ringBorder,
-                                },
-                              ]}
-                            >
-                              <AppText variant="caption" highlight style={styles.duaForPrayerTagText}>
-                                {t('For')} {t(targetPrayer)}
-                              </AppText>
-                            </View>
-                          )}
+                          <AppText variant="rowTitle" style={styles.duaCardTitle}>{t('Dua')}</AppText>
                         </View>
-                        <View style={styles.duaExpandBtn}>
-                          <AppText variant="caption" style={styles.duaExpandBtnText}>
-                            {isExpanded ? t('Less') : t('More')}
-                          </AppText>
-                          <Ionicons
-                            name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-                            size={16}
-                            color={homeTokens.muted}
-                          />
-                        </View>
+                        {isForPrayer && (
+                          <View style={[styles.duaForPrayerTag, { backgroundColor: homeTokens.ringFill, borderColor: homeTokens.ringBorder }]}>
+                            <AppText variant="caption" highlight style={styles.duaForPrayerTagText}>
+                              {t('For')} {t(targetPrayer)}
+                            </AppText>
+                          </View>
+                        )}
                       </View>
 
                       <View style={styles.duaAfterPrayerContent}>
-                        <ArabicText
-                          size={isCompact ? 20 : 22}
-                          align="right"
-                          lineHeight={isCompact ? 38 : 42}
-                          style={styles.duaAfterPrayerArabic}
-                          numberOfLines={isExpanded ? undefined : 3}
-                        >
-                          {item.arabic}
-                        </ArabicText>
-
-                        {isExpanded ? (
-                          <View style={styles.duaExpandedDetails}>
-                            <AppText
-                              variant="body"
-                              tone="faint"
-                              style={[
-                                styles.duaAfterPrayerTransliteration,
-                                { textAlign: isRTL() ? 'right' : 'left' },
-                              ]}
-                            >
-                              {item.transliteration}
-                            </AppText>
-                            <AppText
-                              variant="body"
-                              style={[
-                                styles.duaAfterPrayerTranslation,
-                                { textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' },
-                              ]}
-                            >
-                              {item.translation}
-                            </AppText>
-                            {(item.reference || item.source) ? (
-                              <View
-                                style={[
-                                  styles.duaRefRow,
-                                  { borderTopColor: homeTokens.ringBorder },
-                                ]}
-                              >
-                                <Ionicons name="book-outline" size={11} color={homeTokens.muted} />
-                                <AppText
-                                  variant="caption"
-                                  style={[styles.duaAfterPrayerRef, { textAlign: isRTL() ? 'right' : 'left' }]}
-                                >
-                                  {item.reference || item.source}
-                                </AppText>
-                              </View>
-                            ) : null}
-                          </View>
-                        ) : (
+                        <View style={[styles.duaArabicPanel, { backgroundColor: homeTokens.ringFill, borderColor: homeTokens.ringBorder }]}>
+                          <ArabicText
+                            size={isCompact ? 22 : 24}
+                            align="right"
+                            lineHeight={isCompact ? 40 : 44}
+                            style={styles.duaAfterPrayerArabic}
+                            numberOfLines={isExpanded ? undefined : 4}
+                          >
+                            {item.arabic}
+                          </ArabicText>
+                        </View>
+                        {isExpanded && (
                           <AppText
                             variant="body"
-                            style={[
-                              styles.duaAfterPrayerTranslation,
-                              { textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' },
-                            ]}
-                            numberOfLines={2}
+                            style={[styles.duaAfterPrayerTransliteration, { color: homeTokens.muted, textAlign: isRTL() ? 'right' : 'left' }]}
                           >
-                            {item.translation}
+                            {item.transliteration}
                           </AppText>
                         )}
+                        <AppText
+                          variant="body"
+                          style={[styles.duaAfterPrayerTranslation, { textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' }]}
+                          numberOfLines={isExpanded ? undefined : 3}
+                        >
+                          {item.translation}
+                        </AppText>
+                      </View>
+
+                      <View style={[styles.duaFooter, { borderTopColor: homeTokens.ringBorder }]}>
+                        <View style={styles.duaRefRow}>
+                          <Ionicons name="book-outline" size={14} color={homeTokens.gold} />
+                          <AppText
+                            variant="caption"
+                            style={[styles.duaAfterPrayerRef, { color: homeTokens.muted, textAlign: isRTL() ? 'right' : 'left' }]}
+                            numberOfLines={isExpanded ? undefined : 2}
+                          >
+                            {item.reference || item.source || t('Authentic Adhkar')}
+                          </AppText>
+                        </View>
+                        <View style={[styles.duaExpandBtn, { backgroundColor: homeTokens.ringFill }]}>
+                          <AppText variant="caption" highlight style={styles.duaExpandBtnText}>
+                            {isExpanded ? t('Less') : t('More')}
+                          </AppText>
+                          <Ionicons name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'} size={15} color={homeTokens.gold} />
+                        </View>
                       </View>
                     </TouchableOpacity>
                   </Card>
@@ -2269,7 +2226,10 @@ const styles = StyleSheet.create({
   },
   duaPaginationWrap: {
     alignItems: 'flex-end',
-    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 5,
   },
   duaPaginationText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2294,14 +2254,29 @@ const styles = StyleSheet.create({
   },
   duaCardPressable: {
     zIndex: 2,
-    flex: 1,
+    padding: 18,
   },
   duaAfterPrayerCard: {
     position: 'relative',
     overflow: 'hidden',
-    minHeight: 210,
-    padding: 18,
+    minHeight: 280,
     borderRadius: 14,
+  },
+  duaAccent: { height: 3 },
+  duaCardTitle: { fontSize: 15 },
+  duaArabicPanel: {
+    paddingHorizontal: 14,
+    paddingVertical: 16,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  duaFooter: {
+    flexDirection: 'row',
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    alignItems: 'center',
+    gap: 12,
   },
   duaAfterPrayerHeader: {
     flexDirection: 'row',
@@ -2316,15 +2291,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   duaNumberBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   duaNumberBadgeText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 11,
+    fontSize: 15,
   },
   duaForPrayerTag: {
     paddingHorizontal: 8,
@@ -2339,17 +2314,20 @@ const styles = StyleSheet.create({
   duaExpandBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    minHeight: 36,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    gap: 6,
   },
   duaExpandBtnText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
   },
   duaAfterPrayerEyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+    fontSize: 21,
+    lineHeight: 28,
+    letterSpacing: 0,
+    textTransform: 'none',
     marginBottom: 2,
   },
   duaAfterPrayerContext: {
@@ -2357,23 +2335,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   duaAfterPrayerContent: {
-    gap: 8,
+    gap: 14,
     zIndex: 1,
   },
   duaAfterPrayerArabic: {
     marginTop: 2,
   },
-  duaExpandedDetails: {
-    gap: 8,
-    marginTop: 4,
-  },
   duaRefRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingTop: 8,
-    marginTop: 4,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    flex: 1,
+    minWidth: 0,
+    gap: 7,
   },
   duaAfterPrayerTransliteration: {
     fontFamily: 'Manrope_400Regular',
@@ -2382,10 +2355,12 @@ const styles = StyleSheet.create({
   },
   duaAfterPrayerTranslation: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 22,
   },
   duaAfterPrayerRef: {
+    flex: 1,
+    minWidth: 0,
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
   },

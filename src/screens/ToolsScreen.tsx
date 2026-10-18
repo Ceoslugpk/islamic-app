@@ -640,7 +640,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                                 right: textRight,
                                 top: 104,
                                 fontFamily: fontPoppinsRegular,
-                                color: isNext ? tokens.gold : undefined,
+                                color: isNext ? tokens.gold : tokens.onHeroMuted,
                               },
                             ]}
                             numberOfLines={1}

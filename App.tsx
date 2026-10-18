@@ -122,6 +122,7 @@ import { AppHeader } from './src/components/layout/AppHeader';
 import { FloatingNav } from './src/components/layout/FloatingNav';
 import { TabScreen } from './src/components/layout/TabScreen';
 import { PersistentTabPane } from './src/components/layout/PersistentTabPane';
+import { SystemBarBackgrounds } from './src/components/layout/SystemBarBackgrounds';
 import { useLayoutAudit } from './src/components/layout/LayoutAudit';
 import { routeToTab } from './src/navigation/routeToTab';
 import { NAV_BOTTOM, NAV_HEIGHT } from './src/components/layout/layout.constants';
@@ -960,7 +961,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         <StatusBar style={mode === 'ink' ? 'light' : 'dark'} />
         {/* Top safe-area is owned authoritatively by TabScreen (for tabs) and DetailScreen (for detail/secondary screens) */}
         {/* Contract check: {isTopLevel ? (<AppHeader onOpenSettings={() => {}} />) : null} */}
-        {!isOnline && <OfflineBanner />}
+        {!isOnline && <OfflineBanner topInset={insets.top} />}
         <View style={styles.screenWrap}>
           {/* Home Tab */}
           <PersistentTabPane active={tab === 'home'}>
@@ -1445,6 +1446,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         onChooseCity={handleChooseCityFromSetup}
         onDismiss={handleDismissLocationSetup}
       />
+      <SystemBarBackgrounds topInset={insets.top} bottomInset={insets.bottom} />
     </View>
   );
 }

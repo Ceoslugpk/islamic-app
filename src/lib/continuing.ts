@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
 import { getMushafPageForAyah } from './quran';
+import { loadLastReadPosition } from './db';
 
 const STORAGE_KEY = 'quran-last-reading';
 const MARKER_KEY = 'quran-reading-marker';
@@ -237,11 +238,24 @@ export async function clearReadingMarker(): Promise<boolean> {
 
 /**
  * Canonical "where to continue" position.
- * Precedence: manual marker first, then automatic last-read position.
+ * Precedence: manual marker, automatic position, then the older reader record.
  * Guaranteed to be in-bounds or null (callers fall back to Surah 1, Ayah 1).
  */
 export async function getContinueReadingPosition(): Promise<ReadingPosition | null> {
   const marker = await getReadingMarker();
   if (marker) return marker;
-  return getReadingPosition();
+  const position = await getReadingPosition();
+  if (position) return position;
+  // Older installations may only have the reader's SQLite last-read record.
+  // Read it without rewriting or clearing either persistence format.
+  try {
+    const legacy = loadLastReadPosition();
+    if (!legacy || !isValidReadingPosition({ surah: legacy.surah, ayah: legacy.ayah })) return null;
+    const page = typeof legacy.page === 'number' && legacy.page >= 1 && legacy.page <= 604
+      ? legacy.page
+      : getMushafPageForAyah(legacy.surah, legacy.ayah);
+    return { surah: legacy.surah, ayah: legacy.ayah, page, savedAt: legacy.updatedAt || 0 };
+  } catch {
+    return null;
+  }
 }

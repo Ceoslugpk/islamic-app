@@ -64,8 +64,9 @@ const homeCode = fs.readFileSync('src/screens/QuranHomeScreen.tsx', 'utf8');
 
 // (a) resolver: marker first, then auto position
 assert.ok(
-  continuingCode.includes('const marker = await getReadingMarker();\n  if (marker) return marker;\n  return getReadingPosition();'),
-  'getContinueReadingPosition: marker first, auto fallback'
+  continuingCode.includes('const marker = await getReadingMarker();\n  if (marker) return marker;\n  const position = await getReadingPosition();\n  if (position) return position;') &&
+  continuingCode.includes('const legacy = loadLastReadPosition();'),
+  'getContinueReadingPosition: marker first, automatic position second, older reader record last'
 );
 // (b) bounds validation guards corrupt/stale positions
 assert.ok(continuingCode.includes('isValidReadingPosition'), 'isValidReadingPosition defined');

@@ -111,19 +111,25 @@ export const ContinueReadingCard = React.memo(function ContinueReadingCard({
     haptic('light');
     try {
       const latest = await getContinueReadingPosition();
+      if (!isMountedRef.current) return;
       if (latest && latest.surah > 0) {
         onOpenReader?.(latest.surah, latest.ayah, latest.page);
         return;
       }
       if (position && position.surah > 0) {
         onOpenReader?.(position.surah, position.ayah, position.page);
-      } else if (onOpenQuranTab) {
-        onOpenQuranTab();
+      } else if (onOpenReader) {
+        onOpenReader(1, 1, 1);
       } else {
-        onOpenReader?.(1, 1, 1);
+        onOpenQuranTab?.();
       }
     } catch {
-      inFlightRef.current = false;
+      if (!isMountedRef.current) return;
+      if (onOpenReader) {
+        onOpenReader(position?.surah || 1, position?.ayah || 1, position?.page || 1);
+      } else {
+        onOpenQuranTab?.();
+      }
     } finally {
       inFlightRef.current = false;
     }

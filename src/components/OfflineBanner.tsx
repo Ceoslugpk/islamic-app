@@ -6,12 +6,19 @@ import { offlineUsingSavedData } from '../lib/strings';
 import { t } from '../lib/i18n';
 import { AppText } from './ui/AppText';
 
-export function OfflineBanner() {
+export function OfflineBanner({ topInset = 0 }: { topInset?: number }) {
   const { colors } = useTheme();
 
   return (
     <View
-      style={[styles.banner, { backgroundColor: colors.accentDim, borderBottomColor: colors.borderSubtle }]}
+      style={[styles.banner, {
+        backgroundColor: colors.accentDim,
+        borderBottomColor: colors.borderSubtle,
+        // The following screen already owns the top inset: lift this notice
+        // below the status bar while preserving its existing flow height.
+        paddingTop: 6 + topInset,
+        marginBottom: -topInset,
+      }]}
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
     >
@@ -25,6 +32,7 @@ export function OfflineBanner() {
 
 const styles = StyleSheet.create({
   banner: {
+    zIndex: 1,
     borderBottomWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 6,

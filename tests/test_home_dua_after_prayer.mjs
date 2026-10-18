@@ -236,9 +236,9 @@ assert.ok(
   'duaCardSlide must preserve canonical borderRadius: 14'
 );
 assert.ok(
-  homeSrc.includes('duaAfterPrayerCard: {\n    position: \'relative\',\n    overflow: \'hidden\',\n    minHeight: 210,\n    padding: 18,\n    borderRadius: 14,') ||
-  homeSrc.includes('duaAfterPrayerCard: {\r\n    position: \'relative\',\r\n    overflow: \'hidden\',\r\n    minHeight: 210,\r\n    padding: 18,\r\n    borderRadius: 14,'),
-  'duaAfterPrayerCard must preserve canonical borderRadius: 14, minHeight: 210, padding: 18'
+  /duaAfterPrayerCard: \{[\s\S]*?minHeight: 280,[\s\S]*?borderRadius: 14,/.test(homeSrc) &&
+  /duaCardPressable: \{[\s\S]*?padding: 18,/.test(homeSrc),
+  'Redesigned Dua card keeps 14dp corners and a flexible 280dp minimum, with 18dp padding inside the pressable'
 );
 console.log('  ✓ Canonical style tokens and floating card invariants preserved');
 
