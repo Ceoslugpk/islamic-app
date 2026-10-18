@@ -3,7 +3,7 @@
  * for unified tab chrome (AppHeader, FloatingNav, TabScreen).
  */
 
-export const HEADER_ROW_HEIGHT = 32;
+export const HEADER_ROW_HEIGHT = 40;
 export const HEADER_FADE = 10;
 export const NAV_HEIGHT = 54.5;
 export const NAV_SIDE_MARGIN = 14;
@@ -25,7 +25,7 @@ export const DRAG_PILL_RADIUS = 2.5;
 
 /** Dynamic formulas based on safe-area insets */
 export const HEADER_ROW_TOP = (safeTop: number): number => safeTop + 2;
-export const HEADER_BOTTOM = (safeTop: number): number => safeTop + 34;
+export const HEADER_BOTTOM = (safeTop: number): number => safeTop + HEADER_ROW_HEIGHT + 2;
 export const SUBHEADER_BOTTOM = (safeTop: number): number => safeTop + SUBHEADER_HEIGHT;
 export const NAV_BOTTOM = (safeBottom: number): number => safeBottom + 14;
 export const NAV_TOP = (safeBottom: number): number => NAV_BOTTOM(safeBottom) + NAV_HEIGHT;

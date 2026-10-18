@@ -417,7 +417,7 @@ function FastingScreen({
                   pointerEvents="none"
                 />
                 <View style={styles.todayCardHeader}>
-                  <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                  <View style={{ flex: 1, minWidth: 0, paddingEnd: 8 }}>
                     <AppText variant="eyebrow" highlight style={styles.todayCardEyebrow}>
                       {todayHijri.day} {HIJRI_MONTH_NAMES[todayHijri.month - 1]} {todayHijri.year} AH
                     </AppText>
@@ -576,7 +576,7 @@ function FastingScreen({
                   pointerEvents="none"
                 />
                 <View style={styles.heroHeader}>
-                  <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                  <View style={{ flex: 1, minWidth: 0, paddingEnd: 8 }}>
                     <AppText variant="eyebrow" highlight style={styles.heroEyebrow} numberOfLines={2}>
                       {t("Today's Prayer Schedule")}
                     </AppText>
@@ -631,7 +631,7 @@ function FastingScreen({
                   pointerEvents="none"
                 />
                 <View style={styles.qadaSectionHeader}>
-                  <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                  <View style={{ flex: 1, minWidth: 0, paddingEnd: 8 }}>
                     <AppText variant="eyebrow" highlight style={styles.qadaSectionEyebrow}>
                       {t('Obligatory Makeup')}
                     </AppText>
@@ -1469,7 +1469,7 @@ const styles = StyleSheet.create({
   recTitleWrap: {
     flex: 1,
     minWidth: 0,
-    paddingRight: 8,
+    paddingEnd: 8,
   },
   recName: {
     fontFamily: 'Manrope_600SemiBold',

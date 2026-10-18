@@ -695,7 +695,7 @@ const styles = StyleSheet.create({
   cellEventIcon: {
     position: 'absolute',
     top: 2,
-    right: 2,
+    end: 2,
   },
   gregDay: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
   hijriDay: { fontFamily: 'Manrope_400Regular', fontSize: 10, marginTop: 2 },

@@ -387,7 +387,7 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
               accessibilityRole="button"
               accessibilityLabel={t('Reset count to zero')}
             >
-              <Ionicons name="refresh-outline" size={16} color={tokens.muted} style={{ marginRight: 6 }} />
+              <Ionicons name="refresh-outline" size={16} color={tokens.muted} style={{ marginEnd: 6 }} />
               <AppText variant="caption" tone="faint" style={styles.resetText}>
                 {t('Reset Count')}
               </AppText>

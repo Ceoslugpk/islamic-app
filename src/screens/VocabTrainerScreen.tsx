@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 16,
     borderWidth: cardTokens.borderWidth,
-    marginRight: 8,
+    marginEnd: 8,
   },
   filterText: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
   card: {

@@ -643,7 +643,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     flexShrink: 1,
-    paddingRight: 8,
+    paddingEnd: 8,
   },
   duaBannerTitle: {
     fontFamily: fontRoles.title,

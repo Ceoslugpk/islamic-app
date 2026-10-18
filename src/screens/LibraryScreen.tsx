@@ -17,7 +17,7 @@ import { useTheme } from '../lib/theme';
 import { HOME_THEME_TOKENS, getCardShadow, getHeroCardShadow } from '../lib/homeThemeTokens';
 import { themeTokens, GOLD_GRADIENT } from '../theme/tokens';
 import { useSettings } from '../lib/settings';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { getForwardIcon } from '../lib/iconMap';
 import { GeometricPattern } from '../components/GeometricPattern';
 import { useSurahDownloads } from '../lib/surahDownloads';
@@ -158,6 +158,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
 }: LibraryScreenProps) {
   const { mode } = useTheme();
   const isDark = mode === 'ink';
+  const rtl = isRTL();
   const tokens = getTokens(isDark);
   const { width } = useWindowDimensions();
   const { settings } = useSettings();
@@ -180,8 +181,8 @@ const LibraryScreen = React.memo(function LibraryScreen({
     0.85,
     Math.min(1, 0.85 + ((contentMaxWidth - 360) / (393 - 360)) * 0.15)
   );
-  const heroBooksRight = contentMaxWidth <= 360 ? 10 : 14;
-  const heroTextPaddingRight = contentMaxWidth <= 360 ? 120 : 130;
+  const heroBooksOffset = contentMaxWidth <= 360 ? 10 : 14;
+  const heroTextPadding = contentMaxWidth <= 360 ? 120 : 130;
 
   // Guides rows list (Women items gated by settings.womenWorshipEnabled)
   const guideRows = [
@@ -315,7 +316,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
               <View style={styles.heroInnerBorder} pointerEvents="none" />
 
               {/* Left Content */}
-              <View style={[styles.heroLeftContent, { paddingRight: heroTextPaddingRight }]}>
+              <View style={[styles.heroLeftContent, { paddingEnd: heroTextPadding }]}>
                 {/* Diamond + KNOWLEDGE */}
                 <View style={styles.heroLabelRow}>
                   <DiamondIcon size={7} color={tokens.gold} />
@@ -421,9 +422,9 @@ const LibraryScreen = React.memo(function LibraryScreen({
                 style={[
                   styles.heroBooksCluster,
                   {
-                    right: heroBooksRight,
+                    end: heroBooksOffset,
                     transform: [{ scale: bookScale }],
-                    transformOrigin: 'bottom right',
+                    transformOrigin: rtl ? 'bottom left' : 'bottom right',
                   },
                 ]}
                 accessible={false}
@@ -1089,7 +1090,7 @@ const styles = StyleSheet.create({
 
   /* Title Section */
   titleSection: {
-    paddingLeft: 26,
+    paddingStart: 26,
   },
   titleEyebrow: {
     fontSize: 11,
@@ -1114,7 +1115,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 1,
     position: 'relative',
-    paddingLeft: 16,
+    paddingStart: 16,
     paddingTop: 16,
     paddingBottom: 20,
   },
@@ -1130,7 +1131,7 @@ const styles = StyleSheet.create({
   },
   heroLeftContent: {
     flex: 1,
-    paddingRight: 130,
+    paddingEnd: 130,
     justifyContent: 'flex-start',
     paddingBottom: 44,
   },
@@ -1161,7 +1162,7 @@ const styles = StyleSheet.create({
   heroBooksLabel: {
     fontSize: 17,
     lineHeight: 22,
-    marginLeft: 7,
+    marginStart: 7,
     marginBottom: 6,
   },
   heroSubtitle: {
@@ -1172,7 +1173,7 @@ const styles = StyleSheet.create({
   browseBtnWrap: {
     position: 'absolute',
     bottom: 14,
-    left: 16,
+    start: 16,
   },
   browseBtn: {
     width: 93,
@@ -1189,7 +1190,7 @@ const styles = StyleSheet.create({
   /* Decorative Books */
   heroBooksCluster: {
     position: 'absolute',
-    right: 14,
+    end: 14,
     bottom: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -1234,7 +1235,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: 22.5,
-    marginLeft: 26,
+    marginStart: 26,
   },
   guidesSectionLabel: {
     fontSize: 11,
@@ -1242,7 +1243,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: 29,
-    marginLeft: 26,
+    marginStart: 26,
   },
 
   /* Knowledge 2x2 Grid */
@@ -1314,7 +1315,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginEnd: 10,
   },
   downloadsTextWrap: {
     flex: 1,
@@ -1358,7 +1359,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 9,
+    marginEnd: 9,
   },
   guideTextWrap: {
     flex: 1,
@@ -1375,8 +1376,8 @@ const styles = StyleSheet.create({
   },
   guideSeparator: {
     height: StyleSheet.hairlineWidth,
-    marginLeft: 44.7,
-    marginRight: 11,
+    marginStart: 44.7,
+    marginEnd: 11,
     opacity: 0.35,
   },
 });

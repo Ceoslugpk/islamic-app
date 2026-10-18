@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingVertical: 4,
-    paddingRight: 10,
+    paddingEnd: 10,
     marginBottom: 4,
   },
   backText: {

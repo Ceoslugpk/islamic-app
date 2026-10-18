@@ -53,7 +53,7 @@ assert.deepEqual(JSON.parse(await storage.getItem()), recovered);
 // Production setters must snapshot from settingsRef synchronously, rather than
 // waiting for a deferred React functional updater that can enqueue stale state.
 const settingsSource = fs.readFileSync('src/lib/settings.tsx', 'utf8');
-assert.match(settingsSource, /function updateSettings\(/);
+assert.match(settingsSource, /const updateSettings = useCallback\(/);
 assert.doesNotMatch(settingsSource, /setThemeMode:\s*\([^)]*\)\s*=>\s*setSettings\(\(prev\)/);
 assert.match(settingsSource, /await enqueueWrite\(nextClean,\s*\(raw\)/);
 

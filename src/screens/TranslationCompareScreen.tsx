@@ -654,7 +654,7 @@ const styles = StyleSheet.create({
     minHeight: 30,
     justifyContent: 'center',
     paddingVertical: 3,
-    paddingRight: 10,
+    paddingEnd: 10,
     marginBottom: 2,
   },
   backText: {

@@ -1678,7 +1678,7 @@ const styles = StyleSheet.create({
     minHeight: 30,
     justifyContent: 'center',
     paddingVertical: 3,
-    paddingRight: 10,
+    paddingEnd: 10,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1722,7 +1722,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   searchIcon: {
-    marginRight: 2,
+    marginEnd: 2,
   },
   searchInput: {
     flex: 1,
@@ -1754,15 +1754,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingRight: 4,
+    paddingEnd: 4,
   },
   recentChip: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 8,
     borderWidth: 0.75,
-    paddingLeft: 8,
-    paddingRight: 4,
+    paddingStart: 8,
+    paddingEnd: 4,
     minHeight: 28,
     paddingVertical: 2,
   },
@@ -1779,7 +1779,7 @@ const styles = StyleSheet.create({
   },
   recentChipRemove: {
     padding: 4,
-    marginLeft: 2,
+    marginStart: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2129,7 +2129,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   pctBadge: {
-    paddingLeft: 8,
+    paddingStart: 8,
   },
   pctText: {
     fontFamily: 'Manrope_600SemiBold',

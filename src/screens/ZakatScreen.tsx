@@ -268,7 +268,7 @@ function ZakatScreen({
               {/* Currency Selector Bar */}
               <Card style={[styles.currencyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
                 <View style={styles.currencyRow}>
-                  <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+                  <View style={{ flex: 1, minWidth: 0, marginEnd: 8 }}>
                     <AppText variant="eyebrow" tone="faint" style={styles.controlLabel}>
                       {t('Active Currency')}
                     </AppText>
@@ -401,7 +401,7 @@ function ZakatScreen({
                 ]}
               >
                 <View style={styles.resultsTopRow}>
-                  <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+                  <View style={{ flex: 1, minWidth: 0, marginEnd: 8 }}>
                     <AppText variant="eyebrow" tone="faint" style={styles.resultsEyebrow}>
                       {t('Zakat Due (2.5%)')}
                     </AppText>

@@ -229,7 +229,7 @@ export default function UmrahResourcesScreen({
         {onOpenDuas && (
           <PremiumCard style={styles.quickDuaCard} padded>
             <View style={styles.quickDuaRow}>
-              <View style={{ flex: 1, paddingRight: 12 }}>
+              <View style={{ flex: 1, paddingEnd: 12 }}>
                 <AppText variant="eyebrow" highlight style={styles.cardLead}>{t('SUPPLICATIONS READY')}</AppText>
                 <AppText variant="sectionTitle" style={styles.cardTitleSm}>
                   {t('Need Key Duas in Your Hand?')}

@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingVertical: 4,
-    paddingRight: 10,
+    paddingEnd: 10,
     marginBottom: 4,
   },
   backText: {
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     flex: 1,
     minWidth: 0,
-    marginRight: 8,
+    marginEnd: 8,
   },
   worshipBadge: {
     flexDirection: 'row',
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     flex: 1,
     minWidth: 0,
-    marginRight: 8,
+    marginEnd: 8,
   },
   bleedingDef: {
     fontSize: 12,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     flex: 1,
     minWidth: 0,
-    marginRight: 8,
+    marginEnd: 8,
   },
   catBadge: {
     paddingHorizontal: 6,

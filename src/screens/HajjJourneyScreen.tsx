@@ -541,7 +541,7 @@ export default function HajjJourneyScreen({
         {onOpenDuas && (
           <PremiumCard style={{ marginBottom: 0, padding: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flex: 1, paddingRight: 10 }}>
+              <View style={{ flex: 1, paddingEnd: 10 }}>
                 <AppText variant="sectionTitle" style={styles.footerCardTitle}>
                   {t('Full Supplications Repository')}
                 </AppText>
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   dayChip: {
-    marginRight: 6,
+    marginEnd: 6,
   },
   pillarsCard: {
     marginBottom: 18,
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 12,
     borderWidth: 1,
-    marginLeft: 8,
+    marginStart: 8,
   },
   obligationText: {
     fontFamily: fontRoles.uiBold,

@@ -1204,7 +1204,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginTop: 20,
     marginBottom: 8,
-    marginLeft: 4,
+    marginStart: 4,
     paddingVertical: 2,
   },
   firstGroupLabel: {
@@ -1440,7 +1440,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
-    marginLeft: 4,
+    marginStart: 4,
     minHeight: 20,
   },
   timeBadgeText: {

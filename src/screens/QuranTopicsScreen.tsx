@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1,
     minWidth: 0,
-    marginRight: 8,
+    marginEnd: 8,
   },
   iconWrap: {
     width: 38,

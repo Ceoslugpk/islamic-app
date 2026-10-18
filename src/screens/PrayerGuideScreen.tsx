@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginBottom: 16,
-    paddingRight: 4,
+    paddingEnd: 4,
   },
   sectionWrap: { marginBottom: 20 },
   sectionHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },

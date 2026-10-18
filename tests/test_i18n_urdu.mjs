@@ -322,9 +322,9 @@ assert.ok(settingsCode.includes('createSerializedSettingsWriter'), 'shared seria
 assert.ok(settingsCode.includes('enqueueWrite'), 'SettingsProvider enqueue wrapper present');
 assert.ok(settingsCode.includes('locationMutatedDuringHydrationRef'), 'location-grant hydration guard present');
 assert.ok(settingsCode.includes('await enqueueWrite(nextClean,'), 'language write and readback verification stay inside the shared queue');
-assert.ok(settingsCode.includes('function updateSettings('), 'ordinary setters use synchronous latest-ref snapshots');
-assert.ok(settingsCode.includes('setThemeMode: (themeMode) => updateSettings((prev) => ({ ...prev, themeMode }))'), 'theme updates synchronously snapshot latest settings');
-assert.ok(settingsCode.includes('setAccentKey: (accentKey) => updateSettings((prev) => ({ ...prev, accentKey }))'), 'accent updates synchronously snapshot latest settings');
+assert.ok(settingsCode.includes('const updateSettings = useCallback('), 'ordinary setters use a stable synchronous latest-ref update path');
+assert.ok(settingsCode.includes('const setThemeMode = useCallback(') && settingsCode.includes('updateSettings((prev) => ({ ...prev, themeMode }))'), 'theme updates synchronously snapshot latest settings');
+assert.ok(settingsCode.includes('const setAccentKey = useCallback(') && settingsCode.includes('updateSettings((prev) => ({ ...prev, accentKey }))'), 'accent updates synchronously snapshot latest settings');
 
 // Model/invariant test: simulated write queue ordering, concurrency, and rollback semantics.
 // (Note: This is a standalone model/invariant test of the queue algorithm, not an execution of the React provider closure).

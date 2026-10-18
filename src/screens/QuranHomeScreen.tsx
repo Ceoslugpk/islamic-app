@@ -1775,8 +1775,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 11,
     borderWidth: 1,
-    paddingLeft: 7,
-    paddingRight: 5,
+    paddingStart: 7,
+    paddingEnd: 5,
     minHeight: 24,
   },
   searchRecentChipBtn: {
@@ -1791,7 +1791,7 @@ const styles = StyleSheet.create({
   },
   searchRecentChipRemove: {
     padding: 2,
-    marginLeft: 2,
+    marginStart: 2,
   },
 
   /* 2. Offline Cache Card (spacious floating card) */
@@ -1810,7 +1810,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 8,
+    marginEnd: 8,
   },
   offlineRing: {
     width: 28,
@@ -1819,7 +1819,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginEnd: 8,
     flexShrink: 0,
   },
   offlineTextCol: {
@@ -2089,7 +2089,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 2,
-    paddingRight: 4,
+    paddingEnd: 4,
   },
   chipBtn: {
     minHeight: 28,

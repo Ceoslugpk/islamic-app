@@ -874,8 +874,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   searchIcon: {
-    marginLeft: 6,
-    marginRight: 10,
+    marginStart: 6,
+    marginEnd: 10,
   },
   searchInput: {
     flex: 1,
@@ -886,7 +886,7 @@ const styles = StyleSheet.create({
   },
   clearBtn: {
     padding: 6,
-    marginRight: 4,
+    marginEnd: 4,
   },
   searchSubmitBtn: {
     paddingVertical: 8,
@@ -930,15 +930,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingRight: 4,
+    paddingEnd: 4,
   },
   recentChip: {
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 8,
     borderWidth: 1,
-    paddingLeft: 8,
-    paddingRight: 4,
+    paddingStart: 8,
+    paddingEnd: 4,
     minHeight: 28,
     paddingVertical: 2,
   },
@@ -956,7 +956,7 @@ const styles = StyleSheet.create({
   },
   recentChipRemove: {
     padding: 4,
-    marginLeft: 2,
+    marginStart: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },

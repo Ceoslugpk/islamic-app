@@ -761,7 +761,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 <View style={[styles.translationStatusFlagWrap, { backgroundColor: tokens.ringFill }]}>
                   <AppText style={{ fontSize: 24 }}>{getLanguageFlag(audioLanguage)}</AppText>
                 </View>
-                <View style={{ flex: 1, marginLeft: 12 }}>
+                <View style={{ flex: 1, marginStart: 12 }}>
                   <AppText variant="eyebrow" tone="faint" style={styles.translationStatusLabel}>
                     {t('ACTIVE TRANSLATION AUDIO')}
                   </AppText>
@@ -775,7 +775,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
               </View>
 
               <View style={[styles.translationToggleRow, { borderTopColor: tokens.cardBorder }]}>
-                <View style={{ flex: 1, marginRight: 12 }}>
+                <View style={{ flex: 1, marginEnd: 12 }}>
                   <AppText variant="rowTitle" style={styles.settingTitle}>
                     {t('Play translation after Arabic')}
                   </AppText>
@@ -848,7 +848,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                         </View>
                         <View style={styles.reciterNameCol}>
                           <View style={styles.reciterTitleRow}>
-                            <AppText style={{ fontSize: 16, marginRight: 4 }}>{flagEmoji}</AppText>
+                            <AppText style={{ fontSize: 16, marginEnd: 4 }}>{flagEmoji}</AppText>
                             <AppText
                               variant="rowTitle"
                               style={styles.reciterName}
@@ -1577,7 +1577,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 },
               ]}
             >
-              <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
+              <View style={{ flex: 1, minWidth: 0, marginEnd: 12 }}>
                 <AppText variant="rowTitle" style={styles.settingTitle}>
                   {t('Default Reciter')}
                 </AppText>
@@ -1607,7 +1607,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 },
               ]}
             >
-              <View style={{ flex: 1, marginRight: 12 }}>
+              <View style={{ flex: 1, marginEnd: 12 }}>
                 <AppText variant="rowTitle" style={styles.settingTitle}>
                   {t('Autoplay Next')}
                 </AppText>
@@ -1635,7 +1635,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 },
               ]}
             >
-              <View style={{ flex: 1, marginRight: 12 }}>
+              <View style={{ flex: 1, marginEnd: 12 }}>
                 <AppText variant="rowTitle" style={styles.settingTitle}>
                   {t('Play translation after Arabic')}
                 </AppText>
@@ -1737,7 +1737,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 },
               ]}
             >
-              <View style={{ flex: 1, marginRight: 12 }}>
+              <View style={{ flex: 1, marginEnd: 12 }}>
                 <AppText variant="rowTitle" style={styles.settingTitle}>
                   {t('Lock Screen & Notification Controls')}
                 </AppText>
@@ -1895,7 +1895,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 1,
     borderRadius: 12,
-    marginLeft: 2,
+    marginStart: 2,
   },
   tabBadgeText: {
     fontFamily: 'Manrope_700Bold',
@@ -1961,7 +1961,7 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
     minWidth: 0,
-    marginRight: 6,
+    marginEnd: 6,
   },
   radioArea: {
     width: 24,
@@ -2052,7 +2052,7 @@ const styles = StyleSheet.create({
   recentInfo: {
     flex: 1,
     minWidth: 0,
-    marginRight: 8,
+    marginEnd: 8,
   },
   recentTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2189,7 +2189,7 @@ const styles = StyleSheet.create({
   playlistCardMain: {
     flex: 1,
     minWidth: 0,
-    marginRight: 8,
+    marginEnd: 8,
   },
   playlistName: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2283,7 +2283,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     flex: 1,
     minWidth: 0,
-    marginRight: 8,
+    marginEnd: 8,
   },
   clearBtn: {
     paddingVertical: 4,
@@ -2314,7 +2314,7 @@ const styles = StyleSheet.create({
   queueMainPress: {
     flex: 1,
     minWidth: 0,
-    marginRight: 6,
+    marginEnd: 6,
   },
   queueTitle: {
     fontSize: 14,
@@ -2658,11 +2658,11 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginEnd: 10,
   },
   floatingMiniInfo: {
     flex: 1,
-    marginRight: 8,
+    marginEnd: 8,
   },
   floatingMiniTitleRow: {
     flexDirection: 'row',

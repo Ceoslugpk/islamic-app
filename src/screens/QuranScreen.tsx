@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
     minHeight: 30,
     justifyContent: 'center',
     paddingVertical: 3,
-    paddingRight: 12,
+    paddingEnd: 12,
     marginBottom: 2,
   },
   backText: {
@@ -688,7 +688,7 @@ const styles = StyleSheet.create({
   },
   langBarLeft: {
     flex: 1,
-    marginRight: 10,
+    marginEnd: 10,
   },
   langBarLabel: {
     fontFamily: 'Manrope_700Bold',

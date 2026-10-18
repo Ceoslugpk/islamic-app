@@ -7,6 +7,7 @@ import {
   ViewStyle,
   Insets,
   GestureResponderEvent,
+  AccessibilityState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../lib/theme';
@@ -22,6 +23,7 @@ export interface HeaderRingButtonProps {
   badgeColor?: string;
   accessibilityLabel?: string;
   accessibilityRole?: 'button';
+  accessibilityState?: AccessibilityState;
   hitSlop?: Insets;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -50,6 +52,7 @@ export function HeaderRingButton({
   badgeColor,
   accessibilityLabel,
   accessibilityRole = 'button',
+  accessibilityState,
   hitSlop,
   style,
   testID,
@@ -113,6 +116,7 @@ export function HeaderRingButton({
       onPress={onPress}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={accessibilityState}
       activeOpacity={activeOpacity}
       hitSlop={resolvedHitSlop}
       disabled={disabled}
@@ -134,7 +138,7 @@ const styles = StyleSheet.create({
   badgeDot: {
     position: 'absolute',
     top: 4,
-    right: 4,
+    end: 4,
     width: 6,
     height: 6,
     borderRadius: 3,

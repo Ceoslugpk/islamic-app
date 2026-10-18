@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 import { Platform, useColorScheme } from 'react-native';
 import { palette, ThemeColors, ThemeMode } from './constants';
+import { nextThemeMode } from './themeMode';
 import {
   HOME_THEME_TOKENS,
   CARD_SHADOW,
@@ -59,15 +60,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const mode = resolveMode(settings.themeMode, systemScheme);
   const accentKey = settings.accentKey ?? DEFAULT_ACCENT;
 
-  const toggle = () => {
-  if (settings.themeMode === 'system') setThemeMode('ink');
-  else if (settings.themeMode === 'ink') setThemeMode('paper');
-  else setThemeMode('system');
-};
+  // Toggle the visible mode directly. Cycling through "system" could leave
+  // the screen looking unchanged when the device already uses the same scheme.
+  const toggle = useCallback(() => {
+    setThemeMode(nextThemeMode(mode));
+  }, [mode, setThemeMode]);
 
-  const setAccent = (key: AccentKey) => {
-    setAccentKey(key);
-  };
+  const setAccent = setAccentKey;
 
   const colors: ThemeColors = useMemo(
     () => ({ ...palette[mode], ...getAccentColors(mode) }),
@@ -84,20 +83,22 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const scheme: 'light' | 'dark' = mode === 'ink' ? 'dark' : 'light';
   const semanticTokens = textTokens[mode];
+  const contextValue = useMemo<ThemeContextValue>(
+    () => ({
+      mode,
+      scheme,
+      colors,
+      tokens: semanticTokens,
+      textTokens: semanticTokens,
+      accentKey,
+      setAccent,
+      toggle,
+    }),
+    [mode, scheme, colors, semanticTokens, accentKey, setAccent, toggle],
+  );
 
   return (
-    <ThemeContext.Provider
-      value={{
-        mode,
-        scheme,
-        colors,
-        tokens: semanticTokens,
-        textTokens: semanticTokens,
-        accentKey,
-        setAccent,
-        toggle,
-      }}
-    >
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );

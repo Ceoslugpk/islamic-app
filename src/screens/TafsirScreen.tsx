@@ -582,7 +582,7 @@ const styles = StyleSheet.create({
   },
   selectorBtnMain: {
     flex: 1,
-    marginRight: 8,
+    marginEnd: 8,
   },
   selectorEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
@@ -752,7 +752,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flex: 1,
-    marginRight: 8,
+    marginEnd: 8,
   },
   surahOptionNum: {
     width: 34,

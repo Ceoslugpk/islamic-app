@@ -139,7 +139,7 @@ function NotesScreen({
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.noteBodyWrap, { borderLeftColor: tokens.goldBorder, borderLeftWidth: 3, paddingLeft: 12, paddingVertical: 8, paddingRight: 8, marginVertical: 6, borderRadius: 10, backgroundColor: tokens.ringFill }]}>
+        <View style={[styles.noteBodyWrap, { borderLeftColor: tokens.goldBorder, borderLeftWidth: 3, paddingStart: 12, paddingVertical: 8, paddingEnd: 8, marginVertical: 6, borderRadius: 10, backgroundColor: tokens.ringFill }]}>
           <AppText variant="body" style={styles.noteBody}>
             {item.body}
           </AppText>

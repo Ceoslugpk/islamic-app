@@ -900,6 +900,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                   <View
                     style={[
                       styles.liveThumbnail,
+                      rtl && styles.liveThumbnailRtl,
                       {
                         borderColor: isDark ? 'rgba(222, 184, 110, 0.35)' : 'rgba(16, 90, 75, 0.2)',
                       },
@@ -926,7 +927,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                       end={{ x: 1, y: 0 }}
                       style={styles.livePlayCircle}
                     >
-                      <Ionicons name="play" size={10} color={tokens.onGold} style={{ marginLeft: 1 }} />
+                      <Ionicons name="play" size={10} color={tokens.onGold} style={{ marginStart: 1 }} />
                     </LinearGradient>
                   </View>
 
@@ -1158,7 +1159,7 @@ const styles = StyleSheet.create({
 
   /* Title Section: Eyebrow TOOLS Poppins medium 11 letterSpacing2.2 gold, Utilities Lora 33.5 */
   titleSection: {
-    paddingLeft: 26,
+    paddingStart: 26,
   },
   titleEyebrow: {
     fontSize: 11,
@@ -1309,7 +1310,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     letterSpacing: 2,
     textTransform: 'uppercase',
-    paddingLeft: 26,
+    paddingStart: 26,
     marginTop: 20,
     marginBottom: 8,
   },
@@ -1318,7 +1319,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     letterSpacing: 2,
     textTransform: 'uppercase',
-    paddingLeft: 26,
+    paddingStart: 26,
     marginTop: 24,
     marginBottom: 8,
   },
@@ -1327,7 +1328,7 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     letterSpacing: 2,
     textTransform: 'uppercase',
-    paddingLeft: 26,
+    paddingStart: 26,
     marginTop: 24,
     marginBottom: 8,
   },
@@ -1394,8 +1395,8 @@ const styles = StyleSheet.create({
     minHeight: 40.7,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 12,
-    paddingRight: 16,
+    paddingStart: 12,
+    paddingEnd: 16,
     paddingVertical: 4,
   },
   utilityRingIcon: {
@@ -1407,7 +1408,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   utilityTextWrap: {
-    marginLeft: 8.3,
+    marginStart: 8.3,
     flex: 1,
     minWidth: 0,
     justifyContent: 'center',
@@ -1423,13 +1424,13 @@ const styles = StyleSheet.create({
   utilityBearing: {
     fontSize: 12,
     lineHeight: 15,
-    marginRight: 6,
+    marginEnd: 6,
     flexShrink: 0,
   },
   utilitySeparator: {
     height: 0.5,
-    marginLeft: 45,
-    marginRight: 16,
+    marginStart: 45,
+    marginEnd: 16,
   },
 
   /* Live Broadcasts: 3 stacked cards, 54.5 high, gap 5.8, radius 14 */
@@ -1460,6 +1461,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  liveThumbnailRtl: {
+    left: undefined,
+    right: 7.3,
   },
   liveThumbnailOverlay: {
     position: 'absolute',

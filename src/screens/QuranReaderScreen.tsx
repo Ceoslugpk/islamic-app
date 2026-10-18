@@ -4853,7 +4853,7 @@ const styles = StyleSheet.create({
     minHeight: 36,
     justifyContent: 'center',
     paddingVertical: 4,
-    paddingRight: 8,
+    paddingEnd: 8,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -4974,12 +4974,12 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 8,
+    marginStart: 8,
   },
   toolsMenuHeaderLeft: {
     flex: 1,
     minWidth: 0,
-    paddingRight: 12,
+    paddingEnd: 12,
   },
   toolsMenuSurahTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -5033,7 +5033,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 6,
-    marginLeft: 4,
+    marginStart: 4,
   },
   toolsMenuGroupCard: {
     borderRadius: 14,
@@ -5073,7 +5073,7 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     borderWidth: 1,
-    marginLeft: 4,
+    marginStart: 4,
   },
   toolsMenuDivider: {
     height: StyleSheet.hairlineWidth,
@@ -5168,7 +5168,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   arabicSurahName: {
-    marginLeft: 12,
+    marginStart: 12,
   },
   audioControlsBar: {
     flexDirection: 'row',
@@ -5420,7 +5420,7 @@ const styles = StyleSheet.create({
   reciterInfo: {
     flex: 1,
     minWidth: 0,
-    paddingRight: 12,
+    paddingEnd: 12,
   },
   reciterEngName: {
     fontFamily: 'Manrope_600SemiBold',
@@ -5540,7 +5540,7 @@ const styles = StyleSheet.create({
   mushafSurahSectionsWrap: { width: '100%' },
   mushafSurahGroup: { width: '100%', marginBottom: 8 },
   mushafTranslationMeta: { fontFamily: 'Manrope_600SemiBold', fontSize: 11, marginTop: 4 },
-  mushafSurahSmallName: { fontFamily: 'Manrope_600SemiBold', fontSize: 12, marginLeft: 4 },
+  mushafSurahSmallName: { fontFamily: 'Manrope_600SemiBold', fontSize: 12, marginStart: 4 },
   surahBannerContainer: { width: '100%', alignItems: 'center', marginBottom: 12 },
   surahBannerFrame: { width: '100%', borderWidth: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
   surahBannerArabicName: { fontFamily: 'Amiri_700Bold', fontSize: 24, textAlign: 'center' },
@@ -5608,7 +5608,7 @@ const styles = StyleSheet.create({
   noteModalHeaderLeft: {
     flex: 1,
     minWidth: 0,
-    paddingRight: 12,
+    paddingEnd: 12,
   },
   noteModalEyebrow: {
     fontFamily: 'Manrope_600SemiBold',

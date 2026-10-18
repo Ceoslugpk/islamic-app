@@ -337,7 +337,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 4,
     flexShrink: 0,
-    marginLeft: 8,
+    marginStart: 8,
   },
   coordsText: {
     fontFamily: 'Manrope_400Regular',

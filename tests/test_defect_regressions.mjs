@@ -215,7 +215,7 @@ const settingsCode = fs.readFileSync('src/lib/settings.tsx', 'utf8');
 
 // Every ordinary setting change must snapshot synchronously from the latest ref
 // and use the same serialized writer as language changes.
-assert.ok(settingsCode.includes('function updateSettings('), 'settings must expose one shared update path');
+assert.ok(settingsCode.includes('const updateSettings = useCallback('), 'settings must expose one stable shared update path');
 assert.ok(
   settingsCode.includes('sanitizeSettings(update(settingsRef.current))'),
   'ordinary updates must derive from the latest optimistic settings ref'

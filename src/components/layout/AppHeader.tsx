@@ -57,7 +57,7 @@ export function AppHeader({
       </View>
 
       <View style={[styles.headerContainer, { backgroundColor: transparent ? 'transparent' : tokens.bgTop }]} testID="app-header-container">
-        {/* Row: height 32, paddingStart 26, paddingEnd 19, centered */}
+        {/* Row: height 40, paddingStart 26, paddingEnd 19, centered */}
         <View
           style={[
             styles.row,
@@ -105,28 +105,33 @@ export function AppHeader({
           </AppText>
         </View>
 
-        {/* Actions: two 32 circular buttons, gap 4, cardTop fill, tokens.cardBorder 0.75 border, 14 gold icons */}
+        {/* Actions: two larger circular buttons with a 44dp minimum hit area */}
         <View
           style={[styles.actions, { flexDirection: 'row' }]}
           testID="app-header-actions"
         >
           <HeaderRingButton
             variant="card"
-            iconName="sunny-outline"
-            iconSize={14}
+            iconName={mode === 'ink' ? 'sunny-outline' : 'moon-outline'}
+            iconSize={17}
             iconColor={tokens.gold}
             onPress={toggle}
             accessibilityLabel={t('Appearance')}
+            accessibilityState={{ selected: mode === 'ink' }}
+            hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }}
+            style={styles.actionButton}
             testID="app-header-appearance"
           />
 
           <HeaderRingButton
             variant="card"
             iconName="settings-outline"
-            iconSize={14}
+            iconSize={17}
             iconColor={tokens.gold}
             onPress={onOpenSettings}
             accessibilityLabel={t('Open settings')}
+            hitSlop={{ top: 3, bottom: 3, left: 3, right: 3 }}
+            style={styles.actionButton}
             testID="app-header-gear"
           />
         </View>
@@ -174,6 +179,11 @@ const styles = StyleSheet.create({
   actions: {
     alignItems: 'center',
     gap: 4,
+  },
+  actionButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
   circleBtn: {
     width: 32,

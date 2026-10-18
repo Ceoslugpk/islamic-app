@@ -122,7 +122,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
             },
           ]}
         >
-          <Ionicons name="checkmark-circle" size={13} color={tokens.onGold} style={{ marginRight: 4 }} />
+          <Ionicons name="checkmark-circle" size={13} color={tokens.onGold} style={{ marginEnd: 4 }} />
           <AppText variant="eyebrow" tone="onGold" style={styles.badgeText}>{t('Memorized')}</AppText>
         </View>
       );
@@ -139,7 +139,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
             },
           ]}
         >
-          <Ionicons name="sync-outline" size={13} color={tokens.goldText} style={{ marginRight: 4 }} />
+          <Ionicons name="sync-outline" size={13} color={tokens.goldText} style={{ marginEnd: 4 }} />
           <AppText variant="eyebrow" highlight style={styles.badgeText}>{t('Revising')}</AppText>
         </View>
       );
@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   searchIcon: {
-    marginRight: 8,
+    marginEnd: 8,
   },
   searchInput: {
     flex: 1,

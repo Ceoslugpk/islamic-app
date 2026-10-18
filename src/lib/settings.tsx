@@ -734,14 +734,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     })();
   }, [enqueueWrite]);
 
-  function updateSettings(update: (current: AppSettings) => AppSettings): AppSettings {
+  const updateSettings = useCallback((update: (current: AppSettings) => AppSettings): AppSettings => {
     const clean = sanitizeSettings(update(settingsRef.current));
     settingsRef.current = clean;
     preloadRequestedMem = clean.quranPreloadRequested;
     setSettings(clean);
     enqueueWrite(clean).catch(() => {});
     return clean;
-  }
+  }, [enqueueWrite]);
+
+  const setThemeMode = useCallback(
+    (themeMode: ThemeMode) => updateSettings((prev) => ({ ...prev, themeMode })),
+    [updateSettings],
+  );
+  const setAccentKey = useCallback(
+    (accentKey: AccentKey) => updateSettings((prev) => ({ ...prev, accentKey })),
+    [updateSettings],
+  );
 
   const value: SettingsContextValue = {
     settings,
@@ -779,8 +788,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       setActiveAdhanReciterId(adhanReciterId);
       updateSettings((prev) => ({ ...prev, adhanReciterId }));
     },
-    setThemeMode: (themeMode) => updateSettings((prev) => ({ ...prev, themeMode })),
-    setAccentKey: (accentKey) => updateSettings((prev) => ({ ...prev, accentKey })),
+    setThemeMode,
+    setAccentKey,
     setTranslationAudioEnabled: (translationAudioEnabled) => {
       setAudioTranslationEnabled(translationAudioEnabled);
       updateSettings((prev) => ({ ...prev, translationAudioEnabled }));

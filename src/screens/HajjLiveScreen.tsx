@@ -219,7 +219,7 @@ export default function HajjLiveScreen({
         ].map((site) => (
           <PremiumCard key={site.title} style={{ marginBottom: 12, padding: 16 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <AppText variant="rowTitle" style={[styles.siteName, { flex: 1, marginRight: 8 }]}>
+              <AppText variant="rowTitle" style={[styles.siteName, { flex: 1, marginEnd: 8 }]}>
                 {site.title}
               </AppText>
               <Chip label={site.badge} selected={false} style={{ height: 26, paddingHorizontal: 8 }} />
