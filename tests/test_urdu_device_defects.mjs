@@ -42,7 +42,7 @@ assert.ok(
 // 1d. SettingsScreen does not discard reload if unmounted after language selection
 assert.ok(
   !settingsScreenCode.includes('if (!mountedRef.current) return;\n                  onPrepareReload?.()') &&
-  !settingsScreenCode.includes('if (!mountedRef.current) return;\n                    Updates.reloadAsync()'),
+  !settingsScreenCode.includes('if (!mountedRef.current) return;\n                    reloadAppAsync('),
   'SettingsScreen must not discard reload on unmount once language persistence succeeds'
 );
 

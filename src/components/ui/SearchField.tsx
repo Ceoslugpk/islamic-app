@@ -51,7 +51,7 @@ export function SearchField({
         {
           backgroundColor: mode === 'ink' ? tokens.cardTop : colors.bgSurface,
           borderColor: mode === 'ink' ? tokens.cardBorder : colors.borderSubtle,
-          flexDirection: rtl ? 'row-reverse' : 'row',
+          flexDirection: 'row',
         },
         style,
       ]}

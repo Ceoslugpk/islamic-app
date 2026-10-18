@@ -108,7 +108,7 @@ export function SubHeader({
         testID="sub-header"
         style={[
           styles.innerRow,
-          { flexDirection: rtl ? 'row-reverse' : 'row' },
+          { flexDirection: 'row' },
         ]}
       >
         {/* Left: 32dp ring back button at 16dp radius with 44x44 touch target */}
@@ -117,7 +117,7 @@ export function SubHeader({
             testID={`${childPrefix}-back-btn`}
             style={[
               styles.backButtonTouch,
-              { flexDirection: rtl ? 'row-reverse' : 'row' },
+              { flexDirection: 'row' },
             ]}
             onPress={onBack}
             accessibilityRole="button"

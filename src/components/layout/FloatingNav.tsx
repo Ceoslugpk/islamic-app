@@ -127,7 +127,8 @@ export const FloatingNav = React.memo(function FloatingNav({ active, onChange }:
         <View
           style={[
             styles.columnsRow,
-            { flexDirection: rtl ? 'row-reverse' : 'row' },
+            // Let Yoga mirror this row with the app's native RTL direction.
+            { flexDirection: 'row' },
           ]}
           accessibilityRole="tablist"
           role="tablist"
@@ -184,7 +185,8 @@ export const FloatingNav = React.memo(function FloatingNav({ active, onChange }:
                           maxWidth: maxPillWidth,
                           paddingHorizontal: pillPadHorizontal,
                           gap: pillGap,
-                          flexDirection: rtl ? 'row-reverse' : 'row',
+                          // Let Yoga mirror icon and label together for RTL.
+                          flexDirection: 'row',
                         },
                       ]}
                     >

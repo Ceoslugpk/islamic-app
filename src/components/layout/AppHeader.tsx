@@ -64,14 +64,14 @@ export function AppHeader({
             {
               paddingStart: 26,
               paddingEnd: 19,
-              flexDirection: rtl ? 'row-reverse' : 'row',
+              flexDirection: 'row',
             },
           ]}
           testID="app-header-row"
         >
         {/* Brand: Logo (24x24 radius 6.5) + gap 6 + ISLAMIC wordmark */}
         <View
-          style={[styles.brand, { flexDirection: rtl ? 'row-reverse' : 'row' }]}
+          style={[styles.brand, { flexDirection: 'row' }]}
           testID="app-header-brand"
         >
           <View
@@ -107,7 +107,7 @@ export function AppHeader({
 
         {/* Actions: two 32 circular buttons, gap 4, cardTop fill, tokens.cardBorder 0.75 border, 14 gold icons */}
         <View
-          style={[styles.actions, { flexDirection: rtl ? 'row-reverse' : 'row' }]}
+          style={[styles.actions, { flexDirection: 'row' }]}
           testID="app-header-actions"
         >
           <HeaderRingButton

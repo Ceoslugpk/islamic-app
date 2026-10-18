@@ -205,8 +205,9 @@ assert.ok(
   'Language change must set native layout direction before reload'
 );
 assert.ok(
-  settingsScreenCode.includes('Updates.reloadAsync().catch(() => DevSettings.reload())'),
-  'Language change must trigger native reload on non-web'
+  settingsScreenCode.includes("reloadAppAsync('App language changed').catch(() => {") &&
+    settingsScreenCode.includes('setIsSwitchingLanguage(false);'),
+  'Language change must use core app reload and unlock language options if reload fails'
 );
 assert.ok(
   settingsScreenCode.includes("setLanguageError(t('Still could not load. Try again later.'))"),

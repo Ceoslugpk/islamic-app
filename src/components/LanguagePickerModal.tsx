@@ -187,7 +187,6 @@ export function LanguagePickerModal({
                 <TouchableOpacity
                   style={[
                     styles.languageRow,
-                    isRTL() && { flexDirection: 'row-reverse' },
                     {
                       backgroundColor: isSelected ? colors.accentDim : 'transparent',
                       borderColor: isSelected ? colors.accent : 'transparent',
@@ -208,7 +207,7 @@ export function LanguagePickerModal({
 
                   {/* Text Wrap */}
                   <View style={[styles.textWrap, isRTL() && { alignItems: 'flex-end' }]}>
-                    <View style={[styles.langNameRow, isRTL() && { flexDirection: 'row-reverse' }]}>
+                    <View style={styles.langNameRow}>
                       <AppText
                         variant="rowTitle"
                         highlight={isSelected}

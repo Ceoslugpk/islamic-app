@@ -86,7 +86,7 @@ assert.ok(
   'Quran translation write precedes setOnboardingDone'
 );
 assert.ok(
-  submitTransactionBody.indexOf('await setOnboardingDoneFn(true)') < submitTransactionBody.indexOf('Updates.reloadAsync'),
+  submitTransactionBody.indexOf('await setOnboardingDoneFn(true)') < submitTransactionBody.indexOf('reloadAppAsync'),
   'setOnboardingDone completes BEFORE native reload'
 );
 console.log('  ✓ 1.6 Durable write sequencing and write queue integration verified');
@@ -97,8 +97,8 @@ assert.ok(
   'Calls prepareNativeLayoutDirection'
 );
 assert.ok(
-  onboardingSource.indexOf('prepareNativeLayoutDirection') < onboardingSource.indexOf('Updates.reloadAsync'),
-  'prepareNativeLayoutDirection immediately precedes native reload'
+  submitTransactionBody.indexOf('prepareNativeLayoutDirectionFn(selectedAppLang)') < submitTransactionBody.indexOf('reloadApp().catch'),
+  'prepareNativeLayoutDirection is applied before the scheduled native reload'
 );
 assert.ok(
   onboardingSource.includes('isSubmittingRef.current'),
@@ -463,7 +463,7 @@ const prodOnboardingModule = loadTsModule('src/screens/OnboardingScreen.tsx', {
   },
   'react-native-svg': { default: {}, Path: {} },
   'expo-linear-gradient': { LinearGradient: {} },
-  'expo-updates': { reloadAsync: async () => {} },
+  'expo': { reloadAppAsync: async () => {} },
   'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) },
   '@expo/vector-icons': { Ionicons: {} },
   '../lib/theme': { useTheme: () => ({ colors: {}, mode: 'paper' }), getCardShadow: () => ({}), getPillShadow: () => ({}) },
@@ -531,7 +531,7 @@ const realOnboardingScreenModule = loadTsModule('src/screens/OnboardingScreen.ts
   },
   'react-native-svg': { default: {}, Path: {} },
   'expo-linear-gradient': { LinearGradient: {} },
-  'expo-updates': { reloadAsync: async () => {} },
+  'expo': { reloadAppAsync: async () => {} },
   'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) },
   '@expo/vector-icons': { Ionicons: {} },
   '../lib/theme': { useTheme: () => ({ colors: {}, mode: 'paper' }), getCardShadow: () => ({}), getPillShadow: () => ({}) },
@@ -1489,8 +1489,9 @@ function createProductionOnboardingDoneHarness(storage) {
 
   assert.equal(reloadInvocations, 1, 'Observably exactly one reload invocation executed');
   assert.equal(fallbackReloadInvocations, 0, 'Zero fallback reload invocations (DevSettings.reload removed)');
-  assert.equal(onCompleteCalled, false, 'onComplete() still not called after reload scheduled');
-  console.log('  ✓ Test T passed (model/boundary coverage): native direction change triggers observably exactly one reload without onComplete() or fallback');
+  await Promise.resolve();
+  assert.equal(onCompleteCalled, true, 'onComplete() lets onboarding continue if native reload rejects');
+  console.log('  ✓ Test T passed (model/boundary coverage): failed native reload still completes onboarding without a dead-end');
 }
 
 // Test U: [Model/Boundary Coverage] Native same-direction reload contract (LTR en -> LTR hi / ml / si)

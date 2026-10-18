@@ -124,10 +124,9 @@ applyRTL(isRtlLanguage(initialLanguage));
 
 /**
  * Configure RTL layout direction for React Native and Web.
- * Force unconditionally — call ONLY at boot (module load + App bootstrap) where
- * forceRTL is reliable. Calling it after UI mount (e.g. during a live language
- * switch) is what leaves RTL stuck on Android; live switches rely on the
- * expo-updates reload to re-boot with the persisted language + direction.
+ * At boot, force the direction before any screens mount so the native view tree
+ * inherits the direction for its full lifetime. Language changes persist their
+ * target direction with prepareNativeLayoutDirection() and then use an app reload.
  */
 export function applyRTL(isRTL: boolean): void {
   try {
@@ -144,7 +143,7 @@ export function applyRTL(isRTL: boolean): void {
 
 /**
  * Switch preparation helper called AFTER persistent storage is verified and
- * IMMEDIATELY BEFORE Updates.reloadAsync().
+ * IMMEDIATELY BEFORE the app reload.
  *
  * On native: layout direction changes only take effect on the NEXT native/JS reload.
  * Calling allowRTL(isRtl) and forceRTL(isRtl) writes the preference into

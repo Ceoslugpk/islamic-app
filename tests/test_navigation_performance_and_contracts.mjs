@@ -45,8 +45,9 @@ assert.ok(
   'ScreenHeader must support RTL title font'
 );
 assert.ok(
-  screenHeaderTsx.includes("flexDirection: rtl ? 'row-reverse' : 'row'"),
-  'ScreenHeader must flip row direction in RTL'
+  screenHeaderTsx.includes("flexDirection: 'row'") &&
+    !screenHeaderTsx.includes("flexDirection: rtl ? 'row-reverse' : 'row'"),
+  'ScreenHeader must rely on native layout direction for RTL row flow'
 );
 assert.ok(
   screenHeaderTsx.includes('testID="screen-header"'),
@@ -60,9 +61,10 @@ console.log('  ✓ ScreenHeader RTL, font, and testID contracts verified.');
 
 // 1.3 QuranHomeScreen Header Polish
 assert.ok(
-  quranHomeTsx.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'") &&
-  quranHomeTsx.includes("surahsSectionHeader"),
-  'QuranHomeScreen surahsSectionHeader must respect RTL row direction'
+  quranHomeTsx.includes("flexDirection: 'row'") &&
+    !quranHomeTsx.includes("flexDirection: isRTL() ? 'row-reverse' : 'row'") &&
+    quranHomeTsx.includes("surahsSectionHeader"),
+  'QuranHomeScreen surahsSectionHeader must rely on native RTL row flow'
 );
 assert.ok(
   quranHomeTsx.includes("tokens.gold") && quranHomeTsx.includes("surahsCount"),

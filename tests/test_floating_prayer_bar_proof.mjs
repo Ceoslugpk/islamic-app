@@ -33,7 +33,8 @@ console.log('  ✓ Single surface, single border, single restrained shadow owner
 
 // 4. LTR and RTL support
 assert.ok(compactPrayerBarFile.includes('isRTL()'), 'isRTL check present');
-assert.ok(compactPrayerBarFile.includes("flexDirection: rtl ? 'row-reverse' : 'row'"), 'RTL row reversal supported');
+assert.ok(compactPrayerBarFile.includes("flexDirection: 'row'"), 'Prayer bar uses a native-direction-aware row');
+assert.ok(!compactPrayerBarFile.includes("flexDirection: rtl ? 'row-reverse' : 'row'"), 'Prayer bar must not double-reverse native RTL');
 assert.ok(compactPrayerBarFile.includes("writingDirection: 'ltr'"), 'Prayer time numerals keep LTR');
 console.log('  ✓ LTR and RTL layout and numeral direction safety verified');
 

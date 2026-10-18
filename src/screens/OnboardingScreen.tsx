@@ -15,7 +15,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Updates from 'expo-updates';
+import { reloadAppAsync } from 'expo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, getCardShadow, getPillShadow } from '../lib/theme';
@@ -75,14 +75,14 @@ const APP_LANGUAGES_LIST: { code: AppLanguage; name: string; nativeName: string;
   { code: 'ps', name: 'Pashto', nativeName: 'پښتو', flag: '🇦🇫' },
 ];
 
-let appReloader = () => Updates.reloadAsync();
+let appReloader = () => reloadAppAsync('App language changed during setup');
 
 export function _setAppReloaderForTesting(custom: (() => Promise<void>) | null) {
-  appReloader = custom || (() => Updates.reloadAsync());
+  appReloader = custom || (() => reloadAppAsync('App language changed during setup'));
 }
 
 export function _resetAppReloaderForTesting() {
-  appReloader = () => Updates.reloadAsync();
+  appReloader = () => reloadAppAsync('App language changed during setup');
 }
 
 export interface OnboardingTransactionDeps {
@@ -167,11 +167,12 @@ export async function executeOnboardingSubmitTransaction(params: OnboardingTrans
     // 5. Layout direction & reload handling immediately after successful durable writes
     // CONTRACT:
     // - Native Direction Change (e.g. LTR -> RTL or RTL -> LTR):
-    //   React Native native view hierarchy requires an app reload (Updates.reloadAsync) for
+    //   React Native native view hierarchy requires an app reload for
     //   I18nManager layout changes to take physical effect across native views.
     //   Calls prepareNativeLayoutDirection(selectedAppLang) and schedules exactly ONE native reload
-    //   via appReloader() (zero fallback reload invocations; DevSettings.reload fallback removed).
-    //   onComplete() is not called so the app reloads directly into the home screen with onboarding done.
+    //   via Expo's core reloadAppAsync(), which works when expo-updates is disabled.
+    //   onComplete() stays untouched while the reload succeeds; a rejected reload
+    //   completes onboarding so the user is not stranded on the setup screen.
     // - Native Same Direction (e.g. LTR -> LTR such as en -> hi/ml/si, or RTL -> RTL):
     //   Native view hierarchy direction is already correct. No reload is needed.
     //   Transitions cleanly to the main app by calling onComplete() directly.
@@ -187,7 +188,11 @@ export async function executeOnboardingSubmitTransaction(params: OnboardingTrans
     if (currentPlatform !== 'web' && isSwitchingRTL) {
       prepareNativeLayoutDirectionFn(selectedAppLang); // prepareNativeLayoutDirection(selectedAppLang)
       scheduleReload(() => {
-        reloadApp().catch(() => {}); // appReloader().catch
+        reloadApp().catch(() => {
+          // The preference is already durable. Let the user continue if the
+          // native reload fails; a later cold start will apply the stored RTL.
+          onComplete();
+        }); // appReloader().catch
       }, 300);
     } else {
       if (currentPlatform === 'web') {
@@ -546,7 +551,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     return (
       <View
         pointerEvents={interactive ? 'auto' : 'none'}
-        style={[styles.root, { backgroundColor: tokens.bgTop }]}
+        style={[styles.root, { backgroundColor: tokens.bgTop, direction: isDemoRtl ? 'rtl' : 'ltr' }]}
       >
         {/* Full screen gradient matching Home */}
         <LinearGradient
@@ -588,8 +593,8 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
           onTouchStart={interactive ? stopDemo : undefined}
         >
           {/* Header: Logo squircle with Islamic arch mark + ISLAMIC wordmark + Theme Toggle */}
-          <View style={[styles.headerRow, isCompact && styles.headerRowCompact, isDemoRtl && styles.rowReverse]}>
-            <View style={[styles.brandWrap, isDemoRtl && styles.rowReverse]}>
+          <View style={[styles.headerRow, isCompact && styles.headerRowCompact]}>
+            <View style={styles.brandWrap}>
               <AnimatedBrandBadge
                 size={36}
                 color={tokens.brandGreen || '#105A4B'}
@@ -692,7 +697,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             {/* Row 1: App Language */}
             <TouchableOpacity
               testID="onboarding-row-app-lang"
-              style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
+              style={styles.panelRow}
               onPress={
                 interactive
                   ? () => {
@@ -726,7 +731,6 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   style={[
                     styles.valueInlineRow,
                     interactive && { opacity: demoFadeAnim },
-                    isDemoRtl && styles.rowReverse,
                   ]}
                 >
                   <AppText variant="rowTitle" style={styles.rowValueBold} numberOfLines={1}>
@@ -757,7 +761,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             {/* Row 2: Quran Translation */}
             <TouchableOpacity
               testID="onboarding-row-quran-trans"
-              style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
+              style={styles.panelRow}
               onPress={
                 interactive
                   ? () => {
@@ -791,7 +795,6 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   style={[
                     styles.valueInlineRow,
                     interactive && { opacity: demoFadeAnim },
-                    isDemoRtl && styles.rowReverse,
                   ]}
                 >
                   <AppText variant="rowTitle" style={styles.rowValueBold} numberOfLines={1}>
@@ -822,7 +825,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
             {/* Row 3: Quran Audio */}
             <TouchableOpacity
               testID="onboarding-row-audio-trans"
-              style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
+              style={styles.panelRow}
               onPress={
                 interactive
                   ? () => {
@@ -856,7 +859,6 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
                   style={[
                     styles.valueInlineRow,
                     interactive && { opacity: demoFadeAnim },
-                    isDemoRtl && styles.rowReverse,
                   ]}
                 >
                   <AppText variant="rowTitle" style={styles.rowValueBold} numberOfLines={1}>
@@ -938,7 +940,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFill}
             />
-            <View style={[styles.btnContentRow, isDemoRtl && styles.rowReverse]}>
+            <View style={styles.btnContentRow}>
               <AppText variant="title" tone="onGold" style={styles.getStartedBtnText}>
                 {currentStrings.getStarted}
               </AppText>
@@ -1070,9 +1072,6 @@ const styles = StyleSheet.create({
   themeTogglePlaceholder: {
     width: 44,
     height: 44,
-  },
-  rowReverse: {
-    flexDirection: 'row-reverse',
   },
   headerWordmark: {
     fontFamily: 'SourceSans3_500Medium',

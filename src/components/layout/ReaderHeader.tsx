@@ -126,7 +126,7 @@ export function ReaderHeader({
           {
             gap: isCompact ? 4 : 6,
             paddingVertical: isCompact ? 3 : 4,
-            flexDirection: rtl ? 'row-reverse' : 'row',
+            flexDirection: 'row',
           },
         ]}
         onPress={onBack}
@@ -145,7 +145,7 @@ export function ReaderHeader({
         <View
           style={[
             styles.surahNavInline,
-            { flexDirection: rtl ? 'row-reverse' : 'row' },
+            { flexDirection: 'row' },
           ]}
         >
           {onPrev ? (

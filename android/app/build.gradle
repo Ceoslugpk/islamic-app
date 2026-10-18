@@ -100,8 +100,8 @@ android {
         applicationId 'com.qashi.islamic'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 97
-        versionName "1.1.78"
+        versionCode 98
+        versionName "1.1.79"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }

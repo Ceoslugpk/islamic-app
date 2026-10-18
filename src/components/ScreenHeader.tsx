@@ -81,7 +81,7 @@ export function ScreenHeader({
       <View
         style={[
           styles.innerRow,
-          { flexDirection: rtl ? 'row-reverse' : 'row' },
+          { flexDirection: 'row' },
         ]}
       >
         {/* Left: Back Button or spacer */}
@@ -89,7 +89,7 @@ export function ScreenHeader({
           <TouchableOpacity
             style={[
               styles.backButton,
-              { flexDirection: rtl ? 'row-reverse' : 'row' },
+              { flexDirection: 'row' },
             ]}
             onPress={onBack}
             accessibilityRole="button"

@@ -125,7 +125,7 @@ export function SheetHeader({
       <View
         style={[
           styles.row,
-          { flexDirection: rtl ? 'row-reverse' : 'row' },
+          { flexDirection: 'row' },
         ]}
       >
         <View style={styles.titleColumn}>
@@ -187,7 +187,7 @@ export function SheetHeader({
           <View
             style={[
               styles.rightActionsRow,
-              { flexDirection: rtl ? 'row-reverse' : 'row' },
+              { flexDirection: 'row' },
             ]}
           >
             {chip ? (

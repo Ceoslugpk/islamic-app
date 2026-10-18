@@ -15,14 +15,13 @@ import {
   Linking,
   BackHandler,
   Platform,
-  DevSettings,
 } from 'react-native';
 import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import * as Updates from 'expo-updates';
+import { reloadAppAsync } from 'expo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { useThemeTokens, getTokens, cardTokens, getBrandLogoSource } from '../theme/tokens';
@@ -1127,7 +1126,18 @@ export default function SettingsScreen({
                           if (Platform.OS !== 'web') {
                             reloadTimerRef.current = setTimeout(() => {
                               reloadTimerRef.current = null;
-                              Updates.reloadAsync().catch(() => DevSettings.reload());
+                              // expo-updates is intentionally disabled in this APK. Its
+                              // reloadAsync path can therefore reject and leave the
+                              // language picker permanently disabled in release builds.
+                              // Expo's core reload works in Expo Go and standalone builds.
+                              reloadAppAsync('App language changed').catch(() => {
+                                isSwitchingLanguageRef.current = false;
+                                if (mountedRef.current) {
+                                  setIsSwitchingLanguage(false);
+                                  setSwitchingTargetLang(null);
+                                  setLanguageError(t('Still could not load. Try again later.'));
+                                }
+                              });
                             }, 400);
                           } else {
                             isSwitchingLanguageRef.current = false;

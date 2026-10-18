@@ -50,7 +50,7 @@ export const CompactPrayerBar = React.memo(function CompactPrayerBar({
     {
       backgroundColor: tokens.cardTop,
       borderColor: tokens.cardBorder,
-      flexDirection: rtl ? 'row-reverse' : 'row',
+      flexDirection: 'row',
     },
     style,
   ];
@@ -61,7 +61,7 @@ export const CompactPrayerBar = React.memo(function CompactPrayerBar({
       <View
         style={[
           styles.leftRow,
-          { flexDirection: rtl ? 'row-reverse' : 'row' },
+          { flexDirection: 'row' },
         ]}
       >
         <View

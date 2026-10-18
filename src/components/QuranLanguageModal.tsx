@@ -195,7 +195,6 @@ export function QuranLanguageModal({
                 <TouchableOpacity
                   style={[
                     styles.languageRow,
-                    isRTL() && { flexDirection: 'row-reverse' },
                     {
                       backgroundColor: isSelected ? colors.accentDim : 'transparent',
                       borderColor: isSelected ? colors.accent : 'transparent',
@@ -212,7 +211,7 @@ export function QuranLanguageModal({
 
                   {/* Language & Translator info */}
                   <View style={[styles.textWrap, isRTL() && { alignItems: 'flex-end' }]}>
-                    <View style={[styles.langNameRow, isRTL() && { flexDirection: 'row-reverse' }]}>
+                    <View style={styles.langNameRow}>
                       <AppText
                         variant="rowTitle"
                         highlight={isSelected}

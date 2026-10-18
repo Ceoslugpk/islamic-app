@@ -75,8 +75,9 @@ assert.ok(
   'SettingsScreen must call prepareNativeLayoutDirection before reload'
 );
 assert.ok(
-  settingsScreenCode.includes('Updates.reloadAsync()'),
-  'SettingsScreen must trigger native reload after persistence succeeds'
+  settingsScreenCode.includes("reloadAppAsync('App language changed')") &&
+    !settingsScreenCode.includes('Updates.reloadAsync()'),
+  'SettingsScreen must use Expo core reload, which is available in release builds without expo-updates'
 );
 
 console.log('  ✓ Static contracts verified across settings, writeQueue, i18n, and SettingsScreen');

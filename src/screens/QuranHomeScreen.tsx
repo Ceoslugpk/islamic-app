@@ -1511,7 +1511,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
         </View>
 
         {/* 6. Surahs Section Header (NO Juz selector matching reference) */}
-        <View style={[styles.surahsSectionHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+        <View style={[styles.surahsSectionHeader, { flexDirection: 'row' }]}>
           <AppText
             variant="title"
             style={[

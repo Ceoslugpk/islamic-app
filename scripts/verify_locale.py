@@ -23,12 +23,23 @@ EN_PATH = os.path.join(LOCALES_DIR, "en.json")
 
 REGISTERED_LOCALES = ["en", "ur", "ar", "hi", "ml", "si", "bn", "ms", "ta", "id", "ps"]
 
+# Pashto UI entries must be translated. These are product, license, and date
+# format identifiers whose English spelling is part of the identifier.
+PASHTO_ALLOWED_IDENTICAL_KEYS = {
+    "KFGQPC",
+    "MIT",
+    "OFL 1.1",
+    "TanStack-Free",
+    "YYYY-MM-DD",
+}
+
 # Legitimate protected content permitted to remain identical to English:
 # Proper nouns, technical identifiers, Arabic quotations/transliterations, URLs, numbers.
 PROTECTED_PATTERNS = [
     r"^[0-9\s\.\,\+\-\/\:\(\)\%\#\·\✓\★\☆]+$", # Pure numbers, punctuation, mathematical symbols
     r"^https?://",                            # URLs
     r"^[A-Z0-9_\-]+$",                        # Technical codes/IDs
+    r"^OFL 1\.1$",                              # Open Font License identifier
     r"^(Makkah|Madinah|Mina|Arafat|Muzdalifah|Kaaba|Haram|Qibla|Zamzam|Tawaf|Sa'i|Jamarat)$", # Universal sacred toponyms
 ]
 
@@ -112,6 +123,12 @@ def verify_locales():
                     protected_count += 1
                 else:
                     identical_count += 1
+
+                if loc == "ps" and k not in PASHTO_ALLOWED_IDENTICAL_KEYS:
+                    errors.append(f"[ps] Untranslated English UI value for key: {k!r}")
+
+            if loc == "ps" and "YYYY-MM-DD" in en_val and v.count("YYYY-MM-DD") != en_val.count("YYYY-MM-DD"):
+                errors.append(f"[ps] Date format identifier changed for key: {k!r}")
 
         # Check Arabic token corruption specifically
         if loc == "ar":

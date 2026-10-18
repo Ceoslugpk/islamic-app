@@ -10,7 +10,6 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, fontRoles } from '../../theme/tokens';
-import { isRTL } from '../../lib/i18n';
 import { AppText } from './AppText';
 
 export interface TabItem {
@@ -38,8 +37,6 @@ export function ScreenTabs({
 }: ScreenTabsProps) {
   const { mode } = useTheme();
   const tokens = themeTokens[mode];
-  const rtl = isRTL();
-
   const tabElements = tabs.map((tab) => {
     const isSelected = tab.id === activeTab;
     const tabTestId = isSelected ? 'tab-selected' : `tab-${tab.id}`;
@@ -122,7 +119,7 @@ export function ScreenTabs({
         {
           backgroundColor: tokens.cardTop,
           borderColor: tokens.cardBorder,
-          flexDirection: rtl ? 'row-reverse' : 'row',
+          flexDirection: 'row',
         },
         style,
       ]}

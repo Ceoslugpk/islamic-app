@@ -44,10 +44,10 @@ assert.ok(
   'SettingsScreen awaits language persist before reload'
 );
 assert.ok(
-  settingsScreenCode.includes('Updates.reloadAsync()'),
+  settingsScreenCode.includes("reloadAppAsync('App language changed')"),
   'native reload triggered after persist (boots in new language)'
 );
-ok('en->ur: language persisted before Updates.reloadAsync — reload boots in Urdu');
+ok('en->ur: language persisted before the Expo core reload — reload boots in Urdu');
 
 // (c) ur->en: English content defaults restored (quran translation, tafsir, audio)
 assert.ok(

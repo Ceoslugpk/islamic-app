@@ -229,15 +229,16 @@ console.log('\n--- 6. TASK E: RTL / LTR DIRECTIONAL SEMANTICS & SCRIPT BEHAVIOR 
 
 // FloatingNav directional layout & typography switching
 assert.ok(
-  floatingNavSrc.includes("flexDirection: rtl ? 'row-reverse' : 'row'") &&
+  floatingNavSrc.includes("flexDirection: 'row'") &&
+  !floatingNavSrc.includes("flexDirection: rtl ? 'row-reverse' : 'row'") &&
   floatingNavSrc.includes('const rtl = isRTL();'),
-  'FloatingNav must reverse flex direction when layout is RTL'
+  'FloatingNav must let native layout direction mirror tab order and use rtl only for typography'
 );
 assert.ok(
   floatingNavSrc.includes("fontFamily: rtl ? 'Amiri_700Bold' : 'Poppins_500Medium'"),
   'FloatingNav must switch font family between Amiri for RTL and Poppins for LTR'
 );
-console.log('  ✓ FloatingNav RTL/LTR directional flex and font switching verified');
+console.log('  ✓ FloatingNav native RTL/LTR tab order and font switching verified');
 
 // src/lib/rtl.ts direction engine and script contracts
 const rtlSrc = fs.readFileSync(path.resolve('src/lib/rtl.ts'), 'utf8');
