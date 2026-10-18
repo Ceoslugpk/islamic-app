@@ -1,0 +1,539 @@
+{
+  "schemaVersion": "S10-content-integrity-audit-1",
+  "audit": {
+    "phase": "S10",
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "sourceRef": "94f9073a134af7c2c5a7a2a2ecb8eca50362d7c6",
+    "worktree": "DIRTY_INHERITED_CHANGES_PRESENT",
+    "scope": "Read-only S10 content-integrity audit verifying 114 surahs/6236 ayahs against known table, 604 mushaf pages, Arabic glyph/tofu checks, 48 translations sample verse/direction, 17 Hadith collections non-emptiness, exactly 99 Allah and 99 Prophet names with no duplicates, 49 duas with Arabic/transliteration/translation/source, and absence of placeholder text in rendered pages.",
+    "inventory": "reports/audit/inventory.json",
+    "rules": "rules.md"
+  },
+  "runtime": {
+    "status": "PASS",
+    "targetUrl": "http://15.235.203.134:9998",
+    "environment": "Web Expo preview served via SimpleHTTP/0.6 Python/3.14.7",
+    "playwrightVersion": "1.64.1",
+    "screensAudited": [
+      "Onboarding Screen",
+      "Home Hub",
+      "Quran Hub",
+      "Quran Reader (Surah 1)",
+      "Library Hub",
+      "Duas Screen",
+      "99 Names of Allah",
+      "99 Names of the Prophet",
+      "Hadith Library Screen",
+      "Tools Hub",
+      "Qibla Screen",
+      "Zakat Screen",
+      "Fasting Screen"
+    ],
+    "evidence": [
+      "reports/audit/evidence/S10/rendered_pages_placeholder_audit.json",
+      "reports/audit/evidence/S10/screen_01_onboarding.png",
+      "reports/audit/evidence/S10/screen_02_home_hub.png",
+      "reports/audit/evidence/S10/screen_03_quran_hub.png",
+      "reports/audit/evidence/S10/screen_04_quran_reader_surah1.png",
+      "reports/audit/evidence/S10/screen_05_library_hub.png",
+      "reports/audit/evidence/S10/screen_06_duas_screen.png",
+      "reports/audit/evidence/S10/screen_07_names_allah_screen.png",
+      "reports/audit/evidence/S10/screen_08_names_prophet_screen.png",
+      "reports/audit/evidence/S10/screen_09_hadith_library_screen.png",
+      "reports/audit/evidence/S10/screen_10_tools_hub.png",
+      "reports/audit/evidence/S10/screen_11_qibla_screen.png",
+      "reports/audit/evidence/S10/screen_12_zakat_screen.png",
+      "reports/audit/evidence/S10/screen_13_fasting_screen.png"
+    ]
+  },
+  "tests": [
+    {
+      "id": "S10-001",
+      "feature": "Quran Structure - 114 Surahs Count & Metadata",
+      "route": "quran/home",
+      "steps": "Inspect SURAHS_114 in src/lib/surahs114.ts and SURAH_AYAH_COUNTS in src/lib/surahAyahCounts.ts. Verify surah numbering (1..114), Arabic names, English transliterations, and revelation classification.",
+      "expected": "Exactly 114 surahs indexed 1 to 114 with authentic Arabic names, English transliterations, and valid Meccan/Medinan classification.",
+      "actual": "Both SURAHS_114 and SURAH_AYAH_COUNTS contain exactly 114 entries with sequential indices 1..114, complete Arabic names, transliterations, and revelation types.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/surah_ayah_counts_verification.json"
+      ],
+      "evidence_values": {
+        "surahs114Count": 114,
+        "ayahCountsArrayLength": 114,
+        "startIndex": 1,
+        "endIndex": 114
+      },
+      "notes": "No missing or duplicate surah indices exist."
+    },
+    {
+      "id": "S10-002",
+      "feature": "Quran Structure - 6236 Total Ayahs Count",
+      "route": "quran/reader",
+      "steps": "Sum all ayah counts across all 114 surahs from SURAH_AYAH_COUNTS and SURAHS_114. Compare total against standard Hafs canon (6,236 verses).",
+      "expected": "Cumulative ayah count equals exactly 6,236 verses.",
+      "actual": "Cumulative sum of SURAH_AYAH_COUNTS is 6,236; cumulative sum of SURAHS_114.numberOfAyahs is 6,236. Zero discrepancy.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/surah_ayah_counts_verification.json"
+      ],
+      "evidence_values": {
+        "expectedTotalAyahs": 6236,
+        "actualTotalAyahs": 6236,
+        "discrepancy": 0
+      },
+      "notes": "Authentic Hafs verse count verified without omission or padding."
+    },
+    {
+      "id": "S10-003",
+      "feature": "Quran Structure - Per-Surah Verse Count vs Known Hafs Table",
+      "route": "quran/reader",
+      "steps": "Cross-check every individual surah (1..114) verse count against standard Uthmani/Hafs verse count table (e.g. Al-Fatihah=7, Al-Baqarah=286, Ali Imran=200, ... An-Nas=6).",
+      "expected": "114 out of 114 surahs match standard verse count table with 0 discrepancies.",
+      "actual": "All 114 surahs match standard Hafs table exactly. 0 mismatches found across counts array and metadata summary array.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/surah_ayah_counts_verification.json"
+      ],
+      "evidence_values": {
+        "surahsAudited": 114,
+        "matchedCount": 114,
+        "mismatchedCount": 0
+      },
+      "notes": "Individual counts for long surahs (Al-Baqarah 286, Ash-Shu'ara 227) and short surahs (Al-Kawthar 3, Al-Asr 3) verified."
+    },
+    {
+      "id": "S10-004",
+      "feature": "Quran Layout - 604 Mushaf Pages Range & Boundary Checks",
+      "route": "quran/reader",
+      "steps": "Inspect TOTAL_MUSHAF_PAGES and helper functions in src/lib/surahPageData.ts. Test boundary conditions (pages 0, 1, 604, 605; surahs 0, 1, 114, 115).",
+      "expected": "TOTAL_MUSHAF_PAGES equals 604; boundary helper functions clamp out-of-bounds queries to valid page ranges (1..604).",
+      "actual": "TOTAL_MUSHAF_PAGES is 604. getSurahStartPage(0) and (1) return 1; getSurahStartPage(114) and (115) return 604. getPrimarySurahForPage(0) returns 1; getPrimarySurahForPage(604) and (605) return 114.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/mushaf_604_pages_verification.json"
+      ],
+      "evidence_values": {
+        "totalPages": 604,
+        "boundaryClampingVerified": true
+      },
+      "notes": "Madani Mushaf pagination contract verified."
+    },
+    {
+      "id": "S10-005",
+      "feature": "Quran Layout - Surah Start Pages Mapping",
+      "route": "quran/reader",
+      "steps": "Verify all 114 start pages in SURAH_START_PAGES against King Fahd Complex / AlQuran Cloud authentic standard mushaf page starts.",
+      "expected": "All 114 surah start pages match authentic Madani mushaf pagination (Surah 1 at p.1, Surah 2 at p.2, Surah 3 at p.50, ..., Surah 114 at p.604).",
+      "actual": "All 114 surah start pages in SURAH_START_PAGES match standard Madani Mushaf page numbers with monotonic non-decreasing ordering.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/mushaf_604_pages_verification.json"
+      ],
+      "evidence_values": {
+        "startPagesCount": 114,
+        "matchesStandard": true,
+        "isMonotonic": true
+      },
+      "notes": "Shared ending page 604 contains Surahs 112, 113, and 114 as per standard Mushaf layout."
+    },
+    {
+      "id": "S10-006",
+      "feature": "Arabic Glyphs - Unicode Integrity & Tofu Absence",
+      "route": "repository",
+      "steps": "Scan all bundled Arabic strings across 16 repository files (114 surahs, 99 Allah names, 99 Prophet names, 49 duas, 15 hadiths, 17 hadith collections, adhkar, prayer duas, locales ar/ur/fa/ps/sd/ug) for replacement characters (U+FFFD), BOMs, unassigned control codes, or isolated combining marks.",
+      "expected": "Zero tofu characters (U+FFFD), zero BOM markers in text, zero invalid control characters, zero broken combining marks.",
+      "actual": "Audited 14,400 Arabic strings across 16 files. Found exactly 0 replacement characters (U+FFFD), 0 BOMs, 0 control characters, and 0 isolated combining marks.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/arabic_glyph_tofu_audit.json"
+      ],
+      "evidence_values": {
+        "filesAudited": 16,
+        "arabicStringsAudited": 14400,
+        "anomaliesFound": 0
+      },
+      "notes": "All Arabic datasets exhibit clean UTF-8 encoding."
+    },
+    {
+      "id": "S10-007",
+      "feature": "Arabic Glyphs - Editorial Font Typography & Rendering Config",
+      "route": "quran/reader",
+      "steps": "Inspect font loading in src/lib/fonts.ts and typography component in src/components/ArabicText.tsx. Check font registration, RTL writing direction, and ayah end marker glyph.",
+      "expected": "Amiri (Amiri_400Regular, Amiri_700Bold) and Noto Naskh Arabic (NotoNaskhArabic_400Regular, NotoNaskhArabic_700Bold) fonts loaded; writingDirection: 'rtl' configured; ayah end marker uses authentic Uthmani glyph ۝ (U+06DD).",
+      "actual": "useEditorialFonts() registers Amiri and Noto Naskh Arabic; ArabicText enforces writingDirection:'rtl' and scales lineHeight for Arabic ascenders/diacritics; AyahText uses authentic Uthmani marker ۝.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/arabic_glyph_tofu_audit.json"
+      ],
+      "evidence_values": {
+        "amiriLoaded": true,
+        "notoNaskhLoaded": true,
+        "rtlWritingDirectionSet": true,
+        "ayahEndMarkerGlyphUsed": true
+      },
+      "notes": "KFGQPC desktop-only font is intentionally excluded in favor of bundlable Google Fonts Amiri."
+    },
+    {
+      "id": "S10-008",
+      "feature": "Quran Translations - 48 Registered Translations Coverage",
+      "route": "quran/compare",
+      "steps": "Inspect QURAN_LANGUAGE_EDITIONS in src/lib/quranLanguages.ts. Verify translation list count, language codes, identifiers, and translator names.",
+      "expected": "Exactly 48 distinct Quran translation editions covering global languages with unique identifiers and valid country flags.",
+      "actual": "QURAN_LANGUAGE_EDITIONS defines exactly 48 translations spanning 48 language codes with valid AlQuran Cloud identifiers and national/regional flags.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/translations_48_audit.json"
+      ],
+      "evidence_values": {
+        "expectedEditionsCount": 48,
+        "actualEditionsCount": 48
+      },
+      "notes": "Includes primary world languages and regional translations."
+    },
+    {
+      "id": "S10-009",
+      "feature": "Quran Translations - Sample Verse Retrieval (All 48 Editions)",
+      "route": "quran/compare",
+      "steps": "Query AlQuran Cloud API endpoint /ayah/1:1/editions/... and /ayah/1:2/editions/... for all 48 translation identifiers. Verify returned text non-emptiness and authenticity.",
+      "expected": "All 48 editions return authentic, non-empty sample verse translations for Surah Al-Fatihah.",
+      "actual": "All 48/48 translation editions returned non-empty, authentic sample translation texts from AlQuran Cloud API. 0 missing translations.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/translations_48_audit.json"
+      ],
+      "evidence_values": {
+        "editionsTested": 48,
+        "sampleVersesRetrieved": 48,
+        "missingVersesCount": 0
+      },
+      "notes": "Verified against live AlQuran Cloud backend."
+    },
+    {
+      "id": "S10-010",
+      "feature": "Quran Translations - Text Direction (RTL vs LTR) & Script Mapping",
+      "route": "quran/compare",
+      "steps": "Cross-reference text direction of all 48 translations against src/lib/rtl.ts isRtlScript() and AlQuran Cloud direction metadata.",
+      "expected": "RTL scripts (Arabic, Urdu, Persian, Pashto, Sindhi, Uyghur, Kurdish, Dhivehi) mapped to RTL; LTR scripts mapped to LTR.",
+      "actual": "47 of 48 translations match expected direction. Kurdish ('ku', Burhan Muhammad-Amin) in Arabic/Sorani script is mapped to LTR by isRtlScript() in src/lib/rtl.ts (which checks ['ar','ur','fa','he','ps','sd','ug','dv'] and omits 'ku'). AlQuran Cloud API upstream also reports direction:'ltr' for ku.asan.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/translations_48_audit.json"
+      ],
+      "evidence_values": {
+        "totalTranslations": 48,
+        "matchingDirections": 47,
+        "discrepanciesCount": 1,
+        "discrepantLanguages": [
+          "ku"
+        ]
+      },
+      "notes": "Kurdish Sorani text 'به ناوی خوای به‌خشنده‌ی میهره‌بان' is an Arabic-based script written right-to-left. isRtlScript() in src/lib/rtl.ts should include 'ku'."
+    },
+    {
+      "id": "S10-011",
+      "feature": "Hadith Library - 17 Canonical Collections Non-Emptiness",
+      "route": "library/hadith",
+      "steps": "Inspect FALLBACK_COLLECTIONS in src/lib/hadithApi.ts. Verify exactly 17 collections are registered and all have positive totalHadith counts.",
+      "expected": "Exactly 17 Hadith collections defined; all collections have totalHadith > 0.",
+      "actual": "FALLBACK_COLLECTIONS defines exactly 17 collections (bukhari, muslim, nasai, abudawud, tirmidhi, ibnmajah, malik, riyadussalihin, mishkat, bulugh, adab, shamail, hisn, forty, virtues, ahmad, darimi). Total ahadith count across all collections is 79,640 (ranging from 60 in virtues to 28,199 in ahmad). All 17 collections are non-empty.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/hadith_17_collections_audit.json"
+      ],
+      "evidence_values": {
+        "collectionsCount": 17,
+        "totalHadithAcrossCollections": 79640,
+        "allNonEmpty": true
+      },
+      "notes": "All 17 collections have authentic slug, English title, Arabic title, and introduction."
+    },
+    {
+      "id": "S10-012",
+      "feature": "Hadith Library - Collections Metadata, Titles & Upstream Availability",
+      "route": "library/hadith",
+      "steps": "Verify titles, book/chapter flags, and remote API availability metadata (totalAvailable) across all 17 collections.",
+      "expected": "All 17 collections contain complete English/Arabic titles and intro text; remote availability recorded accurately.",
+      "actual": "All 17 collections have complete bilingual titles and introductions. 16 of 17 collections have totalAvailable > 0 (total 53,889 available ahadith online). Sunan ad-Darimi has totalHadith: 3406 but totalAvailable: 0 in upstream api.islamic.app database.",
+      "status": "PASS",
+      "severity": "low",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/hadith_17_collections_audit.json"
+      ],
+      "evidence_values": {
+        "collectionsCount": 17,
+        "totalAvailableAcrossCollections": 53889,
+        "collectionsWithAvailableAhadith": 16,
+        "darimiAvailableCount": 0
+      },
+      "notes": "Darimi totalAvailable=0 is an upstream remote API characteristic documented in fallback metadata."
+    },
+    {
+      "id": "S10-013",
+      "feature": "Hadith Library - Bundled Daily Ahadith Completeness (15 Hadiths)",
+      "route": "library/hadith",
+      "steps": "Inspect HADITHS array in src/lib/hadith.ts. Verify count, Arabic text, phonetic transliteration, English translation, source, and reference fields.",
+      "expected": "All 15 bundled daily hadiths have complete Arabic, transliteration, English translation, source, and reference.",
+      "actual": "HADITHS contains exactly 15 hadiths (IDs 1..15). 100% (15/15) have non-empty Arabic, transliteration, translation, and authentic source citations (Sahih al-Bukhari, Sahih Muslim, Jami at-Tirmidhi, Sunan an-Nasa'i).",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/hadith_17_collections_audit.json"
+      ],
+      "evidence_values": {
+        "dailyHadithsCount": 15,
+        "allComplete": true
+      },
+      "notes": "Bundled offline hadith set verified."
+    },
+    {
+      "id": "S10-014",
+      "feature": "Asma-ul-Husna - Exactly 99 Names of Allah with Zero Duplicates",
+      "route": "library/names",
+      "steps": "Inspect NAMES_99 in src/lib/names99.ts. Verify count, numbering sequence (1..99), unique Arabic names, unique transliterations, and presence of meanings.",
+      "expected": "Exactly 99 Names of Allah; numbers 1 to 99 sequential with 0 duplicates; 99 unique Arabic names; 0 missing fields.",
+      "actual": "NAMES_99 has exactly 99 entries (length=99, min=1, max=99). Exactly 99 unique numbers, 99 unique Arabic names, 0 duplicate numbers, 0 duplicate Arabic names, 0 duplicate transliterations. All entries possess non-empty arabic, transliteration, and meaning fields.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/names_99_allah_prophet_audit.json"
+      ],
+      "evidence_values": {
+        "allahNamesCount": 99,
+        "uniqueNumbers": 99,
+        "uniqueArabic": 99,
+        "duplicatesCount": 0
+      },
+      "notes": "Verified authentic 99 Names of Allah dataset."
+    },
+    {
+      "id": "S10-015",
+      "feature": "Asma-un-Nabi - Exactly 99 Names of the Prophet with Zero Duplicates",
+      "route": "library/prophet-names",
+      "steps": "Inspect PROPHET_NAMES_99 in src/lib/prophetNames.ts. Verify count, numbering sequence (1..99), unique Arabic names, unique transliterations, and presence of meanings.",
+      "expected": "Exactly 99 Names of the Prophet; numbers 1 to 99 sequential with 0 duplicates; 99 unique Arabic names; 0 missing fields.",
+      "actual": "PROPHET_NAMES_99 has exactly 99 entries (length=99, min=1, max=99). Exactly 99 unique numbers, 99 unique Arabic names, 0 duplicate numbers, 0 duplicate Arabic names, 0 duplicate transliterations. All entries possess non-empty arabic, transliteration, meaning, and note fields.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/names_99_allah_prophet_audit.json"
+      ],
+      "evidence_values": {
+        "prophetNamesCount": 99,
+        "uniqueNumbers": 99,
+        "uniqueArabic": 99,
+        "duplicatesCount": 0
+      },
+      "notes": "Verified authentic 99 Names of the Prophet dataset."
+    },
+    {
+      "id": "S10-016",
+      "feature": "Daily Invocations - Exactly 49 Duas Arabic Text Completeness",
+      "route": "library/duas",
+      "steps": "Inspect DUAS_DATA in src/lib/duas.ts. Verify total count equals 49 and every dua contains genuine non-empty Arabic text.",
+      "expected": "Exactly 49 duas; 49/49 possess valid, fully vowelled Arabic supplication text.",
+      "actual": "DUAS_DATA contains exactly 49 duas. 49 out of 49 duas have non-empty, authentic Arabic text with tashkeel (vowelling).",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/duas_49_audit.json"
+      ],
+      "evidence_values": {
+        "totalDuas": 49,
+        "duasWithArabic": 49,
+        "missingArabicCount": 0
+      },
+      "notes": "All 49 duas have genuine Arabic texts."
+    },
+    {
+      "id": "S10-017",
+      "feature": "Daily Invocations - 49 Duas Transliteration & English Translation",
+      "route": "library/duas",
+      "steps": "Verify that all 49 duas in src/lib/duas.ts possess non-empty phonetic transliterations and accurate English translations.",
+      "expected": "100% of duas have non-empty transliterations and translations.",
+      "actual": "49 out of 49 duas have non-empty transliteration and translation strings. Zero missing or placeholder translations.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/duas_49_audit.json"
+      ],
+      "evidence_values": {
+        "totalDuas": 49,
+        "duasWithTransliteration": 49,
+        "duasWithTranslation": 49,
+        "missingFieldsCount": 0
+      },
+      "notes": "Phonetic transliteration and English translation verified for all 49 supplications."
+    },
+    {
+      "id": "S10-018",
+      "feature": "Daily Invocations - 49 Duas Canonical Source & Reference Citations",
+      "route": "library/duas",
+      "steps": "Verify that all 49 duas in src/lib/duas.ts cite an authentic Hadith compilation or Quranic reference (e.g. Sahih al-Bukhari, Sahih Muslim, Abu Dawood, Tirmidhi, Surah verse).",
+      "expected": "All 49 duas cite an authentic canonical source/reference.",
+      "actual": "49 out of 49 duas have non-empty canonical references (e.g. Sahih Muslim 2723, Sahih al-Bukhari 6306, Abu Dawood 5088, Surah Al-Baqarah 2:255, Surah Al-Imran 3:193). Zero unreferenced duas.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/duas_49_audit.json"
+      ],
+      "evidence_values": {
+        "totalDuas": 49,
+        "duasWithReference": 49,
+        "missingReferencesCount": 0
+      },
+      "notes": "All 49 duas possess authentic Hadith and Quran source citations."
+    },
+    {
+      "id": "S10-019",
+      "feature": "Rendered Pages - Static Repository Text Scan for Placeholders & Stubs",
+      "route": "repository",
+      "steps": "Perform static regex search across src/ components, screens, locales, and bundled data for placeholder artifacts: 'Lorem ipsum', 'TODO', 'FIXME', 'TBD', '[Sindhi]' / bracket stub language indicators, '__TERM__', 'Polskie tłumaczenie:'.",
+      "expected": "Zero placeholder text artifacts in shipped code or user-facing translation files.",
+      "actual": "Zero 'Lorem ipsum' found; zero stub language brackets ('[Sindhi]', '[Urdu]') found in locales; zero '__TERM__' or translation artifact prefixes found. Code comments containing 'TODO' exist in developer annotations but are not rendered in user-facing UI.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/rendered_pages_placeholder_audit.json"
+      ],
+      "evidence_values": {
+        "loremIpsumCount": 0,
+        "stubBracketsCount": 0,
+        "termMarkersCount": 0
+      },
+      "notes": "Clean static content verified across repository assets."
+    },
+    {
+      "id": "S10-020",
+      "feature": "Rendered Pages - Playwright Runtime Crawl Across 13 Screens for Placeholders",
+      "route": "runtime",
+      "steps": "Launch headless Chromium against http://15.235.203.134:9998 in isolated browser sessions (unseeded onboarding and seeded app session). Navigate across 13 major screens (Onboarding, Home, Quran Hub, Quran Reader Surah 1, Library Hub, Duas, 99 Names Allah, 99 Names Prophet, Hadith Library, Tools Hub, Qibla, Zakat, Fasting). Extract DOM innerText and scan for 'Lorem ipsum', 'TODO', 'FIXME', 'TBD', stub language brackets, unresolved template tokens ({{count}}, {{n}}, etc.), literal 'undefined'/'NaN' leaks, and tofu replacement characters.",
+      "expected": "All 13 screens render clean, authentic copy with 0 placeholder text artifacts, 0 unresolved interpolation tokens, and 0 literal leaks.",
+      "actual": "13 out of 13 screens passed. Zero placeholder text artifacts, zero unresolved i18n tokens, and zero leaked literals were detected across all rendered views.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/rendered_pages_placeholder_audit.json",
+        "reports/audit/evidence/S10/screen_01_onboarding.png",
+        "reports/audit/evidence/S10/screen_02_home_hub.png",
+        "reports/audit/evidence/S10/screen_03_quran_hub.png",
+        "reports/audit/evidence/S10/screen_04_quran_reader_surah1.png",
+        "reports/audit/evidence/S10/screen_05_library_hub.png",
+        "reports/audit/evidence/S10/screen_06_duas_screen.png",
+        "reports/audit/evidence/S10/screen_07_names_allah_screen.png",
+        "reports/audit/evidence/S10/screen_08_names_prophet_screen.png",
+        "reports/audit/evidence/S10/screen_09_hadith_library_screen.png",
+        "reports/audit/evidence/S10/screen_10_tools_hub.png",
+        "reports/audit/evidence/S10/screen_11_qibla_screen.png",
+        "reports/audit/evidence/S10/screen_12_zakat_screen.png",
+        "reports/audit/evidence/S10/screen_13_fasting_screen.png"
+      ],
+      "evidence_values": {
+        "screensAudited": 13,
+        "screensPassed": 13,
+        "screensFailed": 0,
+        "placeholderAnomaliesFound": 0
+      },
+      "notes": "13 screenshots captured and archived as visual evidence."
+    },
+    {
+      "id": "S10-021",
+      "feature": "Rendered Pages - Playwright Runtime Arabic Glyph & Visual Proof Verification",
+      "route": "runtime",
+      "steps": "During Playwright runtime crawl across all screens, count and sample Arabic DOM text nodes; inspect for broken glyph boxes, replacement characters (U+FFFD), or empty Arabic text blocks.",
+      "expected": "Arabic text renders cleanly across Quran, Hadith, Duas, and Names screens without tofu replacement glyphs.",
+      "actual": "Active Arabic DOM text nodes detected on all relevant screens (e.g. 47 on Quran Reader, 34 on Duas, 37 on 99 Names Allah, 36 on 99 Names Prophet, 41 on Hadith Library). Zero U+FFFD tofu characters detected in rendered DOM across all 13 screens.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "reports/audit/evidence/S10/rendered_pages_placeholder_audit.json",
+        "reports/audit/evidence/S10/screen_04_quran_reader_surah1.png",
+        "reports/audit/evidence/S10/screen_06_duas_screen.png",
+        "reports/audit/evidence/S10/screen_07_names_allah_screen.png",
+        "reports/audit/evidence/S10/screen_08_names_prophet_screen.png",
+        "reports/audit/evidence/S10/screen_09_hadith_library_screen.png"
+      ],
+      "evidence_values": {
+        "screensAudited": 13,
+        "screensWithArabicContent": 12,
+        "tofuCharactersFound": 0
+      },
+      "notes": "Arabic typography renders authentically with Amiri/Noto Naskh styles."
+    }
+  ],
+  "summary": {
+    "total": 21,
+    "PASS": 20,
+    "FAIL": 1,
+    "FLAKY": 0,
+    "BLOCKED": 0,
+    "SKIPPED": 0,
+    "reconciled": true,
+    "contentIntegrityReadiness": {
+      "quran114SurahsAnd6236Ayahs": "PASS",
+      "perSurahAyahCountsVsKnownTable": "PASS",
+      "mushaf604PagesAndStartPages": "PASS",
+      "arabicGlyphAndTofuIntegrity": "PASS",
+      "quran48TranslationsSampleVerses": "PASS",
+      "quranTranslationsTextDirection": "FAIL",
+      "hadith17CollectionsNonEmpty": "PASS",
+      "names99AllahAnd99ProphetNoDuplicates": "PASS",
+      "duas49ArabicTranslitTranslationSource": "PASS",
+      "noPlaceholderTextInRenderedPages": "PASS"
+    },
+    "keyFindings": [
+      "Quran canonical structure is 100% verified: exactly 114 Surahs, exactly 6,236 Ayahs, and every single Surah count matches the authoritative Hafs table with zero discrepancies.",
+      "Madani Mushaf pagination is 100% verified: exactly 604 pages, all 114 Surah start pages match the King Fahd Complex standard, and boundary helper functions clamp out-of-bounds queries securely.",
+      "Arabic glyph integrity is 100% verified across 14,400 audited Arabic strings in 16 files and live rendered pages: zero U+FFFD tofu characters, zero corrupted control codes, and zero isolated combining marks.",
+      "99 Names of Allah and 99 Names of the Prophet are 100% verified: exactly 99 entries each, sequential numbers 1..99 without gaps or duplicates, 99 unique Arabic names, and complete transliterations/meanings.",
+      "Duas collection is 100% verified: exactly 49 authentic supplications across 10 categories, all 49 featuring genuine Arabic text with vowelling, phonetic transliterations, English translations, and canonical citations from Sahih al-Bukhari, Sahih Muslim, Abu Dawood, Tirmidhi, and the Quran.",
+      "Hadith collections catalog is verified: exactly 17 canonical collections in fallback metadata, all non-empty with totalHadith > 0 (79,640 ahadith total), and 15 daily offline ahadith complete with Arabic, transliteration, translation, and reference. Documented that Sunan ad-Darimi has totalAvailable: 0 in remote API database.",
+      "Quran translations catalog verified: exactly 48 translations defined in QURAN_LANGUAGE_EDITIONS, and all 48 returned authentic sample verses from AlQuran Cloud for Surah Al-Fatihah. One direction finding flagged (FAIL): Kurdish ('ku', Burhan Muhammad-Amin in Sorani script) is omitted from isRtlScript() in src/lib/rtl.ts, causing it to default to LTR even though Arabic-script Kurdish is written right-to-left.",
+      "No placeholder text detected: Playwright crawled 13 key screens in isolated runtime (Onboarding, Home, Quran Hub, Reader Surah 1, Library Hub, Duas, 99 Names Allah, 99 Names Prophet, Hadith Library, Tools Hub, Qibla, Zakat, Fasting) and verified zero 'Lorem ipsum', zero 'TODO'/'FIXME'/'TBD' copy, zero stub language brackets, zero unresolved i18n tokens, zero leaked literals, and zero tofu glyphs."
+    ]
+  },
+  "files_created": [
+    "reports/audit/S10.json",
+    "reports/audit/evidence/S10/surah_ayah_counts_verification.json",
+    "reports/audit/evidence/S10/mushaf_604_pages_verification.json",
+    "reports/audit/evidence/S10/arabic_glyph_tofu_audit.json",
+    "reports/audit/evidence/S10/translations_48_audit.json",
+    "reports/audit/evidence/S10/hadith_17_collections_audit.json",
+    "reports/audit/evidence/S10/names_99_allah_prophet_audit.json",
+    "reports/audit/evidence/S10/duas_49_audit.json",
+    "reports/audit/evidence/S10/rendered_pages_placeholder_audit.json",
+    "reports/audit/evidence/S10/screen_01_onboarding.png",
+    "reports/audit/evidence/S10/screen_02_home_hub.png",
+    "reports/audit/evidence/S10/screen_03_quran_hub.png",
+    "reports/audit/evidence/S10/screen_04_quran_reader_surah1.png",
+    "reports/audit/evidence/S10/screen_05_library_hub.png",
+    "reports/audit/evidence/S10/screen_06_duas_screen.png",
+    "reports/audit/evidence/S10/screen_07_names_allah_screen.png",
+    "reports/audit/evidence/S10/screen_08_names_prophet_screen.png",
+    "reports/audit/evidence/S10/screen_09_hadith_library_screen.png",
+    "reports/audit/evidence/S10/screen_10_tools_hub.png",
+    "reports/audit/evidence/S10/screen_11_qibla_screen.png",
+    "reports/audit/evidence/S10/screen_12_zakat_screen.png",
+    "reports/audit/evidence/S10/screen_13_fasting_screen.png"
+  ],
+  "files_modified_outside_scope": [],
+  "limitations": [
+    "Web preview target runs over plain HTTP without HTTPS/SSL.",
+    "External production API https://api.islamic.app lacks CORS headers for preview web origin, causing live network fetches to fall back to bundled canonical datasets as designed.",
+    "First-launch location permission setup requires dismissal in clean sessions to allow unobstructed screen interaction.",
+    "No code modifications or content alterations were performed (FIX_MODE=false)."
+  ]
+}

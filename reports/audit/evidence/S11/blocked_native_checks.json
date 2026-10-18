@@ -1,0 +1,45 @@
+{
+  "device_or_build_available": false,
+  "blocked_checks": [
+    {
+      "name": "Grey/white pattern flash on launch (Android 12+)",
+      "reason": "Rule 4: Requires real device/emulator visual inspection during cold launch transition from OS windowBackground to SplashScreen.",
+      "severity": "high"
+    },
+    {
+      "name": "Exact alarm & adhan firing during deep Doze sleep",
+      "reason": "Requires physical Android device in overnight or simulated Doze mode to verify AlarmManager and battery optimization exemption.",
+      "severity": "high"
+    },
+    {
+      "name": "Background audio playback with screen locked",
+      "reason": "Requires physical device or emulator to test ongoing audio playback when screen turns off and media session notification controls.",
+      "severity": "medium"
+    },
+    {
+      "name": "Magnetometer hardware sensor & Qibla compass tilt",
+      "reason": "Requires physical hardware magnetometer sensor to verify compass rotation, magnetic declination, and calibration prompts.",
+      "severity": "medium"
+    },
+    {
+      "name": "Biometric authentication hardware prompt (Fingerprint/Face)",
+      "reason": "Requires physical biometric sensor to test expo-local-authentication prompt and Women's Worship privacy gate.",
+      "severity": "medium"
+    },
+    {
+      "name": "Google Play App Signing & Play Integrity API",
+      "reason": "Requires uploading to Google Play Console and testing through Internal Testing track.",
+      "severity": "low"
+    },
+    {
+      "name": "Native Android RTL complex layout rendering",
+      "reason": "Static inspection confirms RTL tokens and directional styles, but native View rendering on Android requires device inspection.",
+      "severity": "medium"
+    },
+    {
+      "name": "24-hour background battery consumption & memory stability",
+      "reason": "Requires hardware battery profiler to measure actual discharge rate with scheduled prayer notifications.",
+      "severity": "low"
+    }
+  ]
+}

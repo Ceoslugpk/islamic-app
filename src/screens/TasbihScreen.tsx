@@ -1,16 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { AppText } from '../components/ui/AppText';
+import { useThemeTokens } from '../theme/tokens';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { useHaptics } from '../lib/haptics';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import { Card } from '../components/Card';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import { saveTasbihCount, loadTasbihCounts, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
@@ -106,25 +110,17 @@ export function getLocalizedDhikrMeaning(item: DhikrItem): string {
   return language === 'en' ? item.meaning : DHIKR_LOCALIZED[language as 'ur' | 'ar' | 'hi' | 'ml' | 'si']?.[item.id]?.meaning ?? item.meaning;
 }
 
-const TARGET_OPTIONS = [33, 99];
+const TARGET_OPTIONS = [33, 99, 100];
 
-function TasbihScreen({ onBack }: { onBack?: () => void }) {
-  const { colors } = useTheme();
+function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: string }) {
+  const { tokens, mode } = useThemeTokens();
   const { haptic } = useHaptics();
   const [selectedDhikr, setSelectedDhikr] = useState<DhikrItem>(DHIKR_PRESETS[0]);
   const [target, setTarget] = useState<number>(33);
-  const [counts, setCounts] = useState<Record<string, number>>({});
-  const [todayTotal, setTodayTotal] = useState<number>(0);
-  const { saveUndoState } = useUndoToast();
-
   const todayKey = new Date().toISOString().slice(0, 10);
-
-  useEffect(() => {
-    const loaded = loadTasbihCounts();
-    setCounts(loaded);
-    const daily = loadTasbihDayTotal(todayKey);
-    setTodayTotal(daily);
-  }, [todayKey]);
+  const [counts, setCounts] = useState<Record<string, number>>(() => loadTasbihCounts());
+  const [todayTotal, setTodayTotal] = useState<number>(() => loadTasbihDayTotal(new Date().toISOString().slice(0, 10)));
+  const { saveUndoState } = useUndoToast();
 
   const currentCount = counts[selectedDhikr.id] || 0;
 
@@ -179,241 +175,257 @@ function TasbihScreen({ onBack }: { onBack?: () => void }) {
   const paddingH = isCompact ? 16 : 20;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
-    >
-      <View style={styles.contentWrap}>
-        <ScreenHeader
+    <DetailScreen
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
+      header={
+        <SubHeader
           eyebrow={t('Dhikr & Remembrance')}
           title={t('Tasbih')}
+          subtitle={t('Tap counter, round tracking, and offline remembrance')}
           onBack={onBack}
           backLabel={t('Library')}
+          {...(backLabel === 'Tools' ? { backLabel: t('Tools') } : {})}
+          borderBottom
+          showFade
         />
-
-      {/* Dhikr Selector Tabs */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.dhikrList, hScrollRTLStyle()]}
+      }
+    >
+      <DetailScreen.ScrollView
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingHorizontal: paddingH,
+          },
+        ]}
       >
-        {DHIKR_PRESETS.map((d) => {
-          const isSelected = d.id === selectedDhikr.id;
-          return (
-            <TouchableOpacity
-              key={d.id}
-              style={[
-                styles.dhikrChip,
-                {
-                  backgroundColor: isSelected ? colors.accentDim : colors.bgSurface,
-                  borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                },
-              ]}
-              onPress={() => setSelectedDhikr(d)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
-            >
-              <Text
-                style={[
-                  styles.dhikrChipText,
-                  { color: isSelected ? colors.accent : colors.textSecondary },
-                ]}
-              >
-                {getLocalizedDhikrTransliteration(d)}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {/* Target Selector & Round Meta */}
-      <View style={[styles.metaBar, { borderColor: colors.borderSubtle }]}>
-        <View style={styles.metaLeft}>
-          <Text style={[styles.metaLabel, { color: colors.textMuted }]}>{t('TARGET')}</Text>
-          <View style={styles.targetRow}>
-            {TARGET_OPTIONS.map((t) => {
-              const active = target === t;
+        <View style={styles.contentWrap}>
+          {/* Dhikr Selector Tabs */}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.dhikrList, hScrollRTLStyle()]}
+          >
+            {DHIKR_PRESETS.map((d) => {
+              const isSelected = d.id === selectedDhikr.id;
               return (
                 <TouchableOpacity
-                  key={t}
-                  onPress={() => setTarget(t)}
+                  key={d.id}
                   style={[
-                    styles.targetBtn,
+                    styles.dhikrChip,
+                    getPillShadow(mode),
                     {
-                      backgroundColor: active ? colors.accent : colors.bgSurface,
-                      borderColor: active ? colors.accent : colors.borderSubtle,
+                      backgroundColor: isSelected ? tokens.gold : tokens.cardTop,
+                      borderColor: isSelected ? tokens.gold : tokens.cardBorder,
                     },
                   ]}
+                  onPress={() => setSelectedDhikr(d)}
                   accessibilityRole="button"
-                  accessibilityLabel={`Target ${t}`}
+                  accessibilityState={{ selected: isSelected }}
                 >
-                  <Text
-                    style={[
-                      styles.targetBtnText,
-                      { color: active ? colors.bgBase : colors.textSecondary },
-                    ]}
+                  <AppText
+                    variant="caption"
+                    tone={isSelected ? 'onGold' : undefined}
+                    style={styles.dhikrChipText}
                   >
-                    {t}
-                  </Text>
+                    {getLocalizedDhikrTransliteration(d)}
+                  </AppText>
                 </TouchableOpacity>
               );
             })}
+          </ScrollView>
+
+          {/* Target Selector & Round Meta */}
+          <Card
+            style={styles.metaBar}
+            padded
+          >
+            <View style={styles.metaLeft}>
+              <AppText variant="eyebrow" tone="faint" style={styles.metaLabel}>{t('TARGET')}</AppText>
+              <View style={styles.targetRow}>
+                {TARGET_OPTIONS.map((tOpt) => {
+                  const active = target === tOpt;
+                  return (
+                    <TouchableOpacity
+                      key={tOpt}
+                      onPress={() => setTarget(tOpt)}
+                      style={[
+                        styles.targetBtn,
+                        getPillShadow(mode),
+                        {
+                          backgroundColor: active ? tokens.gold : (mode === 'paper' ? tokens.cardTop : tokens.ringFill),
+                          borderColor: active ? tokens.gold : tokens.cardBorder,
+                        },
+                      ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Target ${tOpt}`}
+                    >
+                      <AppText
+                        variant="caption"
+                        tone={active ? 'onGold' : undefined}
+                        style={styles.targetBtnText}
+                      >
+                        {tOpt}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            <View style={styles.metaRight}>
+              <AppText variant="eyebrow" tone="faint" style={styles.metaLabel}>{t('ROUNDS')}</AppText>
+              <AppText variant="numeral" highlight style={styles.metaValue}>
+                {rounds} <AppText variant="caption" tone="faint" style={{ fontSize: 13 }}>({progressInRound}/{target})</AppText>
+              </AppText>
+            </View>
+          </Card>
+
+          {/* Today Summary */}
+          <Card
+            style={styles.summaryCard}
+            padded
+          >
+            <AppText variant="eyebrow" tone="faint" style={styles.summaryLabel}>{t('Today')}</AppText>
+            <AppText variant="numeral" highlight style={styles.summaryValue}>{todayTotal}</AppText>
+            <AppText variant="caption" tone="faint" style={styles.summaryUnit}>{t('counts')}</AppText>
+          </Card>
+
+          {/* Current Dhikr Phrase Card */}
+          <Card
+            style={styles.phraseCard}
+            padded
+          >
+            <ArabicText size={32} align="center" style={styles.arabic}>
+              {selectedDhikr.arabic}
+            </ArabicText>
+            <AppText variant="title" style={styles.translit}>
+              {getLocalizedDhikrTransliteration(selectedDhikr)}
+            </AppText>
+            <AppText variant="body" tone="faint" style={styles.meaning}>
+              &ldquo;{getLocalizedDhikrMeaning(selectedDhikr)}&rdquo;
+            </AppText>
+          </Card>
+
+          {/* Big Circular Tap Counter Zone */}
+          <View style={styles.counterWrap}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={handleTap}
+              style={[
+                styles.counterCircle,
+                getCardShadow(mode),
+                {
+                  borderColor: tokens.gold,
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={`Dhikr counter: ${currentCount}. Tap to increment.`}
+            >
+              <LinearGradient
+                colors={mode === 'ink' ? tokens.heroGradient : tokens.goldGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.counterCircleGradient}
+              >
+                <AppText
+                  variant="numeral"
+                  style={[styles.counterNumber, { color: mode === 'ink' ? tokens.text : tokens.onGold }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {currentCount}
+                </AppText>
+                <AppText
+                  variant="eyebrow"
+                  style={[styles.tapLabel, { color: mode === 'ink' ? tokens.gold : tokens.onGold }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                >
+                  {t('TAP TO COUNT')}
+                </AppText>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
+
+          {/* Progress Indicator */}
+          <View style={styles.progressWrap}>
+            <View style={styles.progressMeta}>
+              <AppText variant="caption" style={styles.progressText}>
+                {progressInRound} / {target}
+              </AppText>
+              <AppText variant="caption" tone="faint" style={styles.progressPercent}>
+                {Math.round(progressFraction * 100)}%
+              </AppText>
+            </View>
+            <View style={[styles.progressTrack, { backgroundColor: tokens.ringBorder }]}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    backgroundColor: tokens.gold,
+                    width: `${Math.round(progressFraction * 100)}%`,
+                  },
+                ]}
+              />
+            </View>
+          </View>
+
+          {/* Bottom Action Controls */}
+          <View style={styles.bottomRow}>
+            <TouchableOpacity
+              onPress={handleReset}
+              style={[
+                styles.resetBtn,
+                getPillShadow(mode),
+                {
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.cardTop,
+                },
+              ]}
+              activeOpacity={0.75}
+              accessibilityRole="button"
+              accessibilityLabel={t('Reset count to zero')}
+            >
+              <Ionicons name="refresh-outline" size={16} color={tokens.muted} style={{ marginRight: 6 }} />
+              <AppText variant="caption" tone="faint" style={styles.resetText}>
+                {t('Reset Count')}
+              </AppText>
+            </TouchableOpacity>
+          </View>
+
+          <Hairline style={{ marginTop: 24, marginBottom: 16 }} />
+
+          <AppText variant="caption" tone="faint" style={styles.footnote}>
+            {t('Tap anywhere on the large dial to count. Your count for each phrase is automatically saved offline.')}
+          </AppText>
         </View>
-
-        <View style={styles.metaRight}>
-          <Text style={[styles.metaLabel, { color: colors.textMuted }]}>{t('ROUNDS')}</Text>
-          <Text style={[styles.metaValue, { color: colors.accent }]}>
-            {rounds} <Text style={{ color: colors.textMuted, fontSize: 13 }}>({progressInRound}/{target})</Text>
-          </Text>
-        </View>
-      </View>
-
-      {/* Today Summary */}
-      <View
-        style={[
-          styles.summaryCard,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
-          },
-        ]}
-      >
-        <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{t('Today')}</Text>
-        <Text style={[styles.summaryValue, { color: colors.accent }]}>{todayTotal}</Text>
-        <Text style={[styles.summaryUnit, { color: colors.textMuted }]}>{t('counts')}</Text>
-      </View>
-
-      {/* Current Dhikr Phrase Card */}
-      <View
-        style={[
-          styles.phraseCard,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
-          },
-        ]}
-      >
-        <ArabicText size={32} align="center" style={styles.arabic}>
-          {selectedDhikr.arabic}
-        </ArabicText>
-        <Text style={[styles.translit, { color: colors.textPrimary }]}>
-          {getLocalizedDhikrTransliteration(selectedDhikr)}
-        </Text>
-        <Text style={[styles.meaning, { color: colors.textMuted }]}>
-          &ldquo;{getLocalizedDhikrMeaning(selectedDhikr)}&rdquo;
-        </Text>
-      </View>
-
-      {/* Big Circular Tap Counter Zone */}
-      <View style={styles.counterWrap}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={handleTap}
-          style={[
-            styles.counterCircle,
-            {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.accent,
-            },
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel={`Dhikr counter: ${currentCount}. Tap to increment.`}
-        >
-          <Text style={[styles.counterNumber, { color: colors.textPrimary }]}>
-            {currentCount}
-          </Text>
-          <Text style={[styles.tapLabel, { color: colors.accent }]}>
-            {t('TAP TO COUNT')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Progress Indicator */}
-      <View style={styles.progressWrap}>
-        <View style={styles.progressMeta}>
-          <Text style={[styles.progressText, { color: colors.textSecondary }]}>
-            {progressInRound} / {target}
-          </Text>
-          <Text style={[styles.progressPercent, { color: colors.textMuted }]}>
-            {Math.round(progressFraction * 100)}%
-          </Text>
-        </View>
-        <View style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                backgroundColor: colors.accent,
-                width: `${Math.round(progressFraction * 100)}%`,
-              },
-            ]}
-          />
-        </View>
-      </View>
-
-      {/* Bottom Action Controls */}
-      <View style={styles.bottomRow}>
-        <TouchableOpacity
-          onPress={handleReset}
-          style={[
-            styles.resetBtn,
-            {
-              borderColor: colors.borderSubtle,
-              backgroundColor: colors.bgSurface,
-            },
-          ]}
-          activeOpacity={0.75}
-          accessibilityRole="button"
-          accessibilityLabel={t('Reset count to zero')}
-        >
-          <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
-          <Text style={[styles.resetText, { color: colors.textSecondary }]}>
-            {t('Reset Count')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <Hairline style={{ marginTop: 24, marginBottom: 16 }} />
-
-      <Text style={[styles.footnote, { color: colors.textMuted }]}>
-        {t('Tap anywhere on the large dial to count. Your count for each phrase is automatically saved offline.')}
-      </Text>
-      </View>
-    </ScrollView>
+      </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
+export default withUndoToast(TasbihScreen);
+
 const styles = StyleSheet.create({
-  content: {
-    paddingVertical: 12,
-    paddingBottom: 40,
+  container: {
+    flex: 1,
   },
+  content: {},
   contentWrap: {
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
   },
-  backButton: {
-    alignSelf: 'flex-start',
-    minHeight: 30,
-    justifyContent: 'center',
-    paddingVertical: 3,
-    paddingRight: 10,
-    marginBottom: 2,
-  },
-  backText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
-  },
   dhikrList: {
-    paddingVertical: 4,
+    paddingBottom: 4,
     gap: 6,
     marginBottom: 12,
   },
   dhikrChip: {
-    height: 28,
-    paddingHorizontal: 12,
+    minHeight: 32,
+    paddingHorizontal: 14,
+    paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
     alignItems: 'center',
@@ -427,28 +439,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 20,
     borderWidth: 1,
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    elevation: 1,
+    marginBottom: 12,
+    gap: 8,
   },
   metaLeft: {
-    flexDirection: 'column',
-    gap: 6,
-  },
-  metaRight: {
-    alignItems: 'flex-end',
-    gap: 4,
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   metaLabel: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10,
+    fontSize: 11,
+    fontFamily: 'Manrope_700Bold',
     letterSpacing: 0.8,
   },
   targetRow: {
@@ -456,148 +462,126 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   targetBtn: {
+    minHeight: 28,
     paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 14,
+    paddingVertical: 4,
+    borderRadius: 999,
     borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   targetBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    fontFamily: 'Manrope_700Bold',
+  },
+  metaRight: {
+    alignItems: 'flex-end',
+    flexShrink: 0,
   },
   metaValue: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 22,
+    fontSize: 15,
+    fontFamily: 'Manrope_700Bold',
+  },
+  summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginBottom: 12,
+    gap: 6,
+  },
+  summaryLabel: {
+    fontSize: 13,
+    fontFamily: 'Manrope_600SemiBold',
+  },
+  summaryValue: {
+    fontSize: 24,
+    fontFamily: 'Manrope_700Bold',
+  },
+  summaryUnit: {
+    fontSize: 13,
+    fontFamily: 'Manrope_400Regular',
   },
   phraseCard: {
+    padding: 24,
+    borderRadius: 20,
     borderWidth: 1,
-    borderRadius: 22,
-    padding: 22,
     alignItems: 'center',
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
+    marginBottom: 20,
+    gap: 8,
   },
   arabic: {
-    marginBottom: 8,
+    marginBottom: 6,
   },
   translit: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 17,
-    marginBottom: 4,
+    fontSize: 18,
+    fontFamily: 'Manrope_700Bold',
+    textAlign: 'center',
   },
   meaning: {
+    fontSize: 13.5,
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
     textAlign: 'center',
+    fontStyle: 'italic',
   },
   counterWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 12,
+    marginVertical: 14,
   },
   counterCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 220,
+    minHeight: 220,
+    aspectRatio: 1,
+    borderRadius: 110,
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 3,
+    overflow: 'hidden',
+  },
+  counterCircleGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 110,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   counterNumber: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 64,
-    lineHeight: 70,
+    fontSize: 58,
+    fontFamily: 'Manrope_700Bold',
+    paddingBottom: 4,
+    paddingHorizontal: 8,
+    textAlign: 'center',
   },
   tapLabel: {
+    fontSize: 11,
     fontFamily: 'Manrope_700Bold',
-    fontSize: 11,
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
     marginTop: 4,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  resetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 22,
-    borderWidth: 1,
-  },
-  resetText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
-  },
-  footnote: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    paddingVertical: 2,
     textAlign: 'center',
-    lineHeight: 18,
-  },
-  summaryCard: {
-    borderWidth: 1,
-    borderRadius: 18,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    marginBottom: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  summaryLabel: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  summaryValue: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 28,
-    lineHeight: 34,
-  },
-  summaryUnit: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 13,
-    marginTop: 2,
   },
   progressWrap: {
-    width: '100%',
-    maxWidth: 320,
-    alignSelf: 'center',
-    marginTop: 16,
-    marginBottom: 8,
-    gap: 6,
+    marginBottom: 20,
   },
   progressMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 6,
   },
   progressText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
+    fontFamily: 'Manrope_600SemiBold',
   },
   progressPercent: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
+    fontFamily: 'Manrope_400Regular',
   },
   progressTrack: {
     height: 6,
@@ -608,7 +592,30 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 3,
   },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  resetBtn: {
+    minHeight: 40,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  resetText: {
+    fontSize: 13,
+    fontFamily: 'Manrope_600SemiBold',
+  },
+  footnote: {
+    fontSize: 12,
+    fontFamily: 'Manrope_400Regular',
+    textAlign: 'center',
+    lineHeight: 18,
+    paddingHorizontal: 16,
+  },
 });
-
-export default withUndoToast(TasbihScreen);
-

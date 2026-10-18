@@ -1,0 +1,544 @@
+$ python3 -c import os,re,json; root="."; pats=re.compile(r"TODO|FIXME|console\\.log|API[_-]?KEY|SECRET|PRIVATE[_-]?KEY|BEGIN [A-Z ]+ KEY",re.I); ex={"node_modules","dist",".git","reports","proof","screenshots","test-results","scratch"}; out=[]; files=0
+for dp,dn,fn in os.walk(root):
+ dn[:]=[d for d in dn if d not in ex]
+ for f in fn:
+  p=os.path.join(dp,f)
+  if f.endswith((".ts",".tsx",".js",".jsx",".json",".mjs")):
+   files+=1
+   try:
+    for n,l in enumerate(open(p,encoding="utf-8",errors="ignore"),1):
+     if pats.search(l): out.append({"file":p,"line":n,"text":l.rstrip()})
+   except: pass
+print(json.dumps({"files":files,"matches":out},indent=2))
+{
+  "files": 599,
+  "matches": [
+    {
+      "file": "./src/lib/quranTopics.ts",
+      "line": 149,
+      "text": "        translation: 'Those who spend their wealth [in Allah\\'s way] by night and by day, secretly and publicly - they will have their reward with their Lord.',"
+    },
+    {
+      "file": "./src/lib/duas.ts",
+      "line": 269,
+      "text": "    translation: 'O Allah, forgive me what I have sent forward and what I have held back, what I have kept secret and what I have proclaimed, what I have committed in excess, and what You know better than I. You are the Advancer and You are the Delayer, there is no deity except You.',"
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 4,
+      "text": "  \"\\\"O people, indeed your Lord is One, and your father is one. All of you are from Adam, and Adam was made from dust. An Arab has no superiority over a non-Arab, nor does a non-Arab have any superiority over an Arab; nor does a red person have superiority over a black person, nor a black person over a red person, except by piety.\\\"\": \"\\\"\u00d3 povo, na verdade o seu Senhor \u00e9 Um, e seu pai \u00e9 um. Todos voc\u00eas s\u00e3o de Ad\u00e3o, e Ad\u00e3o foi feito do p\u00f3. Um \u00e1rabe n\u00e3o tem superioridade sobre um n\u00e3o-\u00e1rabe, nem um n\u00e3o-\u00e1rabe tem qualquer superioridade sobre um \u00e1rabe; nem uma pessoa vermelha tem superioridade sobre uma pessoa negra, nem uma pessoa negra sobre uma pessoa vermelha, exceto por piedade.\\\"\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 48,
+      "text": "  \"6. Wash the Entire Body with Water\": \"6. Lave todo o corpo com \u00e1gua\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 59,
+      "text": "  \"A balanced two-month schedule reading half a Juz (~10 pages) every day.\": \"Uma programa\u00e7\u00e3o equilibrada de dois meses lendo meio Juz (cerca de 10 p\u00e1ginas) todos os dias.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 67,
+      "text": "  \"ALL\": \"TODOS\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 124,
+      "text": "  \"All\": \"Todos\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 127,
+      "text": "  \"All Languages...\": \"Todos os idiomas...\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 128,
+      "text": "  \"All Plans\": \"Todos os planos\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 131,
+      "text": "  \"All caught up!\": \"Todos apanhados!\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 132,
+      "text": "  \"All content provided\u2014including the Holy Quran text, translations, tafsir, hadiths, prayer time schedules, and worship guides\u2014is intended for personal devotional and educational purposes. While we strive for absolute accuracy according to verified Islamic scholarship, this software is provided as a supportive companion and does not replace qualified human guidance.\": \"Todo o conte\u00fado fornecido - incluindo o texto do Alcor\u00e3o Sagrado, tradu\u00e7\u00f5es, tafsir, hadiths, hor\u00e1rios de ora\u00e7\u00e3o e guias de adora\u00e7\u00e3o - destina-se a fins devocionais pessoais e educacionais. Embora nos esforcemos para obter precis\u00e3o absoluta de acordo com estudos isl\u00e2micos verificados, este software \u00e9 fornecido como um complemento de apoio e n\u00e3o substitui a orienta\u00e7\u00e3o humana qualificada.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 133,
+      "text": "  \"All data stays on your device. Recap updates each time you open it.\": \"Todos os dados permanecem no seu dispositivo. Recapitule as atualiza\u00e7\u00f5es sempre que voc\u00ea abri-lo.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 153,
+      "text": "  \"Approximate latitude, longitude, and calculation method parameters are sent to Islamic.app to fetch the monthly prayer schedule.\": \"Os par\u00e2metros aproximados de latitude, longitude e m\u00e9todo de c\u00e1lculo s\u00e3o enviados ao Islam.app para buscar a programa\u00e7\u00e3o mensal de ora\u00e7\u00f5es.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 162,
+      "text": "  \"Are you sure you want to remove all downloaded surah audio files?\": \"Tem certeza de que deseja remover todos os arquivos de \u00e1udio da surata baixados?\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 261,
+      "text": "  \"Calculation Method\": \"M\u00e9todo de c\u00e1lculo\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 262,
+      "text": "  \"Calculation method\": \"M\u00e9todo de c\u00e1lculo\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 320,
+      "text": "  \"Clear All Downloads\": \"Limpar todos os downloads\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 324,
+      "text": "  \"Clear all downloads\": \"Limpar todos os downloads\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 344,
+      "text": "  \"Cold and room-temperature Zamzam barrels are situated throughout the Haram. Drink regularly in small amounts. Carry dates or dry nuts in your pouch for steady sustained energy.\": \"Barris Zamzam frios e em temperatura ambiente est\u00e3o situados em todo o Haram. Beba regularmente em pequenas quantidades. Leve t\u00e2maras ou nozes secas em sua bolsa para obter energia constante e sustentada.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 366,
+      "text": "  \"Complete the entire Quran in 30 days by reading one Juz each day. Ideal for Ramadan or intensive study.\": \"Complete todo o Alcor\u00e3o em 30 dias lendo um Juz por dia. Ideal para o Ramad\u00e3 ou estudo intensivo.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 548,
+      "text": "  \"Each external service operates under its respective terms of service and open data attribution licenses. We are profoundly grateful to every provider for their selfless contribution to Islamic technology. May Allah reward them all abundantly.\": \"Cada servi\u00e7o externo opera sob seus respectivos termos de servi\u00e7o e licen\u00e7as de atribui\u00e7\u00e3o de dados abertos. Estamos profundamente gratos a todos os fornecedores pela sua contribui\u00e7\u00e3o altru\u00edsta \u00e0 tecnologia isl\u00e2mica. Que Allah recompense todos eles abundantemente.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 658,
+      "text": "  \"For prayer time issues, specify your city/country, chosen calculation method, and madhab.\": \"Para quest\u00f5es de tempo de ora\u00e7\u00e3o, especifique sua cidade/pa\u00eds, m\u00e9todo de c\u00e1lculo escolhido e madhab.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1265,
+      "text": "  \"Please perform Ghusl to lift major ritual impurity and resume your daily prayers and fasting. Follow the step-by-step method below.\": \"Por favor, execute Ghusl para eliminar as principais impurezas rituais e retomar suas ora\u00e7\u00f5es di\u00e1rias e jejum. Siga o m\u00e9todo passo a passo abaixo.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1271,
+      "text": "  \"Pour water over the entire body, beginning with the right side from shoulder to foot, then the left side, ensuring water reaches all skin folds, navel, and underarms.\": \"Despeje \u00e1gua sobre todo o corpo, come\u00e7ando pelo lado direito, dos ombros aos p\u00e9s, depois pelo lado esquerdo, garantindo que a \u00e1gua chegue a todas as dobras da pele, umbigo e axilas.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1293,
+      "text": "  \"Prayer schedules are astronomical calculations based on established methods. For exact start and end times in special regions (such as extreme high latitudes) or local congregational adjustments, please consult your local mosque or regional Islamic authority.\": \"Os hor\u00e1rios de ora\u00e7\u00e3o s\u00e3o c\u00e1lculos astron\u00f4micos baseados em m\u00e9todos estabelecidos. Para hor\u00e1rios exatos de in\u00edcio e t\u00e9rmino em regi\u00f5es especiais (como latitudes extremamente altas) ou ajustes congregacionais locais, consulte a mesquita local ou a autoridade isl\u00e2mica regional.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1454,
+      "text": "  \"Relying upon Allah's wisdom, divine decree, and seeking His guidance in all affairs.\": \"Confiar na sabedoria de Allah, no decreto divino e buscar Sua orienta\u00e7\u00e3o em todos os assuntos.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1480,
+      "text": "  \"Reset All App Data\": \"Redefinir todos os dados do aplicativo\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1633,
+      "text": "  \"Settings \u2192 Backup & Restore \u2014 export all local data as a JSON file for backup, or import a previously exported backup. No cloud sync involved.\": \"Configura\u00e7\u00f5es \u2192 Backup e restaura\u00e7\u00e3o \u2014 exporte todos os dados locais como um arquivo JSON para backup ou importe um backup exportado anteriormente. Nenhuma sincroniza\u00e7\u00e3o na nuvem envolvida.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1634,
+      "text": "  \"Settings \u2192 Backup & Restore \u2192 'Clear All Data' \u2014 wipes SQLite database, AsyncStorage, and cached files. Or use system Settings \u2192 Apps \u2192 Islamic \u2192 Clear Storage.\": \"Configura\u00e7\u00f5es \u2192 Backup e restaura\u00e7\u00e3o \u2192 \u2018Limpar todos os dados\u2019 \u2013 limpa o banco de dados SQLite, AsyncStorage e arquivos em cache. Ou use Configura\u00e7\u00f5es do sistema \u2192 Aplicativos \u2192 Isl\u00e2mico \u2192 Limpar armazenamento.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1636,
+      "text": "  \"Settings \u2192 Downloads \u2192 'Clear All Downloads' \u2014 removes all cached Quran text editions and downloaded audio files, freeing device storage.\": \"Configura\u00e7\u00f5es \u2192 Downloads \u2192 \u2018Limpar todos os downloads\u2019 \u2014 remove todas as edi\u00e7\u00f5es de texto do Alcor\u00e3o em cache e arquivos de \u00e1udio baixados, liberando armazenamento do dispositivo.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1637,
+      "text": "  \"Settings \u2192 Women's Worship \u2192 'Delete women's data' \u2014 instantly erases all cycle, purity, nifas, and related qada records from SQLite.\": \"Configura\u00e7\u00f5es \u2192 Adora\u00e7\u00e3o de Mulheres \u2192 \u2018Excluir dados de mulheres\u2019 \u2013 apaga instantaneamente todos os registros de ciclo, pureza, nifas e qada relacionados do SQLite.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1807,
+      "text": "  \"Thank you to every provider who makes this possible: Islamic.app \u00b7 AlAdhan \u00b7 AlQuran Cloud \u00b7 islamic.network \u00b7 EveryAyah \u00b7 EsmaulHusna.org \u00b7 OpenStreetMap \u00b7 Google Fonts \u00b7 Expo & the open-source community. May Allah reward them all.\": \"Obrigado a todos os provedores que tornam isso poss\u00edvel: Islam.app \u00b7 AlAdhan \u00b7 AlQuran Cloud \u00b7 islamic.network \u00b7 EveryAyah \u00b7 EsmaulHusna.org \u00b7 OpenStreetMap \u00b7 Google Fonts \u00b7 Expo e a comunidade de c\u00f3digo aberto. Que Allah recompense todos eles.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1830,
+      "text": "  \"The Rawdah is recognized in the mosque by its distinct green carpeting, contrasting with the dark red carpets throughout the rest of the Prophet's Mosque. Pilgrims visit to offer voluntary prayers and make personal supplications in this heavenly sanctuary.\": \"O Rawdah \u00e9 reconhecido na mesquita por seu distinto carpete verde, contrastando com os tapetes vermelhos escuros de todo o resto da Mesquita do Profeta. Os peregrinos visitam para oferecer ora\u00e7\u00f5es volunt\u00e1rias e fazer s\u00faplicas pessoais neste santu\u00e1rio celestial.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1842,
+      "text": "  \"The application integrates with established, free public APIs and open data initiatives across the Muslim world. None of these providers receive personal identities or user profiles.\": \"O aplicativo se integra a APIs p\u00fablicas gratuitas e estabelecidas e a iniciativas de dados abertos em todo o mundo mu\u00e7ulmano. Nenhum desses provedores recebe identidades pessoais ou perfis de usu\u00e1rio.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1843,
+      "text": "  \"The application is provided on an \\\"as is\\\" and \\\"as available\\\" basis without warranties of any kind, whether express or implied. The developers and contributors make every reasonable effort to prevent errors, but assume no liability for calculation inaccuracies, compass magnetic interference, or third-party server downtime.\": \"O aplicativo \u00e9 fornecido \\\"como est\u00e1\\\" e \\\"conforme dispon\u00edvel\\\", sem garantias de qualquer tipo, expressas ou impl\u00edcitas. Os desenvolvedores e colaboradores fazem todos os esfor\u00e7os razo\u00e1veis \u200b\u200bpara evitar erros, mas n\u00e3o assumem nenhuma responsabilidade por imprecis\u00f5es de c\u00e1lculo, interfer\u00eancia magn\u00e9tica da b\u00fassola ou tempo de inatividade de servidores de terceiros.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1863,
+      "text": "  \"Theme mode, calculation methods, madhab, reciter selection, and notification timings.\": \"Modo tema, m\u00e9todos de c\u00e1lculo, madhab, sele\u00e7\u00e3o de recitadores e tempos de notifica\u00e7\u00e3o.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1864,
+      "text": "  \"Theme, accent color, calculation method, madhab, notification reminders, font sizes, and reciter selection (AsyncStorage keys).\": \"Tema, cor de destaque, m\u00e9todo de c\u00e1lculo, madhab, lembretes de notifica\u00e7\u00e3o, tamanhos de fonte e sele\u00e7\u00e3o de recitadores (teclas AsyncStorage).\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1874,
+      "text": "  \"This application is proudly built on open-source foundations. We stand on the shoulders of generous engineers and communities who make mobile software accessible to all.\": \"Este aplicativo foi orgulhosamente desenvolvido com base em c\u00f3digo aberto. Apoiamos-nos em engenheiros e comunidades generosos que tornam o software m\u00f3vel acess\u00edvel a todos.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1879,
+      "text": "  \"This permanently deletes all cycle, purity, nifas and women's qada data from this device. This cannot be undone.\": \"Isso exclui permanentemente todos os dados de ciclo, pureza, nifas e qada feminina deste dispositivo. Isto n\u00e3o pode ser desfeito.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 1883,
+      "text": "  \"Throw all tissues, empty cups, and bottles in designated recycling bins. Never leave spilled water on marble pathways where it poses an immediate slip hazard to elderly worshippers.\": \"Jogue todos os len\u00e7os de papel, copos vazios e garrafas em lixeiras designadas para reciclagem. Nunca deixe \u00e1gua derramada em caminhos de m\u00e1rmore, onde representa um risco imediato de escorregamento para os fi\u00e9is idosos.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 2043,
+      "text": "  \"You can delete all Women's Worship records at any time via Settings \u2192 Women's Worship \u2192 'Delete women's data', which erases cycle, purity, nifas, and related qada records.\": \"Voc\u00ea pode excluir todos os registros de Adora\u00e7\u00e3o Feminina a qualquer momento em Configura\u00e7\u00f5es \u2192 Adora\u00e7\u00e3o Feminina \u2192 'Excluir dados de mulheres', que apaga ciclo, pureza, nifas e registros qada relacionados.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 2045,
+      "text": "  \"You can use every core feature immediately without ever signing in or providing personal credentials.\": \"Voc\u00ea pode usar todos os recursos principais imediatamente, sem precisar fazer login ou fornecer credenciais pessoais.\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 2046,
+      "text": "  \"You have complete authority over your data at all times:\": \"Voc\u00ea tem total autoridade sobre seus dados em todos os momentos:\","
+    },
+    {
+      "file": "./src/locales/pt.json",
+      "line": 2070,
+      "text": "  \"api.islamic.app \u2014 receives approximate latitude, longitude, calculation method ID, and madhab to return prayer schedules and authentic hadith collections (Bukhari, Muslim, etc.).\": \"api.islamic.app \u2014 recebe latitude aproximada, longitude, ID do m\u00e9todo de c\u00e1lculo e madhab para retornar hor\u00e1rios de ora\u00e7\u00e3o e cole\u00e7\u00f5es aut\u00eanticas de hadith (Bukhari, Muslim, etc.).\","
+    },
+    {
+      "file": "./src/locales/it.json",
+      "line": 153,
+      "text": "  \"Approximate latitude, longitude, and calculation method parameters are sent to Islamic.app to fetch the monthly prayer schedule.\": \"I parametri approssimativi di latitudine, longitudine e metodo di calcolo vengono inviati a Islamic.app per recuperare il programma di preghiera mensile.\","
+    },
+    {
+      "file": "./src/locales/it.json",
+      "line": 261,
+      "text": "  \"Calculation Method\": \"Metodo di calcolo\","
+    },
+    {
+      "file": "./src/locales/it.json",
+      "line": 262,
+      "text": "  \"Calculation method\": \"Metodo di calcolo\","
+    },
+    {
+      "file": "./src/locales/it.json",
+      "line": 658,
+      "text": "  \"For prayer time issues, specify your city/country, chosen calculation method, and madhab.\": \"Per questioni legate al tempo di preghiera, specifica la tua citt\u00e0/paese, il metodo di calcolo scelto e il madhab.\","
+    },
+    {
+      "file": "./src/locales/it.json",
+      "line": 1265,
+      "text": "  \"Please perform Ghusl to lift major ritual impurity and resume your daily prayers and fasting. Follow the step-by-step method below.\": \"Per favore esegui Ghusl per eliminare le principali impurit\u00e0 rituali e riprendere le preghiere quotidiane e il digiuno. Segui il metodo passo dopo passo riportato di seguito.\","
+    },
+    {
+      "file": "./src/locales/it.json",
+      "line": 1864,
+      "text": "  \"Theme, accent color, calculation method, madhab, notification reminders, font sizes, and reciter selection (AsyncStorage keys).\": \"Tema, colore principale, metodo di calcolo, madhab, promemoria di notifica, dimensioni dei caratteri e selezione del recitatore (chiavi AsyncStorage).\","
+    },
+    {
+      "file": "./src/locales/it.json",
+      "line": 2070,
+      "text": "  \"api.islamic.app \u2014 receives approximate latitude, longitude, calculation method ID, and madhab to return prayer schedules and authentic hadith collections (Bukhari, Muslim, etc.).\": \"api.islamic.app: riceve latitudine, longitudine, ID del metodo di calcolo approssimativi e madhab per restituire programmi di preghiera e raccolte di hadith autentiche (Bukhari, Muslim, ecc.).\","
+    },
+    {
+      "file": "./src/locales/so.json",
+      "line": 1606,
+      "text": "  \"Seek It in the Last Seven Nights\": \"Ka raadi todobada habeen ee u dambeeya\","
+    },
+    {
+      "file": "./src/locales/so.json",
+      "line": 1767,
+      "text": "  \"Takbirat: Seven in the First Rakah, Five in the Second\": \"Takbiirta: Todoba Rakaco, Shanta Labaad\","
+    },
+    {
+      "file": "./src/locales/so.json",
+      "line": 2009,
+      "text": "  \"Weekly Summary\": \"Kooban Todobaadle ah\","
+    },
+    {
+      "file": "./src/locales/so.json",
+      "line": 2075,
+      "text": "  \"ayahs read this week\": \"ayahs akhri todobaadkan\","
+    },
+    {
+      "file": "./src/locales/so.json",
+      "line": 2145,
+      "text": "  \"notes added this week\": \"qoraalo lagu daray todobaadkan\","
+    },
+    {
+      "file": "./src/locales/th.json",
+      "line": 1726,
+      "text": "  \"Sunan Ibn Majah 1406 \u00b7 Authentic (Sahih)\": \"Sunan Iban Majah 1406 Secret (Sahih)\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 4,
+      "text": "  \"\\\"O people, indeed your Lord is One, and your father is one. All of you are from Adam, and Adam was made from dust. An Arab has no superiority over a non-Arab, nor does a non-Arab have any superiority over an Arab; nor does a red person have superiority over a black person, nor a black person over a red person, except by piety.\\\"\": \"\\\"Oh gente, en verdad vuestro Se\u00f1or es Uno, y vuestro padre es uno. Todos vosotros sois de Ad\u00e1n, y Ad\u00e1n fue hecho del polvo. Un \u00e1rabe no tiene superioridad sobre un no \u00e1rabe, ni un no \u00e1rabe tiene superioridad sobre un \u00e1rabe; ni una persona roja tiene superioridad sobre una persona negra, ni una persona negra sobre una persona roja, excepto por la piedad\\\".\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 48,
+      "text": "  \"6. Wash the Entire Body with Water\": \"6. Lavar todo el cuerpo con agua\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 59,
+      "text": "  \"A balanced two-month schedule reading half a Juz (~10 pages) every day.\": \"Un cronograma equilibrado de dos meses que lee medio Juz (~10 p\u00e1ginas) todos los d\u00edas.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 67,
+      "text": "  \"ALL\": \"TODOS\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 124,
+      "text": "  \"All\": \"Todos\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 127,
+      "text": "  \"All Languages...\": \"Todos los idiomas...\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 128,
+      "text": "  \"All Plans\": \"Todos los planes\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 130,
+      "text": "  \"All Steps\": \"Todos los pasos\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 131,
+      "text": "  \"All caught up!\": \"\u00a1Todos atrapados!\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 132,
+      "text": "  \"All content provided\u2014including the Holy Quran text, translations, tafsir, hadiths, prayer time schedules, and worship guides\u2014is intended for personal devotional and educational purposes. While we strive for absolute accuracy according to verified Islamic scholarship, this software is provided as a supportive companion and does not replace qualified human guidance.\": \"Todo el contenido proporcionado, incluido el texto del Sagrado Cor\u00e1n, las traducciones, el tafsir, los hadices, los horarios de oraci\u00f3n y las gu\u00edas de adoraci\u00f3n, est\u00e1 destinado a fines educativos y devocionales personales. Si bien nos esforzamos por lograr una precisi\u00f3n absoluta seg\u00fan los estudios isl\u00e1micos verificados, este software se proporciona como un complemento de apoyo y no reemplaza la gu\u00eda humana calificada.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 133,
+      "text": "  \"All data stays on your device. Recap updates each time you open it.\": \"Todos los datos permanecen en su dispositivo. Recapitula las actualizaciones cada vez que lo abres.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 153,
+      "text": "  \"Approximate latitude, longitude, and calculation method parameters are sent to Islamic.app to fetch the monthly prayer schedule.\": \"Los par\u00e1metros aproximados de latitud, longitud y m\u00e9todo de c\u00e1lculo se env\u00edan a Islam.app para obtener el programa de oraci\u00f3n mensual.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 162,
+      "text": "  \"Are you sure you want to remove all downloaded surah audio files?\": \"\u00bfEst\u00e1s seguro de que deseas eliminar todos los archivos de audio de sura descargados?\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 261,
+      "text": "  \"Calculation Method\": \"M\u00e9todo de c\u00e1lculo\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 262,
+      "text": "  \"Calculation method\": \"M\u00e9todo de c\u00e1lculo\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 319,
+      "text": "  \"Clear All\": \"Borrar todo\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 344,
+      "text": "  \"Cold and room-temperature Zamzam barrels are situated throughout the Haram. Drink regularly in small amounts. Carry dates or dry nuts in your pouch for steady sustained energy.\": \"Por todo el Haram hay barriles de Zamzam fr\u00edos y a temperatura ambiente. Beba regularmente en peque\u00f1as cantidades. Lleve d\u00e1tiles o nueces secas en su bolsa para obtener energ\u00eda constante y sostenida.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 366,
+      "text": "  \"Complete the entire Quran in 30 days by reading one Juz each day. Ideal for Ramadan or intensive study.\": \"Complete todo el Cor\u00e1n en 30 d\u00edas leyendo un Juz cada d\u00eda. Ideal para Ramad\u00e1n o estudio intensivo.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 548,
+      "text": "  \"Each external service operates under its respective terms of service and open data attribution licenses. We are profoundly grateful to every provider for their selfless contribution to Islamic technology. May Allah reward them all abundantly.\": \"Cada servicio externo opera bajo sus respectivos t\u00e9rminos de servicio y licencias de atribuci\u00f3n de datos abiertos. Estamos profundamente agradecidos a todos los proveedores por su contribuci\u00f3n desinteresada a la tecnolog\u00eda isl\u00e1mica. Que Allah los recompense a todos abundantemente.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 579,
+      "text": "  \"Erase everything, on this device\": \"Borrar todo en este dispositivo\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 585,
+      "text": "  \"Establishing regular prayer and sustaining consciousness of Allah throughout the day.\": \"Establecer oraci\u00f3n regular y mantener la conciencia de Allah durante todo el d\u00eda.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 658,
+      "text": "  \"For prayer time issues, specify your city/country, chosen calculation method, and madhab.\": \"Para cuestiones relacionadas con el tiempo de oraci\u00f3n, especifique su ciudad/pa\u00eds, el m\u00e9todo de c\u00e1lculo elegido y el madhab.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1244,
+      "text": "  \"Play All\": \"Reproducir todo\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1265,
+      "text": "  \"Please perform Ghusl to lift major ritual impurity and resume your daily prayers and fasting. Follow the step-by-step method below.\": \"Realice Ghusl para eliminar las principales impurezas rituales y reanudar sus oraciones y ayunos diarios. Siga el m\u00e9todo paso a paso a continuaci\u00f3n.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1271,
+      "text": "  \"Pour water over the entire body, beginning with the right side from shoulder to foot, then the left side, ensuring water reaches all skin folds, navel, and underarms.\": \"Vierta agua por todo el cuerpo, comenzando por el lado derecho desde el hombro hasta el pie, luego por el lado izquierdo, asegur\u00e1ndose de que el agua llegue a todos los pliegues de la piel, el ombligo y las axilas.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1293,
+      "text": "  \"Prayer schedules are astronomical calculations based on established methods. For exact start and end times in special regions (such as extreme high latitudes) or local congregational adjustments, please consult your local mosque or regional Islamic authority.\": \"Los horarios de oraci\u00f3n son c\u00e1lculos astron\u00f3micos basados \u200b\u200ben m\u00e9todos establecidos. Para conocer las horas exactas de inicio y finalizaci\u00f3n en regiones especiales (como latitudes extremadamente altas) o ajustes congregacionales locales, consulte con su mezquita local o autoridad isl\u00e1mica regional.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1302,
+      "text": "  \"Preload All\": \"Precargar todo\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1454,
+      "text": "  \"Relying upon Allah's wisdom, divine decree, and seeking His guidance in all affairs.\": \"Confiar en la sabidur\u00eda y el decreto divino de Allah y buscar Su gu\u00eda en todos los asuntos.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1480,
+      "text": "  \"Reset All App Data\": \"Restablecer todos los datos de la aplicaci\u00f3n\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1489,
+      "text": "  \"Restore anyway\": \"Restaurar de todos modos\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1633,
+      "text": "  \"Settings \u2192 Backup & Restore \u2014 export all local data as a JSON file for backup, or import a previously exported backup. No cloud sync involved.\": \"Configuraci\u00f3n \u2192 Copia de seguridad y restauraci\u00f3n: exporte todos los datos locales como un archivo JSON para realizar una copia de seguridad o importe una copia de seguridad exportada previamente. No hay sincronizaci\u00f3n en la nube involucrada.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1634,
+      "text": "  \"Settings \u2192 Backup & Restore \u2192 'Clear All Data' \u2014 wipes SQLite database, AsyncStorage, and cached files. Or use system Settings \u2192 Apps \u2192 Islamic \u2192 Clear Storage.\": \"Configuraci\u00f3n \u2192 Copia de seguridad y restauraci\u00f3n \u2192 'Borrar todos los datos': borra la base de datos SQLite, AsyncStorage y los archivos en cach\u00e9. O utilice Configuraci\u00f3n del sistema \u2192 Aplicaciones \u2192 Isl\u00e1mica \u2192 Borrar almacenamiento.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1637,
+      "text": "  \"Settings \u2192 Women's Worship \u2192 'Delete women's data' \u2014 instantly erases all cycle, purity, nifas, and related qada records from SQLite.\": \"Configuraci\u00f3n \u2192 Adoraci\u00f3n de mujeres \u2192 'Eliminar datos de mujeres': borra instant\u00e1neamente todos los registros de ciclo, pureza, nifas y qada relacionados de SQLite.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1780,
+      "text": "  \"Tap items to mark as packed. Everything curated for comfort, compliance with Ihram rules, and ease.\": \"Toque elementos para marcarlos como empaquetados. Todo dise\u00f1ado para brindar comodidad, cumplimiento de las reglas de Ihram y facilidad.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1807,
+      "text": "  \"Thank you to every provider who makes this possible: Islamic.app \u00b7 AlAdhan \u00b7 AlQuran Cloud \u00b7 islamic.network \u00b7 EveryAyah \u00b7 EsmaulHusna.org \u00b7 OpenStreetMap \u00b7 Google Fonts \u00b7 Expo & the open-source community. May Allah reward them all.\": \"Gracias a todos los proveedores que hacen esto posible: Islam.app \u00b7 AlAdhan \u00b7 AlQuran Cloud \u00b7 islamic.network \u00b7 EveryAyah \u00b7 EsmaulHusna.org \u00b7 OpenStreetMap \u00b7 Google Fonts \u00b7 Expo y la comunidad de c\u00f3digo abierto. Que Allah los recompense a todos.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1842,
+      "text": "  \"The application integrates with established, free public APIs and open data initiatives across the Muslim world. None of these providers receive personal identities or user profiles.\": \"La aplicaci\u00f3n se integra con API p\u00fablicas gratuitas y establecidas e iniciativas de datos abiertos en todo el mundo musulm\u00e1n. Ninguno de estos proveedores recibe identidades personales o perfiles de usuario.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1843,
+      "text": "  \"The application is provided on an \\\"as is\\\" and \\\"as available\\\" basis without warranties of any kind, whether express or implied. The developers and contributors make every reasonable effort to prevent errors, but assume no liability for calculation inaccuracies, compass magnetic interference, or third-party server downtime.\": \"La aplicaci\u00f3n se proporciona \\\"tal cual\\\" y \\\"seg\u00fan disponibilidad\\\" sin garant\u00edas de ning\u00fan tipo, ya sean expresas o impl\u00edcitas. Los desarrolladores y contribuyentes hacen todos los esfuerzos razonables para evitar errores, pero no asumen ninguna responsabilidad por imprecisiones en los c\u00e1lculos, interferencias magn\u00e9ticas de la br\u00fajula o tiempo de inactividad del servidor de terceros.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1852,
+      "text": "  \"The live stream below provides official 24/7 Saudi national broadcasts, Grand Mosque coverage, and Hajj Ministry documentation throughout the year.\": \"La transmisi\u00f3n en vivo a continuaci\u00f3n proporciona transmisiones nacionales sauditas oficiales las 24 horas, los 7 d\u00edas de la semana, cobertura de la Gran Mezquita y documentaci\u00f3n del Ministerio del Hajj durante todo el a\u00f1o.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1863,
+      "text": "  \"Theme mode, calculation methods, madhab, reciter selection, and notification timings.\": \"Modo tem\u00e1tico, m\u00e9todos de c\u00e1lculo, madhab, selecci\u00f3n de recitadores y tiempos de notificaci\u00f3n.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1864,
+      "text": "  \"Theme, accent color, calculation method, madhab, notification reminders, font sizes, and reciter selection (AsyncStorage keys).\": \"Tema, color de acento, m\u00e9todo de c\u00e1lculo, madhab, recordatorios de notificaciones, tama\u00f1os de fuente y selecci\u00f3n de recitador (teclas AsyncStorage).\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1874,
+      "text": "  \"This application is proudly built on open-source foundations. We stand on the shoulders of generous engineers and communities who make mobile software accessible to all.\": \"Esta aplicaci\u00f3n se enorgullece de estar construida sobre bases de c\u00f3digo abierto. Nos apoyamos en ingenieros y comunidades generosos que hacen que el software m\u00f3vil sea accesible para todos.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1879,
+      "text": "  \"This permanently deletes all cycle, purity, nifas and women's qada data from this device. This cannot be undone.\": \"Esto elimina permanentemente todos los datos de ciclo, pureza, nifas y qada de mujeres de este dispositivo. Esto no se puede deshacer.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1883,
+      "text": "  \"Throw all tissues, empty cups, and bottles in designated recycling bins. Never leave spilled water on marble pathways where it poses an immediate slip hazard to elderly worshippers.\": \"Tire todos los pa\u00f1uelos, vasos vac\u00edos y botellas en los contenedores de reciclaje designados. Nunca deje agua derramada en caminos de m\u00e1rmol donde represente un peligro inmediato de resbal\u00f3n para los fieles de edad avanzada.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 1994,
+      "text": "  \"View all\": \"Ver todo\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 2043,
+      "text": "  \"You can delete all Women's Worship records at any time via Settings \u2192 Women's Worship \u2192 'Delete women's data', which erases cycle, purity, nifas, and related qada records.\": \"Puede eliminar todos los registros de Adoraci\u00f3n de mujeres en cualquier momento a trav\u00e9s de Configuraci\u00f3n \u2192 Adoraci\u00f3n de mujeres \u2192 'Eliminar datos de mujeres', que borra los registros de ciclo, pureza, nifas y qada relacionados.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 2046,
+      "text": "  \"You have complete authority over your data at all times:\": \"Tienes total autoridad sobre tus datos en todo momento:\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 2052,
+      "text": "  \"Your data has been restored successfully. Please restart the app to apply all changes.\": \"Sus datos han sido restaurados exitosamente. Reinicie la aplicaci\u00f3n para aplicar todos los cambios.\","
+    },
+    {
+      "file": "./src/locales/es.json",
+      "line": 2070,
+      "text": "  \"api.islamic.app \u2014 receives approximate latitude, longitude, calculation method ID, and madhab to return prayer schedules and authentic hadith collections (Bukhari, Muslim, etc.).\": \"api.islamic.app: recibe latitud, longitud aproximada, ID del m\u00e9todo de c\u00e1lculo y madhab para devolver horarios de oraci\u00f3n y colecciones aut\u00e9nticas de hadices (Bujari, musulmanes, etc.).\","
+    }
+  ]
+}
+
+EXIT_CODE=0

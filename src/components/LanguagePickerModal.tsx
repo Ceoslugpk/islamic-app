@@ -4,7 +4,6 @@ import {
   Modal,
   Platform,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -17,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { iconSizes } from '../lib/iconMap';
 import { Hairline } from './Hairline';
 import { isRTL, t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 
 export interface LanguageItem {
   id: string;
@@ -99,13 +99,13 @@ export function LanguagePickerModal({
           <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
             <View style={styles.headerTitles}>
               {eyebrow && (
-                <Text style={[styles.eyebrow, { color: colors.accent }]}>
+                <AppText variant="eyebrow" style={styles.eyebrow}>
                   {eyebrow} ({items.length})
-                </Text>
+                </AppText>
               )}
-              <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
+              <AppText variant="headerTitle" style={styles.title}>{title}</AppText>
               {subtitle && (
-                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+                <AppText variant="subtitle" style={styles.subtitle}>{subtitle}</AppText>
               )}
             </View>
             <TouchableOpacity
@@ -138,6 +138,7 @@ export function LanguagePickerModal({
                 ]}
                 placeholder={searchPlaceholder}
                 placeholderTextColor={colors.textMuted}
+                accessibilityLabel={searchPlaceholder}
                 value={search}
                 onChangeText={setSearch}
                 autoCapitalize="none"
@@ -158,9 +159,9 @@ export function LanguagePickerModal({
             </View>
             {search.trim().length > 0 && (
               <View style={styles.searchMetaRow}>
-                <Text style={[styles.searchMetaText, { color: colors.textSecondary }]}>
+                <AppText variant="caption" style={styles.searchMetaText}>
                   {t('Found')} {filtered.length} / {items.length}
-                </Text>
+                </AppText>
               </View>
             )}
           </View>
@@ -194,28 +195,30 @@ export function LanguagePickerModal({
                   ]}
                   onPress={() => handleSelect(item)}
                   accessibilityRole="radio"
-                  accessibilityState={{ selected: isSelected }}
+                  accessibilityState={{ selected: isSelected, checked: isSelected }}
+                  {...(Platform.OS === 'web' ? { 'aria-checked': isSelected as any } : {})}
                   accessibilityLabel={`${item.name}${item.subName ? ` - ${item.subName}` : ''}${isSelected ? `, ${t('selected')}` : ''}`}
                 >
                   {/* Flag / Icon */}
                   {item.flag ? (
                     <View style={styles.flagWrap}>
-                      <Text style={styles.flagEmoji}>{item.flag}</Text>
+                      <AppText variant="body" style={styles.flagEmoji}>{item.flag}</AppText>
                     </View>
                   ) : null}
 
                   {/* Text Wrap */}
                   <View style={[styles.textWrap, isRTL() && { alignItems: 'flex-end' }]}>
                     <View style={[styles.langNameRow, isRTL() && { flexDirection: 'row-reverse' }]}>
-                      <Text
+                      <AppText
+                        variant="rowTitle"
+                        highlight={isSelected}
                         style={[
                           styles.languageText,
-                          { color: isSelected ? colors.accent : colors.textPrimary },
                           isRTL() && { textAlign: 'right' },
                         ]}
                       >
                         {item.name}
-                      </Text>
+                      </AppText>
                       {item.code ? (
                         <View
                           style={[
@@ -226,28 +229,27 @@ export function LanguagePickerModal({
                             },
                           ]}
                         >
-                          <Text
-                            style={[
-                              styles.codeBadgeText,
-                              { color: isSelected ? colors.onAccent : colors.textMuted },
-                            ]}
+                          <AppText
+                            variant="caption"
+                            tone={isSelected ? 'onGold' : undefined}
+                            style={styles.codeBadgeText}
                           >
                             {item.code.toUpperCase()}
-                          </Text>
+                          </AppText>
                         </View>
                       ) : null}
                     </View>
                     {item.subName ? (
-                      <Text
+                      <AppText
+                        variant={isSelected ? 'body' : 'caption'}
                         style={[
                           styles.editionNameText,
-                          { color: isSelected ? colors.textPrimary : colors.textSecondary },
                           isRTL() && { textAlign: 'right' },
                         ]}
                         numberOfLines={1}
                       >
                         {item.subName}
-                      </Text>
+                      </AppText>
                     ) : null}
                   </View>
 
@@ -265,16 +267,16 @@ export function LanguagePickerModal({
             ListEmptyComponent={
               <View style={styles.emptyWrap}>
                 <Ionicons name="search-outline" size={36} color={colors.textMuted} />
-                <Text style={[styles.emptyText, { color: colors.textPrimary }]}>
+                <AppText variant="rowTitle" style={styles.emptyText}>
                   {t('No matches for')} &ldquo;{search}&rdquo;
-                </Text>
+                </AppText>
                 <TouchableOpacity
                   style={[styles.resetSearchBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
                   onPress={() => setSearch('')}
                   accessibilityRole="button"
                   accessibilityLabel={t('Clear search')}
                 >
-                  <Text style={[styles.resetSearchText, { color: colors.accent }]}>{t('Clear Search')}</Text>
+                  <AppText variant="link" style={styles.resetSearchText}>{t('Clear Search')}</AppText>
                 </TouchableOpacity>
               </View>
             }
@@ -413,7 +415,7 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginEnd: 12,
   },
   flagEmoji: {
     fontSize: 24,

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ViewStyle,
@@ -20,6 +19,7 @@ import {
 import { SUBHEADER_HEIGHT } from './layout.constants';
 import { fontRoles } from '../../theme/tokens';
 import { HeaderRingButton } from './HeaderRingButton';
+import { AppText } from '../ui/AppText';
 
 export interface SheetHeaderProps {
   /** Title of the sheet or modal */
@@ -65,7 +65,7 @@ export function SheetHeader({
   chip,
   style,
   borderBottom = true,
-  testID = 'sheet-header',
+  testID,
 }: SheetHeaderProps) {
   const { colors, mode } = useTheme();
   const tokens = HOME_THEME_TOKENS[mode];
@@ -73,12 +73,16 @@ export function SheetHeader({
   const isCompact = width < 380;
   const rtl = isRTL();
 
+  const childPrefix = testID ?? 'sheet-header';
+
   return (
     <View
-      testID={testID}
+      testID="sheet-header"
+      {...(testID && testID !== 'sheet-header' ? { testID } : {})}
       style={[
         styles.container,
         {
+          backgroundColor: colors.bgSurface,
           paddingHorizontal: HEADER_HORIZONTAL_PADDING,
           borderBottomColor: colors.borderSubtle,
           borderBottomWidth: borderBottom ? StyleSheet.hairlineWidth : 0,
@@ -88,7 +92,7 @@ export function SheetHeader({
     >
       {/* Centered Drag Pill (36 x 5dp, radius 2.5dp) */}
       {showDragPill && (
-        <View style={styles.dragPillWrap} testID={`${testID}-drag-pill-wrap`}>
+        <View style={styles.dragPillWrap} testID={`${childPrefix}-drag-pill-wrap`}>
           {onClose ? (
             <TouchableOpacity
               onPress={onClose}
@@ -102,7 +106,7 @@ export function SheetHeader({
                   styles.dragPill,
                   { backgroundColor: mode === 'ink' ? tokens.ringBorder : colors.borderSubtle },
                 ]}
-                testID={`${testID}-drag-pill`}
+                testID={`${childPrefix}-drag-pill`}
               />
             </TouchableOpacity>
           ) : (
@@ -111,7 +115,7 @@ export function SheetHeader({
                 styles.dragPill,
                 { backgroundColor: mode === 'ink' ? tokens.ringBorder : colors.borderSubtle },
               ]}
-              testID={`${testID}-drag-pill`}
+              testID={`${childPrefix}-drag-pill`}
             />
           )}
         </View>
@@ -126,12 +130,12 @@ export function SheetHeader({
       >
         <View style={styles.titleColumn}>
           {eyebrow ? (
-            <Text
-              testID={`${testID}-eyebrow`}
+            <AppText
+              variant="eyebrow"
+              testID={`${childPrefix}-eyebrow`}
               style={[
                 styles.eyebrow,
                 {
-                  color: colors.accent,
                   fontFamily: rtl ? fontRoles.arabicBold : fontRoles.eyebrowFallback,
                   fontSize: isCompact ? 10 : 11,
                   textAlign: rtl ? 'right' : 'left',
@@ -140,14 +144,14 @@ export function SheetHeader({
               numberOfLines={1}
             >
               {t(eyebrow)}
-            </Text>
+            </AppText>
           ) : null}
-          <Text
-            testID={`${testID}-title`}
+          <AppText
+            variant="headerTitle"
+            testID={`${childPrefix}-title`}
             style={[
               styles.title,
               {
-                color: colors.textPrimary,
                 fontFamily: rtl ? fontRoles.titleRtl : fontRoles.titleFallback,
                 fontSize: 22,
                 lineHeight: 26,
@@ -158,14 +162,14 @@ export function SheetHeader({
             accessibilityRole="header"
           >
             {t(title)}
-          </Text>
+          </AppText>
           {subtitle ? (
-            <Text
-              testID={`${testID}-subtitle`}
+            <AppText
+              variant="subtitle"
+              testID={`${childPrefix}-subtitle`}
               style={[
                 styles.subtitle,
                 {
-                  color: colors.textSecondary,
                   fontFamily: fontRoles.ui,
                   fontSize: isCompact ? 11.5 : 12,
                   textAlign: rtl ? 'right' : 'left',
@@ -174,7 +178,7 @@ export function SheetHeader({
               numberOfLines={1}
             >
               {t(subtitle)}
-            </Text>
+            </AppText>
           ) : null}
         </View>
 
@@ -187,7 +191,7 @@ export function SheetHeader({
             ]}
           >
             {chip ? (
-              <View testID={`${testID}-chip`} style={styles.chipWrap}>
+              <View testID={`${childPrefix}-chip`} style={styles.chipWrap}>
                 {chip}
               </View>
             ) : null}
@@ -195,7 +199,7 @@ export function SheetHeader({
               <View style={styles.dismissWrap}>
                 {closeLabel ? (
                   <TouchableOpacity
-                    testID={`${testID}-close-btn`}
+                    testID={`${childPrefix}-close-btn`}
                     onPress={onClose}
                     accessibilityRole="button"
                     accessibilityLabel={t(closeLabel)}
@@ -203,21 +207,21 @@ export function SheetHeader({
                     activeOpacity={0.7}
                     style={styles.closeTextTouch}
                   >
-                    <Text
+                    <AppText
+                      variant="link"
                       style={[
                         styles.closeText,
                         {
-                          color: colors.accent,
                           fontFamily: rtl ? fontRoles.arabicBold : fontRoles.uiSemiBold,
                         },
                       ]}
                     >
                       {t(closeLabel)}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 ) : (
                   <HeaderRingButton
-                    testID={`${testID}-close-btn`}
+                    testID={`${childPrefix}-close-btn`}
                     iconName="close"
                     iconSize={16}
                     iconColor={colors.accent}
@@ -241,6 +245,9 @@ const styles = StyleSheet.create({
     maxWidth: HEADER_MAX_WIDTH,
     alignSelf: 'center',
     paddingVertical: HEADER_PADDING_VERTICAL,
+    position: 'relative',
+    zIndex: 10,
+    elevation: 4,
   },
   dragPillWrap: {
     alignItems: 'center',

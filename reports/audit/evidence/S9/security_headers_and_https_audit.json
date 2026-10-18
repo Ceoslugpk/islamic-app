@@ -1,0 +1,53 @@
+{
+  "targetUrl": "http://15.235.203.134:9998",
+  "scheme": "http",
+  "isHTTPS": false,
+  "serverSoftware": "SimpleHTTP/0.6 Python/3.14.7",
+  "receivedHeaders": {
+    "content-length": "1235",
+    "content-type": "text/html",
+    "date": "Sat, 17 Oct 2026 11:24:19 GMT",
+    "last-modified": "Sat, 17 Oct 2026 09:54:30 GMT",
+    "server": "SimpleHTTP/0.6 Python/3.14.7"
+  },
+  "requiredSecurityHeaders": [
+    {
+      "header": "Content-Security-Policy",
+      "present": false,
+      "value": null,
+      "severity": "medium"
+    },
+    {
+      "header": "Strict-Transport-Security",
+      "present": false,
+      "value": null,
+      "severity": "high"
+    },
+    {
+      "header": "X-Content-Type-Options",
+      "present": false,
+      "value": null,
+      "severity": "low"
+    },
+    {
+      "header": "X-Frame-Options",
+      "present": false,
+      "value": null,
+      "severity": "medium"
+    },
+    {
+      "header": "Referrer-Policy",
+      "present": false,
+      "value": null,
+      "severity": "low"
+    },
+    {
+      "header": "Permissions-Policy",
+      "present": false,
+      "value": null,
+      "severity": "low"
+    }
+  ],
+  "mixedContentRisk": "Preview server is plain HTTP (HTTP/1.0), lacking transport encryption and standard security headers. All outbound external API calls use HTTPS.",
+  "evaluation": "FAIL (Development/Preview web server lacks HTTPS, CSP, HSTS, and frame protection)"
+}

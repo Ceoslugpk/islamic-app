@@ -244,7 +244,6 @@ export function formatNowPlayingMetadata(
   };
 }
 
-let lastActivePlayerId: string | null = null;
 let lastSyncedTitle: string | null = null;
 let lastSyncedArtist: string | null = null;
 let lastSyncedArtwork: string | null = null;
@@ -366,7 +365,6 @@ export async function syncNowPlaying(meta?: Partial<SystemMediaMetadata>): Promi
         // New player, or the notification was dismissed (pause/finish) —
         // (re)activate lock screen controls and re-post the notification once.
         player.setActiveForLockScreen(true, audioMetadata, options);
-        lastActivePlayerId = player.id || 'active';
         lastActivePlayer = player;
         isLockScreenActive = true;
         lastSyncedTitle = title;
@@ -395,9 +393,11 @@ export async function clearNowPlaying(): Promise<void> {
   lastSyncedArtist = null;
   lastSyncedArtwork = null;
 
-  try {
-    await Notifications.dismissNotificationAsync('quran-now-playing');
-  } catch {}
+  if (Platform.OS !== 'web') {
+    try {
+      await Notifications.dismissNotificationAsync('quran-now-playing');
+    } catch {}
+  }
 
   if (Platform.OS === 'web') {
     if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {

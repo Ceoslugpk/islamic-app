@@ -15,7 +15,6 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DUAS_DATA } from './duas';
 
 export interface AfterPrayerDua {
   id: string;
@@ -200,8 +199,12 @@ function mapRawDua(raw: RawDua, index: number): AfterPrayerDua | null {
   const source = spanByClass(enBody, 'hisn_english_reference');
 
   if (!arabic || !translation) return null;
+  const rawId = raw.number ?? raw.slug ?? (index + 1);
+  const id = typeof rawId === 'number' || /^\d+$/.test(String(rawId))
+    ? `after-prayer-${rawId}`
+    : String(rawId);
   return {
-    id: String(raw.number ?? raw.slug ?? index),
+    id,
     arabic,
     transliteration,
     translation,
@@ -279,8 +282,22 @@ export function useAfterPrayerDuas() {
   }, []);
 
   useEffect(() => {
-    refresh();
-  }, [refresh]);
+    let cancelled = false;
+    loadAfterPrayerDuas()
+      .then((data) => {
+        if (!cancelled) {
+          setDuas(data);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return { duas, loading, refresh };
 }
@@ -314,8 +331,21 @@ export function selectAfterPrayerDua(
 }
 
 /**
- * Returns all after-prayer duas, placing any dua specifically recommended
- * for the given prayer first in the swipe order.
+ * Returns true if a dua contains authentic recommendations specifically
+ * naming the given prayer (e.g. Fajr, Maghrib).
+ */
+export function isDuaForPrayer(
+  dua: AfterPrayerDua,
+  prayer?: string | null
+): boolean {
+  if (!prayer) return false;
+  const prayerRe = new RegExp(`\\b${prayer}\\b`, 'i');
+  return prayerRe.test(searchable(dua));
+}
+
+/**
+ * Returns all after-prayer duas, placing any duas specifically recommended
+ * for the given prayer first in the swipe order while maintaining authentic sequence.
  */
 export function getAllAfterPrayerDuas(
   duas: AfterPrayerDua[],
@@ -324,12 +354,11 @@ export function getAllAfterPrayerDuas(
   const list = duas && duas.length > 0 ? duas : FALLBACK_AFTER_PRAYER_DUAS;
   if (!prayer) return list;
 
-  const prayerRe = new RegExp(`\\b${prayer}\\b`, 'i');
-  const matchedIdx = list.findIndex((dua) => prayerRe.test(searchable(dua)));
+  const matching = list.filter((dua) => isDuaForPrayer(dua, prayer));
+  const rest = list.filter((dua) => !isDuaForPrayer(dua, prayer));
 
-  if (matchedIdx > 0) {
-    const matched = list[matchedIdx];
-    return [matched, ...list.slice(0, matchedIdx), ...list.slice(matchedIdx + 1)];
+  if (matching.length > 0) {
+    return [...matching, ...rest];
   }
   return list;
 }

@@ -11,7 +11,6 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../lib/theme';
 import { HOME_THEME_TOKENS } from '../../lib/homeThemeTokens';
-import { touchTargetTokens } from '../../lib/buttonTokens';
 
 export interface HeaderRingButtonProps {
   onPress?: (event: GestureResponderEvent) => void;

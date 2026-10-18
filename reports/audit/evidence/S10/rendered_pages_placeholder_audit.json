@@ -1,0 +1,214 @@
+{
+  "timestamp": "2026-10-17T11:26:13.643Z",
+  "phase": "S10",
+  "verification": "No Placeholder Text in Rendered Pages (Playwright Isolated Runtime)",
+  "targetUrl": "http://15.235.203.134:9998",
+  "totalScreensAudited": 13,
+  "passedCount": 13,
+  "failedCount": 0,
+  "allPassed": true,
+  "screens": [
+    {
+      "screen": "Onboarding Screen",
+      "screenshot": "reports/audit/evidence/S10/screen_01_onboarding.png",
+      "arabicElementsCount": 0,
+      "arabicSamples": [],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 369,
+      "textSnippet": "I S L A M I C  ASSALAM O ALAIKUM Set up your languages Choose how you read and listen.  APP LANGUAGE English · Menus & buttons   QURAN TRANSLATION English · Saheeh International   QURAN AUDIO "
+    },
+    {
+      "screen": "Home Hub",
+      "screenshot": "reports/audit/evidence/S10/screen_02_home_hub.png",
+      "arabicElementsCount": 24,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 111,
+      "textSnippet": " Can't load prayer times right now. Connect to the internet to get today's prayer schedule. Retry  Home   "
+    },
+    {
+      "screen": "Quran Hub",
+      "screenshot": "reports/audit/evidence/S10/screen_03_quran_hub.png",
+      "arabicElementsCount": 24,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 1151,
+      "textSnippet": "ISLAMIC     Preloading Quran… 1/114 Instant opening with Arabic & translations cached Pause  TRANSLATION  🇬🇧 English Saheeh International  RECENTLY READ None START READING Al-Faatiha الفاتحة "
+    },
+    {
+      "screen": "Quran Reader (Surah 1)",
+      "screenshot": "reports/audit/evidence/S10/screen_04_quran_reader_surah1.png",
+      "arabicElementsCount": 24,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 77,
+      "textSnippet": " Quran  Al-Faatiha Page 1 of 604   Loading Mushaf Page 1...   Quran  "
+    },
+    {
+      "screen": "Library Hub",
+      "screenshot": "reports/audit/evidence/S10/screen_05_library_hub.png",
+      "arabicElementsCount": 24,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 679,
+      "textSnippet": "ISLAMIC   LIBRARY Explore KNOWLEDGE Hadith Library 15+ full books Arabic with English translation Browse → البخاري مسلم الترمذي KNOWLEDGE & COLLECTIONS  Duas & Adhkar Daily supplications  99 Names"
+    },
+    {
+      "screen": "Duas Screen",
+      "screenshot": "reports/audit/evidence/S10/screen_06_duas_screen.png",
+      "arabicElementsCount": 34,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 3266,
+      "textSnippet": " Library SUPPLICATIONS Duas & Adhkar Authentic supplications from the Quran and Sunnah All (49) Morning (4) Evening (2) After Prayer (1) Sleep (1) Waking (1) Home (2) Mosque (2) Eating (2) Travel (1)"
+    },
+    {
+      "screen": "99 Names of Allah",
+      "screenshot": "reports/audit/evidence/S10/screen_07_names_allah_screen.png",
+      "arabicElementsCount": 37,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 893,
+      "textSnippet": " Library ASMA UL-HUSNA 99 Names of Allah Divine attributes and meanings of Allah (SWT) English Français Türkçe Español Deutsch Indonesia বাংলা Русский اردو   99 NAMES 1 الرَّحْمٰنُ Ar-Rahman The Mo"
+    },
+    {
+      "screen": "99 Names of the Prophet",
+      "screenshot": "reports/audit/evidence/S10/screen_08_names_prophet_screen.png",
+      "arabicElementsCount": 36,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 955,
+      "textSnippet": " Library ASMA UN-NABI 99 Names of the Prophet ﷺ Noble attributes and titles of Prophet Muhammad ﷺ  99 NAMES 1 مُحَمَّدٌ Muhammad The Highly Praised From the Arabic root meaning praise; mentioned by "
+    },
+    {
+      "screen": "Hadith Library Screen",
+      "screenshot": "reports/audit/evidence/S10/screen_09_hadith_library_screen.png",
+      "arabicElementsCount": 41,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 3210,
+      "textSnippet": " Library LIBRARY Hadith Library Browse 17 canonical collections, books & authentic narrations  Collections  Saved (0)  Recent  Progress  Sahih al-Bukhari 7,277 hadiths صحيح البخاري Sahih al-Bukh"
+    },
+    {
+      "screen": "Tools Hub",
+      "screenshot": "reports/audit/evidence/S10/screen_10_tools_hub.png",
+      "arabicElementsCount": 24,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 793,
+      "textSnippet": "ISLAMIC   TOOLS Utilities TODAY Salah Tracker Daily 5 prayers checklist & streaks 0 day streak Fajr Dhuhr Asr Maghrib Isha Open → TRACKERS & CALCULATORS  Fasting Ramadan, voluntary & missed  Qada "
+    },
+    {
+      "screen": "Qibla Screen",
+      "screenshot": "reports/audit/evidence/S10/screen_11_qibla_screen.png",
+      "arabicElementsCount": 24,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 795,
+      "textSnippet": " Tools DIRECTION OF PRAYER Qibla Compass True bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas.  Location detection unavailable GPS is not available on this device "
+    },
+    {
+      "screen": "Zakat Screen",
+      "screenshot": "reports/audit/evidence/S10/screen_12_zakat_screen.png",
+      "arabicElementsCount": 24,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 869,
+      "textSnippet": " Tools WORSHIP & CHARITY Zakat Wealth assessment, nisab thresholds & calculation Calculator History Nisab Guide ACTIVE CURRENCY AED — UAE Dirham (AED)  Change NISAB STANDARD Threshold: AED 24,352.50"
+    },
+    {
+      "screen": "Fasting Screen",
+      "screenshot": "reports/audit/evidence/S10/screen_13_fasting_screen.png",
+      "arabicElementsCount": 24,
+      "arabicSamples": [
+        "الفاتحة",
+        "الفاتحة",
+        "البقرة",
+        "آل عمران",
+        "النساء"
+      ],
+      "findings": [],
+      "status": "PASS",
+      "textLength": 502,
+      "textSnippet": " Tools WORSHIP & TRACKER Fasting Suhoor & iftar countdowns, sunnah fasts & qada logs Today Sunnah Qada History 0 THIS MONTH 0d STREAK 0 QADA LEFT 6 JUMADA AL-AWWAL 1448 AH Today's Fast  Not Fasting "
+    }
+  ]
+}

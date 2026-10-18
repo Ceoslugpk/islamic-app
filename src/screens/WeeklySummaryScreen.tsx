@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeTokens, cardTokens, fontRoles } from '../theme/tokens';
@@ -16,7 +17,7 @@ interface Props {
 
 export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
   const { t } = useTranslation();
-  const { tokens, mode } = useThemeTokens();
+  const { tokens } = useThemeTokens();
   const [summary, setSummary] = useState<WeeklySummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -85,62 +86,62 @@ export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
               <View style={styles.heroTopRow}>
                 <View style={[styles.heroBadge, { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder }]}>
                   <Ionicons name="sparkles" size={13} color={tokens.goldText} />
-                  <Text style={[styles.heroBadgeText, { color: tokens.goldText }]}>
+                  <AppText variant="eyebrow" highlight style={styles.heroBadgeText}>
                     {t('7-Day Overview')}
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={[styles.dateRangePill, { backgroundColor: tokens.inset }]}>
                   <Ionicons name="calendar-outline" size={12} color={tokens.textMuted} />
-                  <Text style={[styles.dateRangeText, { color: tokens.textSecondary }]}>
+                  <AppText variant="caption" style={styles.dateRangeText}>
                     {fmtDate(summary.weekStart)} – {fmtDate(summary.weekEnd)}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
-              <Text style={[styles.heroTitle, { color: tokens.textPrimary }]}>
+              <AppText variant="title" style={styles.heroTitle}>
                 {t('A Week of Devotion & Learning')}
-              </Text>
-              <Text style={[styles.heroDesc, { color: tokens.textSecondary }]}>
+              </AppText>
+              <AppText variant="body" style={styles.heroDesc}>
                 {t('Gentle on-device reflection of your daily habits and spiritual consistency.')}
-              </Text>
+              </AppText>
 
               <View style={[styles.statGrid, { borderTopColor: tokens.cardBorder }]}>
                 <View style={styles.statCol}>
-                  <Text style={[styles.statNum, { color: tokens.goldText }]}>{summary.totalAyahsRead}</Text>
-                  <Text style={[styles.statLabel, { color: tokens.textMuted }]}>{t('Ayahs')}</Text>
+                  <AppText variant="numeral" highlight style={styles.statNum}>{summary.totalAyahsRead}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.statLabel}>{t('Ayahs')}</AppText>
                 </View>
                 <View style={[styles.statDivider, { backgroundColor: tokens.goldBorder }]} />
                 <View style={styles.statCol}>
-                  <Text style={[styles.statNum, { color: tokens.goldText }]}>{summary.salahDays}</Text>
-                  <Text style={[styles.statLabel, { color: tokens.textMuted }]}>{t('Salah Days')}</Text>
+                  <AppText variant="numeral" highlight style={styles.statNum}>{summary.salahDays}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.statLabel}>{t('Salah Days')}</AppText>
                 </View>
                 <View style={[styles.statDivider, { backgroundColor: tokens.goldBorder }]} />
                 <View style={styles.statCol}>
-                  <Text style={[styles.statNum, { color: tokens.goldText }]}>{summary.totalReadingMinutes}</Text>
-                  <Text style={[styles.statLabel, { color: tokens.textMuted }]}>{t('Mins Listened')}</Text>
+                  <AppText variant="numeral" highlight style={styles.statNum}>{summary.totalReadingMinutes}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.statLabel}>{t('Mins Listened')}</AppText>
                 </View>
                 <View style={[styles.statDivider, { backgroundColor: tokens.goldBorder }]} />
                 <View style={styles.statCol}>
-                  <Text style={[styles.statNum, { color: tokens.goldText }]}>{summary.salahStreak}</Text>
-                  <Text style={[styles.statLabel, { color: tokens.textMuted }]}>{t('Day Streak')}</Text>
+                  <AppText variant="numeral" highlight style={styles.statNum}>{summary.salahStreak}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.statLabel}>{t('Day Streak')}</AppText>
                 </View>
               </View>
             </PremiumCard>
 
             {/* Quran reading card */}
-            <Text style={[styles.groupLabel, { color: tokens.goldText }]}>{t('QURAN READING')}</Text>
+            <AppText variant="eyebrow" highlight style={styles.groupLabel}>{t('QURAN READING')}</AppText>
             <PremiumCard style={styles.card} padded>
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
                   <Ionicons name="book-outline" size={18} color={tokens.goldText} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardStatValue, { color: tokens.textPrimary }]}>{summary.totalAyahsRead}</Text>
-                  <Text style={[styles.cardStatLabel, { color: tokens.textMuted }]}>{t('ayahs read this week')}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <AppText variant="numeral" style={styles.cardStatValue}>{summary.totalAyahsRead}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('ayahs read this week')}</AppText>
                 </View>
-                <View style={styles.rowRight}>
-                  <Text style={[styles.cardStatValue, { color: tokens.textPrimary }]}>{summary.daysRead}</Text>
-                  <Text style={[styles.cardStatLabel, { color: tokens.textMuted }]}>{t('days active')}</Text>
+                <View style={[styles.rowRight, { flexShrink: 0 }]}>
+                  <AppText variant="numeral" style={styles.cardStatValue}>{summary.daysRead}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('days active')}</AppText>
                 </View>
               </View>
               <Hairline style={{ marginVertical: 12 }} />
@@ -148,71 +149,71 @@ export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
                 <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
                   <Ionicons name="time-outline" size={18} color={tokens.goldText} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardStatValue, { color: tokens.textPrimary }]}>{summary.totalReadingMinutes}</Text>
-                  <Text style={[styles.cardStatLabel, { color: tokens.textMuted }]}>{t('minutes of listening')}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <AppText variant="numeral" style={styles.cardStatValue}>{summary.totalReadingMinutes}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('minutes of listening')}</AppText>
                 </View>
               </View>
             </PremiumCard>
 
             {/* Salah card */}
-            <Text style={[styles.groupLabel, { color: tokens.goldText }]}>{t('SALAH')}</Text>
+            <AppText variant="eyebrow" highlight style={styles.groupLabel}>{t('SALAH')}</AppText>
             <PremiumCard style={styles.card} padded>
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
                   <Ionicons name="checkmark-done-outline" size={18} color={tokens.goldText} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardStatValue, { color: tokens.textPrimary }]}>{summary.salahDays}</Text>
-                  <Text style={[styles.cardStatLabel, { color: tokens.textMuted }]}>{t('days with salah logged')}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <AppText variant="numeral" style={styles.cardStatValue}>{summary.salahDays}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('days with salah logged')}</AppText>
                 </View>
-                <View style={styles.rowRight}>
-                  <Text style={[styles.cardStatValue, { color: tokens.textPrimary }]}>{summary.salahStreak}</Text>
-                  <Text style={[styles.cardStatLabel, { color: tokens.textMuted }]}>{t('day streak')}</Text>
+                <View style={[styles.rowRight, { flexShrink: 0 }]}>
+                  <AppText variant="numeral" style={styles.cardStatValue}>{summary.salahStreak}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('day streak')}</AppText>
                 </View>
               </View>
             </PremiumCard>
 
             {/* Hifz card */}
-            <Text style={[styles.groupLabel, { color: tokens.goldText }]}>{t('HIFZ')}</Text>
+            <AppText variant="eyebrow" highlight style={styles.groupLabel}>{t('HIFZ')}</AppText>
             <PremiumCard style={styles.card} padded>
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
                   <Ionicons name="ribbon-outline" size={18} color={tokens.goldText} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardStatValue, { color: tokens.textPrimary }]}>{summary.hifzMemorized}</Text>
-                  <Text style={[styles.cardStatLabel, { color: tokens.textMuted }]}>{t('surahs memorized')}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <AppText variant="numeral" style={styles.cardStatValue}>{summary.hifzMemorized}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('surahs memorized')}</AppText>
                 </View>
               </View>
             </PremiumCard>
 
             {/* Notes card */}
-            <Text style={[styles.groupLabel, { color: tokens.goldText }]}>{t('NOTES')}</Text>
+            <AppText variant="eyebrow" highlight style={styles.groupLabel}>{t('NOTES')}</AppText>
             <PremiumCard style={styles.card} padded>
               <View style={styles.row}>
                 <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
                   <Ionicons name="create-outline" size={18} color={tokens.goldText} />
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardStatValue, { color: tokens.textPrimary }]}>{summary.notesAdded}</Text>
-                  <Text style={[styles.cardStatLabel, { color: tokens.textMuted }]}>{t('notes added this week')}</Text>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <AppText variant="numeral" style={styles.cardStatValue}>{summary.notesAdded}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('notes added this week')}</AppText>
                 </View>
               </View>
             </PremiumCard>
 
             <View style={styles.footnoteRow}>
-              <Ionicons name="shield-checkmark-outline" size={14} color={tokens.textMuted} />
-              <Text style={[styles.footnote, { color: tokens.textMuted }]}>
+              <Ionicons name="shield-checkmark-outline" size={14} color={tokens.textMuted} style={{ flexShrink: 0 }} />
+              <AppText variant="caption" tone="faint" style={styles.footnote}>
                 {t('All data stays on your device. Recap updates each time you open it.')}
-              </Text>
+              </AppText>
             </View>
           </>
         ) : (
           <View style={styles.center}>
-            <Text style={[styles.errorText, { color: tokens.textSecondary }]}>
+            <AppText variant="body" tone="faint" style={styles.errorText}>
               {t('Could not build your weekly summary.')}
-            </Text>
+            </AppText>
           </View>
         )}
       </DetailScreen.ScrollView>
@@ -221,7 +222,7 @@ export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 14 },
+  content: {},
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30 },
   heroCard: {
     marginBottom: 16,
@@ -247,6 +248,7 @@ const styles = StyleSheet.create({
     fontFamily: fontRoles.uiBold,
     fontSize: 11,
     letterSpacing: 0.5,
+    paddingVertical: 2,
   },
   dateRangePill: {
     flexDirection: 'row',
@@ -259,6 +261,7 @@ const styles = StyleSheet.create({
   dateRangeText: {
     fontFamily: fontRoles.ui,
     fontSize: 11,
+    paddingVertical: 2,
   },
   heroTitle: {
     fontFamily: fontRoles.title,
@@ -268,7 +271,6 @@ const styles = StyleSheet.create({
   heroDesc: {
     fontFamily: fontRoles.ui,
     fontSize: 13,
-    lineHeight: 19,
     marginBottom: 14,
   },
   statGrid: {
@@ -281,6 +283,7 @@ const styles = StyleSheet.create({
   statCol: {
     alignItems: 'center',
     flex: 1,
+    minWidth: 0,
   },
   statDivider: {
     width: 1,
@@ -289,13 +292,13 @@ const styles = StyleSheet.create({
   statNum: {
     fontFamily: fontRoles.titleFallback,
     fontSize: 24,
-    lineHeight: 26,
   },
   statLabel: {
     fontFamily: fontRoles.ui,
     fontSize: 10,
     marginTop: 2,
     textAlign: 'center',
+    paddingVertical: 2,
   },
   groupLabel: {
     fontFamily: fontRoles.eyebrow,
@@ -303,6 +306,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     marginTop: 10,
     marginBottom: 6,
+    paddingVertical: 2,
   },
   card: {
     marginBottom: 12,
@@ -325,7 +329,6 @@ const styles = StyleSheet.create({
   cardStatValue: {
     fontFamily: fontRoles.titleFallback,
     fontSize: 24,
-    lineHeight: 26,
   },
   cardStatLabel: {
     fontFamily: fontRoles.ui,
@@ -338,13 +341,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     marginTop: 18,
-    marginBottom: 12,
+    marginBottom: 0,
     paddingHorizontal: 16,
   },
   footnote: {
     fontFamily: fontRoles.ui,
     fontSize: 11,
     textAlign: 'center',
+    flex: 1,
   },
   errorText: {
     fontFamily: fontRoles.ui,

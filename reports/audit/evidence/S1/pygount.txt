@@ -1,0 +1,4 @@
+$ pygount --format=summary --folders-to-skip=.git,node_modules,dist,proof,screenshots,reports,test-results,scratch .
+pygount: command not found
+
+EXIT_CODE=127

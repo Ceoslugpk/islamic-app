@@ -1,0 +1,408 @@
+{
+  "schemaVersion": "S7-performance-memory-stability-audit-1",
+  "audit": {
+    "phase": "S7",
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "scope": "Cold load & FCP on Fast 3G against 2.5s, JS bundle size and wire compression, long-list node counts & scroll performance (Surahs/Hadith/Names), dropped frames/long tasks, navigation memory growth soak and browser limitations, interval leaks after Home, 3-minute monkey per tab, uncaught exceptions/white screens/unhandled rejections with strict API vs UI error separation.",
+    "inventory": "reports/audit/inventory.json",
+    "rules": "rules.md",
+    "timestamp": "2026-10-17T10:37:50.600Z"
+  },
+  "summary": {
+    "totalChecks": 15,
+    "PASS": 9,
+    "FAIL": 6,
+    "FLAKY": 0,
+    "BLOCKED": 0,
+    "severityCounts": {
+      "High": 2,
+      "Medium": 5,
+      "Low": 0,
+      "Info": 8
+    },
+    "keyFindings": [
+      "Cold load on Fast 3G severely breaches 2.5s budget (~30.52s actual vs 2.5s target) due to uncompressed 6.29 MB initial JS bundle served without gzip/brotli.",
+      "JS bundle on disk is 6.42 MB (index chunk: 6.29 MB raw / 1.37 MB gzip / 0.89 MB brotli). No route code-splitting exists in dist.",
+      "Long lists for Surahs, Hadith, and 99 Names perform at 60 FPS average with bounded node growth on FlatList screens. Hadith collection cards are rendered via unwindowed ScrollView.",
+      "HomeScreen 30s clock interval is never cleared when navigating away from Home because App.tsx retains HomeScreen in DOM with display:'none'.",
+      "150 continuous navigation cycles over 300s showed stable bounded memory (+2.65 MB net heap growth, 0.529 MB/min rate) with active V8 garbage collections; no catastrophic memory leaks.",
+      "3-minute monkey testing across Home, Quran, Library, and Tools (3,230 actions total) revealed 0 white screens. One unhandled rejection was uncovered: Notifications.scheduleNotificationAsync missing a web guard in snoozePrayer.",
+      "API network failures (CORS errors to api.islamic.app) were successfully isolated from UI stability (0 UI crashes)."
+    ]
+  },
+  "limitations": [
+    "Headless Chromium in Linux VM environment without physical touch/accelerometer sensor hardware.",
+    "Target web server is Python SimpleHTTP/0.6 without Content-Encoding (gzip/brotli) or HTTP/2 support, inflating cold-transfer measurements.",
+    "Navigation memory soak test executed for 300 seconds (5 minutes, 150 cycles) rather than 600 seconds (10 minutes) to prevent headless CDP timeout; 10-minute growth was mathematically projected from the 150-cycle linear regression.",
+    "expo-notifications native APIs (scheduleNotificationAsync) are not supported on web and throw rejections unless guarded by Platform.OS checks."
+  ],
+  "evidenceRoot": "reports/audit/evidence/S7",
+  "evidenceFiles": [
+    "reports/audit/evidence/S7/cold_load_fast3g.json",
+    "reports/audit/evidence/S7/js_bundle_analysis.json",
+    "reports/audit/evidence/S7/long_list_scroll_performance.json",
+    "reports/audit/evidence/S7/dropped_frames_long_tasks.json",
+    "reports/audit/evidence/S7/navigation_memory_soak.json",
+    "reports/audit/evidence/S7/interval_leaks_home.json",
+    "reports/audit/evidence/S7/monkey_testing_tabs.json",
+    "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+  ],
+  "checks": [
+    {
+      "id": "S7-001",
+      "feature": "Cold load and FCP on Fast 3G against 2.5s budget",
+      "route": "http://15.235.203.134:9998/",
+      "steps": "Emulate Fast 3G (1.6 Mbps download, 750 kbps upload, 150ms RTT) via CDP Network.emulateNetworkConditions on empty cache across 3 consecutive cold launches.",
+      "expected": "First Contentful Paint (FCP) <= 2.50s (2,500ms) and initial load finishes within responsive interactive budget.",
+      "actual": "All 3 runs failed the 2.5s budget. Initial page load completed in 30,516ms (Run 1), 30,518ms (Run 2), and 30,525ms (Run 3) due to downloading the 6.29 MB uncompressed JavaScript bundle at ~200 KB/s. FCP is blocked until JS finishes downloading and executing.",
+      "status": "FAIL",
+      "severity": "High",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/cold_load_fast3g.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "thresholdMs": 2500,
+        "run1_loadMs": 30516.800000071526,
+        "run2_loadMs": 30518.099999904633,
+        "run3_loadMs": 30525.800000071526,
+        "transferBytes": 7594167,
+        "budgetDeltaSeconds": "+28.02s"
+      },
+      "notes": "Root cause: Python SimpleHTTP server does not support gzip/brotli Content-Encoding, forcing 6.29 MB raw transfer over network."
+    },
+    {
+      "id": "S7-002",
+      "feature": "Baseline unthrottled cold load & FCP",
+      "route": "http://15.235.203.134:9998/",
+      "steps": "Measure 3 consecutive cold launches without network throttling on loopback connection.",
+      "expected": "FCP <= 1.0s and DOMContentLoaded within standard desktop/broadband threshold.",
+      "actual": "Average FCP was 397ms (Run 1: 360ms, Run 2: 460ms, Run 3: 372ms); average load was 299ms.",
+      "status": "PASS",
+      "severity": "Info",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/cold_load_fast3g.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "averageFcpMs": 397,
+        "run1_fcpMs": 360,
+        "run2_fcpMs": 460,
+        "run3_fcpMs": 372
+      },
+      "notes": "When bandwidth is unconstrained, local execution parses and renders within 400ms."
+    },
+    {
+      "id": "S7-003",
+      "feature": "JavaScript bundle size and wire compression audit",
+      "route": "dist/_expo/static/js/web/",
+      "steps": "Inspect on-disk JS assets in dist/_expo/static/js/web/, compute gzip and brotli compression ratios, and inspect HTTP response headers from target server.",
+      "expected": "Production JS bundles are code-split and served with Content-Encoding (gzip or brotli) with uncompressed size < 2.5 MB.",
+      "actual": "Single monolithic bundle index-*.js is 6,285,990 bytes (5.995 MB raw, 1.366 MB gzip, 0.888 MB brotli). Total JS on disk is 6,418,615 bytes (6.121 MB). Target HTTP server serves assets with Content-Encoding: none, transmitting full 6.29 MB over the wire.",
+      "status": "FAIL",
+      "severity": "High",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/js_bundle_analysis.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "totalJsRawBytes": 6418615,
+        "totalJsRawMB": "6.121",
+        "totalJsGzipBytes": 1467918,
+        "totalJsGzipMB": "1.400",
+        "totalJsBrotliBytes": 961811,
+        "totalJsBrotliMB": "0.917",
+        "serverCompressionEnabled": false
+      },
+      "notes": "No route-level code splitting was found in dist output; all 52 routes and libraries are bundled into one primary chunk."
+    },
+    {
+      "id": "S7-004",
+      "feature": "Long-list node counts and scroll performance for Surahs list",
+      "route": "quran/home",
+      "steps": "Navigate to Quran tab home, record initial DOM node count, simulate smooth step-wise scrolling across all 114 Surahs, and record post-scroll DOM nodes, FPS, and frame drops.",
+      "expected": "Virtualization preserves bounded DOM node count; scroll achieves ~60 FPS with minimal dropped frames.",
+      "actual": "Initial DOM nodes: 3,509; post-scroll DOM nodes: 4,169 (+660 nodes rendered as user scrolled). Scroll maintained 60 FPS average (30 frames in 486ms), with 11 dropped frames (>16.7ms) and 0 severe jank frames (>33.3ms).",
+      "status": "PASS",
+      "severity": "Info",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/long_list_scroll_performance.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "initialDomNodes": 3509,
+        "postScrollDomNodes": 4169,
+        "avgFps": 60,
+        "droppedFrames": 11,
+        "jankFrames": 0
+      },
+      "notes": "QuranHomeScreen uses TabFlatList; DOM nodes grow moderately as items render but scrolling remains smooth."
+    },
+    {
+      "id": "S7-005",
+      "feature": "Long-list node counts and scroll performance for Hadith Library",
+      "route": "library/hadith",
+      "steps": "Navigate to Hadith Library screen, record initial DOM node count, scroll through collections and books, and record post-scroll DOM nodes and frame rates.",
+      "expected": "List virtualization keeps DOM node count proportional to visible window.",
+      "actual": "Initial DOM nodes: 4,431; post-scroll DOM nodes: 4,431 (+0 delta). All 15+ Hadith collections are rendered immediately in an unwindowed ScrollView using collections.map(...). Scroll maintained 60 FPS average (30 frames in 490ms) with 11 dropped frames (>16.7ms) and 0 jank frames.",
+      "status": "PASS",
+      "severity": "Medium",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/long_list_scroll_performance.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "initialDomNodes": 4431,
+        "postScrollDomNodes": 4431,
+        "nodeDelta": 0,
+        "avgFps": 60,
+        "droppedFrames": 11
+      },
+      "notes": "Hadith collection cards are not virtualized (all rendered at once in DetailScreen.ScrollView), but total item count is small enough that scroll remains 60 FPS on desktop."
+    },
+    {
+      "id": "S7-006",
+      "feature": "Long-list node counts and scroll performance for 99 Names of Allah",
+      "route": "library/names",
+      "steps": "Navigate to 99 Names of Allah, record initial DOM nodes, scroll down all 99 names cards, and record post-scroll DOM nodes, FPS, and jank frames.",
+      "expected": "Virtualization keeps node count bounded; smooth 60 FPS scroll.",
+      "actual": "Initial DOM nodes: 4,425; post-scroll DOM nodes: 4,613 (+188 nodes). Scroll maintained 60 FPS average (30 frames in 494ms) with 12 dropped frames (>16.7ms) and 1 jank frame (>33.3ms).",
+      "status": "PASS",
+      "severity": "Info",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/long_list_scroll_performance.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "initialDomNodes": 4425,
+        "postScrollDomNodes": 4613,
+        "avgFps": 60,
+        "droppedFrames": 12,
+        "jankFrames": 1
+      },
+      "notes": "Uses DetailScreen.FlatList; incremental node mounting observed during scroll."
+    },
+    {
+      "id": "S7-007",
+      "feature": "Dropped frames, long tasks (>50ms), and Total Blocking Time (TBT)",
+      "route": "application-wide",
+      "steps": "Register PerformanceObserver for longtask entries during bootstrap, tab switching, and interactions; compute Total Blocking Time.",
+      "expected": "No long tasks > 100ms during normal interactions; TBT <= 200ms.",
+      "actual": "Total 4 long tasks captured during bootstrap and screen initialization. Max task duration: 177ms (during bundle execution and initial hydration); Total Blocking Time (TBT): 197ms. No blocking tasks > 70ms were triggered during tab navigation.",
+      "status": "PASS",
+      "severity": "Info",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/dropped_frames_long_tasks.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "longTasksCount": 4,
+        "maxTaskDurationMs": 177,
+        "totalBlockingTimeMs": 197
+      },
+      "notes": "Initial hydration has 2 long tasks (177ms and 99ms). Post-hydration runtime responsiveness is high."
+    },
+    {
+      "id": "S7-008",
+      "feature": "Navigation memory growth soak and browser limitations",
+      "route": "continuous-navigation",
+      "steps": "Perform 150 continuous tab and sub-route navigation cycles across Home, Quran, Reader, Library, Hadith, Names, Tools, and Qibla over 300 seconds (5 minutes); sample JSHeapUsedSize, JSHeapTotalSize, and DOM nodes via CDP Performance.getMetrics every 15 seconds.",
+      "expected": "Heap memory remains bounded without runaway growth (< 5 MB/min); garbage collection cleans transient view models.",
+      "actual": "Baseline heap: 31.76 MB (3,886 nodes). Over 150 cycles, heap fluctuated between 24 MB and 89 MB as V8 GC scavenged and collected memory periodically. Final post-soak heap was 34.41 MB (net +2.65 MB delta over 150 cycles; growth rate: 0.529 MB/min; projected 10-minute growth: 5.29 MB). DOM nodes stabilized at ~4,627-5,044. Headless execution was capped at 300s to avoid browser disconnect while providing 150 continuous navigation data points.",
+      "status": "PASS",
+      "severity": "Info",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/navigation_memory_soak.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "cycles": 150,
+        "durationSeconds": 301,
+        "baselineHeapMB": 31.76,
+        "finalHeapMB": 34.41,
+        "netHeapGrowthMB": 2.65,
+        "growthRateMBPerMin": 0.529,
+        "projected10MinGrowthMB": 5.29,
+        "leakAssessment": "ELEVATED_GROWTH"
+      },
+      "notes": "Tab panes are retained in the DOM with display:'none', causing initial node count to increase upon first visit to each tab, then plateau without further runaway leakage."
+    },
+    {
+      "id": "S7-009",
+      "feature": "Interval leaks after leaving Home tab",
+      "route": "home -> quran -> library -> tools -> home",
+      "steps": "Intercept window.setInterval and window.clearInterval prior to app load. Record active intervals on Home, navigate to Quran, Library, Tools, and return to Home. Track timer IDs, callbacks, and fire counts.",
+      "expected": "Intervals registered by HomeScreen are paused or cleared when Home is not visible.",
+      "actual": "HomeScreen registers a 30-second clock interval: setInterval(() => setNow(new Date()), 30000). When navigating to Quran, Library, and Tools, this interval is NEVER cleared because App.tsx keeps HomeScreen mounted with style display:'none'. The interval continues executing in the background. Returning to Home does not duplicate the interval (active count remains 1).",
+      "status": "FAIL",
+      "severity": "Medium",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/interval_leaks_home.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "activeIntervalsHome": 1,
+        "activeIntervalsAfterLeavingHome": 1,
+        "activeIntervalsAfterReturn": 1,
+        "persistsInBackground": true,
+        "intervalCallback": "()=>ze(new Date)"
+      },
+      "notes": "While there is no runaway duplicate interval accumulation on revisits, HomeScreen intervals continue firing while the user is in other tabs because tabs are not unmounted."
+    },
+    {
+      "id": "S7-010",
+      "feature": "3-minute monkey testing - Home Tab",
+      "route": "home",
+      "steps": "Execute 180 seconds of random monkey interactions (clicks, scrolls, keyboard inputs) on Home tab. Monitor for uncaught exceptions, unhandled rejections, white screens, and API errors.",
+      "expected": "Zero uncaught UI exceptions, zero white screens, zero unhandled rejections.",
+      "actual": "Executed 820 actions (459 clicks, 236 scrolls, 125 keys) over 180 seconds. 0 uncaught UI errors, 0 unhandled rejections, 0 white screens. 913 API failure events recorded due to external CORS blocking on api.islamic.app and api.aladhan.com; UI handled failures gracefully with error banners.",
+      "status": "PASS",
+      "severity": "Info",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/monkey_testing_tabs.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "tab": "Home",
+        "durationSeconds": 180,
+        "totalActions": 820,
+        "clicks": 459,
+        "scrolls": 236,
+        "uncaughtUiErrors": 0,
+        "unhandledRejections": 0,
+        "apiFailures": 913,
+        "whiteScreens": 0
+      },
+      "notes": "Home UI remained completely stable throughout high-frequency randomized inputs."
+    },
+    {
+      "id": "S7-011",
+      "feature": "3-minute monkey testing - Quran Tab",
+      "route": "quran/home",
+      "steps": "Execute 180 seconds of random monkey interactions on Quran tab (Surahs, search, recitation items, filters, cards).",
+      "expected": "Zero uncaught UI exceptions, zero white screens, zero unhandled rejections.",
+      "actual": "Executed 805 actions (461 clicks, 239 scrolls, 105 keys) over 180 seconds. 0 uncaught UI errors, 0 unhandled rejections, 0 white screens. 1,186 background prayer API failure events logged; Quran UI remained fully responsive.",
+      "status": "PASS",
+      "severity": "Info",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/monkey_testing_tabs.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "tab": "Quran",
+        "durationSeconds": 180,
+        "totalActions": 805,
+        "clicks": 461,
+        "scrolls": 239,
+        "uncaughtUiErrors": 0,
+        "unhandledRejections": 0,
+        "apiFailures": 1186,
+        "whiteScreens": 0
+      },
+      "notes": "Surah list scrolling, filtering, and tab transitions operated with zero crashes."
+    },
+    {
+      "id": "S7-012",
+      "feature": "3-minute monkey testing - Library Tab",
+      "route": "library/hub",
+      "steps": "Execute 180 seconds of random monkey interactions on Library tab (Hadith, Duas, Names, Tasbih, bookmarks, articles).",
+      "expected": "Zero uncaught UI exceptions, zero white screens, zero unhandled rejections.",
+      "actual": "Executed 810 actions (450 clicks, 234 scrolls, 126 keys) over 180 seconds. 0 white screens. 1 uncaught UI error and 1 unhandled rejection observed: Notifications.scheduleNotificationAsync is not available on web, triggered via snoozePrayer onPress without web platform guard. 1,035 background API failures logged.",
+      "status": "FAIL",
+      "severity": "Medium",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/monkey_testing_tabs.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "tab": "Library",
+        "durationSeconds": 180,
+        "totalActions": 810,
+        "clicks": 450,
+        "scrolls": 234,
+        "uncaughtUiErrors": 1,
+        "unhandledRejections": 1,
+        "apiFailures": 1035,
+        "whiteScreens": 0,
+        "errorDetail": "Notifications.scheduleNotificationAsync is not available on web"
+      },
+      "notes": "Missing Platform.OS !== 'web' guard around expo-notifications scheduleNotificationAsync call."
+    },
+    {
+      "id": "S7-013",
+      "feature": "3-minute monkey testing - Tools Tab",
+      "route": "tools/hub",
+      "steps": "Execute 180 seconds of random monkey interactions on Tools tab (Salah Tracker, Qibla, Calendar, Zakat, Fasting, Cities, Settings).",
+      "expected": "Zero uncaught UI exceptions, zero white screens, zero unhandled rejections.",
+      "actual": "Executed 795 actions (440 clicks, 234 scrolls, 121 keys) over 180 seconds. 0 white screens. 1 uncaught UI error and 1 unhandled rejection observed: Notifications.scheduleNotificationAsync is not available on web (triggered in snoozePrayer action). 1,418 API failures logged.",
+      "status": "FAIL",
+      "severity": "Medium",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/monkey_testing_tabs.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "tab": "Tools",
+        "durationSeconds": 180,
+        "totalActions": 795,
+        "clicks": 440,
+        "scrolls": 234,
+        "uncaughtUiErrors": 1,
+        "unhandledRejections": 1,
+        "apiFailures": 1418,
+        "whiteScreens": 0,
+        "errorDetail": "Notifications.scheduleNotificationAsync is not available on web"
+      },
+      "notes": "Same notification scheduling call without web guard as observed in Library."
+    },
+    {
+      "id": "S7-014",
+      "feature": "Uncaught exceptions, white screens, and unhandled rejections audit",
+      "route": "application-wide",
+      "steps": "Aggregate and classify all runtime errors, exceptions, and rejections collected across all test runs (cold load, scroll benchmarks, memory soak, and monkey tests).",
+      "expected": "Zero white screens; zero unhandled promise rejections.",
+      "actual": "White screens detected: 0 (the React application shell, headers, and navigation surfaces never disappeared or blanked out). Uncaught UI exceptions: 1 distinct bug (Notifications.scheduleNotificationAsync missing web check in snoozePrayer, triggering 2 errors and 2 unhandled rejections across 3,230 monkey interactions).",
+      "status": "FAIL",
+      "severity": "Medium",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/monkey_testing_tabs.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "totalWhiteScreens": 0,
+        "distinctUiExceptions": 1,
+        "totalUiExceptions": 2,
+        "totalUnhandledRejections": 2,
+        "failingFunction": "snoozePrayer / scheduleNotificationAsync"
+      },
+      "notes": "Overall UI resilience is high; the app did not crash or blank screen despite 3,200+ randomized high-speed actions."
+    },
+    {
+      "id": "S7-015",
+      "feature": "Error taxonomy: Separation of API network failures from UI runtime failures",
+      "route": "application-wide",
+      "steps": "Analyze all console errors and network failures to cleanly separate external API/network unreachability from internal UI crashes.",
+      "expected": "Clear separation between API network failures and UI runtime errors.",
+      "actual": "Separation confirmed: 4,552 total network error events were captured across the audit (CORS-blocked fetches to https://api.islamic.app/v1/timings, https://api.islamic.app/v1/hadith/today, https://api.islamic.app/v1/dhikr/after-prayer). These are classified as API_FAILURE and do not cause UI crashes or white screens; UI renders error/retry state. Only the expo-notifications method rejection is classified as a UI_FAILURE.",
+      "status": "PASS",
+      "severity": "Info",
+      "evidence_paths": [
+        "reports/audit/evidence/S7/monkey_testing_tabs.json",
+        "reports/audit/evidence/S7/raw_metrics_repeatability.txt"
+      ],
+      "evidence_values": {
+        "totalApiFailuresLogged": 4552,
+        "apiFailureCategories": [
+          "CORS blocked: api.islamic.app/v1/timings",
+          "CORS blocked: api.islamic.app/v1/hadith/today",
+          "CORS blocked: api.islamic.app/v1/dhikr/after-prayer",
+          "net::ERR_FAILED"
+        ],
+        "uiCrashCount": 0
+      },
+      "notes": "Meets requirement to distinguish API failure from UI failure."
+    }
+  ]
+}

@@ -1,0 +1,1870 @@
+{
+  "schemaVersion": "phase0-inventory-1",
+  "scope": {
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "maxParallel": 4,
+    "browserContext": "fresh isolated session islamic-audit-phase0",
+    "deterministicClock": "not injectable; runtime uses real Date/time, recorded as limitation",
+    "isolatedStorage": "browser isolated session"
+  },
+  "routes": [
+    {
+      "id": "home",
+      "area": "home",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:128,883-960"
+      }
+    },
+    {
+      "id": "library",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1118-1211"
+      }
+    },
+    {
+      "id": "quran/home",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:149-161,963-1000"
+      }
+    },
+    {
+      "id": "quran/reader",
+      "area": "quran",
+      "params": "params surah:number, initialAyah?, initialPage?, pageOnly?",
+      "evidence": {
+        "source": "App.tsx:151,1001-1033; params surah:number, initialAyah?, initialPage?, pageOnly?"
+      }
+    },
+    {
+      "id": "quran/audio",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:153,1034-1036"
+      }
+    },
+    {
+      "id": "quran/tafsir",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:154,1037-1046; param surah?"
+      }
+    },
+    {
+      "id": "quran/topics",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:155,1047-1056"
+      }
+    },
+    {
+      "id": "quran/compare",
+      "area": "quran",
+      "params": "params surah?, ayah?, returnTo?",
+      "evidence": {
+        "source": "App.tsx:155,1057-1074; params surah?, ayah?, returnTo?"
+      }
+    },
+    {
+      "id": "quran/bookmarks",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:156,1075-1084"
+      }
+    },
+    {
+      "id": "quran/notes",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:157,1085-1094"
+      }
+    },
+    {
+      "id": "quran/plans",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:158,1095-1097"
+      }
+    },
+    {
+      "id": "quran/hifz",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:159,1098-1100"
+      }
+    },
+    {
+      "id": "quran/hifz-practice",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:160,1101-1106; param surah?"
+      }
+    },
+    {
+      "id": "quran/surah-list",
+      "area": "quran",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:161,1107-1115"
+      }
+    },
+    {
+      "id": "library/tasbih",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=tasbih"
+      }
+    },
+    {
+      "id": "library/names",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=names"
+      }
+    },
+    {
+      "id": "library/names-prophet",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=names-prophet"
+      }
+    },
+    {
+      "id": "library/duas",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=duas"
+      }
+    },
+    {
+      "id": "library/hadith",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=hadith"
+      }
+    },
+    {
+      "id": "library/ramadan-guide",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=ramadan-guide"
+      }
+    },
+    {
+      "id": "library/prayer-guide",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=prayer-guide"
+      }
+    },
+    {
+      "id": "library/shahada",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=shahada"
+      }
+    },
+    {
+      "id": "library/downloads",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=downloads"
+      }
+    },
+    {
+      "id": "library/vocab",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=vocab"
+      }
+    },
+    {
+      "id": "library/summary",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=summary"
+      }
+    },
+    {
+      "id": "library/tajweed",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=tajweed"
+      }
+    },
+    {
+      "id": "library/umrah-guide",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=umrah-guide"
+      }
+    },
+    {
+      "id": "library/hajj-journey",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=hajj-journey"
+      }
+    },
+    {
+      "id": "library/women-purity",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=women-purity"
+      }
+    },
+    {
+      "id": "library/women-guidance",
+      "area": "library",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=women-guidance"
+      }
+    },
+    {
+      "id": "tools/tasbih",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=tasbih"
+      }
+    },
+    {
+      "id": "tools/summary",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=summary"
+      }
+    },
+    {
+      "id": "tools/qibla",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=qibla"
+      }
+    },
+    {
+      "id": "tools/tracker",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=tracker"
+      }
+    },
+    {
+      "id": "tools/location",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=location"
+      }
+    },
+    {
+      "id": "tools/cities",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=cities"
+      }
+    },
+    {
+      "id": "tools/notifications",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=notifications"
+      }
+    },
+    {
+      "id": "tools/prayer-reminders",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=prayer-reminders"
+      }
+    },
+    {
+      "id": "tools/fasting",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=fasting"
+      }
+    },
+    {
+      "id": "tools/zakat",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=zakat"
+      }
+    },
+    {
+      "id": "tools/calendar",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=calendar"
+      }
+    },
+    {
+      "id": "tools/mosque",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=mosque"
+      }
+    },
+    {
+      "id": "tools/women-cycle",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=women-cycle"
+      }
+    },
+    {
+      "id": "tools/women-purity",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=women-purity"
+      }
+    },
+    {
+      "id": "tools/women-guidance",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=women-guidance"
+      }
+    },
+    {
+      "id": "tools/women-qada",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=women-qada"
+      }
+    },
+    {
+      "id": "tools/umrah-guide",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=umrah-guide"
+      }
+    },
+    {
+      "id": "tools/umrah-resources",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=umrah-resources"
+      }
+    },
+    {
+      "id": "tools/hajj-journey",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=hajj-journey"
+      }
+    },
+    {
+      "id": "tools/makkah-live",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=makkah-live"
+      }
+    },
+    {
+      "id": "tools/madinah-live",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=madinah-live"
+      }
+    },
+    {
+      "id": "tools/hajj-live",
+      "area": "tools",
+      "params": null,
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=hajj-live"
+      }
+    }
+  ],
+  "features": [
+    {
+      "id": "BackupRestoreScreen",
+      "area": "unreachable/secondary",
+      "entryPoints": [
+        "src/screens/BackupRestoreScreen.tsx",
+        "not imported by App.tsx"
+      ],
+      "dependencies": [
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/BackupRestoreScreen.tsx"
+      }
+    },
+    {
+      "id": "BookmarksScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/BookmarksScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/BookmarksScreen.tsx"
+      }
+    },
+    {
+      "id": "CalendarScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/CalendarScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/CalendarScreen.tsx"
+      }
+    },
+    {
+      "id": "CitiesScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/CitiesScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/CitiesScreen.tsx"
+      }
+    },
+    {
+      "id": "DownloadsScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/DownloadsScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "storage",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/DownloadsScreen.tsx"
+      }
+    },
+    {
+      "id": "DuasScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/DuasScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/DuasScreen.tsx"
+      }
+    },
+    {
+      "id": "FastingScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/FastingScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/FastingScreen.tsx"
+      }
+    },
+    {
+      "id": "HadithLibraryScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/HadithLibraryScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "storage",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/HadithLibraryScreen.tsx"
+      }
+    },
+    {
+      "id": "HajjJourneyScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/HajjJourneyScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/HajjJourneyScreen.tsx"
+      }
+    },
+    {
+      "id": "HajjLiveScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/HajjLiveScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "api",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/HajjLiveScreen.tsx"
+      }
+    },
+    {
+      "id": "HifzPracticeScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/HifzPracticeScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/HifzPracticeScreen.tsx"
+      }
+    },
+    {
+      "id": "HifzScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/HifzScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/HifzScreen.tsx"
+      }
+    },
+    {
+      "id": "HomeScreen",
+      "area": "home",
+      "entryPoints": [
+        "src/screens/HomeScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/HomeScreen.tsx"
+      }
+    },
+    {
+      "id": "LegalScreen",
+      "area": "unreachable/secondary",
+      "entryPoints": [
+        "src/screens/LegalScreen.tsx",
+        "not imported by App.tsx"
+      ],
+      "dependencies": [
+        "storage",
+        "location",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/LegalScreen.tsx"
+      }
+    },
+    {
+      "id": "LibraryScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/LibraryScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/LibraryScreen.tsx"
+      }
+    },
+    {
+      "id": "LocationScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/LocationScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/LocationScreen.tsx"
+      }
+    },
+    {
+      "id": "MadinahLiveScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/MadinahLiveScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "api"
+      ],
+      "evidence": {
+        "source": "src/screens/MadinahLiveScreen.tsx"
+      }
+    },
+    {
+      "id": "MakkahLiveScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/MakkahLiveScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "api"
+      ],
+      "evidence": {
+        "source": "src/screens/MakkahLiveScreen.tsx"
+      }
+    },
+    {
+      "id": "MosqueFinderScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/MosqueFinderScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "api",
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/MosqueFinderScreen.tsx"
+      }
+    },
+    {
+      "id": "NamesScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/NamesScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/NamesScreen.tsx"
+      }
+    },
+    {
+      "id": "NotesScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/NotesScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/NotesScreen.tsx"
+      }
+    },
+    {
+      "id": "NotificationsScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/NotificationsScreen.tsx",
+        "not imported by App.tsx"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/NotificationsScreen.tsx"
+      }
+    },
+    {
+      "id": "OnboardingScreen",
+      "area": "unreachable/secondary",
+      "entryPoints": [
+        "src/screens/OnboardingScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "storage",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/OnboardingScreen.tsx"
+      }
+    },
+    {
+      "id": "PrayerGuideScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/PrayerGuideScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/PrayerGuideScreen.tsx"
+      }
+    },
+    {
+      "id": "PrayerRemindersScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/PrayerRemindersScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/PrayerRemindersScreen.tsx"
+      }
+    },
+    {
+      "id": "QiblaScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/QiblaScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/QiblaScreen.tsx"
+      }
+    },
+    {
+      "id": "QuranAudioScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/QuranAudioScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/QuranAudioScreen.tsx"
+      }
+    },
+    {
+      "id": "QuranHomeScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/QuranHomeScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/QuranHomeScreen.tsx"
+      }
+    },
+    {
+      "id": "QuranReaderScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/QuranReaderScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "storage",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/QuranReaderScreen.tsx"
+      }
+    },
+    {
+      "id": "QuranScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/QuranScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "audio"
+      ],
+      "evidence": {
+        "source": "src/screens/QuranScreen.tsx"
+      }
+    },
+    {
+      "id": "QuranTopicsScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/QuranTopicsScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/QuranTopicsScreen.tsx"
+      }
+    },
+    {
+      "id": "RamadanGuideScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/RamadanGuideScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/RamadanGuideScreen.tsx"
+      }
+    },
+    {
+      "id": "ReadingPlansScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/ReadingPlansScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/ReadingPlansScreen.tsx"
+      }
+    },
+    {
+      "id": "SalahTrackerScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/SalahTrackerScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/SalahTrackerScreen.tsx"
+      }
+    },
+    {
+      "id": "SettingsScreen",
+      "area": "unreachable/secondary",
+      "entryPoints": [
+        "src/screens/SettingsScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "storage",
+        "location",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/SettingsScreen.tsx"
+      }
+    },
+    {
+      "id": "ShahadaScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/ShahadaScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/ShahadaScreen.tsx"
+      }
+    },
+    {
+      "id": "TafsirScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/TafsirScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/TafsirScreen.tsx"
+      }
+    },
+    {
+      "id": "TajweedScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/TajweedScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/TajweedScreen.tsx"
+      }
+    },
+    {
+      "id": "TasbihScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/TasbihScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/TasbihScreen.tsx"
+      }
+    },
+    {
+      "id": "ToolsScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/ToolsScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/ToolsScreen.tsx"
+      }
+    },
+    {
+      "id": "TranslationCompareScreen",
+      "area": "quran",
+      "entryPoints": [
+        "src/screens/TranslationCompareScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/TranslationCompareScreen.tsx"
+      }
+    },
+    {
+      "id": "UmrahGuideScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/UmrahGuideScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "location",
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/UmrahGuideScreen.tsx"
+      }
+    },
+    {
+      "id": "UmrahResourcesScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/UmrahResourcesScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "audio",
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/UmrahResourcesScreen.tsx"
+      }
+    },
+    {
+      "id": "VocabTrainerScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/VocabTrainerScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "storage"
+      ],
+      "evidence": {
+        "source": "src/screens/VocabTrainerScreen.tsx"
+      }
+    },
+    {
+      "id": "WeeklySummaryScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/WeeklySummaryScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/WeeklySummaryScreen.tsx"
+      }
+    },
+    {
+      "id": "WomenCycleScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/WomenCycleScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/WomenCycleScreen.tsx"
+      }
+    },
+    {
+      "id": "WomenGuidanceScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/WomenGuidanceScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [],
+      "evidence": {
+        "source": "src/screens/WomenGuidanceScreen.tsx"
+      }
+    },
+    {
+      "id": "WomenPurityScreen",
+      "area": "library",
+      "entryPoints": [
+        "src/screens/WomenPurityScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/WomenPurityScreen.tsx"
+      }
+    },
+    {
+      "id": "WomenQadaScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/WomenQadaScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/WomenQadaScreen.tsx"
+      }
+    },
+    {
+      "id": "ZakatScreen",
+      "area": "tools",
+      "entryPoints": [
+        "src/screens/ZakatScreen.tsx",
+        "App.tsx import/render"
+      ],
+      "dependencies": [
+        "time"
+      ],
+      "evidence": {
+        "source": "src/screens/ZakatScreen.tsx"
+      }
+    },
+    {
+      "id": "onboarding",
+      "area": "bootstrap",
+      "entryPoints": [
+        "App.tsx:1535-1609",
+        "src/screens/OnboardingScreen.tsx"
+      ],
+      "dependencies": [
+        "storage",
+        "time"
+      ],
+      "evidence": {
+        "source": "App.tsx:1535-1609"
+      }
+    },
+    {
+      "id": "settings-modal",
+      "area": "settings",
+      "entryPoints": [
+        "App.tsx:1391-1398,1436-1523",
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "dependencies": [
+        "storage",
+        "location",
+        "time"
+      ],
+      "evidence": {
+        "source": "App.tsx:1391-1523"
+      }
+    },
+    {
+      "id": "global-audio-mini-player",
+      "area": "global",
+      "entryPoints": [
+        "App.tsx:1363-1371",
+        "src/components/AudioMiniPlayer.tsx"
+      ],
+      "dependencies": [
+        "audio",
+        "storage"
+      ],
+      "evidence": {
+        "source": "App.tsx:289-290,1363-1371"
+      }
+    },
+    {
+      "id": "global-live-mini-player",
+      "area": "global",
+      "entryPoints": [
+        "App.tsx:1353-1362",
+        "src/components/LiveMiniPlayer.tsx"
+      ],
+      "dependencies": [
+        "api",
+        "audio"
+      ],
+      "evidence": {
+        "source": "App.tsx:293-296,1353-1362"
+      }
+    },
+    {
+      "id": "women-pin-gate",
+      "area": "privacy",
+      "entryPoints": [
+        "App.tsx:234-278,1400-1422",
+        "src/components/WomenPinModal.tsx"
+      ],
+      "dependencies": [
+        "storage"
+      ],
+      "evidence": {
+        "source": "App.tsx:234-278,1400-1422"
+      }
+    },
+    {
+      "id": "location-setup",
+      "area": "bootstrap",
+      "entryPoints": [
+        "App.tsx:320-391,1424-1431",
+        "src/components/LocationSetupModal.tsx"
+      ],
+      "dependencies": [
+        "location",
+        "storage"
+      ],
+      "evidence": {
+        "source": "App.tsx:320-391,1424-1431"
+      }
+    }
+  ],
+  "sheetsDialogs": [
+    {
+      "id": "AdhanReciterModal::Modal",
+      "type": "Modal",
+      "entryPoint": "src/components/AdhanReciterModal.tsx",
+      "evidence": {
+        "source": "src/components/AdhanReciterModal.tsx"
+      }
+    },
+    {
+      "id": "AudioPlayerModal::Modal",
+      "type": "Modal",
+      "entryPoint": "src/components/AudioPlayerModal.tsx",
+      "evidence": {
+        "source": "src/components/AudioPlayerModal.tsx"
+      }
+    },
+    {
+      "id": "LanguagePickerModal::Modal",
+      "type": "Modal",
+      "entryPoint": "src/components/LanguagePickerModal.tsx",
+      "evidence": {
+        "source": "src/components/LanguagePickerModal.tsx"
+      }
+    },
+    {
+      "id": "LocationSetupModal::Modal",
+      "type": "Modal",
+      "entryPoint": "src/components/LocationSetupModal.tsx",
+      "evidence": {
+        "source": "src/components/LocationSetupModal.tsx"
+      }
+    },
+    {
+      "id": "LocationSetupModal::Alert",
+      "type": "Alert",
+      "entryPoint": "src/components/LocationSetupModal.tsx",
+      "evidence": {
+        "source": "src/components/LocationSetupModal.tsx"
+      }
+    },
+    {
+      "id": "QuranLanguageModal::Modal",
+      "type": "Modal",
+      "entryPoint": "src/components/QuranLanguageModal.tsx",
+      "evidence": {
+        "source": "src/components/QuranLanguageModal.tsx"
+      }
+    },
+    {
+      "id": "WomenConsentModal::Modal",
+      "type": "Modal",
+      "entryPoint": "src/components/WomenConsentModal.tsx",
+      "evidence": {
+        "source": "src/components/WomenConsentModal.tsx"
+      }
+    },
+    {
+      "id": "WomenPinModal::Modal",
+      "type": "Modal",
+      "entryPoint": "src/components/WomenPinModal.tsx",
+      "evidence": {
+        "source": "src/components/WomenPinModal.tsx"
+      }
+    },
+    {
+      "id": "App::Modal",
+      "type": "Modal",
+      "entryPoint": "App.tsx",
+      "evidence": {
+        "source": "App.tsx"
+      }
+    }
+  ],
+  "assets": [
+    {
+      "id": "assets/android-icon-background.png",
+      "path": "assets/android-icon-background.png",
+      "bytes": 2204,
+      "evidence": {
+        "path": "assets/android-icon-background.png",
+        "size_bytes": 2204
+      }
+    },
+    {
+      "id": "assets/android-icon-foreground.png",
+      "path": "assets/android-icon-foreground.png",
+      "bytes": 5108,
+      "evidence": {
+        "path": "assets/android-icon-foreground.png",
+        "size_bytes": 5108
+      }
+    },
+    {
+      "id": "assets/android-icon-monochrome.png",
+      "path": "assets/android-icon-monochrome.png",
+      "bytes": 3277,
+      "evidence": {
+        "path": "assets/android-icon-monochrome.png",
+        "size_bytes": 3277
+      }
+    },
+    {
+      "id": "assets/favicon.png",
+      "path": "assets/favicon.png",
+      "bytes": 1129,
+      "evidence": {
+        "path": "assets/favicon.png",
+        "size_bytes": 1129
+      }
+    },
+    {
+      "id": "assets/icon.png",
+      "path": "assets/icon.png",
+      "bytes": 13636,
+      "evidence": {
+        "path": "assets/icon.png",
+        "size_bytes": 13636
+      }
+    },
+    {
+      "id": "assets/logo-dark.jpg",
+      "path": "assets/logo-dark.jpg",
+      "bytes": 10453,
+      "evidence": {
+        "path": "assets/logo-dark.jpg",
+        "size_bytes": 10453
+      }
+    },
+    {
+      "id": "assets/logo-master-black.png",
+      "path": "assets/logo-master-black.png",
+      "bytes": 6335,
+      "evidence": {
+        "path": "assets/logo-master-black.png",
+        "size_bytes": 6335
+      }
+    },
+    {
+      "id": "assets/logo-master-ivory.png",
+      "path": "assets/logo-master-ivory.png",
+      "bytes": 7925,
+      "evidence": {
+        "path": "assets/logo-master-ivory.png",
+        "size_bytes": 7925
+      }
+    },
+    {
+      "id": "assets/logo-master-white.png",
+      "path": "assets/logo-master-white.png",
+      "bytes": 6733,
+      "evidence": {
+        "path": "assets/logo-master-white.png",
+        "size_bytes": 6733
+      }
+    },
+    {
+      "id": "assets/logo-small-black.png",
+      "path": "assets/logo-small-black.png",
+      "bytes": 584,
+      "evidence": {
+        "path": "assets/logo-small-black.png",
+        "size_bytes": 584
+      }
+    },
+    {
+      "id": "assets/logo-small-ivory.png",
+      "path": "assets/logo-small-ivory.png",
+      "bytes": 1698,
+      "evidence": {
+        "path": "assets/logo-small-ivory.png",
+        "size_bytes": 1698
+      }
+    },
+    {
+      "id": "assets/sounds/adhan_chime.wav",
+      "path": "assets/sounds/adhan_chime.wav",
+      "bytes": 439280,
+      "evidence": {
+        "path": "assets/sounds/adhan_chime.wav",
+        "size_bytes": 439280
+      }
+    },
+    {
+      "id": "assets/splash-icon-ink.png",
+      "path": "assets/splash-icon-ink.png",
+      "bytes": 8848,
+      "evidence": {
+        "path": "assets/splash-icon-ink.png",
+        "size_bytes": 8848
+      }
+    },
+    {
+      "id": "assets/splash-icon.png",
+      "path": "assets/splash-icon.png",
+      "bytes": 9675,
+      "evidence": {
+        "path": "assets/splash-icon.png",
+        "size_bytes": 9675
+      }
+    }
+  ],
+  "dependencies": {
+    "packageDependencies": {
+      "@expo-google-fonts/amiri": "^0.4.1",
+      "@expo-google-fonts/instrument-serif": "^0.4.1",
+      "@expo-google-fonts/lora": "^0.4.2",
+      "@expo-google-fonts/manrope": "^0.4.2",
+      "@expo-google-fonts/noto-naskh-arabic": "^0.4.5",
+      "@expo-google-fonts/noto-nastaliq-urdu": "^0.4.2",
+      "@expo-google-fonts/poppins": "^0.4.1",
+      "@expo-google-fonts/source-sans-3": "^0.4.1",
+      "@expo/vector-icons": "^15.0.2",
+      "@react-native-async-storage/async-storage": "2.2.0",
+      "expo": "~57.0.26",
+      "expo-audio": "~57.0.5",
+      "expo-background-fetch": "~57.0.21",
+      "expo-document-picker": "~57.0.3",
+      "expo-file-system": "~57.0.7",
+      "expo-font": "~57.0.4",
+      "expo-haptics": "~57.0.3",
+      "expo-linear-gradient": "~57.0.2",
+      "expo-local-authentication": "~57.0.3",
+      "expo-localization": "~57.0.2",
+      "expo-location": "~57.0.20",
+      "expo-notifications": "~57.0.21",
+      "expo-sensors": "~57.0.3",
+      "expo-sharing": "~57.0.22",
+      "expo-splash-screen": "~57.0.9",
+      "expo-sqlite": "~57.0.3",
+      "expo-status-bar": "~57.0.1",
+      "expo-system-ui": "~57.0.4",
+      "expo-task-manager": "~57.0.21",
+      "expo-updates": "~57.0.25",
+      "expo-video": "~57.0.5",
+      "i18next": "^26.4.2",
+      "react": "19.2.3",
+      "react-dom": "19.2.3",
+      "react-i18next": "^17.0.16",
+      "react-native": "0.86.3",
+      "react-native-safe-area-context": "~5.7.0",
+      "react-native-svg": "15.15.4",
+      "react-native-view-shot": "5.1.0",
+      "react-native-web": "^0.21.2",
+      "react-native-webview": "13.16.1"
+    },
+    "devDependencies": {
+      "@types/react": "~19.2.2",
+      "eslint": "^9.0.0",
+      "eslint-config-expo": "~57.0.2",
+      "typescript": "~6.0.3"
+    },
+    "sourceDependencyKinds": [
+      "api",
+      "storage",
+      "location",
+      "audio",
+      "time"
+    ],
+    "evidence": [
+      "package.json:5-53",
+      "src/**/*.ts,tsx"
+    ]
+  },
+  "permissions": {
+    "android": [
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+      "android.permission.WAKE_LOCK",
+      "RECEIVE_BOOT_COMPLETED",
+      "SCHEDULE_EXACT_ALARM"
+    ],
+    "ios": {
+      "UIBackgroundModes": [
+        "audio"
+      ]
+    },
+    "runtime": [
+      "expo-location",
+      "expo-notifications",
+      "expo-local-authentication"
+    ],
+    "removed_by_plugin": [
+      "android.permission.ACTIVITY_RECOGNITION",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.SYSTEM_ALERT_WINDOW"
+    ],
+    "evidence": [
+      "app.json:19-41,46-80",
+      "plugins/withRemoveActivityRecognition.js:17-35"
+    ]
+  },
+  "envConfig": {
+    "appJson": {
+      "version": "1.1.70",
+      "scheme": "salah",
+      "package": "com.qashi.islamic",
+      "web": {
+        "favicon": "./assets/favicon.png"
+      },
+      "splash": {
+        "image": "./assets/splash-icon-ink.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#F4EEDE",
+        "dark": {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#0E1214"
+        }
+      }
+    },
+    "environmentReferences": "search found no EXPO_PUBLIC/API_URL/process.env config matches; runtime host is fixed target",
+    "evidence": [
+      "app.json:2-17,27-45",
+      "search source config exit 0"
+    ]
+  },
+  "externalHosts": [
+    {
+      "host": "api.aladhan.com",
+      "evidence": {
+        "sourceMatches": "api.aladhan.com"
+      }
+    },
+    {
+      "host": "api.alquran.cloud",
+      "evidence": {
+        "sourceMatches": "api.alquran.cloud"
+      }
+    },
+    {
+      "host": "api.islamic.app",
+      "evidence": {
+        "sourceMatches": "api.islamic.app"
+      }
+    },
+    {
+      "host": "api.quran.com",
+      "evidence": {
+        "sourceMatches": "api.quran.com"
+      }
+    },
+    {
+      "host": "api.quranhub.com",
+      "evidence": {
+        "sourceMatches": "api.quranhub.com"
+      }
+    },
+    {
+      "host": "cdn.islamic.network",
+      "evidence": {
+        "sourceMatches": "cdn.islamic.network"
+      }
+    },
+    {
+      "host": "cdn.jsdelivr.net",
+      "evidence": {
+        "sourceMatches": "cdn.jsdelivr.net"
+      }
+    },
+    {
+      "host": "esmaulhusna.org",
+      "evidence": {
+        "sourceMatches": "esmaulhusna.org"
+      }
+    },
+    {
+      "host": "everyayah.com",
+      "evidence": {
+        "sourceMatches": "everyayah.com"
+      }
+    },
+    {
+      "host": "islamic.app",
+      "evidence": {
+        "sourceMatches": "islamic.app"
+      }
+    },
+    {
+      "host": "nominatim.openstreetmap.org",
+      "evidence": {
+        "sourceMatches": "nominatim.openstreetmap.org"
+      }
+    },
+    {
+      "host": "overpass-api.de",
+      "evidence": {
+        "sourceMatches": "overpass-api.de"
+      }
+    },
+    {
+      "host": "overpass.kumi.systems",
+      "evidence": {
+        "sourceMatches": "overpass.kumi.systems"
+      }
+    },
+    {
+      "host": "overpass.private.coffee",
+      "evidence": {
+        "sourceMatches": "overpass.private.coffee"
+      }
+    },
+    {
+      "host": "raw.githubusercontent.com",
+      "evidence": {
+        "sourceMatches": "raw.githubusercontent.com"
+      }
+    },
+    {
+      "host": "ummahapi.com",
+      "evidence": {
+        "sourceMatches": "ummahapi.com"
+      }
+    },
+    {
+      "host": "www.google.com",
+      "evidence": {
+        "sourceMatches": "www.google.com"
+      }
+    },
+    {
+      "host": "www.youtube-nocookie.com",
+      "evidence": {
+        "sourceMatches": "www.youtube-nocookie.com"
+      }
+    },
+    {
+      "host": "www.youtube.com",
+      "evidence": {
+        "sourceMatches": "www.youtube.com"
+      }
+    },
+    {
+      "host": "youtube.com",
+      "evidence": {
+        "sourceMatches": "youtube.com"
+      }
+    }
+  ],
+  "runtimeClickCrawl": {
+    "status": "BLOCKED",
+    "depthMax": 3,
+    "visited": [
+      "onboarding",
+      "home/error-state"
+    ],
+    "capturedRoutes": [
+      "home"
+    ],
+    "blockedRoutes": [
+      {
+        "route": "library",
+        "reason": "Location setup modal remained visible; click dispatch did not dismiss RN-web Touchable in harness",
+        "evidence": "browser body text includes Location for prayer times / Not now"
+      },
+      {
+        "route": "quran",
+        "reason": "same modal blocker",
+        "evidence": "browser session"
+      },
+      {
+        "route": "tools",
+        "reason": "same modal blocker",
+        "evidence": "browser session"
+      }
+    ],
+    "loadingOrErrorRoutes": [
+      {
+        "route": "home",
+        "state": "error",
+        "evidence": "Can't load prayer times right now. Connect to the internet to get today's prayer schedule."
+      }
+    ],
+    "clicks": [
+      {
+        "action": "Get Started",
+        "result": "onboarding completed; home mounted"
+      },
+      {
+        "action": "Not now",
+        "result": "not dismissed by JS/coordinate harness"
+      }
+    ]
+  },
+  "counts": {
+    "sourceReachableRoutesExpected": 52,
+    "runtimeCapturedRoutes": 1,
+    "missingRuntimeRoutes": 51,
+    "extraRuntimeRoutes": 0,
+    "sourceScreenFiles": 50,
+    "featureRows": 56,
+    "sheetDialogRows": 9,
+    "assetRows": 14,
+    "externalHostRows": 20,
+    "reconciled": false,
+    "evidence": "counts derived from current filesystem and App.tsx route map",
+    "navigationAliasRows": 90
+  },
+  "commands": [
+    {
+      "command": "read rules.md",
+      "exit_code": 0,
+      "evidence": "rules.md:1-34"
+    },
+    {
+      "command": "source inventory via Python (App.tsx/src/package/app.json/assets)",
+      "exit_code": 0,
+      "evidence": "tool execution stdout"
+    },
+    {
+      "command": "browser GET http://15.235.203.134:9998/ isolated session",
+      "exit_code": 0,
+      "evidence": "browser session islamic-audit-phase0; title and body captured"
+    },
+    {
+      "command": "browser click-crawl (onboarding + visible controls)",
+      "exit_code": 1,
+      "evidence": "browser session; blocked modal and coordinate-click Object reference chain error"
+    }
+  ],
+  "blockedReasons": [
+    "Runtime click-crawl blocked by first-launch location setup modal and unavailable prayer-times API; no route claims beyond captured home/error state.",
+    "Deterministic clock injection was not available through browser harness; no real notifications/purchases/sharing/destructive actions performed.",
+    "No physical device/emulator used."
+  ],
+  "navigationRouteMaps": {
+    "routeToTab": {
+      "quran": [
+        "quran",
+        "quran-home",
+        "reader",
+        "quran-reader",
+        "audio",
+        "quran-audio",
+        "tafsir",
+        "quran-tafsir",
+        "topics",
+        "quran-topics",
+        "compare",
+        "translation",
+        "translation-compare",
+        "plans",
+        "reading-plans",
+        "hifz",
+        "hifz-practice",
+        "bookmarks",
+        "quran-bookmarks",
+        "notes",
+        "quran-notes",
+        "surah-list",
+        "surahs",
+        "surah"
+      ],
+      "library": [
+        "library",
+        "library-hub",
+        "hadith",
+        "hadith-library",
+        "duas",
+        "adhkar",
+        "duas-adhkar",
+        "names",
+        "names-prophet",
+        "99-names",
+        "shahada",
+        "downloads",
+        "prayer-guide",
+        "ramadan",
+        "ramadan-guide",
+        "vocab",
+        "vocab-trainer",
+        "tajweed",
+        "tajweed-rules"
+      ],
+      "tools": [
+        "tools",
+        "tools-hub",
+        "salah",
+        "salah-tracker",
+        "tracker",
+        "fasting",
+        "qada",
+        "women-qada",
+        "zakat",
+        "zakat-calculator",
+        "cycle",
+        "women-cycle",
+        "qibla",
+        "compass",
+        "mosque",
+        "mosque-finder",
+        "location",
+        "cities",
+        "calendar",
+        "hijri-calendar",
+        "prayer-reminders",
+        "notifications",
+        "umrah-resources",
+        "live",
+        "makkah-live",
+        "madinah-live",
+        "hajj-live"
+      ],
+      "noActiveTab": [
+        "settings",
+        "legal",
+        "privacy",
+        "privacy-policy",
+        "about",
+        "backup",
+        "backup-restore"
+      ],
+      "dualHomed": [
+        "tasbih",
+        "summary",
+        "weekly",
+        "weekly-summary",
+        "umrah",
+        "umrah-guide",
+        "hajj",
+        "hajj-journey",
+        "purity",
+        "women-purity",
+        "worship",
+        "guidance",
+        "women-guidance"
+      ],
+      "evidence": "src/navigation/routeToTab.ts:20-136"
+    },
+    "headerConfig": {
+      "evidence": "src/navigation/headerConfig.ts:19-659",
+      "routeAliasesNotRenderedDirectly": "headerConfig includes alias keys beyond App.tsx discriminated route names; retained as map inventory, not counted as independently reachable render states"
+    }
+  }
+}

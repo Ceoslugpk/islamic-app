@@ -1,17 +1,15 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeTokens } from '../theme/tokens';
-import { getCardShadow } from '../lib/homeThemeTokens';
 import { t } from '../lib/i18n';
 import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
@@ -49,14 +47,18 @@ export default function SalahTrackerScreen({
   onBack?: () => void;
   backLabel?: string;
 }) {
-  const { tokens, mode } = useThemeTokens();
+  const { tokens } = useThemeTokens();
   const { settings } = useSettings();
   const { location: gpsLocation } = useLocation(false);
 
   const [data, setData] = useState<DayTimings | null>(null);
   const [loading, setLoading] = useState(true);
-  const [completed, setCompleted] = useState<Record<string, boolean>>({});
-  const [streak, setStreak] = useState(0);
+  const [completed, setCompleted] = useState<Record<string, boolean>>(() => {
+    return getSalahEntries(getTodayIso());
+  });
+  const [streak, setStreak] = useState<number>(() => {
+    return computeStreak(getSalahHistory(30));
+  });
 
   const effectiveLocation = useMemo(() => {
     if (settings.locationMode === 'auto') {
@@ -65,21 +67,16 @@ export default function SalahTrackerScreen({
     return settings.manualLocation;
   }, [settings.locationMode, gpsLocation, settings.autoLocation, settings.manualLocation]);
 
-  // Load tracker status & streak
-  useEffect(() => {
-    const iso = getTodayIso();
-    const entries = getSalahEntries(iso);
-    setCompleted(entries);
-    const history = getSalahHistory(30);
-    setStreak(computeStreak(history));
-  }, []);
-
   // Fetch today's prayer times
   const [fetchFailed, setFetchFailed] = useState(false);
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setFetchFailed(false);
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        setLoading(true);
+        setFetchFailed(false);
+      }
+    });
     fetchPrayerTimes(effectiveLocation, settings.methodId)
       .then((res) => {
         if (!cancelled) {
@@ -97,7 +94,7 @@ export default function SalahTrackerScreen({
     return () => {
       cancelled = true;
     };
-  }, [effectiveLocation.latitude, effectiveLocation.longitude, settings.methodId]);
+  }, [effectiveLocation, settings.methodId]);
 
   function togglePrayer(prayer: string) {
     const iso = getTodayIso();
@@ -116,6 +113,7 @@ export default function SalahTrackerScreen({
 
   // Past 7 days history
   const recentHistory = useMemo(() => {
+    void completed;
     const hist = getSalahHistory(7);
     return Object.entries(hist)
       .sort(([a], [b]) => b.localeCompare(a))
@@ -166,10 +164,10 @@ export default function SalahTrackerScreen({
           {/* Summary Scorecard */}
           <View style={styles.statsRow}>
             <PremiumCard style={styles.statCard} padded>
-              <Text style={[styles.statValue, { color: tokens.text }]}>
-                {completedCount}<Text style={{ fontSize: 16, color: tokens.muted }}>/5</Text>
-              </Text>
-              <Text style={[styles.statLabel, { color: tokens.muted }]}>{t("Today's Prayers")}</Text>
+              <AppText variant="numeral" style={styles.statValue}>
+                {completedCount}<AppText variant="numeral" tone="faint" style={{ fontSize: 16 }}>/5</AppText>
+              </AppText>
+              <AppText variant="eyebrow" tone="faint" style={styles.statLabel}>{t("Today's Prayers")}</AppText>
               <View style={[styles.progressBarTrack, { backgroundColor: tokens.ringBorder }]}>
                 <View
                   style={[
@@ -182,18 +180,18 @@ export default function SalahTrackerScreen({
 
             <PremiumCard style={styles.statCard} padded>
               <View style={styles.streakWrap}>
-                <Text style={[styles.statValue, { color: tokens.goldText }]}>{streak}</Text>
+                <AppText variant="numeral" highlight style={styles.statValue}>{streak}</AppText>
                 <Ionicons name="flame" size={20} color={tokens.goldText} />
               </View>
-              <Text style={[styles.statLabel, { color: tokens.muted }]}>{t('Day Streak')}</Text>
-              <Text style={[styles.streakHint, { color: tokens.muted }]}>
+              <AppText variant="eyebrow" tone="faint" style={styles.statLabel}>{t('Day Streak')}</AppText>
+              <AppText variant="caption" tone="faint" style={styles.streakHint}>
                 {streak === 0 ? t('Start your streak today') : `${streak} ${t('continuous days')}`}
-              </Text>
+              </AppText>
             </PremiumCard>
           </View>
 
           {/* Today's Checklist */}
-          <Text style={[styles.sectionTitle, { color: tokens.muted }]}>{t("TODAY'S PRAYERS")}</Text>
+          <AppText variant="eyebrow" tone="faint" style={styles.sectionTitle}>{t("TODAY'S PRAYERS")}</AppText>
           <PremiumCard style={styles.listContainer} padded={false}>
             {loading && !data ? (
               <View style={styles.loadingWrap}>
@@ -249,25 +247,31 @@ export default function SalahTrackerScreen({
                         >
                           {isDone && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
                         </View>
-                        <View>
-                          <Text
+                        <View style={styles.prayerTextWrap}>
+                          <AppText
+                            variant="rowTitle"
+                            tone={isDone ? 'faint' : undefined}
                             style={[
                               styles.prayerName,
-                              { color: tokens.text },
-                              isDone && { textDecorationLine: 'line-through', color: tokens.muted },
+                              isDone && { textDecorationLine: 'line-through' },
                             ]}
                           >
                             {t(p.label)}
-                          </Text>
-                          <Text style={[styles.prayerStatus, { color: isDone ? tokens.goldText : tokens.muted }]}>
+                          </AppText>
+                          <AppText
+                            variant="caption"
+                            highlight={isDone}
+                            tone={!isDone ? 'faint' : undefined}
+                            style={styles.prayerStatus}
+                          >
                             {isDone ? t('Completed') : t('Pending')}
-                          </Text>
+                          </AppText>
                         </View>
                       </View>
 
-                      <Text style={[styles.prayerTime, { color: tokens.text }]}>
+                      <AppText variant="rowTitle" style={styles.prayerTime}>
                         {formatted}
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                   </View>
                 );
@@ -278,9 +282,9 @@ export default function SalahTrackerScreen({
           {/* Past 7 Days Activity */}
           {recentHistory.length > 0 && (
             <>
-              <Text style={[styles.sectionTitle, { color: tokens.muted, marginTop: 28 }]}>
+              <AppText variant="eyebrow" tone="faint" style={[styles.sectionTitle, { marginTop: 28 }]}>
                 {t('RECENT DAYS HISTORY')}
-              </Text>
+              </AppText>
               <PremiumCard style={styles.historyContainer} padded={false}>
                 {recentHistory.map((item, idx) => {
                   const dayPrayers = Object.values(item.completed || {}).filter(Boolean).length;
@@ -288,13 +292,13 @@ export default function SalahTrackerScreen({
                     <View key={item.date}>
                       {idx > 0 && <Hairline style={{ backgroundColor: tokens.cardBorder }} />}
                       <View style={styles.historyRow}>
-                        <Text style={[styles.historyDate, { color: tokens.text }]}>
+                        <AppText variant="body" style={styles.historyDate}>
                           {item.date}
-                        </Text>
+                        </AppText>
                         <View style={styles.historyRight}>
-                          <Text style={[styles.historyCount, { color: tokens.muted }]}>
+                          <AppText variant="caption" tone="faint" style={styles.historyCount}>
                             {dayPrayers}/5
-                          </Text>
+                          </AppText>
                           <View
                             style={[
                               styles.historyIndicator,
@@ -344,6 +348,7 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
+    minHeight: 96,
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
@@ -396,16 +401,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   prayerRow: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
+    gap: 12,
   },
   rowLeft: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
+  },
+  prayerTextWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   checkbox: {
     width: 22,
@@ -414,6 +427,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   prayerName: {
     fontFamily: 'Manrope_600SemiBold',
@@ -427,6 +441,8 @@ const styles = StyleSheet.create({
   prayerTime: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
+    flexShrink: 0,
+    textAlign: 'right',
   },
   historyContainer: {
     borderWidth: 1,
@@ -434,13 +450,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   historyRow: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    gap: 12,
   },
   historyDate: {
+    flex: 1,
+    minWidth: 0,
     fontFamily: 'Manrope_500Medium',
     fontSize: 13,
   },
@@ -448,6 +468,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   historyCount: {
     fontFamily: 'Manrope_600SemiBold',

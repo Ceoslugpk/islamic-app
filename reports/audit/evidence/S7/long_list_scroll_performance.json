@@ -1,0 +1,59 @@
+{
+  "surahs": {
+    "screen": "Surahs List (114 Surahs)",
+    "initialStats": {
+      "totalDomNodes": 3509,
+      "divCount": 591
+    },
+    "scrollResult": {
+      "scrollTargetFound": true,
+      "targetScrollHeight": 5159,
+      "steps": 30,
+      "totalDurationMs": 486.60000002384186,
+      "framesCounted": 30,
+      "avgFps": 60,
+      "droppedFramesCount": 11,
+      "jankFramesCount": 0,
+      "severeJankCount": 0,
+      "postScrollDomNodes": 4169
+    }
+  },
+  "hadith": {
+    "screen": "Hadith Library (Books / Collections)",
+    "initialStats": {
+      "totalDomNodes": 4431,
+      "divCount": 1316
+    },
+    "scrollResult": {
+      "scrollTargetFound": true,
+      "targetScrollHeight": 2058,
+      "steps": 30,
+      "totalDurationMs": 490.59999990463257,
+      "framesCounted": 30,
+      "avgFps": 60,
+      "droppedFramesCount": 11,
+      "jankFramesCount": 0,
+      "severeJankCount": 0,
+      "postScrollDomNodes": 4431
+    }
+  },
+  "names": {
+    "screen": "99 Names of Allah (Asma ul-Husna)",
+    "initialStats": {
+      "totalDomNodes": 4425,
+      "divCount": 1306
+    },
+    "scrollResult": {
+      "scrollTargetFound": true,
+      "targetScrollHeight": 3925,
+      "steps": 30,
+      "totalDurationMs": 494.89999997615814,
+      "framesCounted": 30,
+      "avgFps": 60,
+      "droppedFramesCount": 12,
+      "jankFramesCount": 1,
+      "severeJankCount": 0,
+      "postScrollDomNodes": 4613
+    }
+  }
+}

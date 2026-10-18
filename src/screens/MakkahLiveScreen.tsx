@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Platform,
@@ -15,6 +14,7 @@ import { getPillShadow } from '../lib/homeThemeTokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
+import { AppText } from '../components/ui/AppText';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { LiveVideoPlayer } from '../components/LiveVideoPlayer';
@@ -60,41 +60,41 @@ export default function MakkahLiveScreen({
         />
       }
     >
-      <View style={styles.contentWrap}>
-        <DetailScreen.ScrollView
-          key={reloadKey}
-          contentContainerStyle={[
-            styles.content,
-            { paddingHorizontal: paddingH },
-          ]}
-          style={{ flex: 1 }}
-        >
+      <DetailScreen.ScrollView
+        key={reloadKey}
+        contentContainerStyle={[
+          styles.content,
+          { paddingHorizontal: paddingH },
+        ]}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.contentWrap}>
           {/* Sacred Sanctuary Virtues Card */}
           <PremiumCard style={{ marginBottom: 14 }}>
-            <Text style={[styles.cardLead, { color: tokens.goldText }]}>{t('SACRED SANCTUARY')}</Text>
-            <Text style={[styles.cardTitle, { color: tokens.text }]}>
+            <AppText variant="eyebrow" highlight style={styles.cardLead}>{t('SACRED SANCTUARY')}</AppText>
+            <AppText variant="sectionTitle" style={styles.cardTitle}>
               {t('Virtues of Al-Masjid Al-Haram')}
-            </Text>
+            </AppText>
             <ArabicText style={[styles.hadithArabic, { color: tokens.muted }]}>
               صَلَاةٌ فِي الْمَسْجِدِ الْحَرَامِ أَفْضَلُ مِنْ مِائَةِ أَلْفِ صَلَاةٍ فِيمَا سِوَاهُ
             </ArabicText>
-            <Text style={[styles.hadithTranslation, { color: tokens.muted }]}>
+            <AppText variant="body" style={styles.hadithTranslation}>
               {t('The Messenger of Allah ﷺ said: "One prayer in the Sacred Mosque is better than one hundred thousand prayers elsewhere."')}
-            </Text>
-            <Text style={[styles.hadithRef, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="caption" tone="faint" style={styles.hadithRef}>
               {t('Sunan Ibn Majah 1406 · Authentic (Sahih)')}
-            </Text>
+            </AppText>
           </PremiumCard>
 
           {/* Live Badge Bar */}
           <View style={styles.statusBar}>
             <View style={[styles.liveIndicator, { backgroundColor: tokens.danger + '20' }]}>
               <View style={[styles.liveDot, { backgroundColor: tokens.danger }]} />
-              <Text style={[styles.liveText, { color: tokens.danger }]}>{t('LIVE STREAM')}</Text>
+              <AppText variant="caption" tone="danger" style={styles.liveText}>{t('LIVE STREAM')}</AppText>
             </View>
-            <Text style={[styles.channelTag, { color: tokens.muted }]}>
+            <AppText variant="caption" tone="faint" style={styles.channelTag}>
               {t('قناة القرآن الكريم · Saudi Quran TV')}
-            </Text>
+            </AppText>
           </View>
 
           {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
@@ -116,9 +116,9 @@ export default function MakkahLiveScreen({
                 accessibilityLabel={t('Reload Stream')}
               >
                 <Ionicons name="refresh" size={14} color={tokens.goldText} />
-                <Text style={[styles.controlBtnText, { color: tokens.text }]}>
+                <AppText variant="rowTitle" style={styles.controlBtnText}>
                   {t('Reload Stream')}
-                </Text>
+                </AppText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -128,79 +128,79 @@ export default function MakkahLiveScreen({
                 accessibilityLabel={t('Open in YouTube')}
               >
                 <Ionicons name="open-outline" size={14} color={tokens.goldText} />
-                <Text style={[styles.controlBtnText, { color: tokens.text }]}>
+                <AppText variant="rowTitle" style={styles.controlBtnText}>
                   {t('Open in YouTube')}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           )}
 
           {/* Key Landmarks in View */}
           <PremiumCard style={{ marginBottom: 14 }}>
-            <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 8 }]}>
+            <AppText variant="sectionTitle" style={[styles.cardTitle, { marginBottom: 8 }]}>
               {t('Sacred Landmarks Visible on Stream')}
-            </Text>
+            </AppText>
 
             <View style={styles.landmarkItem}>
-              <Text style={[styles.landmarkName, { color: tokens.text }]}>
+              <AppText variant="rowTitle" style={styles.landmarkName}>
                 {t('The Holy Kaaba (الكعبة المشرفة)')}
-              </Text>
-              <Text style={[styles.landmarkDesc, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="subtitle" style={styles.landmarkDesc}>
                 {t('The first house established for the worship of Allah on Earth, rebuilt by Prophet Ibrahim and Ismail (peace be upon them). Draped in the hand-woven black silk Kiswah adorned with gold Quranic calligraphy.')}
-              </Text>
+              </AppText>
             </View>
 
             <Hairline style={{ marginVertical: 10 }} />
 
             <View style={styles.landmarkItem}>
-              <Text style={[styles.landmarkName, { color: tokens.text }]}>
+              <AppText variant="rowTitle" style={styles.landmarkName}>
                 {t('Al-Hajar al-Aswad (الحجر الأسود)')}
-              </Text>
-              <Text style={[styles.landmarkDesc, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="subtitle" style={styles.landmarkDesc}>
                 {t('The Black Stone set into the eastern corner of the Kaaba. It marks the starting and finishing boundary line for each of the seven circuits of Tawaf.')}
-              </Text>
+              </AppText>
             </View>
 
             <Hairline style={{ marginVertical: 10 }} />
 
             <View style={styles.landmarkItem}>
-              <Text style={[styles.landmarkName, { color: tokens.text }]}>
+              <AppText variant="rowTitle" style={styles.landmarkName}>
                 {t('Maqam Ibrahim (مقام إبراهيم)')}
-              </Text>
-              <Text style={[styles.landmarkDesc, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="subtitle" style={styles.landmarkDesc}>
                 {t('The golden crystal enclosure preserving the stone footprint upon which Prophet Ibrahim (peace be upon him) stood while elevating the upper stones of the Kaaba walls.')}
-              </Text>
+              </AppText>
             </View>
 
             <Hairline style={{ marginVertical: 10 }} />
 
             <View style={styles.landmarkItem}>
-              <Text style={[styles.landmarkName, { color: tokens.text }]}>
+              <AppText variant="rowTitle" style={styles.landmarkName}>
                 {t('Hijr Ismail / Al-Hateem (حجر إسماعيل)')}
-              </Text>
-              <Text style={[styles.landmarkDesc, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="subtitle" style={styles.landmarkDesc}>
                 {t('The low white marble semi-circular wall facing the northern wall of the Kaaba. It constitutes part of the original foundations of the Kaaba.')}
-              </Text>
+              </AppText>
             </View>
           </PremiumCard>
 
           {/* Spiritual Etiquette Card */}
-          <PremiumCard style={{ marginBottom: 20 }}>
-            <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 6 }]}>
+          <PremiumCard style={{ marginBottom: 0 }}>
+            <AppText variant="sectionTitle" style={[styles.cardTitle, { marginBottom: 6 }]}>
               {t("Du'a Upon Seeing the Kaaba")}
-            </Text>
+            </AppText>
             <ArabicText style={[styles.hadithArabic, { color: tokens.text }]}>
               اللَّهُمَّ زِدْ هَذَا الْبَيْتَ تَشْرِيفًا وَتَعْظِيمًا وَتَكْرِيمًا وَمَهَابَةً، وَزِدْ مَنْ شَرَّفَهُ وَعَظَّمَهُ مِمَّنْ حَجَّهُ أَوِ اعْتَمَرَهُ تَشْرِيفًا وَتَكْرِيمًا وَتَعْظِيمًا وَبِرًّا
             </ArabicText>
-            <Text style={[styles.hadithTranslation, { color: tokens.muted }]}>
+            <AppText variant="body" style={styles.hadithTranslation}>
               {t('"O Allah, increase this House in honor, esteem, respect, and reverence; and increase whoever honors and respects it from those who perform Hajj or Umrah in honor, respect, esteem, and piety."')}
-            </Text>
-            <Text style={[styles.hadithRef, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="caption" tone="faint" style={styles.hadithRef}>
               {t('Al-Sunan al-Kubra by al-Bayhaqi (5/73)')}
-            </Text>
+            </AppText>
           </PremiumCard>
-        </DetailScreen.ScrollView>
-      </View>
+        </View>
+      </DetailScreen.ScrollView>
     </DetailScreen>
   );
 }
@@ -215,14 +215,13 @@ const styles = StyleSheet.create({
     maxWidth: 720,
     alignSelf: 'center',
   },
-  content: {
-    paddingTop: 10,
-  },
+  content: {},
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
+    gap: 8,
   },
   liveIndicator: {
     flexDirection: 'row',
@@ -230,7 +229,9 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    minHeight: 22,
     borderRadius: 12,
+    flexShrink: 0,
   },
   liveDot: {
     width: 7,
@@ -241,10 +242,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 0.8,
+    paddingVertical: 2,
   },
   channelTag: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11.5,
+    flexShrink: 1,
+    minWidth: 0,
+    paddingVertical: 2,
   },
   playerContainer: {
     width: '100%',
@@ -266,18 +271,21 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
+    minHeight: 36,
     borderRadius: 14,
     borderWidth: 1,
   },
   controlBtnText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
+    paddingVertical: 2,
   },
   cardLead: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 1.2,
     marginBottom: 4,
+    paddingVertical: 2,
   },
   cardTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -285,18 +293,17 @@ const styles = StyleSheet.create({
   },
   hadithArabic: {
     fontSize: 17,
-    lineHeight: 28,
     marginVertical: 8,
   },
   hadithTranslation: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 19,
     marginBottom: 4,
   },
   hadithRef: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11,
+    paddingVertical: 2,
   },
   landmarkItem: {
     marginVertical: 2,
@@ -309,6 +316,5 @@ const styles = StyleSheet.create({
   landmarkDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12.5,
-    lineHeight: 18,
   },
 });

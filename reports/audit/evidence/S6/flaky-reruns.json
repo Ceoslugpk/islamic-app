@@ -1,0 +1,23 @@
+[
+  {
+    "run": 1,
+    "seriousCriticalViolations": [
+      "aria-required-parent"
+    ],
+    "identical": true
+  },
+  {
+    "run": 2,
+    "seriousCriticalViolations": [
+      "aria-required-parent"
+    ],
+    "identical": true
+  },
+  {
+    "run": 3,
+    "seriousCriticalViolations": [
+      "aria-required-parent"
+    ],
+    "identical": true
+  }
+]

@@ -3,7 +3,6 @@ import { fetchPrayerTimes, Location } from './prayerTimes';
 import {
   startQuranPreload,
   isQuranPreloadRunning,
-  getQuranPreloadProgress,
   isQuranPreloadComplete,
 } from './quranPreloader';
 import { fetchReciters } from './quranAudio';

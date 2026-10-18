@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Animated,
   Easing,
   Platform,
-  I18nManager,
   AccessibilityInfo,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +15,7 @@ import { Hairline } from './Hairline';
 import { formatTime } from '../lib/timeFormat';
 import { DayTimings } from '../lib/prayerTimes';
 import { isRTL, t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -43,10 +42,18 @@ function TimelineDot({
   reducedMotion,
 }: TimelineDotProps) {
   const { colors } = useTheme();
-  const popAnim = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(0.4)).current;
+  const [popAnim] = useState(() => new Animated.Value(1));
+  const [pulseAnim] = useState(() => new Animated.Value(0.4));
   const prevCompleted = useRef(isCompleted);
   const [popStep, setPopStep] = useState<'idle' | 'circle' | 'filled' | 'checked'>('idle');
+  const [prevCompletedState, setPrevCompletedState] = useState(isCompleted);
+
+  if (prevCompletedState !== isCompleted) {
+    setPrevCompletedState(isCompleted);
+    if (!isCompleted) {
+      setPopStep('idle');
+    }
+  }
 
   // Completion 3-step pop sequence: ○ → ◉ → ✓ (calm cubic-out, no springs)
   useEffect(() => {
@@ -78,7 +85,6 @@ function TimelineDot({
       t1 = setTimeout(() => setPopStep('filled'), 70);
       t2 = setTimeout(() => setPopStep('checked'), 200);
     } else if (!isCompleted) {
-      setPopStep('idle');
       popAnim.setValue(1);
     }
     prevCompleted.current = isCompleted;
@@ -249,12 +255,26 @@ export function PrayerTimeline({
   streak,
 }: PrayerTimelineProps) {
   const { colors } = useTheme();
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-        setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const listener = (e: MediaQueryListEvent) => {
+          setReducedMotion(e.matches);
+        };
+        if (typeof media.addEventListener === 'function') {
+          media.addEventListener('change', listener);
+          return () => {
+            media.removeEventListener('change', listener);
+          };
+        }
       }
     } else {
       AccessibilityInfo.isReduceMotionEnabled()
@@ -336,7 +356,8 @@ export function PrayerTimeline({
                 <View style={styles.contentColumn}>
                   <View style={styles.rowMain}>
                     <View style={styles.labelGroup}>
-                      <Text
+                      <AppText
+                        variant="rowTitle"
                         style={[
                           styles.rowLabel,
                           {
@@ -352,7 +373,7 @@ export function PrayerTimeline({
                         ]}
                       >
                         {t(item.label)}
-                      </Text>
+                      </AppText>
                       {isCurrent && (
                         <View
                           style={[
@@ -362,12 +383,15 @@ export function PrayerTimeline({
                             },
                           ]}
                         >
-                          <Text style={[styles.nowBadgeText, { color: colors.onAccent }]}>{t('NOW')}</Text>
+                          <AppText variant="caption" tone="onGold" style={styles.nowBadgeText}>
+                            {t('NOW')}
+                          </AppText>
                         </View>
                       )}
                     </View>
 
-                    <Text
+                    <AppText
+                      variant="numeral"
                       style={[
                         styles.rowTime,
                         {
@@ -383,7 +407,7 @@ export function PrayerTimeline({
                       ]}
                     >
                       {formatTime(time, timeFormat)}
-                    </Text>
+                    </AppText>
                   </View>
 
                   {/* Elapsed progress line under current prayer */}
@@ -418,21 +442,21 @@ export function PrayerTimeline({
       <Hairline />
       <View style={styles.trackerFooter}>
         <View style={styles.trackerLeft}>
-          <Text style={[styles.trackerText, { color: colors.textSecondary }]}>
-            <Text style={[styles.trackerBold, { color: colors.textPrimary }]}>
+          <AppText variant="caption" style={styles.trackerText}>
+            <AppText variant="body" style={styles.trackerBold}>
               {completedCount} / 5
-            </Text>{' '}
+            </AppText>{' '}
             {t('Salah')}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.trackerRight}>
-          <Text style={[styles.trackerText, { color: colors.textSecondary }]}>
+          <AppText variant="caption" style={styles.trackerText}>
             {t('Streak')}{' '}
-            <Text style={[styles.trackerBold, { color: colors.accent }]}>
+            <AppText variant="body" highlight style={styles.trackerBold}>
               {streak}
-            </Text>
-          </Text>
+            </AppText>
+          </AppText>
         </View>
       </View>
     </Card>
@@ -538,22 +562,27 @@ const styles = StyleSheet.create({
   rowLabel: {
     fontSize: 15,
     flexShrink: 1,
+    paddingVertical: 2,
   },
   nowBadge: {
     paddingHorizontal: 6,
-    paddingVertical: 1.5,
+    paddingVertical: 2,
     borderRadius: 4,
     flexShrink: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   nowBadgeText: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 9,
     letterSpacing: 0.5,
+    paddingVertical: 1,
   },
   rowTime: {
     fontSize: 15,
     flexShrink: 0,
     writingDirection: 'ltr',
+    paddingVertical: 2,
   },
   currentProgressTrackWrap: {
     marginTop: 6,
@@ -576,21 +605,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 8,
+    minHeight: 44,
   },
   trackerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexShrink: 0,
+    flexShrink: 1,
+    minWidth: 0,
   },
   trackerRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    flexShrink: 0,
+    flexShrink: 1,
+    minWidth: 0,
   },
   trackerText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
+    paddingVertical: 2,
   },
   trackerBold: {
     fontFamily: 'Manrope_700Bold',

@@ -1,0 +1,2426 @@
+$ locale summary / guardrails fixed
+{
+  "locale_count": 49,
+  "base_keys": 2302,
+  "bad_locales": [
+    {
+      "file": "src/locales/kk.json",
+      "keys": 2263,
+      "missing": 39,
+      "extra": 0,
+      "empty": 0,
+      "missing_sample": [
+        "Authentication failed. Try again.",
+        "Authentication unavailable on this device.",
+        "Choose a 4-digit PIN to lock sensitive tools",
+        "Confirm PIN",
+        "Confirming PIN",
+        "Create 4-Digit PIN",
+        "Current PIN is incorrect.",
+        "Digit {{digit}}",
+        "Enable controls",
+        "Enable notifications to control Quran recitation from your lock screen, notification shade, and headphones while listening in the background."
+      ]
+    }
+  ]
+}
+{
+  "src_legacy_exists": false,
+  "counts": {
+    "raw_text_import": 5,
+    "legacy_import": 3,
+    "raw_text_tag": 18,
+    "raw_color": 450
+  },
+  "matches": {
+    "raw_text_import": [
+      {
+        "file": "src/components/ArabicText.tsx",
+        "line": 2,
+        "match": "import { StyleSheet, Text, TextStyle, StyleProp, PixelRatio, Platform } from 'react-native"
+      },
+      {
+        "file": "src/components/TajweedText.tsx",
+        "line": 2,
+        "match": "import { StyleSheet, Text, View, Platform } from 'react-native"
+      },
+      {
+        "file": "src/components/ui/AppText.tsx",
+        "line": 2,
+        "match": "import {\n  StyleSheet,\n  Text,\n  TextProps,\n  TextStyle,\n  Platform,\n} from 'react-native"
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 3,
+        "match": "import {\n  ActivityIndicator,\n  Alert,\n  Animated,\n  BackHandler,\n  Clipboard,\n  FlatList,\n  Image,\n  InteractionManager"
+      },
+      {
+        "file": "src/screens/LibraryScreen.tsx",
+        "line": 2,
+        "match": "import {\n  Pressable,\n  StyleSheet,\n  Text,\n  View,\n  useWindowDimensions,\n  AccessibilityRole,\n} from 'react-native"
+      }
+    ],
+    "legacy_import": [
+      {
+        "file": "src/lib/systemMediaAdapter.ts",
+        "line": 2,
+        "match": "from 'expo-file-system/legacy"
+      },
+      {
+        "file": "src/lib/surahDownloads.ts",
+        "line": 3,
+        "match": "from 'expo-file-system/legacy"
+      },
+      {
+        "file": "src/screens/BackupRestoreScreen.tsx",
+        "line": 13,
+        "match": "from 'expo-file-system/legacy"
+      }
+    ],
+    "raw_text_tag": [
+      {
+        "file": "src/components/ArabicText.tsx",
+        "line": 66,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/components/ArabicText.tsx",
+        "line": 115,
+        "match": "<Text "
+      },
+      {
+        "file": "src/components/TajweedText.tsx",
+        "line": 36,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/components/TajweedText.tsx",
+        "line": 52,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/components/TajweedText.tsx",
+        "line": 63,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/components/TajweedText.tsx",
+        "line": 75,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/components/TajweedText.tsx",
+        "line": 99,
+        "match": "<Text "
+      },
+      {
+        "file": "src/components/TajweedText.tsx",
+        "line": 100,
+        "match": "<Text "
+      },
+      {
+        "file": "src/components/ui/AppText.tsx",
+        "line": 223,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 2554,
+        "match": "<Text "
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 2563,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 3893,
+        "match": "<Text "
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 3894,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 3910,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 4756,
+        "match": "<Text "
+      },
+      {
+        "file": "src/screens/LibraryScreen.tsx",
+        "line": 460,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/screens/LibraryScreen.tsx",
+        "line": 492,
+        "match": "<Text\n"
+      },
+      {
+        "file": "src/screens/LibraryScreen.tsx",
+        "line": 524,
+        "match": "<Text\n"
+      }
+    ],
+    "raw_color": [
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 50,
+        "match": "#EECA80"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 50,
+        "match": "#B88E46"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 51,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 62,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 62,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 63,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 63,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 66,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 67,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 79,
+        "match": "#12121C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 79,
+        "match": "#0C0C14"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 79,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 79,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 80,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 80,
+        "match": "#F3EEDD"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 80,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 80,
+        "match": "#6E6C78"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 80,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 81,
+        "match": "#1A1408"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 81,
+        "match": "#E07A70"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 81,
+        "match": "#7CC4A0"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 81,
+        "match": "rgba("
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 82,
+        "match": "#34323F"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 82,
+        "match": "#1A1922"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 85,
+        "match": "#F8F4EA"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 85,
+        "match": "#F0EBDE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 85,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 85,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 86,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 86,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 86,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 86,
+        "match": "#647068"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 86,
+        "match": "#A6AEA8"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 87,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 87,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 87,
+        "match": "#092C25"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 88,
+        "match": "#C0463C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 88,
+        "match": "#2E8B64"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 88,
+        "match": "rgba("
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 88,
+        "match": "#145C4D"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 88,
+        "match": "#083028"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 91,
+        "match": "#EECA80"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 91,
+        "match": "#B88E46"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 91,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 97,
+        "match": "#F3EEDD"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 97,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 97,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 97,
+        "match": "#EECA80"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 98,
+        "match": "#1A1408"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 98,
+        "match": "#F6F0E1"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 98,
+        "match": "#B0AEB8"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 98,
+        "match": "#E07A70"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 98,
+        "match": "#6E6C78"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 101,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 101,
+        "match": "#647068"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 101,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 101,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 102,
+        "match": "#092C25"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 102,
+        "match": "#F6F0E1"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 102,
+        "match": "#B4D6CA"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 102,
+        "match": "#C0463C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 102,
+        "match": "#A6AEA8"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 106,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 107,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 108,
+        "match": "#647068"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 109,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 110,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 111,
+        "match": "#092C25"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 112,
+        "match": "#F6F0E1"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 113,
+        "match": "#B4D6CA"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 114,
+        "match": "#C0463C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 115,
+        "match": "#A6AEA8"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 118,
+        "match": "#F3EEDD"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 119,
+        "match": "#F3EEDD"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 120,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 121,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 122,
+        "match": "#EECA80"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 123,
+        "match": "#1A1408"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 124,
+        "match": "#F6F0E1"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 125,
+        "match": "#B0AEB8"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 126,
+        "match": "#E07A70"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 127,
+        "match": "#6E6C78"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 158,
+        "match": "#F8F4EA"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 159,
+        "match": "#F0EBDE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 160,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 161,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 162,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 163,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 164,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 165,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 166,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 167,
+        "match": "#647068"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 168,
+        "match": "#A6AEA8"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 169,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 170,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 171,
+        "match": "#EECA80"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 172,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 173,
+        "match": "#092C25"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 174,
+        "match": "#C0463C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 175,
+        "match": "#2E8B64"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 176,
+        "match": "rgba("
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 177,
+        "match": "#145C4D"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 177,
+        "match": "#083028"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 178,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 178,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 179,
+        "match": "#F8F4EA"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 179,
+        "match": "#F0EBDE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 182,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 183,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 184,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 186,
+        "match": "#F8F4EA"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 187,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 188,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 189,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 190,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 191,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 192,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 193,
+        "match": "#647068"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 194,
+        "match": "#647068"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 195,
+        "match": "#C0463C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 196,
+        "match": "#092C25"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 197,
+        "match": "#2E8B64"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 198,
+        "match": "#2E8B64"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 199,
+        "match": "#647068"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 200,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 201,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 202,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 203,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 204,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 205,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 217,
+        "match": "#12121C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 218,
+        "match": "#0C0C14"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 219,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 220,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 221,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 222,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 223,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 224,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 225,
+        "match": "#F3EEDD"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 226,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 227,
+        "match": "#6E6C78"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 228,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 229,
+        "match": "rgba("
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 230,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 231,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 232,
+        "match": "#1A1408"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 233,
+        "match": "#E07A70"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 234,
+        "match": "#7CC4A0"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 235,
+        "match": "rgba("
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 236,
+        "match": "#34323F"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 236,
+        "match": "#1A1922"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 237,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 237,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 238,
+        "match": "#12121C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 238,
+        "match": "#0C0C14"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 241,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 242,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 243,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 245,
+        "match": "#12121C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 246,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 247,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 248,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 249,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 250,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 251,
+        "match": "#F3EEDD"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 252,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 253,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 254,
+        "match": "#E07A70"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 255,
+        "match": "#1A1408"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 256,
+        "match": "#7CC4A0"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 257,
+        "match": "#7CC4A0"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 258,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 259,
+        "match": "rgba("
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 260,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 261,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 262,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 263,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/theme/tokens.ts",
+        "line": 264,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/components/WomenConsentModal.tsx",
+        "line": 159,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AudioPlayerModal.tsx",
+        "line": 494,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AudioPlayerModal.tsx",
+        "line": 496,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AudioPlayerModal.tsx",
+        "line": 562,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AudioPlayerModal.tsx",
+        "line": 564,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AudioPlayerModal.tsx",
+        "line": 1068,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AudioPlayerModal.tsx",
+        "line": 1486,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/ContinueReadingCard.tsx",
+        "line": 178,
+        "match": "#EECA80"
+      },
+      {
+        "file": "src/components/ContinueReadingCard.tsx",
+        "line": 178,
+        "match": "#A67E34"
+      },
+      {
+        "file": "src/components/ContinueReadingCard.tsx",
+        "line": 260,
+        "match": "#092C25"
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 246,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 246,
+        "match": "#786234"
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 251,
+        "match": "#A0C8BA"
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 254,
+        "match": "#8EB3A5"
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 257,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 257,
+        "match": "#786234"
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 262,
+        "match": "#A0C8BA"
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 265,
+        "match": "#8EB3A5"
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 268,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 268,
+        "match": "#786234"
+      },
+      {
+        "file": "src/components/PrayerCountdown.tsx",
+        "line": 273,
+        "match": "#A0C8BA"
+      },
+      {
+        "file": "src/components/QuranLanguageModal.tsx",
+        "line": 295,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/DailyContentRail.tsx",
+        "line": 233,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/DailyContentRail.tsx",
+        "line": 233,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 22,
+        "match": "#0E1214"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 23,
+        "match": "#12121C"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 24,
+        "match": "#0C0C14"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 25,
+        "match": "#F4EEDE"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 26,
+        "match": "#F8F4EA"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 27,
+        "match": "#F0EBDE"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 28,
+        "match": "#F4EEDE"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 29,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 30,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 31,
+        "match": "#10B981"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 32,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 44,
+        "match": "#0E1214"
+      },
+      {
+        "file": "src/components/AnimatedSplash.tsx",
+        "line": 238,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/LiveMiniPlayer.tsx",
+        "line": 129,
+        "match": "#EF4444"
+      },
+      {
+        "file": "src/components/LiveMiniPlayer.tsx",
+        "line": 138,
+        "match": "#EF4444"
+      },
+      {
+        "file": "src/components/AnimatedBrandIcons.tsx",
+        "line": 100,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/components/AnimatedBrandIcons.tsx",
+        "line": 200,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/components/AnimatedBrandIcons.tsx",
+        "line": 311,
+        "match": "#FFFFFF"
+      },
+      {
+        "file": "src/components/AnimatedBrandIcons.tsx",
+        "line": 321,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/components/AnimatedBrandIcons.tsx",
+        "line": 322,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AnimatedBrandIcons.tsx",
+        "line": 322,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/AnimatedBrandIcons.tsx",
+        "line": 496,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/components/LanguagePickerModal.tsx",
+        "line": 291,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/PrayerHeroAtmosphere.tsx",
+        "line": 19,
+        "match": "#1a2340"
+      },
+      {
+        "file": "src/components/PrayerHeroAtmosphere.tsx",
+        "line": 20,
+        "match": "#d99b60"
+      },
+      {
+        "file": "src/components/PrayerHeroAtmosphere.tsx",
+        "line": 21,
+        "match": "#e8decb"
+      },
+      {
+        "file": "src/components/PrayerHeroAtmosphere.tsx",
+        "line": 22,
+        "match": "#c47832"
+      },
+      {
+        "file": "src/components/PrayerHeroAtmosphere.tsx",
+        "line": 23,
+        "match": "#251b3e"
+      },
+      {
+        "file": "src/components/PrayerHeroAtmosphere.tsx",
+        "line": 24,
+        "match": "#0e1017"
+      },
+      {
+        "file": "src/components/AdhanReciterModal.tsx",
+        "line": 246,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/LocationSetupModal.tsx",
+        "line": 112,
+        "match": "#ffffff"
+      },
+      {
+        "file": "src/components/LocationSetupModal.tsx",
+        "line": 115,
+        "match": "#ffffff"
+      },
+      {
+        "file": "src/components/LocationSetupModal.tsx",
+        "line": 175,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/WomenPinModal.tsx",
+        "line": 368,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/Card.tsx",
+        "line": 36,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/Card.tsx",
+        "line": 36,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/Card.tsx",
+        "line": 37,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/Card.tsx",
+        "line": 37,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/ui/PremiumCard.tsx",
+        "line": 91,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/ui/PremiumCard.tsx",
+        "line": 91,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/ui/PremiumCard.tsx",
+        "line": 92,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/ui/PremiumCard.tsx",
+        "line": 92,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/layout/SubHeader.tsx",
+        "line": 56,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/components/layout/SubHeader.tsx",
+        "line": 56,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/components/layout/SubHeader.tsx",
+        "line": 88,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/layout/SubHeader.tsx",
+        "line": 88,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/layout/SubHeader.tsx",
+        "line": 89,
+        "match": "rgba("
+      },
+      {
+        "file": "src/components/layout/SubHeader.tsx",
+        "line": 89,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/notifications.ts",
+        "line": 100,
+        "match": "#D97706"
+      },
+      {
+        "file": "src/lib/notifications.ts",
+        "line": 111,
+        "match": "#D97706"
+      },
+      {
+        "file": "src/lib/notifications.ts",
+        "line": 122,
+        "match": "#D97706"
+      },
+      {
+        "file": "src/lib/notifications.ts",
+        "line": 141,
+        "match": "#10B981"
+      },
+      {
+        "file": "src/lib/tajweed.ts",
+        "line": 18,
+        "match": "#2E7D32"
+      },
+      {
+        "file": "src/lib/tajweed.ts",
+        "line": 19,
+        "match": "#1565C0"
+      },
+      {
+        "file": "src/lib/tajweed.ts",
+        "line": 20,
+        "match": "#757575"
+      },
+      {
+        "file": "src/lib/tajweed.ts",
+        "line": 21,
+        "match": "#C62828"
+      },
+      {
+        "file": "src/lib/tajweed.ts",
+        "line": 22,
+        "match": "#6A1B9A"
+      },
+      {
+        "file": "src/lib/tajweed.ts",
+        "line": 23,
+        "match": "#EF6C00"
+      },
+      {
+        "file": "src/lib/nowPlayingNotification.ts",
+        "line": 149,
+        "match": "#0F5A4A"
+      },
+      {
+        "file": "src/lib/nowPlayingNotification.ts",
+        "line": 249,
+        "match": "#0F5A4A"
+      },
+      {
+        "file": "src/lib/systemMediaAdapter.ts",
+        "line": 612,
+        "match": "#0F5A4A"
+      },
+      {
+        "file": "src/lib/systemMediaAdapter.ts",
+        "line": 625,
+        "match": "#0F5A4A"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 4,
+        "match": "#121110"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 4,
+        "match": "#F5F1E8"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 12,
+        "match": "#E8924C"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 13,
+        "match": "#B45309"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 14,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 15,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 20,
+        "match": "#F472B6"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 21,
+        "match": "#BE185D"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 22,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 23,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 28,
+        "match": "#34D399"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 29,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 30,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 31,
+        "match": "#E0EAE5"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 36,
+        "match": "#2DD4BF"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 37,
+        "match": "#0D9488"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 38,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 39,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 44,
+        "match": "#FB923C"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 45,
+        "match": "#C2410C"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 46,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 47,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 52,
+        "match": "#60A5FA"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 53,
+        "match": "#2563EB"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 54,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 55,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 60,
+        "match": "#C084FC"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 61,
+        "match": "#9333EA"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 62,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 63,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 68,
+        "match": "#A3E635"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 69,
+        "match": "#65A30D"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 70,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 71,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 76,
+        "match": "#FDE047"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 77,
+        "match": "#A16207"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 78,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 79,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 84,
+        "match": "#F43F5E"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 85,
+        "match": "#E11D48"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 86,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 87,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 89,
+        "match": "#121110"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 89,
+        "match": "#F5F1E8"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 93,
+        "match": "#A78BFA"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 94,
+        "match": "#6D28D9"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 95,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 96,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 101,
+        "match": "#4F8EF7"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 102,
+        "match": "#1E40AF"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 103,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 104,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 109,
+        "match": "#FF4D6D"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 110,
+        "match": "#A4161A"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 111,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 112,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 117,
+        "match": "#E76F51"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 118,
+        "match": "#9C4221"
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 119,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/accents.ts",
+        "line": 120,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 9,
+        "match": "#12121C"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 10,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 11,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 12,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 13,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 14,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 15,
+        "match": "#F3EEDD"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 16,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 17,
+        "match": "#6E6C78"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 18,
+        "match": "#E07A70"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 19,
+        "match": "#1A1408"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 20,
+        "match": "#7CC4A0"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 21,
+        "match": "#7CC4A0"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 22,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 23,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 24,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 25,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 26,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 27,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 30,
+        "match": "#F8F4EA"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 31,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 32,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 33,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 34,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 35,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 36,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 37,
+        "match": "#647068"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 38,
+        "match": "#A6AEA8"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 39,
+        "match": "#C0463C"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 40,
+        "match": "#092C25"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 41,
+        "match": "#2E8B64"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 42,
+        "match": "#2E8B64"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 43,
+        "match": "#647068"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 44,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 45,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 46,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 47,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/lib/constants.ts",
+        "line": 48,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 10,
+        "match": "#12121C"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 11,
+        "match": "#0C0C14"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 12,
+        "match": "#2A2933"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 13,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 14,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 15,
+        "match": "#F3EEDD"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 16,
+        "match": "#A8A6AE"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 17,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 18,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 19,
+        "match": "#1A1408"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 20,
+        "match": "#201F28"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 21,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 22,
+        "match": "#8C7747"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 23,
+        "match": "#E6BE6C"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 26,
+        "match": "#F8F4EA"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 27,
+        "match": "#F0EBDE"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 28,
+        "match": "#FEFCF7"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 29,
+        "match": "#FAF6ED"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 30,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 31,
+        "match": "#14221E"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 32,
+        "match": "#647068"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 33,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 34,
+        "match": "#EECA80"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 35,
+        "match": "#092C25"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 36,
+        "match": "#F0F6F2"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 37,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 38,
+        "match": "#E2CC9C"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 39,
+        "match": "#8A6420"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 42,
+        "match": "#145648"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 42,
+        "match": "#082A23"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 43,
+        "match": "#0E4D3E"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 43,
+        "match": "#083228"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 44,
+        "match": "#C4A056"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 45,
+        "match": "#786234"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 46,
+        "match": "#F6F0E1"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 47,
+        "match": "#A0C8BA"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 48,
+        "match": "#8EB3A5"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 49,
+        "match": "#062821"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 51,
+        "match": "#DCB16A"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 51,
+        "match": "#BA8A3E"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 69,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 71,
+        "match": "#282318"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 79,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 81,
+        "match": "#000000"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 92,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 94,
+        "match": "#28443A"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 102,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 104,
+        "match": "#000000"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 115,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 117,
+        "match": "#0E362C"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 125,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 127,
+        "match": "#000000"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 138,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 140,
+        "match": "#7A5418"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 148,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 150,
+        "match": "#000000"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 161,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 163,
+        "match": "#282318"
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 171,
+        "match": "rgba("
+      },
+      {
+        "file": "src/lib/homeThemeTokens.ts",
+        "line": 173,
+        "match": "#000000"
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 4929,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/QuranReaderScreen.tsx",
+        "line": 5326,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/LibraryScreen.tsx",
+        "line": 1024,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/LibraryScreen.tsx",
+        "line": 1024,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/ToolsScreen.tsx",
+        "line": 595,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/ToolsScreen.tsx",
+        "line": 600,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/ToolsScreen.tsx",
+        "line": 890,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/ToolsScreen.tsx",
+        "line": 890,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/ToolsScreen.tsx",
+        "line": 1051,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/ToolsScreen.tsx",
+        "line": 1051,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/ToolsScreen.tsx",
+        "line": 1457,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/OnboardingScreen.tsx",
+        "line": 582,
+        "match": "#105A4B"
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 881,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 881,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 902,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 1015,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 1015,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 1016,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 1016,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 1510,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 1510,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/HomeScreen.tsx",
+        "line": 1781,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/NamesScreen.tsx",
+        "line": 83,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/QuranHomeScreen.tsx",
+        "line": 459,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/SettingsScreen.tsx",
+        "line": 2949,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/NotesScreen.tsx",
+        "line": 457,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/QuranAudioScreen.tsx",
+        "line": 2035,
+        "match": "rgba("
+      },
+      {
+        "file": "src/screens/QuranAudioScreen.tsx",
+        "line": 2447,
+        "match": "rgba("
+      }
+    ]
+  }
+}
+EXIT_CODE=0

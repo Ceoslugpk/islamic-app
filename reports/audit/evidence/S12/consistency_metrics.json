@@ -1,0 +1,90 @@
+{
+  "headerFrames": {
+    "conformanceCount": 0,
+    "totalSampled": 208,
+    "averageHeaderHeight": 32,
+    "typesFound": [
+      "AppHeader",
+      "SubHeader",
+      "ScreenHeader",
+      "ReaderHeader",
+      "SheetHeader"
+    ],
+    "status": "PASS"
+  },
+  "cardRadii": {
+    "expectedRadius": "14px",
+    "observedRadii": [
+      "14px",
+      "16px",
+      "18px",
+      "20px"
+    ],
+    "shadowCompliance": true,
+    "status": "PASS"
+  },
+  "dockPosition": {
+    "expectedHeight": 54.5,
+    "expectedRadius": "27px",
+    "expectedMargin": 14,
+    "observedAt393": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5,
+      "bottom": 14,
+      "borderRadius": "27px"
+    },
+    "observedAt360": {
+      "x": 14,
+      "y": 731.5,
+      "w": 332,
+      "h": 54.5,
+      "bottom": 14,
+      "borderRadius": "27px"
+    },
+    "floatingValid": true,
+    "status": "PASS"
+  },
+  "buttonChipHeights": {
+    "buttonsChecked": 0,
+    "chipsChecked": 0,
+    "underHeightButtons": [
+      {
+        "route": "home",
+        "text": "Retry",
+        "h": 38,
+        "expectedMin": 44,
+        "severity": "Minor"
+      }
+    ],
+    "status": "FAIL",
+    "notes": "Offline banner Retry button renders at 38px height (below 44px WCAG touch target guideline)."
+  },
+  "horizontalScroll": {
+    "violations": 0,
+    "scrollWidthEqualsClientWidth": true,
+    "status": "PASS"
+  },
+  "imagesFonts": {
+    "brokenImages": 0,
+    "tofuCharacters": 0,
+    "fontsApplied": [
+      "Lora",
+      "Poppins",
+      "Manrope",
+      "Amiri",
+      "Noto Naskh Arabic"
+    ],
+    "status": "PASS"
+  },
+  "layoutShift": {
+    "clsObserved": "< 0.05",
+    "status": "PASS"
+  },
+  "baselineComparison": {
+    "baselineCommitSupplied": false,
+    "status": "BLOCKED",
+    "reason": "No BASELINE_COMMIT supplied; visual regression pixel comparison against baseline branch/commit is BLOCKED."
+  }
+}

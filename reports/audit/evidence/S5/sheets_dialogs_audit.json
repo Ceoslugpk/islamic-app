@@ -1,0 +1,72 @@
+{
+  "AdhanReciterModal::Modal": {
+    "file": "src/components/AdhanReciterModal.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [
+      "Preview adhans with the play button. The chosen reciter will sound when prayer time arrives in-app."
+    ],
+    "status": "FAIL"
+  },
+  "AudioPlayerModal::Modal": {
+    "file": "src/components/AudioPlayerModal.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [
+      "Sleep 10m",
+      "Choose any surah or reciter from the Quran tab or Audio Center to start listening."
+    ],
+    "status": "FAIL"
+  },
+  "LanguagePickerModal::Modal": {
+    "file": "src/components/LanguagePickerModal.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [],
+    "status": "PASS"
+  },
+  "LocationSetupModal::Modal": {
+    "file": "src/components/LocationSetupModal.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [],
+    "status": "PASS"
+  },
+  "LocationSetupModal::Alert": {
+    "file": "src/components/LocationSetupModal.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [],
+    "status": "PASS"
+  },
+  "QuranLanguageModal::Modal": {
+    "file": "src/components/QuranLanguageModal.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [],
+    "status": "PASS"
+  },
+  "WomenConsentModal::Modal": {
+    "file": "src/components/WomenConsentModal.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [
+      "Your cycle, purity, and worship data are deeply personal. We protect your privacy with strict on-device guarantees:",
+      "Stays on this device",
+      "All period entries, purity days, and notes are stored strictly in local device storage.",
+      "No account or sign-in",
+      "No login, email, or cloud profile is ever required or attached to your records.",
+      "Zero analytics or telemetry",
+      "Cycle data is never sent to remote servers or included in analytics or telemetry logs.",
+      "Delete or hide anytime",
+      "You can hide the feature from the menu or permanently wipe all records anytime in Settings.",
+      "I Understand"
+    ],
+    "status": "FAIL"
+  },
+  "WomenPinModal::Modal": {
+    "file": "src/components/WomenPinModal.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [],
+    "status": "PASS"
+  },
+  "App::Modal": {
+    "file": "App.tsx",
+    "missing_t_keys": [],
+    "hardcoded_jsx_strings": [],
+    "status": "PASS"
+  }
+}

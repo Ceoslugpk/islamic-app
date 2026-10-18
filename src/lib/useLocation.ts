@@ -406,8 +406,12 @@ export function useLocation(askOnMount = false): UseLocationResult {
   useEffect(() => {
     let isMounted = true;
     if (Platform.OS === 'web') {
-      setStatus('unavailable');
       cachedStatus = 'unavailable';
+      Promise.resolve().then(() => {
+        if (isMounted) {
+          setStatus('unavailable');
+        }
+      });
       return;
     }
 

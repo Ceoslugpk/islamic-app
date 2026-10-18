@@ -1,0 +1,485 @@
+{
+  "qibla": [
+    {
+      "city": "Dubai",
+      "expected": 258.23,
+      "actual": 258.2312050432538,
+      "pass": true
+    },
+    {
+      "city": "London",
+      "expected": 118.99,
+      "actual": 118.98721949633443,
+      "pass": true
+    },
+    {
+      "city": "Karachi",
+      "expected": 266.74,
+      "actual": 267.7409955017553,
+      "pass": true
+    },
+    {
+      "city": "New York",
+      "expected": 58.48,
+      "actual": 58.48170103788368,
+      "pass": true
+    }
+  ],
+  "zakat": {
+    "net": 10000,
+    "threshold": 6630,
+    "due": 250,
+    "eligible": true,
+    "expectedDue": 250,
+    "pass": true,
+    "liability": {
+      "net": 6000,
+      "due": 0,
+      "expectedNet": 6000,
+      "expectedDue": 0,
+      "pass": true
+    }
+  },
+  "time": {
+    "twelveNoon": "12:05 PM",
+    "midnight": "12:05 AM",
+    "twentyFour": "12:05"
+  },
+  "nextPrayer": {
+    "beforeIsha": {
+      "name": "Isha",
+      "time": "20:00",
+      "index": 5
+    },
+    "afterIsha": null,
+    "expectedAfter": "tomorrow Fajr"
+  },
+  "hijri": {
+    "samples": [
+      {
+        "date": "2024-01-01",
+        "expected": {
+          "day": 19,
+          "month": 6,
+          "year": 1445
+        },
+        "actual": {
+          "day": 19,
+          "month": 6,
+          "year": 1445
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-02-07",
+        "expected": {
+          "day": 26,
+          "month": 7,
+          "year": 1445
+        },
+        "actual": {
+          "day": 26,
+          "month": 7,
+          "year": 1445
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-03-15",
+        "expected": {
+          "day": 5,
+          "month": 9,
+          "year": 1445
+        },
+        "actual": {
+          "day": 5,
+          "month": 9,
+          "year": 1445
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-04-21",
+        "expected": {
+          "day": 12,
+          "month": 10,
+          "year": 1445
+        },
+        "actual": {
+          "day": 12,
+          "month": 10,
+          "year": 1445
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-05-28",
+        "expected": {
+          "day": 20,
+          "month": 11,
+          "year": 1445
+        },
+        "actual": {
+          "day": 20,
+          "month": 11,
+          "year": 1445
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-07-04",
+        "expected": {
+          "day": 28,
+          "month": 12,
+          "year": 1445
+        },
+        "actual": {
+          "day": 28,
+          "month": 12,
+          "year": 1445
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-08-10",
+        "expected": {
+          "day": 6,
+          "month": 2,
+          "year": 1446
+        },
+        "actual": {
+          "day": 6,
+          "month": 2,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-09-16",
+        "expected": {
+          "day": 13,
+          "month": 3,
+          "year": 1446
+        },
+        "actual": {
+          "day": 13,
+          "month": 3,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-10-23",
+        "expected": {
+          "day": 20,
+          "month": 4,
+          "year": 1446
+        },
+        "actual": {
+          "day": 20,
+          "month": 4,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2024-11-29",
+        "expected": {
+          "day": 27,
+          "month": 5,
+          "year": 1446
+        },
+        "actual": {
+          "day": 27,
+          "month": 5,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-01-05",
+        "expected": {
+          "day": 5,
+          "month": 7,
+          "year": 1446
+        },
+        "actual": {
+          "day": 5,
+          "month": 7,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-02-11",
+        "expected": {
+          "day": 12,
+          "month": 8,
+          "year": 1446
+        },
+        "actual": {
+          "day": 12,
+          "month": 8,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-03-20",
+        "expected": {
+          "day": 20,
+          "month": 9,
+          "year": 1446
+        },
+        "actual": {
+          "day": 20,
+          "month": 9,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-04-26",
+        "expected": {
+          "day": 28,
+          "month": 10,
+          "year": 1446
+        },
+        "actual": {
+          "day": 28,
+          "month": 10,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-06-02",
+        "expected": {
+          "day": 6,
+          "month": 12,
+          "year": 1446
+        },
+        "actual": {
+          "day": 6,
+          "month": 12,
+          "year": 1446
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-07-09",
+        "expected": {
+          "day": 14,
+          "month": 1,
+          "year": 1447
+        },
+        "actual": {
+          "day": 14,
+          "month": 1,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-08-15",
+        "expected": {
+          "day": 21,
+          "month": 2,
+          "year": 1447
+        },
+        "actual": {
+          "day": 21,
+          "month": 2,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-09-21",
+        "expected": {
+          "day": 29,
+          "month": 3,
+          "year": 1447
+        },
+        "actual": {
+          "day": 29,
+          "month": 3,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-10-28",
+        "expected": {
+          "day": 6,
+          "month": 5,
+          "year": 1447
+        },
+        "actual": {
+          "day": 6,
+          "month": 5,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2025-12-04",
+        "expected": {
+          "day": 13,
+          "month": 6,
+          "year": 1447
+        },
+        "actual": {
+          "day": 13,
+          "month": 6,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-01-10",
+        "expected": {
+          "day": 21,
+          "month": 7,
+          "year": 1447
+        },
+        "actual": {
+          "day": 21,
+          "month": 7,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-02-16",
+        "expected": {
+          "day": 28,
+          "month": 8,
+          "year": 1447
+        },
+        "actual": {
+          "day": 28,
+          "month": 8,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-03-25",
+        "expected": {
+          "day": 6,
+          "month": 10,
+          "year": 1447
+        },
+        "actual": {
+          "day": 6,
+          "month": 10,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-05-01",
+        "expected": {
+          "day": 14,
+          "month": 11,
+          "year": 1447
+        },
+        "actual": {
+          "day": 14,
+          "month": 11,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-06-07",
+        "expected": {
+          "day": 21,
+          "month": 12,
+          "year": 1447
+        },
+        "actual": {
+          "day": 21,
+          "month": 12,
+          "year": 1447
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-07-14",
+        "expected": {
+          "day": 29,
+          "month": 1,
+          "year": 1448
+        },
+        "actual": {
+          "day": 29,
+          "month": 1,
+          "year": 1448
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-08-20",
+        "expected": {
+          "day": 7,
+          "month": 3,
+          "year": 1448
+        },
+        "actual": {
+          "day": 7,
+          "month": 3,
+          "year": 1448
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-09-26",
+        "expected": {
+          "day": 15,
+          "month": 4,
+          "year": 1448
+        },
+        "actual": {
+          "day": 15,
+          "month": 4,
+          "year": 1448
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-11-02",
+        "expected": {
+          "day": 22,
+          "month": 5,
+          "year": 1448
+        },
+        "actual": {
+          "day": 22,
+          "month": 5,
+          "year": 1448
+        },
+        "pass": true
+      },
+      {
+        "date": "2026-12-09",
+        "expected": {
+          "day": 29,
+          "month": 6,
+          "year": 1448
+        },
+        "actual": {
+          "day": 29,
+          "month": 6,
+          "year": 1448
+        },
+        "pass": true
+      }
+    ],
+    "pass": true,
+    "undefined": false
+  }
+}
+
+EXIT_CODE=0

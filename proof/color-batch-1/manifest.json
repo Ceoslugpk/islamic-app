@@ -1,0 +1,246 @@
+{
+  "batch": "Batch 1 (8 screens)",
+  "timestamp": "2026-10-16T16:22:47.205Z",
+  "viewports": [
+    "393x852"
+  ],
+  "themes": [
+    "paper",
+    "ink"
+  ],
+  "totalScreenshots": 16,
+  "screens": [
+    {
+      "id": "backup-restore",
+      "name": "BackupRestoreScreen",
+      "file": "src/screens/BackupRestoreScreen.tsx"
+    },
+    {
+      "id": "bookmarks",
+      "name": "BookmarksScreen",
+      "file": "src/screens/BookmarksScreen.tsx"
+    },
+    {
+      "id": "calendar",
+      "name": "CalendarScreen",
+      "file": "src/screens/CalendarScreen.tsx"
+    },
+    {
+      "id": "cities",
+      "name": "CitiesScreen",
+      "file": "src/screens/CitiesScreen.tsx"
+    },
+    {
+      "id": "downloads",
+      "name": "DownloadsScreen",
+      "file": "src/screens/DownloadsScreen.tsx"
+    },
+    {
+      "id": "duas",
+      "name": "DuasScreen",
+      "file": "src/screens/DuasScreen.tsx"
+    },
+    {
+      "id": "fasting",
+      "name": "FastingScreen",
+      "file": "src/screens/FastingScreen.tsx"
+    },
+    {
+      "id": "hadith",
+      "name": "HadithLibraryScreen",
+      "file": "src/screens/HadithLibraryScreen.tsx"
+    }
+  ],
+  "screenshots": [
+    {
+      "id": "backup-restore",
+      "screen": "BackupRestoreScreen",
+      "theme": "paper",
+      "file": "backup-restore_paper_393x852.png",
+      "path": "proof/color-batch-1/backup-restore_paper_393x852.png",
+      "bytes": 114396,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "bookmarks",
+      "screen": "BookmarksScreen",
+      "theme": "paper",
+      "file": "bookmarks_paper_393x852.png",
+      "path": "proof/color-batch-1/bookmarks_paper_393x852.png",
+      "bytes": 38542,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "calendar",
+      "screen": "CalendarScreen",
+      "theme": "paper",
+      "file": "calendar_paper_393x852.png",
+      "path": "proof/color-batch-1/calendar_paper_393x852.png",
+      "bytes": 91501,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "cities",
+      "screen": "CitiesScreen",
+      "theme": "paper",
+      "file": "cities_paper_393x852.png",
+      "path": "proof/color-batch-1/cities_paper_393x852.png",
+      "bytes": 109999,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "downloads",
+      "screen": "DownloadsScreen",
+      "theme": "paper",
+      "file": "downloads_paper_393x852.png",
+      "path": "proof/color-batch-1/downloads_paper_393x852.png",
+      "bytes": 88037,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "duas",
+      "screen": "DuasScreen",
+      "theme": "paper",
+      "file": "duas_paper_393x852.png",
+      "path": "proof/color-batch-1/duas_paper_393x852.png",
+      "bytes": 123478,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "fasting",
+      "screen": "FastingScreen",
+      "theme": "paper",
+      "file": "fasting_paper_393x852.png",
+      "path": "proof/color-batch-1/fasting_paper_393x852.png",
+      "bytes": 110231,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "hadith",
+      "screen": "HadithLibraryScreen",
+      "theme": "paper",
+      "file": "hadith_paper_393x852.png",
+      "path": "proof/color-batch-1/hadith_paper_393x852.png",
+      "bytes": 111614,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "backup-restore",
+      "screen": "BackupRestoreScreen",
+      "theme": "ink",
+      "file": "backup-restore_ink_393x852.png",
+      "path": "proof/color-batch-1/backup-restore_ink_393x852.png",
+      "bytes": 110607,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "bookmarks",
+      "screen": "BookmarksScreen",
+      "theme": "ink",
+      "file": "bookmarks_ink_393x852.png",
+      "path": "proof/color-batch-1/bookmarks_ink_393x852.png",
+      "bytes": 38473,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "calendar",
+      "screen": "CalendarScreen",
+      "theme": "ink",
+      "file": "calendar_ink_393x852.png",
+      "path": "proof/color-batch-1/calendar_ink_393x852.png",
+      "bytes": 87775,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "cities",
+      "screen": "CitiesScreen",
+      "theme": "ink",
+      "file": "cities_ink_393x852.png",
+      "path": "proof/color-batch-1/cities_ink_393x852.png",
+      "bytes": 104598,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "downloads",
+      "screen": "DownloadsScreen",
+      "theme": "ink",
+      "file": "downloads_ink_393x852.png",
+      "path": "proof/color-batch-1/downloads_ink_393x852.png",
+      "bytes": 86693,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "duas",
+      "screen": "DuasScreen",
+      "theme": "ink",
+      "file": "duas_ink_393x852.png",
+      "path": "proof/color-batch-1/duas_ink_393x852.png",
+      "bytes": 120611,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "fasting",
+      "screen": "FastingScreen",
+      "theme": "ink",
+      "file": "fasting_ink_393x852.png",
+      "path": "proof/color-batch-1/fasting_ink_393x852.png",
+      "bytes": 106234,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "hadith",
+      "screen": "HadithLibraryScreen",
+      "theme": "ink",
+      "file": "hadith_ink_393x852.png",
+      "path": "proof/color-batch-1/hadith_ink_393x852.png",
+      "bytes": 108528,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    }
+  ],
+  "reconciliation": {
+    "preauditLiteralRows": 627,
+    "currentLiteralRows": 604,
+    "preauditViolations": 409,
+    "currentViolations": 386,
+    "batch1ScreenLiteralViolations": 0,
+    "paperPureWhiteSurfaces": 0,
+    "greenControlViolations": 0
+  },
+  "globalDebt": {
+    "accentsFile": "src/lib/accents.ts (14 user-selectable accent themes, untouched)",
+    "remainingScreens": "42 screens to be migrated in batches 2-6"
+  },
+  "status": "PASS"
+}

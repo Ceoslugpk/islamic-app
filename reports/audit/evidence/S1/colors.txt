@@ -1,0 +1,13 @@
+$ node scripts/check-colors.js
+======================================================================
+PHASE 3 BATCH 16A — STATIC COLOR & TEXT GUARDRAILS SCANNER
+======================================================================
+Scanned 213 files under src/
+
+[FAIL] Found 1 guardrail violation(s):
+
+  1. src/components/AnimatedSplash.tsx:32 [no-dark-mode-token-literal]
+     Hardcoded dark mode token literal #E6BE6C found. Dynamic tokens from useTheme() or useThemeTokens() must be used.
+
+
+EXIT_CODE=1

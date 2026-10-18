@@ -1,0 +1,55 @@
+{
+  "checkedFiles": [
+    "src/lib/constants.ts",
+    "src/lib/backup.ts",
+    "src/lib/settings.tsx",
+    "src/lib/webStorage.ts",
+    "src/lib/hadithApi.ts",
+    "src/lib/names99.ts",
+    "src/lib/quran.ts",
+    "src/lib/surahDownloads.ts",
+    "src/lib/i18n.ts",
+    "src/lib/quranLanguageState.ts",
+    "src/lib/tafsirLanguageState.ts",
+    "src/lib/quranProgress.ts",
+    "src/lib/searchHistory.ts",
+    "src/lib/recentSurahs.ts",
+    "src/lib/privacy.ts"
+  ],
+  "keyChanges": [
+    {
+      "file": "src/lib/quranLanguageState.ts",
+      "removedLine": "-AsyncStorage.getItem(QURAN_TRANSLATION_LANG_KEY)"
+    },
+    {
+      "file": "src/lib/quranLanguageState.ts",
+      "removedLine": "-    await AsyncStorage.setItem(QURAN_TRANSLATION_LANG_KEY, next);"
+    }
+  ],
+  "breakingChanges": [],
+  "compatible": true,
+  "storagePrefixes": [
+    "islamic-settings",
+    "settings",
+    "quran-",
+    "audio-",
+    "hifz-",
+    "playlist-",
+    "tafsir-",
+    "vocab-",
+    "@search_history_"
+  ],
+  "activeKeys": [],
+  "headStoragePrefixes": [
+    "islamic-settings",
+    "settings",
+    "quran-",
+    "audio-",
+    "hifz-",
+    "playlist-",
+    "tafsir-",
+    "vocab-",
+    "@search_history_"
+  ],
+  "prefixesMatchHead": true
+}

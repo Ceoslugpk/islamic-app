@@ -1,0 +1,32 @@
+{
+  "rule": "Rule 14: Interpolation tokens must be exact (never translate, rename, or drop)",
+  "locales_with_mismatches": [
+    "ar"
+  ],
+  "mismatches": {
+    "ar": [
+      {
+        "key": "Hizb {n} selected",
+        "en_tokens": [
+          "{n}"
+        ],
+        "locale_tokens": [
+          "{ن}"
+        ],
+        "en_value": "Hizb {n} selected",
+        "locale_value": "حزب {ن} محدد"
+      },
+      {
+        "key": "Juz {n} selected",
+        "en_tokens": [
+          "{n}"
+        ],
+        "locale_tokens": [
+          "{ن}"
+        ],
+        "en_value": "Juz {n} selected",
+        "locale_value": "الجزء {ن} محدد"
+      }
+    ]
+  }
+}

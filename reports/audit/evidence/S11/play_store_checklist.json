@@ -1,0 +1,52 @@
+{
+  "package_name_match": {
+    "expected": "com.qashi.islamic",
+    "actual": "com.qashi.islamic",
+    "status": "PASS"
+  },
+  "app_bundle_aab": {
+    "expected": "Android App Bundle (.aab) format",
+    "actual": "android/app/build/outputs/bundle/release/app-release.aab exists (68.61 MB)",
+    "status": "PASS"
+  },
+  "target_sdk_api34_plus": {
+    "expected": "targetSdkVersion >= 34",
+    "actual": 36,
+    "status": "PASS"
+  },
+  "64_bit_compliance": {
+    "expected": "Include 64-bit architectures (arm64-v8a, x86_64)",
+    "actual": "Includes arm64-v8a and x86_64 alongside 32-bit",
+    "status": "PASS"
+  },
+  "release_signing_keystore": {
+    "expected": "Valid production keystore with SHA-256 cert",
+    "actual": "RSA 2048-bit, valid to 2054, CN=Ceoslugpk, OU=Islamic App",
+    "status": "PASS"
+  },
+  "content_rating": {
+    "expected": "IARC questionnaire completed for Everyone / 4+",
+    "actual": "Completed in docs/publishing.md (Violence: None, Sexual: None, Gambling: None, Rating: Everyone)",
+    "status": "PASS"
+  },
+  "ads_declaration": {
+    "expected": "Declaration matching app content (Contains ads: No)",
+    "actual": "No ad SDKs in package.json or native code; app is 100% ad-free",
+    "status": "PASS"
+  },
+  "sensitive_permissions_policy": {
+    "expected": "Dangerous/restricted permissions justified or removed",
+    "actual": "ACTIVITY_RECOGNITION, RECORD_AUDIO, SYSTEM_ALERT_WINDOW removed by plugin; location used only for prayer/qibla foreground; SCHEDULE_EXACT_ALARM omitted in release manifest",
+    "status": "PASS"
+  },
+  "privacy_policy_url": {
+    "expected": "Live public HTTPS Privacy Policy URL on registered domain",
+    "actual": "Missing external hosted HTTPS URL; only in-app screen and local/dev HTTP references exist",
+    "status": "FAIL"
+  },
+  "store_feature_graphic": {
+    "expected": "1024x500 JPEG/PNG feature graphic",
+    "actual": "Missing from repository",
+    "status": "FAIL"
+  }
+}

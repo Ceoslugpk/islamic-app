@@ -1,0 +1,14 @@
+{
+  "test": "Onboarding Language Animation & Completion",
+  "demoCycled": true,
+  "initialSample": "I S L A M I C  ASSALAM O ALAIKUM Set up your languages Choose how you read and listen.  APP LANGUAGE English  · Menus & buttons   QURAN TRANSLATIO",
+  "cycle1Sample": "اسلامک  مرحبًا بك اختر لغاتك المفضلة اختر كيف تقرأ وتستمع إلى القرآن الكريم.  لغة التطبيق العربية  · القوائم والأزرار   ترجمة القرآن العربية  · Sa",
+  "cycle2Sample": "اسلامک  خوش آمدید اپنی زبانیں منتخب کریں قرآن پاک پڑھنے اور سننے کے لیے اپنی ترجیحات منتخب کریں۔  ایپ کی زبان اردو  · القوائم والأزرار   قرآن کا ت",
+  "onboardingCompleted": false,
+  "screenshots": [
+    "reports/audit/evidence/S5/screenshots/onboarding_initial_en.png",
+    "reports/audit/evidence/S5/screenshots/onboarding_cycle_1.png",
+    "reports/audit/evidence/S5/screenshots/onboarding_cycle_2.png"
+  ],
+  "status": "FAIL"
+}

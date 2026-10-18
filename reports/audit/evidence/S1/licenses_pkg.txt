@@ -1,0 +1,13 @@
+$ npm query .[name] --json
+npm error code EQUERYNODEPTYPE
+npm error `.` is not a supported dependency type.
+{
+  "error": {
+    "code": "EQUERYNODEPTYPE",
+    "summary": "`.` is not a supported dependency type.",
+    "detail": ""
+  }
+}
+npm error A complete log of this run can be found in: /home/ubuntu/.npm/_logs/2026-10-17T10_12_17_811Z-debug-0.log
+
+EXIT_CODE=1

@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ActivityIndicator,
@@ -9,8 +8,12 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
+import { getTokens, cardTokens } from '../theme/tokens';
+import { getCardShadow } from '../lib/homeThemeTokens';
 import { LocationPermissionStatus } from '../lib/useLocation';
 import { t } from '../lib/i18n';
 
@@ -41,7 +44,8 @@ export function LocationPermissionNote({
   style,
   customMessage,
 }: LocationPermissionNoteProps) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
+  const tokens = getTokens(mode);
 
   // Only render when permission is denied or unavailable
   if (status !== 'denied' && status !== 'unavailable') {
@@ -70,13 +74,21 @@ export function LocationPermissionNote({
       style={[
         styles.container,
         {
-          backgroundColor: colors.bgSurface,
-          borderColor: colors.borderSubtle,
+          backgroundColor: tokens.cardTop,
+          borderColor: tokens.cardBorder,
         },
+        getCardShadow(mode),
         compact && styles.containerCompact,
         style,
       ]}
     >
+      <LinearGradient
+        colors={[...tokens.cardGradient]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={[StyleSheet.absoluteFill, styles.gradientSurface]}
+        pointerEvents="none"
+      />
       <View style={styles.topRow}>
         <View
           style={[
@@ -95,10 +107,10 @@ export function LocationPermissionNote({
         </View>
 
         <View style={styles.textWrap}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
+          <AppText variant="sectionTitle" style={styles.title}>{title}</AppText>
+          <AppText variant="subtitle" style={styles.description}>
             {description}
-          </Text>
+          </AppText>
         </View>
 
         {onDismiss && (
@@ -131,38 +143,40 @@ export function LocationPermissionNote({
               accessibilityLabel={t('Choose city from world cities')}
             >
               <Ionicons name="business-outline" size={14} color={colors.textPrimary} />
-              <Text style={[styles.cityBtnText, { color: colors.textPrimary }]}>{t('Choose City')}</Text>
+              <AppText variant="rowTitle" style={styles.cityBtnText}>{t('Choose City')}</AppText>
             </TouchableOpacity>
           )}
 
           {onEnable && (
             <TouchableOpacity
-              style={[
-                styles.enableBtn,
-                {
-                  backgroundColor: colors.accent,
-                },
-              ]}
+              style={styles.enableBtnWrap}
               onPress={onEnable}
               disabled={loading}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={isDenied ? t('Enable Location') : t('Retry Detection')}
             >
-              {loading ? (
-                <ActivityIndicator size="small" color={colors.onAccent} />
-              ) : (
-                <>
-                  <Ionicons
-                    name={isDenied ? 'shield-checkmark-outline' : 'refresh-outline'}
-                    size={14}
-                    color={colors.onAccent}
-                  />
-                  <Text style={[styles.enableBtnText, { color: colors.onAccent }]}>
-                    {isDenied ? t('Enable Location') : t('Retry Detection')}
-                  </Text>
-                </>
-              )}
+              <LinearGradient
+                colors={tokens.goldGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.enableBtn}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color={tokens.onGold} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name={isDenied ? 'shield-checkmark-outline' : 'refresh-outline'}
+                      size={14}
+                      color={tokens.onGold}
+                    />
+                    <AppText variant="rowTitle" tone="onGold" style={styles.enableBtnText}>
+                      {isDenied ? t('Enable Location') : t('Retry Detection')}
+                    </AppText>
+                  </>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           )}
 
@@ -181,7 +195,7 @@ export function LocationPermissionNote({
               accessibilityLabel={t('Open device settings to enable location')}
             >
               <Ionicons name="settings-outline" size={14} color={colors.textPrimary} />
-              <Text style={[styles.cityBtnText, { color: colors.textPrimary }]}>{t('Device Settings')}</Text>
+              <AppText variant="rowTitle" style={styles.cityBtnText}>{t('Device Settings')}</AppText>
             </TouchableOpacity>
           )}
         </View>
@@ -192,14 +206,18 @@ export function LocationPermissionNote({
 
 const styles = StyleSheet.create({
   container: {
-    borderWidth: 1,
+    borderWidth: cardTokens.borderWidth,
     borderRadius: 12,
     padding: 16,
     marginVertical: 10,
+    position: 'relative',
   },
   containerCompact: {
     padding: 12,
     marginVertical: 6,
+  },
+  gradientSurface: {
+    borderRadius: 11.25,
   },
   topRow: {
     flexDirection: 'row',
@@ -249,6 +267,10 @@ const styles = StyleSheet.create({
   cityBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12.5,
+  },
+  enableBtnWrap: {
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   enableBtn: {
     flexDirection: 'row',

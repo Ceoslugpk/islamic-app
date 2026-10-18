@@ -1,0 +1,36 @@
+{
+  "app_icon_512": {
+    "status": "PARTIAL",
+    "detail": "assets/icon.png exists but is 1024x1024 RGB (1.6 MB). Store submission requires 512x512 32-bit PNG. assets/android-icon-foreground.png is 512x512 RGBA."
+  },
+  "feature_graphic_1024x500": {
+    "status": "FAIL",
+    "detail": "Missing from repository (documented as pending in docs/publishing.md line 102)"
+  },
+  "phone_screenshots": {
+    "status": "PASS",
+    "count": 4,
+    "paths": [
+      "screenshots/home.png",
+      "screenshots/quran.png",
+      "screenshots/tools.png",
+      "screenshots/settings.png"
+    ],
+    "dimensions": [
+      780,
+      1688
+    ],
+    "aspect_ratio": "9:19.47",
+    "meets_store_min": true
+  },
+  "tablet_7inch_screenshots": {
+    "status": "FAIL",
+    "count": 0,
+    "detail": "Missing 7-inch tablet screenshots"
+  },
+  "tablet_10inch_screenshots": {
+    "status": "FAIL",
+    "count": 0,
+    "detail": "Missing 10-inch tablet screenshots"
+  }
+}

@@ -158,14 +158,14 @@ for (const w of testWidths) {
   assert.equal(snap, cardW + gap, `Snap interval must match card width + gap at viewport ${w}`);
 }
 
-// 2f. Card vertical compactness contracts to prevent height inflation
+// 2f. Card vertical breathing room with uniform slide sizing
 assert.ok(
   dailyContentRailCode.includes('numberOfLines={1}'),
   'DailyContentRail divine names must limit transliteration lines to avoid vertical inflation'
 );
 assert.ok(
-  dailyContentRailCode.includes('minHeight: 180') && dailyContentRailCode.includes('flex: 1'),
-  'DailyContentRail cards must have uniform flex: 1 and minHeight to avoid height mismatch'
+  dailyContentRailCode.includes('minHeight: 194') && dailyContentRailCode.includes('flex: 1'),
+  'DailyContentRail cards must keep uniform flex: 1 sizing with enough height for Arabic line boxes'
 );
 
 // 2g. PrayerTimeline safe symmetric insets and shrink protection for time strings

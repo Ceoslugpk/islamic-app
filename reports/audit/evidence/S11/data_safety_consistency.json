@@ -1,0 +1,41 @@
+{
+  "location": {
+    "collected": true,
+    "type": "Approximate and Precise (GPS)",
+    "purpose": "App functionality (prayer times calculation, Qibla compass, mosque finder)",
+    "shared": false,
+    "ephemeral_transmission": "Sent as query parameters over HTTPS to api.islamic.app and nominatim.openstreetmap.org; not linked to user identity or persisted on server",
+    "play_console_declaration": "Collected: Yes, Shared: No, Linked to identity: No, Used for tracking: No"
+  },
+  "personal_info": {
+    "collected": false,
+    "note": "No account creation, sign-in, email, phone number, or user profiles"
+  },
+  "financial_info": {
+    "collected": false,
+    "note": "No in-app purchases, paid features, or payment processing"
+  },
+  "health_info_womens_worship": {
+    "collected": false,
+    "note": "Cycle dates, purity intervals, and nifas tracking stored strictly on-device in local SQLite; never transmitted off-device; no Google Health Connect integration"
+  },
+  "messages_photos_files": {
+    "collected": false,
+    "note": "No messaging, photo gallery, or user file uploads"
+  },
+  "device_identifiers": {
+    "collected": false,
+    "note": "No AAID/GAID, IDFA, or hardware serial tracking"
+  },
+  "analytics_diagnostics": {
+    "collected": false,
+    "note": "No Firebase Analytics, Google Analytics, Sentry, Bugsnag, or crash trackers"
+  },
+  "encryption_in_transit": {
+    "enforced": true,
+    "protocol": "HTTPS 100% across all external endpoints in src/"
+  },
+  "data_deletion_request": {
+    "mechanism": "In-app Settings -> Backup & Restore -> Clear All Data wipes SQLite and AsyncStorage; Android Clear Storage wipes all container data. No remote server data exists to delete."
+  }
+}

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, forwardRef } from 'react';
+import React, { createContext, useContext, useMemo, useState, forwardRef } from 'react';
 import {
   View,
   ScrollView,
@@ -10,9 +10,10 @@ import {
   Platform,
   StyleProp,
   ViewStyle,
+  RefreshControlProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TAB_PAD_BOTTOM, SUBHEADER_BOTTOM } from './layout.constants';
+import { TAB_PAD_BOTTOM, SUBHEADER_BOTTOM, SUBHEADER_HEIGHT, CONTENT_GAP, HEADER_FADE } from './layout.constants';
 
 export interface DetailScreenContextValue {
   padTop: number;
@@ -20,7 +21,8 @@ export interface DetailScreenContextValue {
   safeTop: number;
   safeBottom: number;
   header?: React.ReactNode;
-  headerRenderedOutside?: boolean;
+  headerHeight: number;
+  isDirectScroller: boolean;
 }
 
 const defaultContextValue: DetailScreenContextValue = {
@@ -28,7 +30,8 @@ const defaultContextValue: DetailScreenContextValue = {
   padBottom: TAB_PAD_BOTTOM(0),
   safeTop: 0,
   safeBottom: 0,
-  headerRenderedOutside: false,
+  headerHeight: SUBHEADER_HEIGHT - HEADER_FADE,
+  isDirectScroller: true,
 };
 
 export const DetailScreenContext = createContext<DetailScreenContextValue>(defaultContextValue);
@@ -52,15 +55,14 @@ export interface DetailScreenProps {
   customPadTop?: number;
   /**
    * Whether to include safe-area top inset directly in DetailScreen.
-   * Defaults to false (for screens inside App.tsx tabs that have root top clearance).
-   * Set true for modal sub-screens (e.g. Settings sub-screens like Backup/Legal).
+   * Defaults to true for all secondary/detail screens so headers and content respect the status bar.
    */
   includeTopInset?: boolean;
 }
 
 /**
  * Authoritative DetailScreen layout container for secondary/sub screens.
- * Centralizes top and bottom clearance tokens (SUBHEADER_BOTTOM, TAB_PAD_BOTTOM),
+ * Centralizes top and bottom clearance tokens (CONTENT_GAP = 24, TAB_PAD_BOTTOM),
  * ensures consistent scroll geometry, avoids double top padding, and preserves keyboard/modal behavior.
  */
 export function DetailScreen({
@@ -73,19 +75,41 @@ export function DetailScreen({
   keyboardAvoiding = false,
   customPadBottom,
   customPadTop,
-  includeTopInset = false,
+  includeTopInset = true,
 }: DetailScreenProps) {
   const insets = useSafeAreaInsets();
   const safeTop = insets.top;
   const safeBottom = insets.bottom;
+  const topOffset = includeTopInset ? safeTop : 0;
 
-  const headerRenderedOutside = Boolean(header && !scrollable);
+  const [headerHeight, setHeaderHeight] = useState<number>(0);
+  const defaultH = SUBHEADER_HEIGHT;
+  const effectiveHeaderHeight = Math.max(0, (headerHeight > 0 ? headerHeight : defaultH) - HEADER_FADE);
+
+  const isDirectScroller = useMemo(() => {
+    if (scrollable) return true;
+    const childrenArray = React.Children.toArray(children);
+    if (childrenArray.length === 0) return false;
+    const firstChild = childrenArray[0];
+    if (React.isValidElement(firstChild)) {
+      if (firstChild.type === DetailScrollView || firstChild.type === DetailFlatList) {
+        return true;
+      }
+      const typeName = (firstChild.type as any)?.displayName || (firstChild.type as any)?.name;
+      if (typeName === 'DetailScrollView' || typeName === 'DetailFlatList') {
+        return true;
+      }
+    }
+    return false;
+  }, [scrollable, children]);
 
   const padTop = useMemo(() => {
     if (customPadTop !== undefined) return customPadTop;
-    if (header) return 0;
+    if (header) {
+      return isDirectScroller ? topOffset + effectiveHeaderHeight + CONTENT_GAP : 0;
+    }
     return SUBHEADER_BOTTOM(safeTop);
-  }, [header, safeTop, customPadTop]);
+  }, [customPadTop, header, isDirectScroller, topOffset, effectiveHeaderHeight, safeTop]);
 
   const padBottom = useMemo(() => {
     if (customPadBottom !== undefined) return customPadBottom;
@@ -99,9 +123,10 @@ export function DetailScreen({
       safeTop,
       safeBottom,
       header,
-      headerRenderedOutside,
+      headerHeight: effectiveHeaderHeight,
+      isDirectScroller,
     }),
-    [padTop, padBottom, safeTop, safeBottom, header, headerRenderedOutside]
+    [padTop, padBottom, safeTop, safeBottom, header, effectiveHeaderHeight, isDirectScroller]
   );
 
   const content = scrollable ? (
@@ -117,13 +142,32 @@ export function DetailScreen({
       style={[
         styles.container,
         Platform.OS === 'web' && styles.webDvh,
-        includeTopInset && { paddingTop: safeTop },
         style,
       ]}
       testID={testID}
     >
-      {headerRenderedOutside ? header : null}
-      <View style={styles.contentWrapper}>
+      {header ? (
+        <View
+          style={[styles.headerWrapper, { top: topOffset }]}
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0 && Math.abs(h - headerHeight) > 0.5) {
+              setHeaderHeight(h);
+            }
+          }}
+        >
+          {header}
+        </View>
+      ) : null}
+      <View
+        style={[
+          styles.contentWrapper,
+          header && !isDirectScroller
+            ? { paddingTop: topOffset + effectiveHeaderHeight + CONTENT_GAP }
+            : null,
+        ]}
+        testID={!isDirectScroller ? 'screen-content' : undefined}
+      >
         {content}
       </View>
     </View>
@@ -147,29 +191,23 @@ export function DetailScreen({
 
 /**
  * DetailScrollView automatically applies unified clearance padding:
- * - paddingTop: padTop (0 when header is passed)
+ * - paddingTop: padTop (effectiveHeaderHeight + CONTENT_GAP when header is present)
  * - paddingBottom: padBottom (TAB_PAD_BOTTOM)
  * - showsVerticalScrollIndicator: false
  * - contentInsetAdjustmentBehavior: 'never'
  * - bounces: true
  */
 export const DetailScrollView = forwardRef<ScrollView, ScrollViewProps>(
-  ({ contentContainerStyle, children, ...rest }, ref) => {
-    const { padTop, padBottom, header, headerRenderedOutside } = useDetailScreen();
-    const flatStyle = StyleSheet.flatten(contentContainerStyle);
-    const padH =
-      typeof flatStyle?.paddingHorizontal === 'number'
-        ? flatStyle.paddingHorizontal
-        : 0;
+  ({ contentContainerStyle, children, refreshControl, testID, ...rest }, ref) => {
+    const { padTop, padBottom, headerHeight, isDirectScroller } = useDetailScreen();
+    const resolvedTestID = testID ?? (isDirectScroller ? 'screen-content' : 'screen-scroll-container');
 
-    // Only render header inside ScrollView if it wasn't already rendered outside
-    const shouldRenderHeader = header && !headerRenderedOutside;
-    const headerNode =
-      shouldRenderHeader && padH > 0 ? (
-        <View style={{ marginHorizontal: -padH }}>{header}</View>
-      ) : shouldRenderHeader ? (
-        header
-      ) : null;
+    const injectedRefreshControl = useMemo(() => {
+      if (!refreshControl || !React.isValidElement(refreshControl)) return refreshControl;
+      const rc = refreshControl as React.ReactElement<RefreshControlProps>;
+      if (rc.props.progressViewOffset !== undefined) return refreshControl;
+      return React.cloneElement(rc, { progressViewOffset: headerHeight });
+    }, [refreshControl, headerHeight]);
 
     return (
       <ScrollView
@@ -179,13 +217,14 @@ export const DetailScrollView = forwardRef<ScrollView, ScrollViewProps>(
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         bounces={true}
+        refreshControl={injectedRefreshControl}
+        testID={resolvedTestID}
         {...rest}
         contentContainerStyle={[
           contentContainerStyle,
-          { paddingTop: padTop, paddingBottom: padBottom },
+          { paddingTop: isDirectScroller ? padTop : 0, paddingBottom: padBottom },
         ]}
       >
-        {headerNode}
         {children}
       </ScrollView>
     );
@@ -199,42 +238,16 @@ DetailScrollView.displayName = 'DetailScrollView';
 export function DetailFlatList<T>(
   props: FlatListProps<T> & { ref?: React.Ref<FlatList<T>> }
 ) {
-  const { padTop, padBottom, header, headerRenderedOutside } = useDetailScreen();
-  const { contentContainerStyle, ListHeaderComponent, ...rest } = props;
-  const flatStyle = StyleSheet.flatten(contentContainerStyle);
-  const padH =
-    typeof flatStyle?.paddingHorizontal === 'number'
-      ? flatStyle.paddingHorizontal
-      : 0;
+  const { padTop, padBottom, headerHeight, isDirectScroller } = useDetailScreen();
+  const { contentContainerStyle, refreshControl, testID, ...rest } = props;
+  const resolvedTestID = testID ?? (isDirectScroller ? 'screen-content' : 'screen-scroll-container');
 
-  // Only combine header if it was not already rendered outside
-  const shouldRenderHeader = header && !headerRenderedOutside;
-
-  const combinedHeader = useMemo<React.ReactElement | null>(() => {
-    if (!shouldRenderHeader && !ListHeaderComponent) return null;
-    const headerNode =
-      shouldRenderHeader && padH > 0 ? (
-        <View style={{ marginHorizontal: -padH }}>{header}</View>
-      ) : shouldRenderHeader ? (
-        <View>{header}</View>
-      ) : null;
-    if (!headerNode) {
-      return React.isValidElement(ListHeaderComponent)
-        ? (ListHeaderComponent as React.ReactElement)
-        : typeof ListHeaderComponent === 'function'
-        ? React.createElement(ListHeaderComponent)
-        : null;
-    }
-    if (!ListHeaderComponent) return headerNode;
-    return (
-      <View>
-        {headerNode}
-        {typeof ListHeaderComponent === 'function'
-          ? React.createElement(ListHeaderComponent)
-          : ListHeaderComponent}
-      </View>
-    );
-  }, [shouldRenderHeader, header, ListHeaderComponent, padH]);
+  const injectedRefreshControl = useMemo(() => {
+    if (!refreshControl || !React.isValidElement(refreshControl)) return refreshControl;
+    const rc = refreshControl as React.ReactElement<RefreshControlProps>;
+    if (rc.props.progressViewOffset !== undefined) return refreshControl;
+    return React.cloneElement(rc, { progressViewOffset: headerHeight });
+  }, [refreshControl, headerHeight]);
 
   return (
     <FlatList
@@ -243,11 +256,12 @@ export function DetailFlatList<T>(
       contentInsetAdjustmentBehavior="never"
       automaticallyAdjustContentInsets={false}
       bounces={true}
+      refreshControl={injectedRefreshControl}
+      testID={resolvedTestID}
       {...rest}
-      ListHeaderComponent={combinedHeader}
       contentContainerStyle={[
         contentContainerStyle,
-        { paddingTop: padTop, paddingBottom: padBottom },
+        { paddingTop: isDirectScroller ? padTop : 0, paddingBottom: padBottom },
       ]}
     />
   );
@@ -262,6 +276,16 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     backgroundColor: 'transparent',
+    position: 'relative',
+  },
+  headerWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    elevation: 10,
+    overflow: 'visible',
   },
   contentWrapper: {
     flex: 1,

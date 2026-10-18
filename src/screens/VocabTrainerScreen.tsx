@@ -1,17 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTranslation } from 'react-i18next';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
-import { getPillShadow, getCardShadow } from '../lib/homeThemeTokens';
+import { getPillShadow } from '../lib/homeThemeTokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
@@ -25,15 +25,6 @@ const PROGRESS_KEY = 'vocab-trainer-progress-v1';
 interface Progress {
   known: Record<string, boolean>; // arabic -> known
   lastIndex: number;
-}
-
-function loadProgress(): Progress {
-  try {
-    // AsyncStorage is async; this sync helper reads from a module cache set at init.
-    return { known: {}, lastIndex: 0 };
-  } catch {
-    return { known: {}, lastIndex: 0 };
-  }
 }
 
 interface Props {
@@ -131,14 +122,13 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
         />
       }
     >
-      <View style={styles.contentWrap}>
-        <DetailScreen.ScrollView
-          contentContainerStyle={[
-            styles.content,
-            { paddingHorizontal: paddingH },
-          ]}
-          style={{ flex: 1 }}
-        >
+      <DetailScreen.ScrollView
+        style={[styles.contentWrap, { flex: 1 }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingHorizontal: paddingH },
+        ]}
+      >
           {/* Progress */}
           <View style={styles.statsRow}>
             <View
@@ -152,9 +142,9 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               ]}
             >
               <Ionicons name="checkmark-circle" size={14} color={tokens.goldText} />
-              <Text style={[styles.statText, { color: tokens.text }]}>
+              <AppText variant="caption" style={styles.statText}>
                 {knownCount}/{VOCAB_WORDS.length} {t('known')}
-              </Text>
+              </AppText>
             </View>
             <View
               style={[
@@ -167,7 +157,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               ]}
             >
               <Ionicons name="trending-up" size={14} color={tokens.goldText} />
-              <Text style={[styles.statText, { color: tokens.text }]}>{progressPercent}%</Text>
+              <AppText variant="caption" style={styles.statText}>{progressPercent}%</AppText>
             </View>
           </View>
 
@@ -190,7 +180,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                 ]}
               >
                 <Ionicons name="sparkles" size={12} color={tokens.goldText} />
-                <Text style={[styles.dailyBadgeText, { color: tokens.goldText }]}>{t("TODAY'S WORD")}</Text>
+                <AppText variant="eyebrow" highlight style={styles.dailyBadgeText}>{t("TODAY'S WORD")}</AppText>
               </View>
               <View
                 style={[
@@ -203,9 +193,9 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                   },
                 ]}
               >
-                <Text style={[styles.tierText, { color: tokens.goldText }]}>
+                <AppText variant="eyebrow" highlight style={styles.tierText}>
                   {t(TIER_LABELS[dailyWord.tier])}
-                </Text>
+                </AppText>
               </View>
             </View>
 
@@ -213,15 +203,15 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               <ArabicText size={34} align="center" style={[styles.dailyArabic, { color: tokens.arabicName }]}>
                 {dailyWord.arabic}
               </ArabicText>
-              <Text style={[styles.dailyTranslit, { color: tokens.muted }]}>
+              <AppText variant="body" tone="faint" style={styles.dailyTranslit}>
                 {dailyWord.transliteration}
-              </Text>
-              <Text style={[styles.dailyMeaning, { color: tokens.text }]}>
+              </AppText>
+              <AppText variant="sectionTitle" style={styles.dailyMeaning}>
                 &quot;{t(dailyWord.meaning)}&quot;
-              </Text>
-              <Text style={[styles.dailyRef, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="caption" tone="faint" style={styles.dailyRef}>
                 Quran {dailyWord.ref}
-              </Text>
+              </AppText>
             </View>
 
             <View style={styles.dailyFooter}>
@@ -246,9 +236,9 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                 accessibilityLabel={`Practice ${dailyWord.transliteration} in flashcards`}
               >
                 <Ionicons name="school-outline" size={14} color={tokens.goldText} />
-                <Text style={[styles.dailyActionBtnText, { color: tokens.goldText }]}>
+                <AppText variant="link" style={styles.dailyActionBtnText}>
                   {t('Practice in Trainer')}
-                </Text>
+                </AppText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -274,16 +264,13 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                   size={14}
                   color={known[dailyWord.arabic] ? tokens.onGold : tokens.goldText}
                 />
-                <Text
-                  style={[
-                    styles.dailyActionBtnText,
-                    {
-                      color: known[dailyWord.arabic] ? tokens.onGold : tokens.goldText,
-                    },
-                  ]}
+                <AppText
+                  variant="link"
+                  tone={known[dailyWord.arabic] ? 'onGold' : undefined}
+                  style={styles.dailyActionBtnText}
                 >
                   {known[dailyWord.arabic] ? t('Learned ✓') : t('Mark Known')}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           </PremiumCard>
@@ -316,14 +303,13 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                   ]}
                   accessibilityRole="button"
                 >
-                  <Text
-                    style={[
-                      styles.filterText,
-                      { color: isSelected ? tokens.onGold : tokens.muted },
-                    ]}
+                  <AppText
+                    variant="caption"
+                    tone={isSelected ? 'onGold' : 'faint'}
+                    style={styles.filterText}
                   >
                     {item.label}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               );
             })}
@@ -341,9 +327,9 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               accessibilityLabel={`Vocabulary card ${index + 1} of ${words.length}. Tap to flip.`}
             >
               <View style={styles.cardTopRow}>
-                <Text style={[styles.cardCount, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.cardCount}>
                   {index + 1} / {words.length}
-                </Text>
+                </AppText>
                 <View
                   style={[
                     styles.tierBadge,
@@ -355,7 +341,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                     },
                   ]}
                 >
-                  <Text style={[styles.tierText, { color: tokens.goldText }]}>{t(TIER_LABELS[current.tier])}</Text>
+                  <AppText variant="eyebrow" highlight style={styles.tierText}>{t(TIER_LABELS[current.tier])}</AppText>
                 </View>
               </View>
 
@@ -364,25 +350,25 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
                   <ArabicText size={44} align="center" style={[styles.cardArabic, { color: tokens.arabicName }]}>
                     {current.arabic}
                   </ArabicText>
-                  <Text style={[styles.cardHint, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.cardHint}>
                     {t('Tap to reveal meaning')}
-                  </Text>
+                  </AppText>
                 </View>
               ) : (
                 <View style={styles.cardFace}>
                   <ArabicText size={30} align="center" style={[styles.cardArabic, { color: tokens.arabicName }]}>
                     {current.arabic}
                   </ArabicText>
-                  <Text style={[styles.cardTranslit, { color: tokens.muted }]}>
+                  <AppText variant="body" tone="faint" style={styles.cardTranslit}>
                     {current.transliteration}
-                  </Text>
+                  </AppText>
                   <View style={[styles.meaningRule, { backgroundColor: tokens.goldBorder }]} />
-                  <Text style={[styles.cardMeaning, { color: tokens.text }]}>
+                  <AppText variant="title" style={styles.cardMeaning}>
                     {t(current.meaning)}
-                  </Text>
-                  <Text style={[styles.cardRef, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={styles.cardRef}>
                     Quran {current.ref}
-                  </Text>
+                  </AppText>
                 </View>
               )}
             </PremiumCard>
@@ -420,7 +406,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
               accessibilityLabel={t('Mark this word as known')}
             >
               <Ionicons name="checkmark" size={18} color={tokens.onGold} />
-              <Text style={[styles.knowBtnText, { color: tokens.onGold }]}>{t('I know this')}</Text>
+              <AppText variant="rowTitle" tone="onGold" style={styles.knowBtnText}>{t('I know this')}</AppText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -440,11 +426,10 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
             </TouchableOpacity>
           </View>
 
-          <Text style={[styles.sessionHint, { color: tokens.muted }]}>
+          <AppText variant="caption" tone="faint" style={styles.sessionHint}>
             {sessionKnown} {t('marked known this session')}
-          </Text>
+          </AppText>
         </DetailScreen.ScrollView>
-      </View>
     </DetailScreen>
   );
 }
@@ -458,10 +443,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   headerWrap: {
-    paddingTop: 4,
   },
   content: {
-    paddingTop: 12,
   },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
   statChip: {

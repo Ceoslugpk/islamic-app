@@ -1,0 +1,96 @@
+# Phase S11: Release-Readiness Audit Report
+
+**Repository:** `/home/ubuntu/apps/islamic_app`
+**Target URL:** `http://15.235.203.134:9998`
+**Mode:** Read-Only (`FIX_MODE=false`, `ANDROID_BUILD=none`)
+**Report Artifact:** [`reports/audit/S11.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S11.json)
+**Evidence Directory:** [`reports/audit/evidence/S11/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/)
+
+---
+
+## Executive Summary
+
+- **Total Checks:** 25
+- **PASS:** 16
+- **FAIL:** 7
+- **BLOCKED (Device/Physical):** 2
+- **Release Ready (Google Play Store):** **NO**
+- **Release Ready (GitHub Releases per Rule 8):** **YES** (Signed APK v1.1.70, versionCode 89 available on disk)
+
+---
+
+## Key Findings & Blockers
+
+### 1. Critical Store Blockers
+1. **Missing External HTTPS Privacy Policy URL (`S11-019` — CRITICAL):**
+   - Google Play policy requires a publicly accessible HTTPS Privacy Policy URL on an active domain.
+   - While [LegalScreen.tsx](file:///home/ubuntu/apps/islamic_app/src/screens/LegalScreen.tsx#L234-L342) contains complete, accurate in-app privacy disclosures, no public HTTPS URL is configured or hosted (docs note dev HTTP IP `http://38.60.176.137:9998`).
+2. **Missing Play Store Feature Graphic (`S11-022` — HIGH):**
+   - Google Play mandates a `1024×500` PNG/JPEG feature graphic; none exists in the repository (noted as pending in [docs/publishing.md](file:///home/ubuntu/apps/islamic_app/docs/publishing.md#L102)).
+   - Tablet screenshots (7-inch and 10-inch) are also missing.
+3. **Unimplemented Android Widget Claim (`S11-021` — MEDIUM):**
+   - [README.md](file:///home/ubuntu/apps/islamic_app/README.md#L51) and [docs/publishing.md](file:///home/ubuntu/apps/islamic_app/docs/publishing.md#L98) claim "Home-screen widgets (Android)", but neither [AndroidManifest.xml](file:///home/ubuntu/apps/islamic_app/android/app/src/main/AndroidManifest.xml) nor the merged release manifest contains an `AppWidgetProvider`.
+4. **Missing `android.versionCode` in `app.json` (`S11-002` — MEDIUM):**
+   - `versionCode 89` is set in [android/app/build.gradle](file:///home/ubuntu/apps/islamic_app/android/app/build.gradle#L103), but omitted in [app.json](file:///home/ubuntu/apps/islamic_app/app.json). If `expo prebuild` is ever executed, it risks regenerating Gradle with default `versionCode 1`.
+
+### 2. High-Assurance Passing Areas
+- **Package ID & Signing (Rule 3):** `com.qashi.islamic` is preserved across all configs. Production keystore (`CN=Ceoslugpk, OU=Islamic App`) with SHA-256 certificate valid to 2054 is present and verified.
+- **Target API & 64-bit Architecture:** `targetSdkVersion: 36` (exceeds Google Play requirement of API ≥ 34) and `reactNativeArchitectures` includes `arm64-v8a` and `x86_64`.
+- **Hermes & New Architecture:** Hermes bytecode engine is active (`libhermesvm.so` and precompiled JS bundle in AAB/APK).
+- **Network Security:** 100% of runtime API endpoints in `src/` use HTTPS; `usesCleartextTraffic` is strictly false in release manifest.
+- **Unwanted Permission Pruning:** [plugins/withRemoveActivityRecognition.js](file:///home/ubuntu/apps/islamic_app/plugins/withRemoveActivityRecognition.js) successfully strips `ACTIVITY_RECOGNITION`, `RECORD_AUDIO`, and `SYSTEM_ALERT_WINDOW` at manifest merge time.
+- **Data Safety Alignment:** Zero accounts, zero ads, zero analytics SDKs; Women's Worship data is strictly confined to on-device SQLite.
+
+---
+
+## Detailed S11 Audit Table
+
+| ID | Feature / Area | Expected | Actual | Status | Severity | Evidence Paths |
+|---|---|---|---|---|---|---|
+| **S11-001** | App config — Name & slug | Consistent app name and slug across all config surfaces | `Islamic - Your Daily Companion` and slug `islamic` match in [app.json](file:///home/ubuntu/apps/islamic_app/app.json#L3-L4), [strings.xml](file:///home/ubuntu/apps/islamic_app/android/app/src/main/res/values/strings.xml#L2), and manifest label | **PASS** | info | [`app_config.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/app_config.json) |
+| **S11-002** | App config — Version & versionCode | `version` and `versionCode` aligned across config and native build files | Version `1.1.70` matches, but `versionCode 89` is only in [build.gradle](file:///home/ubuntu/apps/islamic_app/android/app/build.gradle#L103) and omitted in [app.json](file:///home/ubuntu/apps/islamic_app/app.json) | **FAIL** | medium | [`app_config.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/app_config.json) |
+| **S11-003** | App config — Package ID (Rule 3) | Preserved package `com.qashi.islamic` | Confirmed `com.qashi.islamic` in [app.json](file:///home/ubuntu/apps/islamic_app/app.json#L28), [build.gradle](file:///home/ubuntu/apps/islamic_app/android/app/build.gradle#L90), and APK badging | **PASS** | info | [`app_config.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/app_config.json) |
+| **S11-004** | App config — Orientation | Portrait lock configured | `portrait` in [app.json](file:///home/ubuntu/apps/islamic_app/app.json#L7), [AndroidManifest.xml](file:///home/ubuntu/apps/islamic_app/android/app/src/main/AndroidManifest.xml#L33), and APK badging | **PASS** | info | [`app_config.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/app_config.json) |
+| **S11-005** | App config — Permissions | Necessary permissions declared; dangerous/unwanted permissions stripped | Location, Foreground Media, Biometrics declared; plugin strips `ACTIVITY_RECOGNITION`, `RECORD_AUDIO`, `SYSTEM_ALERT_WINDOW` | **PASS** | info | [`app_config.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/app_config.json) |
+| **S11-006** | Icons & Adaptive Icons | Valid main icon and adaptive foreground/background/monochrome assets | [assets/icon.png](file:///home/ubuntu/apps/islamic_app/assets/icon.png) (1024×1024), adaptive foreground/background (512×512, `#105A4B`), monochrome (432×432), and native mipmaps present | **PASS** | info | [`icons_splash_theme.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/icons_splash_theme.json) |
+| **S11-007** | Splash Screen & Tokens | Matching light/dark splash colors in config and native styles | Light `#F4EEDE` and dark `#0E1214` match across [app.json](file:///home/ubuntu/apps/islamic_app/app.json#L10-L18), [colors.xml](file:///home/ubuntu/apps/islamic_app/android/app/src/main/res/values/colors.xml), and Android 12+ [styles-v31.xml](file:///home/ubuntu/apps/islamic_app/android/app/src/main/res/values-v31/styles.xml) | **PASS** | info | [`icons_splash_theme.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/icons_splash_theme.json) |
+| **S11-008** | Splash Flash Check (Rule 4) | `windowBackground` matches splash; physical cold boot verified | Static inspection passes (`@color/splashscreen_background`); physical device verification is blocked without device | **BLOCKED** | high | [`icons_splash_theme.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/icons_splash_theme.json) |
+| **S11-009** | Theme Mode Config | `automatic` day/night switching | `automatic` set in [app.json](file:///home/ubuntu/apps/islamic_app/app.json#L9) and [strings.xml](file:///home/ubuntu/apps/islamic_app/android/app/src/main/res/values/strings.xml#L3); `Theme.AppCompat.DayNight` base theme | **PASS** | info | [`icons_splash_theme.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/icons_splash_theme.json) |
+| **S11-010** | Target API Level | `targetSdkVersion >= 34` | `targetSdkVersion: 36`, `compileSdkVersion: 36`, `minSdkVersion: 24` | **PASS** | info | [`build_flags_environment.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/build_flags_environment.json) |
+| **S11-011** | 64-bit Architecture | arm64-v8a / x86_64 support | Configured in [gradle.properties](file:///home/ubuntu/apps/islamic_app/android/gradle.properties#L31); confirmed in APK native code and AAB `base/lib/arm64-v8a/` | **PASS** | info | [`build_flags_environment.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/build_flags_environment.json) |
+| **S11-012** | Minification & R8 | R8 code/resource shrinking enabled in release | `minifyEnabled` and `shrinkResources` default to `false` in release build; APK is 99 MB, AAB is 69 MB | **FAIL** | medium | [`build_flags_environment.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/build_flags_environment.json) |
+| **S11-013** | Hermes Engine | Hermes bytecode enabled | `hermesEnabled=true`; Hermes compiler integration active; `libhermesvm.so` present in bundle | **PASS** | info | [`build_flags_environment.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/build_flags_environment.json) |
+| **S11-014** | Debug Flags | Non-debuggable release build | `android:debuggable` omitted/false in release manifest; `EX_DEV_CLIENT_NETWORK_INSPECTOR=true` present in gradle properties | **PASS** | info | [`build_flags_environment.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/build_flags_environment.json) |
+| **S11-015** | Dev URLs & Cleartext | Zero hardcoded dev URLs/IPs; cleartext disabled | 100% of endpoints in `src/` use HTTPS; `usesCleartextTraffic` disabled in release manifest | **PASS** | info | [`build_flags_environment.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/build_flags_environment.json) |
+| **S11-016** | Release APK Availability | Signed release APK present | `android/app/build/outputs/apk/release/app-release.apk` (98.66 MB, v1.1.70, vCode 89, signed Scheme v2) exists on disk | **PASS** | info | [`artifacts_availability.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/artifacts_availability.json) |
+| **S11-017** | Release AAB Availability | Release AAB bundle present | `android/app/build/outputs/bundle/release/app-release.aab` (68.61 MB, 1,715 bundled files) exists on disk | **PASS** | info | [`artifacts_availability.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/artifacts_availability.json) |
+| **S11-018** | Play Store Checklist | AAB, Target SDK 36, 64-bit, signing, IARC rating | All core technical and packaging checklist criteria satisfied | **PASS** | info | [`play_store_checklist.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/play_store_checklist.json) |
+| **S11-019** | Privacy Policy URL | Live public HTTPS URL on registered domain | Missing public HTTPS URL; only in-app screen and local/dev HTTP references exist | **FAIL** | critical | [`privacy_url_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/privacy_url_audit.json) |
+| **S11-020** | Play Store Data Safety | Code data handling matches store declaration | Declarations consistent: location used solely for on-device prayer/qibla; zero personal/analytics data collected | **PASS** | info | [`data_safety_consistency.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/data_safety_consistency.json) |
+| **S11-021** | Descriptions & Claims | Claims match codebase implementation | No accounts/ads and single prayer provider verified; Android home-screen widgets claim is unimplemented in native manifest | **FAIL** | medium | [`descriptions_claims_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/descriptions_claims_audit.json) |
+| **S11-022** | Store Visual Assets | 512×512 icon, 1024×500 feature graphic, screenshots | 4 phone screenshots present; 1024×500 feature graphic missing; 7-in & 10-in tablet screenshots missing; icon needs 512×512 resize | **FAIL** | high | [`store_assets_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/store_assets_audit.json) |
+| **S11-023** | Datasets & Licenses | Valid license coverage across datasets and dependencies | Code is MIT; Quran/Hadith sacred texts are open access; fonts are OFL 1.1; LegalScreen lacks complete SPDX coverage of 47 npm packages | **FAIL** | medium | [`datasets_licenses_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/datasets_licenses_audit.json) |
+| **S11-024** | Blocked Native Checks | Ledger of checks requiring physical hardware | 8 hardware/runtime checks blocked without physical device or store upload | **BLOCKED** | medium | [`blocked_native_checks.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/blocked_native_checks.json) |
+| **S11-025** | Release Readiness Gate | Reconciled release decision | Play Store release is BLOCKED pending external privacy URL, feature graphic, and widget claim fix; GitHub Release is ready | **FAIL** | high | [`S11.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S11.json) |
+
+---
+
+## Blocked Native Checks Ledger (Physical Hardware Required)
+
+Per Project Rule 21 (*"No physical-device claims without a device"*), the following checks remain strictly blocked:
+1. **Android 12+ Grey/White Launch Pattern Flash (Rule 4):** Cold-start transition between OS windowBackground and animated splash cannot be verified without physical device screen observation.
+2. **Exact Alarm & Adhan Playback in Deep Doze Sleep:** Battery optimization bypass and exact alarm reliability while device is idle in Doze.
+3. **Lock Screen Background Audio & Notification Controls:** MediaSession notification controls and uninterrupted Quran/Adhan streaming when screen is off.
+4. **Hardware Magnetometer Sensor & Qibla Compass:** Physical sensor noise, compass tilt compensation, and real calibration gestures.
+5. **Biometric Authentication Prompt:** Real fingerprint/face recognition integration on Women's Worship privacy gate.
+6. **Play Integrity & In-App Update Flow:** Google Play server-side verification and bundle delivery.
+7. **Native Android RTL Layout Rendering:** Native layout mirroring across complex nested views.
+8. **24-Hour Background Battery & Memory Consumption:** Physical hardware battery drain profiling under real network and notification conditions.
+
+---
+
+## Output Validation
+
+- Report written to [`reports/audit/S11.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S11.json) (33.3 KB, validated JSON).
+- 11 evidence files written to [`reports/audit/evidence/S11/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S11/).
+- Zero source, native, or configuration files modified (`git status` clean outside inherited changes). No builds or uploads were executed.

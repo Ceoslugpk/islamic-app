@@ -1,0 +1,33 @@
+{
+  "project_license": {
+    "type": "MIT License",
+    "file": "LICENSE",
+    "copyright": "2026 Islamic \u2014 Your Daily Companion (Ceoslugpk)",
+    "status": "PASS"
+  },
+  "quran_text_dataset": {
+    "source": "AlQuran Cloud / Tanzil / King Fahd Complex",
+    "license": "Public Domain / Free for non-commercial and religious use",
+    "status": "PASS"
+  },
+  "hadith_dataset": {
+    "source": "Islamic.app API / sunnah.com (Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasa'i, Ibn Majah)",
+    "license": "Public Domain sacred texts",
+    "status": "PASS"
+  },
+  "fonts": {
+    "families": [
+      "Amiri",
+      "Noto Naskh Arabic",
+      "Instrument Serif",
+      "Manrope",
+      "Source Sans 3"
+    ],
+    "license": "SIL Open Font License (OFL 1.1)",
+    "status": "PASS"
+  },
+  "third_party_dependencies_coverage": {
+    "status": "FAIL",
+    "detail": "LegalScreen.tsx displays a curated subset of libraries; lacks automated SPDX license coverage for all 47 npm packages (documented in S1-017)."
+  }
+}

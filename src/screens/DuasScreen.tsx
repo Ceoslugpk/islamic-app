@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   ScrollView,
   TouchableOpacity,
@@ -12,11 +11,12 @@ import {
   Image,
   Share,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, getBrandLogoSource } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { t, isRTL } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
@@ -170,9 +170,9 @@ export default function DuasScreen({
       >
         {/* Top Header of Card */}
         <View style={styles.cardHeader}>
-          <Text style={[styles.duaTitle, { color: tokens.text }]}>
+          <AppText variant="title" style={styles.duaTitle}>
             {t(item.title)}
-          </Text>
+          </AppText>
           <View
             style={[
               styles.categoryBadge,
@@ -183,9 +183,9 @@ export default function DuasScreen({
               },
             ]}
           >
-            <Text style={[styles.categoryBadgeText, { color: tokens.goldText }]}>
+            <AppText variant="eyebrow" highlight style={styles.categoryBadgeText}>
               {t(item.category)}
-            </Text>
+            </AppText>
           </View>
         </View>
 
@@ -199,20 +199,20 @@ export default function DuasScreen({
         <Hairline style={{ marginVertical: 12, backgroundColor: tokens.cardBorder }} />
 
         {/* Transliteration */}
-        <Text style={[styles.translit, { color: tokens.muted }]}>
+        <AppText variant="subtitle" style={styles.translit}>
           {item.transliteration}
-        </Text>
+        </AppText>
 
         {/* Translation */}
-        <Text style={[styles.translation, { color: tokens.text }]}>
+        <AppText variant="body" style={styles.translation}>
           {`"${item.translation}"`}
-        </Text>
+        </AppText>
 
         {/* Reference Footnote & Share Button */}
         <View style={styles.refRow}>
-          <Text style={[styles.refText, { color: tokens.muted }]}>
+          <AppText variant="caption" style={styles.refText}>
             {t('Source')}: {item.reference}
-          </Text>
+          </AppText>
           <TouchableOpacity
             onPress={() => handleShareDua(item)}
             accessibilityRole="button"
@@ -288,24 +288,23 @@ export default function DuasScreen({
                         end={{ x: 1, y: 1 }}
                         style={styles.categoryChipGradient}
                       >
-                        <Text
-                          style={[
-                            styles.categoryChipText,
-                            { color: tokens.onGold },
-                          ]}
+                        <AppText
+                          variant="caption"
+                          tone="onGold"
+                          style={styles.categoryChipText}
                         >
                           {t(cat)} ({DUA_COUNTS[cat]})
-                        </Text>
+                        </AppText>
                       </LinearGradient>
                     ) : (
-                      <Text
-                        style={[
-                          styles.categoryChipText,
-                          { color: tokens.text },
-                        ]}
-                      >
-                        {t(cat)} ({DUA_COUNTS[cat]})
-                      </Text>
+                      <View style={styles.categoryChipUnselected}>
+                        <AppText
+                          variant="caption"
+                          style={styles.categoryChipText}
+                        >
+                          {t(cat)} ({DUA_COUNTS[cat]})
+                        </AppText>
+                      </View>
                     )}
                   </TouchableOpacity>
                 );
@@ -327,9 +326,9 @@ export default function DuasScreen({
             accessibilityRole="button"
             accessibilityLabel={t('Show a random dua from the current filter')}
           >
-            <Text style={[styles.randomBtnText, { color: tokens.goldText }]}>
+            <AppText variant="link" style={styles.randomBtnText}>
               🎲 {t('Random')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
         </View>
 
@@ -350,6 +349,7 @@ export default function DuasScreen({
           onChangeText={setSearchQuery}
           placeholder={isCompact ? t('Search duas...') : t('Search duas by title, transliteration, or meaning...')}
           placeholderTextColor={tokens.muted}
+          accessibilityLabel={t('Search duas...')}
           style={[styles.searchInput, { color: tokens.text }]}
           autoCapitalize="none"
           autoCorrect={false}
@@ -368,14 +368,14 @@ export default function DuasScreen({
       {searchHistory.length > 0 && !searchQuery && (
         <View style={styles.recentWrap}>
           <View style={styles.recentHeader}>
-            <Text style={[styles.recentLabel, { color: tokens.muted }]}>{t('Recent searches')}</Text>
+            <AppText variant="caption" style={styles.recentLabel}>{t('Recent searches')}</AppText>
             <TouchableOpacity
               onPress={clearSearchHistory}
               hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               accessibilityRole="button"
               accessibilityLabel={t('Clear duas search history')}
             >
-              <Text style={[styles.clearAllText, { color: tokens.muted }]}>{t('Clear')}</Text>
+              <AppText variant="caption" style={styles.clearAllText}>{t('Clear')}</AppText>
             </TouchableOpacity>
           </View>
           <ScrollView
@@ -402,9 +402,9 @@ export default function DuasScreen({
                   accessibilityLabel={`${t('Search for')} ${item}`}
                 >
                   <Ionicons name="time-outline" size={13} color={tokens.accent} />
-                  <Text style={[styles.recentChipText, { color: tokens.text }]} numberOfLines={1}>
+                  <AppText variant="caption" style={styles.recentChipText} numberOfLines={1}>
                     {item}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={() => removeSearchHistoryQuery(item)}
@@ -427,6 +427,7 @@ export default function DuasScreen({
           data={Array.from({ length: 6 })}
           keyExtractor={(_, i) => `skeleton-${i}`}
           renderItem={() => <DuaCardSkeleton compact={isCompact} />}
+          ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         />
@@ -436,6 +437,7 @@ export default function DuasScreen({
           data={filteredDuas}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
+          ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
           keyboardShouldPersistTaps="handled"
@@ -478,50 +480,44 @@ export default function DuasScreen({
             collapsable={false}
             style={[styles.shareCard, { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}
           >
-            <Text style={[styles.shareCardEyebrow, { color: tokens.goldText }]}>
+            <AppText variant="eyebrow" highlight style={styles.shareCardEyebrow}>
               {shareDuaItem.category} · Duas & Adhkar
-            </Text>
-            <Text style={[styles.shareCardTitle, { color: tokens.text }]}>
+            </AppText>
+            <AppText variant="title" style={styles.shareCardTitle}>
               {shareDuaItem.title}
-            </Text>
-            <Text style={[styles.shareCardArabic, { color: tokens.text }]}>
+            </AppText>
+            <AppText variant="body" style={styles.shareCardArabic}>
               {shareDuaItem.arabic}
-            </Text>
+            </AppText>
             <View style={[styles.shareCardRule, { backgroundColor: tokens.gold }]} />
             {shareDuaItem.transliteration ? (
-              <Text style={[styles.shareCardTranslit, { color: tokens.muted }]}>
+              <AppText variant="subtitle" style={styles.shareCardTranslit}>
                 {shareDuaItem.transliteration}
-              </Text>
+              </AppText>
             ) : null}
-            <Text style={[styles.shareCardTrans, { color: tokens.text }]}>
+            <AppText variant="body" style={styles.shareCardTrans}>
               {`"${shareDuaItem.translation}"`}
-            </Text>
-            <Text style={[styles.shareCardRef, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="caption" style={styles.shareCardRef}>
               Source: {shareDuaItem.reference}
-            </Text>
+            </AppText>
 
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}
             <View style={[styles.shareCardBrandFooter, { borderTopColor: tokens.cardBorder }]} collapsable={false}>
               <View collapsable={false} style={styles.shareCardLogoWrap}>
                 <Image
-                  source={
-                    mode === 'paper'
-                      ? require('../../assets/logo-master-black.png')
-                      : require('../../assets/logo-master-ivory.png')
-                  }
+                  source={getBrandLogoSource(mode)}
                   style={styles.shareCardLogo}
                   resizeMode="contain"
                   fadeDuration={0}
                 />
               </View>
-              <Text
-                style={[
-                  styles.shareCardBrandWordmark,
-                  { color: tokens.text },
-                ]}
+              <AppText
+                variant="eyebrow"
+                style={styles.shareCardBrandWordmark}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
-              </Text>
+              </AppText>
             </View>
           </View>
         </View>
@@ -556,23 +552,24 @@ const styles = StyleSheet.create({
   },
   chipsWrap: {
     flex: 1,
-    height: 32,
   },
   randomBtn: {
     marginLeft: 8,
     paddingHorizontal: 10,
-    height: 28,
+    paddingVertical: 4,
+    minHeight: 28,
     borderRadius: 14,
     borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   randomBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11.5,
   },
   categoryChip: {
-    height: 28,
+    minHeight: 28,
     borderRadius: 999,
     borderWidth: 0.75,
     alignItems: 'center',
@@ -580,9 +577,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   categoryChipGradient: {
-    height: '100%',
+    minHeight: 28,
     width: '100%',
     paddingHorizontal: 10,
+    paddingVertical: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryChipUnselected: {
+    minHeight: 28,
+    width: '100%',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -590,17 +596,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11.5,
   },
-  listContent: {
-    paddingBottom: 16,
-    gap: 16,
-  },
+  listContent: {},
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 0.75,
     borderRadius: 22,
     paddingHorizontal: 14,
-    height: 42,
+    minHeight: 42,
     marginBottom: 10,
   },
   searchIcon: {
@@ -648,7 +651,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingLeft: 8,
     paddingRight: 4,
-    height: 28,
+    minHeight: 28,
+    paddingVertical: 2,
   },
   recentChipBtn: {
     flexDirection: 'row',
@@ -685,12 +689,14 @@ const styles = StyleSheet.create({
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 20,
     flex: 1,
+    minWidth: 0,
   },
   categoryBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
     borderWidth: 1,
+    flexShrink: 0,
   },
   categoryBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -722,14 +728,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 4,
+    gap: 8,
   },
   shareBtn: {
     padding: 4,
+    flexShrink: 0,
   },
   refText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
     flex: 1,
+    minWidth: 0,
   },
   shareCardWrap: {
     position: 'absolute',
@@ -762,7 +771,6 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     textAlign: 'right',
     writingDirection: 'rtl',
-    includeFontPadding: false,
     marginBottom: 14,
   },
   shareCardRule: {

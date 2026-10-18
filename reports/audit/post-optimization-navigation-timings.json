@@ -1,0 +1,90 @@
+{
+  "transitions": {
+    "Home -> Quran": {
+      "feedback": {
+        "min": 133.5,
+        "median": 155.6,
+        "p95": 237.2,
+        "max": 237.2
+      },
+      "route": {
+        "min": 135.4,
+        "median": 161.9,
+        "p95": 245.2,
+        "max": 245.2
+      },
+      "ready": {
+        "min": 140.3,
+        "median": 167.4,
+        "p95": 254.5,
+        "max": 254.5
+      }
+    },
+    "Quran -> Library": {
+      "feedback": {
+        "min": 115.6,
+        "median": 126.4,
+        "p95": 172.8,
+        "max": 172.8
+      },
+      "route": {
+        "min": 117.4,
+        "median": 130.3,
+        "p95": 175.1,
+        "max": 175.1
+      },
+      "ready": {
+        "min": 123.7,
+        "median": 137.7,
+        "p95": 181.1,
+        "max": 181.1
+      }
+    },
+    "Library -> Tools": {
+      "feedback": {
+        "min": 115.8,
+        "median": 136.9,
+        "p95": 169.5,
+        "max": 169.5
+      },
+      "route": {
+        "min": 119.8,
+        "median": 139.1,
+        "p95": 172.9,
+        "max": 172.9
+      },
+      "ready": {
+        "min": 125.2,
+        "median": 149.3,
+        "p95": 179.7,
+        "max": 179.7
+      }
+    },
+    "Tools -> Home": {
+      "feedback": {
+        "min": 189.1,
+        "median": 201.7,
+        "p95": 215.7,
+        "max": 215.7
+      },
+      "route": {
+        "min": 197.9,
+        "median": 217.3,
+        "p95": 235.3,
+        "max": 235.3
+      },
+      "ready": {
+        "min": 219.8,
+        "median": 238,
+        "p95": 252.9,
+        "max": 252.9
+      }
+    }
+  },
+  "settingsOpen": {
+    "min": 158.5,
+    "median": 173.9,
+    "p95": 207.5,
+    "max": 207.5
+  }
+}

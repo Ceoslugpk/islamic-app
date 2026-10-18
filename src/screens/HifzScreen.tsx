@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TextInput,
   TouchableOpacity,
@@ -9,6 +8,7 @@ import {
   BackHandler,
   Platform,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
@@ -123,7 +123,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           ]}
         >
           <Ionicons name="checkmark-circle" size={13} color={tokens.onGold} style={{ marginRight: 4 }} />
-          <Text style={[styles.badgeText, { color: tokens.onGold }]}>{t('Memorized')}</Text>
+          <AppText variant="eyebrow" tone="onGold" style={styles.badgeText}>{t('Memorized')}</AppText>
         </View>
       );
     }
@@ -140,7 +140,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           ]}
         >
           <Ionicons name="sync-outline" size={13} color={tokens.goldText} style={{ marginRight: 4 }} />
-          <Text style={[styles.badgeText, { color: tokens.goldText }]}>{t('Revising')}</Text>
+          <AppText variant="eyebrow" highlight style={styles.badgeText}>{t('Revising')}</AppText>
         </View>
       );
     }
@@ -154,7 +154,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
           },
         ]}
       >
-        <Text style={[styles.badgeText, { color: tokens.muted }]}>{t('Not started')}</Text>
+        <AppText variant="eyebrow" tone="faint" style={styles.badgeText}>{t('Not started')}</AppText>
       </View>
     );
   };
@@ -187,19 +187,19 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
             },
           ]}
         >
-          <Text style={[styles.numberText, { color: tokens.goldText }]}>
+          <AppText variant="numeral" highlight style={styles.numberText}>
             {item.number}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.midCol}>
           <View style={styles.nameRow}>
-            <Text style={[styles.englishName, { color: tokens.text }]} numberOfLines={1}>
+            <AppText variant="rowTitle" style={styles.englishName} numberOfLines={1}>
               {item.englishName}
-            </Text>
-            <Text style={[styles.ayahCount, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="caption" tone="faint" style={styles.ayahCount}>
               {item.numberOfAyahs} {t('ayahs')} · {t(item.revelationType)}
-            </Text>
+            </AppText>
           </View>
           <View style={{ marginTop: 6, alignSelf: 'flex-start' }}>
             {renderStatusBadge(status)}
@@ -225,11 +225,11 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
               accessibilityLabel={`${t('Practice')} ${item.englishName}`}
             >
               <Ionicons name="eye-outline" size={12} color={tokens.goldText} />
-              <Text style={[styles.practiceText, { color: tokens.goldText }]}>{t('Practice')}</Text>
+              <AppText variant="caption" highlight style={styles.practiceText}>{t('Practice')}</AppText>
             </TouchableOpacity>
-            <Text style={[styles.tapHint, { color: tokens.muted }]}>
+            <AppText variant="caption" tone="faint" style={styles.tapHint}>
               {t('Tap to cycle')}
-            </Text>
+            </AppText>
           </View>
         </View>
       </TouchableOpacity>
@@ -274,34 +274,34 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
             ]}
           >
             <View style={styles.statCol}>
-              <Text style={[styles.statValue, { color: tokens.goldText }]}>
+              <AppText variant="numeral" highlight style={styles.statValue}>
                 {stats.memorized}
-              </Text>
-              <Text style={[styles.statLabel, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="eyebrow" tone="faint" style={styles.statLabel}>
                 {t('MEMORIZED')}
-              </Text>
+              </AppText>
             </View>
 
             <View style={[styles.statDivider, { backgroundColor: tokens.cardBorder }]} />
 
             <View style={styles.statCol}>
-              <Text style={[styles.statValue, { color: tokens.text }]}>
+              <AppText variant="numeral" style={styles.statValue}>
                 {stats.revising}
-              </Text>
-              <Text style={[styles.statLabel, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="eyebrow" tone="faint" style={styles.statLabel}>
                 {t('REVISING')}
-              </Text>
+              </AppText>
             </View>
 
             <View style={[styles.statDivider, { backgroundColor: tokens.cardBorder }]} />
 
             <View style={styles.statCol}>
-              <Text style={[styles.statValue, { color: tokens.muted }]}>
+              <AppText variant="numeral" tone="faint" style={styles.statValue}>
                 {stats.notStarted}
-              </Text>
-              <Text style={[styles.statLabel, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="eyebrow" tone="faint" style={styles.statLabel}>
                 {t('NOT STARTED')}
-              </Text>
+              </AppText>
             </View>
           </View>
         </View>
@@ -324,6 +324,7 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
               onChangeText={setSearchQuery}
               placeholder={t('Search surahs by name or number...')}
               placeholderTextColor={tokens.muted}
+              accessibilityLabel={t('Search surahs by name or number...')}
               style={[
                 styles.searchInput,
                 { color: tokens.text },
@@ -360,14 +361,13 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
                 accessibilityRole="button"
                 accessibilityState={{ selected: isSelected }}
               >
-                <Text
-                  style={[
-                    styles.filterTabText,
-                    { color: isSelected ? tokens.onGold : tokens.muted },
-                  ]}
+                <AppText
+                  variant="caption"
+                  tone={isSelected ? 'onGold' : 'faint'}
+                  style={styles.filterTabText}
                 >
                   {t(tab)}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             );
           })}
@@ -433,13 +433,13 @@ const styles = StyleSheet.create({
   statValue: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
-    lineHeight: 26,
   },
   statLabel: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 9.5,
     letterSpacing: 0.6,
     marginTop: 2,
+    paddingVertical: 2,
   },
   statDivider: {
     width: 1,
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
     borderWidth: cardTokens.borderWidth,
     borderRadius: 22,
     paddingHorizontal: 14,
-    height: 42,
+    minHeight: 42,
     marginBottom: 8,
   },
   searchIcon: {
@@ -462,6 +462,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     paddingVertical: 0,
+    minWidth: 0,
   },
   filterRow: {
     flexDirection: 'row',
@@ -470,7 +471,9 @@ const styles = StyleSheet.create({
   },
   filterTab: {
     flex: 1,
-    paddingVertical: 7,
+    minHeight: 34,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
     borderRadius: 14,
     borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
@@ -479,6 +482,7 @@ const styles = StyleSheet.create({
   filterTabText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
   headerWrap: {
     paddingTop: 4,
@@ -497,13 +501,14 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   numberBox: {
-    width: 36,
-    height: 36,
+    minWidth: 36,
+    minHeight: 36,
     borderRadius: 18,
     borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    paddingHorizontal: 4,
   },
   numberText: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -511,6 +516,7 @@ const styles = StyleSheet.create({
   },
   midCol: {
     flex: 1,
+    minWidth: 0,
   },
   nameRow: {
     flexDirection: 'column',
@@ -529,6 +535,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 3,
+    minHeight: 22,
     borderRadius: 12,
     borderWidth: cardTokens.borderWidth,
   },
@@ -537,6 +544,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
+    paddingVertical: 2,
   },
   rightCol: {
     alignItems: 'flex-end',
@@ -544,13 +552,12 @@ const styles = StyleSheet.create({
     minWidth: 70,
     flexShrink: 1,
   },
-  arabicName: {
-    lineHeight: 28,
-  },
+  arabicName: {},
   tapHint: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 10,
     marginTop: 2,
+    paddingVertical: 2,
   },
   rowActions: {
     flexDirection: 'row',
@@ -567,11 +574,13 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    minHeight: 28,
     borderRadius: 14,
     borderWidth: cardTokens.borderWidth,
   },
   practiceText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
 });

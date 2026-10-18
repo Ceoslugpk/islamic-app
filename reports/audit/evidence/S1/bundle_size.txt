@@ -1,0 +1,7 @@
+$ sh -c stat -c "%n %s bytes" dist/_expo/static/js/web/*.js dist/index.html 2>&1; du -sh dist 2>&1; test -f dist/metadata.json && sed -n "1,120p" dist/metadata.json
+dist/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js 6285990 bytes
+dist/_expo/static/js/web/worker-fa9615d75330bcd5bb60ba0db2d42bb1.js 132625 bytes
+dist/index.html 1235 bytes
+26M	dist
+{"version":0,"bundler":"metro","fileMetadata":{}}
+EXIT_CODE=0

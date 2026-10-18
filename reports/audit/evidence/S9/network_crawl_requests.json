@@ -1,0 +1,2596 @@
+{
+  "targetUrl": "http://15.235.203.134:9998",
+  "serverStatus": 200,
+  "totalRequestsIntercepted": 151,
+  "totalResponsesIntercepted": 151,
+  "hostStats": {
+    "15.235.203.134": {
+      "count": 20,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "http:"
+      ],
+      "resourceTypes": [
+        "document",
+        "script",
+        "font",
+        "image"
+      ],
+      "sampleUrls": [
+        "http://15.235.203.134:9998/",
+        "http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js",
+        "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/manrope/400Regular/Manrope_400Regular.8ca1a84037fdb644723129315c390ad9.ttf",
+        "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/manrope/500Medium/Manrope_500Medium.de7b3026c153d63d5732582887fecbf4.ttf",
+        "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/manrope/600SemiBold/Manrope_600SemiBold.80cb1b1a8ba262608706cb7f2b017835.ttf"
+      ]
+    },
+    "api.islamic.app": {
+      "count": 93,
+      "methods": [
+        "HEAD",
+        "GET"
+      ],
+      "protocols": [
+        "https:"
+      ],
+      "resourceTypes": [
+        "fetch"
+      ],
+      "sampleUrls": [
+        "https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16",
+        "https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0",
+        "https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0",
+        "https://api.islamic.app/v1/hadith/today",
+        "https://api.islamic.app/v1/dhikr/after-prayer"
+      ]
+    },
+    "api.alquran.cloud": {
+      "count": 38,
+      "methods": [
+        "GET"
+      ],
+      "protocols": [
+        "https:"
+      ],
+      "resourceTypes": [
+        "fetch"
+      ],
+      "sampleUrls": [
+        "https://api.alquran.cloud/v1/surah",
+        "https://api.alquran.cloud/v1/ayah/291/editions/quran-uthmani,en.sahih",
+        "https://api.alquran.cloud/v1/surah/1/editions/quran-uthmani,en.sahih",
+        "https://api.alquran.cloud/v1/surah/2/editions/quran-uthmani,en.sahih",
+        "https://api.alquran.cloud/v1/surah/ar"
+      ]
+    }
+  },
+  "allRequests": [
+    {
+      "id": 1,
+      "timestamp": 1792236259948,
+      "url": "http://15.235.203.134:9998/",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/",
+      "protocol": "http:",
+      "resourceType": "document",
+      "headers": {
+        "upgrade-insecure-requests": "1",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0"
+      }
+    },
+    {
+      "id": 2,
+      "timestamp": 1792236259972,
+      "url": "http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js",
+      "protocol": "http:",
+      "resourceType": "script",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 3,
+      "timestamp": 1792236260125,
+      "url": "https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16",
+      "method": "HEAD",
+      "host": "api.islamic.app",
+      "pathname": "/v1/timings/today",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 4,
+      "timestamp": 1792236260251,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/manrope/400Regular/Manrope_400Regular.8ca1a84037fdb644723129315c390ad9.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/manrope/400Regular/Manrope_400Regular.8ca1a84037fdb644723129315c390ad9.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 5,
+      "timestamp": 1792236260251,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/manrope/500Medium/Manrope_500Medium.de7b3026c153d63d5732582887fecbf4.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/manrope/500Medium/Manrope_500Medium.de7b3026c153d63d5732582887fecbf4.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 6,
+      "timestamp": 1792236260251,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/manrope/600SemiBold/Manrope_600SemiBold.80cb1b1a8ba262608706cb7f2b017835.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/manrope/600SemiBold/Manrope_600SemiBold.80cb1b1a8ba262608706cb7f2b017835.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 7,
+      "timestamp": 1792236260251,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/manrope/700Bold/Manrope_700Bold.8e8fe178c0f147b91ed2a2b3097ad8a4.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/manrope/700Bold/Manrope_700Bold.8e8fe178c0f147b91ed2a2b3097ad8a4.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 8,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/instrument-serif/400Regular/InstrumentSerif_400Regular.1e3bf8f4e9f996285924f99ebc80e546.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/instrument-serif/400Regular/InstrumentSerif_400Regular.1e3bf8f4e9f996285924f99ebc80e546.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 9,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/lora/500Medium/Lora_500Medium.2e5042f11715005795c8ed4ba772b40e.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/lora/500Medium/Lora_500Medium.2e5042f11715005795c8ed4ba772b40e.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 10,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/poppins/400Regular/Poppins_400Regular.093ee89be9ede30383f39a899c485a82.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/poppins/400Regular/Poppins_400Regular.093ee89be9ede30383f39a899c485a82.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 11,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/poppins/500Medium/Poppins_500Medium.bf59c687bc6d3a70204d3944082c5cc0.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/poppins/500Medium/Poppins_500Medium.bf59c687bc6d3a70204d3944082c5cc0.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 12,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/amiri/400Regular/Amiri_400Regular.5801fed976868a25cb76c6969c7d46bd.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/amiri/400Regular/Amiri_400Regular.5801fed976868a25cb76c6969c7d46bd.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 13,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/amiri/700Bold/Amiri_700Bold.4e6fcae427f9ae65c36f6a77f7f370e5.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/amiri/700Bold/Amiri_700Bold.4e6fcae427f9ae65c36f6a77f7f370e5.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 14,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/noto-naskh-arabic/400Regular/NotoNaskhArabic_400Regular.b9adf6a0dd7ea110e62d9f1a057fc635.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/noto-naskh-arabic/400Regular/NotoNaskhArabic_400Regular.b9adf6a0dd7ea110e62d9f1a057fc635.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 15,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/noto-naskh-arabic/700Bold/NotoNaskhArabic_700Bold.34b23203ccccf50b2cc2cf7ee63eda1f.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/noto-naskh-arabic/700Bold/NotoNaskhArabic_700Bold.34b23203ccccf50b2cc2cf7ee63eda1f.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 16,
+      "timestamp": 1792236260252,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/source-sans-3/500Medium/SourceSans3_500Medium.b7db812a0b7af4a319b62f14505987e1.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/source-sans-3/500Medium/SourceSans3_500Medium.b7db812a0b7af4a319b62f14505987e1.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 17,
+      "timestamp": 1792236260387,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.b4eb097d35f44ed943676fd56f6bdc51.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.b4eb097d35f44ed943676fd56f6bdc51.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 18,
+      "timestamp": 1792236260409,
+      "url": "https://api.alquran.cloud/v1/surah",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 19,
+      "timestamp": 1792236260409,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/noto-naskh-arabic/500Medium/NotoNaskhArabic_500Medium.30cd423028f3e74e3c3248834ea65430.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/noto-naskh-arabic/500Medium/NotoNaskhArabic_500Medium.30cd423028f3e74e3c3248834ea65430.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 20,
+      "timestamp": 1792236260410,
+      "url": "https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/timings/17-10-2026",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 21,
+      "timestamp": 1792236260412,
+      "url": "http://15.235.203.134:9998/assets/assets/icon.a5e04a1c0a18dec64e74736cc7cd0223.png",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/assets/icon.a5e04a1c0a18dec64e74736cc7cd0223.png",
+      "protocol": "http:",
+      "resourceType": "image",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 22,
+      "timestamp": 1792236260412,
+      "url": "https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/timings/17-10-2026",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 23,
+      "timestamp": 1792236260413,
+      "url": "https://api.alquran.cloud/v1/ayah/291/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/ayah/291/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 24,
+      "timestamp": 1792236260413,
+      "url": "https://api.islamic.app/v1/hadith/today",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/today",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 25,
+      "timestamp": 1792236260413,
+      "url": "https://api.islamic.app/v1/dhikr/after-prayer",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/dhikr/after-prayer",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "accept": "application/json",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 26,
+      "timestamp": 1792236262911,
+      "url": "https://api.alquran.cloud/v1/surah/1/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/1/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 27,
+      "timestamp": 1792236263109,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/1?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/1",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 28,
+      "timestamp": 1792236263149,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/1?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/1",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 29,
+      "timestamp": 1792236263170,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/1?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/1",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 30,
+      "timestamp": 1792236263468,
+      "url": "https://api.alquran.cloud/v1/surah/2/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/2/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 31,
+      "timestamp": 1792236263719,
+      "url": "https://api.alquran.cloud/v1/surah/ar",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/ar",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 32,
+      "timestamp": 1792236264057,
+      "url": "https://api.alquran.cloud/v1/surah/ur",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/ur",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 33,
+      "timestamp": 1792236264059,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/2?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/2",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 34,
+      "timestamp": 1792236264086,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/2?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/2",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 35,
+      "timestamp": 1792236264119,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/2?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/2",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 36,
+      "timestamp": 1792236264254,
+      "url": "https://api.alquran.cloud/v1/surah/id",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/id",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 37,
+      "timestamp": 1792236264403,
+      "url": "https://api.alquran.cloud/v1/surah/3/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/3/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 38,
+      "timestamp": 1792236264454,
+      "url": "https://api.alquran.cloud/v1/surah/tr",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/tr",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 39,
+      "timestamp": 1792236264609,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/3?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/3",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 40,
+      "timestamp": 1792236264652,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/3?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/3",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 41,
+      "timestamp": 1792236264653,
+      "url": "https://api.alquran.cloud/v1/surah/fr",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/fr",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 42,
+      "timestamp": 1792236264682,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/3?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/3",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 43,
+      "timestamp": 1792236264848,
+      "url": "https://api.alquran.cloud/v1/surah/de",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/de",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 44,
+      "timestamp": 1792236264958,
+      "url": "https://api.alquran.cloud/v1/surah/4/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/4/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 45,
+      "timestamp": 1792236265044,
+      "url": "https://api.alquran.cloud/v1/surah/es",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/es",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 46,
+      "timestamp": 1792236265169,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/4?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/4",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 47,
+      "timestamp": 1792236265220,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/4?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/4",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 48,
+      "timestamp": 1792236265242,
+      "url": "https://api.alquran.cloud/v1/surah/ru",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/ru",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 49,
+      "timestamp": 1792236265285,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/4?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/4",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 50,
+      "timestamp": 1792236265438,
+      "url": "https://api.alquran.cloud/v1/surah/bn",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/bn",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 51,
+      "timestamp": 1792236265578,
+      "url": "https://api.alquran.cloud/v1/surah/5/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/5/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 52,
+      "timestamp": 1792236265633,
+      "url": "https://api.alquran.cloud/v1/surah/ms",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/ms",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 53,
+      "timestamp": 1792236265780,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/5?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/5",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 54,
+      "timestamp": 1792236265805,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/5?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/5",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 55,
+      "timestamp": 1792236265831,
+      "url": "https://api.alquran.cloud/v1/surah/fa",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/fa",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 56,
+      "timestamp": 1792236265849,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/5?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/5",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 57,
+      "timestamp": 1792236266027,
+      "url": "https://api.alquran.cloud/v1/surah/hi",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/hi",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 58,
+      "timestamp": 1792236266119,
+      "url": "https://api.alquran.cloud/v1/surah/6/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/6/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 59,
+      "timestamp": 1792236266224,
+      "url": "https://api.alquran.cloud/v1/surah/ml",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/ml",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 60,
+      "timestamp": 1792236266324,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/6?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/6",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 61,
+      "timestamp": 1792236266348,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/6?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/6",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 62,
+      "timestamp": 1792236266366,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/6?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/6",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 63,
+      "timestamp": 1792236266419,
+      "url": "https://api.alquran.cloud/v1/surah/si",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/si",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 64,
+      "timestamp": 1792236266637,
+      "url": "https://api.alquran.cloud/v1/surah/7/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/7/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 65,
+      "timestamp": 1792236266844,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/7?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/7",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 66,
+      "timestamp": 1792236266875,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/7?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/7",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 67,
+      "timestamp": 1792236266900,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/7?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/7",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 68,
+      "timestamp": 1792236266920,
+      "url": "https://api.alquran.cloud/v1/edition/format/audio",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/edition/format/audio",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 69,
+      "timestamp": 1792236267174,
+      "url": "https://api.alquran.cloud/v1/surah/8/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/8/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 70,
+      "timestamp": 1792236267376,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/8?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/8",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 71,
+      "timestamp": 1792236267399,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/8?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/8",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 72,
+      "timestamp": 1792236267420,
+      "url": "https://api.islamic.app/v1/hadith/collections",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 73,
+      "timestamp": 1792236267420,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/8?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/8",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 74,
+      "timestamp": 1792236267667,
+      "url": "http://15.235.203.134:9998/assets/node_modules/@expo-google-fonts/noto-nastaliq-urdu/400Regular/NotoNastaliqUrdu_400Regular.4537f856ebf024967b0314068f623d4d.ttf",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/node_modules/@expo-google-fonts/noto-nastaliq-urdu/400Regular/NotoNastaliqUrdu_400Regular.4537f856ebf024967b0314068f623d4d.ttf",
+      "protocol": "http:",
+      "resourceType": "font",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "origin": "http://15.235.203.134:9998",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 75,
+      "timestamp": 1792236267667,
+      "url": "http://15.235.203.134:9998/assets/assets/logo-master-black.a6202e7c28f3b793c19b058cce9c9588.png",
+      "method": "GET",
+      "host": "15.235.203.134",
+      "pathname": "/assets/assets/logo-master-black.a6202e7c28f3b793c19b058cce9c9588.png",
+      "protocol": "http:",
+      "resourceType": "image",
+      "headers": {
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "referer": "http://15.235.203.134:9998/"
+      }
+    },
+    {
+      "id": 76,
+      "timestamp": 1792236267706,
+      "url": "https://api.alquran.cloud/v1/surah/9/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/9/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 77,
+      "timestamp": 1792236267763,
+      "url": "https://api.islamic.app/v1/hadith/today",
+      "method": "HEAD",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/today",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 78,
+      "timestamp": 1792236267767,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 79,
+      "timestamp": 1792236267786,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/1/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/1/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 80,
+      "timestamp": 1792236267909,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/9?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/9",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 81,
+      "timestamp": 1792236267939,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/9?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/9",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 82,
+      "timestamp": 1792236267957,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/9?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/9",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 83,
+      "timestamp": 1792236268161,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/2/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/2/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 84,
+      "timestamp": 1792236268226,
+      "url": "https://api.alquran.cloud/v1/surah/10/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/10/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 85,
+      "timestamp": 1792236268428,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/10?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/10",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 86,
+      "timestamp": 1792236268462,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/10?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/10",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 87,
+      "timestamp": 1792236268482,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/10?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/10",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 88,
+      "timestamp": 1792236268530,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/2/hadiths?limit=20&offset=20",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/2/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 89,
+      "timestamp": 1792236268754,
+      "url": "https://api.alquran.cloud/v1/surah/11/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/11/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 90,
+      "timestamp": 1792236268905,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/2/hadiths?limit=20&offset=40",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/2/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 91,
+      "timestamp": 1792236269148,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/11?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/11",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 92,
+      "timestamp": 1792236269172,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/11?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/11",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 93,
+      "timestamp": 1792236269193,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/11?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/11",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 94,
+      "timestamp": 1792236269278,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/3/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/3/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 95,
+      "timestamp": 1792236269485,
+      "url": "https://api.alquran.cloud/v1/surah/12/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/12/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 96,
+      "timestamp": 1792236269659,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/3/hadiths?limit=20&offset=20",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/3/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 97,
+      "timestamp": 1792236269879,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/12?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/12",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 98,
+      "timestamp": 1792236269911,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/12?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/12",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 99,
+      "timestamp": 1792236269932,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/12?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/12",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 100,
+      "timestamp": 1792236270033,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/3/hadiths?limit=20&offset=40",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/3/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 101,
+      "timestamp": 1792236270215,
+      "url": "https://api.alquran.cloud/v1/surah/13/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/13/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 102,
+      "timestamp": 1792236270407,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/3/hadiths?limit=20&offset=60",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/3/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 103,
+      "timestamp": 1792236270416,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/13?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/13",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 104,
+      "timestamp": 1792236270438,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/13?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/13",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 105,
+      "timestamp": 1792236270463,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/13?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/13",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 106,
+      "timestamp": 1792236270734,
+      "url": "https://api.alquran.cloud/v1/surah/14/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/14/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 107,
+      "timestamp": 1792236270784,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/4/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/4/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 108,
+      "timestamp": 1792236270938,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/14?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/14",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 109,
+      "timestamp": 1792236271157,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/4/hadiths?limit=20&offset=20",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/4/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 110,
+      "timestamp": 1792236271526,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/14?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/14",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 111,
+      "timestamp": 1792236271534,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/4/hadiths?limit=20&offset=40",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/4/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 112,
+      "timestamp": 1792236271910,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/4/hadiths?limit=20&offset=60",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/4/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 113,
+      "timestamp": 1792236272084,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/14?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/14",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 114,
+      "timestamp": 1792236272293,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/4/hadiths?limit=20&offset=80",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/4/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 115,
+      "timestamp": 1792236272669,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/4/hadiths?limit=20&offset=100",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/4/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 116,
+      "timestamp": 1792236272897,
+      "url": "https://api.alquran.cloud/v1/surah/15/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/15/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 117,
+      "timestamp": 1792236273041,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/5/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/5/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 118,
+      "timestamp": 1792236273098,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/15?fields=text_uthmani_tajweed&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/15",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 119,
+      "timestamp": 1792236273414,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/5/hadiths?limit=20&offset=20",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/5/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 120,
+      "timestamp": 1792236273788,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/5/hadiths?limit=20&offset=40",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/5/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 121,
+      "timestamp": 1792236273849,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/15?fields=text_imlaei&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/15",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 122,
+      "timestamp": 1792236274161,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/6/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/6/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 123,
+      "timestamp": 1792236274539,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/6/hadiths?limit=20&offset=20",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/6/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 124,
+      "timestamp": 1792236274578,
+      "url": "https://api.islamic.app/v1/verses/by_chapter/15?fields=text_indopak&per_page=300",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/verses/by_chapter/15",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 125,
+      "timestamp": 1792236274909,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/7/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/7/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 126,
+      "timestamp": 1792236275283,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 127,
+      "timestamp": 1792236275557,
+      "url": "https://api.alquran.cloud/v1/surah/16/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/16/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 128,
+      "timestamp": 1792236275657,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=20",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 129,
+      "timestamp": 1792236275951,
+      "url": "https://api.alquran.cloud/v1/surah/16/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/16/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 130,
+      "timestamp": 1792236276031,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=40",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 131,
+      "timestamp": 1792236276206,
+      "url": "https://api.alquran.cloud/v1/surah/17/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/17/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 132,
+      "timestamp": 1792236276401,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=60",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 133,
+      "timestamp": 1792236276671,
+      "url": "https://api.alquran.cloud/v1/surah/17/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/17/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 134,
+      "timestamp": 1792236276773,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=80",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 135,
+      "timestamp": 1792236276927,
+      "url": "https://api.alquran.cloud/v1/surah/18/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/18/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 136,
+      "timestamp": 1792236277146,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=100",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 137,
+      "timestamp": 1792236277324,
+      "url": "https://api.alquran.cloud/v1/surah/18/editions/quran-uthmani,en.sahih",
+      "method": "GET",
+      "host": "api.alquran.cloud",
+      "pathname": "/v1/surah/18/editions/quran-uthmani,en.sahih",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 138,
+      "timestamp": 1792236277517,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=120",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 139,
+      "timestamp": 1792236277888,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=140",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 140,
+      "timestamp": 1792236278266,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/8/hadiths?limit=20&offset=160",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/8/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 141,
+      "timestamp": 1792236278413,
+      "url": "https://api.islamic.app/v1/asma-al-husna",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/asma-al-husna",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "accept": "application/json",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 142,
+      "timestamp": 1792236278636,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/9/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/9/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 143,
+      "timestamp": 1792236279009,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/9/hadiths?limit=20&offset=20",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/9/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 144,
+      "timestamp": 1792236279378,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/9/hadiths?limit=20&offset=40",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/9/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 145,
+      "timestamp": 1792236279759,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/9/hadiths?limit=20&offset=60",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/9/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 146,
+      "timestamp": 1792236280140,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/10/hadiths?limit=20&offset=0",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/10/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 147,
+      "timestamp": 1792236280514,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/10/hadiths?limit=20&offset=20",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/10/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 148,
+      "timestamp": 1792236280886,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/10/hadiths?limit=20&offset=40",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/10/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 149,
+      "timestamp": 1792236281259,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/10/hadiths?limit=20&offset=60",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/10/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 150,
+      "timestamp": 1792236281628,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/10/hadiths?limit=20&offset=80",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/10/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    },
+    {
+      "id": 151,
+      "timestamp": 1792236282098,
+      "url": "https://api.islamic.app/v1/hadith/collections/bukhari/books/10/hadiths?limit=20&offset=100",
+      "method": "GET",
+      "host": "api.islamic.app",
+      "pathname": "/v1/hadith/collections/bukhari/books/10/hadiths",
+      "protocol": "https:",
+      "resourceType": "fetch",
+      "headers": {
+        "sec-ch-ua-platform": "\"Android\"",
+        "referer": "http://15.235.203.134:9998/",
+        "user-agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36 IslamicAudit/1.0",
+        "sec-ch-ua": "\"Not:A-Brand\";v=\"8\", \"Chromium\";v=\"156\"",
+        "sec-ch-ua-mobile": "?0"
+      }
+    }
+  ]
+}

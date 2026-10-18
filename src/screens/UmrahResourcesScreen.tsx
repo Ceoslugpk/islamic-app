@@ -2,18 +2,17 @@ import React, { useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, fontRoles } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, Chip, PrimaryButton } from '../components/ui';
-import { fontRoles } from '../theme/tokens';
 import { Hairline } from '../components/Hairline';
 import { hScrollRTLStyle } from '../lib/rtl';
 
@@ -231,13 +230,13 @@ export default function UmrahResourcesScreen({
           <PremiumCard style={styles.quickDuaCard} padded>
             <View style={styles.quickDuaRow}>
               <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={[styles.cardLead, { color: tokens.goldText }]}>{t('SUPPLICATIONS READY')}</Text>
-                <Text style={[styles.cardTitleSm, { color: tokens.text }]}>
+                <AppText variant="eyebrow" highlight style={styles.cardLead}>{t('SUPPLICATIONS READY')}</AppText>
+                <AppText variant="sectionTitle" style={styles.cardTitleSm}>
                   {t('Need Key Duas in Your Hand?')}
-                </Text>
-                <Text style={[styles.cardDescSm, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.cardDescSm}>
                   {t('Talbiyah, Tawaf, Safa & Marwah duas with Arabic text and audio in the Library tab.')}
-                </Text>
+                </AppText>
               </View>
               <PrimaryButton
                 title={t('Open Duas')}
@@ -252,24 +251,24 @@ export default function UmrahResourcesScreen({
         {activeTab === 'checklist' && (
           <View>
             <View style={styles.progressHeader}>
-              <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.sectionHeading}>
                 {t('Pilgrim Packing Checklist')}
-              </Text>
-              <Text style={[styles.progressBadge, { color: tokens.goldText }]}>
+              </AppText>
+              <AppText variant="caption" highlight style={styles.progressBadge}>
                 {packedCount} {t('of')} {PACKING_ITEMS.length} {t('packed')}
-              </Text>
+              </AppText>
             </View>
-            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+            <AppText variant="body" tone="faint" style={styles.sectionDesc}>
               {t('Tap items to mark as packed. Everything curated for comfort, compliance with Ihram rules, and ease.')}
-            </Text>
+            </AppText>
 
             {['Ihram & Clothing', 'Toiletries & Hygiene', 'Health & Essentials', 'Travel & Utilities'].map((cat) => {
               const items = PACKING_ITEMS.filter((i) => i.category === cat);
               return (
                 <PremiumCard key={cat} style={styles.catCard} padded>
-                  <Text style={[styles.catHeader, { color: tokens.goldText }]}>
+                  <AppText variant="eyebrow" highlight style={styles.catHeader}>
                     {t(cat).toUpperCase()}
-                  </Text>
+                  </AppText>
                   {items.map((item, idx) => {
                     const isChecked = !!packedIds[item.id];
                     return (
@@ -292,20 +291,19 @@ export default function UmrahResourcesScreen({
                             {isChecked && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
                           </View>
                           <View style={{ flex: 1 }}>
-                            <Text
+                            <AppText
+                              variant="rowTitle"
+                              tone={isChecked ? 'faint' : undefined}
                               style={[
                                 styles.checkItemTitle,
-                                {
-                                  color: isChecked ? tokens.muted : tokens.text,
-                                  textDecorationLine: isChecked ? 'line-through' : 'none',
-                                },
+                                isChecked && { textDecorationLine: 'line-through' },
                               ]}
                             >
                               {t(item.item)}
-                            </Text>
-                            <Text style={[styles.checkItemNote, { color: tokens.muted }]}>
+                            </AppText>
+                            <AppText variant="caption" tone="faint" style={styles.checkItemNote}>
                               {t(item.note)}
-                            </Text>
+                            </AppText>
                           </View>
                         </TouchableOpacity>
                       </View>
@@ -320,12 +318,12 @@ export default function UmrahResourcesScreen({
         {/* TAB 2: FIRST-TIMER TIPS */}
         {activeTab === 'tips' && (
           <View>
-            <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+            <AppText variant="sectionTitle" style={styles.sectionHeading}>
               {t('Practical Tips for First-Time Pilgrims')}
-            </Text>
-            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="body" tone="faint" style={styles.sectionDesc}>
               {t('Field-tested insights to make your pilgrimage smooth, spiritually focused, and safe.')}
-            </Text>
+            </AppText>
 
             {FIRST_TIMER_TIPS.map((tip, idx) => (
               <PremiumCard key={idx} style={styles.tipCard} padded>
@@ -339,12 +337,12 @@ export default function UmrahResourcesScreen({
                     <Ionicons name={tip.icon} size={20} color={tokens.goldText} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.tipTitle, { color: tokens.text }]}>
+                    <AppText variant="rowTitle" style={styles.tipTitle}>
                       {t(tip.title)}
-                    </Text>
-                    <Text style={[styles.tipDetail, { color: tokens.muted }]}>
+                    </AppText>
+                    <AppText variant="body" tone="faint" style={styles.tipDetail}>
                       {t(tip.detail)}
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
               </PremiumCard>
@@ -355,47 +353,47 @@ export default function UmrahResourcesScreen({
         {/* TAB 3: SACRED ETIQUETTE */}
         {activeTab === 'etiquette' && (
           <View>
-            <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+            <AppText variant="sectionTitle" style={styles.sectionHeading}>
               {t('Etiquette in the Two Holy Sanctuaries')}
-            </Text>
-            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="body" tone="faint" style={styles.sectionDesc}>
               {t('Adab (spiritual courtesy) transforms physical travel into an accepted, beloved act of devotion.')}
-            </Text>
+            </AppText>
 
             <PremiumCard style={styles.etiquetteCard} padded>
-              <Text style={[styles.etiquetteTitle, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.etiquetteTitle}>
                 {t('Inner State & Spiritual Presence')}
-              </Text>
-              <Text style={[styles.etiquetteBody, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="body" tone="faint" style={styles.etiquetteBody}>
                 {t('Remember that you are an invited guest (Dhayf ar-Rahman) of the Lord of the worlds. Cultivate gratitude, humility, and patience when experiencing exhaustion, delays, or dense crowds.')}
-              </Text>
+              </AppText>
             </PremiumCard>
 
             <PremiumCard style={styles.etiquetteCard} padded>
-              <Text style={[styles.etiquetteTitle, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.etiquetteTitle}>
                 {t('Patience with Fellow Pilgrims')}
-              </Text>
-              <Text style={[styles.etiquetteBody, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="body" tone="faint" style={styles.etiquetteBody}>
                 {t('Pilgrims arrive from every nation, language, and culture. Treat the elderly, women, and children with gentleness. Forgive accidental bumps or steps on your heels; responding with warmth earns monumental reward.')}
-              </Text>
+              </AppText>
             </PremiumCard>
 
             <PremiumCard style={styles.etiquetteCard} padded>
-              <Text style={[styles.etiquetteTitle, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.etiquetteTitle}>
                 {t('Protecting the Tranquility of the Sanctuary')}
-              </Text>
-              <Text style={[styles.etiquetteBody, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="body" tone="faint" style={styles.etiquetteBody}>
                 {t('Lower your voice and avoid loud personal arguments or commercial conversations. Refrain from taking selfie videos during circuits, which detracts from personal khushu and blocks the flow of pilgrims.')}
-              </Text>
+              </AppText>
             </PremiumCard>
 
             <PremiumCard style={styles.etiquetteCard} padded>
-              <Text style={[styles.etiquetteTitle, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.etiquetteTitle}>
                 {t('Cleanliness and Civic Care')}
-              </Text>
-              <Text style={[styles.etiquetteBody, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="body" tone="faint" style={styles.etiquetteBody}>
                 {t('Throw all tissues, empty cups, and bottles in designated recycling bins. Never leave spilled water on marble pathways where it poses an immediate slip hazard to elderly worshippers.')}
-              </Text>
+              </AppText>
             </PremiumCard>
           </View>
         )}
@@ -403,33 +401,33 @@ export default function UmrahResourcesScreen({
         {/* TAB 4: COMMON MISTAKES */}
         {activeTab === 'mistakes' && (
           <View>
-            <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+            <AppText variant="sectionTitle" style={styles.sectionHeading}>
               {t('Common Errors & Misconceptions')}
-            </Text>
-            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="body" tone="faint" style={styles.sectionDesc}>
               {t('Review these frequent pitfalls to ensure your Umrah adheres faithfully to the authentic prophetic Sunnah.')}
-            </Text>
+            </AppText>
 
             {COMMON_MISTAKES.map((item, idx) => (
               <PremiumCard key={idx} style={styles.mistakeCard} padded>
                 <View style={styles.mistakeHeader}>
                   <Ionicons name="alert-circle-outline" size={16} color={tokens.danger} />
-                  <Text style={[styles.mistakeTopic, { color: tokens.danger }]}>
+                  <AppText variant="eyebrow" tone="danger" style={styles.mistakeTopic}>
                     {t(item.topic)}
-                  </Text>
+                  </AppText>
                 </View>
 
-                <Text style={[styles.mistakeText, { color: tokens.text }]}>
+                <AppText variant="body" style={styles.mistakeText}>
                   {t('Mistake')}: {item.mistake}
-                </Text>
+                </AppText>
 
                 <Hairline style={{ marginVertical: 8 }} />
 
                 <View style={styles.correctHeader}>
                   <Ionicons name="checkmark-circle-outline" size={16} color={tokens.success} />
-                  <Text style={[styles.correctText, { color: tokens.muted }]}>
+                  <AppText variant="body" tone="faint" style={styles.correctText}>
                     {t('Correct Practice')}: {item.correctAction}
-                  </Text>
+                  </AppText>
                 </View>
               </PremiumCard>
             ))}
@@ -439,27 +437,27 @@ export default function UmrahResourcesScreen({
         {/* TAB 5: RECOMMENDED BOOKS */}
         {activeTab === 'books' && (
           <View>
-            <Text style={[styles.sectionHeading, { color: tokens.text }]}>
+            <AppText variant="sectionTitle" style={styles.sectionHeading}>
               {t('Recommended Books & Study Guides')}
-            </Text>
-            <Text style={[styles.sectionDesc, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="body" tone="faint" style={styles.sectionDesc}>
               {t('Classic and contemporary scholarly publications providing in-depth analysis of pilgrimage rites.')}
-            </Text>
+            </AppText>
 
             {RECOMMENDED_BOOKS.map((book, idx) => (
               <PremiumCard key={idx} style={styles.bookCard} padded>
-                <Text style={[styles.bookFocus, { color: tokens.goldText }]}>
+                <AppText variant="eyebrow" highlight style={styles.bookFocus}>
                   {t(book.focus).toUpperCase()}
-                </Text>
-                <Text style={[styles.bookTitle, { color: tokens.text }]}>
+                </AppText>
+                <AppText variant="title" style={styles.bookTitle}>
                   {book.title}
-                </Text>
-                <Text style={[styles.bookAuthor, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.bookAuthor}>
                   {t('By')} {book.author}
-                </Text>
-                <Text style={[styles.bookDesc, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="body" tone="faint" style={styles.bookDesc}>
                   {t(book.description)}
-                </Text>
+                </AppText>
               </PremiumCard>
             ))}
           </View>
@@ -470,7 +468,7 @@ export default function UmrahResourcesScreen({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 14 },
+  content: {},
   tabScroll: {
     flexDirection: 'row',
     gap: 8,

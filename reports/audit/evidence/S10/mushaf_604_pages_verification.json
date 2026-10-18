@@ -1,0 +1,820 @@
+{
+  "timestamp": "2026-10-17T11:17:35.575Z",
+  "phase": "S10",
+  "verification": "Standard Madani Mushaf 604 Pages and Surah Page Mappings",
+  "expectedTotalPages": 604,
+  "actualTotalPages": 604,
+  "surahStartPagesCount": 114,
+  "isMonotonic": true,
+  "allStartPagesMatchStandard": true,
+  "boundaryChecks": {
+    "getSurahStartPage_0": true,
+    "getSurahStartPage_1": true,
+    "getSurahStartPage_114": true,
+    "getSurahStartPage_115": true,
+    "getPrimarySurahForPage_0": true,
+    "getPrimarySurahForPage_1": true,
+    "getPrimarySurahForPage_604": true,
+    "getPrimarySurahForPage_605": true
+  },
+  "pageRows": [
+    {
+      "surahNumber": 1,
+      "surahName": "Al-Fatihah",
+      "expectedStartPage": 1,
+      "actualStartPage": 1,
+      "matches": true
+    },
+    {
+      "surahNumber": 2,
+      "surahName": "Al-Baqarah",
+      "expectedStartPage": 2,
+      "actualStartPage": 2,
+      "matches": true
+    },
+    {
+      "surahNumber": 3,
+      "surahName": "Ali 'Imran",
+      "expectedStartPage": 50,
+      "actualStartPage": 50,
+      "matches": true
+    },
+    {
+      "surahNumber": 4,
+      "surahName": "An-Nisa",
+      "expectedStartPage": 77,
+      "actualStartPage": 77,
+      "matches": true
+    },
+    {
+      "surahNumber": 5,
+      "surahName": "Al-Ma'idah",
+      "expectedStartPage": 106,
+      "actualStartPage": 106,
+      "matches": true
+    },
+    {
+      "surahNumber": 6,
+      "surahName": "Al-An'am",
+      "expectedStartPage": 128,
+      "actualStartPage": 128,
+      "matches": true
+    },
+    {
+      "surahNumber": 7,
+      "surahName": "Al-A'raf",
+      "expectedStartPage": 151,
+      "actualStartPage": 151,
+      "matches": true
+    },
+    {
+      "surahNumber": 8,
+      "surahName": "Al-Anfal",
+      "expectedStartPage": 177,
+      "actualStartPage": 177,
+      "matches": true
+    },
+    {
+      "surahNumber": 9,
+      "surahName": "At-Tawbah",
+      "expectedStartPage": 187,
+      "actualStartPage": 187,
+      "matches": true
+    },
+    {
+      "surahNumber": 10,
+      "surahName": "Yunus",
+      "expectedStartPage": 208,
+      "actualStartPage": 208,
+      "matches": true
+    },
+    {
+      "surahNumber": 11,
+      "surahName": "Hud",
+      "expectedStartPage": 221,
+      "actualStartPage": 221,
+      "matches": true
+    },
+    {
+      "surahNumber": 12,
+      "surahName": "Yusuf",
+      "expectedStartPage": 235,
+      "actualStartPage": 235,
+      "matches": true
+    },
+    {
+      "surahNumber": 13,
+      "surahName": "Ar-Ra'd",
+      "expectedStartPage": 249,
+      "actualStartPage": 249,
+      "matches": true
+    },
+    {
+      "surahNumber": 14,
+      "surahName": "Ibrahim",
+      "expectedStartPage": 255,
+      "actualStartPage": 255,
+      "matches": true
+    },
+    {
+      "surahNumber": 15,
+      "surahName": "Al-Hijr",
+      "expectedStartPage": 262,
+      "actualStartPage": 262,
+      "matches": true
+    },
+    {
+      "surahNumber": 16,
+      "surahName": "An-Nahl",
+      "expectedStartPage": 267,
+      "actualStartPage": 267,
+      "matches": true
+    },
+    {
+      "surahNumber": 17,
+      "surahName": "Al-Isra",
+      "expectedStartPage": 282,
+      "actualStartPage": 282,
+      "matches": true
+    },
+    {
+      "surahNumber": 18,
+      "surahName": "Al-Kahf",
+      "expectedStartPage": 293,
+      "actualStartPage": 293,
+      "matches": true
+    },
+    {
+      "surahNumber": 19,
+      "surahName": "Maryam",
+      "expectedStartPage": 305,
+      "actualStartPage": 305,
+      "matches": true
+    },
+    {
+      "surahNumber": 20,
+      "surahName": "Taha",
+      "expectedStartPage": 312,
+      "actualStartPage": 312,
+      "matches": true
+    },
+    {
+      "surahNumber": 21,
+      "surahName": "Al-Anbiya",
+      "expectedStartPage": 322,
+      "actualStartPage": 322,
+      "matches": true
+    },
+    {
+      "surahNumber": 22,
+      "surahName": "Al-Hajj",
+      "expectedStartPage": 332,
+      "actualStartPage": 332,
+      "matches": true
+    },
+    {
+      "surahNumber": 23,
+      "surahName": "Al-Mu'minun",
+      "expectedStartPage": 342,
+      "actualStartPage": 342,
+      "matches": true
+    },
+    {
+      "surahNumber": 24,
+      "surahName": "An-Nur",
+      "expectedStartPage": 350,
+      "actualStartPage": 350,
+      "matches": true
+    },
+    {
+      "surahNumber": 25,
+      "surahName": "Al-Furqan",
+      "expectedStartPage": 359,
+      "actualStartPage": 359,
+      "matches": true
+    },
+    {
+      "surahNumber": 26,
+      "surahName": "Ash-Shu'ara",
+      "expectedStartPage": 367,
+      "actualStartPage": 367,
+      "matches": true
+    },
+    {
+      "surahNumber": 27,
+      "surahName": "An-Naml",
+      "expectedStartPage": 377,
+      "actualStartPage": 377,
+      "matches": true
+    },
+    {
+      "surahNumber": 28,
+      "surahName": "Al-Qasas",
+      "expectedStartPage": 385,
+      "actualStartPage": 385,
+      "matches": true
+    },
+    {
+      "surahNumber": 29,
+      "surahName": "Al-'Ankabut",
+      "expectedStartPage": 396,
+      "actualStartPage": 396,
+      "matches": true
+    },
+    {
+      "surahNumber": 30,
+      "surahName": "Ar-Rum",
+      "expectedStartPage": 404,
+      "actualStartPage": 404,
+      "matches": true
+    },
+    {
+      "surahNumber": 31,
+      "surahName": "Luqman",
+      "expectedStartPage": 411,
+      "actualStartPage": 411,
+      "matches": true
+    },
+    {
+      "surahNumber": 32,
+      "surahName": "As-Sajdah",
+      "expectedStartPage": 415,
+      "actualStartPage": 415,
+      "matches": true
+    },
+    {
+      "surahNumber": 33,
+      "surahName": "Al-Ahzab",
+      "expectedStartPage": 418,
+      "actualStartPage": 418,
+      "matches": true
+    },
+    {
+      "surahNumber": 34,
+      "surahName": "Saba",
+      "expectedStartPage": 428,
+      "actualStartPage": 428,
+      "matches": true
+    },
+    {
+      "surahNumber": 35,
+      "surahName": "Fatir",
+      "expectedStartPage": 434,
+      "actualStartPage": 434,
+      "matches": true
+    },
+    {
+      "surahNumber": 36,
+      "surahName": "Ya-Sin",
+      "expectedStartPage": 440,
+      "actualStartPage": 440,
+      "matches": true
+    },
+    {
+      "surahNumber": 37,
+      "surahName": "As-Saffat",
+      "expectedStartPage": 446,
+      "actualStartPage": 446,
+      "matches": true
+    },
+    {
+      "surahNumber": 38,
+      "surahName": "Sad",
+      "expectedStartPage": 453,
+      "actualStartPage": 453,
+      "matches": true
+    },
+    {
+      "surahNumber": 39,
+      "surahName": "Az-Zumar",
+      "expectedStartPage": 458,
+      "actualStartPage": 458,
+      "matches": true
+    },
+    {
+      "surahNumber": 40,
+      "surahName": "Ghafir",
+      "expectedStartPage": 467,
+      "actualStartPage": 467,
+      "matches": true
+    },
+    {
+      "surahNumber": 41,
+      "surahName": "Fussilat",
+      "expectedStartPage": 477,
+      "actualStartPage": 477,
+      "matches": true
+    },
+    {
+      "surahNumber": 42,
+      "surahName": "Ash-Shura",
+      "expectedStartPage": 483,
+      "actualStartPage": 483,
+      "matches": true
+    },
+    {
+      "surahNumber": 43,
+      "surahName": "Az-Zukhruf",
+      "expectedStartPage": 489,
+      "actualStartPage": 489,
+      "matches": true
+    },
+    {
+      "surahNumber": 44,
+      "surahName": "Ad-Dukhan",
+      "expectedStartPage": 496,
+      "actualStartPage": 496,
+      "matches": true
+    },
+    {
+      "surahNumber": 45,
+      "surahName": "Al-Jathiyah",
+      "expectedStartPage": 499,
+      "actualStartPage": 499,
+      "matches": true
+    },
+    {
+      "surahNumber": 46,
+      "surahName": "Al-Ahqaf",
+      "expectedStartPage": 502,
+      "actualStartPage": 502,
+      "matches": true
+    },
+    {
+      "surahNumber": 47,
+      "surahName": "Muhammad",
+      "expectedStartPage": 507,
+      "actualStartPage": 507,
+      "matches": true
+    },
+    {
+      "surahNumber": 48,
+      "surahName": "Al-Fath",
+      "expectedStartPage": 511,
+      "actualStartPage": 511,
+      "matches": true
+    },
+    {
+      "surahNumber": 49,
+      "surahName": "Al-Hujurat",
+      "expectedStartPage": 515,
+      "actualStartPage": 515,
+      "matches": true
+    },
+    {
+      "surahNumber": 50,
+      "surahName": "Qaf",
+      "expectedStartPage": 518,
+      "actualStartPage": 518,
+      "matches": true
+    },
+    {
+      "surahNumber": 51,
+      "surahName": "Adh-Dhariyat",
+      "expectedStartPage": 520,
+      "actualStartPage": 520,
+      "matches": true
+    },
+    {
+      "surahNumber": 52,
+      "surahName": "At-Tur",
+      "expectedStartPage": 523,
+      "actualStartPage": 523,
+      "matches": true
+    },
+    {
+      "surahNumber": 53,
+      "surahName": "An-Najm",
+      "expectedStartPage": 526,
+      "actualStartPage": 526,
+      "matches": true
+    },
+    {
+      "surahNumber": 54,
+      "surahName": "Al-Qamar",
+      "expectedStartPage": 528,
+      "actualStartPage": 528,
+      "matches": true
+    },
+    {
+      "surahNumber": 55,
+      "surahName": "Ar-Rahman",
+      "expectedStartPage": 531,
+      "actualStartPage": 531,
+      "matches": true
+    },
+    {
+      "surahNumber": 56,
+      "surahName": "Al-Waqi'ah",
+      "expectedStartPage": 534,
+      "actualStartPage": 534,
+      "matches": true
+    },
+    {
+      "surahNumber": 57,
+      "surahName": "Al-Hadid",
+      "expectedStartPage": 537,
+      "actualStartPage": 537,
+      "matches": true
+    },
+    {
+      "surahNumber": 58,
+      "surahName": "Al-Mujadila",
+      "expectedStartPage": 542,
+      "actualStartPage": 542,
+      "matches": true
+    },
+    {
+      "surahNumber": 59,
+      "surahName": "Al-Hashr",
+      "expectedStartPage": 545,
+      "actualStartPage": 545,
+      "matches": true
+    },
+    {
+      "surahNumber": 60,
+      "surahName": "Al-Mumtahanah",
+      "expectedStartPage": 549,
+      "actualStartPage": 549,
+      "matches": true
+    },
+    {
+      "surahNumber": 61,
+      "surahName": "As-Saff",
+      "expectedStartPage": 551,
+      "actualStartPage": 551,
+      "matches": true
+    },
+    {
+      "surahNumber": 62,
+      "surahName": "Al-Jumu'ah",
+      "expectedStartPage": 553,
+      "actualStartPage": 553,
+      "matches": true
+    },
+    {
+      "surahNumber": 63,
+      "surahName": "Al-Munafiqun",
+      "expectedStartPage": 554,
+      "actualStartPage": 554,
+      "matches": true
+    },
+    {
+      "surahNumber": 64,
+      "surahName": "At-Taghabun",
+      "expectedStartPage": 556,
+      "actualStartPage": 556,
+      "matches": true
+    },
+    {
+      "surahNumber": 65,
+      "surahName": "At-Talaq",
+      "expectedStartPage": 558,
+      "actualStartPage": 558,
+      "matches": true
+    },
+    {
+      "surahNumber": 66,
+      "surahName": "At-Tahrim",
+      "expectedStartPage": 560,
+      "actualStartPage": 560,
+      "matches": true
+    },
+    {
+      "surahNumber": 67,
+      "surahName": "Al-Mulk",
+      "expectedStartPage": 562,
+      "actualStartPage": 562,
+      "matches": true
+    },
+    {
+      "surahNumber": 68,
+      "surahName": "Al-Qalam",
+      "expectedStartPage": 564,
+      "actualStartPage": 564,
+      "matches": true
+    },
+    {
+      "surahNumber": 69,
+      "surahName": "Al-Haqqah",
+      "expectedStartPage": 566,
+      "actualStartPage": 566,
+      "matches": true
+    },
+    {
+      "surahNumber": 70,
+      "surahName": "Al-Ma'arij",
+      "expectedStartPage": 568,
+      "actualStartPage": 568,
+      "matches": true
+    },
+    {
+      "surahNumber": 71,
+      "surahName": "Nuh",
+      "expectedStartPage": 570,
+      "actualStartPage": 570,
+      "matches": true
+    },
+    {
+      "surahNumber": 72,
+      "surahName": "Al-Jinn",
+      "expectedStartPage": 572,
+      "actualStartPage": 572,
+      "matches": true
+    },
+    {
+      "surahNumber": 73,
+      "surahName": "Al-Muzzammil",
+      "expectedStartPage": 574,
+      "actualStartPage": 574,
+      "matches": true
+    },
+    {
+      "surahNumber": 74,
+      "surahName": "Al-Muddaththir",
+      "expectedStartPage": 575,
+      "actualStartPage": 575,
+      "matches": true
+    },
+    {
+      "surahNumber": 75,
+      "surahName": "Al-Qiyamah",
+      "expectedStartPage": 577,
+      "actualStartPage": 577,
+      "matches": true
+    },
+    {
+      "surahNumber": 76,
+      "surahName": "Al-Insan",
+      "expectedStartPage": 578,
+      "actualStartPage": 578,
+      "matches": true
+    },
+    {
+      "surahNumber": 77,
+      "surahName": "Al-Mursalat",
+      "expectedStartPage": 580,
+      "actualStartPage": 580,
+      "matches": true
+    },
+    {
+      "surahNumber": 78,
+      "surahName": "An-Naba",
+      "expectedStartPage": 582,
+      "actualStartPage": 582,
+      "matches": true
+    },
+    {
+      "surahNumber": 79,
+      "surahName": "An-Nazi'at",
+      "expectedStartPage": 583,
+      "actualStartPage": 583,
+      "matches": true
+    },
+    {
+      "surahNumber": 80,
+      "surahName": "'Abasa",
+      "expectedStartPage": 585,
+      "actualStartPage": 585,
+      "matches": true
+    },
+    {
+      "surahNumber": 81,
+      "surahName": "At-Takwir",
+      "expectedStartPage": 586,
+      "actualStartPage": 586,
+      "matches": true
+    },
+    {
+      "surahNumber": 82,
+      "surahName": "Al-Infitar",
+      "expectedStartPage": 587,
+      "actualStartPage": 587,
+      "matches": true
+    },
+    {
+      "surahNumber": 83,
+      "surahName": "Al-Mutaffifin",
+      "expectedStartPage": 587,
+      "actualStartPage": 587,
+      "matches": true
+    },
+    {
+      "surahNumber": 84,
+      "surahName": "Al-Inshiqaq",
+      "expectedStartPage": 589,
+      "actualStartPage": 589,
+      "matches": true
+    },
+    {
+      "surahNumber": 85,
+      "surahName": "Al-Buruj",
+      "expectedStartPage": 590,
+      "actualStartPage": 590,
+      "matches": true
+    },
+    {
+      "surahNumber": 86,
+      "surahName": "At-Tariq",
+      "expectedStartPage": 591,
+      "actualStartPage": 591,
+      "matches": true
+    },
+    {
+      "surahNumber": 87,
+      "surahName": "Al-A'la",
+      "expectedStartPage": 591,
+      "actualStartPage": 591,
+      "matches": true
+    },
+    {
+      "surahNumber": 88,
+      "surahName": "Al-Ghashiyah",
+      "expectedStartPage": 592,
+      "actualStartPage": 592,
+      "matches": true
+    },
+    {
+      "surahNumber": 89,
+      "surahName": "Al-Fajr",
+      "expectedStartPage": 593,
+      "actualStartPage": 593,
+      "matches": true
+    },
+    {
+      "surahNumber": 90,
+      "surahName": "Al-Balad",
+      "expectedStartPage": 594,
+      "actualStartPage": 594,
+      "matches": true
+    },
+    {
+      "surahNumber": 91,
+      "surahName": "Ash-Shams",
+      "expectedStartPage": 595,
+      "actualStartPage": 595,
+      "matches": true
+    },
+    {
+      "surahNumber": 92,
+      "surahName": "Al-Layl",
+      "expectedStartPage": 595,
+      "actualStartPage": 595,
+      "matches": true
+    },
+    {
+      "surahNumber": 93,
+      "surahName": "Ad-Duhaa",
+      "expectedStartPage": 596,
+      "actualStartPage": 596,
+      "matches": true
+    },
+    {
+      "surahNumber": 94,
+      "surahName": "Ash-Sharh",
+      "expectedStartPage": 596,
+      "actualStartPage": 596,
+      "matches": true
+    },
+    {
+      "surahNumber": 95,
+      "surahName": "At-Tin",
+      "expectedStartPage": 597,
+      "actualStartPage": 597,
+      "matches": true
+    },
+    {
+      "surahNumber": 96,
+      "surahName": "Al-'Alaq",
+      "expectedStartPage": 597,
+      "actualStartPage": 597,
+      "matches": true
+    },
+    {
+      "surahNumber": 97,
+      "surahName": "Al-Qadr",
+      "expectedStartPage": 598,
+      "actualStartPage": 598,
+      "matches": true
+    },
+    {
+      "surahNumber": 98,
+      "surahName": "Al-Bayyinah",
+      "expectedStartPage": 598,
+      "actualStartPage": 598,
+      "matches": true
+    },
+    {
+      "surahNumber": 99,
+      "surahName": "Az-Zalzalah",
+      "expectedStartPage": 599,
+      "actualStartPage": 599,
+      "matches": true
+    },
+    {
+      "surahNumber": 100,
+      "surahName": "Al-'Adiyat",
+      "expectedStartPage": 599,
+      "actualStartPage": 599,
+      "matches": true
+    },
+    {
+      "surahNumber": 101,
+      "surahName": "Al-Qari'ah",
+      "expectedStartPage": 600,
+      "actualStartPage": 600,
+      "matches": true
+    },
+    {
+      "surahNumber": 102,
+      "surahName": "At-Takathur",
+      "expectedStartPage": 600,
+      "actualStartPage": 600,
+      "matches": true
+    },
+    {
+      "surahNumber": 103,
+      "surahName": "Al-'Asr",
+      "expectedStartPage": 601,
+      "actualStartPage": 601,
+      "matches": true
+    },
+    {
+      "surahNumber": 104,
+      "surahName": "Al-Humazah",
+      "expectedStartPage": 601,
+      "actualStartPage": 601,
+      "matches": true
+    },
+    {
+      "surahNumber": 105,
+      "surahName": "Al-Fil",
+      "expectedStartPage": 601,
+      "actualStartPage": 601,
+      "matches": true
+    },
+    {
+      "surahNumber": 106,
+      "surahName": "Quraysh",
+      "expectedStartPage": 602,
+      "actualStartPage": 602,
+      "matches": true
+    },
+    {
+      "surahNumber": 107,
+      "surahName": "Al-Ma'un",
+      "expectedStartPage": 602,
+      "actualStartPage": 602,
+      "matches": true
+    },
+    {
+      "surahNumber": 108,
+      "surahName": "Al-Kawthar",
+      "expectedStartPage": 602,
+      "actualStartPage": 602,
+      "matches": true
+    },
+    {
+      "surahNumber": 109,
+      "surahName": "Al-Kafirun",
+      "expectedStartPage": 603,
+      "actualStartPage": 603,
+      "matches": true
+    },
+    {
+      "surahNumber": 110,
+      "surahName": "An-Nasr",
+      "expectedStartPage": 603,
+      "actualStartPage": 603,
+      "matches": true
+    },
+    {
+      "surahNumber": 111,
+      "surahName": "Al-Masad",
+      "expectedStartPage": 603,
+      "actualStartPage": 603,
+      "matches": true
+    },
+    {
+      "surahNumber": 112,
+      "surahName": "Al-Ikhlas",
+      "expectedStartPage": 604,
+      "actualStartPage": 604,
+      "matches": true
+    },
+    {
+      "surahNumber": 113,
+      "surahName": "Al-Falaq",
+      "expectedStartPage": 604,
+      "actualStartPage": 604,
+      "matches": true
+    },
+    {
+      "surahNumber": 114,
+      "surahName": "An-Nas",
+      "expectedStartPage": 604,
+      "actualStartPage": 604,
+      "matches": true
+    }
+  ]
+}

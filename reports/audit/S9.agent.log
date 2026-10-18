@@ -1,0 +1,107 @@
+root agent idle; waiting up to 30m0s for 2 background task(s)
+I have launched the Playwright runtime audit crawl to collect network requests, test cookies, inspect security headers, and verify search-input XSS. I am waiting for the execution to complete.
+I am waiting for the Playwright crawl task to finish collecting network traffic and testing XSS payloads.
+I will check the status of the crawl task once the timer triggers.
+I am waiting for the comprehensive crawl and security inspection task to finish.
+I am waiting for the comprehensive crawl to complete its remaining screen navigation and write out all evidence artifacts.
+I am waiting for the comprehensive audit runner to complete.
+I am waiting for the comprehensive audit to finish running.
+I will wait for the screenshot capture task to complete.
+I am waiting for `tsc --noEmit` verification to complete.
+A read-only audit of phase **S9 (Network Traffic Crawl, Third-Party Conformance, Privacy, Permissions & Security Audit)** has been completed in accordance with [rules.md](file:///home/ubuntu/apps/islamic_app/rules.md) (`FIX_MODE=false`).
+
+All audit artifacts and proof have been written exclusively to:
+- Report JSON: [`reports/audit/S9.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S9.json)
+- Evidence Directory: [`reports/audit/evidence/S9/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/)
+
+---
+
+### Executive Summary
+
+| Total Checks | PASS | FAIL | WARN | BLOCKED |
+| :---: | :---: | :---: | :---: | :---: |
+| **15** | **13** | **1** | **1** | **0** |
+
+- **Overall Status:** `PASS_WITH_OBSERVATIONS`
+- **Critical Severity:** 0
+- **High Severity:** 0
+- **Medium Severity:** 1 (Web preview server lacks transport encryption & standard security headers)
+- **Low Severity:** 1 (Dev/build toolchain dependencies in `npm audit`)
+- **Info Severity:** 13
+
+---
+
+### Key Findings by Audit Domain
+
+#### 1. Network Traffic Crawl & Allow-List Conformance
+- **Full Interception:** 151 total HTTP/HTTPS requests were captured during the automated Playwright crawl across Home, Quran, Library, Tools, and Settings.
+- **Observed Remote Hosts:**
+  - `15.235.203.134` (local web preview server: scripts, fonts, asset bundle)
+  - `api.islamic.app` (prayer times, authentic hadith collections)
+  - `api.alquran.cloud` (Quran text editions, metadata, preloading)
+- **Allow-List Comparison:** 100% of observed network hosts match the 16 declared services in [`src/screens/LegalScreen.tsx`](file:///home/ubuntu/apps/islamic_app/src/screens/LegalScreen.tsx#L631-L685) (Third-Party Services directory). Zero unlisted, unauthorized, or rogue endpoints were contacted.
+- **Evidence:** [`network_crawl_requests.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/network_crawl_requests.json), [`third_party_hosts_comparison.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/third_party_hosts_comparison.json)
+
+#### 2. Analytics, Advertising, Trackers & CDNs
+- **SDK Inspection:** The production bundle (`index-8bef5dc7bb202c9cefece7879a263ea5.js`, 6.28 MB) was statically analyzed for Google Analytics, Firebase Analytics, Segment, Mixpanel, Amplitude, Sentry, Adjust, AppsFlyer, AdMob, and DoubleClick.
+- **Result (`PASS`):** Zero tracking or ad monetization SDKs are initialized. String matches (e.g. `sentry` or `doubleclick`) correspond solely to vector icon glyph mappings (`saveNifasEntry`) in `@expo/vector-icons` and React DOM event names (`onDoubleClick`).
+- **Evidence:** [`secrets_and_trackers_scan.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/secrets_and_trackers_scan.json)
+
+#### 3. Cookies & Storage Hygiene
+- **Cookies (`PASS`):** 0 cookies exist in the browser context (`document.cookie` is empty string `""`), and zero `Set-Cookie` response headers were returned.
+- **Local Storage (`PASS`):** 317 localStorage keys were populated during navigation, all strictly functional (Quran text caching `salah-db:quran:*`, hadith collections `hadith:cache:*`, settings `islamic-settings`, `onboardingDone`). Zero persistent tracking UUIDs or device fingerprints exist.
+- **Evidence:** [`cookies_and_storage_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/cookies_and_storage_audit.json)
+
+#### 4. Privacy Commitments Verification
+- **Audit:** Codebase implementation was audited against all 4 commitments published in the Legal & Privacy policy:
+  1. *Zero Data Sale:* Verified. No trackers or data-broker integrations exist.
+  2. *No Accounts & No Profiles:* Verified. Zero authentication servers or remote user profiles.
+  3. *Local Device Storage:* Verified. Personal prayer logs, tasbih tallies, fasting records, zakat calculations, Quran notes, and women's cycle data reside exclusively in local SQLite/localStorage.
+  4. *Minimal Public Endpoints:* Verified. Outgoing network requests are restricted to open educational/religious APIs with approximate coordinates and zero user identifiers.
+- **Result (`PASS`):** 100% adherence.
+- **Evidence:** [`privacy_claims_verification.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/privacy_claims_verification.json)
+
+#### 5. Permissions vs Declarations
+- **Android Manifest & Plugins (`PASS`):** Runtime calls in TypeScript are strictly confined to `Location.requestForegroundPermissionsAsync`, `Notifications.requestPermissionsAsync`, and `LocalAuthentication.authenticateAsync`.
+- **Sensitive Permissions Stripped (`PASS`):** Transitively bundled sensitive permissions (`ACTIVITY_RECOGNITION`, `RECORD_AUDIO`, `SYSTEM_ALERT_WINDOW`) are explicitly stripped by the project's config plugin [`plugins/withRemoveActivityRecognition.js`](file:///home/ubuntu/apps/islamic_app/plugins/withRemoveActivityRecognition.js). No microphone, camera, contacts, or background location capabilities are used.
+- **iOS (`PASS`):** `UIBackgroundModes: ["audio"]` is declared and utilized exclusively for background Quran recitation playback.
+- **Evidence:** [`permissions_declarations_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/permissions_declarations_audit.json)
+
+#### 6. Transport Security, Mixed Content & Headers
+- **Source Code Protocol (`PASS`):** 0 `http://` URLs exist in `src/`. All outbound API calls strictly enforce `https://`.
+- **Web Preview Server Headers (`FAIL`):** Target `http://15.235.203.134:9998` is served via Python SimpleHTTP/0.6 over plain HTTP/1.0 without TLS. Missing `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, and `Permissions-Policy`.
+- **Evidence:** [`security_headers_and_https_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/security_headers_and_https_audit.json)
+
+#### 7. WebView & HTML Injection Resistance
+- **WebView Usage (`PASS`):** Resticted exclusively to [`src/components/LiveVideoPlayer.tsx`](file:///home/ubuntu/apps/islamic_app/src/components/LiveVideoPlayer.tsx) for 24/7 Makkah/Madinah Live broadcast playback.
+- **Security Validation (`PASS`):** Verifies `event.source === iframeRef.current.contentWindow`, restricts origin to `youtube-nocookie.com` and `youtube.com`, and sanitizes payloads to known numeric YouTube error codes.
+- **Raw HTML (`PASS`):** 0 occurrences of `dangerouslySetInnerHTML`, 0 `innerHTML`, 0 `document.write`, and 0 `eval`.
+- **Evidence:** [`webview_html_injection_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/webview_html_injection_audit.json)
+
+#### 8. Secrets & Bundled Credentials
+- **Scan (`PASS`):** Scanned bundle for AWS access keys, Google API keys, Stripe tokens, GitHub credentials, private keys, and bearer tokens. Zero hardcoded secrets were detected. All external APIs used are free public resources requiring no credentials.
+- **Evidence:** [`secrets_and_trackers_scan.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/secrets_and_trackers_scan.json)
+
+#### 9. Dependency Vulnerabilities
+- **NPM Audit (`WARN`):** 27 total vulnerabilities identified (0 critical, 18 high, 9 moderate).
+- **Runtime Risk Assessment:** All 27 vulnerabilities reside in build-time / development toolchain dependencies (`metro`, `node-forge`, `micromatch`, `xcode/uuid`, `react-native-view-shot`). Zero vulnerabilities are present in client-shipped production runtime dependencies.
+- **Evidence:** [`dependency_vulnerabilities.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/dependency_vulnerabilities.json)
+
+#### 10. Search-Input XSS Resistance
+- **Injection Testing (`PASS`):** Injected 5 XSS test vectors (`<script>`, `"><img onerror>`, `<svg onload>`, `javascript:`, and template expressions) into Quran Search and 99 Names search fields.
+- **Result:** React Virtual DOM text escaping safely neutralized all payloads. 0 dialog alert events fired, and 0 rogue HTML DOM tags were injected.
+- **Evidence:** [`xss_search_injection_results.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/xss_search_injection_results.json)
+
+#### 11. Runtime Blockers Cataloged
+- **CORS on api.islamic.app:** `https://api.islamic.app` rejects cross-origin browser requests from `http://15.235.203.134:9998` due to missing `Access-Control-Allow-Origin` headers. (App cleanly falls back to bundled offline surah and hadith data).
+- **LocationSetupModal Overlay:** First-launch modal requires dismissal or city selection when `location-setup-dismissed-v1` is uninitialized.
+- **Plain HTTP Context:** Insecure HTTP preview context prevents Service Worker and CacheStorage PWA registration.
+- **Evidence:** [`runtime_blockers.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S9/runtime_blockers.json)
+
+---
+
+### Verification & Deliverables Summary
+
+- Full S9 Audit JSON: [`reports/audit/S9.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S9.json)
+- Validated: JSON structure valid, all 15 test rows contain `steps`, `expected`, `actual`, `status`, `severity`, and verified on-disk `evidence` paths.
+- Clean Worktree: No modifications were made outside `reports/audit/S9.json` and `reports/audit/evidence/S9/`. Typecheck (`tsc --noEmit`) passes with 0 errors.

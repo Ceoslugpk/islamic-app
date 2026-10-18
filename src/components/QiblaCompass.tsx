@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View, Animated, Platform } from 'react-native';
+import { StyleSheet, View, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { shortestAngleDelta } from '../lib/qibla';
 import { t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 
 interface QiblaCompassProps {
   rotation: number; // degrees (bearing - heading)
@@ -142,42 +143,46 @@ export function QiblaCompass({
         })}
 
         {/* Cardinal Letters */}
-        <Text
+        <AppText
+          variant="eyebrow"
+          highlight
           style={[
             styles.cardinal,
             styles.north,
-            { color: colors.accent },
           ]}
         >
           N
-        </Text>
-        <Text
+        </AppText>
+        <AppText
+          variant="eyebrow"
+          tone="faint"
           style={[
             styles.cardinal,
             styles.east,
-            { color: colors.textSecondary },
           ]}
         >
           E
-        </Text>
-        <Text
+        </AppText>
+        <AppText
+          variant="eyebrow"
+          tone="faint"
           style={[
             styles.cardinal,
             styles.south,
-            { color: colors.textSecondary },
           ]}
         >
           S
-        </Text>
-        <Text
+        </AppText>
+        <AppText
+          variant="eyebrow"
+          tone="faint"
           style={[
             styles.cardinal,
             styles.west,
-            { color: colors.textSecondary },
           ]}
         >
           W
-        </Text>
+        </AppText>
 
         {/* Rotating Needle Assembly */}
         <Animated.View
@@ -252,7 +257,7 @@ export function QiblaCompass({
       {isAligned && !isStaticMode && heading !== null && (
         <View style={[styles.alignedBadge, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
           <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
-          <Text style={[styles.alignedBadgeText, { color: colors.accent }]}>{t('Facing Qibla')}</Text>
+          <AppText variant="rowTitle" highlight style={styles.alignedBadgeText}>{t('Facing Qibla')}</AppText>
         </View>
       )}
 
@@ -260,7 +265,7 @@ export function QiblaCompass({
       {heading === null && !isStaticMode && (
         <View style={[styles.alignedBadge, { backgroundColor: colors.bgRaised, borderColor: colors.borderSubtle }]}>
           <Ionicons name="compass-outline" size={14} color={colors.accent} />
-          <Text style={[styles.alignedBadgeText, { color: colors.textSecondary }]}>{t('Rotate device to calibrate')}</Text>
+          <AppText variant="rowTitle" tone="faint" style={styles.alignedBadgeText}>{t('Rotate device to calibrate')}</AppText>
         </View>
       )}
     </View>

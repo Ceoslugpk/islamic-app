@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   FlatList,
-  ScrollView,
   NativeScrollEvent,
   NativeSyntheticEvent,
 } from 'react-native';
@@ -20,6 +19,9 @@ export function useScrollRestore({
   key,
   minDelayMs = 300,
 }: UseScrollRestoreOptions) {
+  const [scrollPosition] = useState<ScrollPosition>(
+    () => MEMORY_SCROLL_CACHE.get(key) || { x: 0, y: 0 }
+  );
   const scrollPositionRef = useRef<ScrollPosition>(
     MEMORY_SCROLL_CACHE.get(key) || { x: 0, y: 0 }
   );
@@ -73,14 +75,17 @@ export function useScrollRestore({
     [key, minDelayMs]
   );
 
-  return { scrollPosition: scrollPositionRef.current, onScroll };
+  return { scrollPosition, onScroll };
 }
 
-export function useFlatListRestore<Item, R extends React.Key = any>(
+export function useFlatListRestore<Item = any>(
   key: string,
   listRef: React.MutableRefObject<FlatList<Item> | null>,
   extraDeps: any[] = []
 ) {
+  const [scrollPosition] = useState<ScrollPosition>(
+    () => MEMORY_SCROLL_CACHE.get(key) || { x: 0, y: 0 }
+  );
   const scrollPositionRef = useRef<ScrollPosition>(
     MEMORY_SCROLL_CACHE.get(key) || { x: 0, y: 0 }
   );
@@ -129,7 +134,7 @@ export function useFlatListRestore<Item, R extends React.Key = any>(
     return () => {
       mounted = false;
     };
-  }, [key]);
+  }, [key, listRef]);
 
   const onScroll = useCallback(
     (event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -161,5 +166,5 @@ export function useFlatListRestore<Item, R extends React.Key = any>(
     [key]
   );
 
-  return { listRef, onScroll, scrollPosition: scrollPositionRef.current };
+  return { listRef, onScroll, scrollPosition };
 }

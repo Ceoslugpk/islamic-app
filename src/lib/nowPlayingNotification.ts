@@ -352,10 +352,12 @@ export async function updateNowPlayingNotification(): Promise<void> {
 
 export async function stopNowPlayingNotification(): Promise<void> {
   clearNowPlaying().catch(() => {});
-  try {
-    await Notifications.dismissNotificationAsync(NOW_PLAYING_NOTIFICATION_ID);
-  } catch {
-    // ignore
+  if (Platform.OS !== 'web') {
+    try {
+      await Notifications.dismissNotificationAsync(NOW_PLAYING_NOTIFICATION_ID);
+    } catch {
+      // ignore
+    }
   }
   currentNotificationId = null;
   lastPlaybackTitle = null;

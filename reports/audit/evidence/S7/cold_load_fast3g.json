@@ -1,0 +1,108 @@
+{
+  "targetUrl": "http://15.235.203.134:9998",
+  "benchmark": "Cold Load & FCP against 2.5s on Fast 3G",
+  "thresholdSeconds": 2.5,
+  "thresholdMs": 2500,
+  "overallStatus": "FAIL",
+  "fast3G": {
+    "profile": "Fast 3G (1.6 Mbps down / 750 kbps up / 150ms RTT)",
+    "runs": [
+      {
+        "run": 1,
+        "throttled": true,
+        "fcpMs": null,
+        "fcpSeconds": null,
+        "ttfbMs": 1.600000023841858,
+        "domContentLoadedMs": 30515,
+        "loadMs": 30516.800000071526,
+        "totalTransferBytes": 7594167,
+        "requestCount": 16,
+        "wallClockMs": 30520,
+        "thresholdMs": 2500,
+        "passedThreshold": false
+      },
+      {
+        "run": 2,
+        "throttled": true,
+        "fcpMs": null,
+        "fcpSeconds": null,
+        "ttfbMs": 2,
+        "domContentLoadedMs": 30516.099999904633,
+        "loadMs": 30518.099999904633,
+        "totalTransferBytes": 7594167,
+        "requestCount": 16,
+        "wallClockMs": 30521,
+        "thresholdMs": 2500,
+        "passedThreshold": false
+      },
+      {
+        "run": 3,
+        "throttled": true,
+        "fcpMs": null,
+        "fcpSeconds": null,
+        "ttfbMs": 2.3000000715255737,
+        "domContentLoadedMs": 30524,
+        "loadMs": 30525.800000071526,
+        "totalTransferBytes": 7594167,
+        "requestCount": 16,
+        "wallClockMs": 30528,
+        "thresholdMs": 2500,
+        "passedThreshold": false
+      }
+    ],
+    "averageFcpMs": null,
+    "averageFcpSeconds": null,
+    "verdict": "FAIL",
+    "deltaFromTargetSeconds": null,
+    "rootCause": "Uncompressed 6.29 MB initial JS bundle served over HTTP without Content-Encoding (gzip/br); transfer on 1.6 Mbps connection alone takes ~30-31 seconds before JS parse & execution"
+  },
+  "unthrottledBaseline": {
+    "profile": "Unthrottled loopback/direct",
+    "runs": [
+      {
+        "run": 1,
+        "throttled": false,
+        "fcpMs": 360,
+        "fcpSeconds": "0.360",
+        "ttfbMs": 3.399999976158142,
+        "domContentLoadedMs": 259.7999999523163,
+        "loadMs": 262.10000002384186,
+        "totalTransferBytes": 9190571,
+        "requestCount": 17,
+        "wallClockMs": 266,
+        "thresholdMs": 2500,
+        "passedThreshold": true
+      },
+      {
+        "run": 2,
+        "throttled": false,
+        "fcpMs": 460,
+        "fcpSeconds": "0.460",
+        "ttfbMs": 2.5,
+        "domContentLoadedMs": 359.40000009536743,
+        "loadMs": 361.2000000476837,
+        "totalTransferBytes": 9190571,
+        "requestCount": 17,
+        "wallClockMs": 364,
+        "thresholdMs": 2500,
+        "passedThreshold": true
+      },
+      {
+        "run": 3,
+        "throttled": false,
+        "fcpMs": 372,
+        "fcpSeconds": "0.372",
+        "ttfbMs": 3,
+        "domContentLoadedMs": 272.3000000715256,
+        "loadMs": 274.5,
+        "totalTransferBytes": 9190571,
+        "requestCount": 17,
+        "wallClockMs": 277,
+        "thresholdMs": 2500,
+        "passedThreshold": true
+      }
+    ],
+    "averageFcpMs": 397,
+    "averageFcpSeconds": "0.40"
+  }
+}

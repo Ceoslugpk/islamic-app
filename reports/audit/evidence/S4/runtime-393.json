@@ -1,0 +1,990 @@
+[
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nCan't load prayer times right now.\nConnect to the internet to get today's prayer schedule.\nRetry\n\nHome\n\n\n\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device location, choose a city, or d",
+    "textLen": 371,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Home",
+    "route": "home",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('home')"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "ISLAMIC\n\n\nLIBRARY\nExplore\nKNOWLEDGE\nHadith Library\n15+\nfull books\nArabic with English translation\nBrowse →\nالبخاري\nمسلم\nالترمذي\nKNOWLEDGE & COLLECTIONS\n\nDuas & Adhkar\nDaily supplications\n\n99 Names of Allah\nAsma ul-Husna\n\n99 Names of the Prophet\nNoble names & attributes\n\nThe Shahada\nDeclaration",
+    "textLen": 939,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hub'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "ISLAMIC\n\n\n\n\nPreloading Quran… 11/114\nInstant opening with Arabic & translations cached\nPause\n\nTRANSLATION\n\n🇬🇧 English\nSaheeh International\n\nRECENTLY READ\nNone\nSTART READING\nAl-Faatiha\nالفاتحة\nThe Opening · Ayah 1\nStart\n\n\nAudio Center\nReciters & Playlists\n\nTafsir\nJalalayn Commentary\n\nTop",
+    "textLen": 1412,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/home",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'home'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\n\nAl-Faatiha\nPage 1 of 604\n\n\nLoading Mushaf Page 1...\n\n\nQuran\n\n\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device location, choose a city, or decide later in Settings.\n\nUse cur",
+    "textLen": 337,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/reader",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'reader',surah:1})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nAUDIO CENTER\nQuran Audio\nRecitations, audio translations, playlists & player settings\n\nReciters\n\nTranslation Audio\n\nRecent\n\nPlaylists\n\nQueue\n\nSettings\n\nArabic Reciters (19)\nSelect default reciter or tap Sample\n\nAlafasy\nKuwait\nمشاري العفاسي\n\nSample\n\nAbdul Basit\nEgypt\nعبد الباسط عبد ",
+    "textLen": 1318,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/audio",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'audio'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nEXEGESIS & COMMENTARY\nTafsir al-Jalalayn\nVerse-by-verse scholarly exegesis\nSURAH 1\nAl-Faatiha · The Opening\nسُورَةُ ٱلْفَاتِحَةِ\n\nTAFSIR SOURCE\nTafsir al-Jalalayn\n\n\n\n\nQuran\n\n\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla dire",
+    "textLen": 449,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/tafsir",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'tafsir'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nTHEMATIC QURAN\nQuran Topics\nCurated Quranic passages arranged by core themes of life, faith, and spirituality.\n\nPatience & Perseverance\nالصبر والمصابرة\n4 verses\n\nSteadfastness during difficulties, enduring hardship with dignity, and holding onto faith.\nAl-Baqarah 2:153\nRead in Surah →\nيَـٰ",
+    "textLen": 1835,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/topics",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'topics'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nCOMPARATIVE STUDY\nTranslation Compare\nSide-by-side comparative study of translations\n\nAl-Faatiha\nAyah 1 of 7\n\nTRANSLATION A · 🇬🇧 ENGLISH\nAll Languages...\n\n🇬🇧 English\n🇵🇰 Urdu\n🇮🇩 Indonesian\n🇹🇷 Turkish\n🇫🇷 French\n🇸🇦 Arabic\nTRANSLATION B · 🇵🇰 URDU\nAll Languages...\n\n🇬🇧 Englis",
+    "textLen": 665,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/compare",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'compare'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nSAVED VERSES\nBookmarks\nAccess your saved verses and reading bookmarks\n\nNo bookmarks yet\nOpen the Quran and tap the bookmark icon on any ayah to save it here for quick access.\nOpen the Quran\n\n\nQuran\n\n\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer t",
+    "textLen": 472,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/bookmarks",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'bookmarks'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nPERSONAL STUDY\nNotes & Reflections\nRecord thoughts and reflections on verses as you read\n\nADD NEW REFLECTION\nCapture your insights, questions, and personal dua\nSave\n\nNo reflections yet\nAdd thoughts and reflections on verses as you read the Quran — or write your first one above.\n\n\nQuran\n",
+    "textLen": 562,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/notes",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'notes'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nKHATMAH\nReading Plans\nStructured schedules to recite the Holy Quran at your own pace\nChoose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.\n30-Day Khatmah\n1 Juz per day\n1 JUZ / DAY\nComplete the entire Quran in 30 days by reading one Juz each",
+    "textLen": 1050,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/plans",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'plans'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nMEMORIZATION\nHifz Tracker\nTrack memorization progress, revisions, and test recall\n0\nMEMORIZED\n0\nREVISING\n114\nNOT STARTED\n\nAll\nMemorized\nRevising\nNot started\n1\nAl-Fatihah\n7 ayahs · Meccan\nNOT STARTED\nالفَاتِحة\n\nPractice\nTap to cycle\n2\nAl-Baqarah\n286 ayahs · Medinan\nNOT STARTED\nالبَقَرَة\n\nP",
+    "textLen": 1202,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/hifz",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nHifz\nHIDE & PEEK\nAl-Fatihah\n7 ayahs · Recite from memory & test recall\nAyah 1 of 7\n0 peeked\n1:1\n• • • • • • • • •\nRecite from memory, then peek to check.\n\nPeek\n\nPeek\n\n\n\nRestart\n\n\nQuran\n\n\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qi",
+    "textLen": 457,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/hifz-practice",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz-practice'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nQuran\nTHE HOLY QURAN\nSurahs\nAll 114 Surahs with translations, audio & verse commentary\nTRANSLATION\n🇬🇧 English · Saheeh International\nChange\n\nJUZ\n1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n11\n12\n13\n14\n15\n16\n17\n18\n19\n20\n21\n22\n23\n24\n25\n26\n27\n28\n29\n30\nREVELATION\nAll\nMeccan\nMedinan\nMeccan 86 · Medinan 28 · 114\n1\nAl-Faati",
+    "textLen": 1464,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Quran",
+    "route": "quran/surah-list",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'surah-list'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nDHIKR & REMEMBRANCE\nTasbih\nTap counter, round tracking, and offline remembrance\nSubhanAllah\nAlhamdulillah\nAllahu Akbar\nLa ilaha illallah\nAstaghfirullah\nTARGET\n33\n99\n100\nROUNDS\n0 (0/33)\nTODAY\n0\ncounts\nسُبْحَانَ اللَّهِ\nSubhanAllah\n“Glory be to Allah”\n0\nTAP TO COUNT\n0 / 33\n0%\n\nReset Count\nT",
+    "textLen": 674,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/tasbih",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tasbih'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nASMA UL-HUSNA\n99 Names of Allah\nDivine attributes and meanings of Allah (SWT)\nEnglish\nFrançais\nTürkçe\nEspañol\nDeutsch\nIndonesia\nবাংলা\nРусский\nاردو\n\n\n99 NAMES\n1\nالرَّحْمٰنُ\nAr-Rahman\nThe Most Merciful\n\nQuran 1:2 · 2:163\n\n2\nالرَّحِيمُ\nAr-Raheem\nThe Most Compassionate\n\nQuran 1:2 · 2:37\n",
+    "textLen": 1153,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/names",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nASMA UN-NABI\n99 Names of the Prophet ﷺ\nNoble attributes and titles of Prophet Muhammad ﷺ\n\n99 NAMES\n1\nمُحَمَّدٌ\nMuhammad\nThe Highly Praised\nFrom the Arabic root meaning praise; mentioned by name four times in the Qur’an.\n\n2\nأَحْمَدٌ\nAhmad\nThe Most Commendable\nProphet Isa (Jesus) announced",
+    "textLen": 1215,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/names-prophet",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names-prophet'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nSUPPLICATIONS\nDuas & Adhkar\nAuthentic supplications from the Quran and Sunnah\nAll (49)\nMorning (4)\nEvening (2)\nAfter Prayer (1)\nSleep (1)\nWaking (1)\nHome (2)\nMosque (2)\nEating (2)\nTravel (1)\nDistress (1)\nProtection (6)\nForgiveness (5)\nFamily (4)\nParents (4)\nRamadan (4)\nHajj & Umrah (5)\nAnx",
+    "textLen": 607,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/duas",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'duas'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nLIBRARY\nHadith Library\nBrowse 17 canonical collections, books & authentic narrations\n\nCollections\n\nSaved (0)\n\nRecent\n\nProgress\n\nSahih al-Bukhari\n7,277 hadiths\nصحيح البخاري\nSahih al-Bukhari is recognized by the overwhelming majority of the Muslim world to be the most authentic collecti",
+    "textLen": 3470,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/hadith",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hadith'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nGUIDES\nRamadan & Eid Guide\nFasting, Laylatul Qadr, Itikaf, Zakat al-Fitr, Eid and Tashriq — every narration verified with its collection, number and grade.\n\nFasting Rules (Ahkam al-Siyam)\nأحكام الصيام\nIntention (Niyyah) Before Dawn\nأَخْبَرَنَا إِسْحَاقُ بْنُ إِبْرَاهِيمَ، قَالَ أَنْبَأَنَ",
+    "textLen": 19382,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/ramadan-guide",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'ramadan-guide'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nGUIDES\nPrayer Guide (Fiqh)\nWudu, Salah, praying in congregation, Janazah, Istikhara, Eid and Taraweeh — every narration verified with its collection, number and grade.\nWudu\nThe Prayer (Salah)\nPraying in Congregation\nFuneral Prayer (Salat al-Janazah)\nSeeking Guidance (Istikhara)\nEid Prayer\n",
+    "textLen": 21275,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/prayer-guide",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'prayer-guide'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nLIBRARY · KNOWLEDGE\nThe Shahada\nThe declaration of faith and its foundational conditions in Islam\nإِنَّ ٱلدِّينَ عِندَ ٱللَّٰهِ ٱلْإِسْلَٰمُ\nIndeed, the religion in the sight of Allah is Islam. (3:19)\nQur'an 3:19 (Surah Ali 'Imran)\nأَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا ٱللَّٰهُ\nوَأَشْهَدُ أَنَّ",
+    "textLen": 3122,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/shahada",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'shahada'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nOFFLINE\nDownloads\nManage offline audio surahs and cached Quran text\nAll Downloads\nAudio Surahs\n0\nQuran Text\n15/114\n\n\nQuran Text & Translation\nFor offline reading (not audio) · 🇬🇧 Saheeh International\nPause\nDownloading text… 15/114 · Surah 15\n\nStorage Used: 0 B\n0 surahs saved for offli",
+    "textLen": 707,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/downloads",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'downloads'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nLEARN\nQuran Vocabulary\nMost frequent words of the Quran\n\n0/60 known\n\n0%\n\nTODAY'S WORD\nVERY COMMON\nبَاطِل\nbāṭil\n\"falsehood\"\nQuran 2:42\n\nPractice in Trainer\n\nMark Known\nAll\nToday's Set\nMost frequent\nVery common\nCommon\n1 / 60\nMOST FREQUENT\nالله\nTap to reveal meaning\n\n\nI know this\n\n0 m",
+    "textLen": 600,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/vocab",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'vocab'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nPERSONAL JOURNEY\nWeekly Summary\nYour past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections.\n\n7-DAY OVERVIEW\n\nOct 11 – Oct 17\nA Week of Devotion & Learning\nGentle on-device reflection of your daily habits and spiritual consistency.\n0\nAyahs\n",
+    "textLen": 869,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/summary",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'summary'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nLEARN\nTajweed Colors\nFull Quran · color-coded recitation rules\n\nEvery surah of the Quran in standard tajweed colors — ghunnah, idgham, qalqalah, ikhfa, madd and silent letters. Data from islamic.app (uthmani tajweed edition).\n\n1\nAl-Fatihah\n7 ayahs\nالفَاتِحة\n\n2\nAl-Baqarah\n286 ayahs\nالبَق",
+    "textLen": 4253,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/tajweed",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tajweed'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nHAJJ & UMRAH\nUmrah Guide\nStep-by-step rituals of the sacred pilgrimage: Ihram, Tawaf, Sa'i, and Halq.\n01 · Ihram & Niyyah\n02 · Entering Al-Masjid Al-Haram\n03 · Tawaf Around the Kaaba\n04 · Sa'i between Safa and Marwah\n05 · Halq or Taqsir (Exit from Ihram)\n\nTHE 4 PILLARS OF UMRAH\nA Journey ",
+    "textLen": 8908,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/umrah-guide",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'umrah-guide'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nLibrary\nSACRED PILGRIMAGE\nHajj Journey\nDay-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba.\nDay 1 · 8th Dhu al-Hijjah\nDay 2 · 9th Dhu al-Hijjah\nDay 3 · 10th Dhu al-Hijjah\nDays 4–5 · 11th & 12th Dhu al-Hijjah\nDay 6 · 13th Dhu al-Hijjah\n\nTHE 4 PILLARS OF HAJJ (ARKAN)\nE",
+    "textLen": 9277,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/hajj-journey",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hajj-journey'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\n\n\nLibrary\n\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device location, choose a city, or decide later in Settings.\n\nUse current location\n\nChoose a city\nNot now",
+    "textLen": 275,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/women-purity",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-purity'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\n\n\nLibrary\n\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device location, choose a city, or decide later in Settings.\n\nUse current location\n\nChoose a city\nNot now",
+    "textLen": 275,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Library",
+    "route": "library/women-guidance",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-guidance'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nDHIKR & REMEMBRANCE\nTasbih\nTap counter, round tracking, and offline remembrance\nSubhanAllah\nAlhamdulillah\nAllahu Akbar\nLa ilaha illallah\nAstaghfirullah\nTARGET\n33\n99\n100\nROUNDS\n0 (0/33)\nTODAY\n0\ncounts\nسُبْحَانَ اللَّهِ\nSubhanAllah\n“Glory be to Allah”\n0\nTAP TO COUNT\n0 / 33\n0%\n\nReset Count\nTap",
+    "textLen": 670,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/tasbih",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tasbih'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nPERSONAL JOURNEY\nWeekly Summary\nYour past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections.\n\n7-DAY OVERVIEW\n\nOct 11 – Oct 17\nA Week of Devotion & Learning\nGentle on-device reflection of your daily habits and spiritual consistency.\n0\nAyahs\n0\n",
+    "textLen": 865,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/summary",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'summary'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nDIRECTION OF PRAYER\nQibla Compass\nTrue bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas.\n\nLocation detection unavailable\nGPS is not available on this device or platform. Currently using saved location (Makkah, Saudi Arabia).\n\nChoose City\n\nRetry Detection\n",
+    "textLen": 1055,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/qibla",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'qibla'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nDAILY OBLIGATIONS\nSalah Tracker\nTrack your daily 5 prayers and build a consistent habit\n0/5\nTODAY'S PRAYERS\n0\n\nDAY STREAK\nStart your streak today\nTODAY'S PRAYERS\n\nPrayer times unavailable\nCouldn't load today's prayer times. Check your connection or location, then try again.\nRetry\n\n\n\n\nT",
+    "textLen": 564,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/tracker",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tracker'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nPREFERENCES\nLocation\nUse GPS automatically or enter a city or coordinates\nAuto-detect (GPS)\nManual Coordinates\nGPS Auto\nGPS unavailable\nUsing manual location (Makkah, Saudi Arabia)\n21.4225°, 39.8262°\nQUICK CITY SELECT\nMakkah\nMadinah\nJerusalem\nCairo\nIstanbul\nLOCATION DETECTION\nAuto-detect (GP",
+    "textLen": 910,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/location",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'location'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nDIRECTORY\nCities\nPick a city to set your location\n\n\nDubai\nUnited Arab Emirates\n25.20°, 55.27°\n\nAbu Dhabi\nUnited Arab Emirates\n24.45°, 54.38°\n\nSharjah\nUnited Arab Emirates\n25.35°, 55.39°\n\nRiyadh\nSaudi Arabia\n24.71°, 46.68°\n\nJeddah\nSaudi Arabia\n21.49°, 39.19°\n\nMecca\nSaudi Arabia\n21.39°,",
+    "textLen": 1041,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/cities",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'cities'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nTOOLS\nPrayer Reminders\nManage daily prayer alarms, adhan voices & Quran reading habit\nPRAYER REMINDERS\nPrayer reminders\nAlarms before and at each prayer time — on time even when the app is closed\nSTATUS\nPaused\nNEXT PRAYER\n—\nTODAY\n—\n\nRe-schedule now\n\nSnooze 10m\nPER-PRAYER ALERTS & AUDIO\n\nF",
+    "textLen": 2496,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/notifications",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'notifications'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nTOOLS\nPrayer Reminders\nManage daily prayer alarms, adhan voices & Quran reading habit\nPRAYER REMINDERS\nPrayer reminders\nAlarms before and at each prayer time — on time even when the app is closed\nSTATUS\nPaused\nNEXT PRAYER\n—\nTODAY\n—\n\nRe-schedule now\n\nSnooze 10m\nPER-PRAYER ALERTS & AUDIO\n\nF",
+    "textLen": 2496,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/prayer-reminders",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'prayer-reminders'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nWORSHIP & TRACKER\nFasting\nSuhoor & iftar countdowns, sunnah fasts & qada logs\nToday\nSunnah\nQada\nHistory\n0\nTHIS MONTH\n0d\nSTREAK\n0\nQADA LEFT\n6 JUMADA AL-AWWAL 1448 AH\nToday's Fast\n\nNot Fasting\nTap below to record your fast and track your habit.\n\nI am Fasting Today\nTODAY'S PRAYER SCHEDULE\nSuh",
+    "textLen": 762,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/fasting",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'fasting'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nWORSHIP & CHARITY\nZakat\nWealth assessment, nisab thresholds & calculation\nCalculator\nHistory\nNisab Guide\nACTIVE CURRENCY\nAED — UAE Dirham (AED)\n\nChange\nNISAB STANDARD\nThreshold: AED 24,352.50\nGold (85g)\nRecommended standard\nSilver (595g)\nLower threshold\nGold / g (AED)\nSilver / g (AED)\nZAKAT",
+    "textLen": 1129,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/zakat",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'zakat'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nHIJRI CALENDAR\nIslamic Dates\nGregorian to Hijri mapping, Islamic months & holy dates\nTODAY\n6 Jumada al-Awwal 1448 AH\nOctober 17, 2026\nDay 6 of 20 in Jumada al-Awwal\n\nNEXT EVENT\nIsra and Mi'raj (الإسراء والمعراج)\nin 80 days\nNight journey and ascension of the Prophet ﷺ to the heavens.\n‹\nJumad",
+    "textLen": 2739,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/calendar",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'calendar'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nTOOLS\nMosque Finder\nFind nearby places of worship\n\n\nFind\n\nSEARCH CENTER · MANUAL (MAKKAH, SAUDI ARABIA)\nMakkah, Saudi Arabia\n\nUSE MY LOCATION\n\nLocation detection unavailable\nGPS is not available on this device or platform. Currently using saved location (Makkah, Saudi Arabia).\n\nChoose ",
+    "textLen": 628,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/mosque",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'mosque'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nWOMEN'S WORSHIP\nCycle Tracker\nPeriod logging, cycle duration, predictions & daily purity status.\n\nPrivate & local · Stored securely on your device only · Never sent to servers\nPURITY STATE\nRitual Purity (Tuhr) · Day 1\n\nNormal Worship\nPredictions are informational estimates computed strictl",
+    "textLen": 934,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/women-cycle",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-cycle'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\n\n\n\nTools\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device location, choose a city, or decide later in Settings.\n\nUse current location\n\nChoose a city\nNot now",
+    "textLen": 273,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/women-purity",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-purity'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\n\n\n\nTools\n\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device location, choose a city, or decide later in Settings.\n\nUse current location\n\nChoose a city\nNot now",
+    "textLen": 273,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/women-guidance",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-guidance'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nWOMEN'S WORSHIP\nQada Fasts\nTrack and make up missed Ramadan fasts due to menstruation or postpartum.\n\nPrivate & synchronized · Stored safely in your local fasting database\n\nExplicit recording only: Missed fasts are only logged when you manually add them. Predictions never auto-create recor",
+    "textLen": 874,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/women-qada",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-qada'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nHAJJ & UMRAH\nUmrah Guide\nStep-by-step rituals of the sacred pilgrimage: Ihram, Tawaf, Sa'i, and Halq.\n01 · Ihram & Niyyah\n02 · Entering Al-Masjid Al-Haram\n03 · Tawaf Around the Kaaba\n04 · Sa'i between Safa and Marwah\n05 · Halq or Taqsir (Exit from Ihram)\n\nTHE 4 PILLARS OF UMRAH\nA Journey of",
+    "textLen": 8904,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/umrah-guide",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-guide'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nHAJJ & UMRAH\nUmrah Resources\nEssential packing checklist, etiquette, common errors, tips & scholarly references.\nPacking Checklist\nFirst-Timer Tips\nSacred Etiquette\nCommon Errors\nBooks & Guides\nSUPPLICATIONS READY\nNeed Key Duas in Your Hand?\nTalbiyah, Tawaf, Safa & Marwah duas with Arabic te",
+    "textLen": 2366,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/umrah-resources",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-resources'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nSACRED PILGRIMAGE\nHajj Journey\nDay-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba.\nDay 1 · 8th Dhu al-Hijjah\nDay 2 · 9th Dhu al-Hijjah\nDay 3 · 10th Dhu al-Hijjah\nDays 4–5 · 11th & 12th Dhu al-Hijjah\nDay 6 · 13th Dhu al-Hijjah\n\nTHE 4 PILLARS OF HAJJ (ARKAN)\nEss",
+    "textLen": 9273,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/hajj-journey",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-journey'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nHAJJ & UMRAH\nMakkah Live TV\n24/7 Official High-Definition Live Broadcast from Al-Masjid Al-Haram.\nSACRED SANCTUARY\nVirtues of Al-Masjid Al-Haram\nصَلَاةٌ فِي الْمَسْجِدِ الْحَرَامِ أَفْضَلُ مِنْ مِائَةِ أَلْفِ صَلَاةٍ فِيمَا سِوَاهُ\nThe Messenger of Allah ﷺ said: \"One prayer in the Sacred Mos",
+    "textLen": 2037,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/makkah-live",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'makkah-live'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nHAJJ & UMRAH\nMadinah Live\n24/7 Official High-Definition Live Broadcast from Al-Masjid an-Nabawi.\nCITY OF THE MESSENGER ﷺ\nVirtues of Al-Masjid an-Nabawi\nصَلَاةٌ فِي مَسْجِدِي هَذَا أَفْضَلُ مِنْ أَلْفِ صَلَاةٍ فِيمَا سِوَاهُ إِلَّا الْمَسْجِدَ الْحَرَامَ\nThe Messenger of Allah ﷺ said: \"One pr",
+    "textLen": 1836,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/madinah-live",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'madinah-live'})"
+  },
+  {
+    "url": "http://15.235.203.134:9998/",
+    "text": "\nTools\nHAJJ & UMRAH\nHajj Live\nOfficial broadcasts from the Holy Sites of Mina, Arafat, Muzdalifah & Jamarat.\nAl Ekhbariya (Live News)\nMinistry of Hajj & Umrah\nToday: 6 Jumada al-Awwal 1448 AH\n\nHajj Live Broadcast Notice\nContinuous multi-site live coverage across Mina, Mount Arafat, Muzdalifah, and",
+    "textLen": 2919,
+    "dialogCount": 1,
+    "dialogs": [
+      "\n\nLocation for prayer times\nIslamic uses your location to calculate accurate prayer times and the Qibla direction for "
+    ],
+    "nav": {
+      "x": 14,
+      "y": 783.5,
+      "w": 365,
+      "h": 54.5
+    },
+    "activeLabel": "Tools",
+    "route": "tools/hajj-live",
+    "viewport": "393x852",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-live'})"
+  }
+]

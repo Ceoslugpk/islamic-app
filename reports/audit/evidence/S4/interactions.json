@@ -1,0 +1,20 @@
+{
+  "viewportChecks": [
+    {"viewport":"393x852","routes":["quran/notes","library/hadith","tools/calendar"],"result":"BLOCKED","evidence":"runtime-393.json: dialogCount=1 on every route"},
+    {"viewport":"360x800","routes":["quran/notes","library/hadith","tools/calendar"],"result":"BLOCKED","evidence":"browser probe: floating-nav-surface x=14,y=731.5,w=332,h=54.5; location dialog remained visible"}
+  ],
+  "modal": {
+    "open": {"route":"/","steps":["complete onboarding","navigate through app","observe location setup sheet"],"expected":"first-launch sheet opens once and can be dismissed", "actual":"Location for prayer times dialog recurred on route changes and remained visible over every crawled route", "status":"FAIL", "severity":"High", "evidence":"runtime-393.json dialogCount=1 for all 52 rows"},
+    "close": {"steps":["click visible Dismiss location setup and use default location"],"expected":"dialog closes", "actual":"dialog closed once by coordinate click; subsequent route-state changes reopened it", "status":"FAIL", "severity":"High"}
+  },
+  "navigation": {
+    "secondaryBack": {"route":"quran/notes","steps":["set quran notes state","click Back Quran"],"expected":"return to Quran home and active Quran tab", "actual":"returned to Quran home; floating-nav-active-label was Quran", "status":"PASS"},
+    "tabStack": {"steps":["navigate quran notes -> library hub -> quran notes", "inspect route state and active dock"],"expected":"tab switch clears prior tab stack and active tab matches route", "actual":"Quran route restored and active label Quran; underlying modal blocked full visual proof", "status":"BLOCKED"},
+    "deepLinkRefresh": {"steps":["refresh root after state navigation","inspect URL and body"],"expected":"route deep link survives refresh", "actual":"URL stayed http://15.235.203.134:9998/ and app has no route URL; state bridge is runtime-only", "status":"BLOCKED", "severity":"Medium"},
+    "fallbackBack": {"steps":["navigate route through runtime state then use back control"],"expected":"fallback/back returns to canonical parent", "actual":"secondary Quran back path passed; URL fallback cannot be exercised because all routes share /", "status":"BLOCKED"}
+  },
+  "keyboard": {"route":"quran/notes","steps":["focus textarea"],"expected":"keyboard hides nav while input stays visible", "actual":"activeElement was TEXTAREA, but floating-nav-container and nav children remained visible in DOM/geometry; physical keyboard behavior not available", "status":"BLOCKED", "severity":"Medium"},
+  "scroll": {"steps":["inspect actual screen-content/screen-scroll-container owners at 393 and 360"],"expected":"per-tab offsets preserve and final content clears nav", "actual":"route scroll owners and scrollHeight were measurable, but location dialog blocked unobscured mid/end clearance proof", "status":"BLOCKED"},
+  "console": {"steps":["inspect runtime error exposure after navigation crawl"],"expected":"no console errors", "actual":"window.__consoleErrors remained [] during crawl; browser console stream was not exposed by the target harness", "status":"BLOCKED"},
+  "themeLanguage": {"steps":["inspect onboarding/default dark state and settings sheet"],"expected":"both themes and Urdu route states render", "actual":"English content rendered; settings sheet exposed language/theme controls, but modal recurrence prevented complete light/Urdu matrix", "status":"BLOCKED"}
+}

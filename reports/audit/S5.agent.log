@@ -1,0 +1,72 @@
+root agent idle; waiting up to 30m0s for 1 background task(s)
+I have launched the comprehensive S5 runtime and static audit suite covering all 52 routes, 9 sheets/dialogs, 6 registered locales (`en`, `ur`, `ar`, `hi`, `ml`, `si`), light/dark themes, and target viewports (`393x852`, `360x800`). Waiting for the runtime crawl to finish.
+### S5 Audit Completed: Localization, i18n, RTL & Theme Conformance
+
+The read-only audit for **S5** has been executed against target `http://15.235.203.134:9998` (`FIX_MODE=false`), auditing all **52 inventory routes**, **9 sheets/dialogs**, and **6 registered locales** (`en`, `ur`, `ar`, `hi`, `ml`, `si`) across light (`paper`) and dark (`ink`) modes at viewports `393x852` and `360x800`.
+
+The audit artifact has been generated at [`reports/audit/S5.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S5.json) with supporting evidence under [`reports/audit/evidence/S5/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/). No source, test, package, proof, or git files were modified.
+
+---
+
+### Audit Summary
+
+| Total Rows | PASS | FAIL | BLOCKED | FLAKY | SKIPPED |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **72** | **38** | **34** | **0** | **0** | **0** |
+
+- **Global / Architectural Checks:** 11 rows (6 PASS, 5 FAIL)
+- **Sheets / Dialogs:** 9 rows (6 PASS, 3 FAIL)
+- **Inventory Routes:** 52 rows (26 PASS, 26 FAIL)
+
+---
+
+### Key Findings & Defect Categorization
+
+1. **Missing Keys in Codebase (Leftover English / Raw Keys - Severity: High):**
+   - **Static scan ([`missing_keys_scan.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/missing_keys_scan.json)):** **271 distinct keys** invoked via `t(...)` in source files do not exist in [`src/locales/en.json`](file:///home/ubuntu/apps/islamic_app/src/locales/en.json) (e.g. `NEXT PRAYER`, `Salah Today`, `TRACKERS & CALCULATORS`, `UTILITIES & LOCATION`, `Noble names & attributes`, `Recitations, audio translations...`, `Structured schedules...`).
+   - **Runtime impact:** In all non-English locales (`ur`, `ar`, `hi`, `ml`, `si`), `i18next` falls back to returning the key itself, producing noticeable English leakage across 26-34 routes.
+
+2. **Interpolation Token Integrity (Rule 14 Violation - Severity: Medium):**
+   - In [`src/locales/ar.json`](file:///home/ubuntu/apps/islamic_app/src/locales/ar.json), keys `Hizb {n} selected` and `Juz {n} selected` translate the parameter token to `{ن}` instead of retaining exact token `{n}`. While patched at runtime via a custom regex in [`src/lib/i18n.ts`](file:///home/ubuntu/apps/islamic_app/src/lib/i18n.ts#L195-L198), it violates Standing Rule 14.
+
+3. **Hardcoded English Literals in Sheets/Dialogs (Severity: Medium):**
+   - [`WomenConsentModal.tsx`](file:///home/ubuntu/apps/islamic_app/src/components/WomenConsentModal.tsx): 10 hardcoded English paragraphs and heading literals bypassing `t(...)` entirely (e.g. *"Your cycle, purity, and worship data are deeply personal..."*, *"Stays on this device"*).
+   - [`AdhanReciterModal.tsx`](file:///home/ubuntu/apps/islamic_app/src/components/AdhanReciterModal.tsx): Hardcoded English subtitle (*"Preview adhans with the play button..."*).
+   - [`AudioPlayerModal.tsx`](file:///home/ubuntu/apps/islamic_app/src/components/AudioPlayerModal.tsx): Hardcoded empty-state description (*"Choose any surah or reciter from the Quran tab..."*).
+
+4. **RTL Directional Styling / Physical Margins (Severity: Medium):**
+   - **Static scan ([`rtl_directional_scan.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/rtl_directional_scan.json)):** **44 files** utilize physical CSS properties (`paddingLeft`, `paddingRight`, `marginLeft`, `marginRight`) rather than logical properties (`paddingStart`, `paddingEnd`, `marginStart`, `marginEnd`). In RTL mode (`ur`, `ar`), these asymmetric offsets do not mirror.
+
+5. **Script Fonts & Numeral Formatting (Severity: Low):**
+   - [`src/lib/fonts.ts`](file:///home/ubuntu/apps/islamic_app/src/lib/fonts.ts) only bundles Arabic and Latin fonts. Hindi (`hi`), Malayalam (`ml`), and Sinhala (`si`) rely completely on unbundled system font fallbacks. Urdu lacks a dedicated Nastaliq font (falls back to Noto Naskh Arabic).
+   - UI numbers (prayer countdowns, hijri dates, tasbih counters, zakat calculator) hardcode Latin digits (0-9) rather than utilizing localized numerals.
+
+---
+
+### Passing Validations
+
+- **Locale Key Parity:** All 6 registered locales (`en`, `ur`, `ar`, `hi`, `ml`, `si`) have exact 2,302 key parity, 0 missing keys, 0 extra keys, 0 empty strings, and identical-to-English ratio $\le 1.17\%$.
+- **Instant Switching & Persistence:** Tested all 12 matrix combinations (6 locales $\times$ 2 themes) via Playwright; verified `document.documentElement.dir`, `lang`, write queue validation, and full persistence across cold page reloads.
+- **Onboarding Animation:** The language demo animation cycled smoothly across demo locales (`en` $\rightarrow$ `ar` $\rightarrow$ `ur`) and persisted `onboardingDone='true'` upon completion.
+- **+40% Pseudo-Localization:** Text expansion simulation at 360px viewport produced 0 unscrollable horizontal container clipping defects.
+- **No Invalid Placeholders:** 0 instances of `undefined`, `null`, `[object Object]`, or `NaN` were detected across any crawled route in the rendered DOM.
+
+---
+
+### Evidence Artifacts Generated
+
+- [`reports/audit/S5.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S5.json)
+- [`reports/audit/evidence/S5/locale_parity.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/locale_parity.json)
+- [`reports/audit/evidence/S5/token_mismatches.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/token_mismatches.json)
+- [`reports/audit/evidence/S5/missing_keys_scan.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/missing_keys_scan.json)
+- [`reports/audit/evidence/S5/language_theme_switching.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/language_theme_switching.json)
+- [`reports/audit/evidence/S5/onboarding_animation.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/onboarding_animation.json)
+- [`reports/audit/evidence/S5/pseudo_localization.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/pseudo_localization.json)
+- [`reports/audit/evidence/S5/rtl_directional_scan.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/rtl_directional_scan.json)
+- [`reports/audit/evidence/S5/font_numerals_scan.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/font_numerals_scan.json)
+- [`reports/audit/evidence/S5/sheets_dialogs_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/sheets_dialogs_audit.json)
+- [`reports/audit/evidence/S5/sheets_dialogs_runtime.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/sheets_dialogs_runtime.json)
+- [`reports/audit/evidence/S5/route_crawl_393_dark_en.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/route_crawl_393_dark_en.json)
+- [`reports/audit/evidence/S5/route_crawl_393_light_ur.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/route_crawl_393_light_ur.json)
+- [`reports/audit/evidence/S5/route_crawl_360_dark_ar.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/route_crawl_360_dark_ar.json)
+- Screen captures in [`reports/audit/evidence/S5/screenshots/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S5/screenshots/)

@@ -1,0 +1,20 @@
+{
+  "json_valid": true,
+  "row_count": 22,
+  "computed": {
+    "PASS": 7,
+    "FAIL": 8,
+    "BLOCKED": 7
+  },
+  "declared": {
+    "total": 22,
+    "PASS": 7,
+    "FAIL": 8,
+    "FLAKY": 0,
+    "BLOCKED": 7,
+    "SKIPPED": 0,
+    "reconciled": true,
+    "release_ready": false
+  }
+}
+VALIDATION=PASS

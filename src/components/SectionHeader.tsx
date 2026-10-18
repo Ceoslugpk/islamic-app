@@ -1,7 +1,7 @@
 import React from 'react';
-import { I18nManager, StyleSheet, Text, View, ViewStyle, TextStyle, useWindowDimensions } from 'react-native';
-import { useTheme } from '../lib/theme';
+import { StyleSheet, View, ViewStyle, TextStyle, useWindowDimensions } from 'react-native';
 import { isRTL, t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 
 interface SectionHeaderProps {
   eyebrow?: string;
@@ -9,11 +9,11 @@ interface SectionHeaderProps {
   subtitle?: string;
   style?: ViewStyle;
   compact?: boolean;
+  maxFontSizeMultiplier?: number;
 }
 
 /** Editorial section header: eyebrow + serif title + optional subtitle. Responsive across small screens and tablets. */
-export function SectionHeader({ eyebrow, title, subtitle, style, compact }: SectionHeaderProps) {
-  const { colors } = useTheme();
+export function SectionHeader({ eyebrow, title, subtitle, style, compact, maxFontSizeMultiplier = 1.4 }: SectionHeaderProps) {
   const { width } = useWindowDimensions();
   const isCompact = compact ?? width < 380;
   const isTiny = width <= 340;
@@ -37,49 +37,51 @@ export function SectionHeader({ eyebrow, title, subtitle, style, compact }: Sect
   return (
     <View style={[styles.wrap, { marginBottom }, style]}>
       {eyebrow ? (
-        <Text
+        <AppText
+          variant="eyebrow"
           style={[
             styles.eyebrow,
             rtlEyebrow,
-            { color: colors.accent, fontSize: eyebrowFontSize, marginBottom: isCompact ? 4 : 10 },
+            { fontSize: eyebrowFontSize, marginBottom: isCompact ? 4 : 10 },
           ]}
           numberOfLines={1}
-          maxFontSizeMultiplier={1.4}
+          maxFontSizeMultiplier={maxFontSizeMultiplier}
         >
           {t(eyebrow)}
-        </Text>
+        </AppText>
       ) : null}
-      <Text
+      <AppText
+        variant="sectionTitle"
         style={[
           styles.title,
           rtlTitle,
           {
-            color: colors.textPrimary,
             fontSize: titleFontSize,
             lineHeight: titleLineHeight,
           },
         ]}
         accessibilityRole="header"
-        maxFontSizeMultiplier={1.4}
+        aria-level={2}
+        maxFontSizeMultiplier={maxFontSizeMultiplier}
       >
         {t(title)}
-      </Text>
+      </AppText>
       {subtitle ? (
-        <Text
+        <AppText
+          variant="subtitle"
           style={[
             styles.subtitle,
             rtlSubtitle,
             {
-              color: colors.textSecondary,
               fontSize: subtitleFontSize,
               lineHeight: subtitleLineHeight,
               marginTop: isCompact ? 4 : 8,
             },
           ]}
-          maxFontSizeMultiplier={1.4}
+          maxFontSizeMultiplier={maxFontSizeMultiplier}
         >
           {t(subtitle)}
-        </Text>
+        </AppText>
       ) : null}
     </View>
   );

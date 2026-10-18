@@ -1,0 +1,1415 @@
+[
+  {
+    "route": "home",
+    "stateExpression": "__NAVIGATE__.setTab('home')",
+    "analysis": {
+      "textLength": 118,
+      "textSnippet": " اس وقت نماز کے اوقات لوڈ نہیں ہو سکے۔ آج کے نماز کے شیڈول کے لیے انٹرنیٹ سے رابطہ کریں۔ دوبارہ کوشش کریں  ہوم   ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/home_ur_paper_393.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hub'})",
+    "analysis": {
+      "textLength": 662,
+      "textSnippet": "اسلامک   LIBRARY دریافت کریں KNOWLEDGE Hadith Library 15+ full books Arabic with English translation Browse → البخاري مسلم الترمذي KNOWLEDGE & COLLECTIONS  د",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 42,
+      "sampleLatinWords": [
+        "LIBRARY",
+        "KNOWLEDGE",
+        "Library",
+        "full",
+        "books",
+        "Arabic",
+        "with",
+        "English"
+      ]
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/library_ur_paper_393.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/home",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'home'})",
+    "analysis": {
+      "textLength": 996,
+      "textSnippet": "اسلامک     قرآن پری لوڈ ہو رہا ہے… 2/114 عربی متن اور تراجم کے ساتھ فوری مطالعہ روکیں  ترجمہ  🇬🇧 انگریزی صحیح انٹرنیشنل  حالیہ مطالعہ کوئی نہیں تلاوت ش",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/quran_home_ur_paper_393.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/reader",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'reader',surah:1})",
+    "analysis": {
+      "textLength": 75,
+      "textSnippet": " قرآن  Al-Faatiha Page 1 of 604   Loading Mushaf Page 1...   قرآن  ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 5,
+      "sampleLatinWords": [
+        "Faatiha",
+        "Page",
+        "Loading",
+        "Mushaf",
+        "Page"
+      ]
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/quran_reader_ur_paper_393.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/audio",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'audio'})",
+    "analysis": {
+      "textLength": 1018,
+      "textSnippet": " قرآن آڈیو سینٹر تلاوتِ قرآن Recitations, audio translations, playlists & player settings  قارئین  ترجمہ کی آڈیو  حالیہ  پلے لسٹس  قطار  ترتیبات  عربی ق",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 55,
+      "sampleLatinWords": [
+        "Recitations",
+        "audio",
+        "translations",
+        "playlists",
+        "player",
+        "settings",
+        "Alafasy",
+        "Kuwait"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/tafsir",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'tafsir'})",
+    "analysis": {
+      "textLength": 262,
+      "textSnippet": " قرآن تفسیر اور تشریح Tafsir al-Jalalayn Verse-by-verse scholarly exegesis سورت 1 الفاتحہ · The Opening سُورَةُ ٱلْفَاتِحَةِ  ماخذِ تفسیر Tafsir al-Jalalayn ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 9,
+      "sampleLatinWords": [
+        "Tafsir",
+        "Jalalayn",
+        "Verse",
+        "verse",
+        "scholarly",
+        "exegesis",
+        "Opening",
+        "Tafsir"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/topics",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'topics'})",
+    "analysis": {
+      "textLength": 1483,
+      "textSnippet": " قرآن موضوعاتی قرآن قرآنی موضوعات زندگی، ایمان اور روحانیت کے بنیادی موضوعات پر قرآنی آیات کا انتخاب۔  صبر و استقامت الصبر والمصابرة 4 آیات  مشکلات میں ثابت ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 42,
+      "sampleLatinWords": [
+        "Baqarah",
+        "have",
+        "believed",
+        "seek",
+        "help",
+        "through",
+        "patience",
+        "prayer"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/compare",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'compare'})",
+    "analysis": {
+      "textLength": 676,
+      "textSnippet": " قرآن تقابلی مطالعہ تراجم کا موازنہ Side-by-side comparative study of translations  Al-Faatiha آیت 1 میں سے 7  ترجمہ A · 🇬🇧 انگریزی تمام زبانیں...  🇬🇧 E",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 15,
+      "sampleLatinWords": [
+        "Side",
+        "side",
+        "comparative",
+        "study",
+        "translations",
+        "Faatiha",
+        "English",
+        "English"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/bookmarks",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'bookmarks'})",
+    "analysis": {
+      "textLength": 215,
+      "textSnippet": " قرآن محفوظ شدہ آیات بک مارکس Access your saved verses and reading bookmarks  ابھی تک کوئی بُک مارک نہیں ہے قرآن مجید کھولیں اور کسی بھی آیت پر بک مارک کا آئی",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 6,
+      "sampleLatinWords": [
+        "Access",
+        "your",
+        "saved",
+        "verses",
+        "reading",
+        "bookmarks"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/notes",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'notes'})",
+    "analysis": {
+      "textLength": 309,
+      "textSnippet": " قرآن ذاتی مطالعہ نوٹس اور تدبر Record thoughts and reflections on verses as you read  نیا تدبر / نوٹ شامل کریں Capture your insights, questions, and personal",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 10,
+      "sampleLatinWords": [
+        "Record",
+        "thoughts",
+        "reflections",
+        "verses",
+        "read",
+        "Capture",
+        "your",
+        "insights"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/plans",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'plans'})",
+    "analysis": {
+      "textLength": 739,
+      "textSnippet": " قرآن ختم قرآن تلاوت کے منصوبے Structured schedules to recite the Holy Quran at your own pace اپنی سہولت کے مطابق قرآن پاک کی تلاوت کا منظم منصوبہ منتخب کریں۔ ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 6,
+      "sampleLatinWords": [
+        "Structured",
+        "schedules",
+        "recite",
+        "Holy",
+        "your",
+        "pace"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/hifz",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz'})",
+    "analysis": {
+      "textLength": 1001,
+      "textSnippet": " قرآن حفظِ قرآن حفظ ٹریکر Track memorization progress, revisions, and test recall 0 حفظ شدہ 0 دہرائی 114 شروع نہیں ہوا  تمام حفظ شدہ دہرائی شروع نہیں ہوا 1 Al",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 14,
+      "sampleLatinWords": [
+        "Track",
+        "memorization",
+        "progress",
+        "revisions",
+        "test",
+        "recall",
+        "Fatihah",
+        "Baqarah"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/hifz-practice",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz-practice'})",
+    "analysis": {
+      "textLength": 223,
+      "textSnippet": " حفظ چھپائیں اور دیکھیں Al-Fatihah 7 آیات · Recite from memory & test recall آیت 1 میں سے 7 0 دیکھا گیا 1:1 • • • • • • • • • زبانی تلاوت کریں، پھر تصدیق کے لی",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 6,
+      "sampleLatinWords": [
+        "Fatihah",
+        "Recite",
+        "from",
+        "memory",
+        "test",
+        "recall"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/surah-list",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'surah-list'})",
+    "analysis": {
+      "textLength": 1674,
+      "textSnippet": " قرآن قرآن مجید سورتیں All 114 Surahs with translations, audio & verse commentary ترجمہ 🇬🇧 انگریزی · صحیح انٹرنیشنل تبدیل کریں  پارہ 1 2 3 4 5 6 7 8 9 10 11",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 50,
+      "sampleLatinWords": [
+        "Surahs",
+        "with",
+        "translations",
+        "audio",
+        "verse",
+        "commentary",
+        "Faatiha",
+        "Opening"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/tasbih",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tasbih'})",
+    "analysis": {
+      "textLength": 382,
+      "textSnippet": " لائبریری ذکر اور یاد تسبیح Tap counter, round tracking, and offline remembrance سبحان اللہ الحمد للہ اللہ اکبر لا الٰہ الا اللہ استغفر اللہ ہدف 33 99 100 چکر ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 5,
+      "sampleLatinWords": [
+        "counter",
+        "round",
+        "tracking",
+        "offline",
+        "remembrance"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/names",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names'})",
+    "analysis": {
+      "textLength": 889,
+      "textSnippet": " لائبریری اسمائے حسنیٰ اللہ کے ۹۹ نام Divine attributes and meanings of Allah (SWT) English Français Türkçe Español Deutsch Indonesia বাংলা Русский اردو   99",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 36,
+      "sampleLatinWords": [
+        "Divine",
+        "attributes",
+        "meanings",
+        "English",
+        "Fran",
+        "Espa",
+        "Deutsch",
+        "Indonesia"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/names-prophet",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names-prophet'})",
+    "analysis": {
+      "textLength": 952,
+      "textSnippet": " لائبریری اسمائے نبی ﷺ حضور ﷺ کے ۹۹ مبارک نام Noble attributes and titles of Prophet Muhammad ﷺ  99 نام 1 مُحَمَّدٌ Muhammad The Highly Praised From the Arabi",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 73,
+      "sampleLatinWords": [
+        "Noble",
+        "attributes",
+        "titles",
+        "Prophet",
+        "Muhammad",
+        "Muhammad",
+        "Highly",
+        "Praised"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/duas",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'duas'})",
+    "analysis": {
+      "textLength": 370,
+      "textSnippet": " لائبریری دعائیں دعائیں اور اذکار Authentic supplications from the Quran and Sunnah تمام (49) صبح (4) شام (2) نماز کے بعد (1) سونے کے وقت (1) جاگنے کے وقت (1) ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 4,
+      "sampleLatinWords": [
+        "Authentic",
+        "supplications",
+        "from",
+        "Sunnah"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/hadith",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hadith'})",
+    "analysis": {
+      "textLength": 3138,
+      "textSnippet": " لائبریری لائبریری کتبِ احادیث 17 مستند مجموعے، کتب اور صحیح روایات براؤز کریں  مجموعے  محفوظ (0)  حالیہ  پیش رفت  Sahih al-Bukhari 7,277 احادیث صحيح البخ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 201,
+      "sampleLatinWords": [
+        "Sahih",
+        "Bukhari",
+        "Sahih",
+        "Bukhari",
+        "recognized",
+        "overwhelming",
+        "majority",
+        "Muslim"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/ramadan-guide",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'ramadan-guide'})",
+    "analysis": {
+      "textLength": 18938,
+      "textSnippet": " لائبریری رہنمائی رمضان اور عید گائیڈ روزہ، شبِ قدر، اعتکاف، صدقۃ الفطر، عید اور ایامِ تشریق — ہر روایت اپنی کتاب، حدیث نمبر اور سند کے ساتھ تصدیق شدہ۔  احکام",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 780,
+      "sampleLatinWords": [
+        "narrated",
+        "that",
+        "Hafsah",
+        "said",
+        "There",
+        "fast",
+        "does",
+        "intend"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/prayer-guide",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'prayer-guide'})",
+    "analysis": {
+      "textLength": 20761,
+      "textSnippet": " لائبریری رہنمائی نماز گائیڈ (فقہ) وضو، نماز، باجماعت نماز، نمازِ جنازہ، استخارہ، عید اور تراویح — ہر روایت اپنے مجموعے، نمبر اور صحت کے درجے کے ساتھ مستند ہے۔",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 1008,
+      "sampleLatinWords": [
+        "Wudu",
+        "Narrated",
+        "AbuHurayrah",
+        "Messenger",
+        "said",
+        "prayer",
+        "person",
+        "does"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/shahada",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'shahada'})",
+    "analysis": {
+      "textLength": 2506,
+      "textSnippet": " لائبریری لائبریری · علم کلمہ شہادت The declaration of faith and its foundational conditions in Islam إِنَّ ٱلدِّينَ عِندَ ٱللَّٰهِ ٱلْإِسْلَٰمُ بیشک اللہ کے ن",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 24,
+      "sampleLatinWords": [
+        "declaration",
+        "faith",
+        "foundational",
+        "conditions",
+        "Islam",
+        "bear",
+        "witness",
+        "that"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/downloads",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'downloads'})",
+    "analysis": {
+      "textLength": 457,
+      "textSnippet": " لائبریری آف لائن ڈاؤن لوڈز Manage offline audio surahs and cached Quran text All Downloads Audio Surahs 0 Quran Text 15/114   قرآنی متن اور ترجمہ آف لائن پڑ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 10,
+      "sampleLatinWords": [
+        "Manage",
+        "offline",
+        "audio",
+        "surahs",
+        "cached",
+        "text",
+        "Downloads",
+        "Audio"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/vocab",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'vocab'})",
+    "analysis": {
+      "textLength": 383,
+      "textSnippet": " لائبریری سیکھیں قرآنی الفاظ قرآن کے کثرت سے استعمال ہونے والے الفاظ  0/60 معلوم  0%  آج کا لفظ بہت عام بَاطِل bāṭil \"باطل\" Quran 2:42  ٹرینر میں مشق کریں ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/summary",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'summary'})",
+    "analysis": {
+      "textLength": 611,
+      "textSnippet": " لائبریری PERSONAL JOURNEY ہفتہ وار خلاصہ Your past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections.  7-Day ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 29,
+      "sampleLatinWords": [
+        "PERSONAL",
+        "JOURNEY",
+        "Your",
+        "past",
+        "days",
+        "glance",
+        "recitation",
+        "prayer"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/tajweed",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tajweed'})",
+    "analysis": {
+      "textLength": 3721,
+      "textSnippet": " لائبریری سیکھیں تجوید کے رنگ مکمل قرآن · رنگوں کے ساتھ تجوید کے قواعد  قرآن کریم کی ہر سورت معیاری تجویدی رنگوں کے ساتھ — غنہ، ادغام، قلقلہ، اخفاء، مد اور غی",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 114,
+      "sampleLatinWords": [
+        "ayahs",
+        "ayahs",
+        "ayahs",
+        "ayahs",
+        "ayahs",
+        "ayahs",
+        "ayahs",
+        "ayahs"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/umrah-guide",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'umrah-guide'})",
+    "analysis": {
+      "textLength": 8347,
+      "textSnippet": " لائبریری حج اور عمرہ عمرہ گائیڈ مقدس سفرِ عمرہ کے مرحلہ وار مناسک: احرام، طواف، سعی اور حلق۔ 01 · احرام اور نیت 02 · مسجد الحرام میں داخلہ 03 · طواف کعبہ 04 ·",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 661,
+      "sampleLatinWords": [
+        "Entering",
+        "sacred",
+        "state",
+        "consecration",
+        "Ihram",
+        "before",
+        "crossing",
+        "Miqat"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/hajj-journey",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hajj-journey'})",
+    "analysis": {
+      "textLength": 8607,
+      "textSnippet": " لائبریری SACRED PILGRIMAGE سفرِ حج Day-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba. پہلا دن · ۸ ذوالحجہ دوسرا دن · ۹ ذوالحجہ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 727,
+      "sampleLatinWords": [
+        "SACRED",
+        "PILGRIMAGE",
+        "rites",
+        "from",
+        "Yawm",
+        "Tarwiyah",
+        "Mina",
+        "Farewell"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/women-purity",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-purity'})",
+    "analysis": {
+      "textLength": 16,
+      "textSnippet": "   لائبریری ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/women-guidance",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-guidance'})",
+    "analysis": {
+      "textLength": 16,
+      "textSnippet": "   لائبریری ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/tasbih",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tasbih'})",
+    "analysis": {
+      "textLength": 374,
+      "textSnippet": " ٹولز ذکر اور یاد تسبیح Tap counter, round tracking, and offline remembrance سبحان اللہ الحمد للہ اللہ اکبر لا الٰہ الا اللہ استغفر اللہ ہدف 33 99 100 چکر 0 (0",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 5,
+      "sampleLatinWords": [
+        "counter",
+        "round",
+        "tracking",
+        "offline",
+        "remembrance"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/summary",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'summary'})",
+    "analysis": {
+      "textLength": 603,
+      "textSnippet": " ٹولز PERSONAL JOURNEY ہفتہ وار خلاصہ Your past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections.  7-Day Over",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 29,
+      "sampleLatinWords": [
+        "PERSONAL",
+        "JOURNEY",
+        "Your",
+        "past",
+        "days",
+        "glance",
+        "recitation",
+        "prayer"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/qibla",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'qibla'})",
+    "analysis": {
+      "textLength": 733,
+      "textSnippet": " ٹولز DIRECTION OF PRAYER قبلہ کمپاس کعبۃ اللہ کی صحیح سمت گریٹ سرکل جیوڈیسک فارمولوں سے اخذ کی گئی۔  Location detection unavailable GPS is not available on t",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 23,
+      "sampleLatinWords": [
+        "DIRECTION",
+        "PRAYER",
+        "Location",
+        "detection",
+        "unavailable",
+        "available",
+        "this",
+        "device"
+      ]
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/tools_qibla_ur_paper_393.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/tracker",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tracker'})",
+    "analysis": {
+      "textLength": 325,
+      "textSnippet": " ٹولز روزانہ کے فرائض نماز ٹریکر اپنی روزانہ کی 5 نمازوں کا ریکارڈ رکھیں اور باقاعدگی کی عادت بنائیں 0/5 آج کی نمازیں 0  مسلسل دن آج سے اپنا سلسلہ شروع کریں آ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/location",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'location'})",
+    "analysis": {
+      "textLength": 640,
+      "textSnippet": " ٹولز ترجیحات مقام Use GPS automatically or enter a city or coordinates خودکار سراغ (GPS) Manual Coordinates خودکار GPS GPS دستیاب نہیں ہے دستی مقام کا استعمال",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 32,
+      "sampleLatinWords": [
+        "automatically",
+        "enter",
+        "city",
+        "coordinates",
+        "Manual",
+        "Coordinates",
+        "Makkah",
+        "Saudi"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/cities",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'cities'})",
+    "analysis": {
+      "textLength": 415,
+      "textSnippet": " ٹولز ڈائرکٹری شہر اپنی لوکیشن سیٹ کرنے کے لیے ایک شہر منتخب کریں   دبئی متحدہ عرب امارات 25.20°, 55.27°  ابوظہبی متحدہ عرب امارات 24.45°, 54.38°  شارجہ مت",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/notifications",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'notifications'})",
+    "analysis": {
+      "textLength": 2205,
+      "textSnippet": " ٹولز ٹولز نماز کی یاد دہانیاں روزانہ نماز کے الارم، اذان کی آوازیں اور تلاوتِ قرآن کی عادت کا انتظام کریں نماز کی یاد دہانی نماز کی یاد دہانی ہر نماز کے وقت ا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 16,
+      "sampleLatinWords": [
+        "Fajr",
+        "Dhuhr",
+        "Maghrib",
+        "Isha",
+        "Mishary",
+        "Rashid",
+        "Alafasy",
+        "KUWAIT"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/prayer-reminders",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'prayer-reminders'})",
+    "analysis": {
+      "textLength": 2205,
+      "textSnippet": " ٹولز ٹولز نماز کی یاد دہانیاں روزانہ نماز کے الارم، اذان کی آوازیں اور تلاوتِ قرآن کی عادت کا انتظام کریں نماز کی یاد دہانی نماز کی یاد دہانی ہر نماز کے وقت ا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 16,
+      "sampleLatinWords": [
+        "Fajr",
+        "Dhuhr",
+        "Maghrib",
+        "Isha",
+        "Mishary",
+        "Rashid",
+        "Alafasy",
+        "KUWAIT"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/fasting",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'fasting'})",
+    "analysis": {
+      "textLength": 455,
+      "textSnippet": " ٹولز عبادت اور ٹریکر روزہ Suhoor & iftar countdowns, sunnah fasts & qada logs آج سنت قضا تاریخ 0 اس مہینے 0d تسلسل 0 قضا باقی 6 JUMADA AL-AWWAL 1448 AH آج کا ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 9,
+      "sampleLatinWords": [
+        "Suhoor",
+        "iftar",
+        "countdowns",
+        "sunnah",
+        "fasts",
+        "qada",
+        "logs",
+        "JUMADA"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/zakat",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'zakat'})",
+    "analysis": {
+      "textLength": 822,
+      "textSnippet": " ٹولز عبادات اور صدقات زکوٰۃ Wealth assessment, nisab thresholds & calculation کیلکولیٹر تاریخ رہنمائے نصاب فعال کرنسی AED — UAE Dirham (AED)  تبدیل کریں معیا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 6,
+      "sampleLatinWords": [
+        "Wealth",
+        "assessment",
+        "nisab",
+        "thresholds",
+        "calculation",
+        "Dirham"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/calendar",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'calendar'})",
+    "analysis": {
+      "textLength": 2469,
+      "textSnippet": " ٹولز اسلامی تقویم اسلامی تاریخیں Gregorian to Hijri mapping, Islamic months & holy dates آج 6 Jumada al-Awwal 1448 AH اکتوبر 17, 2026 دن 6 میں سے 20 میں Jumad",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 141,
+      "sampleLatinWords": [
+        "Gregorian",
+        "Hijri",
+        "mapping",
+        "months",
+        "holy",
+        "dates",
+        "Jumada",
+        "Awwal"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/mosque",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'mosque'})",
+    "analysis": {
+      "textLength": 382,
+      "textSnippet": " ٹولز ٹولز مسجد تلاش کریں Find nearby places of worship   تلاش کریں  مرکزِ تلاش · دستی (Makkah, Saudi Arabia) Makkah, Saudi Arabia  میری موجودہ لوکیشن استع",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 28,
+      "sampleLatinWords": [
+        "Find",
+        "nearby",
+        "places",
+        "worship",
+        "Makkah",
+        "Saudi",
+        "Arabia",
+        "Makkah"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/women-cycle",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-cycle'})",
+    "analysis": {
+      "textLength": 651,
+      "textSnippet": " ٹولز خواتین کی عبادات ماہواری ٹریکر ماہواری کا اندراج، دورانیہ، پیشگوئی اور یومیہ طہارت کی کیفیت۔  نجی اور مقامی · صرف آپ کے آلے پر محفوظ · سرور پر کبھی نہیں",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/women-purity",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-purity'})",
+    "analysis": {
+      "textLength": 12,
+      "textSnippet": "    ٹولز",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/women-guidance",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-guidance'})",
+    "analysis": {
+      "textLength": 12,
+      "textSnippet": "    ٹولز",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/women-qada",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-qada'})",
+    "analysis": {
+      "textLength": 567,
+      "textSnippet": " ٹولز خواتین کی عبادات قضا روزے حیض یا نفاس کی وجہ سے چھوٹ جانے والے رمضان کے روزوں کا حساب اور ادائیگی۔  نجی اور ہم آہنگ · آپ کے مقامی ڈیٹا بیس میں محفوظ  ص",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/umrah-guide",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-guide'})",
+    "analysis": {
+      "textLength": 8339,
+      "textSnippet": " ٹولز حج اور عمرہ عمرہ گائیڈ مقدس سفرِ عمرہ کے مرحلہ وار مناسک: احرام، طواف، سعی اور حلق۔ 01 · احرام اور نیت 02 · مسجد الحرام میں داخلہ 03 · طواف کعبہ 04 · صفا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 661,
+      "sampleLatinWords": [
+        "Entering",
+        "sacred",
+        "state",
+        "consecration",
+        "Ihram",
+        "before",
+        "crossing",
+        "Miqat"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/umrah-resources",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-resources'})",
+    "analysis": {
+      "textLength": 1863,
+      "textSnippet": " ٹولز حج اور عمرہ وسائلِ عمرہ ضروری سامان کی فہرست، آداب، عام غلطیاں، تجاویز اور علمی مراجع۔ سامان کی فہرست پہلی بار جانے والوں کے لیے تجاویز حرم کے مقدس آداب ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/hajj-journey",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-journey'})",
+    "analysis": {
+      "textLength": 8599,
+      "textSnippet": " ٹولز SACRED PILGRIMAGE سفرِ حج Day-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba. پہلا دن · ۸ ذوالحجہ دوسرا دن · ۹ ذوالحجہ تیس",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 727,
+      "sampleLatinWords": [
+        "SACRED",
+        "PILGRIMAGE",
+        "rites",
+        "from",
+        "Yawm",
+        "Tarwiyah",
+        "Mina",
+        "Farewell"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/makkah-live",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'makkah-live'})",
+    "analysis": {
+      "textLength": 1493,
+      "textSnippet": " ٹولز حج اور عمرہ مکہ لائیو ٹی وی مسجد الحرام سے چوبیس گھنٹے براہِ راست باضابطہ ایچ ڈی نشریات۔ مقدس حرم مسجد الحرام کے فضائل صَلَاةٌ فِي الْمَسْجِدِ الْحَرَامِ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/madinah-live",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'madinah-live'})",
+    "analysis": {
+      "textLength": 1335,
+      "textSnippet": " ٹولز حج اور عمرہ مدینہ منورہ لائیو مسجد نبوی سے چوبیس گھنٹے باضابطہ ایچ ڈی براہ راست نشریات۔ شہرِ رسول ﷺ مسجد نبوی کے فضائل صَلَاةٌ فِي مَسْجِدِي هَذَا أَفْضَ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/hajj-live",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-live'})",
+    "analysis": {
+      "textLength": 2301,
+      "textSnippet": " ٹولز حج اور عمرہ حج لائیو منیٰ، عرفات، مزدلفہ اور جمرات کے مقدس مقامات سے باضابطہ نشریات۔ Al Ekhbariya (Live News) وزارتِ حج و عمرہ آج: 6 Jumada al-Awwal 1448",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 66,
+      "sampleLatinWords": [
+        "Ekhbariya",
+        "Live",
+        "News",
+        "Jumada",
+        "Awwal",
+        "approx",
+        "months",
+        "away"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  }
+]

@@ -1,0 +1,332 @@
+{
+  "benchmark": "3-minute monkey per tab (Home, Quran, Library, Tools)",
+  "target": "http://15.235.203.134:9998",
+  "durationPerTabSeconds": 180,
+  "parallelTabsCount": 4,
+  "totalWallClockSeconds": 180,
+  "totalActionsAllTabs": 3230,
+  "tabs": [
+    {
+      "tab": "Home",
+      "durationMs": 180000,
+      "durationSeconds": 180,
+      "totalActions": 820,
+      "clicks": 459,
+      "scrolls": 236,
+      "keyPresses": 125,
+      "uncaughtUiErrorsCount": 0,
+      "uncaughtUiErrors": [],
+      "unhandledRejectionsCount": 0,
+      "unhandledRejections": [],
+      "apiFailuresCount": 913,
+      "apiFailures": [
+        {
+          "timestamp": 1792232874738,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232874739,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875076,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/hadith/today' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875076,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875076,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/dhikr/after-prayer' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875076,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875077,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875077,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875087,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875087,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        }
+      ],
+      "whiteScreensDetected": 0,
+      "whiteScreens": [],
+      "status": "PASS",
+      "finalHealth": {
+        "rootPresent": true,
+        "domNodes": 4156,
+        "bodyTextSnippet": "ISLAMIC\n\n\nTOOLS\nUtilities\nTODAY\nSalah Tracker\nDaily 5 prayers checklist & streaks\n0\nday streak\nFajr\nDhuhr\nAsr\n\nMaghrib\n\nIsha\nOpen →\nTRACKERS & CAL"
+      }
+    },
+    {
+      "tab": "Quran",
+      "durationMs": 180000,
+      "durationSeconds": 180,
+      "totalActions": 805,
+      "clicks": 461,
+      "scrolls": 239,
+      "keyPresses": 105,
+      "uncaughtUiErrorsCount": 0,
+      "uncaughtUiErrors": [],
+      "unhandledRejectionsCount": 0,
+      "unhandledRejections": [],
+      "apiFailuresCount": 1186,
+      "apiFailures": [
+        {
+          "timestamp": 1792232874705,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232874705,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875996,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/dhikr/after-prayer' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875996,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875996,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875996,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232876014,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/hadith/today' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232876014,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232876014,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232876016,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        }
+      ],
+      "whiteScreensDetected": 0,
+      "whiteScreens": [],
+      "status": "PASS",
+      "finalHealth": {
+        "rootPresent": true,
+        "domNodes": 4309,
+        "bodyTextSnippet": "\nTools\nDHIKR & REMEMBRANCE\nTasbih\nTap counter, round tracking, and offline remembrance\nSubhanAllah\nAlhamdulillah\nAllahu Akbar\nLa ilaha illallah\nAstag"
+      }
+    },
+    {
+      "tab": "Library",
+      "durationMs": 180000,
+      "durationSeconds": 180,
+      "totalActions": 810,
+      "clicks": 450,
+      "scrolls": 234,
+      "keyPresses": 126,
+      "uncaughtUiErrorsCount": 1,
+      "uncaughtUiErrors": [
+        {
+          "timestamp": 1792232889271,
+          "message": "The method or property Notifications.scheduleNotificationAsync is not available on web, are you sure you've linked all the native dependencies properly?",
+          "stack": "o: The method or property Notifications.scheduleNotificationAsync is not available on web, are you sure you've linked all the native dependencies properly?\n    at _e.scheduleNotificationAsync (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:453:186)\n    at _e.snoozePrayer (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:404:3682)\n    at async onPress (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:991:9090)"
+        }
+      ],
+      "unhandledRejectionsCount": 1,
+      "unhandledRejections": [
+        {
+          "timestamp": 1792233057367,
+          "source": "window.unhandledrejection",
+          "reason": "The method or property Notifications.scheduleNotificationAsync is not available on web, are you sure you've linked all the native dependencies properly?"
+        }
+      ],
+      "apiFailuresCount": 1035,
+      "apiFailures": [
+        {
+          "timestamp": 1792232874743,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232874743,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875318,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/dhikr/after-prayer' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875318,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875318,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/hadith/today' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875318,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875320,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875320,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875320,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875320,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        }
+      ],
+      "whiteScreensDetected": 0,
+      "whiteScreens": [],
+      "status": "FAIL",
+      "finalHealth": {
+        "rootPresent": true,
+        "domNodes": 4500,
+        "bodyTextSnippet": "ISLAMIC\n\n\nLIBRARY\nExplore\nKNOWLEDGE\nHadith Library\n15+\nfull books\nArabic with English translation\nBrowse →\nالبخاري\nمسلم\nالترمذي\nKNOWLEDGE & COLLECTI"
+      }
+    },
+    {
+      "tab": "Tools",
+      "durationMs": 180000,
+      "durationSeconds": 180,
+      "totalActions": 795,
+      "clicks": 440,
+      "scrolls": 234,
+      "keyPresses": 121,
+      "uncaughtUiErrorsCount": 1,
+      "uncaughtUiErrors": [
+        {
+          "timestamp": 1792233001847,
+          "message": "The method or property Notifications.scheduleNotificationAsync is not available on web, are you sure you've linked all the native dependencies properly?",
+          "stack": "o: The method or property Notifications.scheduleNotificationAsync is not available on web, are you sure you've linked all the native dependencies properly?\n    at _e.scheduleNotificationAsync (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:453:186)\n    at _e.snoozePrayer (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:404:3682)\n    at async onPress (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:991:9090)"
+        }
+      ],
+      "unhandledRejectionsCount": 1,
+      "unhandledRejections": [
+        {
+          "timestamp": 1792233057243,
+          "source": "window.unhandledrejection",
+          "reason": "The method or property Notifications.scheduleNotificationAsync is not available on web, are you sure you've linked all the native dependencies properly?"
+        }
+      ],
+      "apiFailuresCount": 1418,
+      "apiFailures": [
+        {
+          "timestamp": 1792232874832,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232874833,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875146,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875146,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875146,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/hadith/today' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875146,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875149,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/timings/17-10-2026?latitude=21.4225&longitude=39.8262&method=16&timezone=UTC&school=0' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875149,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        },
+        {
+          "timestamp": 1792232875162,
+          "type": "API_FAILURE",
+          "message": "Access to fetch at 'https://api.islamic.app/v1/dhikr/after-prayer' from origin 'http://15.235.203.134:9998' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource."
+        },
+        {
+          "timestamp": 1792232875162,
+          "type": "API_FAILURE",
+          "message": "Failed to load resource: net::ERR_FAILED"
+        }
+      ],
+      "whiteScreensDetected": 0,
+      "whiteScreens": [],
+      "status": "FAIL",
+      "finalHealth": {
+        "rootPresent": true,
+        "domNodes": 5306,
+        "bodyTextSnippet": "\nCan't load prayer times right now.\nConnect to the internet to get today's prayer schedule.\nRetry\n\nHome\n\n\n"
+      }
+    }
+  ],
+  "overallVerdict": "FAIL",
+  "separationNotes": "External prayer-times API network/CORS failures are categorized as API_FAILURE and separated from UI runtime errors."
+}

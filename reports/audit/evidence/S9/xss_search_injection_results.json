@@ -1,0 +1,62 @@
+{
+  "totalPayloadsTested": 5,
+  "xssDialogsFired": 0,
+  "xssResults": [
+    {
+      "target": "Quran View Search Input",
+      "payload": "<script>alert(\"XSS_S9_TAG\")</script>",
+      "domCheck": {
+        "injectedImgsCount": 0,
+        "injectedScriptsCount": 0,
+        "injectedSvgsCount": 0
+      },
+      "dialogTriggered": false,
+      "result": "SAFE"
+    },
+    {
+      "target": "Quran View Search Input",
+      "payload": "\"><img src=x onerror=alert(\"XSS_S9_IMG\")>",
+      "domCheck": {
+        "injectedImgsCount": 0,
+        "injectedScriptsCount": 0,
+        "injectedSvgsCount": 0
+      },
+      "dialogTriggered": false,
+      "result": "SAFE"
+    },
+    {
+      "target": "Quran View Search Input",
+      "payload": "<svg/onload=alert(\"XSS_S9_SVG\")>",
+      "domCheck": {
+        "injectedImgsCount": 0,
+        "injectedScriptsCount": 0,
+        "injectedSvgsCount": 0
+      },
+      "dialogTriggered": false,
+      "result": "SAFE"
+    },
+    {
+      "target": "Quran View Search Input",
+      "payload": "javascript:alert(\"XSS_S9_JS\")",
+      "domCheck": {
+        "injectedImgsCount": 0,
+        "injectedScriptsCount": 0,
+        "injectedSvgsCount": 0
+      },
+      "dialogTriggered": false,
+      "result": "SAFE"
+    },
+    {
+      "target": "Quran View Search Input",
+      "payload": "{{constructor.constructor(\"alert(1)\")()}}",
+      "domCheck": {
+        "injectedImgsCount": 0,
+        "injectedScriptsCount": 0,
+        "injectedSvgsCount": 0
+      },
+      "dialogTriggered": false,
+      "result": "SAFE"
+    }
+  ],
+  "overallStatus": "PASS"
+}

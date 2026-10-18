@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  I18nManager,
   ScrollView,
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   useWindowDimensions,
@@ -12,14 +10,20 @@ import {
   AccessibilityInfo,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  AppState,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import {
+  useTheme,
+  getCardShadow,
+  getHeroCardShadow,
+  getActivePrayerShadow,
+} from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { useHaptics } from '../lib/haptics';
 import { useLocation } from '../lib/useLocation';
 import { fetchPrayerTimes, getCachedPrayerTimes, todayDdmmyyyy, DayTimings, getNextPrayer } from '../lib/prayerTimes';
-import { formatTime, formatCountdown } from '../lib/timeFormat';
+import { formatTime } from '../lib/timeFormat';
 import { usePrayerWatcher } from '../lib/usePrayerWatcher';
 import { configureAudio } from '../lib/audio';
 import {
@@ -33,7 +37,7 @@ import { NAMES_99 } from '../lib/names99';
 import {
   useAfterPrayerDuas,
   getAllAfterPrayerDuas,
-  FALLBACK_AFTER_PRAYER_DUAS,
+  isDuaForPrayer,
 } from '../lib/afterPrayerDuas';
 import { Card } from '../components/Card';
 import { Hairline } from '../components/Hairline';
@@ -58,12 +62,25 @@ import {
 } from '../components/PrayerHeroAtmosphere';
 import { PhaseWash } from '../components/PhaseWash';
 import { PrayerCountdown } from '../components/PrayerCountdown';
-import { PrayerTimeline } from '../components/PrayerTimeline';
 import { ContinueReadingCard } from '../components/ContinueReadingCard';
 import { DailyContentRail } from '../components/DailyContentRail';
 import { QuickActionsStrip } from '../components/QuickActionsStrip';
 import { CompactPrayerBar } from '../components/CompactPrayerBar';
 import { hScrollRTLStyle } from '../lib/rtl';
+import { LinearGradient } from 'expo-linear-gradient';
+import { TabScrollView, TabAnimatedScrollView, useTabScreen } from '../components/layout/TabScreen';
+import { HOME_THEME_TOKENS } from '../lib/constants';
+import { getFloatingCardShadow } from '../lib/homeThemeTokens';
+import { themeTokens } from '../theme/tokens';
+import { AppText } from '../components/ui/AppText';
+
+const FIVE_PRAYERS: { key: 'Fajr' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha'; label: string }[] = [
+  { key: 'Fajr', label: 'Fajr' },
+  { key: 'Dhuhr', label: 'Dhuhr' },
+  { key: 'Asr', label: 'Asr' },
+  { key: 'Maghrib', label: 'Maghrib' },
+  { key: 'Isha', label: 'Isha' },
+];
 
 const PRAYER_ORDER: { key: keyof DayTimings['timings']; label: string }[] = [
   { key: 'Fajr', label: 'Fajr' },
@@ -88,8 +105,6 @@ function parseHm(hm: string): number {
   return (h || 0) * 60 + (m || 0);
 }
 
-const USE_NATIVE_DRIVER = Platform.OS !== 'web';
-
 function checkReducedMotion(cb: (reduced: boolean) => void) {
   if (Platform.OS === 'web') {
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
@@ -104,6 +119,43 @@ function checkReducedMotion(cb: (reduced: boolean) => void) {
     .catch(() => cb(false));
 }
 
+function IslamicStar({ isFull, color, size = 18 }: { isFull: boolean; color: string; size?: number }) {
+  const half = Math.round(size * 0.72);
+  if (isFull) {
+    return (
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: half, height: half, backgroundColor: color, borderRadius: 1.5 }} />
+        <View
+          style={{
+            position: 'absolute',
+            width: half,
+            height: half,
+            backgroundColor: color,
+            borderRadius: 1.5,
+            transform: [{ rotate: '45deg' }],
+          }}
+        />
+      </View>
+    );
+  }
+  return (
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ width: half, height: half, borderWidth: 1.4, borderColor: color, borderRadius: 1.5 }} />
+      <View
+        style={{
+          position: 'absolute',
+          width: half,
+          height: half,
+          borderWidth: 1.4,
+          borderColor: color,
+          borderRadius: 1.5,
+          transform: [{ rotate: '45deg' }],
+        }}
+      />
+    </View>
+  );
+}
+
 export interface HomeScreenProps {
   onOpenNames?: () => void;
   onOpenQuran?: (surah?: number, ayah?: number, page?: number) => void;
@@ -114,9 +166,10 @@ export interface HomeScreenProps {
   onOpenDuas?: () => void;
   onOpenTasbih?: () => void;
   onOpenCities?: () => void;
+  isActive?: boolean;
 }
 
-export default function HomeScreen({
+const HomeScreen = React.memo(function HomeScreen({
   onOpenNames,
   onOpenQuran,
   onOpenReader,
@@ -126,8 +179,11 @@ export default function HomeScreen({
   onOpenDuas,
   onOpenTasbih,
   onOpenCities,
+  isActive = true,
 }: HomeScreenProps) {
-  const { colors } = useTheme();
+  const { mode } = useTheme();
+  const { padTop, padBottom, safeTop } = useTabScreen();
+  const homeTokens = HOME_THEME_TOKENS[mode];
   const { settings, setAutoLocation } = useSettings();
   const { haptic } = useHaptics();
 
@@ -153,55 +209,6 @@ export default function HomeScreen({
   const { refreshKey } = useConnectivity();
   const { width } = useWindowDimensions();
   const [locationDismissed, setLocationDismissed] = useState(false);
-  const [data, setData] = useState<DayTimings | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [now, setNow] = useState(new Date());
-  const [completed, setCompleted] = useState<Record<string, boolean>>({});
-  const [streak, setStreak] = useState(0);
-  const [activeDuaIndex, setActiveDuaIndex] = useState(0);
-  const [expandedDuaIds, setExpandedDuaIds] = useState<Record<string, boolean>>({});
-
-  const { ayah, loading: ayahLoading, refresh: refreshAyah } = useAyahOfDay();
-  const { hadith, loading: hadithLoading, refresh: refreshHadith } = useHadithOfDay();
-
-  useEffect(() => {
-    if (data) {
-      const currentDate = new Date();
-      const iso = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-      const entries = getSalahEntries(iso);
-      setCompleted(entries);
-      const history = getSalahHistory(30);
-      setStreak(computeStreak(history));
-    }
-  }, [data]);
-
-  function togglePrayer(prayer: string) {
-    const currentDate = new Date();
-    const iso = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-    const nextVal = !completed[prayer];
-    markSalahCompleted(iso, prayer, nextVal);
-    setCompleted((prev) => ({ ...prev, [prayer]: nextVal }));
-    const history = getSalahHistory(30);
-    setStreak(computeStreak(history));
-    if (nextVal) {
-      haptic('success');
-    } else {
-      haptic('light');
-    }
-  }
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 30000);
-    return () => clearInterval(id);
-  }, []);
-
-  // Real-time prayer rollover: when the countdown hits zero, refresh `now`
-  // immediately so `next`/`currentSegment`/compact bar switch to the next prayer
-  // without waiting for the 30s clock tick.
-  const handlePrayerExpire = useCallback(() => {
-    setNow(new Date());
-  }, []);
 
   const effectiveLocation = useMemo(() => {
     if (settings.locationMode === 'auto') {
@@ -230,7 +237,131 @@ export default function HomeScreen({
     return autoValid || manualValid;
   }, [settings.autoLocation, settings.manualLocation]);
 
+  const [data, setData] = useState<DayTimings | null>(() => {
+    return getCachedPrayerTimes(
+      effectiveLocation,
+      settings.methodId,
+      new Date(),
+      settings.madhab
+    );
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    return !getCachedPrayerTimes(
+      effectiveLocation,
+      settings.methodId,
+      new Date(),
+      settings.madhab
+    );
+  });
+  const [error, setError] = useState<string | null>(null);
+  const [now, setNow] = useState(new Date());
+  const [completed, setCompleted] = useState<Record<string, boolean>>(() => {
+    const currentDate = new Date();
+    const iso = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+    return getSalahEntries(iso);
+  });
+  const [salahHistory, setSalahHistory] = useState<Record<string, Record<string, boolean>>>(() => {
+    return getSalahHistory(30);
+  });
+  const [streak, setStreak] = useState<number>(() => {
+    return computeStreak(getSalahHistory(30));
+  });
+  const [activeDuaIndex, setActiveDuaIndex] = useState(0);
+  const [expandedDuaIds, setExpandedDuaIds] = useState<Record<string, boolean>>({});
+
+  const { ayah, refresh: refreshAyah } = useAyahOfDay();
+  const { hadith, refresh: refreshHadith } = useHadithOfDay();
+
+  function togglePrayer(prayer: string) {
+    const currentDate = new Date();
+    const iso = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+    const nextVal = !completed[prayer];
+    markSalahCompleted(iso, prayer, nextVal);
+    setCompleted((prev) => ({ ...prev, [prayer]: nextVal }));
+    const history = getSalahHistory(30);
+    setSalahHistory(history);
+    setStreak(computeStreak(history));
+    if (nextVal) {
+      haptic('success');
+    } else {
+      haptic('light');
+    }
+  }
+
+  const starDays = useMemo(() => {
+    const days: { key: string; label: string; count: number; isFull: boolean; isToday: boolean }[] = [];
+    const weekdayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const isToday = i === 0;
+      const dayEntries = isToday ? completed : (salahHistory[iso] || {});
+      const salahKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+      const count = salahKeys.filter((k) => !!dayEntries[k]).length;
+      const isFull = count >= 5;
+      const dayOfWeek = (d.getDay() + 6) % 7; // Monday = 0 ... Sunday = 6
+      days.push({
+        key: iso,
+        label: weekdayLabels[dayOfWeek],
+        count,
+        isFull,
+        isToday,
+      });
+    }
+    return days;
+  }, [now, completed, salahHistory]);
+
+  const [isAppActive, setIsAppActive] = useState(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      return !document.hidden;
+    }
+    return AppState.currentState === 'active';
+  });
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      setIsAppActive(state === 'active');
+    });
+    let handleVisibility: (() => void) | undefined;
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      handleVisibility = () => {
+        setIsAppActive(!document.hidden);
+      };
+      document.addEventListener('visibilitychange', handleVisibility);
+    }
+    return () => {
+      sub.remove();
+      if (handleVisibility && typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibility);
+      }
+    };
+  }, []);
+
+  const isHomeVisible = Boolean(isActive && isAppActive);
+
+  useEffect(() => {
+    if (!isHomeVisible) return;
+    const syncTimer = setTimeout(() => setNow(new Date()), 0);
+    const id = setInterval(() => setNow(new Date()), 30000);
+    return () => {
+      clearTimeout(syncTimer);
+      clearInterval(id);
+    };
+  }, [isHomeVisible]);
+
+  // Real-time prayer rollover: when the countdown hits zero, refresh `now`
+  // immediately so `next`/`currentSegment`/compact bar switch to the next prayer
+  // without waiting for the 30s clock tick.
+  const handlePrayerExpire = useCallback(() => {
+    setNow(new Date());
+  }, []);
+
   const lastDateStrRef = useRef<string>(todayDdmmyyyy(new Date()));
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
 
   const load = useCallback(async (showSpinner = false, force = false) => {
     const today = new Date();
@@ -253,14 +384,14 @@ export default function HomeScreen({
     // 2. Fast offline check: if offline and not forcing, check cache or show offline state immediately (0ms)
     if (!force && !isAppOnline()) {
       setLoading(false);
-      if (!data) {
+      if (!dataRef.current) {
         setError(prayerTimesOfflineError);
       }
       return;
     }
 
     // 3. Needs fetch: only show spinner if we don't already have data to display
-    if (showSpinner && !data) {
+    if (showSpinner && !dataRef.current) {
       setLoading(true);
     }
     setError(null);
@@ -277,7 +408,7 @@ export default function HomeScreen({
       ]);
       setData(result);
       setError(null);
-    } catch (err: any) {
+    } catch {
       // Check cache one more time in case it exists
       const fallbackCached = getCachedPrayerTimes(
         effectiveLocation,
@@ -288,25 +419,28 @@ export default function HomeScreen({
       if (fallbackCached) {
         setData(fallbackCached);
         setError(null);
-      } else if (!data) {
+      } else if (!dataRef.current) {
         setError(prayerTimesOfflineError);
       }
     } finally {
       setLoading(false);
     }
-  }, [effectiveLocation, settings.methodId, settings.madhab, data]);
+  }, [effectiveLocation, settings.methodId, settings.madhab]);
 
   // Initial mount & config change effect: fetch only when config changed or cache missing
   useEffect(() => {
-    load(true, false);
-  }, [
-    effectiveLocation.latitude,
-    effectiveLocation.longitude,
-    effectiveLocation.label,
-    settings.methodId,
-    settings.madhab,
-    settings.locationMode,
-  ]);
+    let isMounted = true;
+    const run = async () => {
+      await Promise.resolve();
+      if (isMounted) {
+        load(true, false);
+      }
+    };
+    void run();
+    return () => {
+      isMounted = false;
+    };
+  }, [load]);
 
   // Calendar date rollover effect: when midnight passes, load new day's schedule
   useEffect(() => {
@@ -314,14 +448,29 @@ export default function HomeScreen({
     if (lastDateStrRef.current !== todayStr) {
       lastDateStrRef.current = todayStr;
       load(false, false);
+      const iso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      setCompleted(getSalahEntries(iso));
+      const history = getSalahHistory(30);
+      setSalahHistory(history);
+      setStreak(computeStreak(history));
     }
   }, [now, load]);
 
   // Connectivity restored effect: if we were offline without data, fetch now
   useEffect(() => {
+    let isMounted = true;
     if (refreshKey > 0 && !data) {
-      load(true, false);
+      const run = async () => {
+        await Promise.resolve();
+        if (isMounted) {
+          load(true, false);
+        }
+      };
+      void run();
     }
+    return () => {
+      isMounted = false;
+    };
   }, [refreshKey, data, load]);
 
   usePrayerWatcher(data, settings.remindersEnabled);
@@ -331,16 +480,6 @@ export default function HomeScreen({
   }, []);
 
   const next = useMemo(() => (data ? getNextPrayer(data.timings, now) : null), [data, now]);
-
-  const countdownRemaining = useMemo(() => {
-    const hm = next ? next.time : data?.timings.Fajr;
-    if (!hm) return '';
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    let targetMin = parseHm(hm);
-    if (targetMin <= nowMin) targetMin += 1440;
-    const diffMs = (targetMin - nowMin) * 60000 - now.getSeconds() * 1000;
-    return formatCountdown(diffMs);
-  }, [next, now, data]);
 
   const progress = useMemo(() => {
     if (!data) return 0;
@@ -353,6 +492,9 @@ export default function HomeScreen({
         const prevKey = PRAYER_ORDER[next.index - 1].key;
         prevMin = parseHm(data.timings[prevKey] || '00:00');
         nextMin = parseHm(next.time);
+      } else if (next.isTomorrow || nowMin >= parseHm(data.timings.Isha || '00:00')) {
+        prevMin = parseHm(data.timings.Isha || '00:00');
+        nextMin = parseHm(next.time) + 1440;
       } else {
         prevMin = parseHm(data.timings.Isha || '00:00') - 1440;
         nextMin = parseHm(next.time);
@@ -376,18 +518,36 @@ export default function HomeScreen({
   }, [dayOfYear]);
 
   const completedCount = Object.values(completed).filter(Boolean).length;
+  const currentSegment = useMemo((): PrayerSegment => {
+    if (!data) return 'Dhuhr';
+    if (!next) return 'Isha';
+    if (next.index === 0) return 'Isha';
+    const prevKey = PRAYER_ORDER[next.index - 1].key as PrayerSegment;
+    return prevKey;
+  }, [data, next]);
+
   const lastCompletedPrayer = useMemo(() => {
     const prayerKeys = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+    if (completed[currentSegment]) return currentSegment;
     for (let i = prayerKeys.length - 1; i >= 0; i--) {
       if (completed[prayerKeys[i]]) return prayerKeys[i];
     }
     return null;
-  }, [completed]);
+  }, [completed, currentSegment]);
+
+  const targetPrayer = useMemo(() => {
+    return currentSegment || lastCompletedPrayer;
+  }, [currentSegment, lastCompletedPrayer]);
 
   const { duas: afterPrayerDuas } = useAfterPrayerDuas();
   const allAfterPrayerDuas = useMemo(
-    () => getAllAfterPrayerDuas(afterPrayerDuas, lastCompletedPrayer),
-    [afterPrayerDuas, lastCompletedPrayer]
+    () => getAllAfterPrayerDuas(afterPrayerDuas, targetPrayer),
+    [afterPrayerDuas, targetPrayer]
+  );
+
+  const hasSpecificPrayerDuas = useMemo(
+    () => (targetPrayer ? allAfterPrayerDuas.some((d) => isDuaForPrayer(d, targetPrayer)) : false),
+    [allAfterPrayerDuas, targetPrayer]
   );
 
   const isCompact = useMemo(() => width <= 380, [width]);
@@ -396,14 +556,6 @@ export default function HomeScreen({
   const duaCardWidth = useMemo(() => Math.min(effectiveDuaWidth, 620), [effectiveDuaWidth]);
   const duaGap = 12;
   const duaSnapInterval = duaCardWidth + duaGap;
-
-  const currentSegment = useMemo((): PrayerSegment => {
-    if (!data) return 'Dhuhr';
-    if (!next) return 'Isha';
-    if (next.index === 0) return 'Isha';
-    const prevKey = PRAYER_ORDER[next.index - 1].key as PrayerSegment;
-    return prevKey;
-  }, [data, next]);
 
   const weekdayHijriLabel = useMemo(() => {
     if (!data) return '';
@@ -421,16 +573,16 @@ export default function HomeScreen({
     checkReducedMotion(setReducedMotion);
   }, []);
 
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const [scrollY] = useState(() => new Animated.Value(0));
   const scrollRef = useRef<ScrollView>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
       const y = e.nativeEvent.contentOffset.y;
-      if (y > 40 && !isScrolled) {
+      if (y > 180 && !isScrolled) {
         setIsScrolled(true);
-      } else if (y <= 40 && isScrolled) {
+      } else if (y <= 180 && isScrolled) {
         setIsScrolled(false);
       }
     },
@@ -521,14 +673,7 @@ export default function HomeScreen({
     extrapolate: 'clamp',
   });
 
-  // 8. Hero transition hint: opacity 1→0 (0-200px)
-  const transitionOpacity = scrollY.interpolate({
-    inputRange: [0, 200],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-
-  // 9. Compact bar: cross-fades IN (opacity 0→1 over 200-300px), slight translateY (-8→0)
+  // 8. Compact bar: cross-fades IN (opacity 0→1 over 200-300px), slight translateY (-8→0)
   const compactBarOpacity = scrollY.interpolate({
     inputRange: [200, 300],
     outputRange: [0, 1],
@@ -542,13 +687,10 @@ export default function HomeScreen({
 
   if (loading) {
     return (
-      <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
-        <ScrollView
+      <View style={styles.root}>
+        <TabScrollView
           style={styles.scroll}
-          contentContainerStyle={[
-            styles.content,
-            { paddingBottom: 40 },
-          ]}
+          contentContainerStyle={styles.content}
         >
           <SectionHeader
             eyebrow="Today"
@@ -591,26 +733,38 @@ export default function HomeScreen({
             <Hairline style={styles.cardDivider} />
             <Skeleton width="100%" height={70} borderRadius={12} />
           </Card>
-        </ScrollView>
+        </TabScrollView>
       </View>
     );
   }
 
   if (!data) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.bgBase, padding: 24 }]}>
-        <Ionicons name="cloud-offline-outline" size={iconSizes.emptyState} color={colors.textMuted} style={{ marginBottom: 16 }} />
-        <Text style={[styles.errorText, { color: colors.textPrimary, textAlign: 'center', marginBottom: 8, fontSize: 16, fontWeight: '600' }]}>
+      <View style={styles.root}>
+        <View style={[styles.center, { flex: 1, padding: 24, paddingTop: padTop + 24, paddingBottom: padBottom + 24 }]}>
+          <Ionicons name="cloud-offline-outline" size={iconSizes.emptyState} color={homeTokens.muted} style={{ marginBottom: 16 }} />
+        <AppText
+          variant="sectionTitle"
+          tone="danger"
+          style={[styles.errorText, { textAlign: 'center', marginBottom: 8, fontSize: 16, fontWeight: '600' }]}
+        >
           {t(error || prayerTimesOfflineError)}
-        </Text>
-        <Text style={{ color: colors.textMuted, textAlign: 'center', marginBottom: 20, fontSize: 14 }}>
+        </AppText>
+        <AppText
+          variant="subtitle"
+          style={{ textAlign: 'center', marginBottom: 20, fontSize: 14 }}
+        >
           {t(prayerTimesNeedsConnection)}
-        </Text>
+        </AppText>
         <TouchableOpacity
           style={{
-            backgroundColor: colors.accent,
+            backgroundColor: homeTokens.gold,
             paddingHorizontal: 20,
             paddingVertical: 10,
+            minHeight: 44,
+            minWidth: 44,
+            alignItems: 'center',
+            justifyContent: 'center',
             borderRadius: 8,
           }}
           onPress={() => {
@@ -620,58 +774,76 @@ export default function HomeScreen({
           accessibilityRole="button"
           accessibilityLabel={t('Retry loading prayer times')}
         >
-          <Text style={{ color: colors.onAccent, fontWeight: '600', fontSize: 14 }}>{t(retry)}</Text>
+          <AppText
+            variant="body"
+            tone="onGold"
+            style={{ fontWeight: '600', fontSize: 14 }}
+          >
+            {t(retry)}
+          </AppText>
         </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
 
-  const hijriLabel = `${data.hijri.day} ${data.hijri.monthEn} ${data.hijri.year}`;
   const locLabel = effectiveLocation.label;
   const isFallback = settings.locationMode === 'auto' && !gpsLocation;
   const locDisplay = isFallback
     ? `Using manual location (${settings.manualLocation.label || 'Dubai, UAE'})`
     : locLabel;
   const fmt = settings.timeFormat;
-  const hour = now.getHours();
-  const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+  const heroRawTime = next ? next.time : data.timings.Fajr;
+  const heroFormatted = formatTime(heroRawTime, fmt);
+  const heroParts = heroFormatted.split(' ');
+  const heroTimeStr = heroParts[0] || heroFormatted;
+  const heroPeriodStr = heroParts[1] || '';
+
+  const prevKey: keyof DayTimings['timings'] = currentSegment;
+
+  const prevTimeRaw = data?.timings[prevKey] || '--:--';
+  const prevTimeFmt = formatTime(prevTimeRaw, fmt);
+  const nextTimeFmt = formatTime(heroRawTime, fmt);
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.bgBase }]}>
+    <View style={styles.root}>
       {/* Part 10: full-screen time-of-day phase wash (subtle, gradual crossfade) */}
-      <PhaseWash segment={currentSegment} intensity={0.35} />
+      {mode === 'ink' && <PhaseWash segment={currentSegment} intensity={0.35} />}
 
       {/* Pinned persistent compact prayer bar on scroll */}
       <Animated.View
         style={[
           styles.pinnedBarWrap,
           {
+            top: (safeTop || 0) + 8,
             opacity: compactBarOpacity,
             transform: [{ translateY: compactBarTranslateY }],
+            display: isScrolled ? 'flex' : 'none',
           },
         ]}
         pointerEvents={isScrolled ? 'auto' : 'none'}
+        testID="pinned-prayer-bar-wrap"
       >
         <CompactPrayerBar
           prayerName={next ? next.name : 'Fajr'}
           prayerTime={formatTime(next ? next.time : data.timings.Fajr, fmt)}
           targetTime={next ? next.time : data.timings.Fajr}
+          isActive={isHomeVisible && isScrolled}
           onPress={() => {
             haptic('light');
             scrollRef.current?.scrollTo({ y: 0, animated: true });
           }}
           onExpire={handlePrayerExpire}
+          testID="compact-prayer-bar"
         />
       </Animated.View>
 
-      <Animated.ScrollView
+      <TabAnimatedScrollView
         ref={scrollRef as any}
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: 40 },
-        ]}
+        contentContainerStyle={styles.content}
         scrollEventThrottle={16}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -689,19 +861,52 @@ export default function HomeScreen({
           style={{
             opacity: greetingOpacity,
             transform: [{ translateY: greetingTranslateY }],
+            marginBottom: 14.5,
           }}
         >
-<SectionHeader
-      eyebrow="Today"
-      title={t('Assalam o Alaikum')}
-      subtitle={`${locDisplay} · ${hijriLabel} (${data.readable || data.gregorian})`}
-      style={styles.sectionHeader}
-    />
-            <Text style={[
-              { fontFamily: 'Manrope_400Regular', fontSize: 14, color: colors.textSecondary, marginTop: 4 },
-            ]}>
-              {t(timeGreeting)}
-            </Text>
+          {/* Small uppercase letter-spaced date line */}
+          <AppText
+            variant="eyebrow"
+            style={[
+              styles.headerDateLine,
+              {
+                textAlign: isRTL() ? 'right' : 'left',
+              },
+            ]}
+          >
+            {weekdayHijriLabel.toUpperCase()}
+          </AppText>
+
+          {/* Large editorial serif greeting */}
+          <AppText
+            variant="screenTitle"
+            style={[
+              styles.headerGreetingTitle,
+              {
+                fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                textAlign: isRTL() ? 'right' : 'left',
+                fontSize: isCompact ? 36 : 42,
+                lineHeight: isCompact ? 40 : 46,
+              },
+            ]}
+          >
+            {t('Assalam o Alaikum')}
+          </AppText>
+
+          {/* Small muted location line directly below greeting */}
+          <AppText
+            variant="subtitle"
+            style={[
+              styles.headerLocationText,
+              {
+                textAlign: isRTL() ? 'right' : 'left',
+                fontSize: 13.5,
+                lineHeight: 18,
+              },
+            ]}
+          >
+            {locDisplay}
+          </AppText>
         </Animated.View>
 
         {/* Location Permission Note: only when no usable saved/manual location exists AND not dismissed this session */}
@@ -722,150 +927,559 @@ export default function HomeScreen({
           />
         )}
 
-        {/* 1. Prayer Hero (Visual Centerpiece with time-of-day atmosphere & smart countdown) */}
-        <Animated.View style={{ transform: [{ scale: heroCardScale }] }}>
-          <Card style={styles.prayerHeroCard} padded={false}>
+        {/* 1. Next Prayer Hero (~225dp rounded patterned green hero) */}
+        <Animated.View
+          style={[
+            {
+              transform: [{ scale: heroCardScale }],
+              marginBottom: 14.5,
+              borderRadius: 18,
+              backgroundColor:
+                mode === 'ink'
+                  ? themeTokens.ink.heroGradient[0]
+                  : HOME_THEME_TOKENS.hero.lightGradient[0],
+              ...getHeroCardShadow(mode),
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.prayerHeroCard,
+              {
+                borderColor: mode === 'paper' ? 'rgba(212, 163, 89, 0.35)' : 'rgba(196, 160, 86, 0.35)',
+                backgroundColor:
+                  mode === 'ink'
+                    ? themeTokens.ink.heroGradient[0]
+                    : HOME_THEME_TOKENS.hero.lightGradient[0],
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={
+                mode === 'ink'
+                  ? [...themeTokens.ink.heroGradient]
+                  : [...HOME_THEME_TOKENS.hero.lightGradient]
+              }
+              style={StyleSheet.absoluteFill}
+            />
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                styles.heroInsetBorder,
+                { borderColor: mode === 'paper' ? HOME_THEME_TOKENS.hero.innerBorder : 'rgba(120, 98, 52, 0.35)' },
+              ]}
+              pointerEvents="none"
+            />
             <PrayerHeroAtmosphere
               segment={currentSegment}
               size={isCompact ? 280 : 340}
             />
-            <View style={styles.heroContent}>
-              {/* Line 1: Weekday · Hijri date */}
-              <Animated.View
-                style={{
-                  opacity: eyebrowOpacity,
-                  transform: [{ translateY: eyebrowTranslateY }],
-                }}
-              >
-                <Text style={[styles.heroEyebrow, { color: colors.textMuted }]}>
-                  {weekdayHijriLabel}
-                </Text>
-              </Animated.View>
+            <GeometricPattern variant="tessellation" tileSize={44} color={HOME_THEME_TOKENS.hero.ivory} opacity={mode === 'paper' ? 0.09 : 0.05} />
+            <View style={styles.heroInnerContent}>
+              {/* Top Row: Left details (Next Prayer, Name, Big Time) + Right (Arabic name) */}
+              <View style={styles.heroTopRow}>
+                <View style={styles.heroLeftCol}>
+                  {/* Eyebrow: Diamond + NEXT PRAYER */}
+                  <Animated.View
+                    style={{
+                      opacity: eyebrowOpacity,
+                      transform: [{ translateY: eyebrowTranslateY }],
+                    }}
+                  >
+                    <View style={styles.heroNextPrayerBadge}>
+                      <AppText variant="caption" onHero style={styles.heroDiamondGlyph}>◆</AppText>
+                      <AppText variant="eyebrow" onHero style={styles.heroNextPrayerLabel}>
+                        {t('NEXT PRAYER')}
+                      </AppText>
+                    </View>
+                  </Animated.View>
 
-              {/* Line 2: Arabic prayer name */}
-              <Animated.View
-                style={{
-                  opacity: arabicOpacity,
-                  transform: [{ translateY: arabicTranslateY }],
-                }}
-              >
-                <ArabicText
-                  size={isCompact ? 26 : 30}
-                  align="center"
-                  style={styles.heroArabicName}
+                  {/* Prayer English Name */}
+                  <Animated.View
+                    style={{
+                      opacity: englishOpacity,
+                      transform: [{ translateY: englishTranslateY }],
+                    }}
+                  >
+                    <AppText
+                      variant="onHeroTitle"
+                      onHero
+                      style={[
+                        styles.heroPrayerName,
+                        {
+                          fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                          fontSize: isCompact ? 30 : 34,
+                          lineHeight: isCompact ? 34 : 38,
+                        },
+                      ]}
+                    >
+                      {t(next ? next.name : 'Fajr')}
+                    </AppText>
+                  </Animated.View>
+
+                  {/* Big Time + Period (PM/AM) */}
+                  <Animated.View
+                    style={{
+                      opacity: bigTimeOpacity,
+                      transform: [
+                        { translateY: bigTimeTranslateY },
+                        { scale: bigTimeScale },
+                      ],
+                    }}
+                  >
+                    <View style={styles.heroTimeWrap}>
+                      <AppText
+                        variant="numeral"
+                        style={[
+                          styles.heroTimeBig,
+                          {
+                            fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                            fontSize: isCompact ? 38 : 44,
+                            lineHeight: isCompact ? 42 : 48,
+                            color: homeTokens.gold,
+                          },
+                        ]}
+                      >
+                        {heroTimeStr}
+                      </AppText>
+                      {Boolean(heroPeriodStr) && (
+                        <AppText variant="caption" style={[styles.heroTimePeriod, { color: homeTokens.gold }]}>
+                          {heroPeriodStr}
+                        </AppText>
+                      )}
+                    </View>
+                  </Animated.View>
+                </View>
+
+                {/* Right: Large Arabic prayer name */}
+                <Animated.View
+                  style={{
+                    opacity: arabicOpacity,
+                    transform: [{ translateY: arabicTranslateY }],
+                  }}
                 >
-                  {nextArabicName}
-                </ArabicText>
-              </Animated.View>
+                  <ArabicText
+                    size={isCompact ? 34 : 40}
+                    style={[styles.heroArabicDisplay, { color: homeTokens.gold }]}
+                  >
+                    {nextArabicName}
+                  </ArabicText>
+                </Animated.View>
+              </View>
 
-              {/* Line 3: English name */}
-              <Animated.View
-                style={{
-                  opacity: englishOpacity,
-                  transform: [{ translateY: englishTranslateY }],
-                }}
-              >
-                <Text
-                  style={[
-                    styles.heroEnglishName,
-                    {
-                      color: colors.textPrimary,
-                      fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
-                      letterSpacing: isRTL() ? 0 : 0.5,
-                    },
-                  ]}
-                >
-                  {t(next ? next.name : 'Fajr')}
-                </Text>
-              </Animated.View>
-
-              {/* Line 4: Very large TIME */}
-              <Animated.View
-                style={{
-                  opacity: bigTimeOpacity,
-                  transform: [
-                    { translateY: bigTimeTranslateY },
-                    { scale: bigTimeScale },
-                  ],
-                }}
-              >
-                <Text
-                  style={[
-                    styles.heroTime,
-                    {
-                      color: colors.textPrimary,
-                      fontSize: isCompact ? 58 : 68,
-                      lineHeight: isCompact ? 64 : 74,
-                    },
-                  ]}
-                >
-                  {formatTime(next ? next.time : data.timings.Fajr, fmt)}
-                </Text>
-              </Animated.View>
-
-              {/* Line 5: Tabular figures countdown with digit transitions */}
+              {/* Middle Row: Countdown Boxes + 'until [Prayer]' */}
               <Animated.View
                 style={{
                   opacity: countdownOpacity,
                   transform: [{ translateY: countdownTranslateY }],
                 }}
               >
-                <View style={styles.heroCountdownWrap}>
+                <View style={styles.heroCountdownSection}>
                   <PrayerCountdown
                     targetTime={next ? next.time : data.timings.Fajr}
-                    color={colors.accent}
-                    separatorColor={colors.textMuted}
-                    fontSize={18}
+                    variant="tiles"
+                    color={HOME_THEME_TOKENS.hero.ivory}
+                    tileBg={mode === 'paper' ? 'rgba(5, 36, 28, 0.75)' : 'rgba(26, 25, 34, 0.75)'}
+                    tileBorder={mode === 'paper' ? 'rgba(212, 163, 89, 0.3)' : 'rgba(196, 160, 86, 0.4)'}
+                    labelColor={mode === 'ink' ? homeTokens.muted : HOME_THEME_TOKENS.hero.mintLight}
+                    separatorColor={homeTokens.gold}
+                    isActive={isHomeVisible}
                     onExpire={handlePrayerExpire}
                   />
+                  <AppText
+                    variant="onHeroSubtitle"
+                    onHero
+                    style={styles.heroUntilText}
+                  >
+                    {`${t('until')} ${t(next ? next.name : 'Fajr')}`}
+                  </AppText>
                 </View>
               </Animated.View>
 
-              {/* Line 6: Divider + transition hint */}
-              <Animated.View style={{ opacity: transitionOpacity }}>
-                <View style={styles.heroTransitionWrap}>
+              {/* Bottom Row: Progress line with knob + prayer labels */}
+              <View style={styles.heroProgressSection}>
+                <View style={styles.heroProgressTrack}>
                   <View
-                    style={[styles.heroDivider, { backgroundColor: colors.borderSubtle }]}
+                    style={[
+                      styles.heroProgressFill,
+                      {
+                        backgroundColor: homeTokens.gold,
+                        width: `${Math.round(progress * 100)}%`,
+                      },
+                    ]}
                   />
-                  <Text style={[styles.heroTransitionText, { color: colors.textMuted }]}>
-                    {t(currentSegment)}{' '}
-                    <Text style={{ color: colors.accent }}>{isRTL() ? '←' : '→'}</Text>{' '}
-                    {t(next ? next.name : 'Fajr')}
-                  </Text>
+                  <View
+                    style={[
+                      styles.heroProgressKnob,
+                      {
+                        backgroundColor: homeTokens.gold,
+                        left: `${Math.round(progress * 100)}%`,
+                      },
+                    ]}
+                  />
                 </View>
-              </Animated.View>
+                <View style={styles.heroProgressLabelsRow}>
+                  <AppText
+                    variant="caption"
+                    onHero
+                    style={styles.heroProgressEndpointLabel}
+                  >
+                    {`${t(prevKey)} ${prevTimeFmt}`}
+                  </AppText>
+                  <AppText
+                    variant="caption"
+                    onHero
+                    style={styles.heroProgressEndpointLabel}
+                  >
+                    {`${t(next ? next.name : 'Fajr')} ${nextTimeFmt}`}
+                  </AppText>
+                </View>
+              </View>
             </View>
-          </Card>
+          </View>
         </Animated.View>
 
-        {/* 2. Prayer Timeline with status dots and integrated Salah tracker footer */}
-        <PrayerTimeline
-          timings={data.timings}
-          completed={completed}
-          onTogglePrayer={togglePrayer}
-          currentPrayerSegment={currentSegment}
-          nextPrayerName={next ? next.name : 'Fajr'}
-          progressFraction={progress}
-          timeFormat={fmt}
-          streak={streak}
-        />
+        {/* 2. Five 80dp Equal Responsive Prayer Tiles (Fajr, Dhuhr, Asr, Maghrib, Isha) */}
+        <View style={styles.fivePrayerRow}>
+          {FIVE_PRAYERS.map((item) => {
+            const isDone = Boolean(completed[item.key]);
+            const isNext = next ? next.name === item.key : item.key === 'Fajr';
+            const rawTime = data.timings[item.key] || '--:--';
+            const formattedTime = formatTime(rawTime, fmt);
+            const timeParts = formattedTime.split(' ');
+            const timeMain = timeParts[0];
+            const timePeriod = timeParts[1] || '';
+            const tileState = isDone ? 'DONE' : isNext ? 'NEXT' : 'UPCOMING';
 
-        {/* 3. One "Continue Reading" Primary Action Surface */}
+            return (
+              <TouchableOpacity
+                key={item.key}
+                style={[
+                  styles.prayerTile,
+                  {
+                    borderColor: isNext ? homeTokens.gold : homeTokens.cardBorder,
+                    backgroundColor: isNext ? homeTokens.gold : homeTokens.cardTop,
+                    ...(isNext ? getActivePrayerShadow(mode) : getCardShadow(mode)),
+                  },
+                ]}
+                onPress={() => togglePrayer(item.key)}
+                activeOpacity={0.75}
+                hitSlop={{ top: 8, bottom: 8, left: 3, right: 3 }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isDone }}
+                accessibilityLabel={`${t(item.label)} at ${formattedTime}, ${tileState === 'DONE' ? t('completed') : tileState === 'NEXT' ? t('next') : t('upcoming')}`}
+              >
+                <LinearGradient
+                  colors={
+                    isNext
+                      ? [...HOME_THEME_TOKENS.goldGradient]
+                      : [homeTokens.cardTop, homeTokens.cardBottom]
+                  }
+                  style={StyleSheet.absoluteFill}
+                />
+                <View style={styles.prayerTileStatusWrap}>
+                  {isDone ? (
+                    <View
+                      style={[
+                        styles.prayerTileDoneBadge,
+                        { backgroundColor: isNext ? homeTokens.onGold : homeTokens.accent },
+                      ]}
+                    >
+                      <Ionicons
+                        name="checkmark"
+                        size={11}
+                        color={isNext ? homeTokens.onGold : HOME_THEME_TOKENS.hero.ivory}
+                      />
+                    </View>
+                  ) : isNext ? (
+                    <View
+                      style={[
+                        styles.prayerTileActiveDotWrap,
+                        {
+                          borderColor: homeTokens.gold,
+                          backgroundColor: 'transparent',
+                        },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.prayerTileActiveInnerDot,
+                          { backgroundColor: homeTokens.gold },
+                        ]}
+                      />
+                    </View>
+                  ) : (
+                    <View
+                      style={[
+                        styles.prayerTileUpcomingDot,
+                        { borderColor: homeTokens.ringBorder },
+                      ]}
+                    />
+                  )}
+                </View>
+
+                <AppText
+                  variant="rowTitle"
+                  tone={isNext ? 'onGold' : undefined}
+                  style={[
+                    styles.prayerTileName,
+                    {
+                      fontFamily: isNext ? 'Manrope_700Bold' : 'Manrope_600SemiBold',
+                    },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {t(item.label)}
+                </AppText>
+
+                <View style={styles.prayerTileTimeWrap}>
+                  <AppText
+                    variant="numeral"
+                    tone={isNext ? 'onGold' : undefined}
+                    style={[
+                      styles.prayerTileTime,
+                      {
+                        fontFamily: isNext ? 'Manrope_700Bold' : 'Manrope_600SemiBold',
+                      },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {timeMain}
+                  </AppText>
+                  {Boolean(timePeriod) && (
+                    <AppText
+                      variant="caption"
+                      tone={isNext ? 'onGold' : undefined}
+                      style={[
+                        styles.prayerTilePeriod,
+                        {
+                          fontFamily: isNext ? 'Manrope_600SemiBold' : 'Manrope_500Medium',
+                        },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {timePeriod}
+                    </AppText>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* 3. 80dp Continue Reading Premium Card */}
         <ContinueReadingCard
           onOpenReader={handleOpenReader}
           onOpenQuranTab={handleOpenQuranTab}
-          style={{ marginBottom: 20 }}
+          style={{ marginBottom: 14.5 }}
         />
 
-        {/* 4. Quick Actions Control Strip */}
+        {/* 4. Three 84dp Quick Action Cards */}
         <QuickActionsStrip
           onOpenQibla={onOpenQibla}
           onOpenDuas={onOpenDuas}
           onOpenHadith={onOpenHadith}
           onOpenTasbih={onOpenTasbih}
+          style={{ marginBottom: 14.5 }}
         />
 
-        {/* 5. Daily Content Rail (Ayah / Hadith / 99 Names horizontal swipe discovery rail) */}
+        {/* 5. 73dp Salah Streak Card with Seven StarBadges */}
+        <View
+          style={[
+            styles.streakCard,
+            {
+              borderColor: homeTokens.cardBorder,
+              backgroundColor: homeTokens.cardTop,
+              ...getCardShadow(mode),
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={[homeTokens.cardTop, homeTokens.cardBottom]}
+            style={StyleSheet.absoluteFill}
+          />
+          {mode === 'paper' ? (
+            <View style={styles.streakInnerRow}>
+              <View style={styles.streakLeftCol}>
+                <AppText
+                  variant="eyebrow"
+                  style={[
+                    styles.streakOverline,
+                    {
+                      textAlign: isRTL() ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {t('SALAH STREAK')}
+                </AppText>
+                <AppText
+                  variant="numeral"
+                  style={[
+                    styles.streakBigCount,
+                    {
+                      fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                      textAlign: isRTL() ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {`${streak} ${t(streak === 1 ? 'day' : 'days')}`}
+                </AppText>
+              </View>
+
+              <View
+                style={styles.starBadgesRow}
+                accessibilityRole="text"
+                accessibilityLabel={`${streak} ${t('Day Streak')}, ${completedCount} / 5 ${t('Salah Today')}`}
+              >
+                {starDays.map((day) => (
+                  <View key={day.key} style={styles.starBadgeItem}>
+                    <IslamicStar
+                      isFull={day.isFull}
+                      color={homeTokens.gold}
+                      size={18}
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : (
+            <View style={styles.streakInnerRow}>
+              <View style={styles.streakLeftCol}>
+                <View style={styles.streakTitleRow}>
+                  <Ionicons name="flame" size={16} color={homeTokens.gold} />
+                  <AppText
+                    variant="title"
+                    style={[
+                      styles.streakTitleText,
+                      {
+                        textAlign: isRTL() ? 'right' : 'left',
+                      },
+                    ]}
+                  >
+                    {streak} {t('Day Streak')}
+                  </AppText>
+                </View>
+                <AppText
+                  variant="subtitle"
+                  style={[
+                    styles.streakSubText,
+                    {
+                      textAlign: isRTL() ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {completedCount} / 5 {t('Salah Today')}
+                </AppText>
+              </View>
+
+              <View style={styles.starBadgesRow}>
+                {starDays.map((day) => (
+                  <View key={day.key} style={styles.starBadgeItem}>
+                    <AppText
+                      variant="caption"
+                      highlight={day.isToday}
+                      style={[
+                        styles.starDayLabel,
+                        {
+                          fontFamily: day.isToday ? 'Manrope_700Bold' : 'Manrope_600SemiBold',
+                        },
+                      ]}
+                    >
+                      {day.label}
+                    </AppText>
+                    <View
+                      style={[
+                        styles.starIconWrap,
+                        day.isFull
+                          ? { backgroundColor: homeTokens.gold }
+                          : {
+                              backgroundColor: homeTokens.ringFill,
+                              borderColor: homeTokens.ringBorder,
+                              borderWidth: 1,
+                            },
+                      ]}
+                      accessibilityRole="image"
+                      accessibilityLabel={`${day.label}: ${day.count} / 5 ${t('Salah')}`}
+                    >
+                      {day.isFull ? (
+                        <Ionicons name="star" size={10} color={homeTokens.onGold} />
+                      ) : day.count > 0 ? (
+                        <Ionicons name="star" size={9} color={homeTokens.gold} />
+                      ) : (
+                        <Ionicons name="star-outline" size={9} color={homeTokens.muted} />
+                      )}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* 6. Sunrise Auxiliary Card (Preserved in card system below Salah Streak) */}
+        <View
+          style={[
+            styles.sunriseAuxCard,
+            {
+              borderColor: homeTokens.cardBorder,
+              backgroundColor: homeTokens.cardTop,
+              ...getCardShadow(mode),
+            },
+          ]}
+        >
+          <LinearGradient
+            colors={[homeTokens.cardTop, homeTokens.cardBottom]}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.sunriseInnerRow}>
+            <View style={styles.sunriseLeftGroup}>
+              <View
+                style={[
+                  styles.sunriseIconBadge,
+                  {
+                    backgroundColor: homeTokens.ringFill,
+                    borderColor: homeTokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="sunny-outline" size={16} color={homeTokens.gold} />
+              </View>
+              <View style={styles.sunriseTextGroup}>
+                <AppText
+                  variant="title"
+                  style={[
+                    styles.sunriseTitle,
+                    {
+                      textAlign: isRTL() ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {t('Sunrise')}
+                </AppText>
+                <AppText
+                  variant="subtitle"
+                  style={[
+                    styles.sunriseSubtitle,
+                    {
+                      textAlign: isRTL() ? 'right' : 'left',
+                    },
+                  ]}
+                >
+                  {t('Non-Salah checkpoint')}
+                </AppText>
+              </View>
+            </View>
+            <AppText
+              variant="numeral"
+              highlight
+              style={styles.sunriseTime}
+            >
+              {formatTime(data.timings.Sunrise, fmt)}
+            </AppText>
+          </View>
+        </View>
+
+        {/* 7. Daily Content Rail (Ayah / Hadith / 99 Names horizontal swipe discovery rail) */}
         <DailyContentRail
           ayah={ayah}
           hadith={hadith}
@@ -890,29 +1504,38 @@ export default function HomeScreen({
           {/* Header Row: Eyebrow + context + pagination */}
           <View style={styles.duaRailHeaderRow}>
             <View style={styles.duaRailHeaderLeft}>
-              <Text style={[styles.duaAfterPrayerEyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>
+              <AppText
+                variant="eyebrow"
+                style={[styles.duaAfterPrayerEyebrow, { textAlign: isRTL() ? 'right' : 'left' }]}
+              >
                 {t('Dua After Prayer')}
-              </Text>
-              <Text style={[styles.duaAfterPrayerContext, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}>
-                {lastCompletedPrayer ? `${t('For')} ${t(lastCompletedPrayer)}` : t('Authentic Adhkar')}
-              </Text>
+              </AppText>
+              <AppText
+                variant="subtitle"
+                style={[styles.duaAfterPrayerContext, { textAlign: isRTL() ? 'right' : 'left' }]}
+              >
+                {hasSpecificPrayerDuas && targetPrayer ? `${t('For')} ${t(targetPrayer)}` : t('Authentic Adhkar')}
+              </AppText>
             </View>
 
             {/* Pagination indicator: 1 of N + dots */}
             <View style={[styles.duaPaginationWrap, { alignItems: isRTL() ? 'flex-start' : 'flex-end' }]}>
-              <Text style={[styles.duaPaginationText, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}>
-                {activeDuaIndex + 1} of {allAfterPrayerDuas.length}
-              </Text>
+              <AppText
+                variant="caption"
+                style={[styles.duaPaginationText, { textAlign: isRTL() ? 'right' : 'left' }]}
+              >
+                {Math.max(0, Math.min(activeDuaIndex, allAfterPrayerDuas.length - 1)) + 1} {t('of')} {allAfterPrayerDuas.length}
+              </AppText>
               <View style={styles.duaDotsRow}>
                 {allAfterPrayerDuas.map((_, i) => {
-                  const isActive = i === activeDuaIndex;
+                  const isActive = i === Math.max(0, Math.min(activeDuaIndex, allAfterPrayerDuas.length - 1));
                   return (
                     <View
                       key={i}
                       style={[
                         styles.duaDot,
                         {
-                          backgroundColor: isActive ? colors.accent : colors.borderSubtle,
+                          backgroundColor: isActive ? homeTokens.gold : homeTokens.ringBorder,
                           width: isActive ? 12 : 5,
                         },
                       ]}
@@ -928,165 +1551,553 @@ export default function HomeScreen({
             horizontal
             showsHorizontalScrollIndicator={false}
             snapToInterval={duaSnapInterval}
-            snapToAlignment="center"
             decelerationRate="fast"
             nestedScrollEnabled
             contentContainerStyle={[styles.duaRailScrollContent, hScrollRTLStyle()]}
             onScroll={(event) => {
-              const offsetX = event.nativeEvent.contentOffset.x;
-              const index = Math.round(offsetX / duaSnapInterval);
-              if (index !== activeDuaIndex && index >= 0 && index < allAfterPrayerDuas.length) {
-                setActiveDuaIndex(index);
+              const offsetX = Math.abs(event.nativeEvent.contentOffset.x);
+              const index = Math.round(offsetX / (duaSnapInterval || 1));
+              const safeIndex = Math.max(0, Math.min(allAfterPrayerDuas.length - 1, index));
+              if (safeIndex !== activeDuaIndex) {
+                setActiveDuaIndex(safeIndex);
+              }
+            }}
+            onMomentumScrollEnd={(event) => {
+              const offsetX = Math.abs(event.nativeEvent.contentOffset.x);
+              const index = Math.round(offsetX / (duaSnapInterval || 1));
+              const safeIndex = Math.max(0, Math.min(allAfterPrayerDuas.length - 1, index));
+              if (safeIndex !== activeDuaIndex) {
+                setActiveDuaIndex(safeIndex);
               }
             }}
             scrollEventThrottle={16}
           >
             {allAfterPrayerDuas.map((item, idx) => {
               const isExpanded = !!expandedDuaIds[item.id];
+              const isForPrayer = targetPrayer ? isDuaForPrayer(item, targetPrayer) : false;
               return (
                 <View
                   key={item.id || idx}
-                  style={[styles.duaCardSlide, { width: duaCardWidth }]}
+                  style={[styles.duaCardSlide, { width: duaCardWidth, ...getFloatingCardShadow(mode) }]}
                 >
-                  <Card style={styles.duaAfterPrayerCard} padded={false}>
+                  <Card
+                    style={StyleSheet.flatten([
+                      styles.duaAfterPrayerCard,
+                      {
+                        borderColor: mode === 'ink' ? 'rgba(142,116,64,0.38)' : 'rgba(234,226,210,0.58)',
+                        backgroundColor: homeTokens.cardTop,
+                      },
+                    ])}
+                    padded={false}
+                  >
+                    <LinearGradient
+                      colors={[homeTokens.cardTop, homeTokens.cardBottom]}
+                      style={StyleSheet.absoluteFill}
+                    />
+                    <GeometricPattern
+                      variant="tessellation"
+                      tileSize={40}
+                      color={homeTokens.accent}
+                      opacity={mode === 'ink' ? 0.045 : 0.025}
+                    />
                     <TouchableOpacity
                       activeOpacity={0.88}
-                      style={styles.duaAfterPrayerHeader}
+                      style={styles.duaCardPressable}
                       onPress={() => {
                         haptic('light');
                         setExpandedDuaIds((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
                       }}
                       accessibilityRole="button"
                       accessibilityState={{ expanded: isExpanded }}
-                      accessibilityLabel={`Dua ${idx + 1} of ${allAfterPrayerDuas.length}. Tap to ${isExpanded ? 'collapse' : 'expand'}.`}
+                      accessibilityLabel={`${t('Dua')} ${idx + 1} ${t('of')} ${allAfterPrayerDuas.length}. ${isExpanded ? t('Less') : t('More')}.`}
                     >
-                      <View style={styles.duaBadgeRow}>
-                        <View
-                          style={[
-                            styles.duaNumberBadge,
-                            { backgroundColor: colors.accentDim },
-                          ]}
-                        >
-                          <Text style={[styles.duaNumberBadgeText, { color: colors.accent }]}>
-                            {idx + 1}
-                          </Text>
-                        </View>
-                        {lastCompletedPrayer && idx === 0 && (
+                      <View style={styles.duaAfterPrayerHeader}>
+                        <View style={styles.duaBadgeRow}>
                           <View
                             style={[
-                              styles.duaForPrayerTag,
+                              styles.duaNumberBadge,
                               {
-                                backgroundColor: colors.bgBase,
-                                borderColor: colors.borderSubtle,
+                                backgroundColor: homeTokens.ringFill,
+                                borderColor: homeTokens.ringBorder,
+                                borderWidth: 1,
                               },
                             ]}
                           >
-                            <Text style={[styles.duaForPrayerTagText, { color: colors.accent }]}>
-                              {t('For')} {t(lastCompletedPrayer)}
-                            </Text>
+                            <AppText variant="caption" highlight style={styles.duaNumberBadgeText}>
+                              {idx + 1}
+                            </AppText>
                           </View>
-                        )}
-                      </View>
-                      <View style={styles.duaExpandBtn}>
-                        <Text style={[styles.duaExpandBtnText, { color: colors.textMuted }]}>
-                          {isExpanded ? t('Less') : t('More')}
-                        </Text>
-                        <Ionicons
-                          name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
-                          size={16}
-                          color={colors.textMuted}
-                        />
-                      </View>
-                    </TouchableOpacity>
-
-                    <View style={styles.duaAfterPrayerContent}>
-                      <ArabicText
-                        size={isCompact ? 20 : 22}
-                        align="right"
-                        style={styles.duaAfterPrayerArabic}
-                        numberOfLines={isExpanded ? undefined : 3}
-                      >
-                        {item.arabic}
-                      </ArabicText>
-
-                      {isExpanded ? (
-                        <View style={styles.duaExpandedDetails}>
-                          <Text
-                            style={[
-                              styles.duaAfterPrayerTransliteration,
-                              { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' },
-                            ]}
-                          >
-                            {item.transliteration}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.duaAfterPrayerTranslation,
-                              { color: colors.textPrimary, textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' },
-                            ]}
-                          >
-                            {item.translation}
-                          </Text>
-                          {(item.reference || item.source) ? (
+                          {isForPrayer && (
                             <View
                               style={[
-                                styles.duaRefRow,
-                                { borderTopColor: colors.borderSubtle },
+                                styles.duaForPrayerTag,
+                                {
+                                  backgroundColor: homeTokens.ringFill,
+                                  borderColor: homeTokens.ringBorder,
+                                },
                               ]}
                             >
-                              <Ionicons name="book-outline" size={11} color={colors.textMuted} />
-                              <Text
-                                style={[styles.duaAfterPrayerRef, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}
-                              >
-                                {item.reference || item.source}
-                              </Text>
+                              <AppText variant="caption" highlight style={styles.duaForPrayerTagText}>
+                                {t('For')} {t(targetPrayer)}
+                              </AppText>
                             </View>
-                          ) : null}
+                          )}
                         </View>
-                      ) : (
-                        <Text
-                          style={[
-                            styles.duaAfterPrayerTranslation,
-                            { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' },
-                          ]}
-                          numberOfLines={2}
+                        <View style={styles.duaExpandBtn}>
+                          <AppText variant="caption" style={styles.duaExpandBtnText}>
+                            {isExpanded ? t('Less') : t('More')}
+                          </AppText>
+                          <Ionicons
+                            name={isExpanded ? 'chevron-up-outline' : 'chevron-down-outline'}
+                            size={16}
+                            color={homeTokens.muted}
+                          />
+                        </View>
+                      </View>
+
+                      <View style={styles.duaAfterPrayerContent}>
+                        <ArabicText
+                          size={isCompact ? 20 : 22}
+                          align="right"
+                          lineHeight={isCompact ? 38 : 42}
+                          style={styles.duaAfterPrayerArabic}
+                          numberOfLines={isExpanded ? undefined : 3}
                         >
-                          {item.translation}
-                        </Text>
-                      )}
-                    </View>
+                          {item.arabic}
+                        </ArabicText>
+
+                        {isExpanded ? (
+                          <View style={styles.duaExpandedDetails}>
+                            <AppText
+                              variant="body"
+                              tone="faint"
+                              style={[
+                                styles.duaAfterPrayerTransliteration,
+                                { textAlign: isRTL() ? 'right' : 'left' },
+                              ]}
+                            >
+                              {item.transliteration}
+                            </AppText>
+                            <AppText
+                              variant="body"
+                              style={[
+                                styles.duaAfterPrayerTranslation,
+                                { textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' },
+                              ]}
+                            >
+                              {item.translation}
+                            </AppText>
+                            {(item.reference || item.source) ? (
+                              <View
+                                style={[
+                                  styles.duaRefRow,
+                                  { borderTopColor: homeTokens.ringBorder },
+                                ]}
+                              >
+                                <Ionicons name="book-outline" size={11} color={homeTokens.muted} />
+                                <AppText
+                                  variant="caption"
+                                  style={[styles.duaAfterPrayerRef, { textAlign: isRTL() ? 'right' : 'left' }]}
+                                >
+                                  {item.reference || item.source}
+                                </AppText>
+                              </View>
+                            ) : null}
+                          </View>
+                        ) : (
+                          <AppText
+                            variant="body"
+                            style={[
+                              styles.duaAfterPrayerTranslation,
+                              { textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' },
+                            ]}
+                            numberOfLines={2}
+                          >
+                            {item.translation}
+                          </AppText>
+                        )}
+                      </View>
+                    </TouchableOpacity>
                   </Card>
                 </View>
               );
             })}
           </ScrollView>
         </View>
-      </Animated.ScrollView>
+      </TabAnimatedScrollView>
     </View>
   );
-}
+}, (prev, next) => prev.isActive === next.isActive);
+
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
   pinnedBarWrap: {
     position: 'absolute',
     top: 10,
-    left: 20,
-    right: 20,
+    left: 14,
+    right: 14,
     zIndex: 100,
-    elevation: 8,
   },
   scroll: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 14 },
-  content: { padding: 24, gap: 24, maxWidth: 680, width: '100%', alignSelf: 'center' },
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 0,
+    maxWidth: 680,
+    width: '100%',
+    alignSelf: 'center',
+  },
   patternTop: { top: -40, right: -60 },
   sectionHeader: { marginBottom: 20 },
-  prayerHeroCard: {
-    marginBottom: 20,
-    borderRadius: 16,
-    overflow: 'hidden',
+  headerDateLine: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 11.5,
+    lineHeight: 15,
+    letterSpacing: 2.2,
+    marginBottom: 5,
+    textTransform: 'uppercase',
+    paddingVertical: 2,
   },
+  headerGreetingTitle: {
+    fontFamily: 'InstrumentSerif_400Regular',
+    fontSize: 42,
+    lineHeight: 46,
+    marginBottom: 5,
+  },
+  headerTimeGreeting: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  headerLocationText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 13.5,
+    lineHeight: 18,
+    marginBottom: 0,
+  },
+  prayerHeroCard: {
+    minHeight: 224,
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  heroInsetBorder: {
+    margin: 1,
+    borderWidth: 1,
+    borderRadius: 15,
+  },
+  heroInnerContent: {
+    padding: 16,
+    minHeight: 224,
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  heroLeftCol: {
+    flex: 1,
+    gap: 2,
+  },
+  heroNextPrayerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 1,
+  },
+  heroDiamondGlyph: {
+    fontSize: 8,
+  },
+  heroNextPrayerLabel: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
+    letterSpacing: 2,
+    paddingVertical: 2,
+  },
+  heroPrayerName: {
+    fontSize: 32,
+    lineHeight: 36,
+    paddingVertical: 2,
+  },
+  heroTimeWrap: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  heroTimeBig: {
+    // dynamically styled with font and size
+  },
+  heroTimePeriod: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+    letterSpacing: 0.5,
+    paddingVertical: 2,
+  },
+  heroArabicDisplay: {
+    textAlign: 'right',
+    marginTop: 2,
+  },
+  heroCountdownSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 2,
+  },
+  heroUntilText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11.5,
+    paddingVertical: 2,
+  },
+  heroProgressSection: {
+    gap: 6,
+    marginTop: 2,
+  },
+  heroProgressTrack: {
+    height: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 1.5,
+    position: 'relative',
+    overflow: 'visible',
+    justifyContent: 'center',
+  },
+  heroProgressFill: {
+    height: 3,
+    borderRadius: 1.5,
+  },
+  heroProgressKnob: {
+    position: 'absolute',
+    width: 9,
+    height: 9,
+    borderRadius: 4.5,
+    top: -3,
+    marginLeft: -4.5,
+  },
+  heroProgressLabelsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  heroProgressEndpointLabel: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 10,
+    letterSpacing: 0.4,
+    paddingVertical: 2,
+  },
+  fivePrayerRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 14.5,
+    width: '100%',
+  },
+  prayerTile: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 94,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    paddingHorizontal: 2,
+  },
+  prayerTileName: {
+    fontSize: 11.5,
+    textAlign: 'center',
+    letterSpacing: 0.2,
+    paddingVertical: 2,
+  },
+  prayerTileStatusWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 20,
+  },
+  prayerTileDoneBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  prayerTileActiveDotWrap: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  prayerTileActiveInnerDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  prayerTileNextBadge: {
+    minHeight: 15,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 7.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  prayerTileNextText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 8.5,
+    letterSpacing: 0.5,
+    paddingVertical: 2,
+  },
+  prayerTileUpcomingDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    opacity: 0.7,
+  },
+  prayerTileTimeWrap: {
+    alignItems: 'center',
+    gap: 0,
+  },
+  prayerTileTime: {
+    fontSize: 11.5,
+    textAlign: 'center',
+    lineHeight: 15,
+    paddingVertical: 1,
+  },
+  prayerTilePeriod: {
+    fontSize: 8.5,
+    textAlign: 'center',
+    lineHeight: 11,
+    paddingVertical: 1,
+  },
+  streakCard: {
+    minHeight: 78,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 14.5,
+    justifyContent: 'center',
+    paddingVertical: 10,
+  },
+  streakOverline: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+    paddingVertical: 2,
+  },
+  streakBigCount: {
+    fontSize: 32,
+    lineHeight: 36,
+    paddingVertical: 2,
+  },
+  streakInnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+  },
+  streakLeftCol: {
+    flex: 1,
+    minWidth: 0,
+    gap: 2,
+  },
+  streakTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  streakTitleText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 13,
+    letterSpacing: 0.2,
+    paddingVertical: 2,
+  },
+  streakSubText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11,
+    paddingVertical: 2,
+  },
+  starBadgesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexShrink: 0,
+  },
+  starBadgeItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  starDayLabel: {
+    fontSize: 9,
+    textAlign: 'center',
+    paddingVertical: 2,
+  },
+  starIconWrap: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sunriseAuxCard: {
+    minHeight: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 14.5,
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  sunriseInnerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+  },
+  sunriseLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  sunriseIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  sunriseTextGroup: {
+    gap: 1,
+    flex: 1,
+    minWidth: 0,
+  },
+  sunriseTitle: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 13,
+    paddingVertical: 2,
+  },
+  sunriseSubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 10.5,
+    paddingVertical: 2,
+  },
+  sunriseTime: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 13.5,
+    flexShrink: 0,
+    paddingVertical: 2,
+  },
+
   cardWithPattern: {
     position: 'relative',
     marginBottom: 20,
@@ -1106,6 +2117,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     textAlign: 'center',
     marginBottom: 6,
+    paddingVertical: 2,
   },
   heroArabicName: {
     lineHeight: 40,
@@ -1144,6 +2156,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 1,
     textTransform: 'uppercase',
+    paddingVertical: 2,
   },
   prayerListCard: {
     marginBottom: 20,
@@ -1171,6 +2184,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2,
     textTransform: 'uppercase',
+    paddingVertical: 2,
   },
   headerActionBtn: {
     paddingVertical: 2,
@@ -1179,6 +2193,7 @@ const styles = StyleSheet.create({
   headerActionText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    paddingVertical: 2,
   },
   cardDivider: {
     marginBottom: 14,
@@ -1204,7 +2219,7 @@ const styles = StyleSheet.create({
   },
   duaRailContainer: {
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 0,
   },
   duaRailHeaderRow: {
     flexDirection: 'row',
@@ -1235,22 +2250,27 @@ const styles = StyleSheet.create({
   },
   duaRailScrollContent: {
     gap: 12,
-    paddingRight: 4,
   },
   duaCardSlide: {
-    borderRadius: 16,
+    borderRadius: 14,
+    overflow: 'visible',
+  },
+  duaCardPressable: {
+    zIndex: 2,
+    flex: 1,
   },
   duaAfterPrayerCard: {
     position: 'relative',
     overflow: 'hidden',
-    padding: 16,
-    borderRadius: 16,
+    minHeight: 210,
+    padding: 18,
+    borderRadius: 14,
   },
   duaAfterPrayerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
     zIndex: 2,
   },
   duaBadgeRow: {
@@ -1304,7 +2324,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   duaAfterPrayerArabic: {
-    lineHeight: 36,
+    marginTop: 2,
   },
   duaExpandedDetails: {
     gap: 8,

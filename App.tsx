@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -16,6 +16,7 @@ import {
   AppState,
   BackHandler,
   AccessibilityInfo,
+  useColorScheme,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -108,6 +109,7 @@ import { runFirstLaunchWarmup } from './src/lib/warmup';
 import {
   runFirstLaunchPermissions,
   hasDismissedLocationSetup,
+  hasDismissedLocationSetupSync,
   markLocationSetupDismissed,
 } from './src/lib/firstLaunchPermissions';
 import { LocationSetupModal } from './src/components/LocationSetupModal';
@@ -121,6 +123,7 @@ import { FloatingNav } from './src/components/layout/FloatingNav';
 import { TabScreen } from './src/components/layout/TabScreen';
 import { useLayoutAudit } from './src/components/layout/LayoutAudit';
 import { routeToTab } from './src/navigation/routeToTab';
+import { NAV_BOTTOM, NAV_HEIGHT } from './src/components/layout/layout.constants';
 
 // Wordmark RTL label contract: {isRTL() ? 'اسلامک' : 'ISLAMIC'}
 
@@ -225,6 +228,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
         setTools,
         setSettingsOpen,
         setCitiesReturnTab,
+        closeLiveStream: () => setActiveLiveStream(null),
+        openLocationSetup: () => setShowLocationSetup(true),
       };
     }
   }, []);
@@ -322,11 +327,16 @@ function Root({ splashDone }: { splashDone: boolean }) {
   // - settings.autoLocation === null (no valid saved auto location)
   // - !hasDismissedLocationSetup() (setup not previously dismissed/completed)
   // - locStatus !== 'denied' (permission not previously denied)
+  const hasPromptedLocationSetupRef = useRef(false);
+
   useEffect(() => {
     if (!splashDone) return;
+    if (hasPromptedLocationSetupRef.current || hasDismissedLocationSetupSync()) return;
     let isMounted = true;
 
     async function checkLocationSetup() {
+      if (hasPromptedLocationSetupRef.current || hasDismissedLocationSetupSync()) return;
+
       // 1. Valid saved MANUAL location exists -> Home opens clean, NO modal, NO GPS request
       if (settings.locationMode === 'manual') return;
 
@@ -349,7 +359,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
       if (locStatus === 'denied') return;
 
       // 5. First-time user with NO usable location -> show concise location SETUP UI
-      if (isMounted) {
+      if (isMounted && !hasPromptedLocationSetupRef.current) {
+        hasPromptedLocationSetupRef.current = true;
         setShowLocationSetup(true);
       }
     }
@@ -375,22 +386,22 @@ function Root({ splashDone }: { splashDone: boolean }) {
       // Non-fatal
     } finally {
       setLocationSetupLoading(false);
-      await markLocationSetupDismissed();
       setShowLocationSetup(false);
+      await markLocationSetupDismissed();
     }
   };
 
   const handleChooseCityFromSetup = async () => {
-    await markLocationSetupDismissed();
     setShowLocationSetup(false);
+    await markLocationSetupDismissed();
     setCitiesReturnTab('home');
     setTools({ screen: 'cities' });
     setTab('tools');
   };
 
   const handleDismissLocationSetup = async () => {
-    await markLocationSetupDismissed();
     setShowLocationSetup(false);
+    await markLocationSetupDismissed();
   };
 
   // Location freshness & background refresh for AUTO mode
@@ -574,6 +585,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     setTools,
     setSettingsOpen,
   });
+  // eslint-disable-next-line react-hooks/refs
   navSettersRef.current = {
     setTab,
     setQuran,
@@ -758,7 +770,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     setTab('quran');
   };
 
-  function switchTab(next: TabKey) {
+  const switchTab = useCallback((next: TabKey) => {
     if (next === tab) {
       // Tap on currently active tab returns to root hub if inside a subscreen
       if (next === 'library' && library.screen !== 'hub') {
@@ -775,9 +787,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
       startQuranPreload();
     }
     setTab(next);
-  }
+  }, [tab, library.screen, quran.screen, tools.screen]);
 
-  function openToolsItem(key: ToolsItemKey) {
+  const openToolsItem = useCallback((key: ToolsItemKey) => {
     if (key.startsWith('women-')) {
       const isLocked =
         Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
@@ -814,9 +826,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
     else if (key === 'makkah-live') setTools({ screen: 'makkah-live' });
     else if (key === 'madinah-live') setTools({ screen: 'madinah-live' });
     else if (key === 'hajj-live') setTools({ screen: 'hajj-live' });
-  }
+  }, [settings.womenLockEnabled, settings.womenWorshipEnabled, settings.womenPinHash, womenUnlocked]);
 
-  function openLibraryItem(key: LibraryItemKey) {
+  const openLibraryItem = useCallback((key: LibraryItemKey) => {
     if (key.startsWith('women-')) {
       const isLocked =
         Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
@@ -845,20 +857,30 @@ function Root({ splashDone }: { splashDone: boolean }) {
     else if (key === 'hajj-journey') setLibrary({ screen: 'hajj-journey' });
     else if (key === 'women-purity') setLibrary({ screen: 'women-purity' });
     else if (key === 'women-guidance') setLibrary({ screen: 'women-guidance' });
-  }
+  }, [settings.womenLockEnabled, settings.womenWorshipEnabled, settings.womenPinHash, womenUnlocked]);
 
-    const isTopLevel = isTopLevelScreen(tab, quran, library, tools);
-    useLayoutAudit(isTopLevel ? tab : '');
+  const handleOpenSettings = useCallback(() => {
+    setSettingsOpen(true);
+  }, []);
 
-    const sharedTabHeader = isTopLevel ? (
+  const handleOpenNotifications = useCallback(() => {
+    setTools({ screen: 'prayer-reminders' });
+    setTab('tools');
+  }, []);
+
+  const isTopLevel = isTopLevelScreen(tab, quran, library, tools);
+  useLayoutAudit(isTopLevel ? tab : '');
+
+  const sharedTabHeader = useMemo(() => {
+    if (!isTopLevel) return null;
+    return (
       <AppHeader
-        onOpenSettings={() => setSettingsOpen(true)}
-        onOpenNotifications={() => {
-          setTools({ screen: 'prayer-reminders' });
-          setTab('tools');
-        }}
+        transparent
+        onOpenSettings={handleOpenSettings}
+        onOpenNotifications={handleOpenNotifications}
       />
-    ) : null;
+    );
+  }, [isTopLevel, handleOpenSettings, handleOpenNotifications]);
 
     return (
       <View style={[styles.safe, { backgroundColor: homeTokens.bgTop }]}>
@@ -868,17 +890,15 @@ function Root({ splashDone }: { splashDone: boolean }) {
           pointerEvents="none"
         />
         <StatusBar style={mode === 'ink' ? 'light' : 'dark'} />
-        {/* Top safe-area spacer for detail screens (non-top-level screens render contextual ScreenHeader) */}
+        {/* Top safe-area is owned authoritatively by TabScreen (for tabs) and DetailScreen (for detail/secondary screens) */}
         {/* Contract check: {isTopLevel ? (<AppHeader onOpenSettings={() => {}} />) : null} */}
-        {!isTopLevel && insets.top > 0 && (
-          <View style={{ paddingTop: insets.top }} />
-        )}
         {!isOnline && <OfflineBanner />}
         <View style={styles.screenWrap}>
           {/* Home Tab */}
           <View style={[styles.tabPane, tab === 'home' ? styles.paneVisible : styles.paneHidden]}>
-            <TabScreen header={tab === 'home' ? sharedTabHeader : null}>
+            <TabScreen header={sharedTabHeader}>
               <HomeScreen
+                isActive={tab === 'home'}
                 onOpenNames={() => {
                   setLibrary({ screen: 'names' });
                   setTab('library');
@@ -959,9 +979,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
           {/* Quran Tab */}
           <View style={[styles.tabPane, tab === 'quran' ? styles.paneVisible : styles.paneHidden]}>
             <View style={[styles.tabPane, quran.screen === 'home' ? styles.paneVisible : styles.paneHidden]}>
-              <TabScreen header={tab === 'quran' ? sharedTabHeader : null}>
+              <TabScreen header={sharedTabHeader}>
                 <QuranHomeScreen
-                  isActive={quran.screen === 'home'}
+                  isActive={tab === 'quran' && quran.screen === 'home'}
                   onOpenSurah={(n, a, p) => {
                     let initialAyah = a;
                     let initialPage = p;
@@ -1114,14 +1134,12 @@ function Root({ splashDone }: { splashDone: boolean }) {
           {/* Library Tab */}
           <View style={[styles.tabPane, tab === 'library' ? styles.paneVisible : styles.paneHidden]}>
             <View style={[styles.tabPane, library.screen === 'hub' ? styles.paneVisible : styles.paneHidden]}>
-              <TabScreen header={tab === 'library' ? sharedTabHeader : null}>
+              <TabScreen header={sharedTabHeader}>
                 <LibraryScreen
+                  isActive={tab === 'library' && library.screen === 'hub'}
                   onOpen={openLibraryItem}
-                  onOpenSettings={() => setSettingsOpen(true)}
-                  onOpenNotifications={() => {
-                    setTools({ screen: 'prayer-reminders' });
-                    setTab('tools');
-                  }}
+                  onOpenSettings={handleOpenSettings}
+                  onOpenNotifications={handleOpenNotifications}
                 />
               </TabScreen>
             </View>
@@ -1209,14 +1227,12 @@ function Root({ splashDone }: { splashDone: boolean }) {
           {/* Tools Tab */}
           <View style={[styles.tabPane, tab === 'tools' ? styles.paneVisible : styles.paneHidden]}>
             <View style={[styles.tabPane, tools.screen === 'hub' ? styles.paneVisible : styles.paneHidden]}>
-              <TabScreen header={tab === 'tools' ? sharedTabHeader : null}>
+              <TabScreen header={sharedTabHeader}>
                 <ToolsScreen
+                  isActive={tab === 'tools' && tools.screen === 'hub'}
                   onOpen={openToolsItem}
-                  onOpenSettings={() => setSettingsOpen(true)}
-                  onOpenNotifications={() => {
-                    setTools({ screen: 'prayer-reminders' });
-                    setTab('tools');
-                  }}
+                  onOpenSettings={handleOpenSettings}
+                  onOpenNotifications={handleOpenNotifications}
                 />
               </TabScreen>
             </View>
@@ -1240,6 +1256,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
               <LocationScreen
                 onBack={() => setTools({ screen: 'hub' })}
                 onOpenCities={() => setTools({ screen: 'cities' })}
+                onOpenLocationSetup={() => setShowLocationSetup(true)}
                 backLabel="Tools"
               />
             )}
@@ -1347,26 +1364,46 @@ function Root({ splashDone }: { splashDone: boolean }) {
           </View>
         </View>
       {Boolean(activeLiveStream && !(tab === 'tools' && tools.screen === `${activeLiveStream.id}-live`)) && activeLiveStream && (
-        <LiveMiniPlayer
-          stream={activeLiveStream}
-          onClose={() => setActiveLiveStream(null)}
-          onExpand={() => {
-            setTab('tools');
-            setTools({ screen: `${activeLiveStream.id}-live` as any });
+        <View
+          style={{
+            marginBottom: isTopLevel
+              ? NAV_BOTTOM(insets.bottom) + NAV_HEIGHT + 8
+              : Math.max(insets.bottom, 12),
           }}
-        />
+        >
+          <LiveMiniPlayer
+            stream={activeLiveStream}
+            onClose={() => setActiveLiveStream(null)}
+            onExpand={() => {
+              setTab('tools');
+              setTools({ screen: `${activeLiveStream.id}-live` as any });
+            }}
+          />
+        </View>
       )}
       {showMiniPlayer && playback && (
-        <AudioMiniPlayer
-          playback={playback}
-          status={status}
-          onPlayPause={onPlayPause}
-          onStop={onStop}
-          onOpenAudio={() => setAudioModalOpen(true)}
-          onSeek={onSeek}
-        />
+        <View
+          style={{
+            backgroundColor: colors.bgSurface,
+            marginBottom: isTopLevel
+              ? NAV_BOTTOM(insets.bottom) + NAV_HEIGHT + 8
+              : 0,
+            paddingBottom: !isTopLevel
+              ? Math.max(insets.bottom, 12)
+              : 0,
+          }}
+        >
+          <AudioMiniPlayer
+            playback={playback}
+            status={status}
+            onPlayPause={onPlayPause}
+            onStop={onStop}
+            onOpenAudio={() => setAudioModalOpen(true)}
+            onSeek={onSeek}
+          />
+        </View>
       )}
-      {!settingsOpen && !audioModalOpen && !womenPinModalOpen && !showLocationSetup && (
+      {isTopLevel && !settingsOpen && !audioModalOpen && !womenPinModalOpen && !showLocationSetup && (
         <FloatingNav
           active={routeToTab(
             tab === 'quran' ? quran : tab === 'library' ? library : tab === 'tools' ? tools : 'home',
@@ -1474,8 +1511,13 @@ function SettingsModal({
       statusBarTranslucent
     >
       <View style={styles.settingsOverlay}>
-        <TouchableWithoutFeedback onPress={handleRequestClose} accessibilityLabel="Close settings">
-          <View style={styles.settingsBackdrop} />
+        <TouchableWithoutFeedback onPress={handleRequestClose} accessible={false}>
+          <View
+            style={styles.settingsBackdrop}
+            accessible={false}
+            importantForAccessibility="no"
+            {...(Platform.OS === 'web' ? { 'aria-hidden': 'true' as any } : {})}
+          />
         </TouchableWithoutFeedback>
         <Animated.View
           style={[
@@ -1497,15 +1539,10 @@ function SettingsModal({
           <View
             style={[
               styles.settingsSheetPill,
-              { backgroundColor: colors.borderSubtle, marginTop: insets.top + 8 },
+              { backgroundColor: colors.borderSubtle, top: insets.top + 8 },
             ]}
           />
-          <View
-            style={[
-              styles.settingsSheetContent,
-              { paddingBottom: Math.max(insets.bottom, 16) + 12 },
-            ]}
-          >
+          <View style={styles.settingsSheetContent}>
             <SettingsScreen
               onClose={onClose}
               onBackRef={backRef}
@@ -1520,6 +1557,8 @@ function SettingsModal({
 }
 
 export default function App() {
+  const systemScheme = useColorScheme();
+  const isDark = systemScheme === 'dark';
   const [fontsLoaded, fontError] = useEditorialFonts();
   const [splashDone, setSplashDone] = useState(false);
   const [langReady, setLangReady] = useState(false);
@@ -1569,6 +1608,28 @@ export default function App() {
     };
   }, []);
 
+  // Web CSS media rule for prefers-reduced-motion compliance
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const styleId = 'app-prefers-reduced-motion';
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+              scroll-behavior: auto !important;
+            }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+  }, []);
+
   const handleSplashDone = useCallback(() => {
     setSplashDone(true);
   }, []);
@@ -1578,7 +1639,14 @@ export default function App() {
   }, []);
 
   if ((!fontsLoaded && !fontError) || !langReady || !onboardingChecked) {
-    return <View style={styles.loading} />;
+    return (
+      <View
+        style={[
+          styles.loading,
+          { backgroundColor: isDark ? '#12121C' : '#F4EEDE' },
+        ]}
+      />
+    );
   }
 
   const showOnboarding = !onboardingCompleted;
@@ -1748,7 +1816,9 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     alignSelf: 'center',
-    marginBottom: 6,
+    position: 'absolute',
+    top: 8,
+    zIndex: 20,
   },
   settingsSheetContent: {
     flex: 1,

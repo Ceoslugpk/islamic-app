@@ -1,12 +1,23 @@
-import React, { createContext, useContext, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import React, { createContext, useContext, useEffect, useMemo } from 'react';
+import { Platform, useColorScheme } from 'react-native';
 import { palette, ThemeColors, ThemeMode } from './constants';
-import { accentThemes, AccentKey, DEFAULT_ACCENT } from './accents';
+import {
+  HOME_THEME_TOKENS,
+  CARD_SHADOW,
+  HERO_CARD_SHADOW,
+  ACTIVE_PRAYER_CARD_SHADOW,
+  PILL_SHADOW,
+} from './homeThemeTokens';
+import { AccentKey, DEFAULT_ACCENT } from './accents';
 import { useSettings } from './settings';
+import { textTokens, SemanticTextTokens } from '../theme/tokens';
 
 interface ThemeContextValue {
   mode: ThemeMode;
+  scheme: 'light' | 'dark';
   colors: ThemeColors;
+  tokens: SemanticTextTokens;
+  textTokens: SemanticTextTokens;
   accentKey: AccentKey;
   setAccent: (key: AccentKey) => void;
   toggle: () => void;
@@ -23,21 +34,20 @@ function resolveMode(
   return systemScheme === 'dark' ? 'ink' : 'paper';
 }
 
-function getAccentColors(mode: ThemeMode, accentKey: AccentKey) {
-  const accent = accentThemes[accentKey];
+function getAccentColors(mode: ThemeMode) {
   if (mode === 'ink') {
     return {
-      accent: accent.darkAccent,
-      accentHover: accent.darkAccent,
-      accentDim: accent.darkDim,
-      success: accent.darkAccent,
+      accent: HOME_THEME_TOKENS.ink.gold,
+      accentHover: HOME_THEME_TOKENS.ink.gold,
+      accentDim: HOME_THEME_TOKENS.ink.ringFill,
+      success: HOME_THEME_TOKENS.ink.gold,
     };
   }
   return {
-    accent: accent.lightAccent,
-    accentHover: accent.lightAccent,
-    accentDim: accent.lightDim,
-    success: accent.lightAccent,
+    accent: HOME_THEME_TOKENS.paper.accent,
+    accentHover: HOME_THEME_TOKENS.paper.accent,
+    accentDim: HOME_THEME_TOKENS.paper.ringFill,
+    success: HOME_THEME_TOKENS.paper.accent,
   };
 }
 
@@ -60,12 +70,34 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const colors: ThemeColors = useMemo(
-    () => ({ ...palette[mode], ...getAccentColors(mode, accentKey) }),
-    [mode, accentKey],
+    () => ({ ...palette[mode], ...getAccentColors(mode) }),
+    [mode],
   );
 
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      const scheme = mode === 'ink' ? 'dark' : 'light';
+      document.documentElement.style.colorScheme = scheme;
+      document.documentElement.setAttribute('data-theme', scheme);
+    }
+  }, [mode]);
+
+  const scheme: 'light' | 'dark' = mode === 'ink' ? 'dark' : 'light';
+  const semanticTokens = textTokens[mode];
+
   return (
-    <ThemeContext.Provider value={{ mode, colors, accentKey, setAccent, toggle }}>
+    <ThemeContext.Provider
+      value={{
+        mode,
+        scheme,
+        colors,
+        tokens: semanticTokens,
+        textTokens: semanticTokens,
+        accentKey,
+        setAccent,
+        toggle,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -75,4 +107,55 @@ export function useTheme(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
   if (!ctx) throw new Error('useTheme must be used within ThemeProvider');
   return ctx;
+}
+
+export function useSemanticTextTokens(): SemanticTextTokens {
+  const { tokens } = useTheme();
+  return tokens;
+}
+
+export {
+  textTokens,
+  getBrandLogoSource,
+  useBrandLogoSource,
+  getAppLogoSource,
+  useAppLogoSource,
+} from '../theme/tokens';
+export type { SemanticTextTokens, BrandLogoVariant } from '../theme/tokens';
+
+export function useHomeTokens() {
+  const { mode } = useTheme();
+  return HOME_THEME_TOKENS[mode];
+}
+
+export {
+  CARD_SHADOW,
+  HERO_CARD_SHADOW,
+  ACTIVE_PRAYER_CARD_SHADOW,
+  PILL_SHADOW,
+  getCardShadow,
+  getHeroCardShadow,
+  getActivePrayerShadow,
+  getPillShadow,
+} from './homeThemeTokens';
+export type { CardShadowTokens } from './homeThemeTokens';
+
+export function useCardShadow() {
+  const { mode } = useTheme();
+  return CARD_SHADOW[mode];
+}
+
+export function useHeroCardShadow() {
+  const { mode } = useTheme();
+  return HERO_CARD_SHADOW[mode];
+}
+
+export function useActivePrayerShadow() {
+  const { mode } = useTheme();
+  return ACTIVE_PRAYER_CARD_SHADOW[mode];
+}
+
+export function usePillShadow() {
+  const { mode } = useTheme();
+  return PILL_SHADOW[mode];
 }

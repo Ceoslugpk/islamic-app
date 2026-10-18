@@ -1,11 +1,10 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
   LayoutChangeEvent,
   Pressable,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -17,6 +16,7 @@ import { TajweedText } from './TajweedText';
 import { iconSizes } from '../lib/iconMap';
 import { t } from '../lib/i18n';
 import { isRtlScript } from '../lib/rtl';
+import { AppText } from './ui/AppText';
 
 export interface AyahBookmarkButtonProps {
   isBookmarked: boolean;
@@ -33,7 +33,7 @@ export function AyahBookmarkButton({
   inactiveColor,
   ayahNumber,
 }: AyahBookmarkButtonProps) {
-  const bounceAnim = useRef(new Animated.Value(1)).current;
+  const [bounceAnim] = useState(() => new Animated.Value(1));
 
   const handlePress = () => {
     Animated.sequence([
@@ -245,9 +245,13 @@ const AyahCardRowComponent = ({
       {/* Action Header */}
       <View style={styles.ayahActionBar}>
         <View style={[styles.ayahBadge, { backgroundColor: accentDimColor }]}>
-          <Text style={[styles.ayahBadgeText, { color: accentColor }]}>
+          <AppText
+            variant="numeral"
+            highlight
+            style={styles.ayahBadgeText}
+          >
             {ayahNumber}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.actionsGroup}>
@@ -360,18 +364,18 @@ const AyahCardRowComponent = ({
       {/* Translation */}
       {showTranslation && Boolean(ayah.translation) && (
         <View style={styles.translationWrap}>
-          <Text style={[styles.translationTag, { color: textMutedColor }]}>
+          <AppText variant="caption" style={styles.translationTag}>
             {translationFlag ? `${translationFlag} ` : ''}{translationEditionName || ''}
-          </Text>
-          <Text
+          </AppText>
+          <AppText
+            variant="body"
             style={[
               styles.translationText,
-              { color: textSecondaryColor },
               isRtlScript(appLanguage) ? { textAlign: 'right', writingDirection: 'rtl' } : null,
             ]}
           >
             {ayah.translation}
-          </Text>
+          </AppText>
         </View>
       )}
 
@@ -384,9 +388,9 @@ const AyahCardRowComponent = ({
           ]}
         >
           <View style={styles.tafsirHeader}>
-            <Text style={[styles.tafsirTitle, { color: accentColor }]}>
+            <AppText variant="eyebrow" style={styles.tafsirTitle}>
               {tafsirEdition || 'Tafsir'}
-            </Text>
+            </AppText>
             <TouchableOpacity onPress={onCloseTafsir}>
               <Ionicons name="close" size={16} color={textMutedColor} />
             </TouchableOpacity>
@@ -394,14 +398,12 @@ const AyahCardRowComponent = ({
           {tafsirLoading ? (
             <ActivityIndicator size="small" color={accentColor} style={{ marginVertical: 8 }} />
           ) : (
-            <Text
-              style={[
-                styles.inlineTafsirText,
-                { color: textPrimaryColor, fontFamily: 'Manrope_400Regular' },
-              ]}
+            <AppText
+              variant="body"
+              style={styles.inlineTafsirText}
             >
               {tafsirText || ''}
-            </Text>
+            </AppText>
           )}
         </View>
       )}

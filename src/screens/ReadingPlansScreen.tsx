@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   useWindowDimensions,
   BackHandler,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens } from '../theme/tokens';
@@ -177,116 +177,117 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
           />
         }
       >
-        <View style={styles.contentWrap}>
-          <DetailScreen.FlatList
-            data={selectedPlan.days}
-            keyExtractor={(item) => item.day.toString()}
-            contentContainerStyle={[
-              styles.daysList,
-              {
-                paddingHorizontal: paddingH,
-              },
-            ]}
-            ListHeaderComponent={
-              <View style={{ paddingTop: 12, paddingBottom: 12 }}>
-                <View
-                  style={[
-                    styles.progressCard,
-                    getHeroCardShadow(mode),
-                    {
-                      backgroundColor: tokens.cardTop,
-                      borderColor: tokens.cardBorder,
-                    },
-                  ]}
-                >
-                  <View style={styles.progressHeader}>
-                    <Text style={[styles.progressTitle, { color: tokens.text }]}>
-                      {completedCount} {t('of')} {selectedPlan.durationDays} {t('completed')}
-                    </Text>
-                    <Text style={[styles.progressPercent, { color: tokens.goldText }]}>
-                      {percent}%
-                    </Text>
-                  </View>
-
-                  {/* Progress Bar */}
-                  <View style={[styles.progressBarTrack, { backgroundColor: tokens.trackColor }]}>
-                    <View
-                      style={[
-                        styles.progressBarFill,
-                        {
-                          backgroundColor: tokens.gold,
-                          width: `${percent}%`,
-                        },
-                      ]}
-                    />
-                  </View>
-
-                  <Text style={[styles.planDesc, { color: tokens.muted }]}>
-                    {t(selectedPlan.description)}
-                  </Text>
+        <DetailScreen.FlatList
+          style={styles.contentWrap}
+          data={selectedPlan.days}
+          keyExtractor={(item) => item.day.toString()}
+          contentContainerStyle={[
+            styles.daysList,
+            {
+              paddingHorizontal: paddingH,
+            },
+          ]}
+          ListHeaderComponent={
+            <View style={{ paddingBottom: 12 }}>
+              <View
+                style={[
+                  styles.progressCard,
+                  getHeroCardShadow(mode),
+                  {
+                    backgroundColor: tokens.cardTop,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+              >
+                <View style={styles.progressHeader}>
+                  <AppText variant="sectionTitle" style={[styles.progressTitle, { flex: 1, minWidth: 0 }]}>
+                    {completedCount} {t('of')} {selectedPlan.durationDays} {t('completed')}
+                  </AppText>
+                  <AppText variant="numeral" highlight style={[styles.progressPercent, { flexShrink: 0 }]}>
+                    {percent}%
+                  </AppText>
                 </View>
-              </View>
-            }
-            renderItem={({ item }) => {
-              const isCompleted = currentPlanProgress[item.day] === true;
-              const displayLabel = item.label.replace('Day', t('Day')).replace('Milestone', t('Milestone'));
-              const displayPortion = item.portion.replace('Juz', t('Juz')).replace('Part', t('Part'));
-              return (
-                <TouchableOpacity
-                  style={[
-                    styles.dayCard,
-                    getCardShadow(mode),
-                    {
-                      backgroundColor: tokens.cardTop,
-                      borderColor: tokens.cardBorder,
-                    },
-                  ]}
-                  onPress={() => toggleDay(selectedPlan.id, item.day)}
-                  accessibilityRole="checkbox"
-                  accessibilityState={{ checked: isCompleted }}
-                  accessibilityLabel={`${displayLabel}: ${displayPortion}. ${isCompleted ? t('Completed') : t('Not completed')}`}
-                >
+
+                {/* Progress Bar */}
+                <View style={[styles.progressBarTrack, { backgroundColor: tokens.trackColor }]}>
                   <View
                     style={[
-                      styles.checkCircle,
+                      styles.progressBarFill,
                       {
-                        borderColor: isCompleted ? tokens.gold : tokens.cardBorder,
-                        backgroundColor: isCompleted ? tokens.gold : tokens.ringFill,
+                        backgroundColor: tokens.gold,
+                        width: `${percent}%`,
+                      },
+                    ]}
+                  />
+                </View>
+
+                <AppText variant="caption" tone="faint" style={styles.planDesc}>
+                  {t(selectedPlan.description)}
+                </AppText>
+              </View>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const isCompleted = currentPlanProgress[item.day] === true;
+            const displayLabel = item.label.replace('Day', t('Day')).replace('Milestone', t('Milestone'));
+            const displayPortion = item.portion.replace('Juz', t('Juz')).replace('Part', t('Part'));
+            return (
+              <TouchableOpacity
+                style={[
+                  styles.dayCard,
+                  getCardShadow(mode),
+                  {
+                    backgroundColor: tokens.cardTop,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+                onPress={() => toggleDay(selectedPlan.id, item.day)}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isCompleted }}
+                accessibilityLabel={`${displayLabel}: ${displayPortion}. ${isCompleted ? t('Completed') : t('Not completed')}`}
+              >
+                <View
+                  style={[
+                    styles.checkCircle,
+                    {
+                      borderColor: isCompleted ? tokens.gold : tokens.cardBorder,
+                      backgroundColor: isCompleted ? tokens.gold : tokens.ringFill,
+                      flexShrink: 0,
+                    },
+                  ]}
+                >
+                  {isCompleted && (
+                    <Ionicons name="checkmark" size={14} color={tokens.onGold} />
+                  )}
+                </View>
+
+                <View style={[styles.dayTextWrap, { minWidth: 0 }]}>
+                  <AppText
+                    variant="rowTitle"
+                    tone={isCompleted ? 'faint' : undefined}
+                    style={[
+                      styles.dayLabel,
+                      {
+                        textDecorationLine: isCompleted ? 'line-through' : 'none',
                       },
                     ]}
                   >
-                    {isCompleted && (
-                      <Ionicons name="checkmark" size={14} color={tokens.onGold} />
-                    )}
-                  </View>
+                    {displayLabel}
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={styles.dayPortion}>
+                    {displayPortion}
+                  </AppText>
+                </View>
 
-                  <View style={styles.dayTextWrap}>
-                    <Text
-                      style={[
-                        styles.dayLabel,
-                        {
-                          color: isCompleted ? tokens.muted : tokens.text,
-                          textDecorationLine: isCompleted ? 'line-through' : 'none',
-                        },
-                      ]}
-                    >
-                      {displayLabel}
-                    </Text>
-                    <Text style={[styles.dayPortion, { color: tokens.muted }]}>
-                      {displayPortion}
-                    </Text>
+                {isCompleted && (
+                  <View style={[styles.doneTagPill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, flexShrink: 0 }]}>
+                    <AppText variant="eyebrow" highlight style={styles.doneTag}>{t('Done')}</AppText>
                   </View>
-
-                  {isCompleted && (
-                    <View style={[styles.doneTagPill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
-                      <Text style={[styles.doneTag, { color: tokens.goldText }]}>{t('Done')}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            }}
-          />
-        </View>
+                )}
+              </TouchableOpacity>
+            );
+          }}
+        />
       </DetailScreen>
     );
   }
@@ -315,9 +316,9 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
         ]}
       >
         <View style={styles.contentWrap}>
-          <Text style={[styles.introText, { color: tokens.muted }]}>
+          <AppText variant="body" tone="faint" style={styles.introText}>
             {t('Choose a structured plan to recite the Holy Quran at your own pace. Your progress is saved automatically.')}
-          </Text>
+          </AppText>
 
           <View style={styles.planCards}>
             {PLANS.map((plan) => {
@@ -335,13 +336,13 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
                 >
                   <View style={styles.planCardInner}>
                     <View style={styles.planCardTop}>
-                      <View style={styles.planTitleCol}>
-                        <Text style={[styles.planCardTitle, { color: tokens.text }]}>
+                      <View style={[styles.planTitleCol, { minWidth: 0 }]}>
+                        <AppText variant="title" style={styles.planCardTitle}>
                           {t(plan.title)}
-                        </Text>
-                        <Text style={[styles.planCardSub, { color: tokens.muted }]}>
+                        </AppText>
+                        <AppText variant="subtitle" tone="faint" style={styles.planCardSub}>
                           {t(plan.subtitle)}
-                        </Text>
+                        </AppText>
                       </View>
                       <View
                         style={[
@@ -351,18 +352,19 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
                             backgroundColor: tokens.ringFill,
                             borderColor: tokens.ringBorder,
                             borderWidth: 1,
+                            flexShrink: 0,
                           },
                         ]}
                       >
-                        <Text style={[styles.paceBadgeText, { color: tokens.goldText }]}>
+                        <AppText variant="eyebrow" highlight style={styles.paceBadgeText}>
                           {t(plan.pace)}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
 
-                    <Text style={[styles.planCardDesc, { color: tokens.muted }]}>
+                    <AppText variant="caption" tone="faint" style={styles.planCardDesc}>
                       {t(plan.description)}
-                    </Text>
+                    </AppText>
 
                     {/* Progress Bar & Status */}
                     <View style={styles.planCardFooter}>
@@ -377,9 +379,9 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
                           ]}
                         />
                       </View>
-                      <Text style={[styles.percentText, { color: tokens.goldText }]}>
+                      <AppText variant="caption" highlight style={[styles.percentText, { flexShrink: 0 }]}>
                         {completedCount}/{plan.durationDays} ({percent}%)
-                      </Text>
+                      </AppText>
                     </View>
                   </View>
                 </PremiumCard>
@@ -397,7 +399,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingTop: 10,
     paddingBottom: 40,
   },
   contentWrap: {
@@ -409,7 +410,6 @@ const styles = StyleSheet.create({
   introText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12.5,
-    lineHeight: 18,
     marginBottom: 12,
   },
   planCards: {
@@ -449,11 +449,11 @@ const styles = StyleSheet.create({
   paceBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
   planCardDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 19,
     marginBottom: 16,
   },
   planCardFooter: {
@@ -464,6 +464,7 @@ const styles = StyleSheet.create({
   percentText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    paddingVertical: 2,
   },
   progressCard: {
     borderWidth: 1,
@@ -497,7 +498,6 @@ const styles = StyleSheet.create({
   planDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
-    lineHeight: 18,
     marginTop: 12,
   },
   daysList: {
@@ -542,5 +542,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     textTransform: 'uppercase',
+    paddingVertical: 2,
   },
 });

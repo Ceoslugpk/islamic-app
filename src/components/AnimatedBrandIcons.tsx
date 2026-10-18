@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -8,27 +8,32 @@ import {
   View,
   ViewStyle,
   AccessibilityInfo,
+  Image,
 } from 'react-native';
 import Svg, { Path, G, Circle, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
-import { isRTL, t } from '../lib/i18n';
+import { getTokens, getAppLogoSource, ThemeMode } from '../theme/tokens';
+import { t } from '../lib/i18n';
 
 const AnimatedView = Animated.View;
-const AnimatedG = Animated.createAnimatedComponent(G);
 
 /**
  * Hook to track whether the user prefers reduced motion (OS accessibility setting or web media query).
  */
 export function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
+  const [reduced, setReduced] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    return false;
+  });
 
   useEffect(() => {
     let mounted = true;
     if (Platform.OS === 'web') {
       if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
         const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-        setReduced(media.matches);
         const listener = (e: MediaQueryListEvent) => {
           if (mounted) setReduced(e.matches);
         };
@@ -95,7 +100,7 @@ export function AnimatedCrescentOrbit({
   const primaryColor = color || (mode === 'ink' ? colors.forestGreen : '#105A4B');
   const secondaryColor = starColor || (mode === 'ink' ? colors.sage : colors.sage);
 
-  const loopAnim = useRef(new Animated.Value(0)).current;
+  const [loopAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (reducedMotion || paused) {
@@ -131,16 +136,6 @@ export function AnimatedCrescentOrbit({
   const floatY = loopAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, -3],
-  });
-
-  const starScale = loopAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [1, 1.12, 1],
-  });
-
-  const starOpacity = loopAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: [0.85, 1, 0.85],
   });
 
   return (
@@ -203,7 +198,7 @@ export function AnimatedArabesqueKhatim({
   const reducedMotion = usePrefersReducedMotion();
 
   const strokeColor = color || (mode === 'ink' ? colors.forestGreen : '#105A4B');
-  const loopAnim = useRef(new Animated.Value(0)).current;
+  const [loopAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (reducedMotion || paused) {
@@ -302,11 +297,13 @@ export interface AnimatedBrandBadgeProps {
   archColor?: string;
   style?: ViewStyle;
   paused?: boolean;
+  mode?: ThemeMode;
 }
 
 /**
  * Animated Brand Badge:
  * The signature Islamic arch squircle logo with a gentle ambient breathing aura ring.
+ * In dark mode, renders the approved crisp dark brand tile without duplicated borders.
  */
 export function AnimatedBrandBadge({
   size = 36,
@@ -314,14 +311,17 @@ export function AnimatedBrandBadge({
   archColor = '#FFFFFF',
   style,
   paused = false,
+  mode: propMode,
 }: AnimatedBrandBadgeProps) {
-  const { colors, mode } = useTheme();
+  const { colors, mode: themeMode } = useTheme();
+  const mode = propMode || themeMode;
+  const isDark = mode !== 'paper';
   const reducedMotion = usePrefersReducedMotion();
 
   const badgeColor = color || (mode === 'ink' ? colors.forestGreen : '#105A4B');
-  const auraColor = mode === 'ink' ? 'rgba(16, 185, 129, 0.28)' : 'rgba(16, 90, 75, 0.16)';
+  const auraColor = isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(16, 90, 75, 0.16)';
 
-  const pulseAnim = useRef(new Animated.Value(0)).current;
+  const [pulseAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (reducedMotion || paused) {
@@ -379,36 +379,64 @@ export function AnimatedBrandBadge({
         ]}
       />
 
-      {/* Crisp Brand Squircle */}
-      <View
-        style={{
-          width: size,
-          height: size,
-          borderRadius: Math.round(size * 0.25),
-          backgroundColor: badgeColor,
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <Svg width={Math.round(size * 0.62)} height={Math.round(size * 0.62)} viewBox="0 0 24 24" fill="none">
-          <Path
-            d="M12 4C8 4 6 7 6 11V20H18V11C18 7 16 4 12 4Z"
-            stroke={archColor}
-            strokeWidth={2.4}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {/* Crisp Brand Squircle / Dark Brand Tile */}
+      {isDark ? (
+        <View
+          style={{
+            width: size,
+            height: size,
+            borderRadius: Math.round(size * 0.25),
+            overflow: 'hidden',
+            backgroundColor: 'transparent',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.18,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+          testID="onboarding-brand-badge-tile"
+        >
+          <Image
+            source={getAppLogoSource('ink')}
+            style={{
+              width: size,
+              height: size,
+              borderRadius: Math.round(size * 0.25),
+            }}
+            resizeMode="cover"
           />
-          <Path
-            d="M12 10C10.5 10 9.5 11.5 9.5 13.5V20H14.5V13.5C14.5 11.5 13.5 10 12 10Z"
-            fill={archColor}
-          />
-        </Svg>
-      </View>
+        </View>
+      ) : (
+        <View
+          style={{
+            width: size,
+            height: size,
+            borderRadius: Math.round(size * 0.25),
+            backgroundColor: badgeColor,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 2,
+          }}
+        >
+          <Svg width={Math.round(size * 0.62)} height={Math.round(size * 0.62)} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M12 4C8 4 6 7 6 11V20H18V11C18 7 16 4 12 4Z"
+              stroke={archColor}
+              strokeWidth={2.4}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <Path
+              d="M12 10C10.5 10 9.5 11.5 9.5 13.5V20H14.5V13.5C14.5 11.5 13.5 10 12 10Z"
+              fill={archColor}
+            />
+          </Svg>
+        </View>
+      )}
     </View>
   );
 }
@@ -437,7 +465,7 @@ export function OnboardingThemeToggle({
   const { colors } = useTheme();
   const reducedMotion = usePrefersReducedMotion();
 
-  const iconAnim = useRef(new Animated.Value(isDark ? 1 : 0)).current;
+  const [iconAnim] = useState(() => new Animated.Value(isDark ? 1 : 0));
 
   useEffect(() => {
     if (reducedMotion) {
@@ -463,7 +491,9 @@ export function OnboardingThemeToggle({
     outputRange: [1, 0.82, 1],
   });
 
-  const iconColor = colors.forestGreen || colors.accent || '#105A4B';
+  const effectiveMode = isDark ? 'ink' : 'paper';
+  const tokens = getTokens(effectiveMode);
+  const iconColor = isDark ? tokens.gold : (tokens.accent || '#105A4B');
 
   return (
     <TouchableOpacity

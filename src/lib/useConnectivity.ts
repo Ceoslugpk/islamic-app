@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 const REACHABILITY_URL = 'https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16';

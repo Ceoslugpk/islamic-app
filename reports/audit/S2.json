@@ -1,0 +1,1187 @@
+{
+  "schemaVersion": "S2-design-conformance-audit-1",
+  "audit": {
+    "phase": "S2",
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "browserSession": "islamic-audit-s2",
+    "viewportMatrix": [
+      "393x852",
+      "360x800"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "textScale": "130% where supported",
+    "scope": "Read-only design-conformance audit; only S2.json and evidence/S2 artifacts written.",
+    "inventory": "reports/audit/inventory.json",
+    "rules": "rules.md"
+  },
+  "runtime": {
+    "status": "PARTIAL",
+    "expectedRoutes": 52,
+    "capturedRoutes": [
+      "home/error-state"
+    ],
+    "blockedRoutes": 51,
+    "expectedSheetsDialogs": 9,
+    "capturedSheetsDialogs": 0,
+    "blockedSheetsDialogs": 9,
+    "actual": "Target reachable. Onboarding completed. Home rendered at 393x852 in an API error state. Route crawl blocked by location setup/RN-web dismissal and unavailable prayer-times API.",
+    "evidence": [
+      "reports/audit/evidence/S2/runtime_scope.txt"
+    ]
+  },
+  "contractFindings": [
+    {
+      "id": "S2-C01",
+      "topic": "spacing",
+      "status": "FAIL",
+      "finding": "S2 requests 12dp contract; repository current spacing contract is 24dp.",
+      "evidence": [
+        "rules.md",
+        "reports/audit/evidence/S2/inventory_summary.json"
+      ]
+    },
+    {
+      "id": "S2-C02",
+      "topic": "runtime error state",
+      "status": "FAIL",
+      "finding": "Home displayed prayer-times error with gold Retry control; this is not a loaded happy-state route proof.",
+      "evidence": [
+        "reports/audit/evidence/S2/runtime_dom_light.json",
+        "reports/audit/evidence/S2/home-light-393x852.png"
+      ]
+    },
+    {
+      "id": "S2-C03",
+      "topic": "theme",
+      "status": "BLOCKED",
+      "finding": "Dark rendered matrix and live no-reload switch were not verified.",
+      "evidence": [
+        "reports/audit/evidence/S2/runtime_dom_dark.json"
+      ]
+    },
+    {
+      "id": "S2-C04",
+      "topic": "route coverage",
+      "status": "BLOCKED",
+      "finding": "51 of 52 routes and all 9 sheets/dialogs were not runtime reached.",
+      "evidence": [
+        "reports/audit/evidence/S2/runtime_scope.txt",
+        "reports/audit/evidence/S2/inventory_summary.json"
+      ]
+    }
+  ],
+  "tests": [
+    {
+      "id": "S2-001",
+      "feature": "Inventory reconciliation",
+      "route": "repository",
+      "status": "PASS",
+      "severity": "info",
+      "expected": "52 routes and 9 sheets/dialogs are represented.",
+      "actual": "Parsed inventory.json: 52 routes, 9 sheets/dialogs, 56 features, 50 source screen files.",
+      "evidence": {
+        "source": "reports/audit/evidence/S2/inventory_summary.json",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": ""
+    },
+    {
+      "id": "S2-002",
+      "feature": "Runtime reachability",
+      "route": "home",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Every route is rendered in both themes at required phone viewports.",
+      "actual": "Target was reachable and onboarding completed, but runtime remained at home/error-state; route crawl was blocked by the first-launch location sheet/RN-web touch dismissal and unavailable prayer-times API.",
+      "evidence": {
+        "source": "reports/audit/evidence/S2/runtime_scope.txt",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": ""
+    },
+    {
+      "id": "S2-003",
+      "feature": "12dp geometry contract",
+      "route": "repository",
+      "status": "FAIL",
+      "severity": "high",
+      "expected": "The audited spacing contract uses 12dp where specified.",
+      "actual": "Static/source contract conflict: repository spacing guard and existing implementation use a 24dp base contract; requested S2 contract is 12dp. No source edits made.",
+      "evidence": {
+        "source": "rules.md",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Recorded as conflict rather than silently treating 24dp as 12dp."
+    },
+    {
+      "id": "S2-004",
+      "feature": "Palette literals and forbidden colors",
+      "route": "source",
+      "status": "FAIL",
+      "severity": "high",
+      "expected": "Only approved semantic palette literals are used; forbidden pure surfaces/controls absent.",
+      "actual": "Static scan found 102 distinct six-digit hex literals across source/config/content; runtime home shows cream surface and gold Retry control. Full route-level computed classification is blocked.",
+      "evidence": {
+        "source": "reports/audit/evidence/S2/static_palette_scan.json",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": ""
+    },
+    {
+      "id": "S2-005",
+      "feature": "Fonts allow-list",
+      "route": "source",
+      "status": "BLOCKED",
+      "severity": "medium",
+      "expected": "All rendered font families are in the audit allow-list and verified at runtime.",
+      "actual": "Source contains 146 font-family-related matches. Runtime route/font matrix was not reachable; allow-list conformance cannot be claimed.",
+      "evidence": {
+        "source": "reports/audit/evidence/S2/static_palette_scan.json",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": ""
+    },
+    {
+      "id": "S2-006",
+      "feature": "Theme switch without reload",
+      "route": "home",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Light/dark switch updates rendered colors without reload.",
+      "actual": "Isolated storage themeMode=dark reload did not yield a dark rendered surface before browser capture timeout; live no-reload switch was not reachable from the captured error state.",
+      "evidence": {
+        "source": "reports/audit/evidence/S2/runtime_dom_dark.json",
+        "dom": "reports/audit/evidence/S2/runtime_dom_dark.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_dark.json",
+        "screenshot": "reports/audit/evidence/S2/home-light-393x852.png"
+      },
+      "notes": ""
+    },
+    {
+      "id": "S2-007",
+      "feature": "FloatingNav frame and clearance",
+      "route": "home",
+      "status": "PASS",
+      "severity": "high",
+      "expected": "Exactly one FloatingNav frame exists and content clears it at midpoint and scroll end.",
+      "actual": "Home screenshot shows one bottom FloatingNav capsule. Midpoint/true-end clearance could not be measured because the captured route is a non-scrollable error state.",
+      "evidence": {
+        "source": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "PASS only for visible one-frame observation; clearance remains unverified."
+    },
+    {
+      "id": "S2-008",
+      "feature": "Route design conformance: home",
+      "route": "home",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:128,883-960",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-009",
+      "feature": "Route design conformance: library",
+      "route": "library",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1118-1211",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-010",
+      "feature": "Route design conformance: quran/home",
+      "route": "quran/home",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:149-161,963-1000",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-011",
+      "feature": "Route design conformance: quran/reader",
+      "route": "quran/reader",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:151,1001-1033; params surah:number, initialAyah?, initialPage?, pageOnly?",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-012",
+      "feature": "Route design conformance: quran/audio",
+      "route": "quran/audio",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:153,1034-1036",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-013",
+      "feature": "Route design conformance: quran/tafsir",
+      "route": "quran/tafsir",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:154,1037-1046; param surah?",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-014",
+      "feature": "Route design conformance: quran/topics",
+      "route": "quran/topics",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:155,1047-1056",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-015",
+      "feature": "Route design conformance: quran/compare",
+      "route": "quran/compare",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:155,1057-1074; params surah?, ayah?, returnTo?",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-016",
+      "feature": "Route design conformance: quran/bookmarks",
+      "route": "quran/bookmarks",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:156,1075-1084",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-017",
+      "feature": "Route design conformance: quran/notes",
+      "route": "quran/notes",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:157,1085-1094",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-018",
+      "feature": "Route design conformance: quran/plans",
+      "route": "quran/plans",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:158,1095-1097",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-019",
+      "feature": "Route design conformance: quran/hifz",
+      "route": "quran/hifz",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:159,1098-1100",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-020",
+      "feature": "Route design conformance: quran/hifz-practice",
+      "route": "quran/hifz-practice",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:160,1101-1106; param surah?",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-021",
+      "feature": "Route design conformance: quran/surah-list",
+      "route": "quran/surah-list",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:161,1107-1115",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-022",
+      "feature": "Route design conformance: library/tasbih",
+      "route": "library/tasbih",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=tasbih",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-023",
+      "feature": "Route design conformance: library/names",
+      "route": "library/names",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=names",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-024",
+      "feature": "Route design conformance: library/names-prophet",
+      "route": "library/names-prophet",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=names-prophet",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-025",
+      "feature": "Route design conformance: library/duas",
+      "route": "library/duas",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=duas",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-026",
+      "feature": "Route design conformance: library/hadith",
+      "route": "library/hadith",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=hadith",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-027",
+      "feature": "Route design conformance: library/ramadan-guide",
+      "route": "library/ramadan-guide",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=ramadan-guide",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-028",
+      "feature": "Route design conformance: library/prayer-guide",
+      "route": "library/prayer-guide",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=prayer-guide",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-029",
+      "feature": "Route design conformance: library/shahada",
+      "route": "library/shahada",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=shahada",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-030",
+      "feature": "Route design conformance: library/downloads",
+      "route": "library/downloads",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=downloads",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-031",
+      "feature": "Route design conformance: library/vocab",
+      "route": "library/vocab",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=vocab",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-032",
+      "feature": "Route design conformance: library/summary",
+      "route": "library/summary",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=summary",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-033",
+      "feature": "Route design conformance: library/tajweed",
+      "route": "library/tajweed",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=tajweed",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-034",
+      "feature": "Route design conformance: library/umrah-guide",
+      "route": "library/umrah-guide",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=umrah-guide",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-035",
+      "feature": "Route design conformance: library/hajj-journey",
+      "route": "library/hajj-journey",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=hajj-journey",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-036",
+      "feature": "Route design conformance: library/women-purity",
+      "route": "library/women-purity",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=women-purity",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-037",
+      "feature": "Route design conformance: library/women-guidance",
+      "route": "library/women-guidance",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:130-147,1132-1209; screen=women-guidance",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-038",
+      "feature": "Route design conformance: tools/tasbih",
+      "route": "tools/tasbih",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=tasbih",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-039",
+      "feature": "Route design conformance: tools/summary",
+      "route": "tools/summary",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=summary",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-040",
+      "feature": "Route design conformance: tools/qibla",
+      "route": "tools/qibla",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=qibla",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-041",
+      "feature": "Route design conformance: tools/tracker",
+      "route": "tools/tracker",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=tracker",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-042",
+      "feature": "Route design conformance: tools/location",
+      "route": "tools/location",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=location",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-043",
+      "feature": "Route design conformance: tools/cities",
+      "route": "tools/cities",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=cities",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-044",
+      "feature": "Route design conformance: tools/notifications",
+      "route": "tools/notifications",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=notifications",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-045",
+      "feature": "Route design conformance: tools/prayer-reminders",
+      "route": "tools/prayer-reminders",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=prayer-reminders",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-046",
+      "feature": "Route design conformance: tools/fasting",
+      "route": "tools/fasting",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=fasting",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-047",
+      "feature": "Route design conformance: tools/zakat",
+      "route": "tools/zakat",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=zakat",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-048",
+      "feature": "Route design conformance: tools/calendar",
+      "route": "tools/calendar",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=calendar",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-049",
+      "feature": "Route design conformance: tools/mosque",
+      "route": "tools/mosque",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=mosque",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-050",
+      "feature": "Route design conformance: tools/women-cycle",
+      "route": "tools/women-cycle",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=women-cycle",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-051",
+      "feature": "Route design conformance: tools/women-purity",
+      "route": "tools/women-purity",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=women-purity",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-052",
+      "feature": "Route design conformance: tools/women-guidance",
+      "route": "tools/women-guidance",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=women-guidance",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-053",
+      "feature": "Route design conformance: tools/women-qada",
+      "route": "tools/women-qada",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=women-qada",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-054",
+      "feature": "Route design conformance: tools/umrah-guide",
+      "route": "tools/umrah-guide",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=umrah-guide",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-055",
+      "feature": "Route design conformance: tools/umrah-resources",
+      "route": "tools/umrah-resources",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=umrah-resources",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-056",
+      "feature": "Route design conformance: tools/hajj-journey",
+      "route": "tools/hajj-journey",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=hajj-journey",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-057",
+      "feature": "Route design conformance: tools/makkah-live",
+      "route": "tools/makkah-live",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=makkah-live",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-058",
+      "feature": "Route design conformance: tools/madinah-live",
+      "route": "tools/madinah-live",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=madinah-live",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-059",
+      "feature": "Route design conformance: tools/hajj-live",
+      "route": "tools/hajj-live",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Rendered route passes header/count/geometry/buttons/palette/contrast/theme/clipping/logo/FloatingNav/gradient/font checks in light and dark at 393x852, 360x800, and 130% text scale.",
+      "actual": "Not reached in fresh isolated runtime. Inventory source route was retained; route-specific DOM/computed style and screenshot evidence are unavailable because runtime crawl was blocked at first-launch location setup and home prayer API error.",
+      "evidence": {
+        "source": "App.tsx:163-186,1227-1350; screen=hajj-live",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-060",
+      "feature": "Sheet/dialog design conformance: AdhanReciterModal::Modal",
+      "route": "AdhanReciterModal::Modal",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "src/components/AdhanReciterModal.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-061",
+      "feature": "Sheet/dialog design conformance: AudioPlayerModal::Modal",
+      "route": "AudioPlayerModal::Modal",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "src/components/AudioPlayerModal.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-062",
+      "feature": "Sheet/dialog design conformance: LanguagePickerModal::Modal",
+      "route": "LanguagePickerModal::Modal",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "src/components/LanguagePickerModal.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-063",
+      "feature": "Sheet/dialog design conformance: LocationSetupModal::Modal",
+      "route": "LocationSetupModal::Modal",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "src/components/LocationSetupModal.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-064",
+      "feature": "Sheet/dialog design conformance: LocationSetupModal::Alert",
+      "route": "LocationSetupModal::Alert",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "src/components/LocationSetupModal.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-065",
+      "feature": "Sheet/dialog design conformance: QuranLanguageModal::Modal",
+      "route": "QuranLanguageModal::Modal",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "src/components/QuranLanguageModal.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-066",
+      "feature": "Sheet/dialog design conformance: WomenConsentModal::Modal",
+      "route": "WomenConsentModal::Modal",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "src/components/WomenConsentModal.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-067",
+      "feature": "Sheet/dialog design conformance: WomenPinModal::Modal",
+      "route": "WomenPinModal::Modal",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "src/components/WomenPinModal.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    },
+    {
+      "id": "S2-068",
+      "feature": "Sheet/dialog design conformance: App::Modal",
+      "route": "App::Modal",
+      "status": "BLOCKED",
+      "severity": "high",
+      "expected": "Reachable sheet/dialog passes geometry, buttons, palette, contrast, clipping, theme, and overlay checks in both themes.",
+      "actual": "Not reached in isolated runtime; first-launch location sheet could not be reliably dismissed and other sheet/dialog states were not fabricated.",
+      "evidence": {
+        "source": "App.tsx",
+        "dom": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "computed": "reports/audit/evidence/S2/runtime_dom_light.json",
+        "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+      },
+      "notes": "Representative location-sheet screenshot documents the blocker, not route-specific proof; row remains BLOCKED."
+    }
+  ],
+  "summary": {
+    "testRows": 68,
+    "pass": 2,
+    "fail": 2,
+    "blocked": 64,
+    "waived": 0,
+    "routeRows": 52,
+    "sheetDialogRows": 9,
+    "expectedRouteRows": 52,
+    "expectedSheetDialogRows": 9,
+    "reconciled": true
+  },
+  "evidenceRoot": "reports/audit/evidence/S2",
+  "limitations": [
+    "No physical device or emulator used.",
+    "Target prayer-times API failed in the isolated preview.",
+    "130% text scale and 360x800 route matrix could not be completed after runtime blocking.",
+    "Representative home screenshot is intentionally not used as proof for blocked routes."
+  ]
+}

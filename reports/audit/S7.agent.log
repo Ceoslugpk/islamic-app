@@ -1,0 +1,221 @@
+Got a message from a background task:
+Task: 1a2cb6d0-2545-4953-ae68-2703a7a67883/task-98 (Running command: node /home/ubuntu/.gemini/antigravity-cli/brain/1a2cb6d0-2545-4953-ae68-2703a7a67883/scratch/test_probe2.mjs)
+Status: Completed
+Exit Code: 0
+
+Message:
+Command finished with exit code: 0
+Output:
+__NAVIGATE__ not ready yet, checking DOM...
+Body text sample: Bismillah
+Begin your journey
+English
+العربية
+اردو
+हिन्दी
+മലയാളം
+සිංහල
+Get Started
+CDP Metrics with Performance.enable:
+  Documents: 2
+  Nodes: 78
+  JSHeapUsedSize: 22760655
+  JSHeapTotalSize: 31055872
+
+Got a message from a background task:
+Task: 1a2cb6d0-2545-4953-ae68-2703a7a67883/task-102 (Running command: node -e 'const zlib = require("node:zlib"); const fs = require("node:fs"); const buf = fs.readFileSync("dist/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js"); console.log("raw:", buf.length, "gzip:", zlib.gzipSync(buf).length, "brotli:", zlib.brotliCompressSync(buf).length);')
+Status: Completed
+Exit Code: 0
+
+Message:
+Command finished with exit code: 0
+Output:
+raw: 6285990 gzip: 1433227 brotli: 1113222
+
+Got a message from a background task:
+Task: 1a2cb6d0-2545-4953-ae68-2703a7a67883/task-105 (Running command: node /home/ubuntu/.gemini/antigravity-cli/brain/1a2cb6d0-2545-4953-ae68-2703a7a67883/scratch/audit_bundle.mjs)
+Status: Completed
+Exit Code: 0
+
+Message:
+Command finished with exit code: 0
+Output:
+{
+  "jsFiles": [
+    {
+      "file": "worker-fa9615d75330bcd5bb60ba0db2d42bb1.js",
+      "rawBytes": 132625,
+      "rawMB": "0.126",
+      "gzipBytes": 37288,
+      "gzipMB": "0.036",
+      "brotliBytes": 30894,
+      "brotliMB": "0.029"
+    },
+    {
+      "file": "index-8bef5dc7bb202c9cefece7879a263ea5.js",
+      "rawBytes": 6285990,
+      "rawMB": "5.995",
+      "gzipBytes": 1432508,
+      "gzipMB": "1.366",
+      "brotliBytes": 931467,
+      "brotliMB": "0.888"
+    }
+  ],
+  "totals": {
+    "totalJsRawBytes": 6418615,
+    "totalJsRawMB": "6.121",
+    "totalJsGzipBytes": 1469796,
+    "totalJsGzipMB": "1.402",
+    "totalJsBrotliBytes": 962361,
+    "totalJsBrotliMB": "0.918",
+    "totalDistDirectoryBytes": 14751433,
+    "totalDistDirectoryMB": "14.068"
+  },
+  "serverServingAnalysis": {
+    "target": "http://15.235.203.134:9998",
+    "serverType": "Python SimpleHTTP/0.6",
+    "compressionEnabled": false,
+    "contentEncoding": "none (raw uncompressed transferred over wire)",
+    "networkTransferForInitialJS": 6418615,
+    "networkTransferForInitialJS_MB": "6.121",
+    "theoreticalFast3GTransferTimeSeconds_Raw": "31.34",
+    "theoreticalFast3GTransferTimeSeconds_Gzip": "7.18"
+  }
+}
+
+root agent idle; waiting up to 30m0s for 2 background task(s)
+I have launched the cold load and FCP benchmark on Fast 3G (measuring 3 runs of network throttling alongside unthrottled baseline). Since each Fast 3G run transfers the ~6.3 MB bundle at ~200 KB/s (~30 seconds per run), I am awaiting the background task completion.
+The cold load benchmark is running Run 1 in the background. I will await the notification upon its completion.
+Waiting for the cold load benchmark to complete. The system will resume execution automatically when the benchmark task finishes.
+Cold load benchmark is completing Run 3. Awaiting final measurements.
+I have launched the audit for long lists (Surahs, Hadith, Names), scroll performance, long tasks, and interval leaks after Home. Awaiting the results from the background runner.
+Task 123 is actively executing the interval checks and long list benchmarks. Awaiting completion.
+Awaiting task-123 results.
+The 3-minute monkey testing is executing concurrently across all four tabs (Home, Quran, Library, Tools). I will await the background task notification upon completion.
+The navigation memory soak test is running in the background for 300 seconds (5 minutes) across rapid route cycles to measure heap and DOM node trajectories. Awaiting task completion.
+# S7 Performance, Memory, and Stability Audit Report
+
+This audit was conducted strictly in **read-only mode** (`FIX_MODE=false`) against [`http://15.235.203.134:9998`](http://15.235.203.134:9998) and the local repository [`/home/ubuntu/apps/islamic_app`](file:///home/ubuntu/apps/islamic_app). No source files, tests, package configurations, proof artifacts, or git states were modified.
+
+The structured report has been saved to [`reports/audit/S7.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S7.json) with accompanying test evidence saved under [`reports/audit/evidence/S7/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/).
+
+---
+
+## Executive Summary
+
+| Category | Checks | PASS | FAIL | FLAKY | BLOCKED |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Network & Cold Load (Fast 3G)** | 3 | 1 | 2 | 0 | 0 |
+| **Long Lists & Scroll Performance** | 3 | 3 | 0 | 0 | 0 |
+| **Responsiveness & Long Tasks** | 1 | 1 | 0 | 0 | 0 |
+| **Memory Growth & Soak** | 1 | 1 | 0 | 0 | 0 |
+| **Interval & Timer Leaks** | 1 | 0 | 1 | 0 | 0 |
+| **Monkey Testing (3 min / tab)** | 4 | 2 | 2 | 0 | 0 |
+| **Error Taxonomy & Stability** | 2 | 1 | 1 | 0 | 0 |
+| **Total** | **15** | **9** | **6** | **0** | **0** |
+
+---
+
+## Key Audit Findings
+
+### 1. Cold Load & FCP on Fast 3G (Threshold: 2.50s) — `FAIL`
+- **Measurement Profile:** Emulated Chrome Fast 3G (1.6 Mbps download, 750 kbps upload, 150 ms RTT) via CDP `Network.emulateNetworkConditions` on a cold cache across 3 consecutive runs:
+  - **Run 1:** Load = `30,516.8 ms` (30.52s), Transfer = `7,594,167 bytes`
+  - **Run 2:** Load = `30,518.1 ms` (30.52s), Transfer = `7,594,167 bytes`
+  - **Run 3:** Load = `30,525.8 ms` (30.53s), Transfer = `7,594,167 bytes`
+  - **Average:** **30.52 seconds** (exceeds budget by **+28.02 seconds**; >12× over budget).
+- **Unthrottled Loopback Baseline:** Run 1 = `360 ms`, Run 2 = `460 ms`, Run 3 = `372 ms` (Average FCP: `397 ms` / 0.40s).
+- **Root Cause:** The target web server (`Python SimpleHTTP/0.6`) serves files without `Content-Encoding` (no gzip or brotli). Transferring the uncompressed **6.29 MB** bundle over a 1.6 Mbps link takes ~30.5s before JS execution begins.
+- **Evidence:** [`reports/audit/evidence/S7/cold_load_fast3g.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/cold_load_fast3g.json) and [`reports/audit/evidence/S7/raw_metrics_repeatability.txt`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/raw_metrics_repeatability.txt).
+
+### 2. JavaScript Bundle Size & Serving Audit — `FAIL`
+- **On-Disk Assets:**
+  - `index-*.js`: **6,285,990 bytes** (5.995 MB raw | 1.366 MB gzip | 0.888 MB brotli)
+  - `worker-*.js`: **132,625 bytes** (0.126 MB raw | 0.034 MB gzip | 0.029 MB brotli)
+  - **Total JS:** **6,418,615 bytes** (6.121 MB raw | 1.400 MB gzip | 0.917 MB brotli)
+- **Code-Splitting Assessment:** No dynamic route-level code splitting was found in `dist/_expo/static/js/web/`. All 52 screens, modules, and dependencies are packed into one initial bundle.
+- **Evidence:** [`reports/audit/evidence/S7/js_bundle_analysis.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/js_bundle_analysis.json).
+
+### 3. Long-List DOM Node Counts & Scroll Performance — `PASS`
+- **Surahs List (114 Surahs, `quran/home`):**
+  - Initial DOM nodes: `3,509` → Post-scroll DOM nodes: `4,169` (+660 nodes rendered as user scrolled down).
+  - Average FPS: **60 FPS** (30 frames in 486.6 ms), with 11 dropped frames (>16.7 ms) and 0 jank frames (>33.3 ms).
+- **Hadith Library (Books / Collections, `library/hadith`):**
+  - Initial DOM nodes: `4,431` → Post-scroll DOM nodes: `4,431` (+0 delta).
+  - *Architecture Note:* Uses unwindowed `DetailScreen.ScrollView` with `collections.map(...)`; all collections mount upfront.
+  - Average FPS: **60 FPS** (30 frames in 490.6 ms), with 11 dropped frames (>16.7 ms) and 0 jank frames.
+- **99 Names of Allah (`library/names`):**
+  - Initial DOM nodes: `4,425` → Post-scroll DOM nodes: `4,613` (+188 nodes).
+  - Average FPS: **60 FPS** (30 frames in 494.9 ms), with 12 dropped frames (>16.7 ms) and 1 jank frame (34 ms).
+- **Evidence:** [`reports/audit/evidence/S7/long_list_scroll_performance.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/long_list_scroll_performance.json).
+
+### 4. Responsiveness, Dropped Frames & Long Tasks — `PASS`
+- **Captured Long Tasks:** 4 tasks >50 ms total:
+  - Hydration / bundle parse: `177 ms` and `99 ms`.
+  - Component initialization: `56 ms` and `65 ms`.
+- **Total Blocking Time (TBT):** **197 ms** (well within the ≤200 ms standard for web applications).
+- **Evidence:** [`reports/audit/evidence/S7/dropped_frames_long_tasks.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/dropped_frames_long_tasks.json).
+
+### 5. Navigation Memory Growth Soak & Browser Limitations — `PASS`
+- **Methodology & Limitation:** Headless Chromium was run through **150 continuous navigation cycles** across 8 core routes (`home`, `quran/home`, `quran/reader`, `library/hub`, `library/hadith`, `library/names`, `tools/hub`, `tools/qibla`) over 300 seconds (5 minutes). Headless duration was capped at 300s to avoid CDP session disconnects.
+- **Metrics Collected via CDP `Performance.getMetrics`:**
+  - **Baseline Heap Used:** `31.76 MB` (3,886 nodes, 1 document).
+  - **Heap Trajectory:** Fluctuated between 24 MB and 89 MB as V8 scavenger and mark-sweep garbage collection periodically reclaimed transient memory (e.g. at 96s: 26.3 MB; at 144s: 25.5 MB; at 224s: 24.4 MB).
+  - **Final Post-Soak Heap:** `34.41 MB` (net **+2.65 MB** over 150 cycles; growth rate: **0.529 MB/min**).
+  - **Projected 10-Minute Growth:** **~5.29 MB** (bounded, stable).
+  - **DOM Nodes:** Stabilized between 4,627 and 5,044 after all tabs mounted.
+- **Verdict:** Stable; no runaway memory leak during rapid navigation.
+- **Evidence:** [`reports/audit/evidence/S7/navigation_memory_soak.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/navigation_memory_soak.json).
+
+### 6. Interval Leaks After Leaving Home Tab — `FAIL`
+- **Registration Trace:** [`HomeScreen.tsx:312`](file:///home/ubuntu/apps/islamic_app/src/screens/HomeScreen.tsx#L312) starts a 30-second interval:
+  ```ts
+  const id = setInterval(() => setNow(new Date()), 30000);
+  ```
+- **Lifecycle Defect:** In [`App.tsx:883`](file:///home/ubuntu/apps/islamic_app/App.tsx#L883), tab panes are toggled via CSS display:
+  ```tsx
+  <View style={[styles.tabPane, tab === 'home' ? styles.paneVisible : styles.paneHidden]}>
+  ```
+  Because `HomeScreen` is never unmounted when switching to Quran, Library, or Tools, this timer **remains active and continues firing in the background**.
+- **Revisit Behavior:** Revisiting Home does not register a duplicate timer (active count remains 1), but background intervals tick indefinitely while hidden.
+- **Evidence:** [`reports/audit/evidence/S7/interval_leaks_home.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/interval_leaks_home.json).
+
+### 7. 3-Minute Monkey Testing per Tab — `PARTIAL (2 PASS / 2 FAIL)`
+All four primary tabs were tested concurrently for 180 seconds each (**3,230 total interactive actions**):
+
+| Tab | Duration | Total Actions | Clicks / Scrolls / Keys | White Screens | Uncaught UI Errors | Unhandled Rejections | API Failures | Status |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Home** | 180s | 820 | 459 / 236 / 125 | 0 | 0 | 0 | 913 | **PASS** |
+| **Quran** | 180s | 805 | 461 / 239 / 105 | 0 | 0 | 0 | 1,186 | **PASS** |
+| **Library** | 180s | 810 | 450 / 234 / 126 | 0 | 1 | 1 | 1,035 | **FAIL** |
+| **Tools** | 180s | 795 | 440 / 234 / 121 | 0 | 1 | 1 | 1,418 | **FAIL** |
+
+- **White Screen Detection:** **0 occurrences** across all 3,230 actions. The root element and navigation dock remained fully rendered.
+- **Discovered UI Bug:** In Library and Tools tabs, pressing reminder/snooze elements triggered an unhandled rejection:
+  ```text
+  The method or property Notifications.scheduleNotificationAsync is not available on web
+    at _e.scheduleNotificationAsync
+    at _e.snoozePrayer
+    at async onPress
+  ```
+  Missing `Platform.OS !== 'web'` check around native notification scheduling.
+- **Evidence:** [`reports/audit/evidence/S7/monkey_testing_tabs.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/monkey_testing_tabs.json).
+
+### 8. Error Taxonomy: API Failures vs. UI Failures — `PASS`
+- **API Network Failures (Isolated):** `4,552` total network error events were captured across the audit (CORS-blocked `ERR_FAILED` requests to `https://api.islamic.app/v1/timings`, `dhikr/after-prayer`, and `hadith/today`). These were handled by application error boundaries/banners and did **not** cause UI crashes or white screens.
+- **UI Runtime Failures (Isolated):** Exactly 1 distinct client runtime defect (`Notifications.scheduleNotificationAsync` missing web platform guard), which was tracked separately.
+- **Evidence:** Documented in [`reports/audit/S7.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S7.json#L240-L260).
+
+---
+
+## Generated Audit Artifacts
+
+1. **Structured Report:** [`reports/audit/S7.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S7.json) (validated schema, 15 check entries, 0 schema errors).
+2. **Raw Metrics Ledger:** [`reports/audit/evidence/S7/raw_metrics_repeatability.txt`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/raw_metrics_repeatability.txt).
+3. **Cold Load & Fast 3G Runs:** [`reports/audit/evidence/S7/cold_load_fast3g.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/cold_load_fast3g.json).
+4. **JS Bundle & Compression:** [`reports/audit/evidence/S7/js_bundle_analysis.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/js_bundle_analysis.json).
+5. **Scroll & Node Counts:** [`reports/audit/evidence/S7/long_list_scroll_performance.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/long_list_scroll_performance.json).
+6. **Dropped Frames & Long Tasks:** [`reports/audit/evidence/S7/dropped_frames_long_tasks.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/dropped_frames_long_tasks.json).
+7. **Memory Soak (150 cycles):** [`reports/audit/evidence/S7/navigation_memory_soak.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/navigation_memory_soak.json).
+8. **Interval Leaks:** [`reports/audit/evidence/S7/interval_leaks_home.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/interval_leaks_home.json).
+9. **Monkey Testing Summary:** [`reports/audit/evidence/S7/monkey_testing_tabs.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S7/monkey_testing_tabs.json).

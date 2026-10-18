@@ -1,0 +1,364 @@
+{
+  "total_files_with_physical_styles": 44,
+  "guidance": "Physical left/right properties should be replaced with logical paddingStart, paddingEnd, marginStart, marginEnd to allow proper RTL mirroring in Urdu and Arabic.",
+  "files": {
+    "src/components/AudioPlayerModal.tsx": {
+      "count": 3,
+      "properties": [
+        "marginRight",
+        "marginRight",
+        "marginRight"
+      ]
+    },
+    "src/components/QuranLanguageModal.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/components/NowPlayingHeroCard.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/components/AudioMiniPlayer.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/components/LanguagePickerModal.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/components/AdhanReciterModal.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/components/AnimatedPattern.tsx": {
+      "count": 3,
+      "properties": [
+        "borderLeftWidth",
+        "borderRightWidth",
+        "borderLeftWidth"
+      ]
+    },
+    "src/components/QiblaCompass.tsx": {
+      "count": 4,
+      "properties": [
+        "borderLeftWidth",
+        "borderRightWidth",
+        "borderLeftWidth",
+        "borderRightWidth"
+      ]
+    },
+    "src/components/ui/PrimaryButton.tsx": {
+      "count": 2,
+      "properties": [
+        "marginRight",
+        "marginLeft"
+      ]
+    },
+    "src/components/ui/SearchField.tsx": {
+      "count": 2,
+      "properties": [
+        "marginRight",
+        "marginLeft"
+      ]
+    },
+    "src/components/ui/OutlineButton.tsx": {
+      "count": 2,
+      "properties": [
+        "marginRight",
+        "marginLeft"
+      ]
+    },
+    "src/components/ui/Chip.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/screens/QuranReaderScreen.tsx": {
+      "count": 9,
+      "properties": [
+        "paddingRight",
+        "marginLeft",
+        "paddingRight",
+        "marginLeft",
+        "marginLeft",
+        "marginLeft",
+        "paddingRight",
+        "marginLeft",
+        "paddingRight"
+      ]
+    },
+    "src/screens/PrayerGuideScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "paddingRight"
+      ]
+    },
+    "src/screens/WomenQadaScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "paddingRight"
+      ]
+    },
+    "src/screens/UmrahResourcesScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "paddingRight"
+      ]
+    },
+    "src/screens/PrayerRemindersScreen.tsx": {
+      "count": 2,
+      "properties": [
+        "marginLeft",
+        "marginLeft"
+      ]
+    },
+    "src/screens/UmrahGuideScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "paddingRight"
+      ]
+    },
+    "src/screens/LibraryScreen.tsx": {
+      "count": 10,
+      "properties": [
+        "paddingLeft",
+        "paddingLeft",
+        "paddingRight",
+        "marginLeft",
+        "marginLeft",
+        "marginLeft",
+        "marginRight",
+        "marginRight",
+        "marginLeft",
+        "marginRight"
+      ]
+    },
+    "src/screens/WomenCycleScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "borderLeftWidth"
+      ]
+    },
+    "src/screens/TasbihScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/screens/QuranScreen.tsx": {
+      "count": 2,
+      "properties": [
+        "paddingRight",
+        "marginRight"
+      ]
+    },
+    "src/screens/ToolsScreen.tsx": {
+      "count": 11,
+      "properties": [
+        "marginLeft",
+        "paddingLeft",
+        "paddingLeft",
+        "paddingLeft",
+        "paddingLeft",
+        "paddingLeft",
+        "paddingRight",
+        "marginLeft",
+        "marginRight",
+        "marginLeft"
+      ]
+    },
+    "src/screens/HajjLiveScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/screens/HadithLibraryScreen.tsx": {
+      "count": 7,
+      "properties": [
+        "paddingRight",
+        "marginRight",
+        "paddingRight",
+        "paddingLeft",
+        "paddingRight",
+        "marginLeft",
+        "paddingLeft"
+      ]
+    },
+    "src/screens/TafsirScreen.tsx": {
+      "count": 2,
+      "properties": [
+        "marginRight",
+        "marginRight"
+      ]
+    },
+    "src/screens/HomeScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "paddingRight"
+      ]
+    },
+    "src/screens/MosqueFinderScreen.tsx": {
+      "count": 7,
+      "properties": [
+        "marginLeft",
+        "marginRight",
+        "marginRight",
+        "paddingRight",
+        "paddingLeft",
+        "paddingRight",
+        "marginLeft"
+      ]
+    },
+    "src/screens/NamesScreen.tsx": {
+      "count": 9,
+      "properties": [
+        "paddingRight",
+        "marginLeft",
+        "marginRight",
+        "marginRight",
+        "marginRight",
+        "paddingRight",
+        "paddingLeft",
+        "paddingRight",
+        "marginLeft"
+      ]
+    },
+    "src/screens/QuranHomeScreen.tsx": {
+      "count": 6,
+      "properties": [
+        "paddingLeft",
+        "paddingRight",
+        "marginLeft",
+        "marginRight",
+        "marginRight",
+        "paddingRight"
+      ]
+    },
+    "src/screens/VocabTrainerScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/screens/HifzScreen.tsx": {
+      "count": 3,
+      "properties": [
+        "marginRight",
+        "marginRight",
+        "marginRight"
+      ]
+    },
+    "src/screens/WomenPurityScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "paddingRight"
+      ]
+    },
+    "src/screens/QuranTopicsScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "marginRight"
+      ]
+    },
+    "src/screens/HajjJourneyScreen.tsx": {
+      "count": 3,
+      "properties": [
+        "paddingRight",
+        "marginRight",
+        "marginLeft"
+      ]
+    },
+    "src/screens/ZakatScreen.tsx": {
+      "count": 2,
+      "properties": [
+        "marginRight",
+        "marginRight"
+      ]
+    },
+    "src/screens/WomenGuidanceScreen.tsx": {
+      "count": 4,
+      "properties": [
+        "paddingRight",
+        "marginRight",
+        "marginRight",
+        "marginRight"
+      ]
+    },
+    "src/screens/NotesScreen.tsx": {
+      "count": 3,
+      "properties": [
+        "borderLeftWidth",
+        "paddingLeft",
+        "paddingRight"
+      ]
+    },
+    "src/screens/DuasScreen.tsx": {
+      "count": 6,
+      "properties": [
+        "marginLeft",
+        "marginRight",
+        "paddingRight",
+        "paddingLeft",
+        "paddingRight",
+        "marginLeft"
+      ]
+    },
+    "src/screens/FastingScreen.tsx": {
+      "count": 4,
+      "properties": [
+        "paddingRight",
+        "paddingRight",
+        "paddingRight",
+        "paddingRight"
+      ]
+    },
+    "src/screens/TranslationCompareScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "paddingRight"
+      ]
+    },
+    "src/screens/QuranAudioScreen.tsx": {
+      "count": 15,
+      "properties": [
+        "marginLeft",
+        "marginRight",
+        "marginRight",
+        "marginRight",
+        "marginRight",
+        "marginRight",
+        "marginRight",
+        "marginLeft",
+        "marginRight",
+        "marginRight"
+      ]
+    },
+    "src/screens/CitiesScreen.tsx": {
+      "count": 1,
+      "properties": [
+        "marginLeft"
+      ]
+    },
+    "App.tsx": {
+      "count": 4,
+      "properties": [
+        "paddingRight",
+        "marginRight",
+        "marginRight",
+        "marginRight"
+      ]
+    }
+  }
+}

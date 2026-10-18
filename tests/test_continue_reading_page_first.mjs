@@ -42,9 +42,11 @@ assert.ok(
   quranHomeCode.includes('onOpenSurah(freshPos.surah, freshPos.ayah, freshPos.page);'),
   'QuranHomeScreen handleResumeReading passes freshPos.page to onOpenSurah'
 );
+const recentResumeHandler = quranHomeCode.match(/const handleOpenRecentSurah = useCallback\(\(recent: RecentSurah\) => \{([\s\S]*?)\n  \}, \[readingPosition, onOpenSurah\]\);/)?.[1] || '';
 assert.ok(
-  quranHomeCode.includes('const page = isMarked ? readingPosition.page : undefined;\n                    onOpenSurah(recent.surah, ayah, page);'),
-  'QuranHomeScreen recent chips pass saved page'
+  recentResumeHandler.includes('const page = isMarked ? readingPosition.page : undefined;') &&
+  recentResumeHandler.includes('onOpenSurah(recent.surah, ayah, page);'),
+  'QuranHomeScreen recent-surah card passes the saved page through its shared resume handler'
 );
 assert.ok(
   quranHomeCode.includes('isMarked ? readingPosition.page : undefined'),

@@ -1,22 +1,23 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
   Easing,
-  I18nManager,
   Modal,
   PanResponder,
   Platform,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
+import { getTokens } from '../theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { iconSizes } from '../lib/iconMap';
 import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
@@ -60,7 +61,8 @@ export function AudioPlayerModal({
   onClose,
   onOpenAudioCenter,
 }: AudioPlayerModalProps) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
+  const tokens = getTokens(mode);
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isTablet = width >= 640;
@@ -77,10 +79,17 @@ export function AudioPlayerModal({
   const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>(
     () => safeLoadSettings().repeatMode || 'none'
   );
+  const [prevVisible, setPrevVisible] = useState(visible);
+  if (visible !== prevVisible) {
+    setPrevVisible(visible);
+    if (visible) {
+      setRepeatMode(safeLoadSettings().repeatMode || 'none');
+    }
+  }
 
   const [touchX, setTouchX] = useState<number | null>(null);
   const [dragRatio, setDragRatio] = useState<number | null>(null);
-  const progressWidth = useRef<number>(0);
+  const [progressWidth, setProgressWidth] = useState<number>(0);
 
   // Fine playback speed + sleep timer (Niro: feature #3 + #4)
   const SPEED_OPTIONS = [0.5, 0.6, 0.7, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2];
@@ -147,13 +156,6 @@ export function AudioPlayerModal({
     };
   }, []);
 
-  // Update repeatMode from settings when modal becomes visible
-  useEffect(() => {
-    if (visible) {
-      setRepeatMode(safeLoadSettings().repeatMode || 'none');
-    }
-  }, [visible]);
-
   const canNext = canPlayNext();
   const canPrev = canPlayPrevious();
 
@@ -169,59 +171,57 @@ export function AudioPlayerModal({
 
   const handleTrackPress = useCallback(
     (e: any) => {
-      const w = progressWidth.current;
-      if (w <= 0 || status.durationMillis <= 0) return;
+      if (progressWidth <= 0 || status.durationMillis <= 0) return;
       const x = e.nativeEvent.locationX;
-      const ratio = Math.max(0, Math.min(1, x / w));
+      const ratio = Math.max(0, Math.min(1, x / progressWidth));
       const targetMillis = Math.round(ratio * status.durationMillis);
       onSeek(targetMillis);
     },
-    [status.durationMillis, onSeek]
+    [progressWidth, status.durationMillis, onSeek]
   );
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e: any) => {
-        const w = progressWidth.current;
-        if (w <= 0 || status.durationMillis <= 0) return;
-        const x = e.nativeEvent.locationX;
-        setTouchX(x);
-        setDragRatio(Math.max(0, Math.min(1, x / w)));
-      },
-      onPanResponderMove: (e: any) => {
-        if (touchX === null) return;
-        const w = progressWidth.current;
-        if (w <= 0 || status.durationMillis <= 0) return;
-        const x = e.nativeEvent.locationX;
-        const ratio = Math.max(0, Math.min(1, x / w));
-        setDragRatio(ratio);
-        setTouchX(x);
-      },
-      onPanResponderRelease: (e: any) => {
-        const w = progressWidth.current;
-        if (w <= 0 || status.durationMillis <= 0 || touchX === null) {
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (e: any) => {
+          if (progressWidth <= 0 || status.durationMillis <= 0) return;
+          const x = e.nativeEvent.locationX;
+          setTouchX(x);
+          setDragRatio(Math.max(0, Math.min(1, x / progressWidth)));
+        },
+        onPanResponderMove: (e: any) => {
+          if (touchX === null) return;
+          if (progressWidth <= 0 || status.durationMillis <= 0) return;
+          const x = e.nativeEvent.locationX;
+          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          setDragRatio(ratio);
+          setTouchX(x);
+        },
+        onPanResponderRelease: (e: any) => {
+          if (progressWidth <= 0 || status.durationMillis <= 0 || touchX === null) {
+            setTouchX(null);
+            setDragRatio(null);
+            return;
+          }
+          const x = e.nativeEvent.locationX;
+          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          const positionMillis = Math.round(ratio * status.durationMillis);
+          onSeek(positionMillis);
           setTouchX(null);
           setDragRatio(null);
-          return;
-        }
-        const x = e.nativeEvent.locationX;
-        const ratio = Math.max(0, Math.min(1, x / w));
-        const positionMillis = Math.round(ratio * status.durationMillis);
-        onSeek(positionMillis);
-        setTouchX(null);
-        setDragRatio(null);
-      },
-      onPanResponderTerminate: () => {
-        setTouchX(null);
-        setDragRatio(null);
-      },
-    })
-  ).current;
+        },
+        onPanResponderTerminate: () => {
+          setTouchX(null);
+          setDragRatio(null);
+        },
+      }),
+    [progressWidth, status.durationMillis, touchX, onSeek]
+  );
 
   const handleCycleRepeat = () => {
-    const modes: Array<'none' | 'all' | 'one'> = ['none', 'all', 'one'];
+    const modes: ('none' | 'all' | 'one')[] = ['none', 'all', 'one'];
     const curIdx = modes.indexOf(repeatMode);
     const nextMode = modes[(curIdx + 1) % modes.length];
     const updated = updateAudioSettings({ repeatMode: nextMode });
@@ -247,33 +247,35 @@ export function AudioPlayerModal({
 
   // Drag-to-dismiss: dragging the grab pill (or any non-scroll area) downward
   // pulls the sheet; releasing past a threshold closes it.
-  const dragY = useRef(new Animated.Value(0)).current;
-  const dragging = useRef<Animated.Value>(new Animated.Value(0)).current;
-  const dismissPanRef = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 8 && g.dy > 0,
-      onPanResponderMove: (_e, g) => {
-        if (g.dy < 0) return;
-        dragY.setValue(g.dy);
-        dragging.setValue(Math.min(1, g.dy / 200));
-      },
-      onPanResponderRelease: (_e, g) => {
-        if (g.dy > 140) {
-          onClose();
-        }
-        Animated.parallel([
-          Animated.timing(dragY, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
-          Animated.timing(dragging, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
-        ]).start();
-      },
-      onPanResponderTerminate: () => {
-        Animated.parallel([
-          Animated.timing(dragY, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
-          Animated.timing(dragging, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
-        ]).start();
-      },
-    })
-  ).current;
+  const [dragY] = useState(() => new Animated.Value(0));
+  const [dragging] = useState(() => new Animated.Value(0));
+  const dismissPanRef = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 8 && g.dy > 0,
+        onPanResponderMove: (_e, g) => {
+          if (g.dy < 0) return;
+          dragY.setValue(g.dy);
+          dragging.setValue(Math.min(1, g.dy / 200));
+        },
+        onPanResponderRelease: (_e, g) => {
+          if (g.dy > 140) {
+            onClose();
+          }
+          Animated.parallel([
+            Animated.timing(dragY, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
+            Animated.timing(dragging, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
+          ]).start();
+        },
+        onPanResponderTerminate: () => {
+          Animated.parallel([
+            Animated.timing(dragY, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
+            Animated.timing(dragging, { toValue: 0, duration: 180, useNativeDriver: Platform.OS !== 'web' }),
+          ]).start();
+        },
+      }),
+    [dragY, dragging, onClose]
+  );
 
   useEffect(() => {
     if (visible) {
@@ -293,6 +295,7 @@ export function AudioPlayerModal({
       transparent
       animationType="fade"
       onRequestClose={onClose}
+      statusBarTranslucent
     >
       <View style={styles.modalOverlay}>
         <TouchableWithoutFeedback onPress={onClose}>
@@ -352,7 +355,7 @@ export function AudioPlayerModal({
                 ]}
               >
                 {status.isBuffering ? (
-                  <ActivityIndicator size={10} color={colors.accent} style={{ marginRight: 4 }} />
+                  <ActivityIndicator size={10} color={colors.accent} style={{ marginEnd: 4 }} />
                 ) : (
                   <View
                     style={[
@@ -361,19 +364,13 @@ export function AudioPlayerModal({
                     ]}
                   />
                 )}
-                <Text
-                  style={[
-                    styles.statusBadgeText,
-                    {
-                      color:
-                        status.isPlaying || status.isBuffering
-                          ? colors.accent
-                          : colors.textMuted,
-                    },
-                  ]}
+                <AppText
+                  variant="eyebrow"
+                  tone={status.isPlaying || status.isBuffering ? undefined : 'faint'}
+                  style={styles.statusBadgeText}
                 >
                   {status.isBuffering ? 'BUFFERING' : status.isPlaying ? 'NOW PLAYING' : 'PAUSED'}
-                </Text>
+                </AppText>
               </View>
 
               {playback?.segmentType && (
@@ -393,19 +390,14 @@ export function AudioPlayerModal({
                     size={11}
                     color={playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary}
                   />
-                  <Text
-                    style={[
-                      styles.segmentBadgeText,
-                      {
-                        color:
-                          playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary,
-                      },
-                    ]}
+                  <AppText
+                    variant={playback.segmentType === 'arabic' ? 'eyebrow' : 'caption'}
+                    style={styles.segmentBadgeText}
                   >
                     {playback.segmentType === 'arabic'
                       ? 'AR'
                       : `TR${playback.translationLang ? ` (${playback.translationLang.toUpperCase()})` : ''}`}
-                  </Text>
+                  </AppText>
                 </View>
               )}
             </View>
@@ -430,23 +422,26 @@ export function AudioPlayerModal({
               nestedScrollEnabled
             >
               <View style={styles.infoArea}>
-                <Text
-                  style={[styles.reciterName, { color: colors.textSecondary }]}
+                <AppText
+                  variant="subtitle"
+                  style={styles.reciterName}
                   numberOfLines={1}
                 >
                   {playback.reciterName}
-                </Text>
-                <Text
-                  style={[styles.trackTitle, { color: colors.accent }]}
+                </AppText>
+                <AppText
+                  variant="title"
+                  highlight
+                  style={styles.trackTitle}
                   numberOfLines={2}
                 >
                   {playback.title}
-                </Text>
+                </AppText>
                 {playback.surah && (
-                  <Text style={[styles.surahTag, { color: colors.textMuted }]}>
+                  <AppText variant="caption" style={styles.surahTag}>
                     Surah {playback.surah}
                     {playback.ayah ? ` · Ayah ${playback.ayah}` : ' · Full Surah'}
-                  </Text>
+                  </AppText>
                 )}
               </View>
 
@@ -468,22 +463,30 @@ export function AudioPlayerModal({
                     styles.langSegmentBtn,
                     activeSegment === 'arabic' && [
                       styles.langSegmentBtnActive,
-                      { backgroundColor: colors.accent, borderColor: colors.accent },
+                      { borderColor: tokens.goldBorder, overflow: 'hidden' },
                     ],
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={t('Switch to Arabic recitation')}
                   accessibilityState={{ selected: activeSegment === 'arabic' }}
                 >
+                  {activeSegment === 'arabic' && (
+                    <LinearGradient
+                      colors={tokens.goldGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 9 }]}
+                      pointerEvents="none"
+                    />
+                  )}
                   <View style={styles.langSegmentHeader}>
-                    <Text
-                      style={[
-                        styles.langSegmentTitle,
-                        { color: activeSegment === 'arabic' ? colors.onAccent : colors.textPrimary },
-                      ]}
+                    <AppText
+                      variant="title"
+                      tone={activeSegment === 'arabic' ? 'onGold' : undefined}
+                      style={styles.langSegmentTitle}
                     >
                       العربية
-                    </Text>
+                    </AppText>
                     <View
                       style={[
                         styles.langSegmentMiniBadge,
@@ -495,28 +498,23 @@ export function AudioPlayerModal({
                         },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.langSegmentMiniBadgeText,
-                          { color: activeSegment === 'arabic' ? colors.onAccent : colors.accent },
-                        ]}
+                      <AppText
+                        variant="eyebrow"
+                        tone={activeSegment === 'arabic' ? 'onGold' : undefined}
+                        style={styles.langSegmentMiniBadgeText}
                       >
                         AR
-                      </Text>
+                      </AppText>
                     </View>
                   </View>
-                  <Text
-                    style={[
-                      styles.langSegmentSub,
-                      {
-                        color:
-                          activeSegment === 'arabic' ? colors.onAccent : colors.textMuted,
-                      },
-                    ]}
-                    numberOfLines={1}
+                  <AppText
+                    variant="caption"
+                    tone={activeSegment === 'arabic' ? 'onGold' : undefined}
+                    style={styles.langSegmentSub}
+                    numberOfLines={2}
                   >
                     {playback?.arabicReciterName || playback?.reciterName || 'Alafasy'}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
 
                 {/* Translation Segment */}
@@ -527,7 +525,7 @@ export function AudioPlayerModal({
                     styles.langSegmentBtn,
                     activeSegment === 'translation' && [
                       styles.langSegmentBtnActive,
-                      { backgroundColor: colors.accent, borderColor: colors.accent },
+                      { borderColor: tokens.goldBorder, overflow: 'hidden' },
                     ],
                     !audioEdition && { opacity: 0.5 },
                   ]}
@@ -539,16 +537,24 @@ export function AudioPlayerModal({
                   }
                   accessibilityState={{ selected: activeSegment === 'translation' }}
                 >
+                  {activeSegment === 'translation' && (
+                    <LinearGradient
+                      colors={tokens.goldGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 0, y: 1 }}
+                      style={[StyleSheet.absoluteFill, { borderRadius: 9 }]}
+                      pointerEvents="none"
+                    />
+                  )}
                   <View style={styles.langSegmentHeader}>
-                    <Text
-                      style={[
-                        styles.langSegmentTitle,
-                        { color: activeSegment === 'translation' ? colors.onAccent : colors.textPrimary },
-                      ]}
+                    <AppText
+                      variant="title"
+                      tone={activeSegment === 'translation' ? 'onGold' : undefined}
+                      style={styles.langSegmentTitle}
                       numberOfLines={1}
                     >
                       {getLanguageFlag(audioLanguage)} {audioLangName}
-                    </Text>
+                    </AppText>
                     <View
                       style={[
                         styles.langSegmentMiniBadge,
@@ -560,28 +566,23 @@ export function AudioPlayerModal({
                         },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.langSegmentMiniBadgeText,
-                          { color: activeSegment === 'translation' ? '#121110' : colors.textSecondary },
-                        ]}
+                      <AppText
+                        variant="caption"
+                        tone={activeSegment === 'translation' ? 'onGold' : undefined}
+                        style={styles.langSegmentMiniBadgeText}
                       >
                         {audioLanguage.toUpperCase()}
-                      </Text>
+                      </AppText>
                     </View>
                   </View>
-                  <Text
-                    style={[
-                      styles.langSegmentSub,
-                      {
-                        color:
-                          activeSegment === 'translation' ? colors.onAccent : colors.textMuted,
-                      },
-                    ]}
-                    numberOfLines={1}
+                  <AppText
+                    variant="caption"
+                    tone={activeSegment === 'translation' ? 'onGold' : undefined}
+                    style={styles.langSegmentSub}
+                    numberOfLines={2}
                   >
                     {audioEdition ? getLocalizedTranslationTitle(audioEdition.identifier, audioEdition.englishName || audioEdition.name) : 'No audio'}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               </View>
 
@@ -593,17 +594,16 @@ export function AudioPlayerModal({
                     size={13}
                     color={audioEdition ? colors.accent : colors.destructive}
                   />
-                  <Text
-                    style={[
-                      styles.langSwitchNotice,
-                      { color: audioEdition ? colors.textMuted : colors.destructive },
-                    ]}
-                    numberOfLines={1}
+                  <AppText
+                    variant="caption"
+                    tone={audioEdition ? undefined : 'danger'}
+                    style={styles.langSwitchNotice}
+                    numberOfLines={2}
                   >
                     {audioEdition
                       ? `Voice: ${getLocalizedTranslatorName(audioEdition.identifier, audioEdition.englishName || audioEdition.name)}`
                       : 'Audio translation unavailable'}
-                  </Text>
+                  </AppText>
                 </View>
                 <TouchableOpacity
                   onPress={() => setLangPickerOpen(true)}
@@ -617,9 +617,9 @@ export function AudioPlayerModal({
                   accessibilityRole="button"
                   accessibilityLabel={t('Change translation audio language')}
                 >
-                  <Text style={[styles.changeLangPillText, { color: colors.accent }]}>
+                  <AppText variant="link" style={styles.changeLangPillText}>
                     {t('Change Lang')}
-                  </Text>
+                  </AppText>
                   <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={10} color={colors.accent} />
                 </TouchableOpacity>
               </View>
@@ -632,7 +632,7 @@ export function AudioPlayerModal({
                   {...panResponder.panHandlers}
                   style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}
                   onLayout={(e) => {
-                    progressWidth.current = e.nativeEvent.layout.width;
+                    setProgressWidth(e.nativeEvent.layout.width);
                   }}
                   accessibilityRole="adjustable"
                   accessibilityLabel={t('Audio timeline seeker')}
@@ -649,14 +649,14 @@ export function AudioPlayerModal({
                 </TouchableOpacity>
 
                 <View style={styles.timeRow}>
-                  <Text style={[styles.timeText, { color: colors.textMuted }]}>
+                  <AppText variant="caption" style={styles.timeText}>
                     {dragRatio !== null && durationSec > 0
                       ? formatDuration(dragRatio * durationSec)
                       : formatDuration(positionSec)}
-                  </Text>
-                  <Text style={[styles.timeText, { color: colors.textMuted }]}>
+                  </AppText>
+                  <AppText variant="caption" style={styles.timeText}>
                     {durationSec > 0 ? formatDuration(durationSec) : '--:--'}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
@@ -681,7 +681,7 @@ export function AudioPlayerModal({
                     color={repeatMode !== 'none' ? colors.accent : colors.textMuted}
                   />
                   {repeatMode === 'one' && (
-                    <Text style={[styles.repeatBadgeText, { color: colors.accent }]}>1</Text>
+                    <AppText variant="eyebrow" style={styles.repeatBadgeText}>1</AppText>
                   )}
                 </TouchableOpacity>
 
@@ -709,20 +709,25 @@ export function AudioPlayerModal({
                   disabled={status.isBuffering}
                   style={[
                     styles.mainPlayBtn,
-                    {
-                      backgroundColor: colors.accent,
-                    },
+                    { overflow: 'hidden' },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel={status.isPlaying ? 'Pause audio' : 'Play audio'}
                 >
+                  <LinearGradient
+                    colors={tokens.goldGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={[StyleSheet.absoluteFill, { borderRadius: 29 }]}
+                    pointerEvents="none"
+                  />
                   {status.isBuffering ? (
-                    <ActivityIndicator size="small" color={colors.onAccent} />
+                    <ActivityIndicator size="small" color={tokens.onGold} />
                   ) : (
                     <Ionicons
                       name={status.isPlaying ? 'pause' : 'play'}
                       size={iconSizes.featured}
-                      color={colors.onAccent}
+                      color={tokens.onGold}
                       style={status.isPlaying ? undefined : { marginStart: 3 }}
                     />
                   )}
@@ -772,9 +777,9 @@ export function AudioPlayerModal({
                   accessibilityLabel={`Playback speed ${playbackRate}x. Tap to cycle.`}
                 >
                   <Ionicons name="speedometer-outline" size={15} color={colors.accent} />
-                  <Text style={[styles.speedBtnText, { color: colors.textSecondary }]}>
+                  <AppText variant="caption" style={styles.speedBtnText}>
                     {playbackRate.toFixed(2).replace(/\.?0+$/, '')}×
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
 
                 {sleepMin === null ? (
@@ -788,9 +793,9 @@ export function AudioPlayerModal({
                     accessibilityLabel={t('Start a 10 minute sleep timer. Tap again for more options.')}
                   >
                     <Ionicons name="moon-outline" size={15} color={colors.accent} />
-                    <Text style={[styles.sleepBtnText, { color: colors.textSecondary }]}>
+                    <AppText variant="caption" style={styles.sleepBtnText}>
                       Sleep 10m
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
@@ -803,11 +808,11 @@ export function AudioPlayerModal({
                     accessibilityLabel={`Sleep timer active, ${sleepRemaining} seconds remaining. Tap to cancel.`}
                   >
                     <Ionicons name="moon" size={15} color={colors.accent} />
-                    <Text style={[styles.sleepBtnText, { color: colors.accent }]}>
+                    <AppText variant="caption" highlight style={styles.sleepBtnText}>
                       {sleepRemaining !== null && sleepRemaining > 60
                         ? `${Math.round(sleepRemaining / 60)}m`
                         : `${sleepRemaining ?? 0}s`}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 )}
               </View>
@@ -818,14 +823,14 @@ export function AudioPlayerModal({
                   <View style={styles.queueHeaderRow}>
                     <View style={styles.queueHeaderTitle}>
                       <Ionicons name="list" size={13} color={colors.textSecondary} />
-                      <Text style={[styles.queueHeaderText, { color: colors.textSecondary }]}>
+                      <AppText variant="caption" style={styles.queueHeaderText}>
                         UP NEXT IN QUEUE ({queue.length})
-                      </Text>
+                      </AppText>
                     </View>
                     {queueIndex >= 0 && (
-                      <Text style={[styles.queueIndexText, { color: colors.textMuted }]}>
+                      <AppText variant="caption" style={styles.queueIndexText}>
                         Track {queueIndex + 1} of {queue.length}
-                      </Text>
+                      </AppText>
                     )}
                   </View>
 
@@ -852,23 +857,21 @@ export function AudioPlayerModal({
                           accessibilityLabel={`Play track ${idx + 1}: ${item.title}`}
                         >
                           <View style={styles.queueItemLeft}>
-                            <Text
-                              style={[
-                                styles.queueItemNum,
-                                { color: isCurrent ? colors.accent : colors.textMuted },
-                              ]}
+                            <AppText
+                              variant="caption"
+                              highlight={isCurrent}
+                              style={styles.queueItemNum}
                             >
                               {idx + 1}
-                            </Text>
-                            <Text
-                              style={[
-                                styles.queueItemTitle,
-                                { color: isCurrent ? colors.accent : colors.textPrimary },
-                              ]}
+                            </AppText>
+                            <AppText
+                              variant="rowTitle"
+                              highlight={isCurrent}
+                              style={styles.queueItemTitle}
                               numberOfLines={1}
                             >
                               {item.title}
-                            </Text>
+                            </AppText>
                           </View>
                           {isCurrent && (
                             <Ionicons
@@ -889,12 +892,12 @@ export function AudioPlayerModal({
               <View style={[styles.emptyIconWrap, { backgroundColor: colors.accentDim }]}>
                 <Ionicons name="headset-outline" size={28} color={colors.accent} />
               </View>
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              <AppText variant="title" style={styles.emptyTitle}>
                 {t('No Audio Playing')}
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+              </AppText>
+              <AppText variant="subtitle" style={styles.emptySubtitle}>
                 Choose any surah or reciter from the Quran tab or Audio Center to start listening.
-              </Text>
+              </AppText>
             </View>
           )}
 
@@ -912,9 +915,9 @@ export function AudioPlayerModal({
             accessibilityLabel={t('Open full Audio Center')}
           >
             <Ionicons name="musical-notes-outline" size={16} color={colors.accent} />
-            <Text style={[styles.audioCenterBtnText, { color: colors.textPrimary }]}>
+            <AppText variant="rowTitle" style={styles.audioCenterBtnText}>
               Open Audio Center (Reciters, Playlists, Queue)
-            </Text>
+            </AppText>
             <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={14} color={colors.textMuted} />
           </TouchableOpacity>
         </Animated.View>
@@ -925,6 +928,7 @@ export function AudioPlayerModal({
           transparent
           animationType="fade"
           onRequestClose={() => setLangPickerOpen(false)}
+          statusBarTranslucent
         >
           <View style={styles.pickerOverlay}>
             <TouchableWithoutFeedback onPress={() => setLangPickerOpen(false)}>
@@ -941,13 +945,13 @@ export function AudioPlayerModal({
               ]}
             >
               <View style={[styles.pickerHeader, { borderBottomColor: colors.borderSubtle }]}>
-                <View style={{ flex: 1, marginEnd: 8 }}>
-                  <Text style={[styles.pickerTitle, { color: colors.textPrimary }]}>
+                <View style={{ flex: 1, marginEnd: 8, minWidth: 0 }}>
+                  <AppText variant="sectionTitle" style={styles.pickerTitle}>
                     {t('Audio Language & Reciter')}
-                  </Text>
-                  <Text style={[styles.pickerSubtitle, { color: colors.textMuted }]}>
+                  </AppText>
+                  <AppText variant="caption" style={styles.pickerSubtitle}>
                     Arabic recitation + 11 translation languages ({NON_ARABIC_AUDIO_EDITIONS.length + 1} options)
-                  </Text>
+                  </AppText>
                 </View>
                 <TouchableOpacity
                   onPress={() => setLangPickerOpen(false)}
@@ -979,19 +983,18 @@ export function AudioPlayerModal({
                   accessibilityLabel={t('Select Arabic recitation')}
                 >
                   <View style={styles.pickerOptionLeft}>
-                    <Text style={styles.pickerFlag}>🇸🇦</Text>
-                    <View style={{ flex: 1 }}>
-                      <Text
-                        style={[
-                          styles.pickerOptionTitle,
-                          { color: activeSegment === 'arabic' ? colors.accent : colors.textPrimary },
-                        ]}
+                    <AppText variant="body" style={styles.pickerFlag}>🇸🇦</AppText>
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <AppText
+                        variant="rowTitle"
+                        highlight={activeSegment === 'arabic'}
+                        style={styles.pickerOptionTitle}
                       >
                         العربية · Arabic (Original)
-                      </Text>
-                      <Text style={[styles.pickerOptionSub, { color: colors.textMuted }]} numberOfLines={1}>
+                      </AppText>
+                      <AppText variant="caption" style={styles.pickerOptionSub} numberOfLines={2}>
                         Reciter: {playback?.arabicReciterName || playback?.reciterName || 'Alafasy'}
-                      </Text>
+                      </AppText>
                     </View>
                   </View>
                   {activeSegment === 'arabic' && (
@@ -1001,9 +1004,9 @@ export function AudioPlayerModal({
 
                 {/* Section Header */}
                 <View style={styles.pickerSectionDivider}>
-                  <Text style={[styles.pickerSectionLabel, { color: colors.accent }]}>
+                  <AppText variant="eyebrow" style={styles.pickerSectionLabel}>
                     TRANSLATION VOICES (11 LANGUAGES)
-                  </Text>
+                  </AppText>
                 </View>
 
                 {/* Non-Arabic Translation Editions */}
@@ -1027,23 +1030,22 @@ export function AudioPlayerModal({
                       accessibilityLabel={`Select ${langTitle} - ${ed.englishName}`}
                     >
                       <View style={styles.pickerOptionLeft}>
-                        <Text style={styles.pickerFlag}>{flagEmoji}</Text>
-                        <View style={{ flex: 1 }}>
-                          <Text
-                            style={[
-                              styles.pickerOptionTitle,
-                              { color: isSelected ? colors.accent : colors.textPrimary },
-                            ]}
+                        <AppText variant="body" style={styles.pickerFlag}>{flagEmoji}</AppText>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <AppText
+                            variant="rowTitle"
+                            highlight={isSelected}
+                            style={styles.pickerOptionTitle}
                           >
                             {langTitle} ({ed.language.toUpperCase()})
-                          </Text>
-                          <Text style={[styles.pickerOptionSub, { color: colors.textMuted }]} numberOfLines={1}>
+                          </AppText>
+                          <AppText variant="caption" style={styles.pickerOptionSub} numberOfLines={2}>
                             {getLocalizedTranslationTitle(ed.identifier, ed.englishName)}
-                          </Text>
+                          </AppText>
                           {ed.name ? (
-                            <Text style={{ fontSize: 11, color: colors.textMuted, marginTop: 1 }} numberOfLines={1}>
+                            <AppText variant="caption" style={{ fontSize: 11, marginTop: 1 }} numberOfLines={2}>
                               {getLocalizedTranslatorName(ed.identifier, ed.name)}
-                            </Text>
+                            </AppText>
                           ) : null}
                         </View>
                       </View>
@@ -1158,9 +1160,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1180,17 +1182,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 0.3,
     marginBottom: 4,
+    paddingVertical: 2,
     textTransform: 'uppercase',
   },
   trackTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 26,
-    lineHeight: 30,
+    lineHeight: 34,
     marginBottom: 4,
+    paddingVertical: 2,
   },
   surahTag: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
+    paddingVertical: 1,
   },
   progressContainer: {
     marginBottom: 18,
@@ -1253,6 +1258,7 @@ const styles = StyleSheet.create({
   speedBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
+    paddingVertical: 1,
   },
   sleepBtn: {
     flexDirection: 'row',
@@ -1266,6 +1272,7 @@ const styles = StyleSheet.create({
   sleepBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
+    paddingVertical: 1,
   },
   repeatBadgeText: {
     position: 'absolute',
@@ -1339,7 +1346,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flex: 1,
-    marginRight: 8,
+    marginEnd: 8,
   },
   queueItemNum: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1401,6 +1408,7 @@ const styles = StyleSheet.create({
   },
   langSegmentBtn: {
     flex: 1,
+    minHeight: 52,
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 10,
@@ -1555,7 +1563,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
-    marginRight: 8,
+    marginEnd: 8,
   },
   pickerFlag: {
     fontSize: 20,

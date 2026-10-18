@@ -1,13 +1,15 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   StyleProp,
   ViewStyle,
 } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { HOME_THEME_TOKENS, getPillShadow } from '../lib/homeThemeTokens';
+import { isRTL, t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 import { PrayerCountdown } from './PrayerCountdown';
 
 export interface CompactPrayerBarProps {
@@ -17,58 +19,92 @@ export interface CompactPrayerBarProps {
   onPress?: () => void;
   onExpire?: () => void;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
+  isActive?: boolean;
 }
 
 /**
- * CompactPrayerBar: A slim, persistent top pill displaying the current/upcoming
- * prayer name and time on the left, paired with the live tabular countdown on the right.
+ * CompactPrayerBar: A slim, persistent floating pill displaying the current/upcoming
+ * prayer name and time, paired with the live tabular countdown.
  * Cross-fades into view as the user scrolls past the full Prayer Hero centerpiece.
+ * Styled in the premium theme-matched visual language with muted gold accent.
  */
-export function CompactPrayerBar({
+export const CompactPrayerBar = React.memo(function CompactPrayerBar({
   prayerName,
   prayerTime,
   targetTime,
   onPress,
   onExpire,
   style,
+  testID = 'compact-prayer-bar',
+  isActive = true,
 }: CompactPrayerBarProps) {
-  const { colors } = useTheme();
+  const { mode, tokens: activeText } = useTheme();
+  const tokens = HOME_THEME_TOKENS[mode];
+  const rtl = isRTL();
+  const shadow = getPillShadow(mode);
+
+  const containerStyle: StyleProp<ViewStyle> = [
+    styles.container,
+    shadow,
+    {
+      backgroundColor: tokens.cardTop,
+      borderColor: tokens.cardBorder,
+      flexDirection: rtl ? 'row-reverse' : 'row',
+    },
+    style,
+  ];
 
   const content = (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.bgSurface,
-          borderColor: colors.borderSubtle,
-        },
-        style,
-      ]}
-    >
-      {/* Left: Indicator dot + MAGHRIB · 18:21 */}
-      <View style={styles.leftRow}>
-        <View style={[styles.statusDot, { backgroundColor: colors.accent }]} />
-        <Text style={[styles.prayerName, { color: colors.textPrimary }]} numberOfLines={1}>
-          {prayerName.toUpperCase()}
-        </Text>
-        <Text style={[styles.separator, { color: colors.textMuted }]}>·</Text>
-        <Text style={[styles.prayerTime, { color: colors.textPrimary }]}>
+    <>
+      {/* Indicator dot + localized PRAYER NAME · prayerTime */}
+      <View
+        style={[
+          styles.leftRow,
+          { flexDirection: rtl ? 'row-reverse' : 'row' },
+        ]}
+      >
+        <View
+          style={[styles.statusDot, { backgroundColor: activeText.eyebrow }]}
+          testID={`${testID}-dot`}
+        />
+        <AppText
+          variant="eyebrow"
+          style={styles.prayerName}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+          testID={`${testID}-name`}
+        >
+          {rtl ? t(prayerName) : t(prayerName).toUpperCase()}
+        </AppText>
+        <AppText variant="caption" tone="faint" style={styles.separator}>
+          ·
+        </AppText>
+        <AppText
+          variant="numeral"
+          style={[styles.prayerTime, { writingDirection: 'ltr' }]}
+          numberOfLines={1}
+          testID={`${testID}-time`}
+        >
           {prayerTime}
-        </Text>
+        </AppText>
       </View>
 
-      {/* Right: Tabular countdown figures */}
-      <View style={styles.rightRow}>
+      {/* Live tabular countdown */}
+      <View style={styles.rightRow} testID={`${testID}-countdown`}>
         <PrayerCountdown
           targetTime={targetTime}
-          color={colors.accent}
-          separatorColor={colors.textMuted}
-          fontSize={13}
+          color={activeText.eyebrow}
+          separatorColor={activeText.subtle}
+          fontSize={14}
           onExpire={onExpire}
+          isActive={isActive}
         />
       </View>
-    </View>
+    </>
   );
+
+  const accessibilityLabel = `${t(prayerName)} at ${prayerTime}. Tap to return to top.`;
 
   if (onPress) {
     return (
@@ -76,61 +112,65 @@ export function CompactPrayerBar({
         onPress={onPress}
         activeOpacity={0.88}
         accessibilityRole="button"
-        accessibilityLabel={`${prayerName} at ${prayerTime}. Tap to return to top.`}
+        accessibilityLabel={accessibilityLabel}
+        style={containerStyle}
+        testID={testID}
       >
         {content}
       </TouchableOpacity>
     );
   }
 
-  return content;
-}
+  return (
+    <View style={containerStyle} testID={testID}>
+      {content}
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row',
+    width: '100%',
+    maxWidth: 680,
+    alignSelf: 'center',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 24,
+    minHeight: 52,
+    borderRadius: 26,
     borderWidth: 1,
-    paddingVertical: 9,
+    paddingVertical: 8,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
   },
   leftRow: {
-    flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 1,
+    minWidth: 0,
     marginEnd: 8,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 6.5,
+    height: 6.5,
+    borderRadius: 3.25,
     marginEnd: 8,
+    flexShrink: 0,
   },
   prayerName: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
     letterSpacing: 1.2,
+    flexShrink: 1,
   },
   separator: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    marginHorizontal: 5,
+    marginHorizontal: 6,
+    flexShrink: 0,
   },
   prayerTime: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 17,
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
+    flexShrink: 0,
   },
   rightRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexShrink: 0,
+    marginStart: 4,
   },
 });

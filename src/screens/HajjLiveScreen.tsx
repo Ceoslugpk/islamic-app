@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Platform,
   Linking,
@@ -13,6 +12,7 @@ import { useThemeTokens } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, ScreenTabs, OutlineButton, Chip } from '../components/ui';
+import { AppText } from '../components/ui/AppText';
 import { ArabicText } from '../components/ArabicText';
 import { LiveVideoPlayer } from '../components/LiveVideoPlayer';
 import { getHijriDate, HIJRI_MONTH_NAMES } from '../lib/fasting';
@@ -117,18 +117,18 @@ export default function HajjLiveScreen({
             <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
               <Ionicons name="information-circle-outline" size={20} color={tokens.goldText} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
-                <Text style={[styles.noticeTitle, { color: tokens.text }]}>
+                <AppText variant="rowTitle" style={styles.noticeTitle}>
                   {t('Hajj Live Broadcast Notice')}
-                </Text>
-                <Text style={[styles.noticeBody, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="body" tone="faint" style={styles.noticeBody}>
                   {t('Continuous multi-site live coverage across Mina, Mount Arafat, Muzdalifah, and the Jamarat bridge broadcasts during the sacred Hajj days (8–13 Dhu al-Hijjah).')}
-                </Text>
-                <Text style={[styles.noticeNextHajj, { color: tokens.goldText }]}>
+                </AppText>
+                <AppText variant="caption" highlight style={styles.noticeNextHajj}>
                   {t('Next Hajj Season: 8–13 Dhu al-Hijjah')} {hijri.year + (hijri.month === 12 && hijri.day > 13 ? 1 : 0)} AH (approx. {monthsRemaining} month{monthsRemaining === 1 ? '' : 's'} away).
-                </Text>
-                <Text style={[styles.noticeNote, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.noticeNote}>
                   {t('Hajj live broadcasts are active exclusively during the pilgrimage season (8–13 Dhu al-Hijjah). Outside this window, recorded broadcasts and documentaries are available via the official channel.')}
-                </Text>
+                </AppText>
               </View>
             </View>
           </PremiumCard>
@@ -172,18 +172,18 @@ export default function HajjLiveScreen({
                 <Ionicons name="videocam-off-outline" size={22} color={tokens.goldText} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.offSeasonTitle, { color: tokens.text }]}>
+                <AppText variant="sectionTitle" style={styles.offSeasonTitle}>
                   {selectedChannel === 'ekhbariya' ? t('Al Ekhbariya Official Feed') : t('Ministry of Hajj & Umrah')}
-                </Text>
-                <Text style={[styles.offSeasonSub, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.offSeasonSub}>
                   {t('Hajj live streams are unavailable outside Hajj season')}
-                </Text>
+                </AppText>
               </View>
             </View>
 
-            <Text style={[styles.offSeasonBody, { color: tokens.muted }]}>
+            <AppText variant="body" style={styles.offSeasonBody}>
               {t('Official multi-site broadcasts from Mina, Mount Arafat, Muzdalifah, and the Jamarat bridge air exclusively during the sacred Hajj pilgrimage (8–13 Dhu al-Hijjah). During the off-season, you can visit the verified official channel for news, documentaries, and archival coverage.')}
-            </Text>
+            </AppText>
 
             <View style={{ marginTop: 14 }}>
               <OutlineButton
@@ -197,9 +197,9 @@ export default function HajjLiveScreen({
         )}
 
         {/* The Holy Sites of Hajj Overview */}
-        <Text style={[styles.cardLead, { color: tokens.goldText, marginBottom: 8, paddingHorizontal: 4 }]}>
+        <AppText variant="eyebrow" highlight style={[styles.cardLead, { marginBottom: 8, paddingHorizontal: 4 }]}>
           {t('SACRED GEOGRAPHY')}
-        </Text>
+        </AppText>
         {[
           {
             title: t('1. Mina (منى) — The City of Tents'),
@@ -219,31 +219,31 @@ export default function HajjLiveScreen({
         ].map((site) => (
           <PremiumCard key={site.title} style={{ marginBottom: 12, padding: 16 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Text style={[styles.siteName, { color: tokens.text, flex: 1, marginRight: 8 }]}>
+              <AppText variant="rowTitle" style={[styles.siteName, { flex: 1, marginRight: 8 }]}>
                 {site.title}
-              </Text>
+              </AppText>
               <Chip label={site.badge} selected={false} style={{ height: 26, paddingHorizontal: 8 }} />
             </View>
-            <Text style={[styles.siteDesc, { color: tokens.muted }]}>
+            <AppText variant="subtitle" style={styles.siteDesc}>
               {site.desc}
-            </Text>
+            </AppText>
           </PremiumCard>
         ))}
 
         {/* The Farewell Sermon Reflection */}
-        <PremiumCard style={{ marginBottom: 20, padding: 16 }}>
-          <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 6 }]}>
+        <PremiumCard style={{ marginBottom: 0, padding: 16 }}>
+          <AppText variant="sectionTitle" style={[styles.cardTitle, { marginBottom: 6 }]}>
             {t("From the Farewell Sermon (Khutbat al-Wada')")}
-          </Text>
+          </AppText>
           <ArabicText style={[styles.sermonArabic, { color: tokens.text }]}>
             يَا أَيُّهَا النَّاسُ، إِنَّ رَبَّكُمْ وَاحِدٌ، وَإِنَّ أَبَاكُمْ وَاحِدٌ، كُلُّكُمْ لِآدَمَ، وَآدَمُ مِنْ تُرَابٍ، لَا فَضْلَ لِعَرَبِيٍّ عَلَىٰ أَعْجَمِيٍّ، وَلَا لِعَجَمِيٍّ عَلَىٰ عَرَبِيٍّ، وَلَا لِأَحْمَرَ عَلَىٰ أَسْوَدَ، وَلَا لِأَسْوَدَ عَلَىٰ أَحْمَرَ إِلَّا بِالتَّقْوَىٰ
           </ArabicText>
-          <Text style={[styles.sermonTrans, { color: tokens.muted }]}>
+          <AppText variant="body" style={styles.sermonTrans}>
             {t('"O people, indeed your Lord is One, and your father is one. All of you are from Adam, and Adam was made from dust. An Arab has no superiority over a non-Arab, nor does a non-Arab have any superiority over an Arab; nor does a red person have superiority over a black person, nor a black person over a red person, except by piety."')}
-          </Text>
-          <Text style={[styles.sermonRef, { color: tokens.muted }]}>
+          </AppText>
+          <AppText variant="caption" tone="faint" style={styles.sermonRef}>
             {t('Musnad Ahmad 23489 · Authentic (Sahih)')}
-          </Text>
+          </AppText>
         </PremiumCard>
       </DetailScreen.ScrollView>
     </DetailScreen>
@@ -251,7 +251,7 @@ export default function HajjLiveScreen({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 10 },
+  content: {},
   seasonBanner: {
     flexDirection: 'row',
     marginBottom: 8,

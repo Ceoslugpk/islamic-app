@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Platform } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { parseTajweedAny, TajweedRule, TAJWEED_RULES, TajweedSpan } from '../lib/tajweed';
 
@@ -13,12 +13,14 @@ export function TajweedText({
   lineHeight,
   fontFamily,
   numberInSurah,
+  maxFontSizeMultiplier = 1.3,
 }: {
   text: string;
   size?: number;
   lineHeight?: number;
   fontFamily?: string;
   numberInSurah?: number;
+  maxFontSizeMultiplier?: number;
 }) {
   const { colors } = useTheme();
   // Strip end marker tag if numberInSurah is provided so we can append standard ۝{numberInSurah}
@@ -27,7 +29,7 @@ export function TajweedText({
       ? text.replace(/<span class=end>[^<]*<\/span>/g, '').replace(/<end[^>]*\/?>/g, '').trim()
       : text;
   const spans: TajweedSpan[] = parseTajweedAny(cleanText);
-  const resolvedLineHeight = lineHeight ?? Math.round(size * 1.6);
+  const resolvedLineHeight = lineHeight ?? Math.round(size * 1.8);
   const resolvedFamily = fontFamily ?? 'Amiri_400Regular';
 
   return (
@@ -43,7 +45,7 @@ export function TajweedText({
         },
       ]}
       allowFontScaling
-      maxFontSizeMultiplier={1.4}
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
     >
       {spans.map((span, i) =>
         span.rule ? (
@@ -106,7 +108,12 @@ export function TajweedLegend({ compact = false }: { compact?: boolean }) {
 const styles = StyleSheet.create({
   base: {
     fontFamily: 'Amiri_400Regular',
-    includeFontPadding: false,
+    ...Platform.select({
+      android: {
+        includeFontPadding: true,
+      },
+      default: {},
+    }),
     textAlign: 'right',
   },
   legendWrap: { gap: 10 },
@@ -114,7 +121,7 @@ const styles = StyleSheet.create({
   legendRowCompact: { alignItems: 'flex-start' },
   legendDot: { width: 14, height: 14, borderRadius: 7 },
   legendLabel: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
-  legendHint: { fontFamily: 'Manrope_400Regular', fontSize: 11, lineHeight: 15, marginTop: 1 },
+  legendHint: { fontFamily: 'Manrope_400Regular', fontSize: 11, lineHeight: 17, marginTop: 1 },
   ayahMarker: {
     fontSize: 18,
     opacity: 0.85,

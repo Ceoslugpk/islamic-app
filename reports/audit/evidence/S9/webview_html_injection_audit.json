@@ -1,0 +1,22 @@
+{
+  "webViewUsage": [
+    {
+      "component": "src/components/LiveVideoPlayer.tsx",
+      "usage": "Embeds YouTube Live stream broadcast (Makkah & Madinah Live).",
+      "nativeImplementation": "react-native-webview with baseUrl 'https://www.youtube-nocookie.com'",
+      "webImplementation": "Native <iframe> element with YouTube nocookie embed",
+      "securityControls": [
+        "Source validation: event.source must strictly equal iframeRef.current.contentWindow",
+        "Origin validation: origin must match https://www.youtube.com, https://www.youtube-nocookie.com, or https://youtube.com",
+        "Payload sanitization: only known numeric YouTube IFrame API error codes (2, 5, 100, 101, 150) trigger state changes",
+        "No arbitrary JavaScript execution or exposed native bridge interfaces"
+      ],
+      "risk": "Low / Sanitized"
+    }
+  ],
+  "dangerouslySetInnerHTMLOccurrences": 0,
+  "rawInnerHTMLOccurrences": 0,
+  "documentWriteOccurrences": 0,
+  "evalOccurrences": 0,
+  "evaluation": "PASS - WebView usage is strictly restricted to YouTube Live broadcasts with origin and source validation; zero raw HTML injection vectors exist in codebase."
+}

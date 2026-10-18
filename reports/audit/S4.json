@@ -1,0 +1,1615 @@
+{
+  "schemaVersion": "S4-navigation-route-state-modal-console-1",
+  "scope": {
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "browserContext": "fresh isolated session islamic-audit-S4-fresh",
+    "viewports": [
+      "393x852",
+      "360x800"
+    ],
+    "languages": [
+      "en"
+    ],
+    "themes": [
+      "default/dark observed",
+      "light blocked"
+    ],
+    "sourceInventory": "reports/audit/inventory.json"
+  },
+  "method": {
+    "sourceDeepLink": "BLOCKED: app exposes one root URL and runtime state bridge __NAVIGATE__; no URL route parser observed during refresh/deep-link check",
+    "runtimeNavigation": "__NAVIGATE__.setTab/setQuran/setLibrary/setTools",
+    "retries": "route crawl once; flaky interaction/geometry probes repeated where applicable",
+    "console": "window.__consoleErrors was []; browser harness console stream unavailable, therefore console PASS not claimed"
+  },
+  "summary": {
+    "routeCount": 52,
+    "routeRows": 52,
+    "PASS": 1,
+    "FAIL": 2,
+    "BLOCKED": 56,
+    "WAIVED": 0,
+    "severityCounts": {
+      "High": 1,
+      "Medium": 2,
+      "Low": 0
+    },
+    "note": "PASS/FAIL/blocked interaction checks are separate from per-route rows; totals reconcile in checks."
+  },
+  "findings": [
+    {
+      "id": "S4-001",
+      "title": "Location setup dialog recurs and blocks every route crawl",
+      "status": "FAIL",
+      "severity": "High",
+      "category": "Functional/Modal",
+      "route": "all inventory routes",
+      "steps": [
+        "complete onboarding",
+        "dismiss location setup",
+        "navigate to another route with production runtime bridge",
+        "repeat across 52 routes"
+      ],
+      "expected": "First-launch location sheet closes permanently for the session after Not now or Close.",
+      "actual": "The dialog reopened/remained visible after route state changes; runtime-393.json records dialogCount=1 for all 52 routes.",
+      "evidence": [
+        "evidence/S4/runtime-393.json",
+        "evidence/S4/interactions.json"
+      ]
+    },
+    {
+      "id": "S4-002",
+      "title": "Routes are not addressable by source deep link or refresh",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "category": "Navigation/Route",
+      "route": "all inventory routes",
+      "steps": [
+        "navigate runtime state",
+        "refresh/inspect location.href"
+      ],
+      "expected": "Each route has a refreshable deep-link URL.",
+      "actual": "location.href remained http://15.235.203.134:9998/; route state exists only in in-memory __NAVIGATE__.",
+      "evidence": [
+        "evidence/S4/interactions.json"
+      ]
+    },
+    {
+      "id": "S4-003",
+      "title": "Console verification unavailable from target harness",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "category": "Console",
+      "route": "all inventory routes",
+      "steps": [
+        "crawl routes and inspect exposed runtime errors"
+      ],
+      "expected": "A readable console stream proves zero errors after navigation/interactions.",
+      "actual": "window.__consoleErrors was empty, but the harness did not expose the browser console stream; no console PASS claimed.",
+      "evidence": [
+        "evidence/S4/interactions.json"
+      ]
+    }
+  ],
+  "routeRows": [
+    {
+      "route": "home",
+      "source": "App.tsx:128,883-960",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('home'); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Can't load prayer times right now. | Connect to the internet to get today's prayer schedule. | Retry |  | Home |  |  |  |  |  | Location for prayer times | Islamic uses your location to calculat",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 371,
+        "activeLabel": "Home",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library",
+      "source": "App.tsx:130-147,1118-1211",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hub'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample: ISLAMIC |  |  | LIBRARY | Explore | KNOWLEDGE | Hadith Library | 15+ | full books | Arabic with English translation | Browse → | البخاري | مسلم | الترمذي | KNOWLEDGE & COLLECTIONS |  | Duas & Adhkar | Daily supp",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 939,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/home",
+      "source": "App.tsx:149-161,963-1000",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'home'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample: ISLAMIC |  |  |  |  | Preloading Quran… 11/114 | Instant opening with Arabic & translations cached | Pause |  | TRANSLATION |  | 🇬🇧 English | Saheeh International |  | RECENTLY READ | None | START READING | ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1412,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/reader",
+      "source": "App.tsx:151,1001-1033; params surah:number, initialAyah?, initialPage?, pageOnly?",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'reader',surah:1}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran |  | Al-Faatiha | Page 1 of 604 |  |  | Loading Mushaf Page 1... |  |  | Quran |  |  |  |  | Location for prayer times | Islamic uses your location to calculate accurate prayer times and the Qi",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 337,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/audio",
+      "source": "App.tsx:153,1034-1036",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'audio'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | AUDIO CENTER | Quran Audio | Recitations, audio translations, playlists & player settings |  | Reciters |  | Translation Audio |  | Recent |  | Playlists |  | Queue |  | Settings |  | Arabic Recite",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1318,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/tafsir",
+      "source": "App.tsx:154,1037-1046; param surah?",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'tafsir'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | EXEGESIS & COMMENTARY | Tafsir al-Jalalayn | Verse-by-verse scholarly exegesis | SURAH 1 | Al-Faatiha · The Opening | سُورَةُ ٱلْفَاتِحَةِ |  | TAFSIR SOURCE | Tafsir al-Jalalayn |  |  |  |  | ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 449,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/topics",
+      "source": "App.tsx:155,1047-1056",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'topics'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | THEMATIC QURAN | Quran Topics | Curated Quranic passages arranged by core themes of life, faith, and spirituality. |  | Patience & Perseverance | الصبر والمصابرة | 4 verses |  | Steadfas",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1835,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/compare",
+      "source": "App.tsx:155,1057-1074; params surah?, ayah?, returnTo?",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'compare'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | COMPARATIVE STUDY | Translation Compare | Side-by-side comparative study of translations |  | Al-Faatiha | Ayah 1 of 7 |  | TRANSLATION A · 🇬🇧 ENGLISH | All Languages... |  | 🇬🇧 English | 🇵🇰 ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 665,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/bookmarks",
+      "source": "App.tsx:156,1075-1084",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'bookmarks'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | SAVED VERSES | Bookmarks | Access your saved verses and reading bookmarks |  | No bookmarks yet | Open the Quran and tap the bookmark icon on any ayah to save it here for quick acce",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 472,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/notes",
+      "source": "App.tsx:157,1085-1094",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'notes'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | PERSONAL STUDY | Notes & Reflections | Record thoughts and reflections on verses as you read |  | ADD NEW REFLECTION | Capture your insights, questions, and personal dua | Save |  | No r",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 562,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/plans",
+      "source": "App.tsx:158,1095-1097",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'plans'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | KHATMAH | Reading Plans | Structured schedules to recite the Holy Quran at your own pace | Choose a structured plan to recite the Holy Quran at your own pace. Your progress is sa",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1050,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/hifz",
+      "source": "App.tsx:159,1098-1100",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | MEMORIZATION | Hifz Tracker | Track memorization progress, revisions, and test recall | 0 | MEMORIZED | 0 | REVISING | 114 | NOT STARTED |  | All | Memorized | Revising | Not started | 1 | Al-Fatihah | 7",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1202,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/hifz-practice",
+      "source": "App.tsx:160,1101-1106; param surah?",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz-practice'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Hifz | HIDE & PEEK | Al-Fatihah | 7 ayahs · Recite from memory & test recall | Ayah 1 of 7 | 0 peeked | 1:1 | • • • • • • • • • | Recite from memory, then peek to check. |  | Peek |  | Peek |  |  |  | Rest",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 457,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "quran/surah-list",
+      "source": "App.tsx:161,1107-1115",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'surah-list'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Quran | THE HOLY QURAN | Surahs | All 114 Surahs with translations, audio & verse commentary | TRANSLATION | 🇬🇧 English · Saheeh International | Change |  | JUZ | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1464,
+        "activeLabel": "Quran",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/tasbih",
+      "source": "App.tsx:130-147,1132-1209; screen=tasbih",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tasbih'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | DHIKR & REMEMBRANCE | Tasbih | Tap counter, round tracking, and offline remembrance | SubhanAllah | Alhamdulillah | Allahu Akbar | La ilaha illallah | Astaghfirullah | TARGET | 33 | 99 | 100 | R",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 674,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/names",
+      "source": "App.tsx:130-147,1132-1209; screen=names",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | ASMA UL-HUSNA | 99 Names of Allah | Divine attributes and meanings of Allah (SWT) | English | Français | Türkçe | Español | Deutsch | Indonesia | বাংলা | Русский | اردو |  |  | 99 NAMES | 1 | الرَّحْم",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1153,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/names-prophet",
+      "source": "App.tsx:130-147,1132-1209; screen=names-prophet",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names-prophet'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | ASMA UN-NABI | 99 Names of the Prophet ﷺ | Noble attributes and titles of Prophet Muhammad ﷺ |  | 99 NAMES | 1 | مُحَمَّدٌ | Muhammad | The Highly Praised | From the Arabic root meaning p",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1215,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/duas",
+      "source": "App.tsx:130-147,1132-1209; screen=duas",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'duas'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | SUPPLICATIONS | Duas & Adhkar | Authentic supplications from the Quran and Sunnah | All (49) | Morning (4) | Evening (2) | After Prayer (1) | Sleep (1) | Waking (1) | Home (2) | Mosque (2) | E",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 607,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/hadith",
+      "source": "App.tsx:130-147,1132-1209; screen=hadith",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hadith'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | LIBRARY | Hadith Library | Browse 17 canonical collections, books & authentic narrations |  | Collections |  | Saved (0) |  | Recent |  | Progress |  | Sahih al-Bukhari | 7,277 hadiths | صحيح ا",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 3470,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/ramadan-guide",
+      "source": "App.tsx:130-147,1132-1209; screen=ramadan-guide",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'ramadan-guide'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | GUIDES | Ramadan & Eid Guide | Fasting, Laylatul Qadr, Itikaf, Zakat al-Fitr, Eid and Tashriq — every narration verified with its collection, number and grade. |  | Fasting Rule",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 19382,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/prayer-guide",
+      "source": "App.tsx:130-147,1132-1209; screen=prayer-guide",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'prayer-guide'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | GUIDES | Prayer Guide (Fiqh) | Wudu, Salah, praying in congregation, Janazah, Istikhara, Eid and Taraweeh — every narration verified with its collection, number and grade. | Wu",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 21275,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/shahada",
+      "source": "App.tsx:130-147,1132-1209; screen=shahada",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'shahada'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | LIBRARY · KNOWLEDGE | The Shahada | The declaration of faith and its foundational conditions in Islam | إِنَّ ٱلدِّينَ عِندَ ٱللَّٰهِ ٱلْإِسْلَٰمُ | Indeed, the religion in the s",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 3122,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/downloads",
+      "source": "App.tsx:130-147,1132-1209; screen=downloads",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'downloads'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | OFFLINE | Downloads | Manage offline audio surahs and cached Quran text | All Downloads | Audio Surahs | 0 | Quran Text | 15/114 |  |  | Quran Text & Translation | For offline reading (not a",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 707,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/vocab",
+      "source": "App.tsx:130-147,1132-1209; screen=vocab",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'vocab'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | LEARN | Quran Vocabulary | Most frequent words of the Quran |  | 0/60 known |  | 0% |  | TODAY'S WORD | VERY COMMON | بَاطِل | bāṭil | \"falsehood\" | Quran 2:42 |  | Practice in Trainer |  | Mark Know",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 600,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/summary",
+      "source": "App.tsx:130-147,1132-1209; screen=summary",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'summary'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | PERSONAL JOURNEY | Weekly Summary | Your past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections. |  | 7-DAY OVERVIEW |  | Oct 11 – O",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 869,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/tajweed",
+      "source": "App.tsx:130-147,1132-1209; screen=tajweed",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tajweed'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | LEARN | Tajweed Colors | Full Quran · color-coded recitation rules |  | Every surah of the Quran in standard tajweed colors — ghunnah, idgham, qalqalah, ikhfa, madd and silent l",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 4253,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/umrah-guide",
+      "source": "App.tsx:130-147,1132-1209; screen=umrah-guide",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'umrah-guide'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | HAJJ & UMRAH | Umrah Guide | Step-by-step rituals of the sacred pilgrimage: Ihram, Tawaf, Sa'i, and Halq. | 01 · Ihram & Niyyah | 02 · Entering Al-Masjid Al-Haram | 03 · Tawaf Arou",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 8908,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/hajj-journey",
+      "source": "App.tsx:130-147,1132-1209; screen=hajj-journey",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hajj-journey'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Library | SACRED PILGRIMAGE | Hajj Journey | Day-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba. | Day 1 · 8th Dhu al-Hijjah | Day 2 · 9th Dhu al-Hijjah | Day ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 9277,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/women-purity",
+      "source": "App.tsx:130-147,1132-1209; screen=women-purity",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-purity'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  |  |  | Library |  |  |  | Location for prayer times | Islamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device locat",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 275,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "library/women-guidance",
+      "source": "App.tsx:130-147,1132-1209; screen=women-guidance",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-guidance'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  |  |  | Library |  |  |  | Location for prayer times | Islamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device locat",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 275,
+        "activeLabel": "Library",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/tasbih",
+      "source": "App.tsx:163-186,1227-1350; screen=tasbih",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tasbih'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | DHIKR & REMEMBRANCE | Tasbih | Tap counter, round tracking, and offline remembrance | SubhanAllah | Alhamdulillah | Allahu Akbar | La ilaha illallah | Astaghfirullah | TARGET | 33 | 99 | 100 | ROU",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 670,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/summary",
+      "source": "App.tsx:163-186,1227-1350; screen=summary",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'summary'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | PERSONAL JOURNEY | Weekly Summary | Your past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections. |  | 7-DAY OVERVIEW |  | Oct 11 – Oct",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 865,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/qibla",
+      "source": "App.tsx:163-186,1227-1350; screen=qibla",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'qibla'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | DIRECTION OF PRAYER | Qibla Compass | True bearing towards the Kaaba calculated using great-circle geodetic geodesic formulas. |  | Location detection unavailable | GPS is not avail",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1055,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/tracker",
+      "source": "App.tsx:163-186,1227-1350; screen=tracker",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tracker'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | DAILY OBLIGATIONS | Salah Tracker | Track your daily 5 prayers and build a consistent habit | 0/5 | TODAY'S PRAYERS | 0 |  | DAY STREAK | Start your streak today | TODAY'S PRAYERS |  | Prayer ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 564,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/location",
+      "source": "App.tsx:163-186,1227-1350; screen=location",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'location'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | PREFERENCES | Location | Use GPS automatically or enter a city or coordinates | Auto-detect (GPS) | Manual Coordinates | GPS Auto | GPS unavailable | Using manual location (Makkah, Saudi",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 910,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/cities",
+      "source": "App.tsx:163-186,1227-1350; screen=cities",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'cities'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | DIRECTORY | Cities | Pick a city to set your location |  |  | Dubai | United Arab Emirates | 25.20°, 55.27° |  | Abu Dhabi | United Arab Emirates | 24.45°, 54.38° |  | Sharjah | United Arab Emirat",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1041,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/notifications",
+      "source": "App.tsx:163-186,1227-1350; screen=notifications",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'notifications'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | TOOLS | Prayer Reminders | Manage daily prayer alarms, adhan voices & Quran reading habit | PRAYER REMINDERS | Prayer reminders | Alarms before and at each prayer time — on time even",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 2496,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/prayer-reminders",
+      "source": "App.tsx:163-186,1227-1350; screen=prayer-reminders",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'prayer-reminders'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | TOOLS | Prayer Reminders | Manage daily prayer alarms, adhan voices & Quran reading habit | PRAYER REMINDERS | Prayer reminders | Alarms before and at each prayer time — on time even",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 2496,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/fasting",
+      "source": "App.tsx:163-186,1227-1350; screen=fasting",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'fasting'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | WORSHIP & TRACKER | Fasting | Suhoor & iftar countdowns, sunnah fasts & qada logs | Today | Sunnah | Qada | History | 0 | THIS MONTH | 0d | STREAK | 0 | QADA LEFT | 6 JUMADA AL-AWWAL 1448 AH | Today's",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 762,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/zakat",
+      "source": "App.tsx:163-186,1227-1350; screen=zakat",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'zakat'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | WORSHIP & CHARITY | Zakat | Wealth assessment, nisab thresholds & calculation | Calculator | History | Nisab Guide | ACTIVE CURRENCY | AED — UAE Dirham (AED) |  | Change | NISAB STANDARD | Thre",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1129,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/calendar",
+      "source": "App.tsx:163-186,1227-1350; screen=calendar",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'calendar'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | HIJRI CALENDAR | Islamic Dates | Gregorian to Hijri mapping, Islamic months & holy dates | TODAY | 6 Jumada al-Awwal 1448 AH | October 17, 2026 | Day 6 of 20 in Jumada al-Awwal |  | NEXT ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 2739,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/mosque",
+      "source": "App.tsx:163-186,1227-1350; screen=mosque",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'mosque'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | TOOLS | Mosque Finder | Find nearby places of worship |  |  | Find |  | SEARCH CENTER · MANUAL (MAKKAH, SAUDI ARABIA) | Makkah, Saudi Arabia |  | USE MY LOCATION |  | Location detection unava",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 628,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/women-cycle",
+      "source": "App.tsx:163-186,1227-1350; screen=women-cycle",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-cycle'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | WOMEN'S WORSHIP | Cycle Tracker | Period logging, cycle duration, predictions & daily purity status. |  | Private & local · Stored securely on your device only · Never sent to ser",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 934,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/women-purity",
+      "source": "App.tsx:163-186,1227-1350; screen=women-purity",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-purity'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  |  |  |  | Tools |  |  | Location for prayer times | Islamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device locatio",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 273,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/women-guidance",
+      "source": "App.tsx:163-186,1227-1350; screen=women-guidance",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-guidance'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  |  |  |  | Tools |  |  | Location for prayer times | Islamic uses your location to calculate accurate prayer times and the Qibla direction for where you are. You can use your device locatio",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 273,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/women-qada",
+      "source": "App.tsx:163-186,1227-1350; screen=women-qada",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-qada'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | WOMEN'S WORSHIP | Qada Fasts | Track and make up missed Ramadan fasts due to menstruation or postpartum. |  | Private & synchronized · Stored safely in your local fasting database",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 874,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/umrah-guide",
+      "source": "App.tsx:163-186,1227-1350; screen=umrah-guide",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-guide'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | HAJJ & UMRAH | Umrah Guide | Step-by-step rituals of the sacred pilgrimage: Ihram, Tawaf, Sa'i, and Halq. | 01 · Ihram & Niyyah | 02 · Entering Al-Masjid Al-Haram | 03 · Tawaf Around",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 8904,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/umrah-resources",
+      "source": "App.tsx:163-186,1227-1350; screen=umrah-resources",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-resources'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | HAJJ & UMRAH | Umrah Resources | Essential packing checklist, etiquette, common errors, tips & scholarly references. | Packing Checklist | First-Timer Tips | Sacred Etiquette | Common ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 2366,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/hajj-journey",
+      "source": "App.tsx:163-186,1227-1350; screen=hajj-journey",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-journey'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | SACRED PILGRIMAGE | Hajj Journey | Day-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba. | Day 1 · 8th Dhu al-Hijjah | Day 2 · 9th Dhu al-Hijjah | Day 3 ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 9273,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/makkah-live",
+      "source": "App.tsx:163-186,1227-1350; screen=makkah-live",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'makkah-live'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | HAJJ & UMRAH | Makkah Live TV | 24/7 Official High-Definition Live Broadcast from Al-Masjid Al-Haram. | SACRED SANCTUARY | Virtues of Al-Masjid Al-Haram | صَلَاةٌ فِي الْمَسْجِدِ الْ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 2037,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/madinah-live",
+      "source": "App.tsx:163-186,1227-1350; screen=madinah-live",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'madinah-live'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | HAJJ & UMRAH | Madinah Live | 24/7 Official High-Definition Live Broadcast from Al-Masjid an-Nabawi. | CITY OF THE MESSENGER ﷺ | Virtues of Al-Masjid an-Nabawi | صَلَاةٌ فِي مَسْجِدِ",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 1836,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    },
+    {
+      "route": "tools/hajj-live",
+      "source": "App.tsx:163-186,1227-1350; screen=hajj-live",
+      "steps": [
+        "Use fresh isolated browser context",
+        "complete onboarding",
+        "dismiss Location for prayer times with Not now",
+        "set production runtime navigation state for this route",
+        "wait 180ms and inspect visible DOM, URL, dialog, active dock"
+      ],
+      "expected": "The exact route renders after navigation with its parent tab active, no blocking overlay, and content available for scroll/back/modal checks.",
+      "actual": "Runtime state was set via __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-live'}); URL remained http://15.235.203.134:9998/. A visible Location for prayer times dialog remained present (dialogCount=1) over the route. Route text sample:  | Tools | HAJJ & UMRAH | Hajj Live | Official broadcasts from the Holy Sites of Mina, Arafat, Muzdalifah & Jamarat. | Al Ekhbariya (Live News) | Ministry of Hajj & Umrah | Today: 6 Jumada al-A",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": {
+        "artifact": "evidence/S4/runtime-393.json",
+        "viewport": "393x852",
+        "dialogCount": 1,
+        "textLen": 2919,
+        "activeLabel": "Tools",
+        "nav": {
+          "x": 14,
+          "y": 783.5,
+          "w": 365,
+          "h": 54.5
+        }
+      }
+    }
+  ],
+  "checks": [
+    {
+      "id": "navigation-back",
+      "status": "PASS",
+      "route": "quran/notes -> quran/home",
+      "expected": "Back Quran returns to Quran home and active dock label Quran.",
+      "actual": "Observed head text Quran home; floating-nav-active-label was Quran.",
+      "evidence": "evidence/S4/interactions.json"
+    },
+    {
+      "id": "modal-open-close",
+      "status": "FAIL",
+      "route": "/",
+      "expected": "Location modal open/close is one-shot and stable.",
+      "actual": "Opened automatically; coordinate click closed once, but it recurred after route state changes.",
+      "evidence": "evidence/S4/interactions.json"
+    },
+    {
+      "id": "keyboard",
+      "status": "BLOCKED",
+      "route": "quran/notes",
+      "expected": "Keyboard hides nav and keeps textarea visible.",
+      "actual": "TEXTAREA was active while floating nav remained visible; no physical keyboard available.",
+      "evidence": "evidence/S4/interactions.json"
+    },
+    {
+      "id": "scroll-clearance",
+      "status": "BLOCKED",
+      "route": "quran/notes, library/hadith, tools/calendar",
+      "expected": "Mid-scroll/end-scroll content clears floating dock and per-tab offsets persist.",
+      "actual": "Scroll-owner evidence was collected, but modal overlay prevented unobscured geometry proof at 393 and 360.",
+      "evidence": "evidence/S4/interactions.json"
+    },
+    {
+      "id": "theme-language",
+      "status": "BLOCKED",
+      "route": "settings",
+      "expected": "Light/dark and English/Urdu states render and persist.",
+      "actual": "English/default settings controls were visible; full light/Urdu matrix was blocked by recurring modal and no native device.",
+      "evidence": "evidence/S4/interactions.json"
+    },
+    {
+      "id": "viewport-360",
+      "status": "BLOCKED",
+      "route": "quran/notes, library/hadith, tools/calendar",
+      "expected": "No clipped content and dock fits at 360x800.",
+      "actual": "Dock measured x=14,y=731.5,w=332,h=54.5; modal remained visible, so content clearance is unproven.",
+      "evidence": "evidence/S4/interactions.json"
+    }
+  ],
+  "evidence": [
+    "evidence/S4/runtime-393.json",
+    "evidence/S4/interactions.json"
+  ],
+  "validation": {
+    "expectedRouteRows": 52,
+    "actualRouteRows": 52,
+    "runtimeRecords": 52,
+    "allRouteRowsHaveExactRouteStepsExpectedActualStatusSeverityEvidence": true,
+    "jsonValidated": true
+  }
+}

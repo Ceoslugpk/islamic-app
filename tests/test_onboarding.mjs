@@ -9,7 +9,28 @@ assert.ok(onboardingStateCode.includes('ONBOARDING_DONE_KEY'), 'onboardingState 
 assert.ok(onboardingStateCode.includes("'onboardingDone'"), 'ONBOARDING_DONE_KEY equals "onboardingDone"');
 assert.ok(onboardingStateCode.includes('export async function getOnboardingDone'), 'exports getOnboardingDone');
 assert.ok(onboardingStateCode.includes('export async function setOnboardingDone'), 'exports setOnboardingDone');
-console.log('  ✓ 1. Onboarding persistence state module verified');
+assert.ok(onboardingStateCode.includes("readback !== 'true'"), 'setOnboardingDone verifies read-back');
+assert.ok(onboardingStateCode.includes('cachedOnboardingDone = prev'), 'setOnboardingDone rolls back on failure');
+
+assert.ok(onboardingStateCode.includes('prevPersisted'), 'setOnboardingDone restores previous persisted key on disk');
+assert.ok(!onboardingStateCode.includes('catch {\n    return false;\n  }'), 'getOnboardingDone does not swallow read errors');
+
+const quranLangCode = fs.readFileSync('src/lib/quranLanguageState.ts', 'utf8');
+assert.ok(quranLangCode.includes('bootstrapQuranLanguage'), 'quranLanguageState exports bootstrapQuranLanguage');
+assert.ok(quranLangCode.includes('getQuranLanguageBootstrapError'), 'quranLanguageState exports getQuranLanguageBootstrapError');
+assert.ok(quranLangCode.includes('readback !== next'), 'setQuranTranslationLanguage verifies read-back');
+assert.ok(quranLangCode.includes('currentLanguage = prev'), 'setQuranTranslationLanguage rolls back memory on failure');
+assert.ok(quranLangCode.includes('prevPersisted'), 'setQuranTranslationLanguage rolls back disk on failure');
+
+const quranAudioCode = fs.readFileSync('src/lib/quranAudio.ts', 'utf8');
+assert.ok(quranAudioCode.includes('bootstrapAudioTranslation'), 'quranAudio exports bootstrapAudioTranslation');
+assert.ok(quranAudioCode.includes('getAudioTranslationBootstrapError'), 'quranAudio exports getAudioTranslationBootstrapError');
+assert.ok(quranAudioCode.includes('readbackId !== targetId'), 'setAudioTranslationEdition verifies edition read-back');
+assert.ok(quranAudioCode.includes('readbackLang !== ed.language'), 'setAudioTranslationEdition verifies language read-back');
+assert.ok(quranAudioCode.includes('currentAudioTranslationEditionId = prevId'), 'setAudioTranslationEdition rolls back memory on failure');
+assert.ok(quranAudioCode.includes('prevPersistedEdition'), 'setAudioTranslationEdition restores previous persisted edition on disk');
+assert.ok(quranAudioCode.includes('prevPersistedLang'), 'setAudioTranslationEdition restores previous persisted language on disk');
+console.log('  ✓ 1. Onboarding persistence state module, bootstrap observables & two-key transactional rollback contracts verified');
 
 // 2. Demo locale resources contract
 const demoDataCode = fs.readFileSync('src/lib/onboardingDemoData.ts', 'utf8');
@@ -29,6 +50,8 @@ const screenCode = fs.readFileSync('src/screens/OnboardingScreen.tsx', 'utf8');
 assert.ok(screenCode.includes("Ionicons name=\"globe-outline\""), 'Card 1 uses globe-outline');
 assert.ok(screenCode.includes("Ionicons name=\"book-outline\""), 'Card 2 uses book-outline');
 assert.ok(screenCode.includes("Ionicons name=\"headset-outline\""), 'Card 3 uses headset-outline');
+assert.ok(screenCode.includes("getQuranLanguageBootstrapError"), 'OnboardingScreen checks Quran language bootstrap error');
+assert.ok(screenCode.includes("getAudioTranslationBootstrapError"), 'OnboardingScreen checks Audio translation bootstrap error');
 assert.ok(screenCode.includes("isReduceMotionEnabled"), 'Respects AccessibilityInfo.isReduceMotionEnabled');
 assert.ok(screenCode.includes("setOnboardingDone(true)"), 'Persists onboardingDone on Get Started');
 assert.ok(screenCode.includes("setQuranTranslationLanguage"), 'Persists Quran translation language');

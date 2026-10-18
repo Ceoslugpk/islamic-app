@@ -1,0 +1,38 @@
+{
+  "home": {
+    "clientWidth": 393,
+    "scrollWidth": 393,
+    "hasHorizontalOverflow": false,
+    "clippedCount": 0
+  },
+  "library": {
+    "clientWidth": 393,
+    "scrollWidth": 393,
+    "hasHorizontalOverflow": false,
+    "clippedCount": 1
+  },
+  "quran/home": {
+    "clientWidth": 393,
+    "scrollWidth": 393,
+    "hasHorizontalOverflow": false,
+    "clippedCount": 1
+  },
+  "quran/reader": {
+    "clientWidth": 393,
+    "scrollWidth": 393,
+    "hasHorizontalOverflow": false,
+    "clippedCount": 0
+  },
+  "tools/tracker": {
+    "clientWidth": 393,
+    "scrollWidth": 393,
+    "hasHorizontalOverflow": false,
+    "clippedCount": 1
+  },
+  "tools/fasting": {
+    "clientWidth": 393,
+    "scrollWidth": 393,
+    "hasHorizontalOverflow": false,
+    "clippedCount": 1
+  }
+}

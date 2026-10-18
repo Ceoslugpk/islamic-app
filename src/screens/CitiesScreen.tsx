@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Animated,
   Easing,
@@ -15,6 +14,7 @@ import { CITIES, City, getLocalizedCityName, getLocalizedCountryName } from '../
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { SearchField, PremiumCard } from '../components/ui';
+import { AppText } from '../components/ui/AppText';
 import { t } from '../lib/i18n';
 
 export default function CitiesScreen({
@@ -24,7 +24,7 @@ export default function CitiesScreen({
   onBack?: () => void;
   backLabel?: string;
 }) {
-  const { tokens, mode } = useThemeTokens();
+  const { tokens } = useThemeTokens();
   const { settings, setManualLocation, setLocationMode } = useSettings();
   const language = settings.language;
   const [query, setQuery] = useState('');
@@ -139,19 +139,19 @@ export default function CitiesScreen({
                 />
               </View>
               <View style={styles.textWrap}>
-                <Text style={[styles.cityName, { color: tokens.text }]} numberOfLines={1} ellipsizeMode="tail">
+                <AppText variant="rowTitle" style={styles.cityName} numberOfLines={isCompact ? 2 : 1} ellipsizeMode="tail">
                   {getLocalizedCityName(item.name, language)}
-                </Text>
-                <Text style={[styles.countryName, { color: tokens.muted }]} numberOfLines={1} ellipsizeMode="tail">
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.countryName} numberOfLines={2}>
                   {getLocalizedCountryName(item.country, language)}
-                </Text>
+                </AppText>
               </View>
             </View>
 
             <View style={styles.rowRight}>
-              <Text style={[styles.coordsText, { color: tokens.muted }]}>
+              <AppText variant="caption" tone="faint" style={styles.coordsText}>
                 {item.latitude.toFixed(2)}°, {item.longitude.toFixed(2)}°
-              </Text>
+              </AppText>
               {isSelected && (
                 <View
                   style={[
@@ -159,9 +159,9 @@ export default function CitiesScreen({
                     { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder },
                   ]}
                 >
-                  <Text style={[styles.activeBadgeText, { color: tokens.goldText }]}>
+                  <AppText variant="eyebrow" highlight style={styles.activeBadgeText}>
                     {t('Active')}
-                  </Text>
+                  </AppText>
                 </View>
               )}
             </View>
@@ -215,9 +215,9 @@ export default function CitiesScreen({
         >
           <View style={styles.successBannerContent}>
             <Ionicons name="checkmark-circle" size={18} color={tokens.success} />
-            <Text style={[styles.successBannerText, { color: tokens.text }]}>
+            <AppText variant="body" style={styles.successBannerText}>
               {t('Location set to')} {successCity.name}, {successCity.country}
-            </Text>
+            </AppText>
           </View>
         </Animated.View>
       )}
@@ -245,9 +245,9 @@ export default function CitiesScreen({
         keyboardShouldPersistTaps="handled"
         ListEmptyComponent={
           <View style={styles.emptyWrap}>
-            <Text style={[styles.emptyText, { color: tokens.muted }]}>
+            <AppText variant="body" tone="faint" style={styles.emptyText}>
               {t('No matches for')} &ldquo;{query}&rdquo;
-            </Text>
+            </AppText>
           </View>
         }
       />
@@ -295,17 +295,20 @@ const styles = StyleSheet.create({
   cityCardContent: {
     paddingVertical: 12,
     paddingHorizontal: 14,
+    minHeight: 56,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
   rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
     flex: 1,
+    minWidth: 0,
   },
   cityIconBox: {
     width: 34,
@@ -315,9 +318,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    flexShrink: 0,
   },
   textWrap: {
     flex: 1,
+    minWidth: 0,
   },
   cityName: {
     fontFamily: 'Manrope_600SemiBold',
@@ -331,6 +336,8 @@ const styles = StyleSheet.create({
   rowRight: {
     alignItems: 'flex-end',
     gap: 4,
+    flexShrink: 0,
+    marginLeft: 8,
   },
   coordsText: {
     fontFamily: 'Manrope_400Regular',
@@ -369,5 +376,7 @@ const styles = StyleSheet.create({
   successBannerText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
+    flex: 1,
+    minWidth: 0,
   },
 });

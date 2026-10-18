@@ -567,9 +567,9 @@ export async function fetchAyahTafsir(
 export async function fetchSurahTafsir(
   surah: number,
   tafsirIdentifier = 'ar.jalalayn'
-): Promise<Array<{ ayahNumber: number; text: string }>> {
+): Promise<{ ayahNumber: number; text: string }[]> {
   const key = `tafsir:surah:${surah}:${tafsirIdentifier}`;
-  const cached = loadQuranCache<Array<{ ayahNumber: number; text: string }>>(key);
+  const cached = loadQuranCache<{ ayahNumber: number; text: string }[]>(key);
   if (cached) return cached;
 
   // tafsir_api (jsDelivr, pinned): REAL per-ayah text — fetch the full surah.
@@ -587,7 +587,7 @@ export async function fetchSurahTafsir(
         const json = await res.json();
         const rawList = Array.isArray(json) ? json : (Array.isArray(json?.ayahs) ? json.ayahs : null);
         if (rawList && rawList.length > 0) {
-          const out: Array<{ ayahNumber: number; text: string }> = [];
+          const out: { ayahNumber: number; text: string }[] = [];
           for (const item of rawList) {
             const ayahNum = Number(item?.ayah);
             const txt = item?.text;
@@ -614,7 +614,7 @@ export async function fetchSurahTafsir(
       // gap — fall back to per-ayah fetch loop
     }
 
-    const out: Array<{ ayahNumber: number; text: string }> = [];
+    const out: { ayahNumber: number; text: string }[] = [];
     const total = SURAH_AYAH_COUNTS[surah - 1] || 7;
     for (let ayah = 1; ayah <= total; ayah++) {
       try {

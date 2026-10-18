@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import {
   Modal,
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   TouchableWithoutFeedback,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useTheme } from '../lib/theme';
@@ -48,13 +48,22 @@ export function WomenPinModal({
   // For 'verify': step is 'verify'
   // For 'set': step is 'enter_new' | 'confirm_new'
   // For 'change': step is 'verify_old' | 'enter_new' | 'confirm_new'
-  const [step, setStep] = useState<'verify' | 'verify_old' | 'enter_new' | 'confirm_new'>('verify');
+  const [step, setStep] = useState<'verify' | 'verify_old' | 'enter_new' | 'confirm_new'>(() => {
+    if (mode === 'set') return 'enter_new';
+    if (mode === 'change') return 'verify_old';
+    return 'verify';
+  });
   const [pin, setPin] = useState<string>('');
   const [firstPin, setFirstPin] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [lockoutSeconds, setLockoutSeconds] = useState<number>(0);
 
-  useEffect(() => {
+  const [prevVisible, setPrevVisible] = useState(visible);
+  const [prevMode, setPrevMode] = useState(mode);
+
+  if (visible !== prevVisible || mode !== prevMode) {
+    setPrevVisible(visible);
+    setPrevMode(mode);
     if (visible) {
       setPin('');
       setFirstPin('');
@@ -62,18 +71,28 @@ export function WomenPinModal({
       if (mode === 'verify') setStep('verify');
       else if (mode === 'set') setStep('enter_new');
       else if (mode === 'change') setStep('verify_old');
-
-      loadPinLockoutState().then((state) => {
-        const diffMs = state.lockedUntil - Date.now();
-        if (diffMs > 0) {
-          const secs = Math.ceil(diffMs / 1000);
-          setLockoutSeconds(secs);
-          setErrorMsg(`Too many attempts. Try again in ${secs}s.`);
-        } else {
-          setLockoutSeconds(0);
-        }
-      });
     }
+  }
+
+  useEffect(() => {
+    if (!visible) return;
+    let isCancelled = false;
+
+    loadPinLockoutState().then((state) => {
+      if (isCancelled) return;
+      const diffMs = state.lockedUntil - Date.now();
+      if (diffMs > 0) {
+        const secs = Math.ceil(diffMs / 1000);
+        setLockoutSeconds(secs);
+        setErrorMsg(`Too many attempts. Try again in ${secs}s.`);
+      } else {
+        setLockoutSeconds(0);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [visible, mode]);
 
   useEffect(() => {
@@ -217,6 +236,7 @@ export function WomenPinModal({
       transparent
       animationType="fade"
       onRequestClose={onCancel}
+      statusBarTranslucent
     >
       <View style={styles.backdrop}>
         <TouchableWithoutFeedback onPress={onCancel}>
@@ -238,8 +258,8 @@ export function WomenPinModal({
             <Ionicons name="lock-closed" size={26} color={colors.accent} />
           </View>
 
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{headerTitle}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{headerSub}</Text>
+          <AppText variant="title" style={styles.title}>{headerTitle}</AppText>
+          <AppText variant="subtitle" style={styles.subtitle}>{headerSub}</AppText>
 
           {/* Dots Indicator */}
           <View style={styles.dotsRow}>
@@ -263,11 +283,11 @@ export function WomenPinModal({
           {/* Error Message */}
           <View style={styles.errorContainer}>
             {errorMsg ? (
-              <Text style={[styles.errorText, { color: colors.destructive }]}>{errorMsg}</Text>
+              <AppText variant="caption" tone="danger" style={styles.errorText}>{errorMsg}</AppText>
             ) : (
-              <Text style={[styles.hintText, { color: colors.textMuted }]}>
+              <AppText variant="caption" tone="faint" style={styles.hintText}>
                 {step === 'confirm_new' ? t('Confirming PIN') : t('Strictly on-device lock')}
-              </Text>
+              </AppText>
             )}
           </View>
 
@@ -290,7 +310,7 @@ export function WomenPinModal({
                         accessibilityRole="button"
                         accessibilityLabel={t('Cancel')}
                       >
-                        <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{t('Cancel')}</Text>
+                        <AppText variant="body" style={styles.cancelText}>{t('Cancel')}</AppText>
                       </TouchableOpacity>
                     );
                   }
@@ -324,12 +344,13 @@ export function WomenPinModal({
                       accessibilityRole="button"
                       accessibilityLabel={`Digit ${item}`}
                     >
-                      <Text
-                        style={[styles.keyDigit, { color: colors.textPrimary }]}
+                      <AppText
+                        variant="numeral"
+                        style={styles.keyDigit}
                         maxFontSizeMultiplier={1.4}
                       >
                         {item}
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                   );
                 })}

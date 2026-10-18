@@ -1,0 +1,542 @@
+$ npm test
+
+> scaffold@1.1.70 test
+> node tests/test_ui_redesign_functionality_guard.mjs && node tests/test_prayer_architecture.mjs && node tests/test_location_permission_flow.mjs && node tests/test_system_media.mjs && node tests/test_backup.mjs && node tests/test_tajweed.mjs && node tests/test_reader_mount_safety.mjs && node tests/test_reader_tools_menu.mjs && node tests/test_reading_marker.mjs && node tests/test_tafsir_language.mjs && node tests/test_quran_scripts.mjs && node tests/test_quran_audio_notifications.mjs && node tests/test_security_audit_regressions.mjs && node tests/test_header_ux.mjs && node tests/test_i18n_urdu.mjs && node tests/test_language_switching.mjs && node tests/test_defect_regressions.mjs && node tests/test_global_fix_pass.mjs && node tests/test_recovery_mission.mjs && node tests/test_stage2_locale_metadata.mjs && node tests/test_stage2_reader_position.mjs && node tests/test_urdu_device_defects.mjs && node tests/test_continue_reading_page_first.mjs && node tests/test_responsive_language_settings.mjs && node tests/test_real_language_switching_harden.mjs && node scripts/check-spacing.js
+
+=== UI REDESIGN FUNCTIONALITY GUARD ===
+
+--- 1. Navigation Route Names & Screen Unions ---
+  ✓ Navigation route names: TabKey, LibraryView, QuranView, ToolsView, and isTopLevelScreen verified
+
+--- 2. Storage Keys ---
+  ✓ Storage keys: islamic-settings, onboardingDone, quran-last-reading, quran-reading-marker, audio-translation verified
+
+--- 3. Onboarding Screen Functional Anchors ---
+  ✓ Onboarding functional anchors: state, storage persistence, RTL layout direction, and modals verified
+
+--- 4. Language-Switch Queue & Writer Contract ---
+  ✓ Language-switch serialized writer queue verified
+
+--- 5. Quran Reader Modes & Display Ranges ---
+  ✓ Quran reader modes, clamp helpers, and font ranges verified
+
+--- 6. Continue Reading Target & Highlight Contracts ---
+  ✓ Continue Reading targets, bounds validation, and highlight logic verified
+
+--- 7. Prayer & Audio Playback Contracts ---
+  ✓ Prayer & audio playback handler contracts verified
+
+========================================
+ALL FUNCTIONALITY GUARD TESTS PASSED!
+========================================
+
+=== RUNNING PRAYER TIMES ARCHITECTURE TEST SUITE ===
+
+Test 1: islamic.app success → displayed + cached...
+  ✓ PASSED
+Test 2: reopen → cache stable (no network request needed)...
+  ✓ PASSED
+Test 3: network failure with force → fallback to cached schedule...
+  ✓ PASSED
+Test 4: offline + cache → navigable immediately (0ms)...
+  ✓ PASSED
+Test 5: offline + no cache → unavailable state immediately (no infinite spinner)...
+  ✓ PASSED
+Test 6: valid cache not replaced during ordinary navigation...
+  ✓ PASSED
+Test 7: location/method/madhab change → fresh fetch + cache with composite key...
+  ✓ PASSED
+Test 8: date rollover → next day fetched...
+  ✓ PASSED
+Test 9: notifications use same authoritative schedule...
+  ✓ PASSED
+Test 10: NO aladhan references in prayer path code...
+  ✓ PASSED
+
+====================================================
+ALL 10 TESTS PASSED SUCCESSFULLY! ARCHITECTURE SOUND.
+====================================================
+=== RUNNING LOCATION PERMISSION FLOW REGRESSION TEST SUITE ===
+
+Test 1: Android fresh launch returns status: "pending" when canAskAgain is true...
+  ✓ PASSED
+Test 2: Force request bypasses cachedStatus "denied" and invokes prompt...
+  ✓ PASSED
+Test 3: Stale in-flight null request does not swallow forced user request...
+  ✓ PASSED
+Test 4: Last-known fallback used when current GPS throws/times out...
+  ✓ PASSED
+Test 5: HomeScreen effectiveLocation switches to auto and triggers reload...
+  ✓ PASSED
+Test 6: Silent recovery when user grants permission in device settings...
+  ✓ PASSED
+
+===============================================================
+ALL LOCATION PERMISSION REGRESSION TESTS PASSED SUCCESSFULLY!
+===============================================================
+
+=== RUNNING QURAN AUDIO SYSTEM MEDIA TEST SUITE ===
+
+Test 1: Arabic Ayah metadata formatting (Al-Fatihah 1:1)...
+  ✓ PASSED
+Test 2: Translation segment metadata formatting...
+  ✓ PASSED
+Test 3: Full Surah playback metadata formatting (Arabic & Translation)...
+  ✓ PASSED
+Test 4: 99 Names non-Quran clip metadata formatting...
+  ✓ PASSED
+Test 5: Remote command routing to player actions...
+  ✓ PASSED
+Test 6: Playback rate setting & clamping...
+  ✓ PASSED
+Test 7: AudioPlayer native lockscreen methods contract...
+  ✓ PASSED
+Test 8: Adhan coexistence and audio session separation...
+  ✓ PASSED
+
+====================================================
+ALL 8 SYSTEM MEDIA ARCHITECTURE TESTS PASSED!
+====================================================
+=== BACKUP & RESTORE FORMAT TEST SUITE ===
+
+  ✓ valid payload accepted
+  ✓ null rejected
+  ✓ wrong app rejected
+  ✓ future version rejected
+  ✓ missing data rejected
+  ✓ corrupted file rejected
+  ✓ serialize round-trip preserves data
+  ✓ describe shows date + tables + counts
+  ✓ empty backup described gracefully
+  ✓ non-object table rows rejected
+  ✓ non-array table value rejected
+  ✓ absurd table row counts rejected
+  ✓ corrupted storage entries rejected
+  ✓ newer-version guard comparison logic verified
+  ✓ missing/unknown tables handled gracefully
+  ✓ detailed singular/plural counts summary verified ("12 salah entries, 5 bookmarks, 3 notes…")
+  ✓ arbitrary/unauthorized storage keys rejected
+  ✓ excluded storage keys rejected
+  ✓ malformed islamic-settings JSON rejected
+  ✓ non-object islamic-settings rejected
+  ✓ SDK 57 FileSystem legacy import verified in BackupRestoreScreen
+  ✓ Native module static imports & render-path safety verified
+
+========================================================
+ALL 22 BACKUP & NATIVE IMPORT TESTS PASSED SUCCESSFULLY!
+========================================================
+=== TAJWEED PARSER TEST SUITE ===
+
+  ✓ plain text stays unmarked
+  ✓ real 1:1 payload maps classes correctly
+  ✓ real 112:1 qalqalah maps
+  ✓ stripping is lossless
+  ✓ every class maps to a display rule
+  ✓ empty text handled
+  ✓ QuranHub bracket tajweed parses to rules
+  ✓ auto-detect handles islamic.app HTML + QuranHub brackets + plain
+
+========================================================
+ALL 8 TAJWEED TESTS PASSED SUCCESSFULLY!
+========================================================
+=== QURAN READER MOUNT SAFETY TEST SUITE ===
+
+  ✓ QuranReaderScreen has zero TDZ access hazards
+  ✓ Ayah index & page calculations handle boundaries, undefined, and NaN gracefully
+  ✓ Reading progress handles null surah and clamps percent to 100%
+  ✓ Study bookmarks deduplication handles null/corrupted arrays safely
+  ✓ Arabic font family safely falls back to Amiri on unknown or legacy font identifiers
+
+========================================================
+ALL 5 QURAN READER MOUNT SAFETY TESTS PASSED!
+========================================================
+
+=== QURAN READER TOOLS MENU REDESIGN TEST SUITE ===
+
+  ✓ Dots button: 44x44 tap target, bordered chip, and active accent state verified
+  ✓ Header strip: Instrument Serif title, progress subtitle, Juz chip, and 3px progress bar verified
+  ✓ Grouped sections: DISPLAY, LANGUAGE & TAFSIR, NAVIGATE, OFFLINE present
+  ✓ All reading tools properly mapped into groups
+  ✓ Polish: inner hairline dividers inside groups and redundant progress row removed
+  ✓ T5: Live progress state, interactive drag pill, and BackHandler verified
+  ✓ T6: Share card logo and ISLAMIC wordmark verified
+  ✓ T8: Ayah long press Add Note composer, bottom sheet & highlight verified
+  ✓ T9: Android edge-to-edge dynamic keyboard tracking & note scrollability verified
+  ✓ T10: Juz/Hizb position sync and sub-picker BackHandler dismissal verified
+  ✓ T11: Mushaf Pages/Ayah mode split, 500ms long-press, compact actions, and page race guard verified
+  ✓ T12: Mushaf page cache safety and zero un-interpolated token leaks verified
+  ✓ T13: Ayah popup anchoring with measured layout coordinates in both branches verified
+  ✓ T14: Reading mode switch resilience and blank-screen protection verified
+  ✓ T15: Footer controls and FlatList onViewableItemsChanged stability verified
+  ✓ T16: Mushaf selected-ayah popup actions (Bookmark, Marker, Notes, Play, Tafsir, Copy, Share, Stacking) verified
+
+========================================================
+ALL TOOLS MENU & READER ENHANCEMENT TESTS PASSED!
+========================================================
+
+=== READING MARKER + CONTINUE READING POSITION TEST SUITE ===
+
+  [ok] Reading-marker strings present in en.json + ur.json
+  [ok] No marker + no auto position -> null
+  [ok] Auto-only fallback -> Surah 18 Ayah 25
+  [ok] Manual marker overrides auto position -> Surah 2 Ayah 255
+  [ok] Marker replacement -> Surah 18 Ayah 5, single persisted marker
+  [ok] Marker cleared -> falls back to auto position
+  [ok] Marker storage is local-only (no network dependency)
+
+ALL READING MARKER TESTS PASSED SUCCESSFULLY!
+=== TAFSIR SOURCE REGRESSION TEST SUITE ===
+
+  ✓ api: identifiers route to the real per-ayah provider
+  ✓ cache keys are per-ayah (no same-tafsir collision)
+  ✓ per-ayah variation confirmed (2:254 ≠ 2:255)
+  ✓ unavailable tafsir throws (no fake Arabic/Urdu)
+  ✓ 10 multilingual tafsir_api sources in picker (en/ur/bn/ar)
+  ✓ islamic: identifiers fully removed (no stale route)
+
+========================================================
+ALL TAFSIR SOURCE TESTS PASSED SUCCESSFULLY!
+========================================================
+=== QURAN SCRIPT SELECTOR ARCHITECTURE TEST SUITE ===
+
+  ✓ 4 Quran script options defined with exact labels & descriptions
+  ✓ Cache key formatting strictly follows surah-script:{surah}:{script}
+  ✓ Field map maps all scripts to live islamic.app verse fields
+  ✓ Offline script miss falls back gracefully to Uthmani text (no crash)
+  ✓ Ayah model overlay preserves audio numbers, translations, and study metadata
+  ✓ Tajweed HTML export cleans tags and end markers for sharing and copying
+  ✓ Settings migration guard safely validates scripts and defaults to uthmani
+  ✓ Reader UI has Script row in DISPLAY group, modal picker, and OOM-safe rendering
+
+========================================================
+ALL 8 QURAN SCRIPT SELECTOR TESTS PASSED!
+========================================================
+
+=== RUNNING QURAN AUDIO NOTIFICATION TEST SUITE ===
+
+Test 1: startNowPlayingNotification skips expo-notifications banner on native...
+  ✓ PASSED
+Test 2: syncNowPlaying updates metadata in-place for active player...
+  ✓ PASSED
+Test 3: playAudioUrl reuses existing AudioPlayer via replace()...
+  ✓ PASSED
+Test 4: Notification tap routes to current Quran surah and ayah...
+  ✓ PASSED
+Test 5: Clean dismissal on stop and queue completion...
+  ✓ PASSED
+Test 5b: clearNowPlaying does not re-post notification on next tick (blink fix)...
+  ✓ PASSED
+Test 6: Media notification permission request logic...
+  ✓ PASSED
+
+====================================================
+ALL QURAN AUDIO NOTIFICATION TESTS PASSED SUCCESSFULLY!
+====================================================
+
+=== RUNNING SECURITY AUDIT REGRESSION TEST SUITE ===
+
+Test 1: F-01 & F-02 Backup storage allowlist, export stripping & JSON validation...
+  ✓ PASSED
+Test 2: F-02 Slow KDF, legacy verification, auto-upgrade & lockout duration...
+  ✓ PASSED
+Test 3: F-03 Deep link routing gates women screens when locked...
+  ✓ PASSED
+Test 4: F-04 Settings hydration validates and clamps all 30 fields, strips unknowns...
+  ✓ PASSED
+Test 5: F-08 Geocode label sanitization & coordinates-only cache key...
+  ✓ PASSED
+Test 6: F-09 Quran audio cache shape guards return defaults on malformed data...
+  ✓ PASSED
+Test 7: F-11 Notification URL allowlist blocks dangerous URI schemes...
+  ✓ PASSED
+Test 8: F-12 FastingScreen masks intimate women reasons when locked...
+  ✓ PASSED
+
+===============================================================
+ALL 8 SECURITY AUDIT REGRESSION TEST SUITES PASSED (0 ERRORS)!
+===============================================================
+=== GLOBAL HEADER UX REFACTOR TEST SUITE ===
+
+  ✓ Central isTopLevel predicate and AppHeader conditional gating verified in App.tsx
+  ✓ Shared header geometry tokens defined and consumed by both AppHeader and ScreenHeader
+  ✓ isTopLevelScreen predicate logic tested across all hubs and detail states
+  ✓ SettingsScreen modal close aligned with contextual back family (chevron + Done)
+  ✓ QuranReaderScreen minimal header verified with canonical RTL-aware back chevron
+  ✓ All 37 detail screens verified to have canonical ScreenHeader or SubHeader
+
+========================================================
+ALL GLOBAL HEADER UX REFACTOR TESTS PASSED SUCCESSFULLY!
+========================================================
+
+(node:2352663) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/ubuntu/apps/islamic_app/src/lib/accents.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/ubuntu/apps/islamic_app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+=== URDU I18N & AUTO-LINK ARCHITECTURE TEST SUITE ===
+
+  ✓ Locale dictionaries parity: 2302 matching keys verified
+  ✓ Settings schema & sanitization: AppLanguage and defaults verified
+  ✓ Auto-link behavior: translation, tafsir, and translation-audio defaults verified
+  ✓ RTL configuration: native forceRTL and web dir=rtl verified
+  ✓ SettingsScreen: Language selector row verified
+
+--- Task 1: Arabic Structural Parity & Registration ---
+  ✓ Arabic dictionary parity: exact 2302 matching keys, 0 missing, 0 empty, 0 token/newline defects
+  ✓ Arabic, Hindi, Malayalam, and Sinhala registered in i18n, RTL/LTR helpers, device locale detection, and SettingsScreen UI
+
+--- Task 1b: Hindi Structural Parity & Registration ---
+  ✓ Hindi dictionary parity: exact 2302 matching keys, 0 missing, 0 empty, 0 token/newline defects
+
+--- Task 1c: Malayalam Structural Parity & Registration ---
+  ✓ Malayalam dictionary parity: exact 2302 matching keys, 0 missing, 0 empty, 0 token/newline defects
+
+--- Task 1d: Sinhala Structural Parity & Registration ---
+  ✓ Sinhala dictionary parity: exact 2302 matching keys, 0 missing, 0 empty, 0 token/newline defects
+  ✓ RTL/LTR transitions: all 30 pairwise transitions across [en, ur, ar, hi, ml, si] verified
+
+--- Task 2: Durable Light/Dark Theme Persistence ---
+  ✓ Model/invariant test: simulated write queue ordering, failure non-rollback, and serialization invariants verified
+  ✓ Production static contract: optimistic React update and race prevention sequencing verified
+✓ serialized settings writer keeps write+readback atomic, recovers after rejection, and production setters snapshot synchronously
+
+--- Task 3: Accents Allowlist & 4 Approved Choices ---
+  ✓ Exact 14 accents, minimal established fields, legacy migrations, and localization verified
+
+--- Task 4: Removal of GitHub Links from App ---
+  ✓ Comprehensive runtime scan (213 files, 0 exemptions): zero GitHub URLs across all files
+
+========================================================
+ALL I18N, APPEARANCE, ACCENTS & GITHUB REMOVAL TESTS PASSED!
+========================================================
+
+=== LANGUAGE SWITCHING & PERSISTENCE TEST SUITE ===
+
+--- 1. Static Contract Verification ---
+  ✓ Static contracts in settings.tsx, i18n.ts, SettingsScreen.tsx, and App.tsx verified.
+
+--- 2. Dynamic Behavioral Test Suite ---
+  ✓ Test 2 passed: en -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 3 passed: ur -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2b passed: en -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2c passed: ur -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2d passed: ar -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2e passed: ar -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2f passed: en -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2g passed: hi -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2h passed: ur -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2i passed: hi -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2j passed: ar -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2k passed: hi -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2l passed: en -> ml ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2m passed: ml -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2n passed: ur -> ml ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2o passed: ml -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2p passed: ar -> ml ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2q passed: ml -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2r passed: en -> si ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2s passed: si -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2t passed: ur -> si ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2u passed: si -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2v passed: ar -> si ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2w passed: si -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.
+  ✓ Test 2x passed: ml -> si ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 2y passed: si -> ml ordering write -> readback verify -> forceRTL(false) -> reload verified.
+  ✓ Test 4 passed: Write failure results in zero forceRTL, zero reload, and clean rollback.
+  ✓ Test 4b passed: Readback mismatch results in zero forceRTL, zero reload, and clean rollback.
+  ✓ Test 5 passed: Repeated rapid switches converge correctly without corrupting storage.
+  ✓ Test 6 passed: Stale-closure write is impossible; all current setting fields preserved.
+  ✓ Test 7 passed: Side-effects run after language persistence; failures do not lose language.
+  ✓ Test 7b passed: Symmetric & deterministic Arabic auto-linking verified (en->ar, ar->ur, ur->ar, ar->en).
+  ✓ Test 7c passed: User explicit custom Quran language, tafsir, and audio choices preserved.
+  ✓ Test 7d passed: Audio policy is honest — zero fake Arabic translation audio identifiers exist.
+  ✓ Test 7e passed: Symmetric & deterministic Hindi auto-linking verified (en->hi, hi->ur, ur->hi, hi->ar, ar->hi, hi->en).
+  ✓ Test 7f passed: Audio policy is honest — zero fake Hindi translation audio identifiers exist.
+  ✓ Test 7g passed: Symmetric & deterministic Malayalam auto-linking verified (en->ml, ml->ur, ur->ml, ml->ar, ar->ml, ml->en).
+  ✓ Test 7h passed: Audio policy is honest — zero fake Malayalam translation audio identifiers exist.
+  ✓ Test 7i passed: Symmetric & deterministic Sinhala auto-linking verified (en->si, si->ur, ur->si, si->ml, ml->si, si->en).
+  ✓ Test 7j passed: Audio policy is honest — zero fake Sinhala translation audio identifiers exist.
+  ✓ Test 8 passed: Quran reading position keys preserved across language changes.
+
+========================================================
+ALL LANGUAGE SWITCHING & PERSISTENCE TESTS PASSED!
+========================================================
+
+=== FOUR DEFECT REGRESSION TESTS ===
+
+--- 1. Quran Chooser: Arabic display & translator metadata ---
+  ✓ Task 1 Quran chooser static assertions passed.
+  ✓ Task 1 dynamic Arabic, Hindi, Malayalam & Sinhala coverage verified across all editions.
+
+--- 2. Tasbih: Localization in Urdu & Arabic ---
+  ✓ Task 2 Tasbih assertions passed.
+
+--- 3. Cities: Localized Arabic, Urdu, Hindi, Malayalam & Sinhala names and bilingual search ---
+  ✓ Task 3 Cities assertions passed.
+
+--- 4. Settings Queue: Concurrency & resilience ---
+  ✓ Task 4 Settings queue assertions passed.
+
+--- 5. Batch 6D-B Regressions: Quran Home parent tab & reader clearance ---
+  ✓ routeToTab correctly distinguishes top-level Home from Quran Home
+  ✓ QuranReaderScreen readerBottomClearance and scroll owner geometry contract verified
+
+========================================================
+ALL DEFECT REGRESSION TESTS PASSED!
+========================================================
+
+(node:2352772) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/ubuntu/apps/islamic_app/src/navigation/routeToTab.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/ubuntu/apps/islamic_app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2352787) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///home/ubuntu/apps/islamic_app/src/lib/cities.ts is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /home/ubuntu/apps/islamic_app/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+=== GLOBAL FIX PASS REGRESSION TESTS ===
+
+  [ok] Locale parity + Cities/Umrah keys present with Urdu values
+  [ok] CITIES catalogue has 68 entries with complete Arabic/Urdu names and English fallback
+  [ok] Marker: per-ayah flag button wired, menu group removed
+  [ok] QuranHome refreshes Continue Reading on focus
+  [ok] Language boot resolves persisted language + direction pre-mount
+  [ok] No dependency/permission changes in tracked code (android/ gitignored)
+
+ALL GLOBAL FIX PASS REGRESSION TESTS PASSED SUCCESSFULLY!
+=== RECOVERY MISSION REGRESSION TESTS ===
+
+  [ok] Scrolling: no fixed-height assumption, positionedRef reset, user-scroll guard, measured retry only
+  [ok] Reading position: unmount flush + open-save guard
+  [ok] Resolver: bounds validation + clear marker
+  [ok] Universal resolver: notifications + PrayerReminders honor the marker
+  [ok] ur->en: restores English quran/tafsir/audio defaults
+  [ok] Recent surah reopens at saved ayah; focus refresh race-guarded
+  [ok] Missing keys added: reader chrome + Umrah packed + tafsir note
+
+ALL RECOVERY MISSION REGRESSION TESTS PASSED SUCCESSFULLY!
+=== STAGE-2 QA: LOCALE LIFECYCLE + 114 SURAH NAMES + METADATA LOCALIZATION + HEADER WORDMARK ===
+
+  [ok] locale boot: persisted language resolved before i18n init; RTL set at boot
+  [ok] en->ur: language persisted before Updates.reloadAsync — reload boots in Urdu
+  [ok] ur->en: English content defaults restored (translation lang, tafsir, audio edition)
+  [ok] repeated switches: symmetric ur/en branches with state guards
+  [ok] SURAH_NAMES_UR: 114 unique Arabic-script names, 1..114 complete, bounds-guarded helper
+  [ok] SURAH_NAME_TRANSLATIONS.ur: 114 complete, no dups, no latin content
+  [ok] LANGUAGE_NAMES_UR covers all 48 selectable translation languages
+  [ok] getLocalizedLanguageName semantics verified (ur lookup, en passthrough)
+  [ok] header wordmark: اسلامک in RTL w/ Amiri_700Bold, ISLAMIC in LTR w/ SourceSans3
+  [ok] QuranHome: per-language surah names wired to fetchSurahListForLanguage
+  [ok] en/ur parity: 2302 keys both ways, all ur values non-empty
+
+ALL STAGE-2 QA TESTS PASSED SUCCESSFULLY!
+=== STAGE-2 QA: MUSHARF LINEHEIGHT + CONTINUE READING EXACT POSITION + READER POSITIONING ===
+
+  [ok] lineHeight sweep: all 17 allowed line-heights x all 12 font sizes pass no-overlap (mushaf row > card row)
+  [ok] resolver: marker-first + bounds-validated (corrupt/stale positions rejected)
+  [ok] QuranHome: resumeTarget passes stored surah+ayah+page through to reader
+  [ok] reader: clamped target → targetIndex (0-based) → scrollToIndex exact position
+  [ok] deep-target retry: simulated loop converges to ayah 286 in 19 retries (no deadlock)
+  [ok] mushaf positioning: exact page restoration without proportional scrolling
+  [ok] unmount flush: position + per-surah cache persisted on exit
+  [ok] marker: persisted under language-independent key, reloaded on every mount
+  [ok] QuranHome: Continue Reading card refreshes on return from reader (generation-guarded)
+  [ok] ContinueReadingCard (Today): resolver + exact-position open
+  [ok] navigation: saved page propagates through every navigation layer
+  [ok] highlight: 2-second visible highlight in Uthmani & Tajweed with clean timer lifecycle and popup isolation
+
+ALL STAGE-2 READER/MUSHAF POSITION TESTS PASSED SUCCESSFULLY!
+=== FOUR PHYSICAL-DEVICE URDU DEFECTS REGRESSION TEST SUITE ===
+
+--- Task 1: Urdu -> English Switch Flow & Reload Resilience ---
+  ✓ Task 1 static contract assertions passed.
+
+--- Task 2: Home Screen Cards Below Prayer Card RTL Flow ---
+  ✓ Task 2 Home cards RTL flow assertions passed.
+
+--- Task 3: Localize Translation & Translator Names in Urdu ---
+  ✓ Task 3 static contract assertions passed.
+
+--- Task 4: Urdu Surah-name Search Normalization ---
+  ✓ Task 4 actual Urdu normalizer/name queries, English, Arabic canonical, and numeric search passed.
+  ✓ Task 3 all exposed editions have Urdu metadata with unknown-edition fallback.
+
+========================================================
+ALL DEFECT REGRESSION CONTRACTS VERIFIED!
+========================================================
+
+=== REGRESSION TEST: EXACT MUSHAF-PAGE-FIRST CONTINUE READING RESTORATION ===
+
+Test 1: Continue Reading passes saved page through every navigation layer...
+  ✓ Page passed through ContinueReadingCard -> Home/QuranHome -> App.tsx -> QuranReaderScreen
+
+Test 2: Authoritative initialPage & single-page FlatList rendering...
+  ✓ Authoritative initialPage, synchronous Mushaf mode, single-page FlatList model verified
+
+Test 3: Target matching with Surah + Ayah & bounded mismatch protection...
+  ✓ Surah+Ayah matching verified, zero silent fallback to page[0], position overwrite prevented
+
+Test 4: Layout-driven 2000ms highlight with stable key & isolated popup...
+  ✓ Layout-driven highlight timing, 2000ms expiry, stable key, Tajweed/Uthmani parity verified
+
+Test 5: Lazy Surah loading in Mushaf mode (no full-list pre-render)...
+  ✓ Mushaf mode renders page data only without pre-rendering full Surah list
+
+================================================================
+ALL EXACT MUSHAF-PAGE-FIRST REGRESSION CONTRACT TESTS PASSED!
+================================================================
+
+=== RESPONSIVE LANGUAGE SETTINGS REGRESSION SUITE ===
+
+--- 1. Source Contract & Registry Parity ---
+  ✓ i18n AppLanguage union verified: ar, en, hi, ml, si, ur
+  ✓ All 6 registered languages present in APP_LANGUAGE_OPTIONS
+  ✓ Authentic native scripts and Arabic typography bindings verified
+
+--- 2. Responsive Layout & Scalability ---
+  ✓ Touch target minHeight is 54px (>= 44px requirement met)
+  ✓ Ultra-compact / Narrow Phone (iPhone SE 1st gen) -> row width: 264px, minHeight: 54px
+  ✓ Compact Phone (Samsung A-series / iPhone 8)    -> row width: 304px, minHeight: 54px
+  ✓ Standard Modern Phone (iPhone 13/14/15/16)     -> row width: 318px, minHeight: 58px
+  ✓ Large Phone / Phablet (Pixel 8 / Galaxy S24+)  -> row width: 340px, minHeight: 58px
+  ✓ Foldable / Small Tablet                        -> row width: 528px, minHeight: 58px
+  ✓ Tablet / Desktop / Web                         -> row width: 608px, minHeight: 58px
+  ✓ Scalability verified: Scales linearly across 6, 7, 8, 10, 12 languages without awkward grid wrapping
+
+--- 3. Accessibility, RTL, Visual States & Concurrency ---
+  ✓ Accessibility, RTL mirroring, visual states, and concurrency contracts verified
+
+========================================================
+ALL RESPONSIVE LANGUAGE SETTINGS REGRESSION TESTS PASSED!
+========================================================
+=== REAL LANGUAGE SWITCHING HARDENING TEST SUITE ===
+
+--- 1. Production Source Contracts ---
+  ✓ Static contracts verified across settings, writeQueue, i18n, and SettingsScreen
+
+--- 2. Behavioral Flow & Ordering Verification ---
+
+--- Test A: Sequential en -> ur -> ar -> en Transitions ---
+  ✓ en -> ur: write -> readback verify -> prepareNativeLayoutDirection(RTL: true) -> reload
+  ✓ ur -> ar: write -> readback verify -> prepareNativeLayoutDirection(RTL: true) -> reload
+  ✓ ar -> en: write -> readback verify -> prepareNativeLayoutDirection(RTL: false) -> reload
+
+--- Test B: Reverse en -> ar -> ur -> en Transitions ---
+  ✓ en -> ar -> ur -> en reverse transitions complete with full direction & tafsir parity
+
+--- Test C: Rapid Double-Tap & Concurrency Protection ---
+  ✓ Rapid double-taps rejected synchronously: 1 accepted, 4 ignored
+
+--- Test D: Write Failure Rollback Safety ---
+  ✓ Storage write failure: clean rollback, zero forceRTL, zero reload, error displayed
+
+--- Test E: Readback Mismatch Rollback Safety ---
+  ✓ Storage readback mismatch: clean rollback, zero forceRTL, zero reload
+
+--- Test F: Unmount During In-Flight Switch ---
+  ✓ Unmount during in-flight switch preserves reload & layout direction update
+
+========================================================
+ALL REAL LANGUAGE SWITCHING HARDENING TESTS PASSED!
+========================================================
+✅ check-spacing passed: CONTENT_GAP = 24 contract fully satisfied across shared wrappers and tests.
+
+EXIT_CODE=0

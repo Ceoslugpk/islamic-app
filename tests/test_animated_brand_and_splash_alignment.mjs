@@ -24,7 +24,8 @@ console.log('=== ANIMATED BRAND ICONS, SPLASH ALIGNMENT & ONBOARDING THEME TOGGL
 console.log('--- 1. Splash Screen & Brand Color Alignment ---');
 
 const appJson = JSON.parse(fs.readFileSync('app.json', 'utf8'));
-const splash = appJson.expo.splash;
+const splashPlugin = appJson.expo.plugins?.find((p) => Array.isArray(p) && p[0] === 'expo-splash-screen');
+const splash = (splashPlugin ? splashPlugin[1] : null) || appJson.expo.splash;
 const adaptiveIcon = appJson.expo.android.adaptiveIcon;
 
 // Exact brand anchors
@@ -37,15 +38,20 @@ assert.equal(splash.dark.backgroundColor, BRAND_DARK, `app.json splash.dark.back
 assert.equal(adaptiveIcon.backgroundColor, BRAND_GREEN, `app.json adaptiveIcon.backgroundColor must be ${BRAND_GREEN}`);
 console.log('  ✓ app.json splash and adaptiveIcon background colors match exact brand anchors');
 
-// Android colors.xml
+// Android colors.xml (Light)
 const colorsXml = fs.readFileSync('android/app/src/main/res/values/colors.xml', 'utf8');
 assert.ok(colorsXml.includes('<color name="splashscreen_background">#F4EEDE</color>'), 'colors.xml splashscreen_background must be #F4EEDE');
 assert.ok(colorsXml.includes('<color name="iconBackground">#105A4B</color>'), 'colors.xml iconBackground must be #105A4B');
-console.log('  ✓ android/app/src/main/res/values/colors.xml matches exact brand anchors');
+
+// Android values-night colors.xml (Dark)
+const colorsNightXml = fs.readFileSync('android/app/src/main/res/values-night/colors.xml', 'utf8');
+assert.ok(colorsNightXml.includes('<color name="splashscreen_background">#0E1214</color>'), 'values-night/colors.xml splashscreen_background must be #0E1214');
+console.log('  ✓ android/app/src/main/res/values/colors.xml and values-night/colors.xml match exact brand anchors');
 
 // Android styles.xml
 const stylesXml = fs.readFileSync('android/app/src/main/res/values/styles.xml', 'utf8');
 assert.ok(stylesXml.includes('@drawable/splashscreen_logo'), 'styles.xml windowBackground must reference splashscreen_logo');
+assert.ok(stylesXml.includes('<item name="android:windowBackground">@color/splashscreen_background</item>'), 'AppTheme must declare windowBackground to prevent grey/white flash');
 
 // Android v31 styles.xml (Android 12+)
 const stylesV31Xml = fs.readFileSync('android/app/src/main/res/values-v31/styles.xml', 'utf8');
@@ -72,11 +78,17 @@ const pythonCheck = `
 from PIL import Image
 densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']
 for d in densities:
-    path = f'android/app/src/main/res/drawable-{d}/splashscreen_logo.png'
-    im = Image.open(path)
+    path_light = f'android/app/src/main/res/drawable-{d}/splashscreen_logo.png'
+    im = Image.open(path_light)
     corners = [im.getpixel((0,0)), im.getpixel((im.width-1, 0)), im.getpixel((0, im.height-1)), im.getpixel((im.width-1, im.height-1))]
     for c in corners:
-        assert c == (244, 238, 222, 255), f'Mismatch in {path}: {c}'
+        assert c == (244, 238, 222, 255), f'Mismatch in {path_light}: {c}'
+
+    path_night = f'android/app/src/main/res/drawable-night-{d}/splashscreen_logo.png'
+    im_night = Image.open(path_night)
+    corners_night = [im_night.getpixel((0,0)), im_night.getpixel((im_night.width-1, 0)), im_night.getpixel((0, im_night.height-1)), im_night.getpixel((im_night.width-1, im_night.height-1))]
+    for c in corners_night:
+        assert c == (14, 18, 20, 255), f'Mismatch in {path_night}: {c}'
 
 im_bg = Image.open('assets/android-icon-background.png')
 for c in [im_bg.getpixel((0,0)), im_bg.getpixel((256,256))]:
@@ -85,8 +97,9 @@ print('ALL_PIXELS_MATCH')
 `;
 
 const pyOut = execSync(`python3 -c "${pythonCheck}"`).toString().trim();
-assert.equal(pyOut, 'ALL_PIXELS_MATCH', 'All density bitmap corners must match RGB(244, 238, 222, 255) exactly');
-console.log('  ✓ All 5 density splashscreen_logo.png bitmaps match RGB(244, 238, 222, 255) corner pixels');
+assert.equal(pyOut, 'ALL_PIXELS_MATCH', 'All density bitmap corners must match RGB(244, 238, 222, 255) for light and RGB(14, 18, 20, 255) for night');
+console.log('  ✓ All 5 density light splashscreen_logo.png bitmaps match RGB(244, 238, 222, 255) corner pixels');
+console.log('  ✓ All 5 density night splashscreen_logo.png bitmaps match RGB(14, 18, 20, 255) corner pixels');
 console.log('  ✓ assets/android-icon-background.png matches RGB(16, 90, 75, 255) exactly');
 
 // ---------------------------------------------------------------------------
@@ -97,12 +110,16 @@ console.log('\n--- 3. AnimatedSplash.tsx Brand Alignment ---');
 const animSplashCode = fs.readFileSync('src/components/AnimatedSplash.tsx', 'utf8');
 assert.ok(animSplashCode.includes("const BG_LIGHT = '#F4EEDE';"), 'AnimatedSplash BG_LIGHT must be #F4EEDE');
 assert.ok(animSplashCode.includes("const BG_DARK = '#0E1214';"), 'AnimatedSplash BG_DARK must be #0E1214');
+assert.ok(animSplashCode.includes("const BG_DARK_TOP = '#12121C';"), 'AnimatedSplash BG_DARK_TOP must be #12121C');
+assert.ok(animSplashCode.includes("const BG_DARK_BOTTOM = '#0C0C14';"), 'AnimatedSplash BG_DARK_BOTTOM must be #0C0C14');
+assert.ok(animSplashCode.includes("const SPLASH_ACCENT_DARK = '#E6BE6C';"), 'AnimatedSplash SPLASH_ACCENT_DARK must be #E6BE6C');
 assert.ok(animSplashCode.includes("const BRAND_GREEN_LIGHT = '#105A4B';"), 'AnimatedSplash BRAND_GREEN_LIGHT must be #105A4B');
 assert.ok(animSplashCode.includes("const BRAND_GREEN_DARK = '#10B981';"), 'AnimatedSplash BRAND_GREEN_DARK must be #10B981');
 assert.ok(!animSplashCode.includes('#B8975A'), 'AnimatedSplash must not contain unapproved gold #B8975A');
 assert.ok(animSplashCode.includes('AccessibilityInfo.isReduceMotionEnabled'), 'AnimatedSplash must support reduced motion');
 assert.ok(animSplashCode.includes('safetyTimer'), 'AnimatedSplash must include safety fallback timer');
-console.log('  ✓ AnimatedSplash.tsx aligned to exact brand paper and forest green tokens with zero unapproved gold');
+assert.ok(animSplashCode.includes("fontFamily: isRTL() ? 'Amiri_700Bold' : 'SourceSans3_500Medium'"), 'AnimatedSplash must use Amiri_700Bold in RTL');
+console.log('  ✓ AnimatedSplash.tsx aligned to exact brand paper, dark ink, and gold tokens with zero unapproved gold');
 
 // ---------------------------------------------------------------------------
 // 4. ANIMATED BRAND ICONS CONTRACT

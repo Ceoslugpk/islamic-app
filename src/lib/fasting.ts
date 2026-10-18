@@ -3,6 +3,7 @@
  */
 
 import { FastingEntry } from './db';
+import { gregorianToHijri, HIJRI_MONTHS } from './hijri';
 
 export type FastingType = 'ramadan' | 'voluntary' | 'qada';
 
@@ -70,50 +71,13 @@ export const VOLUNTARY_FASTS_CATALOG = [
 
 /* ─── Hijri helper ─────────────────────────────────────────────── */
 
-const HIJRI_EPOCH_JDN = 2461237;
-
-function isLeap(year: number): boolean {
-  const cycle = year % 30;
-  return [2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29].includes(cycle);
-}
-
-function monthLength(year: number, month: number): number {
-  const base = month % 2 === 1 ? 30 : 29;
-  return month === 12 && isLeap(year) ? 30 : base;
-}
-
-function gregorianToJdn(y: number, m: number, d: number): number {
-  let yy = y, mm = m;
-  if (mm <= 2) { yy -= 1; mm += 12; }
-  const A = Math.floor(yy / 100);
-  const B = 2 - A + Math.floor(A / 4);
-  return Math.floor(365.25 * (yy + 4716)) + Math.floor(30.6001 * (mm + 1)) + d + B - 1524;
-}
 
 export function getHijriDate(date: Date = new Date()): { day: number; month: number; year: number } {
-  const jdn = gregorianToJdn(date.getFullYear(), date.getMonth() + 1, date.getDate());
-  let days = jdn - HIJRI_EPOCH_JDN;
-  let year = 1448;
-  while (days < 0) { year -= 1; days += 354 + (isLeap(year) ? 1 : 0); }
-  let remaining = days;
-  let y = year;
-  while (remaining >= 354 + (isLeap(y) ? 1 : 0)) {
-    remaining -= 354 + (isLeap(y) ? 1 : 0);
-    y += 1;
-  }
-  let month = 1;
-  while (remaining >= monthLength(y, month)) {
-    remaining -= monthLength(y, month);
-    month += 1;
-  }
-  return { day: remaining + 1, month, year: y };
+  const h = gregorianToHijri(date.getFullYear(), date.getMonth() + 1, date.getDate());
+  return { day: h.day, month: h.month, year: h.year };
 }
 
-export const HIJRI_MONTH_NAMES = [
-  'Muharram', 'Safar', "Rabi' al-awwal", "Rabi' al-thani",
-  'Jumada al-awwal', 'Jumada al-thani', 'Rajab', "Sha'ban",
-  'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah',
-];
+export const HIJRI_MONTH_NAMES = HIJRI_MONTHS;
 
 /** Format YYYY-MM-DD */
 export function toDateString(d: Date = new Date()): string {

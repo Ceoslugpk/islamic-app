@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   TextInput,
-  Text,
   View,
   TouchableOpacity,
   useWindowDimensions,
   Platform,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
@@ -121,9 +121,9 @@ function NotesScreen({
             style={[styles.badge, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}
             onPress={() => onOpenVerse?.(item.surah, item.ayah)}
           >
-            <Text style={[styles.badgeText, { color: tokens.gold }]}>
+            <AppText variant="caption" highlight style={styles.badgeText}>
               {t('Surah')} {item.surah}:{item.ayah} →
-            </Text>
+            </AppText>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.deleteBtn}
@@ -140,21 +140,21 @@ function NotesScreen({
         </View>
 
         <View style={[styles.noteBodyWrap, { borderLeftColor: tokens.goldBorder, borderLeftWidth: 3, paddingLeft: 12, paddingVertical: 8, paddingRight: 8, marginVertical: 6, borderRadius: 10, backgroundColor: tokens.ringFill }]}>
-          <Text style={[styles.noteBody, { color: tokens.text }]}>
+          <AppText variant="body" style={styles.noteBody}>
             {item.body}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.noteFooter}>
           <View style={styles.noteDateRow}>
             <Ionicons name="time-outline" size={13} color={tokens.muted} />
-            <Text style={[styles.noteDate, { color: tokens.muted }]}>
+            <AppText variant="caption" tone="faint" style={styles.noteDate}>
               {new Date(item.createdAt).toLocaleDateString(undefined, {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
               })}
-            </Text>
+            </AppText>
           </View>
           <TouchableOpacity
             style={[styles.openVerseLink, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, borderWidth: 1 }]}
@@ -162,9 +162,9 @@ function NotesScreen({
             accessibilityRole="button"
             accessibilityLabel={`${t('Read')} ${t('Surah')} ${item.surah}:${item.ayah}`}
           >
-            <Text style={[styles.openVerseLinkText, { color: tokens.goldText }]}>
+            <AppText variant="link" style={styles.openVerseLinkText}>
               {t('Read in Quran')} ↗
-            </Text>
+            </AppText>
           </TouchableOpacity>
         </View>
       </Card>
@@ -179,17 +179,18 @@ function NotesScreen({
             <Ionicons name="book-outline" size={16} color={tokens.goldText} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.inputLabel, { color: tokens.text }]}>
+            <AppText variant="sectionTitle" style={styles.inputLabel}>
               {t('Add New Reflection')}
-            </Text>
-            <Text style={[styles.inputHint, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="caption" tone="faint" style={styles.inputHint}>
               {t('Capture your insights, questions, and personal dua')}
-            </Text>
+            </AppText>
           </View>
         </View>
         <TextInput
           placeholder={t('Write your thoughts or lessons from this verse...')}
           placeholderTextColor={tokens.muted}
+          accessibilityLabel={t('Write your thoughts or lessons from this verse...')}
           multiline
           numberOfLines={3}
           value={input}
@@ -207,6 +208,7 @@ function NotesScreen({
           <TextInput
             placeholder={t('Verse: e.g. 2:255')}
             placeholderTextColor={tokens.muted}
+            accessibilityLabel={t('Verse: e.g. 2:255')}
             value={refInput}
             onChangeText={setRefInput}
             style={[
@@ -228,15 +230,15 @@ function NotesScreen({
             accessibilityRole="button"
             accessibilityLabel={justSaved ? t('Reflection saved') : t('Save reflection')}
           >
-            <Text style={[styles.saveBtnText, { color: tokens.onGold }]}>
+            <AppText variant="rowTitle" tone="onGold" style={styles.saveBtnText}>
               {justSaved ? t('Saved ✓') : t('Save')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
         </View>
         {error && (
-          <Text style={[styles.errorText, { color: tokens.danger }]}>
+          <AppText variant="caption" tone="danger" style={styles.errorText}>
             {error}
-          </Text>
+          </AppText>
         )}
       </Card>
     </View>
@@ -251,17 +253,17 @@ function NotesScreen({
             <View style={[styles.studyTipIconWrap, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, borderWidth: 1 }]}>
               <Ionicons name="sparkles" size={15} color={tokens.goldText} />
             </View>
-            <Text style={[styles.studyTipTitle, { color: tokens.text }]}>
+            <AppText variant="title" style={styles.studyTipTitle}>
               {t('Reflecting on the Quran (Tadabbur)')}
-            </Text>
+            </AppText>
           </View>
-          <Text style={[styles.studyTipQuote, { color: tokens.muted }]}>
+          <AppText variant="body" tone="faint" style={styles.studyTipQuote}>
             {t('“Do they not then reflect upon the Quran, or are there locks upon their hearts?” (Surah Muhammad 47:24)')}
-          </Text>
+          </AppText>
           <View style={[styles.studyTipDivider, { backgroundColor: tokens.cardBorder }]} />
-          <Text style={[styles.studyTipHint, { color: tokens.muted }]}>
+          <AppText variant="caption" tone="faint" style={styles.studyTipHint}>
             {t('Notes are saved privately on your device. Review your reflections periodically to deepen your understanding.')}
-          </Text>
+          </AppText>
         </Card>
       </View>
     );
@@ -342,6 +344,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    paddingVertical: 2,
   },
   textArea: {
     borderWidth: 1,
@@ -368,6 +371,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingHorizontal: 12,
     paddingVertical: 9,
+    minHeight: 40,
     minWidth: 0,
     ...(Platform.OS === 'web' ? { outlineStyle: 'none', outlineWidth: 0 } as any : {}),
   },
@@ -378,15 +382,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minHeight: 40,
+    flexShrink: 0,
   },
   saveBtnText: {
     fontSize: 13.5,
     fontFamily: 'Manrope_700Bold',
+    paddingVertical: 2,
   },
   errorText: {
     fontSize: 12,
     marginTop: 6,
     fontFamily: 'Manrope_500Medium',
+    paddingVertical: 2,
   },
   emptyCard: {
     borderRadius: 20,
@@ -404,11 +411,13 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
+    minHeight: 24,
     borderRadius: 999,
   },
   badgeText: {
     fontSize: 12.5,
     fontFamily: 'Manrope_700Bold',
+    paddingVertical: 2,
   },
   deleteBtn: {
     padding: 6,
@@ -417,7 +426,6 @@ const styles = StyleSheet.create({
   noteBody: {
     fontSize: 14,
     fontFamily: 'Manrope_400Regular',
-    lineHeight: 21,
   },
   inputHeaderRow: {
     flexDirection: 'row',
@@ -431,6 +439,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   inputHint: {
     fontSize: 12,
@@ -457,15 +466,18 @@ const styles = StyleSheet.create({
   openVerseLink: {
     paddingHorizontal: 10,
     paddingVertical: 4,
+    minHeight: 24,
     borderRadius: 8,
   },
   openVerseLinkText: {
     fontSize: 11.5,
     fontFamily: 'Manrope_600SemiBold',
+    paddingVertical: 2,
   },
   noteDate: {
     fontSize: 11.5,
     fontFamily: 'Manrope_400Regular',
+    paddingVertical: 2,
   },
   footerContainer: {
     paddingTop: 8,
@@ -487,6 +499,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   studyTipTitle: {
     fontFamily: 'Manrope_700Bold',
@@ -496,7 +509,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12.5,
     fontStyle: 'italic',
-    lineHeight: 18,
     marginBottom: 8,
   },
   studyTipDivider: {
@@ -506,6 +518,5 @@ const styles = StyleSheet.create({
   studyTipHint: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11.5,
-    lineHeight: 16,
   },
 });

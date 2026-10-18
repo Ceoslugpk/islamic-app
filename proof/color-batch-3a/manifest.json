@@ -1,0 +1,234 @@
+{
+  "batch": "Batch 3A (8 screens: HajjJourney, HajjLive, MadinahLive, UmrahGuide, UmrahResources, Tasbih, Shahada, Location)",
+  "timestamp": "2026-10-16T12:06:45.268Z",
+  "viewports": [
+    "393x852"
+  ],
+  "themes": [
+    "paper",
+    "ink"
+  ],
+  "totalScreenshots": 16,
+  "screens": [
+    {
+      "id": "hajj-journey",
+      "name": "HajjJourneyScreen",
+      "file": "src/screens/HajjJourneyScreen.tsx"
+    },
+    {
+      "id": "hajj-live",
+      "name": "HajjLiveScreen",
+      "file": "src/screens/HajjLiveScreen.tsx"
+    },
+    {
+      "id": "madinah-live",
+      "name": "MadinahLiveScreen",
+      "file": "src/screens/MadinahLiveScreen.tsx"
+    },
+    {
+      "id": "umrah-guide",
+      "name": "UmrahGuideScreen",
+      "file": "src/screens/UmrahGuideScreen.tsx"
+    },
+    {
+      "id": "umrah-resources",
+      "name": "UmrahResourcesScreen",
+      "file": "src/screens/UmrahResourcesScreen.tsx"
+    },
+    {
+      "id": "tasbih",
+      "name": "TasbihScreen",
+      "file": "src/screens/TasbihScreen.tsx"
+    },
+    {
+      "id": "shahada",
+      "name": "ShahadaScreen",
+      "file": "src/screens/ShahadaScreen.tsx"
+    },
+    {
+      "id": "location",
+      "name": "LocationScreen",
+      "file": "src/screens/LocationScreen.tsx"
+    }
+  ],
+  "screenshots": [
+    {
+      "id": "hajj-journey",
+      "screen": "HajjJourneyScreen",
+      "theme": "paper",
+      "file": "hajj-journey_paper_393x852.png",
+      "path": "proof/color-batch-3a/hajj-journey_paper_393x852.png",
+      "bytes": 98051,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "hajj-live",
+      "screen": "HajjLiveScreen",
+      "theme": "paper",
+      "file": "hajj-live_paper_393x852.png",
+      "path": "proof/color-batch-3a/hajj-live_paper_393x852.png",
+      "bytes": 107313,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "madinah-live",
+      "screen": "MadinahLiveScreen",
+      "theme": "paper",
+      "file": "madinah-live_paper_393x852.png",
+      "path": "proof/color-batch-3a/madinah-live_paper_393x852.png",
+      "bytes": 118177,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "umrah-guide",
+      "screen": "UmrahGuideScreen",
+      "theme": "paper",
+      "file": "umrah-guide_paper_393x852.png",
+      "path": "proof/color-batch-3a/umrah-guide_paper_393x852.png",
+      "bytes": 101208,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "umrah-resources",
+      "screen": "UmrahResourcesScreen",
+      "theme": "paper",
+      "file": "umrah-resources_paper_393x852.png",
+      "path": "proof/color-batch-3a/umrah-resources_paper_393x852.png",
+      "bytes": 101981,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "tasbih",
+      "screen": "TasbihScreen",
+      "theme": "paper",
+      "file": "tasbih_paper_393x852.png",
+      "path": "proof/color-batch-3a/tasbih_paper_393x852.png",
+      "bytes": 64697,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "shahada",
+      "screen": "ShahadaScreen",
+      "theme": "paper",
+      "file": "shahada_paper_393x852.png",
+      "path": "proof/color-batch-3a/shahada_paper_393x852.png",
+      "bytes": 99012,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "location",
+      "screen": "LocationScreen",
+      "theme": "paper",
+      "file": "location_paper_393x852.png",
+      "path": "proof/color-batch-3a/location_paper_393x852.png",
+      "bytes": 89875,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "hajj-journey",
+      "screen": "HajjJourneyScreen",
+      "theme": "ink",
+      "file": "hajj-journey_ink_393x852.png",
+      "path": "proof/color-batch-3a/hajj-journey_ink_393x852.png",
+      "bytes": 97007,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "hajj-live",
+      "screen": "HajjLiveScreen",
+      "theme": "ink",
+      "file": "hajj-live_ink_393x852.png",
+      "path": "proof/color-batch-3a/hajj-live_ink_393x852.png",
+      "bytes": 107549,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "madinah-live",
+      "screen": "MadinahLiveScreen",
+      "theme": "ink",
+      "file": "madinah-live_ink_393x852.png",
+      "path": "proof/color-batch-3a/madinah-live_ink_393x852.png",
+      "bytes": 118077,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "umrah-guide",
+      "screen": "UmrahGuideScreen",
+      "theme": "ink",
+      "file": "umrah-guide_ink_393x852.png",
+      "path": "proof/color-batch-3a/umrah-guide_ink_393x852.png",
+      "bytes": 99027,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "umrah-resources",
+      "screen": "UmrahResourcesScreen",
+      "theme": "ink",
+      "file": "umrah-resources_ink_393x852.png",
+      "path": "proof/color-batch-3a/umrah-resources_ink_393x852.png",
+      "bytes": 103265,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "tasbih",
+      "screen": "TasbihScreen",
+      "theme": "ink",
+      "file": "tasbih_ink_393x852.png",
+      "path": "proof/color-batch-3a/tasbih_ink_393x852.png",
+      "bytes": 67489,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "shahada",
+      "screen": "ShahadaScreen",
+      "theme": "ink",
+      "file": "shahada_ink_393x852.png",
+      "path": "proof/color-batch-3a/shahada_ink_393x852.png",
+      "bytes": 101127,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    },
+    {
+      "id": "location",
+      "screen": "LocationScreen",
+      "theme": "ink",
+      "file": "location_ink_393x852.png",
+      "path": "proof/color-batch-3a/location_ink_393x852.png",
+      "bytes": 88274,
+      "dimensions": "393x852",
+      "bodyBg": "rgba(0, 0, 0, 0)",
+      "pureWhiteElements": 0
+    }
+  ],
+  "blocked": [],
+  "status": "PASS"
+}

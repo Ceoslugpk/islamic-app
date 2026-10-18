@@ -1,0 +1,67 @@
+{
+  "homeActiveIntervals": [
+    {
+      "internalId": 1,
+      "timerId": 79,
+      "timeout": 30000,
+      "handler": "()=>ze(new Date)",
+      "stack": [
+        "at window.setInterval (<anonymous>:13:21)",
+        "at http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:750:5068",
+        "at Ti (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:51:98322)"
+      ],
+      "registeredAt": 1792232786016,
+      "fireCount": 0
+    }
+  ],
+  "intervalsAfterLeavingHome": [
+    {
+      "internalId": 1,
+      "timerId": 79,
+      "timeout": 30000,
+      "handler": "()=>ze(new Date)",
+      "stack": [
+        "at window.setInterval (<anonymous>:13:21)",
+        "at http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:750:5068",
+        "at Ti (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:51:98322)"
+      ],
+      "registeredAt": 1792232786016,
+      "fireCount": 0
+    }
+  ],
+  "intervalsAfterLibrary": [
+    {
+      "internalId": 1,
+      "timerId": 79,
+      "timeout": 30000,
+      "handler": "()=>ze(new Date)",
+      "stack": [
+        "at window.setInterval (<anonymous>:13:21)",
+        "at http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:750:5068",
+        "at Ti (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:51:98322)"
+      ],
+      "registeredAt": 1792232786016,
+      "fireCount": 0
+    }
+  ],
+  "intervalsAfterHomeReturn": [
+    {
+      "internalId": 1,
+      "timerId": 79,
+      "timeout": 30000,
+      "handler": "()=>ze(new Date)",
+      "stack": [
+        "at window.setInterval (<anonymous>:13:21)",
+        "at http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:750:5068",
+        "at Ti (http://15.235.203.134:9998/_expo/static/js/web/index-8bef5dc7bb202c9cefece7879a263ea5.js:51:98322)"
+      ],
+      "registeredAt": 1792232786016,
+      "fireCount": 0
+    }
+  ],
+  "analysis": {
+    "intervalsRetainedWhenHidden": 1,
+    "persistsInBackground": true,
+    "leakNotes": "HomeScreen remains mounted with display:'none' in App.tsx tabPane. Intervals (e.g. 30s now timer, 1s prayer countdown) continue executing even when user is on another tab."
+  }
+}

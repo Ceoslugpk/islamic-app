@@ -1,5 +1,8 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
+import { AppText } from '../components/ui/AppText';
+import { useTheme } from './theme';
+import { t } from './i18n';
 
 export interface UndoToastSaveParams {
   id: string;
@@ -78,15 +81,12 @@ export const useUndoToast = (): {
   return context;
 };
 
-import { useTheme } from './theme';
-import { t } from './i18n';
-
 const UndoToast: React.FC<{
   actionDescription: string;
   onUndo: () => void;
   onClose: () => void;
 }> = ({ actionDescription, onUndo, onClose }) => {
-  const { visible, pendingUndo } = useContext(UndoToastContext);
+  const { visible } = useContext(UndoToastContext);
   const { colors } = useTheme();
 
   return visible ? (
@@ -100,13 +100,13 @@ const UndoToast: React.FC<{
         },
       ]}
     >
-      <Text style={[styles.toastText, { color: colors.textPrimary }]}>{actionDescription}</Text>
+      <AppText variant="body" style={styles.toastText}>{actionDescription}</AppText>
       <TouchableOpacity
         style={styles.undoBtn}
         onPress={onUndo}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={[styles.undoBtnText, { color: colors.accent }]}>{t('Undo')}</Text>
+        <AppText variant="link" style={styles.undoBtnText}>{t('Undo')}</AppText>
       </TouchableOpacity>
     </View>
   ) : null;

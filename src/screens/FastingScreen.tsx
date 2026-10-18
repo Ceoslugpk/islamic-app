@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   TextInput,
   useWindowDimensions,
   Alert,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -87,49 +87,30 @@ function FastingScreen({
   const [activeTab, setActiveTab] = useState<FastingSubTab>('tracker');
 
   // Timings & Hijri state
+  const todayStr = useMemo(() => toDateString(), []);
+  const todayHijri = useMemo(() => getHijriDate(new Date()), []);
+
   const [timings, setTimings] = useState<DayTimings | null>(null);
-  const [todayEntry, setTodayEntry] = useState<FastingEntry>({
-    date: toDateString(),
-    fasting: false,
-    type: 'voluntary',
+  const [todayEntry, setTodayEntry] = useState<FastingEntry>(() => {
+    const entry = getFastingEntry(todayStr);
+    if (entry) {
+      return entry;
+    }
+    const defaultType: FastingType = todayHijri.month === 9 ? 'ramadan' : 'voluntary';
+    return {
+      date: todayStr,
+      fasting: false,
+      type: defaultType,
+    };
   });
-  const [history, setHistory] = useState<FastingEntry[]>([]);
-  const [missedList, setMissedList] = useState<MissedFastItem[]>([]);
+  const [history, setHistory] = useState<FastingEntry[]>(() => loadFastingHistory());
+  const [missedList, setMissedList] = useState<MissedFastItem[]>(() => loadMissedFasts());
   const { saveUndoState } = useUndoToast();
 
   // Qada Form State
   const [showAddMissed, setShowAddMissed] = useState(false);
   const [missedDateInput, setMissedDateInput] = useState(toDateString());
   const [missedReasonInput, setMissedReasonInput] = useState(MISSED_REASONS[0]);
-
-  const todayStr = useMemo(() => toDateString(), []);
-  const todayHijri = useMemo(() => getHijriDate(new Date()), []);
-
-  // Load initial data
-  const loadData = useCallback(() => {
-    const entry = getFastingEntry(todayStr);
-    if (entry) {
-      setTodayEntry(entry);
-    } else {
-      // Default to Ramadan if month 9, else voluntary
-      const defaultType: FastingType = todayHijri.month === 9 ? 'ramadan' : 'voluntary';
-      setTodayEntry({
-        date: todayStr,
-        fasting: false,
-        type: defaultType,
-      });
-    }
-
-    const hist = loadFastingHistory();
-    setHistory(hist);
-
-    const missed = loadMissedFasts();
-    setMissedList(missed);
-  }, [todayStr, todayHijri.month]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   // Load prayer times for suhoor / iftar
   useEffect(() => {
@@ -383,14 +364,13 @@ function FastingScreen({
                       style={StyleSheet.absoluteFill}
                     />
                   )}
-                  <Text
-                    style={[
-                      styles.tabBtnText,
-                      { color: isSelected ? tokens.onGold : tokens.muted },
-                    ]}
+                  <AppText
+                    variant="rowTitle"
+                    tone={isSelected ? 'onGold' : undefined}
+                    style={styles.tabBtnText}
                   >
                     {labels[tab]}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               );
             })}
@@ -402,28 +382,28 @@ function FastingScreen({
               {/* Small Stats Row */}
               <View style={styles.statsRow}>
                 <View style={[styles.statBox, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
-                  <Text style={[styles.statNumber, { color: tokens.goldText }]}>
+                  <AppText variant="numeral" highlight style={styles.statNumber}>
                     {daysFastedThisMonth}
-                  </Text>
-                  <Text style={[styles.statText, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="caption" style={styles.statText}>
                     {t('This Month')}
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={[styles.statBox, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
-                  <Text style={[styles.statNumber, { color: tokens.text }]}>
+                  <AppText variant="numeral" style={styles.statNumber}>
                     {streak}d
-                  </Text>
-                  <Text style={[styles.statText, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="caption" style={styles.statText}>
                     {t('Streak')}
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={[styles.statBox, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
-                  <Text style={[styles.statNumber, { color: qadaPendingCount > 0 ? tokens.goldText : tokens.text }]}>
+                  <AppText variant="numeral" highlight={qadaPendingCount > 0} style={styles.statNumber}>
                     {qadaPendingCount}
-                  </Text>
-                  <Text style={[styles.statText, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="caption" style={styles.statText}>
                     {t('Qada Left')}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
@@ -437,13 +417,13 @@ function FastingScreen({
                   pointerEvents="none"
                 />
                 <View style={styles.todayCardHeader}>
-                  <View>
-                    <Text style={[styles.todayCardEyebrow, { color: tokens.goldText }]}>
+                  <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                    <AppText variant="eyebrow" highlight style={styles.todayCardEyebrow}>
                       {todayHijri.day} {HIJRI_MONTH_NAMES[todayHijri.month - 1]} {todayHijri.year} AH
-                    </Text>
-                    <Text style={[styles.todayCardTitle, { color: tokens.text }]}>
+                    </AppText>
+                    <AppText variant="headerTitle" style={styles.todayCardTitle}>
                       {t("Today's Fast")}
-                    </Text>
+                    </AppText>
                   </View>
                   <View
                     style={[
@@ -452,6 +432,7 @@ function FastingScreen({
                       {
                         backgroundColor: todayEntry.fasting ? tokens.ringFill : tokens.inset,
                         borderColor: todayEntry.fasting ? tokens.goldBorder : tokens.cardBorder,
+                        flexShrink: 0,
                       },
                     ]}
                   >
@@ -460,29 +441,28 @@ function FastingScreen({
                       size={14}
                       color={todayEntry.fasting ? tokens.accent : tokens.muted}
                     />
-                    <Text
-                      style={[
-                        styles.statusBadgeText,
-                        { color: todayEntry.fasting ? tokens.goldText : tokens.muted },
-                      ]}
+                    <AppText
+                      variant="caption"
+                      highlight={todayEntry.fasting}
+                      style={styles.statusBadgeText}
                     >
                       {todayEntry.fasting ? t('Fasting Active') : t('Not Fasting')}
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
 
                 <View style={styles.todayStatusBox}>
-                  <Text style={[styles.todayStatusMessage, { color: tokens.muted }]}>
+                  <AppText variant="body" style={styles.todayStatusMessage}>
                     {todayEntry.fasting
                       ? t('Alhamdulillah, your fast is recorded for today.')
                       : t('Tap below to record your fast and track your habit.')}
-                  </Text>
+                  </AppText>
 
                   {todayEntry.fasting ? (
                     <View style={styles.fastTypeContainer}>
-                      <Text style={[styles.typeSelectLabel, { color: tokens.muted }]}>
+                      <AppText variant="rowTitle" style={styles.typeSelectLabel}>
                         {t('Intention / Category:')}
-                      </Text>
+                      </AppText>
                       <View style={styles.typeButtonsRow}>
                         {(['ramadan', 'voluntary', 'qada'] as FastingType[]).map((type) => {
                           const isChosen = todayEntry.type === type;
@@ -515,14 +495,13 @@ function FastingScreen({
                                   style={StyleSheet.absoluteFill}
                                 />
                               )}
-                              <Text
-                                style={[
-                                  styles.typeBtnText,
-                                  { color: isChosen ? tokens.onGold : tokens.text },
-                                ]}
+                              <AppText
+                                variant="rowTitle"
+                                tone={isChosen ? 'onGold' : undefined}
+                                style={styles.typeBtnText}
                               >
                                 {typeLabels[type]}
-                              </Text>
+                              </AppText>
                             </TouchableOpacity>
                           );
                         })}
@@ -554,14 +533,13 @@ function FastingScreen({
                           size={18}
                           color={tokens.danger}
                         />
-                        <Text
-                          style={[
-                            styles.primaryCtaBtnText,
-                            { color: tokens.danger },
-                          ]}
+                        <AppText
+                          variant="rowTitle"
+                          tone="danger"
+                          style={styles.primaryCtaBtnText}
                         >
                           {t('Cancel / Not Fasting Today')}
-                        </Text>
+                        </AppText>
                       </View>
                     ) : (
                       <LinearGradient
@@ -575,14 +553,13 @@ function FastingScreen({
                           size={18}
                           color={tokens.onGold}
                         />
-                        <Text
-                          style={[
-                            styles.primaryCtaBtnText,
-                            { color: tokens.onGold },
-                          ]}
+                        <AppText
+                          variant="rowTitle"
+                          tone="onGold"
+                          style={styles.primaryCtaBtnText}
                         >
                           {t('I am Fasting Today')}
-                        </Text>
+                        </AppText>
                       </LinearGradient>
                     )}
                   </TouchableOpacity>
@@ -600,12 +577,12 @@ function FastingScreen({
                 />
                 <View style={styles.heroHeader}>
                   <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-                    <Text style={[styles.heroEyebrow, { color: tokens.goldText }]} numberOfLines={1}>
+                    <AppText variant="eyebrow" highlight style={styles.heroEyebrow} numberOfLines={2}>
                       {t("Today's Prayer Schedule")}
-                    </Text>
-                    <Text style={[styles.heroTitle, { color: tokens.text }]} numberOfLines={1}>
+                    </AppText>
+                    <AppText variant="title" style={styles.heroTitle} numberOfLines={2}>
                       {t('Suhoor & Iftar Timings')}
-                    </Text>
+                    </AppText>
                   </View>
                   <View style={[styles.phasePill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, flexShrink: 0 }]}>
                     <Ionicons
@@ -613,9 +590,9 @@ function FastingScreen({
                       size={13}
                       color={tokens.goldText}
                     />
-                    <Text style={[styles.phasePillText, { color: tokens.goldText }]} numberOfLines={1}>
+                    <AppText variant="caption" highlight style={styles.phasePillText} numberOfLines={2}>
                       {countdown.label}
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
 
@@ -623,23 +600,23 @@ function FastingScreen({
                   <View style={[styles.timeBox, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
                     <View style={styles.timeLabelWrap}>
                       <Ionicons name="moon-outline" size={15} color={tokens.muted} />
-                      <Text style={[styles.timeBoxLabel, { color: tokens.muted }]}>{t('Suhoor Ends')}</Text>
+                      <AppText variant="caption" style={styles.timeBoxLabel}>{t('Suhoor Ends')}</AppText>
                     </View>
-                    <Text style={[styles.timeBoxValue, { color: tokens.text }]}>
+                    <AppText variant="numeral" style={styles.timeBoxValue}>
                       {suhoorFormatted}
-                    </Text>
-                    <Text style={[styles.timeBoxSub, { color: tokens.muted }]}>{t('Fajr Dawn')}</Text>
+                    </AppText>
+                    <AppText variant="caption" style={styles.timeBoxSub}>{t('Fajr Dawn')}</AppText>
                   </View>
 
                   <View style={[styles.timeBox, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
                     <View style={styles.timeLabelWrap}>
                       <Ionicons name="sunny-outline" size={15} color={tokens.goldText} />
-                      <Text style={[styles.timeBoxLabel, { color: tokens.muted }]}>{t('Iftar Time')}</Text>
+                      <AppText variant="caption" style={styles.timeBoxLabel}>{t('Iftar Time')}</AppText>
                     </View>
-                    <Text style={[styles.timeBoxValue, { color: tokens.goldText }]}>
+                    <AppText variant="numeral" highlight style={styles.timeBoxValue}>
                       {iftarFormatted}
-                    </Text>
-                    <Text style={[styles.timeBoxSub, { color: tokens.muted }]}>{t('Maghrib Dusk')}</Text>
+                    </AppText>
+                    <AppText variant="caption" style={styles.timeBoxSub}>{t('Maghrib Dusk')}</AppText>
                   </View>
                 </View>
               </View>
@@ -649,20 +626,20 @@ function FastingScreen({
                 <LinearGradient
                   colors={tokens.cardGradient}
                   start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
+                  end={{ x: 1, y: 1 }}
                   style={StyleSheet.absoluteFill}
                   pointerEvents="none"
                 />
                 <View style={styles.qadaSectionHeader}>
-                  <View>
-                    <Text style={[styles.qadaSectionEyebrow, { color: tokens.goldText }]}>
+                  <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+                    <AppText variant="eyebrow" highlight style={styles.qadaSectionEyebrow}>
                       {t('Obligatory Makeup')}
-                    </Text>
-                    <Text style={[styles.qadaSectionTitle, { color: tokens.text }]}>
+                    </AppText>
+                    <AppText variant="title" style={styles.qadaSectionTitle}>
                       {t('Missed Fasts (Qada)')}
-                    </Text>
+                    </AppText>
                   </View>
-                  <View style={styles.qadaActionBtnsRow}>
+                  <View style={[styles.qadaActionBtnsRow, { flexShrink: 0 }]}>
                     <TouchableOpacity
                       style={[styles.stepperBtn, getPillShadow(mode), { backgroundColor: 'transparent', borderColor: tokens.goldBorder }]}
                       onPress={handleQuickAddMissed}
@@ -670,7 +647,7 @@ function FastingScreen({
                       accessibilityLabel={t('Add missed fast')}
                     >
                       <Ionicons name="add" size={15} color={tokens.goldText} />
-                      <Text style={[styles.stepperBtnText, { color: tokens.goldText }]}>{t('Add')}</Text>
+                      <AppText variant="rowTitle" highlight style={styles.stepperBtnText}>{t('Add')}</AppText>
                     </TouchableOpacity>
                     {qadaPendingCount > 0 ? (
                       <TouchableOpacity
@@ -680,7 +657,7 @@ function FastingScreen({
                         accessibilityLabel={t('Make up one missed fast')}
                       >
                         <Ionicons name="checkmark" size={14} color={tokens.text} />
-                        <Text style={[styles.stepperBtnText, { color: tokens.text }]}>{t('-1 Made Up')}</Text>
+                        <AppText variant="rowTitle" style={styles.stepperBtnText}>{t('-1 Made Up')}</AppText>
                       </TouchableOpacity>
                     ) : null}
                   </View>
@@ -725,24 +702,24 @@ function FastingScreen({
                           )}
                           {item.madeUp && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
                         </TouchableOpacity>
-                        <View style={{ flex: 1 }}>
-                          <Text
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <AppText
+                            variant="rowTitle"
                             style={[
                               styles.missedDate,
                               {
-                                color: tokens.text,
                                 textDecorationLine: item.madeUp ? 'line-through' : 'none',
                               },
                             ]}
                           >
                             {item.date}
-                          </Text>
-                          <Text style={[styles.missedReason, { color: tokens.muted }]}>
+                          </AppText>
+                          <AppText variant="body" style={styles.missedReason}>
                             {(!womenUnlocked && isWomenSpecificReason(item.reason))
                               ? t('Excused (Private)')
                               : t(item.reason)}{' '}
                             {item.madeUp && item.madeUpDate ? `• ${t('Made up on')} ${item.madeUpDate}` : ''}
-                          </Text>
+                          </AppText>
                         </View>
                       </View>
                     ))}
@@ -752,11 +729,11 @@ function FastingScreen({
                       onPress={() => setActiveTab('qada')}
                       accessibilityRole="button"
                     >
-                      <Text style={[styles.viewAllLedgerText, { color: tokens.goldText }]}>
+                      <AppText variant="link" style={styles.viewAllLedgerText}>
                         {visibleMissedList.length > 3
                           ? `${t('View all')} ${visibleMissedList.length} ${t('records in Qada ledger →')}`
                           : t('Open full Qada ledger →')}
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                   </View>
                 )}
@@ -767,9 +744,9 @@ function FastingScreen({
           {/* ─── TAB 2: VOLUNTARY (SUNNAH) FASTS ────────────────────── */}
           {activeTab === 'voluntary' && (
             <View style={styles.tabContent}>
-              <Text style={[styles.sectionHeading, { color: tokens.muted }]}>
+              <AppText variant="eyebrow" style={styles.sectionHeading}>
                 {t('Recommended Voluntary Fasts')}
-              </Text>
+              </AppText>
 
               {voluntaryRecommendations.map((rec) => (
                 <View key={rec.id} style={[styles.recCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
@@ -782,9 +759,9 @@ function FastingScreen({
                   />
                   <View style={styles.recCardHeader}>
                     <View style={styles.recTitleWrap}>
-                      <Text style={[styles.recName, { color: tokens.text }]}>
+                      <AppText variant="sectionTitle" style={styles.recName}>
                         {rec.name}
-                      </Text>
+                      </AppText>
                       <ArabicText style={[styles.recArabic, { color: tokens.arabicName }]}>
                         {rec.arabicName}
                       </ArabicText>
@@ -799,26 +776,25 @@ function FastingScreen({
                         },
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.statusPillText,
-                          { color: rec.isActiveToday ? tokens.goldText : tokens.muted },
-                        ]}
+                      <AppText
+                        variant="caption"
+                        highlight={rec.isActiveToday}
+                        style={styles.statusPillText}
                       >
                         {rec.upcomingDateLabel}
-                      </Text>
+                      </AppText>
                     </View>
                   </View>
 
-                  <Text style={[styles.recDesc, { color: tokens.muted }]}>
+                  <AppText variant="body" style={styles.recDesc}>
                     {rec.description}
-                  </Text>
+                  </AppText>
 
                   <View style={[styles.virtueBox, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
                     <Ionicons name="sparkles" size={13} color={tokens.goldText} style={{ marginTop: 2 }} />
-                    <Text style={[styles.virtueText, { color: tokens.muted }]}>
+                    <AppText variant="caption" style={styles.virtueText}>
                       {rec.virtue}
-                    </Text>
+                    </AppText>
                   </View>
 
                   {rec.isActiveToday && !todayEntry.fasting && (
@@ -842,9 +818,9 @@ function FastingScreen({
                       accessibilityRole="button"
                     >
                       <Ionicons name="checkmark-circle-outline" size={16} color={tokens.goldText} />
-                      <Text style={[styles.fastTodayActionText, { color: tokens.goldText }]}>
+                      <AppText variant="link" style={styles.fastTodayActionText}>
                         {t('Fast')} {rec.name} {t('Today')}
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -858,20 +834,20 @@ function FastingScreen({
               {/* Scorecard */}
               <View style={styles.qadaScorecard}>
                 <PremiumCard style={styles.qadaStatBox} padded>
-                  <Text style={[styles.qadaStatNumber, { color: tokens.goldText }]}>
+                  <AppText variant="numeral" highlight style={styles.qadaStatNumber}>
                     {qadaPendingCount}
-                  </Text>
-                  <Text style={[styles.qadaStatText, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="caption" style={styles.qadaStatText}>
                     {t('Fasts to Make Up')}
-                  </Text>
+                  </AppText>
                 </PremiumCard>
                 <PremiumCard style={styles.qadaStatBox} padded>
-                  <Text style={[styles.qadaStatNumber, { color: tokens.text }]}>
+                  <AppText variant="numeral" style={styles.qadaStatNumber}>
                     {qadaMadeUpCount}
-                  </Text>
-                  <Text style={[styles.qadaStatText, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="caption" style={styles.qadaStatText}>
                     {t('Made Up (Completed)')}
-                  </Text>
+                  </AppText>
                 </PremiumCard>
               </View>
 
@@ -887,9 +863,9 @@ function FastingScreen({
                     size={17}
                     color={tokens.goldText}
                   />
-                  <Text style={[styles.addMissedBtnText, { color: tokens.goldText }]}>
+                  <AppText variant="link" style={styles.addMissedBtnText}>
                     {justLogged ? t('Logged ✓') : t('+ Log Missed Fast')}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               ) : (
                 <View style={[styles.addMissedForm, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
@@ -900,20 +876,21 @@ function FastingScreen({
                     style={StyleSheet.absoluteFill}
                     pointerEvents="none"
                   />
-                  <Text style={[styles.formTitle, { color: tokens.text }]}>
+                  <AppText variant="sectionTitle" style={styles.formTitle}>
                     {t('Log a Missed Fast')}
-                  </Text>
+                  </AppText>
 
-                  <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Date (YYYY-MM-DD):')}</Text>
+                  <AppText variant="rowTitle" style={styles.inputLabel}>{t('Date (YYYY-MM-DD):')}</AppText>
                   <TextInput
                     style={[styles.textInput, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder, color: tokens.text }]}
                     value={missedDateInput}
                     onChangeText={setMissedDateInput}
                     placeholder="YYYY-MM-DD"
                     placeholderTextColor={tokens.muted}
+                    accessibilityLabel={t('Date (YYYY-MM-DD)')}
                   />
 
-                  <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Reason:')}</Text>
+                  <AppText variant="rowTitle" style={styles.inputLabel}>{t('Reason:')}</AppText>
                   <View style={styles.reasonPillsRow}>
                     {availableMissedReasons.map((r) => {
                       const isSelected = missedReasonInput === r;
@@ -939,14 +916,13 @@ function FastingScreen({
                               style={StyleSheet.absoluteFill}
                             />
                           )}
-                          <Text
-                            style={[
-                              styles.reasonPillText,
-                              { color: isSelected ? tokens.onGold : tokens.text },
-                            ]}
+                          <AppText
+                            variant="caption"
+                            tone={isSelected ? 'onGold' : undefined}
+                            style={styles.reasonPillText}
                           >
                             {t(r)}
-                          </Text>
+                          </AppText>
                         </TouchableOpacity>
                       );
                     })}
@@ -957,7 +933,7 @@ function FastingScreen({
                       style={[styles.formBtn, { borderColor: tokens.cardBorder }]}
                       onPress={() => setShowAddMissed(false)}
                     >
-                      <Text style={{ color: tokens.muted }}>{t('Cancel')}</Text>
+                      <AppText variant="rowTitle">{t('Cancel')}</AppText>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[styles.formBtn, getPillShadow(mode), { overflow: 'hidden', paddingVertical: 0, paddingHorizontal: 0, borderWidth: 0 }]}
@@ -969,14 +945,12 @@ function FastingScreen({
                         end={{ x: 1, y: 1 }}
                         style={{ paddingVertical: 8, paddingHorizontal: 14, alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <Text
-                          style={{
-                            color: tokens.onGold,
-                            fontFamily: 'Manrope_600SemiBold',
-                          }}
+                        <AppText
+                          variant="rowTitle"
+                          tone="onGold"
                         >
                           {justLogged ? t('Saved ✓') : t('Save Record')}
-                        </Text>
+                        </AppText>
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
@@ -984,9 +958,9 @@ function FastingScreen({
               )}
 
               {/* List of Missed Fasts */}
-              <Text style={[styles.sectionHeading, { color: tokens.muted, marginTop: 14 }]}>
+              <AppText variant="eyebrow" style={[styles.sectionHeading, { marginTop: 14 }]}>
                 {t('Missed Fasts Ledger')}
-              </Text>
+              </AppText>
 
               {visibleMissedList.length === 0 ? (
                 <PremiumCard style={styles.emptyCard} padded>
@@ -994,12 +968,12 @@ function FastingScreen({
                     <View style={[styles.emptyIconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
                       <Ionicons name="checkmark-done-circle-outline" size={28} color={tokens.accent} />
                     </View>
-                    <Text style={[styles.emptyTitle, { color: tokens.text }]}>
+                    <AppText variant="sectionTitle" style={styles.emptyTitle}>
                       {t('All caught up!')}
-                    </Text>
-                    <Text style={[styles.emptySubtitle, { color: tokens.muted }]}>
+                    </AppText>
+                    <AppText variant="body" style={styles.emptySubtitle}>
                       {t('No missed fasts recorded in your ledger.')}
-                    </Text>
+                    </AppText>
                   </View>
                 </PremiumCard>
               ) : (
@@ -1030,23 +1004,23 @@ function FastingScreen({
                         {item.madeUp && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
                       </TouchableOpacity>
                       <View style={styles.missedItemText}>
-                        <Text
+                        <AppText
+                          variant="rowTitle"
                           style={[
                             styles.missedDate,
                             {
-                              color: tokens.text,
                               textDecorationLine: item.madeUp ? 'line-through' : 'none',
                             },
                           ]}
                         >
                           {item.date}
-                        </Text>
-                        <Text style={[styles.missedReason, { color: tokens.muted }]}>
+                        </AppText>
+                        <AppText variant="body" style={styles.missedReason}>
                           {(!womenUnlocked && isWomenSpecificReason(item.reason))
                             ? t('Excused (Private)')
                             : t(item.reason)}{' '}
                           {item.madeUp && item.madeUpDate ? `• ${t('Made up on')} ${item.madeUpDate}` : ''}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
 
@@ -1077,23 +1051,23 @@ function FastingScreen({
               <PremiumCard style={styles.statsCard} padded>
                 <View style={styles.historyStatsRow}>
                   <View style={styles.statCol}>
-                    <Text style={[styles.statBig, { color: tokens.goldText }]}>{streak}</Text>
-                    <Text style={[styles.statLabel, { color: tokens.muted }]}>{t('Current Streak')}</Text>
+                    <AppText variant="numeral" highlight style={styles.statBig}>{streak}</AppText>
+                    <AppText variant="caption" style={styles.statLabel}>{t('Current Streak')}</AppText>
                   </View>
                   <View style={styles.statCol}>
-                    <Text style={[styles.statBig, { color: tokens.text }]}>{totalFastedDays}</Text>
-                    <Text style={[styles.statLabel, { color: tokens.muted }]}>{t('Total Fasted')}</Text>
+                    <AppText variant="numeral" style={styles.statBig}>{totalFastedDays}</AppText>
+                    <AppText variant="caption" style={styles.statLabel}>{t('Total Fasted')}</AppText>
                   </View>
                   <View style={styles.statCol}>
-                    <Text style={[styles.statBig, { color: tokens.text }]}>{ramadanFastsCount}</Text>
-                    <Text style={[styles.statLabel, { color: tokens.muted }]}>{t('Ramadan Days')}</Text>
+                    <AppText variant="numeral" style={styles.statBig}>{ramadanFastsCount}</AppText>
+                    <AppText variant="caption" style={styles.statLabel}>{t('Ramadan Days')}</AppText>
                   </View>
                 </View>
               </PremiumCard>
 
-              <Text style={[styles.sectionHeading, { color: tokens.muted }]}>
+              <AppText variant="eyebrow" style={styles.sectionHeading}>
                 {t('Fasting Log')}
-              </Text>
+              </AppText>
 
               {history.length === 0 ? (
                 <PremiumCard style={styles.emptyCard} padded>
@@ -1101,12 +1075,12 @@ function FastingScreen({
                     <View style={[styles.emptyIconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
                       <Ionicons name="calendar-outline" size={28} color={tokens.accent} />
                     </View>
-                    <Text style={[styles.emptyTitle, { color: tokens.text }]}>
+                    <AppText variant="sectionTitle" style={styles.emptyTitle}>
                       {t('No fasting records yet')}
-                    </Text>
-                    <Text style={[styles.emptySubtitle, { color: tokens.muted }]}>
+                    </AppText>
+                    <AppText variant="body" style={styles.emptySubtitle}>
                       {t('Mark your fasts on the Today tab to start building your streak.')}
-                    </Text>
+                    </AppText>
                     <TouchableOpacity
                       onPress={() => setActiveTab('tracker')}
                       style={[styles.emptyActionBtn, { overflow: 'hidden', paddingHorizontal: 0, paddingVertical: 0 }]}
@@ -1120,9 +1094,9 @@ function FastingScreen({
                         end={{ x: 1, y: 1 }}
                         style={{ paddingHorizontal: 18, paddingVertical: 10, borderRadius: 14, alignItems: 'center' }}
                       >
-                        <Text style={[styles.emptyActionText, { color: tokens.onGold }]}>
+                        <AppText variant="rowTitle" tone="onGold" style={styles.emptyActionText}>
                           {t('Go to Today')}
-                        </Text>
+                        </AppText>
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
@@ -1144,20 +1118,24 @@ function FastingScreen({
                           size={18}
                           color={entry.fasting ? tokens.accent : tokens.muted}
                         />
-                        <View>
-                          <Text style={[styles.historyDate, { color: tokens.text }]}>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <AppText variant="rowTitle" style={styles.historyDate}>
                             {entry.date} {entry.date === todayStr ? t('(Today)') : ''}
-                          </Text>
+                          </AppText>
                           {entry.notes ? (
-                            <Text style={[styles.historyNote, { color: tokens.muted }]}>
+                            <AppText variant="caption" style={styles.historyNote}>
                               {entry.notes}
-                            </Text>
+                            </AppText>
                           ) : null}
                         </View>
                       </View>
 
                       <View style={[styles.typeBadge, getPillShadow(mode), { backgroundColor: badge.bg, borderColor: tokens.cardBorder }]}>
-                        <Text style={[styles.typeBadgeText, { color: badge.text }]}>
+                        <AppText
+                          variant="caption"
+                          highlight={entry.fasting && entry.type === 'ramadan'}
+                          style={styles.typeBadgeText}
+                        >
                           {entry.fasting
                             ? entry.type === 'ramadan'
                               ? t('Ramadan')
@@ -1165,7 +1143,7 @@ function FastingScreen({
                               ? t('Qada')
                               : t('Sunnah')
                             : t('Not Fasting')}
-                        </Text>
+                        </AppText>
                       </View>
                     </PremiumCard>
                   );
@@ -1197,7 +1175,6 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     alignSelf: 'center',
-    paddingTop: 8,
   },
 
   /* Tab Navigation */
@@ -1210,7 +1187,9 @@ const styles = StyleSheet.create({
   },
   tabBtn: {
     flex: 1,
+    minHeight: 38,
     paddingVertical: 6,
+    paddingHorizontal: 4,
     borderRadius: 10,
     borderWidth: 0.75,
     borderColor: 'transparent',
@@ -1267,6 +1246,7 @@ const styles = StyleSheet.create({
   },
   timeBox: {
     flex: 1,
+    minHeight: 76,
     padding: 12,
     borderRadius: 14,
     borderWidth: 0.75,
@@ -1300,6 +1280,7 @@ const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
+    minHeight: 64,
     paddingVertical: 12,
     paddingHorizontal: 8,
     borderRadius: 14,
@@ -1413,6 +1394,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 8,
   },
   qadaSectionEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1449,6 +1431,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    minHeight: 48,
     paddingVertical: 8,
     borderBottomWidth: 0.75,
   },
@@ -1481,9 +1464,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 8,
   },
   recTitleWrap: {
     flex: 1,
+    minWidth: 0,
     paddingRight: 8,
   },
   recName: {
@@ -1495,6 +1480,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   statusPill: {
+    flexShrink: 0,
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
@@ -1620,6 +1606,8 @@ const styles = StyleSheet.create({
   },
   missedItemCard: {
     padding: 14,
+    minHeight: 56,
+    gap: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1630,6 +1618,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flex: 1,
+    minWidth: 0,
   },
   checkbox: {
     width: 22,
@@ -1641,6 +1630,7 @@ const styles = StyleSheet.create({
   },
   missedItemText: {
     flex: 1,
+    minWidth: 0,
   },
   missedDate: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1653,6 +1643,7 @@ const styles = StyleSheet.create({
   },
   deleteBtn: {
     padding: 6,
+    flexShrink: 0,
   },
 
   /* History */
@@ -1678,6 +1669,8 @@ const styles = StyleSheet.create({
   },
   historyRow: {
     padding: 14,
+    minHeight: 52,
+    gap: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1688,6 +1681,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     flex: 1,
+    minWidth: 0,
   },
   historyDate: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1703,6 +1697,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 0.75,
+    flexShrink: 0,
   },
   typeBadgeText: {
     fontFamily: 'Manrope_600SemiBold',

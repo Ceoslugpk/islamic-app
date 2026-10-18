@@ -1,0 +1,55 @@
+{
+  "count": 4,
+  "totalBlockingTimeMs": 197,
+  "maxTaskDurationMs": 177,
+  "tasks": [
+    {
+      "name": "self",
+      "startTime": 68.69999992847443,
+      "duration": 177,
+      "attribution": [
+        {
+          "name": "unknown",
+          "containerType": "window",
+          "containerName": ""
+        }
+      ]
+    },
+    {
+      "name": "self",
+      "startTime": 290.7999999523163,
+      "duration": 99,
+      "attribution": [
+        {
+          "name": "unknown",
+          "containerType": "window",
+          "containerName": ""
+        }
+      ]
+    },
+    {
+      "name": "self",
+      "startTime": 1975.1000000238419,
+      "duration": 56,
+      "attribution": [
+        {
+          "name": "unknown",
+          "containerType": "window",
+          "containerName": ""
+        }
+      ]
+    },
+    {
+      "name": "self",
+      "startTime": 20423.299999952316,
+      "duration": 65,
+      "attribution": [
+        {
+          "name": "unknown",
+          "containerType": "window",
+          "containerName": ""
+        }
+      ]
+    }
+  ]
+}

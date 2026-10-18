@@ -2,17 +2,16 @@ import React, { useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, fontRoles } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, PrimaryButton, Chip } from '../components/ui';
-import { fontRoles } from '../theme/tokens';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -297,7 +296,7 @@ export default function HajjJourneyScreen({
   backLabel?: string;
 }) {
   const { t } = useTranslation();
-  const { tokens, mode } = useThemeTokens();
+  const { tokens } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const isCompact = width < 380;
@@ -354,22 +353,23 @@ export default function HajjJourneyScreen({
           <View style={styles.pillarsHeaderRow}>
             <View style={[styles.badge, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
               <Ionicons name="sparkles" size={13} color={tokens.goldText} />
-              <Text style={[styles.badgeText, { color: tokens.goldText }]}>
+              <AppText variant="eyebrow" highlight style={styles.badgeText}>
                 {t('THE 4 PILLARS OF HAJJ (ARKAN)')}
-              </Text>
+              </AppText>
             </View>
           </View>
-          <Text style={[styles.pillarsTitle, { color: tokens.text }]}>
+          <AppText variant="title" style={styles.pillarsTitle}>
             {t('Essential Foundations of the Pilgrimage')}
-          </Text>
-          <Text style={[styles.pillarsBody, { color: tokens.muted }]}>
+          </AppText>
+          <AppText variant="body" tone="faint" style={styles.pillarsBody}>
             {t("1. Ihram (Intention) · 2. Wuquf at Arafah (Standing on 9th) · 3. Tawaf al-Ifadah (Circumambulation on 10th) · 4. Sa'i between Safa and Marwah. Missing any pillar invalidates Hajj.")}
-          </Text>
+          </AppText>
         </PremiumCard>
 
         {/* Days Details */}
-        {HAJJ_DAYS.map((day) => {
+        {HAJJ_DAYS.map((day, di) => {
           const isSelected = day.id === selectedDayId;
+          const isLastDay = di === HAJJ_DAYS.length - 1;
           return (
             <PremiumCard
               key={day.id}
@@ -378,6 +378,7 @@ export default function HajjJourneyScreen({
                 isSelected && {
                   borderColor: tokens.gold,
                 },
+                !onOpenDuas && isLastDay && { marginBottom: 0 },
               ]}
               padded
             >
@@ -392,20 +393,20 @@ export default function HajjJourneyScreen({
                     },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.dayTagText,
-                      { color: isSelected ? tokens.onGold : tokens.goldText },
-                    ]}
+                  <AppText
+                    variant="eyebrow"
+                    tone={isSelected ? 'onGold' : undefined}
+                    highlight={!isSelected}
+                    style={styles.dayTagText}
                   >
                     {t(day.dayNumber).toUpperCase()} · {t(day.hijriDate)}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
-              <Text style={[styles.dayTitle, { color: tokens.text }]}>
+              <AppText variant="title" style={styles.dayTitle}>
                 {t(day.title)}
-              </Text>
+              </AppText>
 
               <ArabicText style={[styles.dayArabicTitle, { color: tokens.muted }]}>
                 {day.arabicTitle}
@@ -422,21 +423,21 @@ export default function HajjJourneyScreen({
                 ]}
               >
                 <Ionicons name="navigate-outline" size={14} color={tokens.goldText} />
-                <Text style={[styles.locationBannerText, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.locationBannerText}>
                   {t(day.location)}
-                </Text>
+                </AppText>
               </View>
 
-              <Text style={[styles.daySummary, { color: tokens.muted }]}>
+              <AppText variant="body" tone="faint" style={styles.daySummary}>
                 {day.summary}
-              </Text>
+              </AppText>
 
               <Hairline style={{ marginVertical: 14 }} />
 
               {/* Key Rituals */}
-              <Text style={[styles.sectionSubtitle, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.sectionSubtitle}>
                 {t('Day Rituals & Fiqh Obligations')}
-              </Text>
+              </AppText>
               {day.rituals.map((r, ri) => {
                 const obligationColor =
                   r.obligation === 'Pillar (Rukn)'
@@ -457,18 +458,18 @@ export default function HajjJourneyScreen({
                     ]}
                   >
                     <View style={styles.ritualHeader}>
-                      <Text style={[styles.ritualName, { color: tokens.text }]}>
+                      <AppText variant="rowTitle" style={styles.ritualName}>
                         {r.name}
-                      </Text>
+                      </AppText>
                       <View style={[styles.obligationBadge, { borderColor: obligationColor }]}>
-                        <Text style={[styles.obligationText, { color: obligationColor }]}>
+                        <AppText variant="caption" style={[styles.obligationText, { color: obligationColor }]}>
                           {t(r.obligation)}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
-                    <Text style={[styles.ritualDesc, { color: tokens.muted }]}>
+                    <AppText variant="body" tone="faint" style={styles.ritualDesc}>
                       {r.description}
-                    </Text>
+                    </AppText>
                   </View>
                 );
               })}
@@ -476,9 +477,9 @@ export default function HajjJourneyScreen({
               {/* Duas Section */}
               {day.duas && day.duas.length > 0 && (
                 <View style={{ marginTop: 8 }}>
-                  <Text style={[styles.sectionSubtitle, { color: tokens.text, marginTop: 10 }]}>
+                  <AppText variant="sectionTitle" style={[styles.sectionSubtitle, { marginTop: 10 }]}>
                     {t('Pivotal Supplications')}
-                  </Text>
+                  </AppText>
                   {day.duas.map((d, di) => (
                     <View
                       key={di}
@@ -490,21 +491,21 @@ export default function HajjJourneyScreen({
                         },
                       ]}
                     >
-                      <Text style={[styles.duaBoxTitle, { color: tokens.goldText }]}>
+                      <AppText variant="rowTitle" highlight style={styles.duaBoxTitle}>
                         {d.title}
-                      </Text>
+                      </AppText>
                       <ArabicText style={[styles.duaBoxArabic, { color: tokens.text }]}>
                         {d.arabic}
                       </ArabicText>
-                      <Text style={[styles.duaBoxTranslit, { color: tokens.muted }]}>
+                      <AppText variant="subtitle" tone="faint" style={styles.duaBoxTranslit}>
                         {d.transliteration}
-                      </Text>
-                      <Text style={[styles.duaBoxTrans, { color: tokens.muted }]}>
+                      </AppText>
+                      <AppText variant="body" tone="faint" style={styles.duaBoxTrans}>
                         &quot;{d.translation}&quot;
-                      </Text>
-                      <Text style={[styles.duaBoxRef, { color: tokens.muted }]}>
+                      </AppText>
+                      <AppText variant="caption" tone="faint" style={styles.duaBoxRef}>
                         {t('Source')}: {d.reference}
-                      </Text>
+                      </AppText>
                     </View>
                   ))}
                 </View>
@@ -522,14 +523,14 @@ export default function HajjJourneyScreen({
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                   <Ionicons name="compass-outline" size={15} color={tokens.goldText} />
-                  <Text style={[styles.tipsBoxTitle, { color: tokens.goldText }]}>
+                  <AppText variant="rowTitle" highlight style={styles.tipsBoxTitle}>
                     {t('Pilgrim Logistics & Advice')}
-                  </Text>
+                  </AppText>
                 </View>
                 {day.practicalNotes.map((pn, pni) => (
-                  <Text key={pni} style={[styles.tipsBoxText, { color: tokens.muted }]}>
+                  <AppText key={pni} variant="body" tone="faint" style={styles.tipsBoxText}>
                     • {pn}
-                  </Text>
+                  </AppText>
                 ))}
               </View>
             </PremiumCard>
@@ -538,15 +539,15 @@ export default function HajjJourneyScreen({
 
         {/* Library link card */}
         {onOpenDuas && (
-          <PremiumCard style={{ marginBottom: 20, padding: 16 }}>
+          <PremiumCard style={{ marginBottom: 0, padding: 16 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ flex: 1, paddingRight: 10 }}>
-                <Text style={[styles.footerCardTitle, { color: tokens.text }]}>
+                <AppText variant="sectionTitle" style={styles.footerCardTitle}>
                   {t('Full Supplications Repository')}
-                </Text>
-                <Text style={[styles.footerCardSub, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.footerCardSub}>
                   {t('Explore the complete Hajj & Umrah Duas collection with audio and translations.')}
-                </Text>
+                </AppText>
               </View>
               <PrimaryButton
                 title={t('Explore Duas')}
@@ -562,7 +563,7 @@ export default function HajjJourneyScreen({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 10 },
+  content: {},
   chipsScroll: {
     flexDirection: 'row',
     gap: 8,

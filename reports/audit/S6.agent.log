@@ -1,0 +1,109 @@
+root agent idle; waiting up to 30m0s for 2 background task(s)
+The comprehensive S6 accessibility and usability audit is now running against the target at `http://15.235.203.134:9998`. The test suite is currently processing all 52 routes and 9 sheets/dialogs across the `393x852` and `360x800` viewport matrix in both light and dark themes. I will examine the results as soon as the test run finishes.
+The first pass (393x852 dark theme) across all 52 routes has completed successfully, and the audit is now running the 393x852 light theme pass. I am tracking the job until completion.
+The audit has completed the 393x852 (dark and light) passes and is currently progressing through the 360x800 test passes, to be followed by the text-scale, reduced-motion, sheets/dialogs, and 3x flaky-check passes. Continuing to track progress.
+The final route crawl pass (360x800 light) is nearly complete. The suite is transitioning into the modals, text-scaling, reduced-motion, and 3x flaky verification steps. I will process the evidence as soon as the run concludes.
+# S6 Accessibility and Usability Audit Report
+
+The read-only accessibility and usability audit (**S6**) for repository `/home/ubuntu/apps/islamic_app` targeting `http://15.235.203.134:9998` is complete.
+
+- **Source Code & Git State:** Untouched (`FIX_MODE=false`; no source, tests, package, proof, or git modifications).
+- **Report Written:** [`reports/audit/S6.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S6.json) (70,387 bytes, schema-validated JSON).
+- **Evidence Written:** [`reports/audit/evidence/S6/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/) (full per-viewport route crawls, modal audits, 3x flaky verification run ledger, and 28 screenshots).
+
+---
+
+## Executive Summary
+
+| Category | Audited | PASS | FAIL | BLOCKED | Key Blockers / Failure Drivers |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **Inventory Routes** | 52 | 0 | 52 | 0 | `aria-required-parent` on FloatingNav across all routes; 340+ `< 44px` touch targets; low contrast on 25+ routes |
+| **Sheets & Dialogs** | 9 | 0 | 5 | 4 | 4 dialogs runtime-blocked (`Alert.alert` Android-only, unmounted consent, audio stream dependency, biometric PIN enrollment) |
+| **Total Entities** | **61** | **0** | **57** | **4** | **12 Critical / Serious / Moderate findings documented** |
+
+---
+
+## Core Findings Summary
+
+1. **FloatingNav Tab Container Missing `role="tablist"` (Critical — WCAG 1.3.1, 4.1.2)**
+   - **Expected:** Every `<div role="tab">` must be nested inside an ancestor `<div role="tablist">`.
+   - **Actual:** FloatingNav renders 4 tabs (`Home`, `Quran`, `Library`, `Tools`) without a `role="tablist"` parent. Axe flags `aria-required-parent` as **CRITICAL** across all 52 crawled routes.
+   - **Evidence:** [`reports/audit/evidence/S6/routes-393-dark.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/routes-393-dark.json), [`reports/audit/evidence/S6/flaky-reruns.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/flaky-reruns.json).
+
+2. **FloatingNav Missing `role="navigation"` and Active State Attributes (Serious — WCAG 1.3.1, 4.1.2)**
+   - **Expected:** Navigation container has landmark `role="navigation"` and the active tab announces its state (`aria-selected="true"` or `aria-current="page"`).
+   - **Actual:** Zero navigation landmarks found on FloatingNav (`hasNavigationLandmark: false`). Active tab omits both `aria-selected` and `aria-current`.
+   - **Evidence:** [`reports/audit/evidence/S6/routes-393-dark.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/routes-393-dark.json).
+
+3. **Sub-4.5:1 Text Color Contrast on 25 Dark and 26 Light Routes (Serious — WCAG 1.4.3)**
+   - **Expected:** Text and images of text must meet at least 4.5:1 contrast against their background (3:1 for large text).
+   - **Actual:** Muted subtitle labels, Arabic surah metadata pills, and timestamps measure between 2.1:1 and 3.8:1 contrast across 25 dark routes and 26 light routes.
+   - **Evidence:** [`reports/audit/evidence/S6/routes-393-dark.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/routes-393-dark.json), [`reports/audit/evidence/S6/routes-393-light.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/routes-393-light.json).
+
+4. **340+ Interactive Touch Targets Smaller Than 44x44px (Serious — WCAG 2.5.5, 2.5.8)**
+   - **Expected:** Interactive controls have an effective touch target size of at least 44x44 CSS pixels.
+   - **Actual:** Widespread sub-44px targets:
+     - Top bar `Notifications` and `Open settings` icon buttons: `32x32px`
+     - Modal close buttons: `32x32px`
+     - Step/filter pills (Tasbih presets, Hajj/Umrah steps): `32px` to `35px` height
+     - Home retry button: `75x38px`
+     - Form search inputs: `42px` height
+   - **Evidence:** [`reports/audit/evidence/S6/modal-LocationSetupModal.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/modal-LocationSetupModal.png), [`reports/audit/evidence/S6/routes-393-dark.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/routes-393-dark.json).
+
+5. **Missing `aria-checked` on Radio Buttons & Prohibited Attributes in Settings (Critical — WCAG 4.1.2)**
+   - **Expected:** Radio buttons provide `aria-checked="true|false"`. Generic divs without interactive roles do not have `aria-label`.
+   - **Actual:** In `App::Modal` (Settings), 34 theme/accent radio buttons have `role="radio"` but omit `aria-checked` (Axe `aria-required-attr` Critical). Backdrop dismissal element `<div aria-label="Close settings">` has no interactive role (Axe `aria-prohibited-attr` Serious).
+   - **Evidence:** [`reports/audit/evidence/S6/modals-audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/modals-audit.json), [`reports/audit/evidence/S6/modal-AppModal-Settings.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/modal-AppModal-Settings.png).
+
+6. **Search Inputs and Textareas Lack Accessible Names Across 15 Routes (Serious — WCAG 1.3.1, 4.1.2)**
+   - **Expected:** All inputs and textareas have an accessible label (`<label>`, `aria-label`, or `aria-labelledby`).
+   - **Actual:** 25 inputs/textareas rely exclusively on `placeholder` attributes without an accessible label (e.g. `quran/home`, `quran/notes`, `quran/hifz`, `tools/zakat`).
+   - **Evidence:** [`reports/audit/evidence/S6/routes-393-dark.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/routes-393-dark.json).
+
+7. **Multiple H1 Section Headings Without Hierarchical Nesting (Moderate — WCAG 1.3.1, 2.4.6)**
+   - **Expected:** Page has one root `<h1>` followed by logical `<h2>`/`<h3>` subheadings.
+   - **Actual:** All 52 routes render multiple `<h1>` section tags without hierarchical nesting (e.g. "KNOWLEDGE & COLLECTIONS" and "GUIDES & EDUCATION" on Home are both `<h1>`).
+   - **Evidence:** [`reports/audit/evidence/S6/routes-393-dark.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/routes-393-dark.json).
+
+8. **Keyboard Tab Navigation Skips Primary Feed Cards (Moderate — WCAG 2.1.1)**
+   - **Expected:** All interactive feed items are reachable via standard keyboard Tab traversal.
+   - **Actual:** Cards rendered with `TouchableOpacity` lack `tabindex="0"` on web. Tab traversal jumps straight from Retry to FloatingNav tabs, skipping the primary cards.
+   - **Evidence:** [`reports/audit/evidence/S6/keyboard-focus-summary.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/keyboard-focus-summary.json).
+
+9. **Zero Compiled `prefers-reduced-motion` CSS Media Rules (Moderate — WCAG 2.3.3)**
+   - **Expected:** Stylesheets compile `@media (prefers-reduced-motion: reduce)` rules to suppress non-essential animations.
+   - **Actual:** Browser `matchMedia('(prefers-reduced-motion: reduce)').matches` is true, but 0 CSS media rules for reduced motion exist in bundled stylesheets.
+   - **Evidence:** [`reports/audit/evidence/S6/reduced-motion-audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/reduced-motion-audit.json).
+
+10. **130% Text Scale Header Clipping (Minor — WCAG 1.4.4)**
+    - **Expected:** Content scales to 130% without clipping or horizontal overflow.
+    - **Actual:** No page horizontal overflow occurs (`scrollWidth === clientWidth`), but compact header subtitles and pill badges clip text under 130% zoom in `library`, `quran/home`, and `quran/reader`.
+    - **Evidence:** [`reports/audit/evidence/S6/text-scale-audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/text-scale-audit.json), [`reports/audit/evidence/S6/textscale-library-130pct.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/textscale-library-130pct.png).
+
+---
+
+## Sheets & Dialogs Status Table
+
+| Dialog / Sheet ID | Type | Status | Severity | Actual Runtime Result | Evidence Path |
+| :--- | :---: | :---: | :---: | :--- | :--- |
+| **`App::Modal`** | Modal | **FAIL** | Critical | Renders with `role="dialog"`, `aria-modal="true"`. Keyboard focus trapped within dialog. Fails with 34 radio buttons missing `aria-checked` and backdrop `aria-prohibited-attr`. | [`evidence/S6/modal-AppModal-Settings.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/modal-AppModal-Settings.png) |
+| **`LocationSetupModal::Modal`** | Modal | **FAIL** | Serious | Mounts with `role="dialog"`, `aria-modal="true"`. Axe flags missing accessible dialog name (`aria-dialog-name`). Top-right close button is `32x32px` (`< 44px`). | [`evidence/S6/modal-LocationSetupModal.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/modal-LocationSetupModal.png) |
+| **`LocationSetupModal::Alert`** | Alert | **BLOCKED** | High | Android-only `Alert.alert` location rationale. In web target, `Platform.OS === 'web'` bypasses alert and resolves immediately (`src/lib/firstLaunchPermissions.ts:51`). | [`src/lib/firstLaunchPermissions.ts:50-70`](file:///home/ubuntu/apps/islamic_app/src/lib/firstLaunchPermissions.ts#L50-L70) |
+| **`LanguagePickerModal::Modal`** | Modal | **FAIL** | Serious | Mounts with `role="dialog"`, `aria-modal="true"`. Search input lacks explicit `<label>`. Sub-captions have contrast issues under light theme. | [`evidence/S6/modal-LanguagePickerModal.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/modal-LanguagePickerModal.png) |
+| **`QuranLanguageModal::Modal`** | Modal | **FAIL** | Critical | Mounts with `role="dialog"`, `aria-modal="true"`. Axe flags `aria-allowed-attr`, `aria-dialog-name`, and inherits radio `aria-required-attr`. | [`evidence/S6/modal-QuranLanguageModal.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/modal-QuranLanguageModal.png) |
+| **`AdhanReciterModal::Modal`** | Modal | **FAIL** | Serious | Mounts with `role="dialog"`, `aria-modal="true"`. Fails with 10 instances of `nested-interactive` (preview buttons nested inside touchable rows) and `aria-dialog-name`. | [`evidence/S6/modal-AdhanReciterModal.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/modal-AdhanReciterModal.png) |
+| **`AudioPlayerModal::Modal`** | Modal | **BLOCKED** | High | Conditioned on active audio playback (`playback !== null`) and MiniPlayer tap (`App.tsx:1384`). In headless web environment, native audio playback does not initialize. | [`App.tsx:1384-1399`](file:///home/ubuntu/apps/islamic_app/App.tsx#L1384-L1399) |
+| **`WomenConsentModal::Modal`** | Modal | **BLOCKED** | High | Component defined in `src/components/WomenConsentModal.tsx`, but `SettingsScreen.tsx:1696` uses an inline consent card to avoid web modal stacking bugs. Standalone modal is never invoked in active app navigation. | [`src/screens/SettingsScreen.tsx:1696-1705`](file:///home/ubuntu/apps/islamic_app/src/screens/SettingsScreen.tsx#L1696-L1705) |
+| **`WomenPinModal::Modal`** | Modal | **BLOCKED** | High | PIN modal invocation requires biometric/PIN enrollment in `SettingsScreen.tsx:1780`. Local credential enrollment is not established in unauthenticated web sessions. | [`src/screens/SettingsScreen.tsx:1780-1808`](file:///home/ubuntu/apps/islamic_app/src/screens/SettingsScreen.tsx#L1780-L1808) |
+
+---
+
+## Flaky Verification (3 Runs)
+
+The core accessibility assertions were re-run **3 consecutive times** against fresh browser sessions:
+- **Run 1:** 1 Critical violation (`aria-required-parent`) on root Home screen
+- **Run 2:** 1 Critical violation (`aria-required-parent`) on root Home screen
+- **Run 3:** 1 Critical violation (`aria-required-parent`) on root Home screen
+- **Result:** **100% Deterministic** (`status: "VERIFIED_DETERMINISTIC"` in [`reports/audit/evidence/S6/flaky-reruns.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S6/flaky-reruns.json)).
+
+The complete structured audit results are available in [`reports/audit/S6.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S6.json).

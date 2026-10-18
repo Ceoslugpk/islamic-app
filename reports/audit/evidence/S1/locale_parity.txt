@@ -1,0 +1,444 @@
+$ python3 -c import json,glob,os; base=json.load(open("src/locales/en.json")); b=set(base); rows=[]
+for p in sorted(glob.glob("src/locales/*.json")):
+ try: d=json.load(open(p)); keys=set(d); rows.append({"file":p,"keys":len(keys),"missing":sorted(b-keys),"extra":sorted(keys-b),"empty":sum(1 for v in d.values() if isinstance(v,str) and not v.strip()),"valid":True})
+ except Exception as e: rows.append({"file":p,"valid":False,"error":str(e)})
+print(json.dumps({"base_keys":len(b),"locales":rows},indent=2))
+{
+  "base_keys": 2302,
+  "locales": [
+    {
+      "file": "src/locales/am.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ar.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/az.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ba.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ber.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/bg.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/bn.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/bs.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ce.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/cs.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/de.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/dv.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/en.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/es.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/fa.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/fr.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ha.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/hi.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/id.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/it.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ja.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/kk.json",
+      "keys": 2263,
+      "missing": [
+        "Authentication failed. Try again.",
+        "Authentication unavailable on this device.",
+        "Choose a 4-digit PIN to lock sensitive tools",
+        "Confirm PIN",
+        "Confirming PIN",
+        "Create 4-Digit PIN",
+        "Current PIN is incorrect.",
+        "Digit {{digit}}",
+        "Enable controls",
+        "Enable notifications to control Quran recitation from your lock screen, notification shade, and headphones while listening in the background.",
+        "Enable reminders",
+        "Enter New PIN",
+        "Enter your 4-digit PIN",
+        "Enter your 4-digit PIN to access",
+        "Enter your current 4-digit PIN",
+        "Expand {{title}} live stream",
+        "Incorrect PIN. Please try again.",
+        "Islamic uses your location only to calculate accurate prayer times and the Qibla direction for where you are.\n\nIf you prefer, you can skip this and choose a city instead \u2014 you can change this anytime in Settings.",
+        "LIVE",
+        "No device security is set up. Enable a screen lock in your device settings.",
+        "Notifications let Islamic play the Adhan at prayer time and remind you to read the Quran daily.\n\nYou can change or turn these off anytime in Settings.",
+        "PIN Protection",
+        "PINs did not match. Please try again.",
+        "Pause stream",
+        "Play stream",
+        "Playback & Lock Screen Controls",
+        "Protected",
+        "Re-enter your 4-digit PIN to confirm",
+        "Remove Download",
+        "Remove offline audio for Surah {{name}} ({{size}})?",
+        "Strictly on-device lock",
+        "Too many attempts. Try again in {{seconds}}s.",
+        "Undo",
+        "Unlock",
+        "Unlocking\u2026",
+        "Use location",
+        "Use your device security (fingerprint, face, or PIN) to view Women's Worship.",
+        "Women's Worship Locked",
+        "Your location for prayer times"
+      ],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ko.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ku.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ml.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ms.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/my.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/nl.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/no.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/pl.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ps.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/pt.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ro.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ru.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/sd.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/si.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/so.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/sq.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/sv.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/sw.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ta.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/tg.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/th.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/tr.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/tt.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ug.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/ur.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/uz.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    },
+    {
+      "file": "src/locales/zh.json",
+      "keys": 2302,
+      "missing": [],
+      "extra": [],
+      "empty": 0,
+      "valid": true
+    }
+  ]
+}
+
+EXIT_CODE=0

@@ -1,0 +1,29 @@
+{
+  "claimsEvaluated": [
+    {
+      "claim": "Zero Data Sale",
+      "sourceText": "This application is built entirely as Sadaqah Jariyah. We do not sell, rent, monetize, or distribute any user data under any circumstances.",
+      "codeVerification": "No ad networks, tracker SDKs, or data broker integrations exist in source or compiled bundle.",
+      "status": "PASS"
+    },
+    {
+      "claim": "No Accounts & No Profiles",
+      "sourceText": "The app requires no account creation, sign-in, email address, or phone number. We do not create user profiles, fingerprint your device, or track your identity.",
+      "codeVerification": "No user database, auth token storage, or remote account API calls exist.",
+      "status": "PASS"
+    },
+    {
+      "claim": "Local Device Storage for Worship Data",
+      "sourceText": "All your personal interactions and records remain stored strictly within your device's isolated application container (SQLite + AsyncStorage).",
+      "codeVerification": "Prayer tracker, tasbih, fasting records, zakat calculations, Quran notes, and women's cycle data are stored purely on-device in sqlite/webKV.",
+      "status": "PASS"
+    },
+    {
+      "claim": "Strictly Minimal Public Endpoints",
+      "sourceText": "No personal profile data ever leaves your phone. Network traffic is restricted exclusively to verified public endpoints.",
+      "codeVerification": "Every observed network call was made to verified educational, Quranic, or calculation APIs; coordinates sent are approximate without identifiers.",
+      "status": "PASS"
+    }
+  ],
+  "overallCompliance": "PASS (100% adherence between legal privacy disclosures and codebase behavior)"
+}

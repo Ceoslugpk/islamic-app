@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AudioPlayer, AudioStatus, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
@@ -11,7 +11,6 @@ import {
   saveAudioSettings,
   saveRecentlyPlayed,
 } from './db';
-export type { PlaylistItem } from './db';
 import {
   clearAudioPreloadCache,
   enqueuePreloadUrls,
@@ -23,12 +22,13 @@ import {
   takePreloadedSound,
 } from './audioPreloader';
 import { isSurahDownloaded, resolveAudioUri } from './surahDownloads';
-export { resolveAudioUri };
 import { fetchWithTimeout } from './quran';
 import { isAppOnline } from './useConnectivity';
 import { ensureNotificationPermissionForPlayback } from './notifications';
-export {
 
+export type { PlaylistItem } from './db';
+export { resolveAudioUri };
+export {
   clearAudioPreloadCache,
   getAudioPreloadStats,
   hasPreloadedSound,
@@ -54,8 +54,6 @@ export interface Reciter {
   language: string;
   country?: string;
 }
-
-const RECITERS_CACHE_KEY = 'reciters-cache';
 
 /** Ayah counts for all 114 surahs to compute global ayah indices (1..6236). */
 export { SURAH_AYAH_COUNTS } from './surahAyahCounts';
@@ -251,26 +249,64 @@ export function getAudioTranslationLangName(langCode: string): string {
 
 let currentAudioTranslationEditionId = DEFAULT_AUDIO_TRANSLATION_EDITION_ID;
 const audioTranslationListeners = new Set<(edition: Reciter) => void>();
+let audioBootstrapError: Error | null = null;
+const defaultStorage = (AsyncStorage as any)?.default || AsyncStorage;
 
-// Initialize audio translation edition from storage on bootstrap
-AsyncStorage.getItem(AUDIO_TRANSLATION_EDITION_KEY)
-  .then((saved) => {
+let audioStorageBackend: {
+  getItem(key: string): Promise<string | null>;
+  setItem(key: string, value: string): Promise<void>;
+  removeItem(key: string): Promise<void>;
+} = defaultStorage;
+
+export function _setQuranAudioStorageForTesting(custom: any) {
+  audioStorageBackend = custom || defaultStorage;
+}
+
+export function _resetQuranAudioStateForTesting(customStorage?: any) {
+  currentAudioTranslationEditionId = DEFAULT_AUDIO_TRANSLATION_EDITION_ID;
+  audioTranslationListeners.clear();
+  audioBootstrapError = null;
+  audioStorageBackend = customStorage || defaultStorage;
+}
+
+export function getAudioTranslationBootstrapError(): Error | null {
+  return audioBootstrapError;
+}
+
+/**
+ * Initializes audio translation edition from storage on bootstrap.
+ * Legitimate missing key returns default edition without error.
+ * Storage read failure records audioBootstrapError and propagates rejection to caller.
+ */
+export async function bootstrapAudioTranslation(): Promise<Reciter> {
+  try {
+    const saved = await audioStorageBackend.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+    audioBootstrapError = null;
     if (saved) {
       const match = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.identifier === saved);
       if (match) {
         currentAudioTranslationEditionId = match.identifier;
         audioTranslationListeners.forEach((fn) => fn(match));
-        return;
+        return match;
       }
       const matchLang = LANGUAGE_AUDIO_EDITIONS[saved];
       if (matchLang) {
         currentAudioTranslationEditionId = matchLang.identifier;
         const ed = getAudioTranslationEdition();
         audioTranslationListeners.forEach((fn) => fn(ed));
+        return ed;
       }
     }
-  })
-  .catch(() => {});
+    return getAudioTranslationEdition();
+  } catch (err: any) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    audioBootstrapError = error;
+    throw error;
+  }
+}
+
+// Initialize audio translation edition from storage on bootstrap
+bootstrapAudioTranslation().catch(() => {});
 
 export function getAudioTranslationEditionId(): string {
   return currentAudioTranslationEditionId;
@@ -300,15 +336,79 @@ export async function setAudioTranslationEdition(identifierOrLangCode: string): 
     }
   }
 
+  // Read previous persisted state for both keys to enable disk restoration on failure
+  let prevPersistedEdition: string | null = null;
+  let prevPersistedLang: string | null = null;
+  try {
+    prevPersistedEdition = await audioStorageBackend.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+    prevPersistedLang = await audioStorageBackend.getItem(AUDIO_TRANSLATION_LANG_KEY);
+  } catch (readErr: any) {
+    const error = readErr instanceof Error ? readErr : new Error(String(readErr));
+    throw new Error(`Failed to read prior audio translation storage state: ${error.message}`);
+  }
+
+  const prevId = currentAudioTranslationEditionId;
   currentAudioTranslationEditionId = targetId;
   const ed = getAudioTranslationEdition();
   audioTranslationListeners.forEach((fn) => fn(ed));
 
   try {
-    await AsyncStorage.setItem(AUDIO_TRANSLATION_EDITION_KEY, targetId);
-    await AsyncStorage.setItem(AUDIO_TRANSLATION_LANG_KEY, ed.language);
-  } catch {
-    // ignore
+    // 1. Persist edition and language keys
+    await audioStorageBackend.setItem(AUDIO_TRANSLATION_EDITION_KEY, targetId);
+    await audioStorageBackend.setItem(AUDIO_TRANSLATION_LANG_KEY, ed.language);
+
+    // 2. Verify read-back for both keys
+    const readbackId = await audioStorageBackend.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+    if (readbackId !== targetId) {
+      throw new Error(`Audio translation edition read-back failed: expected "${targetId}", got "${readbackId}"`);
+    }
+
+    const readbackLang = await audioStorageBackend.getItem(AUDIO_TRANSLATION_LANG_KEY);
+    if (readbackLang !== ed.language) {
+      throw new Error(`Audio translation language read-back failed: expected "${ed.language}", got "${readbackLang}"`);
+    }
+  } catch (err) {
+    // Best-effort transactional restoration across BOTH keys on disk
+    const rollbackErrors: Error[] = [];
+
+    try {
+      if (prevPersistedEdition !== null) {
+        await audioStorageBackend.setItem(AUDIO_TRANSLATION_EDITION_KEY, prevPersistedEdition);
+      } else {
+        await audioStorageBackend.removeItem(AUDIO_TRANSLATION_EDITION_KEY);
+      }
+    } catch (rbErr: any) {
+      rollbackErrors.push(rbErr instanceof Error ? rbErr : new Error(String(rbErr)));
+    }
+
+    try {
+      if (prevPersistedLang !== null) {
+        await audioStorageBackend.setItem(AUDIO_TRANSLATION_LANG_KEY, prevPersistedLang);
+      } else {
+        await audioStorageBackend.removeItem(AUDIO_TRANSLATION_LANG_KEY);
+      }
+    } catch (rbErr: any) {
+      rollbackErrors.push(rbErr instanceof Error ? rbErr : new Error(String(rbErr)));
+    }
+
+    // Always restore in-memory state and notify listeners of previous edition
+    currentAudioTranslationEditionId = prevId;
+    const prevEd = getAudioTranslationEdition();
+    audioTranslationListeners.forEach((fn) => fn(prevEd));
+
+    if (rollbackErrors.length > 0) {
+      const details = rollbackErrors.map((e) => e.message).join('; ');
+      const structuredError = new Error(
+        `Audio translation persistence failed: ${err instanceof Error ? err.message : String(err)}. ` +
+        `Rollback incomplete (${rollbackErrors.length} key(s) failed to restore): ${details}`
+      );
+      (structuredError as any).originalError = err;
+      (structuredError as any).rollbackErrors = rollbackErrors;
+      (structuredError as any).rollbackIncomplete = true;
+      throw structuredError;
+    }
+
+    throw err;
   }
 }
 
@@ -322,14 +422,11 @@ export function subscribeAudioTranslation(listener: (edition: Reciter) => void):
 }
 
 export function useAudioTranslation() {
-  const [edition, setEdition] = useState<Reciter>(getAudioTranslationEdition());
-
-  useEffect(() => {
-    setEdition(getAudioTranslationEdition());
-    return subscribeAudioTranslation((next) => {
-      setEdition(next);
-    });
-  }, []);
+  const edition = useSyncExternalStore(
+    subscribeAudioTranslation,
+    getAudioTranslationEdition,
+    getAudioTranslationEdition
+  );
 
   return {
     audioEdition: edition,
@@ -697,7 +794,7 @@ export async function fetchReciters(): Promise<Reciter[]> {
     }
 
     return arabicReciters.length > 0 ? arabicReciters : DEFAULT_RECITERS;
-  } catch (err) {
+  } catch {
     if (cachedReciters && cachedReciters.length > 0) {
       return cachedReciters;
     }
@@ -1525,7 +1622,7 @@ async function playTranslationSegment(
 
   try {
     await playAudioUrl(transUrl);
-  } catch (err) {
+  } catch {
     // If translation playback fails, skip to next ayah without breaking recitation flow
     await advanceAfterAyah(surah, ayah, isSurahMode, arabicReciter, arabicReciterName);
   }
@@ -2088,7 +2185,7 @@ export async function playSurah(
 
   try {
     await playAudioUrl(playbackUrl);
-  } catch (err) {
+  } catch {
     // If full-surah audio fails, fallback to verse-by-verse starting at ayah 1
     const fallbackAyahUrl = getAyahAudioUrl(resolvedId, targetSurah, 1);
     await playAyah(resolvedId, fallbackAyahUrl, resolvedTitle, resolvedReciter, targetSurah, 1, true);

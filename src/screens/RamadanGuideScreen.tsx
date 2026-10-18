@@ -1,17 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, fontRoles } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
-import { fontRoles } from '../theme/tokens';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import {
@@ -89,32 +88,32 @@ export default function RamadanGuideScreen({
     };
   }, []);
 
-  const renderItem = (item: RamadanGuideItem) => {
+  const renderItem = (item: RamadanGuideItem, isLast = false) => {
     const update = updates[item.id];
     const arabic = update?.arabic ?? item.arabic;
     const translation = update?.translation ?? item.translation;
     const grades = update?.grades ?? item.grades;
     return (
-      <PremiumCard key={item.id} style={styles.itemCard} padded>
-        <Text style={[styles.itemTitle, { color: tokens.textPrimary }]}>{t(item.title)}</Text>
+      <PremiumCard key={item.id} style={[styles.itemCard, isLast && { marginBottom: 0 }]} padded>
+        <AppText variant="rowTitle" style={styles.itemTitle}>{t(item.title)}</AppText>
         {arabic ? (
           <ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
             {arabic}
           </ArabicText>
         ) : null}
         {item.transliteration ? (
-          <Text style={[styles.itemTranslit, { color: tokens.textSecondary }]}>
+          <AppText variant="subtitle" tone="faint" style={styles.itemTranslit}>
             {item.transliteration}
-          </Text>
+          </AppText>
         ) : null}
-        <Text style={[styles.itemTranslation, { color: tokens.textSecondary }]}>
+        <AppText variant="body" style={styles.itemTranslation}>
           {t(translation)}
-        </Text>
+        </AppText>
         <View style={styles.refRow}>
           <Ionicons name="book-outline" size={12} color={tokens.textMuted} />
-          <Text style={[styles.itemRef, { color: tokens.textMuted }]} numberOfLines={2}>
+          <AppText variant="caption" tone="faint" style={styles.itemRef}>
             {item.reference}
-          </Text>
+          </AppText>
           {grades ? (
             <View
               style={[
@@ -122,7 +121,7 @@ export default function RamadanGuideScreen({
                 { backgroundColor: tokens.sagePill, borderColor: 'transparent' },
               ]}
             >
-              <Text style={[styles.gradePillText, { color: tokens.goldText }]}>{grades}</Text>
+              <AppText variant="eyebrow" highlight style={styles.gradePillText}>{grades}</AppText>
             </View>
           ) : null}
         </View>
@@ -189,71 +188,77 @@ export default function RamadanGuideScreen({
                 />
               </View>
               <View style={styles.bannerTextCol}>
-                <Text style={[styles.bannerTitle, { color: tokens.textPrimary }]}>{bannerTitle}</Text>
+                <AppText variant="sectionTitle" style={styles.bannerTitle}>{bannerTitle}</AppText>
                 {hijriLabel ? (
-                  <Text style={[styles.bannerMeta, { color: tokens.textMuted }]}>{hijriLabel}</Text>
+                  <AppText variant="caption" tone="faint" style={styles.bannerMeta}>{hijriLabel}</AppText>
                 ) : null}
                 {banner.isRamadan ? (
-                  <Text style={[styles.bannerMeta, { color: tokens.textSecondary }]}>
+                  <AppText variant="caption" style={styles.bannerMeta}>
                     {banner.daysUntilLaylatulQadr != null && banner.daysUntilLaylatulQadr > 0
                       ? `Laylatul Qadr expected in ${banner.daysUntilLaylatulQadr} night${
                           banner.daysUntilLaylatulQadr === 1 ? '' : 's'
                         } — search for it on the odd nights.`
                       : t('Seek Laylatul Qadr on every odd night of the last ten nights.')}
-                  </Text>
+                  </AppText>
                 ) : null}
                 {upcoming && upcoming.daysUntil > 0 ? (
-                  <Text style={[styles.bannerMeta, { color: tokens.textMuted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.bannerMeta}>
                     {t('Next')}: {upcoming.name} {t('in')} {upcoming.daysUntil} day
                     {upcoming.daysUntil === 1 ? '' : 's'}
-                  </Text>
+                  </AppText>
                 ) : null}
               </View>
             </View>
           </PremiumCard>
         ) : null}
 
-        {RAMADAN_GUIDE_SECTIONS.map((section, si) => (
-          <View key={section.id} style={styles.sectionWrap}>
-            <View style={styles.sectionHeadRow}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: tokens.iconCircleBg, borderColor: 'transparent' },
-                ]}
-              >
-                <Ionicons
-                  name={
-                    (SECTION_ICONS[section.id] ?? 'book-outline') as keyof typeof Ionicons.glyphMap
-                  }
-                  size={16}
-                  color={tokens.iconCircleFg}
-                />
+        {RAMADAN_GUIDE_SECTIONS.map((section, si) => {
+          const isLastSection = si === RAMADAN_GUIDE_SECTIONS.length - 1;
+          return (
+            <View key={section.id} style={[styles.sectionWrap, isLastSection && { marginBottom: 0 }]}>
+              <View style={styles.sectionHeadRow}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: tokens.iconCircleBg, borderColor: 'transparent' },
+                  ]}
+                >
+                  <Ionicons
+                    name={
+                      (SECTION_ICONS[section.id] ?? 'book-outline') as keyof typeof Ionicons.glyphMap
+                    }
+                    size={16}
+                    color={tokens.iconCircleFg}
+                  />
+                </View>
+                <View style={styles.sectionTitleCol}>
+                  <AppText variant="sectionTitle" style={styles.sectionTitle}>
+                    {t(section.title)}
+                  </AppText>
+                  {section.arabicTitle ? (
+                    <ArabicText align="left" size={13} style={{ color: tokens.text }}>
+                      {section.arabicTitle}
+                    </ArabicText>
+                  ) : null}
+                </View>
               </View>
-              <View style={styles.sectionTitleCol}>
-                <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
-                  {t(section.title)}
-                </Text>
-                {section.arabicTitle ? (
-                  <ArabicText align="left" size={13} style={{ color: tokens.text }}>
-                    {section.arabicTitle}
-                  </ArabicText>
-                ) : null}
-              </View>
+              {section.items.map((item, ii) => {
+                const isLastItem = isLastSection && ii === section.items.length - 1;
+                return renderItem(item, isLastItem);
+              })}
+              {!isLastSection ? (
+                <Hairline style={styles.sectionDivider} />
+              ) : null}
             </View>
-            {section.items.map(renderItem)}
-            {si < RAMADAN_GUIDE_SECTIONS.length - 1 ? (
-              <Hairline style={styles.sectionDivider} />
-            ) : null}
-          </View>
-        ))}
+          );
+        })}
       </DetailScreen.ScrollView>
     </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 14 },
+  content: {},
   bannerCard: { marginBottom: 16 },
   bannerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bannerIcon: {
@@ -263,8 +268,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  bannerTextCol: { flex: 1 },
+  bannerTextCol: { flex: 1, minWidth: 0 },
   bannerTitle: {
     fontFamily: fontRoles.title,
     fontSize: 16,
@@ -272,7 +278,6 @@ const styles = StyleSheet.create({
   bannerMeta: {
     fontFamily: fontRoles.ui,
     fontSize: 11.5,
-    lineHeight: 16,
     marginTop: 2,
   },
   sectionWrap: { marginBottom: 18 },
@@ -284,8 +289,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  sectionTitleCol: { flex: 1 },
+  sectionTitleCol: { flex: 1, minWidth: 0 },
   sectionTitle: {
     fontFamily: fontRoles.title,
     fontSize: 16,
@@ -301,20 +307,17 @@ const styles = StyleSheet.create({
   itemArabic: {
     fontFamily: fontRoles.arabic,
     fontSize: 18,
-    lineHeight: 28,
     marginBottom: 6,
   },
   itemTranslit: {
     fontFamily: fontRoles.ui,
     fontSize: 11.5,
     fontStyle: 'italic',
-    lineHeight: 17,
     marginBottom: 4,
   },
   itemTranslation: {
     fontFamily: fontRoles.ui,
     fontSize: 13,
-    lineHeight: 19,
   },
   refRow: {
     flexDirection: 'row',
@@ -326,13 +329,15 @@ const styles = StyleSheet.create({
   itemRef: {
     fontFamily: fontRoles.ui,
     fontSize: 10.5,
-    maxWidth: '70%',
+    flexShrink: 1,
+    minWidth: 0,
   },
   gradePill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
     borderWidth: 1,
+    flexShrink: 0,
   },
   gradePillText: {
     fontFamily: fontRoles.uiBold,

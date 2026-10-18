@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
@@ -9,6 +8,7 @@ import {
   useWindowDimensions,
   BackHandler,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
@@ -119,33 +119,32 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
               >
                 <Ionicons name="color-palette-outline" size={15} color={tokens.goldText} />
-                <Text style={[styles.backChipText, { color: tokens.goldText }]}>{t('Legend')}</Text>
+                <AppText variant="link" style={styles.backChipText}>{t('Legend')}</AppText>
               </TouchableOpacity>
             ) : undefined
           }
         />
       }
     >
-      <View style={styles.contentWrap}>
-        {openSurah === null ? (
-          <DetailScreen.ScrollView
-            contentContainerStyle={[
-              styles.content,
-              {
-                paddingHorizontal: paddingH,
-              },
-            ]}
-            style={{ flex: 1 }}
-          >
+      {openSurah === null ? (
+        <DetailScreen.ScrollView
+          style={[styles.contentWrap, { flex: 1 }]}
+          contentContainerStyle={[
+            styles.content,
+            {
+              paddingHorizontal: paddingH,
+            },
+          ]}
+        >
             <PremiumCard
               padded={false}
               style={styles.infoCard}
               contentStyle={styles.infoCardContent}
             >
               <Ionicons name="information-circle-outline" size={18} color={tokens.goldText} />
-              <Text style={[styles.infoText, { color: tokens.muted }]}>
+              <AppText variant="body" tone="faint" style={styles.infoText}>
                 {t('Every surah of the Quran in standard tajweed colors — ghunnah, idgham, qalqalah, ikhfa, madd and silent letters. Data from islamic.app (uthmani tajweed edition).')}
-              </Text>
+              </AppText>
             </PremiumCard>
 
             <View style={styles.searchBoxWrap}>
@@ -183,11 +182,11 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
                       },
                     ]}
                   >
-                    <Text style={[styles.numText, { color: tokens.goldText }]}>{s.number}</Text>
+                    <AppText variant="numeral" highlight style={styles.numText}>{s.number}</AppText>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.rowName, { color: tokens.text }]}>{getLocalizedSurahName(s.number, s.englishName)}</Text>
-                    <Text style={[styles.rowCount, { color: tokens.muted }]}>{s.numberOfAyahs} ayahs</Text>
+                    <AppText variant="rowTitle" style={styles.rowName}>{getLocalizedSurahName(s.number, s.englishName)}</AppText>
+                    <AppText variant="caption" tone="faint" style={styles.rowCount}>{s.numberOfAyahs} ayahs</AppText>
                   </View>
                   <ArabicText size={18} style={{ color: tokens.arabicName }}>{s.name}</ArabicText>
                   <Ionicons name={getForwardIcon()} size={16} color={tokens.muted} style={{ marginStart: 8 }} />
@@ -208,9 +207,9 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
               accessibilityRole="button"
             >
               <Ionicons name={showLegend ? 'chevron-up' : 'chevron-down'} size={15} color={tokens.goldText} />
-              <Text style={[styles.legendToggleText, { color: tokens.goldText }]}>
+              <AppText variant="link" style={styles.legendToggleText}>
                 {showLegend ? t('Hide color legend') : t('Show color legend')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
 
             {showLegend && (
@@ -229,7 +228,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
             )}
           </DetailScreen.ScrollView>
         ) : (
-          <View style={{ flex: 1 }}>
+          <View style={[styles.contentWrap, { flex: 1 }]}>
             {showLegend && (
               <View style={[styles.content, { paddingBottom: 8, paddingHorizontal: paddingH }]}>
                 <View
@@ -250,18 +249,18 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
             {loading ? (
               <View style={styles.center}>
                 <ActivityIndicator color={tokens.gold} size="large" />
-                <Text style={[styles.hint, { color: tokens.muted }]}>{t('Loading tajweed text...')}</Text>
+                <AppText variant="caption" tone="faint" style={styles.hint}>{t('Loading tajweed text...')}</AppText>
               </View>
             ) : error ? (
               <View style={styles.center}>
                 <Ionicons name="cloud-offline-outline" size={40} color={tokens.muted} />
-                <Text style={[styles.errorText, { color: tokens.muted }]}>{error}</Text>
+                <AppText variant="body" tone="danger" style={styles.errorText}>{error}</AppText>
                 <TouchableOpacity
                   style={[styles.retryBtn, getPillShadow(mode), { backgroundColor: tokens.gold, borderColor: tokens.goldBorder }]}
                   onPress={() => loadSurah(openSurah)}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.retryText, { color: tokens.onGold }]}>{t('Retry')}</Text>
+                  <AppText variant="link" tone="onGold" style={styles.retryText}>{t('Retry')}</AppText>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -279,9 +278,9 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
                 windowSize={7}
                 removeClippedSubviews={Platform.OS !== 'web'}
                 ListHeaderComponent={
-                  <Text style={[styles.listHint, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.listHint}>
                     {ayahs?.length || 0} {t('ayahs · tajweed colors')}
-                  </Text>
+                  </AppText>
                 }
                 renderItem={({ item }: { item: TajweedAyah }) => (
                   <View
@@ -294,7 +293,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
                       },
                     ]}
                   >
-                    <Text style={[styles.ayahNum, { color: tokens.goldText }]}>{item.verseKey}</Text>
+                    <AppText variant="numeral" highlight style={styles.ayahNum}>{item.verseKey}</AppText>
                     <TajweedText text={item.html} size={isCompact ? 22 : 25} />
                   </View>
                 )}
@@ -302,8 +301,7 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
             )}
           </View>
         )}
-      </View>
-    </DetailScreen>
+      </DetailScreen>
   );
 }
 
@@ -316,10 +314,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   headerWrap: {
-    paddingTop: 4,
     paddingBottom: 4,
   },
-  content: { paddingTop: 6 },
+  content: {},
   infoCard: { marginBottom: 12 },
   infoCardContent: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
   infoText: { fontFamily: 'Manrope_400Regular', fontSize: 12.5, lineHeight: 18, flex: 1 },
@@ -389,7 +386,7 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19, textAlign: 'center' },
   retryBtn: { paddingHorizontal: 22, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   retryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
-  ayahListContainer: { paddingTop: 8, gap: 12 },
+  ayahListContainer: { gap: 12 },
   listHint: { fontFamily: 'Manrope_500Medium', fontSize: 11, marginBottom: 8 },
   ayahBlockCard: {
     borderRadius: 16,

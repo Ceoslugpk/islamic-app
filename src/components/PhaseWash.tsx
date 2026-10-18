@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Platform, StyleSheet, View, AccessibilityInfo } from 'react-native';
-import { useTheme } from '../lib/theme';
 import { PRAYER_ATMOSPHERE_CONFIG, PrayerSegment } from './PrayerHeroAtmosphere';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
@@ -31,28 +30,38 @@ interface PhaseWashProps {
  * Sits absolutely behind the scroll content; pointerEvents none.
  */
 export function PhaseWash({ segment, intensity = 0.5, style }: PhaseWashProps) {
-  const { colors } = useTheme();
   const [displayed, setDisplayed] = useState<PrayerSegment>(segment);
   const [prev, setPrev] = useState<PrayerSegment>(segment);
   const [reduced, setReduced] = useState(false);
-  const fade = useRef(new Animated.Value(1)).current;
+  const [fade] = useState(() => new Animated.Value(1));
+  const isInitialMount = useRef(true);
+
+  if (segment !== displayed) {
+    setPrev(displayed);
+    setDisplayed(segment);
+  }
 
   useEffect(() => {
     checkReducedMotion(setReduced);
   }, []);
 
   useEffect(() => {
-    if (segment === displayed) return;
-    setPrev(displayed);
-    setDisplayed(segment);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     fade.setValue(0);
-    Animated.timing(fade, {
+    const anim = Animated.timing(fade, {
       toValue: 1,
       duration: reduced ? 0 : 300,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: USE_NATIVE_DRIVER,
-    }).start();
-  }, [segment, displayed, fade, reduced]);
+    });
+    anim.start();
+    return () => {
+      anim.stop();
+    };
+  }, [displayed, fade, reduced]);
 
   if (reduced) {
     const cfg = PRAYER_ATMOSPHERE_CONFIG[segment];

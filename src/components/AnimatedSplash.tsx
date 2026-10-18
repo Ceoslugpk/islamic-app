@@ -4,24 +4,32 @@ import {
   Easing,
   Platform,
   StyleSheet,
-  Text,
   View,
   AccessibilityInfo,
+  Image,
 } from 'react-native';
 import Svg, { Path, Defs, Mask, Rect } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StatusBar } from 'expo-status-bar';
 
 import { useTheme } from '../lib/theme';
+import { getAppLogoSource } from '../theme/tokens';
 import { isRTL, t } from '../lib/i18n';
 
 const AnimatedSvg = Animated.createAnimatedComponent(Svg);
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
-const BG_DARK = '#0E1214';
-const BG_LIGHT = '#F4EEDE';
+export const BG_DARK = '#0E1214';
+const BG_DARK_TOP = '#12121C';
+const BG_DARK_BOTTOM = '#0C0C14';
+export const BG_LIGHT = '#F4EEDE';
+const BG_LIGHT_TOP = '#F8F4EA';
+const BG_LIGHT_BOTTOM = '#F0EBDE';
 const IVORY = '#F4EEDE';
-const INK = '#0E1214';
-const BRAND_GREEN_LIGHT = '#105A4B';
-const BRAND_GREEN_DARK = '#10B981';
+const INK = '#14221E';
+export const BRAND_GREEN_LIGHT = '#105A4B';
+export const BRAND_GREEN_DARK = '#10B981';
+const SPLASH_ACCENT_DARK = '#E6BE6C';
 
 // Exact approved symbol geometry (viewBox 100x100, from the brand SVGs)
 const LOGO_PATH = 'M20 93V37A32 32 0 0 1 52 5H65A15 15 0 0 1 80 20V93H65.4L65 37.5A6.5 6.5 0 0 0 52 37.5L51.6 93Z';
@@ -41,27 +49,28 @@ interface AnimatedSplashProps {
 export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
   const { mode } = useTheme();
   const isDark = mode !== 'paper';
-  const bg = isDark ? BG_DARK : BG_LIGHT;
+  const gradient = isDark ? [BG_DARK_TOP, BG_DARK_BOTTOM] as const : [BG_LIGHT_TOP, BG_LIGHT_BOTTOM] as const;
   const logoColor = isDark ? IVORY : INK;
-  const accentColor = isDark ? BRAND_GREEN_DARK : BRAND_GREEN_LIGHT;
+  const accentColor = isDark ? SPLASH_ACCENT_DARK : BRAND_GREEN_LIGHT;
 
-  // Phase progress (0..1 drives the timeline, we step phases manually)
-  const [phase, setPhase] = useState(0);
   const [isFading, setIsFading] = useState(false);
-  const slit = useRef(new Animated.Value(0)).current;
-  const grow = useRef(new Animated.Value(0)).current;
-  const sweep = useRef(new Animated.Value(0)).current;
-  const fadeOut = useRef(new Animated.Value(1)).current;
-  const [reduced, setReduced] = useState(false);
+  const [slit] = useState(() => new Animated.Value(0));
+  const [grow] = useState(() => new Animated.Value(0));
+  const [sweep] = useState(() => new Animated.Value(0));
+  const [fadeOut] = useState(() => new Animated.Value(1));
+  const [reduced, setReduced] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    return false;
+  });
   const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  useEffect(() => {
+    onDoneRef.current = onDone;
+  });
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-        setReduced(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-      }
-    } else {
+    if (Platform.OS !== 'web') {
       AccessibilityInfo.isReduceMotionEnabled().then((v) => setReduced(!!v)).catch(() => {});
     }
   }, []);
@@ -83,7 +92,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
       return () => clearTimeout(t);
     }
 
-    const timings: Array<[number, () => void]> = [];
+    const timings: [number, () => void][] = [];
     // Safety fallback: if anything prevents animation sequence from completing, ensure app reveals within 1600ms
     const safetyTimer = setTimeout(finish, 1600);
     timings.push([1, () => clearTimeout(safetyTimer)]);
@@ -119,7 +128,6 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
 
     slitAnim.start(() => {
       growAnim.start(() => {
-        setPhase(1); // wordmark + hold
         const hold = setTimeout(() => {
           sweepAnim.start(() => {
             const hold2 = setTimeout(() => {
@@ -137,7 +145,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
     });
 
     return () => timings.forEach(([, c]) => c());
-  }, [reduced]);
+  }, [reduced, slit, grow, sweep, fadeOut]);
 
   // Mask: a rectangle that grows SYMMETRICALLY from the slit (x≈58, the true
   // center of the logo's open-base gap between x=51.6 and x=65.4) outward both ways
@@ -157,20 +165,54 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
   return (
     <Animated.View
       pointerEvents={isFading ? 'none' : 'auto'}
-      style={[styles.root, { backgroundColor: bg, opacity: fadeOut }]}
+      style={[
+        styles.root,
+        {
+          backgroundColor: isDark ? BG_DARK_TOP : BG_LIGHT_TOP,
+          opacity: fadeOut,
+        },
+      ]}
       accessibilityLabel={t('Islamic app splash')}
     >
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <LinearGradient colors={gradient} style={StyleSheet.absoluteFill} />
       <View style={styles.center}>
-        {/* The symbol grows from the slit via an SVG mask */}
+        {/* The symbol grows from the slit via an SVG mask (light mode) or smooth dark tile reveal (dark mode) */}
         <View style={styles.logoWrap}>
-          <AnimatedSvg width={140} height={140} viewBox="0 0 100 100">
-            <Defs>
-              <Mask id="reveal">
-                <AnimatedRect x={maskX} y={0} width={maskWidth} height={100} fill="#fff" />
-              </Mask>
-            </Defs>
-            <Path d={LOGO_PATH} fill={logoColor} mask="url(#reveal)" />
-          </AnimatedSvg>
+          {isDark ? (
+            <Animated.View
+              style={[
+                styles.darkLogoWrap,
+                {
+                  opacity: grow,
+                  transform: [
+                    {
+                      scale: grow.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.94, 1],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+              testID="splash-dark-logo"
+            >
+              <Image
+                source={getAppLogoSource('ink')}
+                style={styles.darkLogoImage}
+                resizeMode="cover"
+              />
+            </Animated.View>
+          ) : (
+            <AnimatedSvg width={140} height={140} viewBox="0 0 100 100">
+              <Defs>
+                <Mask id="reveal">
+                  <AnimatedRect x={maskX} y={0} width={maskWidth} height={100} fill="#fff" />
+                </Mask>
+              </Defs>
+              <Path d={LOGO_PATH} fill={logoColor} mask="url(#reveal)" />
+            </AnimatedSvg>
+          )}
 
           {/* Slit light (the vertical opening that starts the reveal) */}
           <Animated.View
@@ -193,7 +235,7 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
               {
                 left: sweepX,
                 opacity: sweepOpacity,
-                backgroundColor: logoColor,
+                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.4)' : logoColor,
               },
             ]}
           />
@@ -201,14 +243,31 @@ export function AnimatedSplash({ onDone }: AnimatedSplashProps) {
 
         {/* Wordmark — appears after the symbol is fully revealed */}
         <Animated.Text
-          style={[styles.wordmark, { opacity: wordmarkOpacity, color: logoColor }]}
+          style={[
+            styles.wordmark,
+            {
+              opacity: wordmarkOpacity,
+              color: logoColor,
+              fontFamily: isRTL() ? 'Amiri_700Bold' : 'SourceSans3_500Medium',
+              letterSpacing: isRTL() ? 0 : 8,
+            },
+          ]}
         >
           {isRTL() ? 'اسلامک' : 'ISLAMIC'}
         </Animated.Text>
 
         {/* Tagline — appears at the very end (phase 2) */}
         <Animated.Text
-          style={[styles.tagline, { color: accentColor, opacity: wordmarkOpacity }]}
+          style={[
+            styles.tagline,
+            {
+              color: accentColor,
+              opacity: wordmarkOpacity,
+              fontFamily: isRTL() ? 'Amiri_400Regular' : 'Manrope_500Medium',
+              letterSpacing: isRTL() ? 0 : 3,
+              textTransform: isRTL() ? 'none' : 'uppercase',
+            },
+          ]}
         >
           {t('Your Daily Companion')}
         </Animated.Text>
@@ -233,6 +292,20 @@ const styles = StyleSheet.create({
     height: 140,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  darkLogoWrap: {
+    width: 140,
+    height: 140,
+    borderRadius: 35,
+    overflow: 'hidden',
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  darkLogoImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 35,
   },
   slit: {
     position: 'absolute',

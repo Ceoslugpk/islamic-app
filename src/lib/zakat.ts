@@ -69,11 +69,11 @@ export interface ZakatEvaluation {
     investments: number;
     other: number;
   };
-  convertedDue: Array<{
+  convertedDue: {
     code: string;
     symbol: string;
     amount: number;
-  }>;
+  }[];
 }
 
 export function getCurrencyConfig(code: string): CurrencyConfig {

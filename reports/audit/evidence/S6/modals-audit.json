@@ -1,0 +1,1102 @@
+{
+  "App::Modal": {
+    "modalAttributes": {
+      "role": "dialog",
+      "ariaModal": "true",
+      "ariaLabel": null
+    },
+    "seriousCriticalViolations": [
+      {
+        "id": "aria-prohibited-attr",
+        "impact": "serious",
+        "tags": [
+          "cat.aria",
+          "wcag2a",
+          "wcag412",
+          "EN-301-549",
+          "EN-9.4.1.2"
+        ],
+        "description": "Ensure ARIA attributes are not prohibited for an element's role",
+        "help": "Elements must only use permitted ARIA attributes",
+        "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-prohibited-attr?application=axeAPI",
+        "nodes": [
+          {
+            "any": [],
+            "all": [],
+            "none": [
+              {
+                "id": "aria-prohibited-attr",
+                "data": {
+                  "role": null,
+                  "nodeName": "div",
+                  "messageKey": "noRoleSingular",
+                  "prohibited": [
+                    "aria-label"
+                  ]
+                },
+                "relatedNodes": [],
+                "impact": "serious",
+                "message": "aria-label attribute cannot be used on a div with no valid role attribute."
+              }
+            ],
+            "impact": "serious",
+            "html": "<div aria-label=\"Close settings\" tabindex=\"0\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af\"></div>",
+            "target": [
+              "div[aria-label=\"Close settings\"]"
+            ],
+            "failureSummary": "Fix all of the following:\n  aria-label attribute cannot be used on a div with no valid role attribute."
+          }
+        ]
+      },
+      {
+        "id": "aria-required-attr",
+        "impact": "critical",
+        "tags": [
+          "cat.aria",
+          "wcag2a",
+          "wcag412",
+          "EN-301-549",
+          "EN-9.4.1.2"
+        ],
+        "description": "Ensure elements with ARIA roles have all required ARIA attributes",
+        "help": "Required ARIA attributes must be provided",
+        "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-required-attr?application=axeAPI",
+        "nodes": [
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Theme: System\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-color: rgba(0, 0, 0, 0); border-width: 0px; border-radius: 14px; min-width: 38px; min-height: 28px; padding-top: 2px; padding-bottom: 2px;\">",
+            "target": [
+              "div[aria-label=\"Theme: System\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Theme: Dark\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-color: rgba(0, 0, 0, 0); border-width: 0px; border-radius: 14px; min-width: 38px; min-height: 28px; padding-top: 2px; padding-bottom: 2px;\">",
+            "target": [
+              "div[aria-label=\"Theme: Dark\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Theme: Light\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-width: 0px; border-radius: 14px; min-width: 38px; min-height: 28px; padding-top: 2px; padding-bottom: 2px; border-color: rgb(226, 204, 156); overflow: hidden;\">",
+            "target": [
+              "div[aria-label=\"Theme: Light\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Amber accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Amber accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Rose accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Rose accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Emerald accent color, selected\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Emerald accent color, selected\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Teal accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Teal accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Terracotta accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Terracotta accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Dusty Blue accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Dusty Blue accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Mauve accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Mauve accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Olive accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Olive accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Sand Gold accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Sand Gold accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Berry accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Berry accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Violet accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Violet accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Cobalt accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Cobalt accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Crimson accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Crimson accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Copper accent color\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-cnw61z r-7a29px\">",
+            "target": [
+              "div[aria-label=\"Copper accent color\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Haptics, Subtle vibration feedback for meaningful actions, On\" role=\"switch\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-t23y2h r-rs99b7 r-h0d30l r-1777fci r-zhp00w r-rwqe4o\" style=\"border-color: rgb(226, 204, 156); background-color: rgba(0, 0, 0, 0); overflow: hidden;\">",
+            "target": [
+              ".r-1cmwbt1.r-1wtj0ep.r-18u37iz:nth-child(7) > .r-zhp00w.r-rwqe4o[role=\"switch\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Preload Quran text, 0/114 cached · Saheeh International, On\" role=\"switch\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-t23y2h r-rs99b7 r-h0d30l r-1777fci r-zhp00w r-rwqe4o\" style=\"border-color: rgb(226, 204, 156); background-color: rgba(0, 0, 0, 0); overflow: hidden;\">",
+            "target": [
+              ".r-1cmwbt1.r-1wtj0ep.r-18u37iz:nth-child(4) > .r-zhp00w.r-rwqe4o[role=\"switch\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Amiri, Classic Naskh — the Quran reader default\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-18u37iz r-1cmwbt1 r-1wtj0ep\" style=\"padding: 3.5px 16px; min-height: 35px; opacity: 1;\">",
+            "target": [
+              ".css-g5y9jx:nth-child(10) > .r-1cmwbt1.r-1wtj0ep[role=\"radio\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Noto Naskh Arabic, Google's clean, highly legible Naskh\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-18u37iz r-1cmwbt1 r-1wtj0ep\" style=\"padding: 3.5px 16px; min-height: 35px; opacity: 1;\">",
+            "target": [
+              ".css-g5y9jx:nth-child(11) > .r-1cmwbt1.r-1wtj0ep[role=\"radio\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"KFGQPC, Coming soon · no bundleable mobile font file yet\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1awozwy r-18u37iz r-1cmwbt1 r-1wtj0ep\" style=\"padding: 3.5px 16px; min-height: 35px; opacity: 0.5;\">",
+            "target": [
+              ".r-l53udc.r-6ncur5.r-bnwqim > .r-1cmwbt1.r-1wtj0ep[role=\"radio\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-valuenow"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-valuenow"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Font Size, 30pt\" role=\"slider\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-13awgt0 r-h0d30l r-1777fci\">",
+            "target": [
+              "div[aria-label=\"Font Size, 30pt\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-valuenow"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-valuenow"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-valuenow"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Line Height, 2.2×\" role=\"slider\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-13awgt0 r-h0d30l r-1777fci\">",
+            "target": [
+              "div[aria-label=\"Line Height, 2.2×\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-valuenow"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Translation, Show the translation beneath each ayah, On\" role=\"switch\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-t23y2h r-rs99b7 r-h0d30l r-1777fci r-zhp00w r-rwqe4o\" style=\"border-color: rgb(226, 204, 156); background-color: rgba(0, 0, 0, 0); overflow: hidden;\">",
+            "target": [
+              ".r-1cmwbt1.r-1wtj0ep.r-18u37iz:nth-child(18) > .r-zhp00w.r-rwqe4o[role=\"switch\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Time format: 12-hour\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-width: 1px; border-radius: 8px; min-width: 44px; min-height: 24px; padding-top: 3px; padding-bottom: 3px; border-color: rgb(226, 204, 156); overflow: hidden;\">",
+            "target": [
+              "div[aria-label=\"Time format: 12-hour\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Time format: 24-hour\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-color: rgb(226, 204, 156); border-width: 1px; border-radius: 8px; min-width: 44px; min-height: 24px; padding-top: 3px; padding-bottom: 3px;\">",
+            "target": [
+              "div[aria-label=\"Time format: 24-hour\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Prayer reminders, Off — no prayer notifications, Off\" role=\"switch\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-t23y2h r-rs99b7 r-h0d30l r-1777fci r-zhp00w r-rwqe4o\" style=\"border-color: rgb(226, 204, 156); background-color: rgba(0, 0, 0, 0); overflow: hidden;\">",
+            "target": [
+              ".r-1cmwbt1.r-1wtj0ep.r-18u37iz:nth-child(8) > .r-zhp00w.r-rwqe4o[role=\"switch\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-disabled=\"true\" aria-label=\"Remind before prayer: 5 min\" role=\"radio\" tabindex=\"-1\" class=\"css-g5y9jx r-12vffkv r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-color: rgb(226, 204, 156); border-width: 1px; border-radius: 8px; min-width: 44px; min-height: 24px; padding-top: 3px; padding-bottom: 3px; opacity: 0.55;\">",
+            "target": [
+              "div[aria-label=\"Remind before prayer: 5 min\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-disabled=\"true\" aria-label=\"Remind before prayer: 10 min\" role=\"radio\" tabindex=\"-1\" class=\"css-g5y9jx r-12vffkv r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-color: rgb(226, 204, 156); border-width: 1px; border-radius: 8px; min-width: 44px; min-height: 24px; padding-top: 3px; padding-bottom: 3px; opacity: 0.55;\">",
+            "target": [
+              "div[aria-label=\"Remind before prayer: 10 min\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-disabled=\"true\" aria-label=\"Remind before prayer: 15 min\" role=\"radio\" tabindex=\"-1\" class=\"css-g5y9jx r-12vffkv r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-color: rgb(226, 204, 156); border-width: 1px; border-radius: 8px; min-width: 44px; min-height: 24px; padding-top: 3px; padding-bottom: 3px; opacity: 0.55;\">",
+            "target": [
+              "div[aria-label=\"Remind before prayer: 15 min\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-disabled=\"true\" aria-label=\"Remind before prayer: 20 min\" role=\"radio\" tabindex=\"-1\" class=\"css-g5y9jx r-12vffkv r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-color: rgb(226, 204, 156); border-width: 1px; border-radius: 8px; min-width: 44px; min-height: 24px; padding-top: 3px; padding-bottom: 3px; opacity: 0.55;\">",
+            "target": [
+              "div[aria-label=\"Remind before prayer: 20 min\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-disabled=\"true\" aria-label=\"Remind before prayer: 30 min\" role=\"radio\" tabindex=\"-1\" class=\"css-g5y9jx r-12vffkv r-1awozwy r-13awgt0 r-1777fci r-18c5d7m\" style=\"border-color: rgb(226, 204, 156); border-width: 1px; border-radius: 8px; min-width: 44px; min-height: 24px; padding-top: 3px; padding-bottom: 3px; opacity: 0.55;\">",
+            "target": [
+              "div[aria-label=\"Remind before prayer: 30 min\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"Quran reminder, Off — no daily reminder, Off\" role=\"switch\" tabindex=\"0\" class=\"css-g5y9jx r-1loqt21 r-1otgn73 r-t23y2h r-rs99b7 r-h0d30l r-1777fci r-zhp00w r-rwqe4o\" style=\"border-color: rgb(226, 204, 156); background-color: rgba(0, 0, 0, 0); overflow: hidden;\">",
+            "target": [
+              ".r-1cmwbt1.r-1wtj0ep.r-18u37iz:nth-child(17) > .r-zhp00w.r-rwqe4o[role=\"switch\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          }
+        ]
+      }
+    ],
+    "status": "PASS"
+  },
+  "LocationSetupModal::Modal": {
+    "status": "BLOCKED",
+    "reason": "Location setup modal did not trigger within 2500ms"
+  },
+  "LocationSetupModal::Alert": {
+    "status": "BLOCKED",
+    "reason": "Alert.alert location rationale is Android-only native dialog; Platform.OS === \"web\" bypasses Alert.alert and resolves true immediately by design.",
+    "sourceEvidence": "src/lib/firstLaunchPermissions.ts:51"
+  },
+  "LanguagePickerModal::Modal": {
+    "modalAttributes": {
+      "role": "dialog",
+      "ariaModal": "true",
+      "text": "APP LANGUAGE (6)\nApp Language\nChoose your preferre"
+    },
+    "seriousCriticalViolations": [
+      {
+        "id": "aria-dialog-name",
+        "impact": "serious",
+        "tags": [
+          "cat.aria",
+          "best-practice"
+        ],
+        "description": "Ensure every ARIA dialog and alertdialog node has an accessible name",
+        "help": "ARIA dialog and alertdialog nodes should have an accessible name",
+        "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-dialog-name?application=axeAPI",
+        "nodes": [
+          {
+            "any": [
+              {
+                "id": "aria-label",
+                "data": null,
+                "relatedNodes": [],
+                "impact": "serious",
+                "message": "aria-label attribute does not exist or is empty"
+              },
+              {
+                "id": "aria-labelledby",
+                "data": null,
+                "relatedNodes": [],
+                "impact": "serious",
+                "message": "aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty"
+              },
+              {
+                "id": "non-empty-title",
+                "data": {
+                  "messageKey": "noAttr"
+                },
+                "relatedNodes": [],
+                "impact": "serious",
+                "message": "Element has no title attribute"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "serious",
+            "html": "<div aria-modal=\"true\" class=\"css-g5y9jx r-1p0dtai r-1d2f490 r-1xcajam r-zchlnj r-ipm5af r-1niwhzg\" role=\"dialog\">",
+            "target": [
+              "div[aria-modal=\"true\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute"
+          }
+        ]
+      },
+      {
+        "id": "aria-required-attr",
+        "impact": "critical",
+        "tags": [
+          "cat.aria",
+          "wcag2a",
+          "wcag412",
+          "EN-301-549",
+          "EN-9.4.1.2"
+        ],
+        "description": "Ensure elements with ARIA roles have all required ARIA attributes",
+        "help": "Required ARIA attributes must be provided",
+        "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/aria-required-attr?application=axeAPI",
+        "nodes": [
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"English - English, selected\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1i6wzkk r-lrvibr r-1loqt21 r-1otgn73 r-1awozwy r-1867qdf r-rs99b7 r-18u37iz r-n5f61p r-19yznuf r-1mmae3n r-3o4zer\" style=\"background-color: rgb(240, 246, 242); border-color: rgb(16, 90, 75); transition-duration: 0s;\">",
+            "target": [
+              "div[aria-label=\"English - English, selected\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"العربية - Arabic\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1i6wzkk r-lrvibr r-1loqt21 r-1otgn73 r-1awozwy r-1867qdf r-rs99b7 r-18u37iz r-n5f61p r-19yznuf r-1mmae3n r-3o4zer\" style=\"background-color: rgba(0, 0, 0, 0); border-color: rgba(0, 0, 0, 0); transition-duration: 0s;\">",
+            "target": [
+              "div[aria-label=\"العربية - Arabic\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"اردو - Urdu\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1i6wzkk r-lrvibr r-1loqt21 r-1otgn73 r-1awozwy r-1867qdf r-rs99b7 r-18u37iz r-n5f61p r-19yznuf r-1mmae3n r-3o4zer\" style=\"background-color: rgba(0, 0, 0, 0); border-color: rgba(0, 0, 0, 0); transition-duration: 0s;\">",
+            "target": [
+              "div[aria-label=\"اردو - Urdu\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"हिन्दी - Hindi\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1i6wzkk r-lrvibr r-1loqt21 r-1otgn73 r-1awozwy r-1867qdf r-rs99b7 r-18u37iz r-n5f61p r-19yznuf r-1mmae3n r-3o4zer\" style=\"background-color: rgba(0, 0, 0, 0); border-color: rgba(0, 0, 0, 0); transition-duration: 0s;\">",
+            "target": [
+              "div[aria-label=\"हिन्दी - Hindi\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"മലയാളം - Malayalam\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1i6wzkk r-lrvibr r-1loqt21 r-1otgn73 r-1awozwy r-1867qdf r-rs99b7 r-18u37iz r-n5f61p r-19yznuf r-1mmae3n r-3o4zer\" style=\"background-color: rgba(0, 0, 0, 0); border-color: rgba(0, 0, 0, 0); transition-duration: 0s;\">",
+            "target": [
+              "div[aria-label=\"മലയാളം - Malayalam\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          },
+          {
+            "any": [
+              {
+                "id": "aria-required-attr",
+                "data": [
+                  "aria-checked"
+                ],
+                "relatedNodes": [],
+                "impact": "critical",
+                "message": "Required ARIA attribute not present: aria-checked"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "critical",
+            "html": "<div aria-label=\"සිංහල - Sinhala\" role=\"radio\" tabindex=\"0\" class=\"css-g5y9jx r-1i6wzkk r-lrvibr r-1loqt21 r-1otgn73 r-1awozwy r-1867qdf r-rs99b7 r-18u37iz r-n5f61p r-19yznuf r-1mmae3n r-3o4zer\" style=\"background-color: rgba(0, 0, 0, 0); border-color: rgba(0, 0, 0, 0); transition-duration: 0s;\">",
+            "target": [
+              "div[aria-label=\"සිංහල - Sinhala\"]"
+            ],
+            "failureSummary": "Fix any of the following:\n  Required ARIA attribute not present: aria-checked"
+          }
+        ]
+      },
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "tags": [
+          "cat.color",
+          "wcag2aa",
+          "wcag143",
+          "TTv5",
+          "TT13.c",
+          "EN-301-549",
+          "EN-9.1.4.3",
+          "ACT"
+        ],
+        "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+        "help": "Elements must meet minimum color contrast ratio thresholds",
+        "helpUrl": "https://dequeuniversity.com/rules/axe/4.10/color-contrast?application=axeAPI",
+        "nodes": [
+          {
+            "any": [
+              {
+                "id": "color-contrast",
+                "data": {
+                  "fgColor": "#a6aea8",
+                  "bgColor": "#f0ebde",
+                  "contrastRatio": 1.9,
+                  "fontSize": "9.0pt (12px)",
+                  "fontWeight": "normal",
+                  "messageKey": null,
+                  "expectedContrastRatio": "4.5:1"
+                },
+                "relatedNodes": [
+                  {
+                    "html": "<div class=\"css-g5y9jx r-1awozwy r-5kkj8d r-1p0dtai r-1d2f490 r-u9wvl5 r-u8s1d r-zchlnj r-136ojw6\" style=\"background-color: rgb(240, 235, 222); border-top-color: rgb(226, 204, 156); padding-top: 12px; padding-bottom: 18px;\">",
+                    "target": [
+                      ".r-136ojw6"
+                    ]
+                  }
+                ],
+                "impact": "serious",
+                "message": "Element has insufficient color contrast of 1.9 (foreground color: #a6aea8, background color: #f0ebde, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "serious",
+            "html": "<div dir=\"auto\" class=\"css-146c3p1 r-1j4l7u5 r-1enofrn r-knv0ih r-1559e4e r-q4m81j\" style=\"line-height: 17px; color: rgb(166, 174, 168);\">You can change these anytime in Settings.</div>",
+            "target": [
+              ".r-knv0ih"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.9 (foreground color: #a6aea8, background color: #f0ebde, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+          },
+          {
+            "any": [
+              {
+                "id": "color-contrast",
+                "data": {
+                  "fgColor": "#092c25",
+                  "bgColor": "#105a4b",
+                  "contrastRatio": 1.84,
+                  "fontSize": "7.5pt (10px)",
+                  "fontWeight": "normal",
+                  "messageKey": null,
+                  "expectedContrastRatio": "4.5:1"
+                },
+                "relatedNodes": [
+                  {
+                    "html": "<div class=\"css-g5y9jx r-z2wwpe r-rs99b7 r-1559e4e r-18c5d7m\" style=\"background-color: rgb(16, 90, 75); border-color: rgb(16, 90, 75);\"><div dir=\"auto\" class=\"css-146c3p1 r-140o7m9 r-10x49cs r-1ikidpy\" style=\"line-height: 17px; color: rgb(9, 44, 37);\">EN</div></div>",
+                    "target": [
+                      "div[aria-label=\"English - English, selected\"] > .r-13awgt0.r-1777fci.css-g5y9jx > .r-1cmwbt1.r-18u37iz.r-1awozwy > .r-z2wwpe.r-18c5d7m.r-1559e4e"
+                    ]
+                  }
+                ],
+                "impact": "serious",
+                "message": "Element has insufficient color contrast of 1.84 (foreground color: #092c25, background color: #105a4b, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "all": [],
+            "none": [],
+            "impact": "serious",
+            "html": "<div dir=\"auto\" class=\"css-146c3p1 r-140o7m9 r-10x49cs r-1ikidpy\" style=\"line-height: 17px; color: rgb(9, 44, 37);\">EN</div>",
+            "target": [
+              "div[aria-label=\"English - English, selected\"] > .r-13awgt0.r-1777fci.css-g5y9jx > .r-1cmwbt1.r-18u37iz.r-1awozwy > .r-z2wwpe.r-18c5d7m.r-1559e4e > .r-1ikidpy.r-10x49cs.r-140o7m9"
+            ],
+            "failureSummary": "Fix any of the following:\n  Element has insufficient color contrast of 1.84 (foreground color: #092c25, background color: #105a4b, font size: 7.5pt (10px), font weight: normal). Expected contrast ratio of 4.5:1"
+          }
+        ]
+      }
+    ],
+    "status": "PASS"
+  },
+  "QuranLanguageModal::Modal": {
+    "status": "BLOCKED",
+    "reason": "Quran language modal did not mount to DOM"
+  },
+  "AdhanReciterModal::Modal": {
+    "status": "BLOCKED",
+    "reason": "Reciter button not visible in prayer-reminders"
+  },
+  "AudioPlayerModal::Modal": {
+    "status": "BLOCKED",
+    "reason": "Audio playback requires audio stream / user tap; full modal not open in headless test"
+  },
+  "WomenConsentModal::Modal": {
+    "status": "BLOCKED",
+    "reason": "WomenConsentModal is present in codebase as standalone component but not invoked in active route navigation flow",
+    "sourceEvidence": "src/components/WomenConsentModal.tsx"
+  },
+  "WomenPinModal::Modal": {
+    "status": "BLOCKED",
+    "reason": "PIN lock requires user PIN setup in settings; locked behind biometric/PIN enrollment",
+    "sourceEvidence": "src/components/WomenPinModal.tsx"
+  }
+}

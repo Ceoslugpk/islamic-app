@@ -2,12 +2,12 @@ import React from 'react';
 import {
   Modal,
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { t } from '../lib/i18n';
@@ -29,6 +29,7 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
       transparent
       animationType="fade"
       onRequestClose={onCancel}
+      statusBarTranslucent
     >
       <View style={styles.backdrop}>
         <View
@@ -47,12 +48,12 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
               <Ionicons name="shield-checkmark" size={28} color={colors.accent} />
             </View>
 
-            <Text style={[styles.title, { color: colors.textPrimary }]}>
+            <AppText variant="title" style={styles.title}>
               Private & On-Device
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            </AppText>
+            <AppText variant="subtitle" style={styles.subtitle}>
               Your cycle, purity, and worship data are deeply personal. We protect your privacy with strict on-device guarantees:
-            </Text>
+            </AppText>
 
             {/* Guarantees List */}
             <View style={styles.list}>
@@ -61,12 +62,12 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                   <Ionicons name="phone-portrait-outline" size={16} color={colors.accent} />
                 </View>
                 <View style={styles.listTextWrap}>
-                  <Text style={[styles.listHeading, { color: colors.textPrimary }]}>
+                  <AppText variant="rowTitle" style={styles.listHeading}>
                     Stays on this device
-                  </Text>
-                  <Text style={[styles.listBody, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText variant="body" style={styles.listBody}>
                     All period entries, purity days, and notes are stored strictly in local device storage.
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
@@ -75,12 +76,12 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                   <Ionicons name="person-circle-outline" size={16} color={colors.accent} />
                 </View>
                 <View style={styles.listTextWrap}>
-                  <Text style={[styles.listHeading, { color: colors.textPrimary }]}>
+                  <AppText variant="rowTitle" style={styles.listHeading}>
                     No account or sign-in
-                  </Text>
-                  <Text style={[styles.listBody, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText variant="body" style={styles.listBody}>
                     No login, email, or cloud profile is ever required or attached to your records.
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
@@ -89,12 +90,12 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                   <Ionicons name="eye-off-outline" size={16} color={colors.accent} />
                 </View>
                 <View style={styles.listTextWrap}>
-                  <Text style={[styles.listHeading, { color: colors.textPrimary }]}>
+                  <AppText variant="rowTitle" style={styles.listHeading}>
                     Zero analytics or telemetry
-                  </Text>
-                  <Text style={[styles.listBody, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText variant="body" style={styles.listBody}>
                     Cycle data is never sent to remote servers or included in analytics or telemetry logs.
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
@@ -103,12 +104,12 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                   <Ionicons name="trash-bin-outline" size={16} color={colors.accent} />
                 </View>
                 <View style={styles.listTextWrap}>
-                  <Text style={[styles.listHeading, { color: colors.textPrimary }]}>
+                  <AppText variant="rowTitle" style={styles.listHeading}>
                     Delete or hide anytime
-                  </Text>
-                  <Text style={[styles.listBody, { color: colors.textSecondary }]}>
+                  </AppText>
+                  <AppText variant="body" style={styles.listBody}>
                     You can hide the feature from the menu or permanently wipe all records anytime in Settings.
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             </View>
@@ -121,12 +122,14 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 accessibilityRole="button"
                 accessibilityLabel={t("I Understand and enable Women's Worship")}
               >
-                <Text
-                  style={[styles.primaryBtnText, { color: colors.onAccent }]}
+                <AppText
+                  variant="rowTitle"
+                  tone="onGold"
+                  style={styles.primaryBtnText}
                   maxFontSizeMultiplier={1.4}
                 >
                   I Understand
-                </Text>
+                </AppText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -135,12 +138,13 @@ export function WomenConsentModal({ visible, onConfirm, onCancel }: WomenConsent
                 accessibilityRole="button"
                 accessibilityLabel={t('Cancel')}
               >
-                <Text
-                  style={[styles.cancelBtnText, { color: colors.textSecondary }]}
+                <AppText
+                  variant="body"
+                  style={styles.cancelBtnText}
                   maxFontSizeMultiplier={1.4}
                 >
                   Cancel
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           </ScrollView>

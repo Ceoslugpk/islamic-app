@@ -1,0 +1,4 @@
+Phase 0 inventory completed read-only.
+- Source: App.tsx route state/render map, 50 screen files, components, assets, package.json, app.json, permissions plugin, external URL literals.
+- Runtime: fresh isolated browser loaded target and completed onboarding; home reached but prayer API was unavailable and first-launch location modal blocked further click-crawl.
+- No source/tests/package/proof/git files modified; only inventory.json and this log were created.

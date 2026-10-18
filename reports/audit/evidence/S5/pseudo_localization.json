@@ -1,0 +1,10 @@
+{
+  "test": "+40% Pseudo-Localization Text Expansion Simulation",
+  "viewport": "360x800",
+  "overflowCount": 0,
+  "overflowFindings": [],
+  "screenshot": "reports/audit/evidence/S5/screenshots/pseudo_localization_360.png",
+  "status": "PASS",
+  "severity": "None",
+  "notes": "All containers adapted without horizontal overflow."
+}

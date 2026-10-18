@@ -1,0 +1,1173 @@
+{
+  "schemaVersion": "S5-localization-i18n-rtl-theme-audit-1",
+  "audit": {
+    "phase": "S5",
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "scope": "Comprehensive localization, i18n, RTL, and theme audit across 52 routes, 9 sheets/dialogs, 6 registered locales (en, ur, ar, hi, ml, si), light/dark themes, and target viewports (393x852, 360x800)",
+    "inventory": "reports/audit/inventory.json",
+    "rules": "rules.md",
+    "evidenceRoot": "reports/audit/evidence/S5"
+  },
+  "summary": {
+    "total": 72,
+    "PASS": 38,
+    "FAIL": 34,
+    "FLAKY": 0,
+    "BLOCKED": 0,
+    "SKIPPED": 0,
+    "categoryCounts": {
+      "globalChecks": 11,
+      "sheetsDialogs": 9,
+      "routes": 52
+    },
+    "severityCounts": {
+      "critical": 0,
+      "high": 1,
+      "medium": 31,
+      "low": 2,
+      "info": 38
+    },
+    "reconciled": true
+  },
+  "tests": [
+    {
+      "id": "S5-001",
+      "feature": "Registered locale key parity and structural completeness",
+      "route": "repository",
+      "steps": "Parse en.json and the 5 non-English registered locales (ur, ar, hi, ml, si). Verify exact key count parity (2302 keys), zero missing keys, zero extra keys, and zero empty values.",
+      "expected": "Exact key parity (2302 keys), zero missing, zero extra, zero empty values across en, ur, ar, hi, ml, si.",
+      "actual": "All 6 registered locales have exactly 2,302 keys, 0 missing keys, 0 extra keys, and 0 empty values. Identical-to-English ratio is <= 1.17% across all 5 non-English files.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/locale_parity.json"
+      ],
+      "notes": "Meets rule 13 requirements for the registered locales."
+    },
+    {
+      "id": "S5-002",
+      "feature": "Interpolation token preservation (Rule 14)",
+      "route": "repository",
+      "steps": "Scan all registered locale files for exact matching of interpolation tokens ({{count}}, {{n}}, {n}, etc.) against en.json.",
+      "expected": "Exact token preservation without translation, renaming, or dropping per project rule 14.",
+      "actual": "Found 2 token mismatches in ar.json: 'Hizb {n} selected' and 'Juz {n} selected' use Arabic translated token '{ن}' instead of exact '{n}'. Handled by runtime workaround in src/lib/i18n.ts, but violates rule 14.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/token_mismatches.json"
+      ],
+      "notes": "Rule 14 states interpolation tokens must never be translated. The token {ن} is translated from {n}."
+    },
+    {
+      "id": "S5-003",
+      "feature": "Codebase translation key coverage in t() calls",
+      "route": "src/**/*",
+      "steps": "Extract all string keys passed to t('...') across src/ and App.tsx, and cross-reference against en.json keys.",
+      "expected": "100% of keys referenced in t() calls exist in en.json and registered locale dictionaries.",
+      "actual": "159 keys invoked via t() in code are absent from en.json (e.g. 'NEXT PRAYER', 'Salah Today', 'UTILITIES & LOCATION', 'Structured schedules...'). In non-English locales, i18next returns the raw English key string as fallback.",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence": [
+        "reports/audit/evidence/S5/missing_keys_scan.json"
+      ],
+      "notes": "Direct cause of widespread leftover English observed in Urdu, Arabic, Hindi, Malayalam, and Sinhala route crawls."
+    },
+    {
+      "id": "S5-004",
+      "feature": "Onboarding screen language animation and setup flow",
+      "route": "onboarding",
+      "steps": "Load app in clean browser session without persisted state. Verify OnboardingScreen renders, title and subtitle cycle through demo languages (DEMO_CYCLE_ORDER), and tapping 'Get Started' persists onboardingDone=true.",
+      "expected": "Demo strings cycle smoothly every 1800ms with fade animation; selecting and tapping Get Started persists onboardingDone=true and navigates into main app.",
+      "actual": "OnboardingScreen rendered; text cycled across demo locales (English -> Arabic -> Urdu); Get Started button was clickable and persisted onboardingDone='true' to localStorage.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/onboarding_animation.json",
+        "reports/audit/evidence/S5/screenshots/onboarding_initial_en.png",
+        "reports/audit/evidence/S5/screenshots/onboarding_cycle_1.png",
+        "reports/audit/evidence/S5/screenshots/onboarding_cycle_2.png"
+      ],
+      "notes": "Verified at 393x852 viewport."
+    },
+    {
+      "id": "S5-005",
+      "feature": "Instant language switching and storage persistence",
+      "route": "settings",
+      "steps": "Iterate across all 6 registered locales (en, ur, ar, hi, ml, si). Verify document.documentElement.lang updates, storage queue verifies write with readback, and reload restores persisted language.",
+      "expected": "Immediate language update, document.documentElement.lang matches active locale, islamic-settings storage persisted with read-back verification, and state survives reload.",
+      "actual": "All 6 registered locales passed: document.documentElement.lang matched selected locale, storage write-queue verified JSON payload, and full page reloads preserved chosen language.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/language_theme_switching.json"
+      ],
+      "notes": "Tested in 12 matrix runs across light/dark modes."
+    },
+    {
+      "id": "S5-006",
+      "feature": "Instant theme switching (light/paper vs dark/ink) and persistence",
+      "route": "settings",
+      "steps": "Toggle between 'paper' (light) and 'ink' (dark) themes across multiple locales. Verify storage persistence and theme class/color changes.",
+      "expected": "Instant theme switch without page reload, correct background and text token application, and persistence in islamic-settings.",
+      "actual": "Both paper (light) and ink (dark) themes applied cleanly across all tested locales, persisted to localStorage, and survived page reloads.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/language_theme_switching.json"
+      ],
+      "notes": "12 matrix tests confirmed 100% pass rate."
+    },
+    {
+      "id": "S5-007",
+      "feature": "RTL document direction and layout mirroring for Urdu & Arabic",
+      "route": "app",
+      "steps": "Switch app to ur and ar. Inspect document.documentElement.dir and verify RTL text alignment and layout orientation.",
+      "expected": "document.documentElement.dir is set to 'rtl' for ur and ar, and 'ltr' for en, hi, ml, si.",
+      "actual": "document.documentElement.dir was 'rtl' for ur and ar, and 'ltr' for en, hi, ml, si. General flex container mirroring functions on web.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/language_theme_switching.json",
+        "reports/audit/evidence/S5/screenshots/home_ur_paper_393.png",
+        "reports/audit/evidence/S5/screenshots/home_ar_ink_360.png"
+      ],
+      "notes": "Native layout direction relies on prepareNativeLayoutDirection and app reload."
+    },
+    {
+      "id": "S5-008",
+      "feature": "Logical padding and margin usage for RTL compliance",
+      "route": "src/**/*",
+      "steps": "Scan component and screen StyleSheet definitions for physical directional properties (paddingLeft, paddingRight, marginLeft, marginRight, borderLeftWidth, borderRightWidth).",
+      "expected": "All asymmetric directional styles use logical paddingStart, paddingEnd, marginStart, marginEnd to ensure proper RTL flipping.",
+      "actual": "Found 44 files using physical left/right CSS properties instead of logical start/end properties (e.g. QuranAudioScreen: 17, QuranReaderScreen: 15, LibraryScreen: 14, ToolsScreen: 11).",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/rtl_directional_scan.json"
+      ],
+      "notes": "Physical properties fail to flip in RTL locales, causing inconsistent icon spacing, misaligned chevrons, and unbalanced padding."
+    },
+    {
+      "id": "S5-009",
+      "feature": "Script font loading for non-Latin writing systems",
+      "route": "src/lib/fonts.ts",
+      "steps": "Inspect font loading definitions in src/lib/fonts.ts against registered non-Latin locales (ur, ar, hi, ml, si).",
+      "expected": "Dedicated high-quality typefaces bundled or loaded for Arabic (Amiri, Noto Naskh), Urdu (Nastaliq), Hindi (Devanagari), Malayalam, and Sinhala.",
+      "actual": "Only Amiri and Noto Naskh Arabic are loaded for Arabic script. Urdu lacks Noto Nastaliq Urdu (uses Noto Naskh fallback); Hindi, Malayalam, and Sinhala have no loaded Google web fonts and rely entirely on generic OS system fallbacks.",
+      "status": "FAIL",
+      "severity": "low",
+      "evidence": [
+        "reports/audit/evidence/S5/font_numerals_scan.json"
+      ],
+      "notes": "While system fallback renders the characters, typographic elegance is degraded for Indic and Sinhala scripts."
+    },
+    {
+      "id": "S5-010",
+      "feature": "Locale-aware numeral formatting",
+      "route": "src/**/*",
+      "steps": "Inspect numeral formatting in prayer countdowns, hijri calendars, tasbih counters, and zakat calculators in Urdu and Arabic locales.",
+      "expected": "UI numbers are formatted according to the active locale (e.g. Eastern Arabic/Urdu digits when appropriate, or localized separators).",
+      "actual": "toArabicNumerals is only implemented for Quran ayah end-markers (۝). All other app UI screens hardcode Latin digits (0-9) for prayer times, dates, counters, and statistics regardless of the selected locale.",
+      "status": "FAIL",
+      "severity": "low",
+      "evidence": [
+        "reports/audit/evidence/S5/font_numerals_scan.json"
+      ],
+      "notes": "Standard practice in modern Arabic apps is often mixed, but complete localization should support locale digits or standard Intl formatting."
+    },
+    {
+      "id": "S5-011",
+      "feature": "+40% pseudo-localization text expansion stress test",
+      "route": "app",
+      "steps": "Simulate 40% string expansion on DOM text nodes at compact 360x800 viewport. Measure horizontal overflow (scrollWidth > clientWidth) across cards, pills, buttons, and headers.",
+      "expected": "UI components accommodate +40% text expansion without unscrollable horizontal overflow or broken layouts.",
+      "actual": "Simulation passed: 0 unscrollable overflowing containers detected at 360x800 viewport under +40% string expansion.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/pseudo_localization.json",
+        "reports/audit/evidence/S5/screenshots/pseudo_localization_360.png"
+      ],
+      "notes": "Flexbox wrapping and scroll containers accommodated the expanded text gracefully."
+    },
+    {
+      "id": "S5-012",
+      "feature": "Sheet/Dialog localization: AdhanReciterModal::Modal",
+      "route": "AdhanReciterModal::Modal",
+      "steps": "Audit AdhanReciterModal::Modal (source: src/components/AdhanReciterModal.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "1 hardcoded English JSX text strings (['Preview adhans with the play button. The chosen reciter will sound when prayer time arrives in-app.'])",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: src/components/AdhanReciterModal.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-013",
+      "feature": "Sheet/Dialog localization: AudioPlayerModal::Modal",
+      "route": "AudioPlayerModal::Modal",
+      "steps": "Audit AudioPlayerModal::Modal (source: src/components/AudioPlayerModal.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "2 hardcoded English JSX text strings (['Sleep 10m', 'Choose any surah or reciter from the Quran tab or Audio Center to start listening.'])",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: src/components/AudioPlayerModal.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-014",
+      "feature": "Sheet/Dialog localization: LanguagePickerModal::Modal",
+      "route": "LanguagePickerModal::Modal",
+      "steps": "Audit LanguagePickerModal::Modal (source: src/components/LanguagePickerModal.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "All visible strings wrapped in t() with keys present in locale dictionary; reachable at runtime.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: src/components/LanguagePickerModal.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-015",
+      "feature": "Sheet/Dialog localization: LocationSetupModal::Modal",
+      "route": "LocationSetupModal::Modal",
+      "steps": "Audit LocationSetupModal::Modal (source: src/components/LocationSetupModal.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "All visible strings wrapped in t() with keys present in locale dictionary; reachable at runtime.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: src/components/LocationSetupModal.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-016",
+      "feature": "Sheet/Dialog localization: LocationSetupModal::Alert",
+      "route": "LocationSetupModal::Alert",
+      "steps": "Audit LocationSetupModal::Alert (source: src/components/LocationSetupModal.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "All visible strings wrapped in t() with keys present in locale dictionary; reachable at runtime.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: src/components/LocationSetupModal.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-017",
+      "feature": "Sheet/Dialog localization: QuranLanguageModal::Modal",
+      "route": "QuranLanguageModal::Modal",
+      "steps": "Audit QuranLanguageModal::Modal (source: src/components/QuranLanguageModal.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "All visible strings wrapped in t() with keys present in locale dictionary; reachable at runtime.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: src/components/QuranLanguageModal.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-018",
+      "feature": "Sheet/Dialog localization: WomenConsentModal::Modal",
+      "route": "WomenConsentModal::Modal",
+      "steps": "Audit WomenConsentModal::Modal (source: src/components/WomenConsentModal.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "10 hardcoded English JSX text strings (['Your cycle, purity, and worship data are deeply personal. We protect your privacy with strict on-device guarantees:', 'Stays on this device'])",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: src/components/WomenConsentModal.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-019",
+      "feature": "Sheet/Dialog localization: WomenPinModal::Modal",
+      "route": "WomenPinModal::Modal",
+      "steps": "Audit WomenPinModal::Modal (source: src/components/WomenPinModal.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "All visible strings wrapped in t() with keys present in locale dictionary; reachable at runtime.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: src/components/WomenPinModal.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-020",
+      "feature": "Sheet/Dialog localization: App::Modal",
+      "route": "App::Modal",
+      "steps": "Audit App::Modal (source: App.tsx) for hardcoded English literals, missing t() keys, and runtime presentation.",
+      "expected": "All text strings are localized via t() with matching entries in registered locale dictionaries; no hardcoded English literals.",
+      "actual": "All visible strings wrapped in t() with keys present in locale dictionary; reachable at runtime.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/sheets_dialogs_audit.json",
+        "reports/audit/evidence/S5/sheets_dialogs_runtime.json"
+      ],
+      "notes": "Component entry: App.tsx. Checked at 393x852 and 360x800 viewports."
+    },
+    {
+      "id": "S5-021",
+      "feature": "Route localization & RTL: home",
+      "route": "home",
+      "steps": "Navigate to home across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route home displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 118 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json",
+        "reports/audit/evidence/S5/screenshots/home_ur_paper_393.png",
+        "reports/audit/evidence/S5/screenshots/home_ar_ink_360.png"
+      ],
+      "notes": "Area: home. State expression: __NAVIGATE__.setTab('home')."
+    },
+    {
+      "id": "S5-022",
+      "feature": "Route localization & RTL: library",
+      "route": "library",
+      "steps": "Navigate to library across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 42 leftover English words in Urdu locale (e.g. ['LIBRARY', 'KNOWLEDGE', 'Library', 'full']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json",
+        "reports/audit/evidence/S5/screenshots/library_ur_paper_393.png",
+        "reports/audit/evidence/S5/screenshots/library_ar_ink_360.png"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hub'})."
+    },
+    {
+      "id": "S5-023",
+      "feature": "Route localization & RTL: quran/home",
+      "route": "quran/home",
+      "steps": "Navigate to quran/home across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/home displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 996 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json",
+        "reports/audit/evidence/S5/screenshots/quran_home_ur_paper_393.png",
+        "reports/audit/evidence/S5/screenshots/quran_home_ar_ink_360.png"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'home'})."
+    },
+    {
+      "id": "S5-024",
+      "feature": "Route localization & RTL: quran/reader",
+      "route": "quran/reader",
+      "steps": "Navigate to quran/reader across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/reader displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 75 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json",
+        "reports/audit/evidence/S5/screenshots/quran_reader_ur_paper_393.png",
+        "reports/audit/evidence/S5/screenshots/quran_reader_ar_ink_360.png"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'reader',surah:1})."
+    },
+    {
+      "id": "S5-025",
+      "feature": "Route localization & RTL: quran/audio",
+      "route": "quran/audio",
+      "steps": "Navigate to quran/audio across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/audio displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 55 leftover English words in Urdu locale (e.g. ['Recitations', 'audio', 'translations', 'playlists']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'audio'})."
+    },
+    {
+      "id": "S5-026",
+      "feature": "Route localization & RTL: quran/tafsir",
+      "route": "quran/tafsir",
+      "steps": "Navigate to quran/tafsir across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/tafsir displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 262 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'tafsir'})."
+    },
+    {
+      "id": "S5-027",
+      "feature": "Route localization & RTL: quran/topics",
+      "route": "quran/topics",
+      "steps": "Navigate to quran/topics across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/topics displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 42 leftover English words in Urdu locale (e.g. ['Baqarah', 'have', 'believed', 'seek']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'topics'})."
+    },
+    {
+      "id": "S5-028",
+      "feature": "Route localization & RTL: quran/compare",
+      "route": "quran/compare",
+      "steps": "Navigate to quran/compare across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/compare displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 15 leftover English words in Urdu locale (e.g. ['Side', 'side', 'comparative', 'study']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'compare'})."
+    },
+    {
+      "id": "S5-029",
+      "feature": "Route localization & RTL: quran/bookmarks",
+      "route": "quran/bookmarks",
+      "steps": "Navigate to quran/bookmarks across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/bookmarks displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 215 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'bookmarks'})."
+    },
+    {
+      "id": "S5-030",
+      "feature": "Route localization & RTL: quran/notes",
+      "route": "quran/notes",
+      "steps": "Navigate to quran/notes across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/notes displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 309 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'notes'})."
+    },
+    {
+      "id": "S5-031",
+      "feature": "Route localization & RTL: quran/plans",
+      "route": "quran/plans",
+      "steps": "Navigate to quran/plans across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/plans displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 739 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'plans'})."
+    },
+    {
+      "id": "S5-032",
+      "feature": "Route localization & RTL: quran/hifz",
+      "route": "quran/hifz",
+      "steps": "Navigate to quran/hifz across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/hifz displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 14 leftover English words in Urdu locale (e.g. ['Track', 'memorization', 'progress', 'revisions']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz'})."
+    },
+    {
+      "id": "S5-033",
+      "feature": "Route localization & RTL: quran/hifz-practice",
+      "route": "quran/hifz-practice",
+      "steps": "Navigate to quran/hifz-practice across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/hifz-practice displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 223 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz-practice'})."
+    },
+    {
+      "id": "S5-034",
+      "feature": "Route localization & RTL: quran/surah-list",
+      "route": "quran/surah-list",
+      "steps": "Navigate to quran/surah-list across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route quran/surah-list displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 50 leftover English words in Urdu locale (e.g. ['Surahs', 'with', 'translations', 'audio']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: quran. State expression: __NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'surah-list'})."
+    },
+    {
+      "id": "S5-035",
+      "feature": "Route localization & RTL: library/tasbih",
+      "route": "library/tasbih",
+      "steps": "Navigate to library/tasbih across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/tasbih displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 382 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tasbih'})."
+    },
+    {
+      "id": "S5-036",
+      "feature": "Route localization & RTL: library/names",
+      "route": "library/names",
+      "steps": "Navigate to library/names across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/names displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 36 leftover English words in Urdu locale (e.g. ['Divine', 'attributes', 'meanings', 'English']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names'})."
+    },
+    {
+      "id": "S5-037",
+      "feature": "Route localization & RTL: library/names-prophet",
+      "route": "library/names-prophet",
+      "steps": "Navigate to library/names-prophet across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/names-prophet displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 73 leftover English words in Urdu locale (e.g. ['Noble', 'attributes', 'titles', 'Prophet']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names-prophet'})."
+    },
+    {
+      "id": "S5-038",
+      "feature": "Route localization & RTL: library/duas",
+      "route": "library/duas",
+      "steps": "Navigate to library/duas across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/duas displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 370 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'duas'})."
+    },
+    {
+      "id": "S5-039",
+      "feature": "Route localization & RTL: library/hadith",
+      "route": "library/hadith",
+      "steps": "Navigate to library/hadith across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/hadith displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 201 leftover English words in Urdu locale (e.g. ['Sahih', 'Bukhari', 'Sahih', 'Bukhari']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hadith'})."
+    },
+    {
+      "id": "S5-040",
+      "feature": "Route localization & RTL: library/ramadan-guide",
+      "route": "library/ramadan-guide",
+      "steps": "Navigate to library/ramadan-guide across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/ramadan-guide displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 780 leftover English words in Urdu locale (e.g. ['narrated', 'that', 'Hafsah', 'said']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'ramadan-guide'})."
+    },
+    {
+      "id": "S5-041",
+      "feature": "Route localization & RTL: library/prayer-guide",
+      "route": "library/prayer-guide",
+      "steps": "Navigate to library/prayer-guide across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/prayer-guide displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 1008 leftover English words in Urdu locale (e.g. ['Wudu', 'Narrated', 'AbuHurayrah', 'Messenger']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'prayer-guide'})."
+    },
+    {
+      "id": "S5-042",
+      "feature": "Route localization & RTL: library/shahada",
+      "route": "library/shahada",
+      "steps": "Navigate to library/shahada across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/shahada displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 24 leftover English words in Urdu locale (e.g. ['declaration', 'faith', 'foundational', 'conditions']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'shahada'})."
+    },
+    {
+      "id": "S5-043",
+      "feature": "Route localization & RTL: library/downloads",
+      "route": "library/downloads",
+      "steps": "Navigate to library/downloads across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/downloads displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 457 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'downloads'})."
+    },
+    {
+      "id": "S5-044",
+      "feature": "Route localization & RTL: library/vocab",
+      "route": "library/vocab",
+      "steps": "Navigate to library/vocab across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/vocab displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 383 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'vocab'})."
+    },
+    {
+      "id": "S5-045",
+      "feature": "Route localization & RTL: library/summary",
+      "route": "library/summary",
+      "steps": "Navigate to library/summary across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/summary displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 29 leftover English words in Urdu locale (e.g. ['PERSONAL', 'JOURNEY', 'Your', 'past']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'summary'})."
+    },
+    {
+      "id": "S5-046",
+      "feature": "Route localization & RTL: library/tajweed",
+      "route": "library/tajweed",
+      "steps": "Navigate to library/tajweed across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/tajweed displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 114 leftover English words in Urdu locale (e.g. ['ayahs', 'ayahs', 'ayahs', 'ayahs']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tajweed'})."
+    },
+    {
+      "id": "S5-047",
+      "feature": "Route localization & RTL: library/umrah-guide",
+      "route": "library/umrah-guide",
+      "steps": "Navigate to library/umrah-guide across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/umrah-guide displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 661 leftover English words in Urdu locale (e.g. ['Entering', 'sacred', 'state', 'consecration']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'umrah-guide'})."
+    },
+    {
+      "id": "S5-048",
+      "feature": "Route localization & RTL: library/hajj-journey",
+      "route": "library/hajj-journey",
+      "steps": "Navigate to library/hajj-journey across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/hajj-journey displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 727 leftover English words in Urdu locale (e.g. ['SACRED', 'PILGRIMAGE', 'rites', 'from']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hajj-journey'})."
+    },
+    {
+      "id": "S5-049",
+      "feature": "Route localization & RTL: library/women-purity",
+      "route": "library/women-purity",
+      "steps": "Navigate to library/women-purity across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/women-purity displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 16 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-purity'})."
+    },
+    {
+      "id": "S5-050",
+      "feature": "Route localization & RTL: library/women-guidance",
+      "route": "library/women-guidance",
+      "steps": "Navigate to library/women-guidance across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route library/women-guidance displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 16 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: library. State expression: __NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-guidance'})."
+    },
+    {
+      "id": "S5-051",
+      "feature": "Route localization & RTL: tools/tasbih",
+      "route": "tools/tasbih",
+      "steps": "Navigate to tools/tasbih across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/tasbih displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 374 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tasbih'})."
+    },
+    {
+      "id": "S5-052",
+      "feature": "Route localization & RTL: tools/summary",
+      "route": "tools/summary",
+      "steps": "Navigate to tools/summary across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/summary displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 29 leftover English words in Urdu locale (e.g. ['PERSONAL', 'JOURNEY', 'Your', 'past']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'summary'})."
+    },
+    {
+      "id": "S5-053",
+      "feature": "Route localization & RTL: tools/qibla",
+      "route": "tools/qibla",
+      "steps": "Navigate to tools/qibla across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/qibla displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 23 leftover English words in Urdu locale (e.g. ['DIRECTION', 'PRAYER', 'Location', 'detection']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json",
+        "reports/audit/evidence/S5/screenshots/tools_qibla_ur_paper_393.png",
+        "reports/audit/evidence/S5/screenshots/tools_qibla_ar_ink_360.png"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'qibla'})."
+    },
+    {
+      "id": "S5-054",
+      "feature": "Route localization & RTL: tools/tracker",
+      "route": "tools/tracker",
+      "steps": "Navigate to tools/tracker across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/tracker displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 325 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tracker'})."
+    },
+    {
+      "id": "S5-055",
+      "feature": "Route localization & RTL: tools/location",
+      "route": "tools/location",
+      "steps": "Navigate to tools/location across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/location displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 32 leftover English words in Urdu locale (e.g. ['automatically', 'enter', 'city', 'coordinates']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'location'})."
+    },
+    {
+      "id": "S5-056",
+      "feature": "Route localization & RTL: tools/cities",
+      "route": "tools/cities",
+      "steps": "Navigate to tools/cities across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/cities displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 415 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'cities'})."
+    },
+    {
+      "id": "S5-057",
+      "feature": "Route localization & RTL: tools/notifications",
+      "route": "tools/notifications",
+      "steps": "Navigate to tools/notifications across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/notifications displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 16 leftover English words in Urdu locale (e.g. ['Fajr', 'Dhuhr', 'Maghrib', 'Isha']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'notifications'})."
+    },
+    {
+      "id": "S5-058",
+      "feature": "Route localization & RTL: tools/prayer-reminders",
+      "route": "tools/prayer-reminders",
+      "steps": "Navigate to tools/prayer-reminders across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/prayer-reminders displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 16 leftover English words in Urdu locale (e.g. ['Fajr', 'Dhuhr', 'Maghrib', 'Isha']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'prayer-reminders'})."
+    },
+    {
+      "id": "S5-059",
+      "feature": "Route localization & RTL: tools/fasting",
+      "route": "tools/fasting",
+      "steps": "Navigate to tools/fasting across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/fasting displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 455 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'fasting'})."
+    },
+    {
+      "id": "S5-060",
+      "feature": "Route localization & RTL: tools/zakat",
+      "route": "tools/zakat",
+      "steps": "Navigate to tools/zakat across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/zakat displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 822 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'zakat'})."
+    },
+    {
+      "id": "S5-061",
+      "feature": "Route localization & RTL: tools/calendar",
+      "route": "tools/calendar",
+      "steps": "Navigate to tools/calendar across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/calendar displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 141 leftover English words in Urdu locale (e.g. ['Gregorian', 'Hijri', 'mapping', 'months']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'calendar'})."
+    },
+    {
+      "id": "S5-062",
+      "feature": "Route localization & RTL: tools/mosque",
+      "route": "tools/mosque",
+      "steps": "Navigate to tools/mosque across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/mosque displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 28 leftover English words in Urdu locale (e.g. ['Find', 'nearby', 'places', 'worship']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'mosque'})."
+    },
+    {
+      "id": "S5-063",
+      "feature": "Route localization & RTL: tools/women-cycle",
+      "route": "tools/women-cycle",
+      "steps": "Navigate to tools/women-cycle across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/women-cycle displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 651 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-cycle'})."
+    },
+    {
+      "id": "S5-064",
+      "feature": "Route localization & RTL: tools/women-purity",
+      "route": "tools/women-purity",
+      "steps": "Navigate to tools/women-purity across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/women-purity displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 12 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-purity'})."
+    },
+    {
+      "id": "S5-065",
+      "feature": "Route localization & RTL: tools/women-guidance",
+      "route": "tools/women-guidance",
+      "steps": "Navigate to tools/women-guidance across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/women-guidance displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 12 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-guidance'})."
+    },
+    {
+      "id": "S5-066",
+      "feature": "Route localization & RTL: tools/women-qada",
+      "route": "tools/women-qada",
+      "steps": "Navigate to tools/women-qada across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/women-qada displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 567 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-qada'})."
+    },
+    {
+      "id": "S5-067",
+      "feature": "Route localization & RTL: tools/umrah-guide",
+      "route": "tools/umrah-guide",
+      "steps": "Navigate to tools/umrah-guide across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/umrah-guide displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 661 leftover English words in Urdu locale (e.g. ['Entering', 'sacred', 'state', 'consecration']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-guide'})."
+    },
+    {
+      "id": "S5-068",
+      "feature": "Route localization & RTL: tools/umrah-resources",
+      "route": "tools/umrah-resources",
+      "steps": "Navigate to tools/umrah-resources across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/umrah-resources displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 1863 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-resources'})."
+    },
+    {
+      "id": "S5-069",
+      "feature": "Route localization & RTL: tools/hajj-journey",
+      "route": "tools/hajj-journey",
+      "steps": "Navigate to tools/hajj-journey across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/hajj-journey displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 727 leftover English words in Urdu locale (e.g. ['SACRED', 'PILGRIMAGE', 'rites', 'from']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-journey'})."
+    },
+    {
+      "id": "S5-070",
+      "feature": "Route localization & RTL: tools/makkah-live",
+      "route": "tools/makkah-live",
+      "steps": "Navigate to tools/makkah-live across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/makkah-live displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 1493 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'makkah-live'})."
+    },
+    {
+      "id": "S5-071",
+      "feature": "Route localization & RTL: tools/madinah-live",
+      "route": "tools/madinah-live",
+      "steps": "Navigate to tools/madinah-live across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/madinah-live displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Cleanly rendered across EN, UR (RTL), and AR (RTL). No undefined/object placeholders, no horizontal overflow. Text length: 1335 chars.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'madinah-live'})."
+    },
+    {
+      "id": "S5-072",
+      "feature": "Route localization & RTL: tools/hajj-live",
+      "route": "tools/hajj-live",
+      "steps": "Navigate to tools/hajj-live across 3 configurations: 393x852 dark EN, 393x852 light UR (RTL), and 360x800 dark AR (RTL). Inspect rendered text, placeholders, leftover English, and layout overflow.",
+      "expected": "Route tools/hajj-live displays cleanly in active locale with no raw keys, no undefined/[object Object] placeholders, valid RTL layout, and zero horizontal clipping.",
+      "actual": "Rendered with 66 leftover English words in Urdu locale (e.g. ['Ekhbariya', 'Live', 'News', 'Jumada']). Due to keys missing from locale dictionaries.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence": [
+        "reports/audit/evidence/S5/route_crawl_393_dark_en.json",
+        "reports/audit/evidence/S5/route_crawl_393_light_ur.json",
+        "reports/audit/evidence/S5/route_crawl_360_dark_ar.json"
+      ],
+      "notes": "Area: tools. State expression: __NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-live'})."
+    }
+  ]
+}

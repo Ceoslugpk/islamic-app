@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   Animated,
   Easing,
@@ -9,6 +8,7 @@ import {
   AccessibilityInfo,
 } from 'react-native';
 import { useTheme } from '../lib/theme';
+import { AppText } from './ui/AppText';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -25,32 +25,35 @@ function AnimatedDigit({
   fontSize = 18,
   reducedMotion,
 }: AnimatedDigitProps) {
-  const [currentDigit, setCurrentDigit] = useState(digit);
   const [prevDigit, setPrevDigit] = useState<string | null>(null);
-  const anim = useRef(new Animated.Value(0)).current;
+  const [currentDigit, setCurrentDigit] = useState(digit);
+  const [anim] = useState(() => new Animated.Value(0));
+
+  if (!reducedMotion && digit !== currentDigit) {
+    setPrevDigit(currentDigit);
+    setCurrentDigit(digit);
+  } else if (reducedMotion && digit !== currentDigit) {
+    setCurrentDigit(digit);
+    setPrevDigit(null);
+  }
 
   useEffect(() => {
-    if (digit !== currentDigit) {
-      if (reducedMotion) {
-        setCurrentDigit(digit);
-        setPrevDigit(null);
-        return;
-      }
+    if (prevDigit === null || reducedMotion) return;
 
-      setPrevDigit(currentDigit);
-      setCurrentDigit(digit);
-      anim.setValue(0);
-
-      Animated.timing(anim, {
-        toValue: 1,
-        duration: 200,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: USE_NATIVE_DRIVER,
-      }).start(() => {
-        setPrevDigit(null);
-      });
-    }
-  }, [digit, currentDigit, anim, reducedMotion]);
+    anim.setValue(0);
+    const animation = Animated.timing(anim, {
+      toValue: 1,
+      duration: 200,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: USE_NATIVE_DRIVER,
+    });
+    animation.start(() => {
+      setPrevDigit(null);
+    });
+    return () => {
+      animation.stop();
+    };
+  }, [prevDigit, reducedMotion, anim]);
 
   const digitStyle = {
     fontFamily: 'Manrope_600SemiBold',
@@ -66,7 +69,7 @@ function AnimatedDigit({
   if (prevDigit === null || reducedMotion) {
     return (
       <View style={[styles.digitSlot, { width: slotWidth, height: slotHeight }]}>
-        <Text style={digitStyle}>{currentDigit}</Text>
+        <AppText variant="numeral" style={digitStyle}>{currentDigit}</AppText>
       </View>
     );
   }
@@ -100,7 +103,7 @@ function AnimatedDigit({
           },
         ]}
       >
-        <Text style={digitStyle}>{prevDigit}</Text>
+        <AppText variant="numeral" style={digitStyle}>{prevDigit}</AppText>
       </Animated.View>
       <Animated.View
         style={[
@@ -111,7 +114,7 @@ function AnimatedDigit({
           },
         ]}
       >
-        <Text style={digitStyle}>{currentDigit}</Text>
+        <AppText variant="numeral" style={digitStyle}>{currentDigit}</AppText>
       </Animated.View>
     </View>
   );
@@ -123,13 +126,18 @@ function parseHmToMinutes(hm?: string): number {
   return (h || 0) * 60 + (m || 0);
 }
 
-interface PrayerCountdownProps {
+export interface PrayerCountdownProps {
   targetTime?: string; // "HH:MM" e.g. "18:42"
   color?: string;
   separatorColor?: string;
   fontSize?: number;
   /** Fires once when the countdown crosses zero (next prayer arrived). */
   onExpire?: () => void;
+  variant?: 'inline' | 'tiles';
+  tileBg?: string;
+  tileBorder?: string;
+  labelColor?: string;
+  isActive?: boolean;
 }
 
 export function PrayerCountdown({
@@ -138,11 +146,21 @@ export function PrayerCountdown({
   separatorColor,
   fontSize = 18,
   onExpire,
+  variant = 'inline',
+  tileBg,
+  tileBorder,
+  labelColor,
+  isActive = true,
 }: PrayerCountdownProps) {
   const { colors } = useTheme();
   const activeColor = color ?? colors.accent;
   const activeSeparatorColor = separatorColor ?? colors.textMuted;
-  const [reducedMotion, setReducedMotion] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
+    return false;
+  });
   const expiredRef = useRef(false);
   const [digits, setDigits] = useState<{
     h1: string;
@@ -161,11 +179,7 @@ export function PrayerCountdown({
   });
 
   useEffect(() => {
-    if (Platform.OS === 'web') {
-      if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
-        setReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-      }
-    } else {
+    if (Platform.OS !== 'web') {
       AccessibilityInfo.isReduceMotionEnabled()
         .then((val) => setReducedMotion(!!val))
         .catch(() => {});
@@ -173,6 +187,8 @@ export function PrayerCountdown({
   }, []);
 
   useEffect(() => {
+    if (isActive === false) return;
+
     function compute() {
       if (!targetTime) return;
       const now = new Date();
@@ -213,7 +229,7 @@ export function PrayerCountdown({
     compute();
     const interval = setInterval(compute, 1000);
     return () => clearInterval(interval);
-  }, [targetTime]);
+  }, [targetTime, onExpire, isActive]);
 
   const separatorStyle = {
     fontFamily: 'Manrope_600SemiBold',
@@ -221,6 +237,48 @@ export function PrayerCountdown({
     color: activeSeparatorColor,
     marginHorizontal: 3,
   };
+
+  if (variant === 'tiles') {
+    return (
+      <View
+        style={styles.tilesContainer}
+        accessibilityRole="text"
+        accessibilityLiveRegion="polite"
+        accessibilityLabel={`Countdown ${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}`}
+      >
+        {/* Hours */}
+        <View style={[styles.tileBox, { backgroundColor: tileBg || 'rgba(6, 40, 33, 0.7)', borderColor: tileBorder || '#786234' }]}>
+          <View style={styles.tileDigitsWrap}>
+            <AnimatedDigit digit={digits.h1} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
+            <AnimatedDigit digit={digits.h2} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
+          </View>
+          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>HRS</AppText>
+        </View>
+
+        <AppText variant="caption" style={[styles.tileColon, { color: separatorColor || labelColor || '#8EB3A5' }]}>:</AppText>
+
+        {/* Minutes */}
+        <View style={[styles.tileBox, { backgroundColor: tileBg || 'rgba(6, 40, 33, 0.7)', borderColor: tileBorder || '#786234' }]}>
+          <View style={styles.tileDigitsWrap}>
+            <AnimatedDigit digit={digits.m1} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
+            <AnimatedDigit digit={digits.m2} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
+          </View>
+          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>MIN</AppText>
+        </View>
+
+        <AppText variant="caption" style={[styles.tileColon, { color: separatorColor || labelColor || '#8EB3A5' }]}>:</AppText>
+
+        {/* Seconds */}
+        <View style={[styles.tileBox, { backgroundColor: tileBg || 'rgba(6, 40, 33, 0.7)', borderColor: tileBorder || '#786234' }]}>
+          <View style={styles.tileDigitsWrap}>
+            <AnimatedDigit digit={digits.s1} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
+            <AnimatedDigit digit={digits.s2} color={activeColor} fontSize={16} reducedMotion={reducedMotion} />
+          </View>
+          <AppText variant="caption" style={[styles.tileLabel, { color: labelColor || '#A0C8BA' }]}>SEC</AppText>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -245,7 +303,7 @@ export function PrayerCountdown({
         />
       </View>
 
-      <Text style={separatorStyle}>:</Text>
+      <AppText variant="numeral" style={separatorStyle}>:</AppText>
 
       {/* Minutes */}
       <View style={styles.unitPair}>
@@ -263,7 +321,7 @@ export function PrayerCountdown({
         />
       </View>
 
-      <Text style={separatorStyle}>:</Text>
+      <AppText variant="numeral" style={separatorStyle}>:</AppText>
 
       {/* Seconds */}
       <View style={styles.unitPair}>
@@ -305,5 +363,39 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  tilesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6.5,
+    direction: 'ltr',
+  },
+  tileBox: {
+    width: 54,
+    height: 44,
+    borderRadius: 9.5,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 3,
+  },
+  tileDigitsWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileLabel: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 8,
+    letterSpacing: 0.8,
+    marginTop: 1,
+    textTransform: 'uppercase',
+  },
+  tileColon: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 14,
+    marginHorizontal: 0,
+    lineHeight: 18,
+    alignSelf: 'center',
   },
 });

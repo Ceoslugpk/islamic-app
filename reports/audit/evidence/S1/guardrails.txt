@@ -1,0 +1,32 @@
+$ python3 -c import os,re,json; ex={"node_modules","dist",".git","reports","proof","screenshots","test-results","scratch"}; pats={"raw_text_import":re.compile(r"import\\s*\\{[^}]*\\bText\\b[^}]*\\}\\s*from [\\\"\\\"]react-native"),"legacy_import":re.compile(r"_legacy|from [\\\"\\\"][^\\\"\\\"]*legacy"),"raw_text_tag":re.compile(r"<Text[\\s>]"),"raw_color":re.compile(r"#[0-9A-Fa-f]{6}|rgba?\\(")}; out={k:[] for k in pats}
+for dp,dn,fn in os.walk("src"):
+ dn[:]=[d for d in dn if d not in ex]
+ for f in fn:
+  if not f.endswith((".ts",".tsx",".js",".jsx")): continue
+  p=os.path.join(dp,f); s=open(p,encoding="utf-8",errors="ignore").read()
+  for k,r in pats.items():
+   for m in r.finditer(s): out[k].append({"file":p,"line":s.count("\\n",0,m.start())+1,"match":m.group(0)[:120]})
+print(json.dumps({"src_legacy_exists":os.path.isdir("src/_legacy"),"counts":{k:len(v) for k,v in out.items()},"matches":out},indent=2))
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import os,re,json; ex={"node_modules","dist",".git","reports","proof","screenshots","test-results","scratch"}; pats={"raw_text_import":re.compile(r"import\\s*\\{[^}]*\\bText\\b[^}]*\\}\\s*from [\\\"\\\"]react-native"),"legacy_import":re.compile(r"_legacy|from [\\\"\\\"][^\\\"\\\"]*legacy"),"raw_text_tag":re.compile(r"<Text[\\s>]"),"raw_color":re.compile(r"#[0-9A-Fa-f]{6}|rgba?\\(")}; out={k:[] for k in pats}
+                                                                                                                                                                                                                                                                                                                                                             ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.hermes/tools/python-3.14.7+20260901-linux-x64/lib/python3.14/re/__init__.py", line 289, in compile
+    return _compile(pattern, flags)
+  File "/home/ubuntu/.hermes/tools/python-3.14.7+20260901-linux-x64/lib/python3.14/re/__init__.py", line 350, in _compile
+    p = _compiler.compile(pattern, flags)
+  File "/home/ubuntu/.hermes/tools/python-3.14.7+20260901-linux-x64/lib/python3.14/re/_compiler.py", line 762, in compile
+    p = _parser.parse(p, flags)
+  File "/home/ubuntu/.hermes/tools/python-3.14.7+20260901-linux-x64/lib/python3.14/re/_parser.py", line 973, in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+  File "/home/ubuntu/.hermes/tools/python-3.14.7+20260901-linux-x64/lib/python3.14/re/_parser.py", line 460, in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+                ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                       not nested and not items))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/ubuntu/.hermes/tools/python-3.14.7+20260901-linux-x64/lib/python3.14/re/_parser.py", line 858, in _parse
+    raise source.error("missing ), unterminated subpattern",
+                       source.tell() - start)
+re.PatternError: missing ), unterminated subpattern at position 23
+
+EXIT_CODE=1

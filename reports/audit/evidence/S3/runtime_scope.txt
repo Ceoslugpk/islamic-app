@@ -1,0 +1,12 @@
+S3 runtime scope evidence
+
+Target: http://15.235.203.134:9998/
+Browser session: islamic-audit-s3
+Viewport: 1280x577
+
+Observed before onboarding: onboarding rendered with APP LANGUAGE, QURAN TRANSLATION, QURAN AUDIO, and Get Started.
+Observed after synthetic Get Started click: Home rendered with TODAY, Salah Tracker, Fajr/Dhuhr/Asr/Maghrib/Isha controls, and tool controls including Fasting, Zakat, Qibla, Tasbih, Weekly Summary, Hijri Calendar, Prayer Reminders, and Location.
+Observed runtime text: "Getting your prayer times…" / "Preparing your dashboard" during the Home load.
+Observed resources included the deployed JS bundle and request to https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16.
+
+Coverage limitation: the deployed session was not used to invoke real notifications, sharing, purchases, destructive actions, personal data entry, native location, audio, magnetometer, or hardware behavior. Deterministic clock/location/API injection was not available through the browser harness. Therefore unvisited routes and persistence-dependent rows remain BLOCKED, not PASS.

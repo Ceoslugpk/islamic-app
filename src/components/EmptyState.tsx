@@ -1,7 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
+import { getTokens } from '../theme/tokens';
+import { AppText } from './ui/AppText';
 import { t } from '../lib/i18n';
 
 export interface EmptyStateProps {
@@ -15,24 +18,32 @@ export interface EmptyStateProps {
 
 /** Compact, muted empty/offline state with an optional action (e.g. Retry). */
 export function EmptyState({ icon, title, subtitle, actionLabel, onAction, iconSize = 28 }: EmptyStateProps) {
-  const { colors } = useTheme();
+  const { mode } = useTheme();
+  const tokens = getTokens(mode);
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.iconCircle, { backgroundColor: colors.iconCircleBg || '#E0EAE5' }]}>
-        <Ionicons name={icon} size={iconSize} color={colors.forestGreen || colors.accent} />
+      <View style={[styles.iconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
+        <Ionicons name={icon} size={iconSize} color={tokens.accent} />
       </View>
-      <Text style={[styles.title, { color: colors.textPrimary }]}>{t(title)}</Text>
-      <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t(subtitle)}</Text>
+      <AppText variant="title" style={styles.title}>{t(title)}</AppText>
+      <AppText variant="subtitle" style={styles.subtitle}>{t(subtitle)}</AppText>
       {actionLabel && onAction ? (
         <TouchableOpacity
           onPress={onAction}
-          style={[styles.actionBtn, { backgroundColor: colors.forestGreen || colors.accent }]}
+          style={styles.actionBtn}
           accessibilityRole="button"
           accessibilityLabel={t(actionLabel)}
           activeOpacity={0.85}
         >
-          <Text style={[styles.actionText, { color: colors.onAccent || '#FFFFFF' }]}>{t(actionLabel)}</Text>
+          <LinearGradient
+            colors={tokens.goldGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.actionBtnGradient}
+          >
+            <AppText variant="rowTitle" tone="onGold" style={styles.actionText}>{t(actionLabel)}</AppText>
+          </LinearGradient>
         </TouchableOpacity>
       ) : null}
     </View>
@@ -70,6 +81,10 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     marginTop: 18,
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  actionBtnGradient: {
     minHeight: 44,
     paddingHorizontal: 22,
     paddingVertical: 10,

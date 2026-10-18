@@ -7,16 +7,16 @@
 // All worship exemptions and qada logs depend strictly on EXPLICIT user recording.
 // ============================================================================
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   TextInput,
   useWindowDimensions,
   Alert,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
@@ -243,9 +243,9 @@ function WomenCycleScreen({
         {/* Discreet Privacy Note */}
         <View style={[styles.privacyBadge, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
           <Ionicons name="shield-checkmark" size={14} color={tokens.goldText} />
-          <Text style={[styles.privacyText, { color: tokens.muted }]}>
+          <AppText variant="caption" tone="faint" style={styles.privacyText}>
             {t('Private & local · Stored securely on your device only · Never sent to servers')}
-          </Text>
+          </AppText>
         </View>
 
         {/* Active Status Hero Card */}
@@ -253,14 +253,14 @@ function WomenCycleScreen({
           <LinearGradient pointerEvents="none" colors={tokens.cardGradient} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
           <View style={styles.heroHeader}>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.heroEyebrow, { color: tokens.goldText }]}>
+              <AppText variant="eyebrow" highlight style={styles.heroEyebrow}>
                 {activePeriod ? t('ACTIVE CYCLE') : t('PURITY STATE')}
-              </Text>
-              <Text style={[styles.heroTitle, { color: tokens.text }]}>
+              </AppText>
+              <AppText variant="title" style={styles.heroTitle}>
                 {activePeriod
                   ? `${t('Menstruating · Day')} ${getCycleDay(activePeriod.startDate)}`
                   : `${t('Ritual Purity (Tuhr) · Day')} ${cycleDay}`}
-              </Text>
+              </AppText>
             </View>
             <View
               style={[
@@ -277,38 +277,38 @@ function WomenCycleScreen({
                 size={13}
                 color={activePeriod ? tokens.danger : tokens.goldText}
               />
-              <Text
-                style={[
-                  styles.statusPillText,
-                  { color: activePeriod ? tokens.danger : tokens.goldText },
-                ]}
+              <AppText
+                variant="caption"
+                tone={activePeriod ? 'danger' : undefined}
+                highlight={!activePeriod}
+                style={styles.statusPillText}
               >
                 {activePeriod ? t('Exempt from Salah') : t('Normal Worship')}
-              </Text>
+              </AppText>
             </View>
           </View>
 
           {activePeriod ? (
             <View style={styles.heroBody}>
-              <Text style={[styles.heroDesc, { color: tokens.muted }]}>
+              <AppText variant="body" tone="faint" style={styles.heroDesc}>
                 {t('Started on')} {activePeriod.startDate}. {t('Prayer and fasting are exempt out of divine mercy.')}
-              </Text>
+              </AppText>
 
               {/* Explicit-recording driven status reminder */}
               {todayRecordedStatus === 'menstruating' && (
                 <View style={[styles.recordedReminderChip, { backgroundColor: tokens.danger + '15', borderColor: tokens.danger + '50' }]}>
                   <Ionicons name="information-circle" size={15} color={tokens.danger} />
-                  <Text style={[styles.recordedReminderText, { color: tokens.text }]}>
-                    {t('Recorded as Flow today:')} <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Exempt from fasting; record qada makeup days later.')}</Text>
-                  </Text>
+                  <AppText variant="body" style={styles.recordedReminderText}>
+                    {t('Recorded as Flow today:')} <AppText variant="body" style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Exempt from fasting; record qada makeup days later.')}</AppText>
+                  </AppText>
                 </View>
               )}
               {todayRecordedStatus === 'pure' && (
                 <View style={[styles.recordedReminderChip, { backgroundColor: tokens.ringFill, borderColor: tokens.success }]}>
                   <Ionicons name="sparkles" size={15} color={tokens.success} />
-                  <Text style={[styles.recordedReminderText, { color: tokens.text }]}>
-                    {t('Recorded as Pure today:')} <Text style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Perform Ghusl before resuming Salah & fasting.')}</Text>
-                  </Text>
+                  <AppText variant="body" style={styles.recordedReminderText}>
+                    {t('Recorded as Pure today:')} <AppText variant="body" style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Perform Ghusl before resuming Salah & fasting.')}</AppText>
+                  </AppText>
                 </View>
               )}
 
@@ -321,9 +321,9 @@ function WomenCycleScreen({
                 >
                   <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
                   <Ionicons name="checkmark-done" size={16} color={tokens.onGold} />
-                  <Text style={[styles.primaryBtnText, { color: tokens.onGold }]}>
+                  <AppText variant="rowTitle" tone="onGold" style={styles.primaryBtnText}>
                     {t('End Period / Mark Pure')}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
                 {onOpenPurity && (
                   <TouchableOpacity
@@ -333,7 +333,7 @@ function WomenCycleScreen({
                     accessibilityLabel={t('View Ghusl Guide')}
                   >
                     <Ionicons name="water-outline" size={15} color={tokens.goldText} />
-                    <Text style={[styles.guideLinkText, { color: tokens.goldText }]}>{t('Ghusl Guide')}</Text>
+                    <AppText variant="rowTitle" highlight style={styles.guideLinkText}>{t('Ghusl Guide')}</AppText>
                   </TouchableOpacity>
                 )}
               </View>
@@ -344,12 +344,12 @@ function WomenCycleScreen({
                 <View style={[styles.predictionBox, { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}>
                   <Ionicons name="calendar-outline" size={16} color={tokens.goldText} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.predictionTitle, { color: tokens.text }]}>
+                    <AppText variant="rowTitle" style={styles.predictionTitle}>
                       {t('Next predicted cycle in ~')}{prediction.daysRemaining > 0 ? `${prediction.daysRemaining} ${t('days')}` : t('soon')}
-                    </Text>
-                    <Text style={[styles.predictionSub, { color: tokens.muted }]}>
+                    </AppText>
+                    <AppText variant="caption" tone="faint" style={styles.predictionSub}>
                       {t('Estimated:')} {prediction.nextDate} · {t('Average interval:')} {avgCycle} {t('days')}
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
               )}
@@ -357,20 +357,20 @@ function WomenCycleScreen({
               {fertileWindow && (
                 <View style={[styles.fertileBadge, { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}>
                   <Ionicons name="information-circle-outline" size={14} color={tokens.muted} />
-                  <Text style={[styles.fertileText, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.fertileText}>
                     {t('Estimated fertile window:')} {fertileWindow.start} {t('to')} {fertileWindow.end}
-                  </Text>
+                  </AppText>
                 </View>
               )}
-              <Text style={[styles.disclaimerText, { color: tokens.muted }]}>
+              <AppText variant="caption" tone="faint" style={styles.disclaimerText}>
                 {t('Predictions are informational estimates computed strictly from past entries. Not for medical diagnosis or contraception.')}
-              </Text>
+              </AppText>
 
               <View style={[styles.explicitRuleBox, { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}>
                 <Ionicons name="shield-checkmark-outline" size={14} color={tokens.goldText} />
-                <Text style={[styles.explicitRuleText, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.explicitRuleText}>
                   {t('Explicit recording rule: Predictions never auto-change prayer schedules, reminders, or fasting records.')}
-                </Text>
+                </AppText>
               </View>
 
               <View style={styles.heroBtnRow}>
@@ -382,9 +382,9 @@ function WomenCycleScreen({
                 >
                   <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
                   <Ionicons name="add-circle-outline" size={16} color={tokens.onGold} />
-                  <Text style={[styles.primaryBtnText, { color: tokens.onGold }]}>
+                  <AppText variant="rowTitle" tone="onGold" style={styles.primaryBtnText}>
                     {t('Log Period Start')}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
                 {onOpenPurity && (
                   <TouchableOpacity
@@ -394,7 +394,7 @@ function WomenCycleScreen({
                     accessibilityLabel={t('View Ghusl Guide')}
                   >
                     <Ionicons name="water-outline" size={15} color={tokens.goldText} />
-                    <Text style={[styles.guideLinkText, { color: tokens.goldText }]}>{t('Ghusl Guide')}</Text>
+                    <AppText variant="rowTitle" highlight style={styles.guideLinkText}>{t('Ghusl Guide')}</AppText>
                   </TouchableOpacity>
                 )}
               </View>
@@ -408,13 +408,13 @@ function WomenCycleScreen({
             <LinearGradient pointerEvents="none" colors={tokens.cardGradient} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
             <View style={styles.cardHeaderRow}>
               <Ionicons name="flower-outline" size={16} color={tokens.goldText} />
-              <Text style={[styles.cardTitle, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.cardTitle}>
                 {t('Daily Purity Status')}
-              </Text>
+              </AppText>
             </View>
-            <Text style={[styles.cardSub, { color: tokens.muted }]}>
+            <AppText variant="caption" tone="faint" style={styles.cardSub}>
               {t('Tap any day to toggle status: Flow → Spotting → Pure')}
-            </Text>
+            </AppText>
             <View style={styles.chipsGrid}>
               {Array.from({ length: Math.min(15, Math.max(7, getCycleDay(activePeriod.startDate))) }).map(
                 (_, idx) => {
@@ -441,12 +441,12 @@ function WomenCycleScreen({
                       accessibilityRole="button"
                       accessibilityLabel={`${t('Day')} ${dayNum}, ${dStr}, ${statusColors.label}`}
                     >
-                      <Text style={[styles.dayChipNum, { color: tokens.text }]}>
+                      <AppText variant="caption" style={styles.dayChipNum}>
                         D{dayNum}
-                      </Text>
-                      <Text style={[styles.dayChipStatus, { color: statusColors.text }]}>
+                      </AppText>
+                      <AppText variant="caption" style={[styles.dayChipStatus, { color: statusColors.text }]}>
                         {statusColors.label}
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                   );
                 }
@@ -455,15 +455,15 @@ function WomenCycleScreen({
             <View style={[styles.legendRow, { borderTopColor: tokens.cardBorder }]}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: tokens.danger }]} />
-                <Text style={[styles.legendText, { color: tokens.muted }]}>{t('Flow (Bleeding)')}</Text>
+                <AppText variant="caption" tone="faint" style={styles.legendText}>{t('Flow (Bleeding)')}</AppText>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: tokens.goldText }]} />
-                <Text style={[styles.legendText, { color: tokens.muted }]}>{t('Spotting')}</Text>
+                <AppText variant="caption" tone="faint" style={styles.legendText}>{t('Spotting')}</AppText>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: tokens.success }]} />
-                <Text style={[styles.legendText, { color: tokens.muted }]}>{t('Pure (Dry / Tuhr)')}</Text>
+                <AppText variant="caption" tone="faint" style={styles.legendText}>{t('Pure (Dry / Tuhr)')}</AppText>
               </View>
             </View>
           </View>
@@ -473,22 +473,22 @@ function WomenCycleScreen({
         {showLogPeriod && (
           <View style={[styles.formCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, borderWidth: cardTokens.borderWidth, borderRadius: 20 }]}>
             <LinearGradient pointerEvents="none" colors={tokens.cardGradient} style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} />
-            <Text style={[styles.formTitle, { color: tokens.text }]}>{t('Log Period Entry')}</Text>
+            <AppText variant="sectionTitle" style={styles.formTitle}>{t('Log Period Entry')}</AppText>
 
             <View style={styles.labelRow}>
-              <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Start Date (YYYY-MM-DD)')}</Text>
+              <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('Start Date (YYYY-MM-DD)')}</AppText>
               <View style={styles.quickPillsRow}>
                 <TouchableOpacity
                   style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
                   onPress={() => setNewStartDate(todayStr)}
                 >
-                  <Text style={[styles.quickPillText, { color: tokens.goldText }]}>{t('Today')}</Text>
+                  <AppText variant="caption" highlight style={styles.quickPillText}>{t('Today')}</AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
                   onPress={() => setNewStartDate(yesterdayStr)}
                 >
-                  <Text style={[styles.quickPillText, { color: tokens.muted }]}>{t('Yesterday')}</Text>
+                  <AppText variant="caption" tone="faint" style={styles.quickPillText}>{t('Yesterday')}</AppText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -498,24 +498,25 @@ function WomenCycleScreen({
               onChangeText={setNewStartDate}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={tokens.muted}
+              accessibilityLabel={t('Start Date (YYYY-MM-DD)')}
               keyboardType="numbers-and-punctuation"
             />
 
             <View style={styles.labelRow}>
-              <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('End Date (Optional, leave blank if active)')}</Text>
+              <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('End Date (Optional, leave blank if active)')}</AppText>
               <View style={styles.quickPillsRow}>
                 <TouchableOpacity
                   style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
                   onPress={() => setNewEndDate(todayStr)}
                 >
-                  <Text style={[styles.quickPillText, { color: tokens.goldText }]}>{t('Today')}</Text>
+                  <AppText variant="caption" highlight style={styles.quickPillText}>{t('Today')}</AppText>
                 </TouchableOpacity>
                 {newEndDate ? (
                   <TouchableOpacity
                     style={[styles.quickPill, getPillShadow(mode), { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
                     onPress={() => setNewEndDate('')}
                   >
-                    <Text style={[styles.quickPillText, { color: tokens.muted }]}>{t('Clear')}</Text>
+                    <AppText variant="caption" tone="faint" style={styles.quickPillText}>{t('Clear')}</AppText>
                   </TouchableOpacity>
                 ) : null}
               </View>
@@ -526,16 +527,18 @@ function WomenCycleScreen({
               onChangeText={setNewEndDate}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={tokens.muted}
+              accessibilityLabel={t('End Date (YYYY-MM-DD)')}
               keyboardType="numbers-and-punctuation"
             />
 
-            <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Notes (Optional)')}</Text>
+            <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('Notes (Optional)')}</AppText>
             <TextInput
               style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
               value={newNotes}
               onChangeText={setNewNotes}
               placeholder={t('Cycle notes, flow intensity, pain...')}
               placeholderTextColor={tokens.muted}
+              accessibilityLabel={t('Notes (Optional)')}
             />
             <View style={styles.formBtnRow}>
               <TouchableOpacity
@@ -544,9 +547,9 @@ function WomenCycleScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t('Cancel')}
               >
-                <Text style={{ color: tokens.muted, fontFamily: 'Manrope_600SemiBold', fontSize: 13 }}>
+                <AppText variant="rowTitle" tone="faint" style={{ fontFamily: 'Manrope_600SemiBold', fontSize: 13 }}>
                   {t('Cancel')}
-                </Text>
+                </AppText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.submitBtn, getPillShadow(mode), { borderColor: tokens.goldBorder }]}
@@ -555,9 +558,9 @@ function WomenCycleScreen({
                 accessibilityLabel={t('Save Period Entry')}
               >
                 <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
-                <Text style={{ color: tokens.onGold, fontFamily: 'Manrope_700Bold', fontSize: 13 }}>
+                <AppText variant="rowTitle" tone="onGold" style={{ fontFamily: 'Manrope_700Bold', fontSize: 13 }}>
                   {t('Save Entry')}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           </View>
@@ -566,10 +569,10 @@ function WomenCycleScreen({
         {/* Recent Cycles History */}
         <View style={styles.historySection}>
           <View style={styles.historyHeader}>
-            <Text style={[styles.sectionTitle, { color: tokens.text }]}>{t('Recent History')}</Text>
+            <AppText variant="sectionTitle" style={styles.sectionTitle}>{t('Recent History')}</AppText>
             {!showLogPeriod && (
               <TouchableOpacity onPress={() => setShowLogPeriod(true)}>
-                <Text style={[styles.actionLink, { color: tokens.goldText }]}>{t('+ Add Past Entry')}</Text>
+                <AppText variant="link" highlight style={styles.actionLink}>{t('+ Add Past Entry')}</AppText>
               </TouchableOpacity>
             )}
           </View>
@@ -592,19 +595,19 @@ function WomenCycleScreen({
                 <View style={styles.historyRow}>
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={[styles.historyDates, { color: tokens.text }]}>
+                      <AppText variant="body" style={styles.historyDates}>
                         {item.startDate} {item.endDate ? `→ ${item.endDate}` : `· (${t('Active')})`}
-                      </Text>
+                      </AppText>
                       {!item.endDate && (
                         <View style={[styles.liveBadge, { backgroundColor: tokens.danger + '20', borderColor: tokens.danger, borderWidth: 1 }]}>
-                          <Text style={{ color: tokens.danger, fontSize: 9.5, fontFamily: 'Manrope_700Bold' }}>
+                          <AppText variant="eyebrow" tone="danger" style={{ fontSize: 9.5, fontFamily: 'Manrope_700Bold' }}>
                             {t('ACTIVE')}
-                          </Text>
+                          </AppText>
                         </View>
                       )}
                     </View>
                     {item.notes && (
-                      <Text style={[styles.historyNotes, { color: tokens.muted }]}>{item.notes}</Text>
+                      <AppText variant="caption" tone="faint" style={styles.historyNotes}>{item.notes}</AppText>
                     )}
                   </View>
                   <TouchableOpacity
@@ -648,7 +651,6 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
-    marginTop: -4,
     marginBottom: 12,
   },
   privacyText: {

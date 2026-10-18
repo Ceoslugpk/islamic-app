@@ -1,23 +1,28 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   FlatList,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Polygon } from 'react-native-svg';
+import { TabFlatList } from '../components/layout/TabScreen';
+import { AppText } from '../components/ui/AppText';
+import { getCardShadow, getHeroCardShadow, getPillShadow } from '../lib/theme';
+import { useThemeTokens } from '../theme/tokens';
 import { hScrollRTLStyle } from '../lib/rtl';
 import { fetchSurahList, fetchSurahListForLanguage, getBundledSurahs114, SurahMeta } from '../lib/quran';
-import { ArabicText } from '../components/ArabicText';
-import { SectionHeader } from '../components/SectionHeader';
-import i18n, { t } from '../lib/i18n';
-import { Hairline } from '../components/Hairline';
+import { SURAHS_114 } from '../lib/surahs114';
+import { ArabicText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
+import { GeometricPattern } from '../components/GeometricPattern';
+import { isRTL, t } from '../lib/i18n';
 import { LastReadPosition, loadLastReadPosition, loadQuranCache } from '../lib/db';
 import { getContinueReadingPosition, addReadingPositionListener, ReadingPosition } from '../lib/continuing';
 import { getLocalizedSurahName, getLocalizedLanguageName, normalizeSearchText } from '../lib/surahNamesLocalized';
@@ -31,7 +36,8 @@ import { useSettings } from '../lib/settings';
 import { useFlatListRestore } from '../lib/useScrollRestore';
 import { useSearchHistory } from '../lib/searchHistory';
 import { EmptyState } from '../components/EmptyState';
-import { getForwardIcon, getBackIcon } from '../lib/iconMap';
+import { getForwardIcon } from '../lib/iconMap';
+import { HOME_THEME_TOKENS } from '../lib/homeThemeTokens';
 
 interface QuranHomeScreenProps {
   onOpenSurah: (surahNumber: number, initialAyah?: number, initialPage?: number) => void;
@@ -47,15 +53,152 @@ interface QuranHomeScreenProps {
   isActive?: boolean;
 }
 
-const JUZ_LIST = Array.from({ length: 30 }, (_, i) => i + 1);
+const OCTAGRAM_POINTS =
+  '17.0,2.0 21.4,6.4 27.6,6.4 27.6,12.6 32.0,17.0 27.6,21.4 27.6,27.6 21.4,27.6 17.0,32.0 12.6,27.6 6.4,27.6 6.4,21.4 2.0,17.0 6.4,12.6 6.4,6.4 12.6,6.4';
 
-const JUZ_START_SURAH: Record<number, number> = {
-  1: 1, 2: 2, 3: 2, 4: 3, 5: 4, 6: 4, 7: 5, 8: 6, 9: 7, 10: 8,
-  11: 9, 12: 11, 13: 12, 14: 15, 15: 17, 16: 18, 17: 21, 18: 23, 19: 25, 20: 27,
-  21: 29, 22: 33, 23: 36, 24: 39, 25: 41, 26: 46, 27: 51, 28: 58, 29: 67, 30: 78,
-};
+function getCleanArabicSurahName(surahNumber: number, fallbackName?: string): string {
+  const canonical = SURAHS_114[surahNumber - 1]?.name;
+  const raw = canonical || (fallbackName ? fallbackName.replace(/^(سُورَةُ\s*|سورة\s*)/, '').trim() : '');
+  return raw.replace(/[\u064B-\u065F\u0670]/g, '').trim();
+}
 
-export default function QuranHomeScreen({
+function SurahRosetteBadge({
+  number,
+  borderColor,
+  fillColor,
+  textColor,
+}: {
+  number: number;
+  borderColor: string;
+  fillColor: string;
+  textColor: string;
+}) {
+  return (
+    <View style={styles.rosetteBadge}>
+      <Svg width={28} height={28} viewBox="0 0 34 34" style={StyleSheet.absoluteFill}>
+        <Polygon
+          points={OCTAGRAM_POINTS}
+          stroke={borderColor}
+          strokeWidth={1.3}
+          fill={fillColor}
+        />
+      </Svg>
+      <AppText
+        variant="numeral"
+        style={[
+          styles.rosetteNumberText,
+          {
+            fontSize: number >= 100 ? 8.5 : 9.5,
+          },
+        ]}
+        maxFontSizeMultiplier={1.1}
+      >
+        {number}
+      </AppText>
+    </View>
+  );
+}
+
+interface SurahRowProps {
+  item: SurahMeta;
+  tokens: ReturnType<typeof useThemeTokens>['tokens'];
+  mode: Parameters<typeof getCardShadow>[0];
+  isCompact: boolean;
+  trName?: string;
+  flag?: string;
+  isMarked: boolean;
+  readingPositionAyah?: number;
+  readingPositionPage?: number;
+  onOpenSurah: (surahNumber: number, initialAyah?: number, initialPage?: number) => void;
+}
+
+const SurahRow = React.memo(function SurahRow({
+  item,
+  tokens,
+  mode,
+  isCompact,
+  trName,
+  flag,
+  isMarked,
+  readingPositionAyah,
+  readingPositionPage,
+  onOpenSurah,
+}: SurahRowProps) {
+  const cleanArabic = getCleanArabicSurahName(item.number, item.name);
+  const handlePress = useCallback(() => {
+    onOpenSurah(
+      item.number,
+      isMarked ? (readingPositionAyah ?? 1) : 1,
+      isMarked ? readingPositionPage : undefined
+    );
+  }, [item.number, isMarked, readingPositionAyah, readingPositionPage, onOpenSurah]);
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.surahRow,
+        {
+          backgroundColor: tokens.cardTop,
+          borderColor: tokens.cardBorder,
+          ...getCardShadow(mode),
+        },
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={`Open Surah ${item.number} ${item.englishName}`}
+      testID={`surah-row-${item.number}`}
+      onPress={handlePress}
+      pressRetentionOffset={{ top: 10, bottom: 10, left: 20, right: 20 }}
+      hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
+      activeOpacity={0.7}
+    >
+      <View style={styles.surahLeft}>
+        <SurahRosetteBadge
+          number={item.number}
+          borderColor={tokens.gold}
+          fillColor={tokens.ringFill}
+          textColor={tokens.text}
+        />
+        <View style={styles.nameBlock}>
+          <AppText
+            variant="rowTitle"
+            style={[
+              styles.englishName,
+              { fontSize: isCompact ? 12.5 : 13.5 },
+            ]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            maxFontSizeMultiplier={1.2}
+          >
+            {getLocalizedSurahName(item.number, item.englishName)}
+          </AppText>
+          <AppText
+            variant="caption"
+            style={[
+              styles.metaSubtitle,
+              { fontSize: isCompact ? 9.5 : 10.5 },
+            ]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+            maxFontSizeMultiplier={1.2}
+          >
+            {trName ? `${flag} ${trName} · ` : ''}{t(item.revelationType)} · {item.numberOfAyahs} {t('ayahs')}
+          </AppText>
+        </View>
+      </View>
+      <ArabicText
+        size={isCompact ? 16 : 17}
+        numberOfLines={1}
+        bold
+        fontFamily={QURAN_FONT_FAMILIES.notonaskh.bold}
+        style={[styles.arabicName, { color: tokens.arabicName }]}
+      >
+        {cleanArabic}
+      </ArabicText>
+    </TouchableOpacity>
+  );
+});
+
+const QuranHomeScreen = React.memo(function QuranHomeScreen({
   onOpenSurah,
   onOpenAudio,
   onOpenTafsir,
@@ -67,13 +210,13 @@ export default function QuranHomeScreen({
   onOpenHifz,
   isActive,
 }: QuranHomeScreenProps) {
-  const { colors } = useTheme();
+  const { mode, tokens } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width <= 360;
   const isNarrow = width < 380;
   const horizontalPadding = isCompact ? 12 : isNarrow ? 16 : 20;
 
-  const { language, setLanguage, edition, flag } = useQuranLanguage();
+  const { language, edition, flag } = useQuranLanguage();
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [translatedNames, setTranslatedNames] = useState<Record<number, string> | null>(null);
   const { progress: preloadProgress, startPreload, pausePreload } = useQuranPreload();
@@ -90,13 +233,17 @@ export default function QuranHomeScreen({
     }
     return getBundledSurahs114();
   });
-  const [loading, setLoading] = useState<boolean>(false);
-  const [bookmarkCount, setBookmarkCount] = useState(0);
-  const [noteCount, setNoteCount] = useState(0);
+  const [loading] = useState<boolean>(false);
+  const [bookmarkCount] = useState(() => getBookmarks().length);
+  const [noteCount] = useState(() => getNotes().length);
   const [error, setError] = useState<string | null>(null);
+
+  // Debounced search input (150ms)
+  const [inputQuery, setInputQuery] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
-  const [lastRead, setLastRead] = useState<LastReadPosition | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const [lastRead, setLastRead] = useState<LastReadPosition | null>(() => loadLastReadPosition());
   const [readingPosition, setReadingPosition] = useState<ReadingPosition | null>(null);
   const [recentSurahs, setRecentSurahs] = useState<RecentSurah[]>([]);
   const [isResuming, setIsResuming] = useState(false);
@@ -108,7 +255,22 @@ export default function QuranHomeScreen({
     return () => {
       isMountedRef.current = false;
       isResumingRef.current = false;
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     };
+  }, []);
+
+  const handleSearchChange = useCallback((text: string) => {
+    setInputQuery(text);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      setSearchQuery(text);
+    }, 150);
+  }, []);
+
+  const handleClearSearch = useCallback(() => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    setInputQuery('');
+    setSearchQuery('');
   }, []);
 
   const {
@@ -122,9 +284,8 @@ export default function QuranHomeScreen({
   const [searchFilter, setSearchFilter] = useState<'name' | 'meaning' | 'all'>('all');
 
   // Detect verse reference pattern (e.g., "2:255", "Baqarah 2:255", "Al-Baqarah 2:255")
-  const parseVerseReference = (query: string): { surah: number; ayah: number } | null => {
-    const trimmed = query.trim();
-    // Pattern: "surah:ayah" or "surah-name surah:ayah"
+  const verseRef = useMemo(() => {
+    const trimmed = searchQuery.trim();
     const verseRefRegex = /^(?:.+\s+)?(\d+):(\d+)$/;
     const match = trimmed.match(verseRefRegex);
     if (match) {
@@ -138,9 +299,7 @@ export default function QuranHomeScreen({
       }
     }
     return null;
-  };
-
-  const verseRef = useMemo(() => parseVerseReference(searchQuery), [searchQuery, surahs]);
+  }, [searchQuery, surahs]);
 
   const listRef = useRef<FlatList<SurahMeta>>(null);
 
@@ -157,34 +316,49 @@ export default function QuranHomeScreen({
   }, []);
 
   useEffect(() => {
-    loadData();
-    setBookmarkCount(getBookmarks().length);
-    setNoteCount(getNotes().length);
-  }, [loadData]);
+    let mounted = true;
+    fetchSurahList()
+      .then((list) => {
+        if (mounted) setSurahs(list);
+      })
+      .catch(() => {
+        // Fallback is already present in state
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (language === 'en' && translatedNames !== null) {
+    if (language === 'en') {
+      setTranslatedNames(null);
+    }
+  }
 
   // Load per-language surah names when selected language changes
   useEffect(() => {
     let mounted = true;
-    if (language === 'en') {
-      setTranslatedNames(null);
-    } else {
-      fetchSurahListForLanguage(language)
-        .then((map) => {
-          if (mounted) setTranslatedNames(map);
-        })
-        .catch(() => {
-          if (mounted) setTranslatedNames(null);
-        });
-    }
+    fetchSurahListForLanguage(language)
+      .then((map) => {
+        if (mounted) setTranslatedNames(map);
+      })
+      .catch(() => {
+        if (mounted) setTranslatedNames(null);
+      });
     return () => {
       mounted = false;
     };
   }, [language]);
 
-  // Refresh last read on focus/mount
+  // Android hardware back: close language modal if open
   useEffect(() => {
-    setLastRead(loadLastReadPosition());
-  }, []);
+    if (!langPickerOpen) return;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      setLangPickerOpen(false);
+      return true;
+    });
+    return () => sub.remove();
+  }, [langPickerOpen]);
 
   // Refresh continue-reading position + recently read surahs on mount
   useEffect(() => {
@@ -204,12 +378,7 @@ export default function QuranHomeScreen({
     };
   }, []);
 
-  // Refresh when this screen becomes visible again (returning from the Surah
-  // Reader via Back). The pane stays mounted, so without this the Continue
-  // Reading card would show stale data until an app restart.
   const wasActiveRef = useRef<boolean>(!!isActive);
-  // Generation guard: a stale in-flight mount fetch must never land AFTER a
-  // fresher focus refresh and overwrite it with the pre-back value.
   const refreshGenRef = useRef(0);
   useEffect(() => {
     if (!isActive || wasActiveRef.current) return;
@@ -255,15 +424,14 @@ export default function QuranHomeScreen({
     if (!surahs) return [];
     const rawQuery = searchQuery.trim();
     if (!rawQuery) return surahs;
-    
-    // If verse reference detected, return just that surah
+
     if (verseRef) {
       return surahs.filter((s) => s.number === verseRef.surah);
     }
 
     const normQuery = normalizeSearchText(rawQuery);
     const lowerQuery = rawQuery.toLowerCase();
-    
+
     return surahs.filter((s) => {
       const englishNameMatch = s.englishName.toLowerCase().includes(lowerQuery);
       const meaningMatch = s.englishNameTranslation.toLowerCase().includes(lowerQuery);
@@ -280,7 +448,7 @@ export default function QuranHomeScreen({
       const arabicMatch = normArabic.includes(normQuery);
 
       const nameMatch = englishNameMatch || normEnglish.includes(normQuery) || urduMatch || arabicMatch;
-      
+
       switch (searchFilter) {
         case 'name':
           return nameMatch || numberMatch;
@@ -291,12 +459,10 @@ export default function QuranHomeScreen({
           return nameMatch || meaningMatch || trMatch || numberMatch;
       }
     });
-  }, [surahs, searchQuery, translatedNames, searchFilter, verseRef, i18n.language]);
+  }, [surahs, searchQuery, translatedNames, searchFilter, verseRef]);
 
-  // Navigate to verse reference when detected and user submits search
   useEffect(() => {
     if (verseRef && searchQuery.trim().length > 0) {
-      // Auto-navigate after a short delay to allow UI to update
       const timer = setTimeout(() => {
         onOpenSurah(verseRef.surah, verseRef.ayah);
       }, 300);
@@ -304,24 +470,7 @@ export default function QuranHomeScreen({
     }
   }, [verseRef, searchQuery, onOpenSurah]);
 
-  // Restore the surah list scroll position when the tab remounts
   const { onScroll: onSurahListScroll } = useFlatListRestore('quran-home-scroll', listRef);
-
-  const handleSelectJuz = (j: number) => {
-    const nextJuz = selectedJuz === j ? null : j;
-    setSelectedJuz(nextJuz);
-    if (nextJuz !== null) {
-      const targetSurah = JUZ_START_SURAH[nextJuz];
-      const index = filteredSurahs.findIndex((s) => s.number === targetSurah);
-      if (index >= 0) {
-        try {
-          listRef.current?.scrollToIndex({ index, animated: true });
-        } catch {
-          // ignore if unmeasured
-        }
-      }
-    }
-  };
 
   const resumeTarget = useMemo(() => {
     if (readingPosition) {
@@ -368,116 +517,305 @@ export default function QuranHomeScreen({
     }
   }, [onOpenSurah, resumeTarget]);
 
-  const submitSearch = () => {
-    const q = searchQuery.trim();
+  const submitSearch = useCallback(() => {
+    const q = inputQuery.trim();
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    setSearchQuery(q);
     if (q.length >= 2) addQuery(q);
-  };
+  }, [inputQuery, addQuery]);
 
+  const handleSelectSearchHistory = useCallback((item: string) => {
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    setInputQuery(item);
+    setSearchQuery(item);
+    addQuery(item);
+  }, [addQuery]);
+
+  const handleOpenRecentSurah = useCallback((recent: RecentSurah) => {
+    const isMarked = readingPosition && readingPosition.surah === recent.surah;
+    const cached = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${recent.surah}`);
+    const ayah = isMarked
+      ? readingPosition.ayah
+      : (cached && typeof cached.ayah === 'number' ? cached.ayah : 1);
+    const page = isMarked ? readingPosition.page : undefined;
+    onOpenSurah(recent.surah, ayah, page);
+  }, [readingPosition, onOpenSurah]);
+
+  // Stable memoized header element containing Search, Offline card, Hero, Tiles, Chips, and Surahs section header
   const headerElement = useMemo(() => {
+    const heroSurahMeta = surahs?.find((s) => s.number === (resumeTarget?.surah || 1));
+    const rawArabic = heroSurahMeta?.name || 'الفاتحة';
+    const heroArabicName = getCleanArabicSurahName(heroSurahMeta?.number || 1, rawArabic);
+    const heroLatinName = resumeTarget?.name || (heroSurahMeta ? getLocalizedSurahName(heroSurahMeta.number, heroSurahMeta.englishName) : t('Al-Faatiha'));
+    const heroAyahInfo = resumeTarget
+      ? `${heroSurahMeta?.englishNameTranslation || `${t('Surah')} ${resumeTarget.surah}`} · ${t('Ayah')} ${resumeTarget.ayah}`
+      : `${t('The Opening')} · ${t('Ayah')} 1`;
+
+    const heroGradient = mode === 'ink'
+      ? tokens.heroGradient
+      : HOME_THEME_TOKENS.hero.lightGradient;
+
+    const pillBorderColor = mode === 'paper' ? tokens.cardBorder : 'rgba(142, 116, 64, 0.6)';
+
+    const mostRecent = recentSurahs.length > 0 ? recentSurahs[0] : null;
+    const mostRecentAyah = (() => {
+      if (!mostRecent) return undefined;
+      const isMarked = readingPosition && readingPosition.surah === mostRecent.surah;
+      const cached = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${mostRecent.surah}`);
+      return isMarked
+        ? readingPosition.ayah
+        : (cached && typeof cached.ayah === 'number' ? cached.ayah : undefined);
+    })();
+
     return (
       <View style={styles.headerArea}>
-        <SectionHeader compact eyebrow={t('The Holy Quran')} title={t('Quran')} />
-
-        {/* Translation Language Selector Banner */}
+        {/* 1. Search Bar (pill card matching reference) */}
         <View
           style={[
-            styles.langBar,
-            { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+            styles.searchBar,
+            {
+              backgroundColor: tokens.cardTop,
+              borderColor: tokens.cardBorder,
+              ...getCardShadow(mode),
+            },
           ]}
         >
-          <View style={styles.langBarLeft}>
-            <Text style={[styles.langBarLabel, { color: colors.accent }]}>{t('TRANSLATION')}</Text>
-            <Text style={[styles.langBarTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-              {flag} {getLocalizedLanguageName(edition.language)} <Text style={{ color: colors.textSecondary, fontSize: 12 }}>· {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}</Text>
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.langChangeBtn, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}
-            onPress={() => setLangPickerOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel={`${t('Change translation language')}. ${t('Current')}: ${edition.language}`}
-          >
-            <Text style={[styles.langChangeBtnText, { color: colors.accent }]}>{t('Change')}</Text>
-            <Ionicons name={getForwardIcon()} size={12} color={colors.accent} />
-          </TouchableOpacity>
+          <Ionicons name="search" size={16} color={tokens.accent} />
+          <TextInput
+            key="quran-search-input"
+            style={[
+              styles.searchInput,
+              { color: tokens.text, fontSize: isCompact ? 12.5 : 13.5 },
+            ]}
+            placeholder={
+              verseRef
+                ? `${t('Jumping to')} ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || t('Surah')} ${verseRef?.ayah}…`
+                : searchFilter === 'name'
+                ? t('Search surah name…')
+                : searchFilter === 'meaning'
+                ? t('Search meaning…')
+                : t('Search surah name or meaning…')
+            }
+            placeholderTextColor={tokens.muted}
+            accessibilityLabel={t('Search surah name or meaning…')}
+            value={inputQuery}
+            onChangeText={handleSearchChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={submitSearch}
+            maxFontSizeMultiplier={1.2}
+          />
+          {inputQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={handleClearSearch}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Clear search')}
+            >
+              <Ionicons name="close-circle" size={16} color={tokens.muted} />
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* Quran Offline Preload Status & Trigger */}
-        <View
-          style={[
-            styles.preloadBar,
-            { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-          ]}
-        >
-          <View style={styles.preloadLeft}>
-            <View
-              style={[
-                styles.preloadIconWrap,
-                {
-                  backgroundColor: preloadProgress.isComplete
-                    ? colors.accentDim
-                    : preloadProgress.isRunning
-                    ? colors.accentDim
-                    : colors.bgRaised,
-                },
-              ]}
-            >
-              <Ionicons
-                name={
-                  preloadProgress.isComplete
-                    ? 'checkmark-circle'
-                    : preloadProgress.isRunning
-                    ? 'cloud-download'
-                    : 'cloud-outline'
-                }
-                size={16}
-                color={
-                  preloadProgress.isComplete
-                    ? colors.accent
-                    : preloadProgress.isRunning
-                    ? colors.accent
-                    : colors.textSecondary
-                }
-              />
+        {/* Search Filters & Recent Searches when searching / focused */}
+        {(inputQuery.length > 0 || searchHistory.length > 0 || verseRef) && (
+          <View style={styles.searchDetailsWrap}>
+            <View style={styles.searchFilterRow}>
+              {(['all', 'name', 'meaning'] as const).map((filter) => {
+                const labels = { all: t('All'), name: t('Surah Name'), meaning: t('Meaning') };
+                const isSelected = searchFilter === filter;
+                return (
+                  <TouchableOpacity
+                    key={filter}
+                    style={[
+                      styles.searchFilterBtn,
+                      {
+                        backgroundColor: isSelected ? tokens.gold : tokens.ringFill,
+                        borderColor: isSelected ? tokens.gold : tokens.cardBorder,
+                      },
+                    ]}
+                    onPress={() => setSearchFilter(filter)}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                  >
+                    <AppText
+                      variant="caption"
+                      tone={isSelected ? 'onGold' : undefined}
+                      style={styles.searchFilterBtnText}
+                      maxFontSizeMultiplier={1.2}
+                    >
+                      {labels[filter]}
+                    </AppText>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-            <View style={styles.preloadTextCol}>
-              <Text style={[styles.preloadTitle, { color: colors.textPrimary }]} numberOfLines={1}>
-                {preloadProgress.isComplete
-                  ? t('Offline Ready · 114 Surahs Cached')
-                  : preloadProgress.isRunning
-                  ? `${t('Preloading Quran…')} ${preloadProgress.cached}/114`
-                  : preloadProgress.cached > 0
-                  ? `${preloadProgress.cached}/114 ${t('Surahs Cached Offline')}`
-                  : t('Preload Quran for Offline Reading')}
-              </Text>
-              {preloadProgress.isRunning ? (
-                <View style={[styles.preloadTrack, { backgroundColor: colors.bgBase }]}>
+
+            {verseRef && (
+              <View
+                style={[
+                  styles.verseRefHint,
+                  { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder },
+                ]}
+              >
+                <Ionicons name={getForwardIcon('arrow')} size={13} color={tokens.accent} />
+                <AppText
+                  variant="caption"
+                  style={styles.verseRefHintText}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Verse reference detected — jumping to')}{' '}
+                  <AppText variant="caption" highlight style={{ fontFamily: 'Manrope_700Bold' }}>
+                    {(() => {
+                      const m = surahs?.find((s) => s.number === verseRef.surah);
+                      return m ? getLocalizedSurahName(m.number, m.englishName) : `${t('Surah')} ${verseRef.surah}`;
+                    })()}{' '}
+                    {verseRef.ayah}
+                  </AppText>
+                </AppText>
+              </View>
+            )}
+
+            {searchHistory.length > 0 && !inputQuery && (
+              <View style={styles.searchRecentWrap}>
+                <View style={styles.searchRecentHeader}>
+                  <AppText variant="eyebrow" style={styles.searchRecentLabel} maxFontSizeMultiplier={1.2}>
+                    {t('Recent searches')}
+                  </AppText>
+                  <TouchableOpacity
+                    onPress={clearSearchHistory}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('Clear surah search history')}
+                  >
+                    <AppText variant="caption" style={styles.searchRecentClear} maxFontSizeMultiplier={1.2}>
+                      {t('Clear')}
+                    </AppText>
+                  </TouchableOpacity>
+                </View>
+                <ScrollView
+                  horizontal
+                  nestedScrollEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
+                  scrollEventThrottle={16}
+                  contentContainerStyle={[styles.searchRecentScroll, hScrollRTLStyle()]}
+                >
+                  {searchHistory.map((item) => (
+                    <View
+                      key={item}
+                      style={[
+                        styles.searchRecentChip,
+                        {
+                          backgroundColor: tokens.ringFill,
+                          borderColor: pillBorderColor,
+                          ...getPillShadow(mode),
+                        },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        onPress={() => handleSelectSearchHistory(item)}
+                        style={styles.searchRecentChipBtn}
+                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${t('Search for')} ${item}`}
+                      >
+                        <Ionicons name="time-outline" size={12} color={tokens.accent} />
+                        <AppText
+                          variant="caption"
+                          style={styles.searchRecentChipText}
+                          numberOfLines={1}
+                          maxFontSizeMultiplier={1.2}
+                        >
+                          {item}
+                        </AppText>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => removeSearchHistoryQuery(item)}
+                        style={styles.searchRecentChipRemove}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('Remove from search history')}
+                        hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
+                      >
+                        <Ionicons name="close" size={11} color={tokens.muted} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* 2. Transient Preload / Cache Progress Notification Card (dismissed when complete) */}
+        {!preloadProgress.isComplete && (
+          <View
+            style={[
+              styles.offlineCard,
+              {
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
+                ...getCardShadow(mode),
+              },
+            ]}
+          >
+            <View style={styles.offlineLeft}>
+              <View
+                style={[
+                  styles.offlineRing,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons
+                  name={preloadProgress.isRunning ? 'cloud-download-outline' : 'arrow-down-outline'}
+                  size={15}
+                  color={preloadProgress.isRunning ? tokens.gold : tokens.accent}
+                />
+              </View>
+              <View style={styles.offlineTextCol}>
+                <AppText
+                  variant="sectionTitle"
+                  style={styles.offlineTitle}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {preloadProgress.isRunning
+                    ? `${t('Preloading Quran…')} ${preloadProgress.cached}/114`
+                    : `${preloadProgress.cached}/114 ${t('Surahs Cached Offline')}`}
+                </AppText>
+                <AppText
+                  variant="caption"
+                  style={styles.offlineSubtitle}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Instant opening with Arabic & translations cached')}
+                </AppText>
+                <View style={[styles.offlineTrack, { backgroundColor: tokens.ringFill }]}>
                   <View
                     style={[
-                      styles.preloadFill,
+                      styles.offlineFill,
                       {
-                        backgroundColor: colors.accent,
-                        width: `${Math.max(2, Math.round((preloadProgress.cached / 114) * 100))}%`,
+                        backgroundColor: tokens.gold,
+                        width: `${Math.max(preloadProgress.cached > 0 ? 3 : 0, Math.min(100, Math.round((preloadProgress.cached / 114) * 100)))}%`,
                       },
                     ]}
                   />
                 </View>
-              ) : (
-                <Text style={[styles.preloadSubtitle, { color: colors.textMuted }]} numberOfLines={1}>
-                  {preloadProgress.isComplete
-                    ? t('All 114 surahs and translations cached for instant access')
-                    : t('Instant opening with Arabic & translations cached')}
-                </Text>
-              )}
+              </View>
             </View>
-          </View>
-          {!preloadProgress.isComplete && (
             <TouchableOpacity
               style={[
-                styles.preloadActionBtn,
+                styles.offlineBtn,
                 {
-                  backgroundColor: preloadProgress.isRunning ? colors.bgRaised : colors.accentDim,
-                  borderColor: preloadProgress.isRunning ? colors.borderSubtle : colors.accent,
+                  backgroundColor: mode === 'paper' ? tokens.cardTop : tokens.ringFill,
+                  borderColor: tokens.gold,
                 },
               ]}
               onPress={() => {
@@ -489,794 +827,763 @@ export default function QuranHomeScreen({
                   startPreload(false);
                 }
               }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               accessibilityRole="button"
               accessibilityLabel={preloadProgress.isRunning ? t('Pause preloading') : t('Preload all surahs')}
             >
-              <Text
-                style={[
-                  styles.preloadActionText,
-                  { color: preloadProgress.isRunning ? colors.textSecondary : colors.accent },
-                ]}
+              <AppText
+                variant="caption"
+                highlight
+                style={styles.offlineBtnText}
+                maxFontSizeMultiplier={1.2}
               >
                 {preloadProgress.isRunning ? t('Pause') : t('Preload All')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
-          )}
+          </View>
+        )}
+
+        {/* 2b. Paired Responsive Row: Translation Switch & Recently Read Selector */}
+        <View style={[styles.pairedRow, { gap: isCompact ? 6 : 8 }]}>
+          {/* Translation Card */}
+          <TouchableOpacity
+            style={[
+              styles.pairedCard,
+              {
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
+                ...getCardShadow(mode),
+              },
+            ]}
+            onPress={() => setLangPickerOpen(true)}
+            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('Translation')}. ${t('Current')}: ${edition.language}`}
+            activeOpacity={0.75}
+          >
+            <View style={styles.pairedCardHeader}>
+              <View style={styles.pairedCardHeaderLeft}>
+                <Ionicons name="globe-outline" size={13} color={tokens.accent} />
+                <AppText
+                  variant="eyebrow"
+                  style={styles.pairedCardLabel}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Translation')}
+                </AppText>
+              </View>
+              <Ionicons name={getForwardIcon('chevron')} size={12} color={tokens.muted} />
+            </View>
+            <View style={styles.pairedCardBody}>
+              <AppText
+                variant="rowTitle"
+                style={[
+                  styles.pairedCardTitle,
+                  { fontSize: isCompact ? 11.5 : 12.5 },
+                ]}
+                numberOfLines={1}
+                maxFontSizeMultiplier={1.2}
+              >
+                {flag} {getLocalizedLanguageName(edition.language)}
+              </AppText>
+              <AppText
+                variant="caption"
+                style={[
+                  styles.pairedCardSub,
+                  { fontSize: isCompact ? 9 : 10 },
+                ]}
+                numberOfLines={2}
+                maxFontSizeMultiplier={1.2}
+              >
+                {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}
+              </AppText>
+            </View>
+          </TouchableOpacity>
+
+          {/* Recently Read Card */}
+          <View
+            style={[
+              styles.pairedCard,
+              {
+                backgroundColor: tokens.cardTop,
+                borderColor: tokens.cardBorder,
+                ...getCardShadow(mode),
+              },
+            ]}
+          >
+            {mostRecent ? (
+              <>
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={() => handleOpenRecentSurah(mostRecent)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t('Recently Read')}. ${t('Open Surah')} ${mostRecent.surah} ${mostRecent.name}`}
+                  style={styles.recentMainTouchable}
+                >
+                  <View style={styles.pairedCardHeader}>
+                    <View style={styles.pairedCardHeaderLeft}>
+                      <Ionicons name="time-outline" size={13} color={tokens.accent} />
+                      <AppText
+                        variant="eyebrow"
+                        style={styles.pairedCardLabel}
+                        numberOfLines={1}
+                        maxFontSizeMultiplier={1.2}
+                      >
+                        {t('Recently Read')}
+                      </AppText>
+                    </View>
+                    <AppText
+                      variant="caption"
+                      highlight
+                      style={styles.recentResumeBadge}
+                      numberOfLines={1}
+                      maxFontSizeMultiplier={1.2}
+                    >
+                      {mostRecentAyah ? `${t('Ayah')} ${mostRecentAyah}` : t('Resume')}
+                    </AppText>
+                  </View>
+                  <View style={styles.recentSurahMainRow}>
+                    <AppText
+                      variant="rowTitle"
+                      style={[
+                        styles.pairedCardTitle,
+                        { flex: 1, fontSize: isCompact ? 11.5 : 12.5 },
+                      ]}
+                      numberOfLines={1}
+                      maxFontSizeMultiplier={1.2}
+                    >
+                      {mostRecent.surah}. {getLocalizedSurahName(mostRecent.surah, mostRecent.name)}
+                    </AppText>
+                    <ArabicText
+                      size={isCompact ? 11 : 12}
+                      numberOfLines={1}
+                      bold
+                      style={{ color: tokens.arabicName, flexShrink: 0 }}
+                    >
+                      {getCleanArabicSurahName(mostRecent.surah, mostRecent.arabicName)}
+                    </ArabicText>
+                  </View>
+                </TouchableOpacity>
+
+                {recentSurahs.length > 1 && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    nestedScrollEnabled
+                    onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
+                    scrollEventThrottle={16}
+                    contentContainerStyle={[styles.recentMiniList, hScrollRTLStyle()]}
+                  >
+                    {recentSurahs.map((recent, idx) => {
+                      const isFirst = idx === 0;
+                      return (
+                        <TouchableOpacity
+                          key={`recent-card-item-${recent.surah}`}
+                          onPress={() => handleOpenRecentSurah(recent)}
+                          hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${t('Open Surah')} ${recent.surah} ${recent.name}`}
+                          style={[
+                            styles.recentMiniChip,
+                            {
+                              backgroundColor: isFirst
+                                ? tokens.ringFill
+                                : tokens.bgTop,
+                              borderColor: isFirst ? tokens.gold : tokens.cardBorder,
+                            },
+                          ]}
+                        >
+                          <AppText
+                            variant="caption"
+                            highlight={isFirst}
+                            style={styles.recentMiniChipText}
+                            numberOfLines={1}
+                          >
+                            {recent.surah}. {getLocalizedSurahName(recent.surah, recent.name)}
+                          </AppText>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                )}
+              </>
+            ) : (
+              <View style={styles.recentEmptyWrap}>
+                <View style={styles.pairedCardHeader}>
+                  <View style={styles.pairedCardHeaderLeft}>
+                    <Ionicons name="time-outline" size={13} color={tokens.accent} />
+                    <AppText
+                      variant="eyebrow"
+                      style={styles.pairedCardLabel}
+                      numberOfLines={1}
+                      maxFontSizeMultiplier={1.2}
+                    >
+                      {t('Recently Read')}
+                    </AppText>
+                  </View>
+                </View>
+                <View style={styles.pairedCardBody}>
+                  <AppText
+                    variant="caption"
+                    style={styles.pairedEmptyText}
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('None')}
+                  </AppText>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
 
-        {/* Continue Reading Card */}
+        {/* 3. Hero Card: Start / Continue Reading */}
         <TouchableOpacity
-          activeOpacity={0.8}
+          activeOpacity={0.85}
           onPress={handleResumeReading}
           disabled={isResuming}
           accessibilityRole="button"
           accessibilityState={{ busy: isResuming, disabled: isResuming }}
-          accessibilityLabel={`${resumeTarget ? t('CONTINUE READING') : t('START READING')}. ${resumeTarget?.name || t('Al-Faatiha')}. ${resumeTarget ? `${t('Surah')} ${resumeTarget.surah}:${resumeTarget.ayah}` : `${t('The Opening')} · ${t('Ayah')} 1`}`}
+          accessibilityLabel={`${resumeTarget ? t('CONTINUE READING') : t('START READING')}. ${heroLatinName}. ${heroAyahInfo}`}
           style={[
-            styles.continueCard,
+            styles.heroCard,
             {
-              backgroundColor: colors.bgSurface,
-              borderColor: colors.borderSubtle,
-              padding: isNarrow ? 12 : 16,
-              opacity: isResuming ? 0.7 : 1,
+              borderColor: HOME_THEME_TOKENS.hero.outerBorder,
+              backgroundColor:
+                mode === 'ink'
+                  ? tokens.heroGradient[0]
+                  : HOME_THEME_TOKENS.hero.lightGradient[0],
+              opacity: isResuming ? 0.75 : 1,
+              ...getHeroCardShadow(mode),
             },
           ]}
         >
-          <View style={styles.continueLeft}>
-            <View style={[styles.continueBadge, { backgroundColor: colors.accentDim }]}>
-              <Text style={[styles.continueBadgeText, { color: colors.accent }]}>
+          <LinearGradient
+            colors={heroGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0.8, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          <GeometricPattern
+            variant="tessellation"
+            tileSize={40}
+            opacity={0.06}
+            color={tokens.gold}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.heroInnerBorder} pointerEvents="none" />
+
+          <View style={styles.heroContent}>
+            {/* Top row: Gold diamond + letter-spaced small-caps */}
+            <View style={styles.heroTopRow}>
+              <View
+                style={[
+                  styles.heroDiamond,
+                  { backgroundColor: mode === 'paper' ? HOME_THEME_TOKENS.paper.gold : tokens.gold },
+                ]}
+              />
+              <AppText
+                variant="eyebrow"
+                style={[
+                  styles.heroBadgeText,
+                  {
+                    color: mode === 'paper' ? HOME_THEME_TOKENS.paper.gold : tokens.gold,
+                    textAlign: isRTL() ? 'right' : 'left',
+                  },
+                ]}
+                maxFontSizeMultiplier={1.2}
+              >
                 {resumeTarget ? t('CONTINUE READING') : t('START READING')}
-              </Text>
+              </AppText>
             </View>
-            <Text
+
+            {/* Middle row: Latin and Arabic names (no overlap at 360dp) */}
+            <View style={styles.heroNameRow}>
+              <AppText
+                variant="onHeroTitle"
+                onHero
+                style={[
+                  styles.heroSurahName,
+                  {
+                    fontSize: isCompact ? 23 : 27,
+                    textAlign: isRTL() ? 'right' : 'left',
+                    fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                  },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                maxFontSizeMultiplier={1.2}
+              >
+                {heroLatinName}
+              </AppText>
+              <ArabicText
+                size={isCompact ? 24 : 28}
+                numberOfLines={1}
+                bold
+                fontFamily={QURAN_FONT_FAMILIES.notonaskh.bold}
+                style={[styles.heroArabicName, { color: tokens.gold }]}
+              >
+                {heroArabicName}
+              </ArabicText>
+            </View>
+
+            {/* Subtitle: existing meaning and ayah position */}
+            <AppText
+              variant="onHeroSubtitle"
+              onHero
               style={[
-                styles.continueSurahName,
-                { color: colors.textPrimary, fontSize: isNarrow ? 19 : 22 },
+                styles.heroSubtitle,
+                {
+                  fontSize: isCompact ? 11.5 : 12,
+                  textAlign: isRTL() ? 'right' : 'left',
+                },
               ]}
-              numberOfLines={1}
+              numberOfLines={2}
+              maxFontSizeMultiplier={1.2}
             >
-              {resumeTarget?.name || t('Al-Faatiha')}
-            </Text>
-            <Text
-              style={[
-                styles.continueAyahText,
-                { color: colors.textSecondary, fontSize: isNarrow ? 12 : 13 },
-              ]}
-              numberOfLines={1}
-            >
-              {resumeTarget
-                ? `${t('Surah')} ${resumeTarget.surah}:${resumeTarget.ayah} · ${t('Continue')}`
-                : `${t('The Opening')} · ${t('Ayah')} 1`}
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.resumeIconWrap,
-              {
-                backgroundColor: colors.accent,
-                width: isNarrow ? 32 : 36,
-                height: isNarrow ? 32 : 36,
-                borderRadius: isNarrow ? 16 : 18,
-              },
-            ]}
-          >
-            <Ionicons name={getForwardIcon('arrow')} size={isNarrow ? 16 : 18} color={colors.onAccent} />
+              {heroAyahInfo}
+            </AppText>
+
+            {/* Bottom action: Gold gradient rounded Start/Resume button at bottom-left */}
+            <View style={styles.heroResumeBtnWrap}>
+              <LinearGradient
+                colors={HOME_THEME_TOKENS.goldGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.heroResumeBtn}
+              >
+                <AppText
+                  variant="caption"
+                  tone="onGold"
+                  style={styles.heroResumeBtnText}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {resumeTarget ? t('Resume') : t('Start')}
+                </AppText>
+                <Ionicons name={getForwardIcon('arrow')} size={14} color={tokens.onGold} />
+              </LinearGradient>
+            </View>
           </View>
         </TouchableOpacity>
 
-        {/* Recently Read */}
-        {recentSurahs.length > 0 && (
-          <View style={styles.recentSection}>
-            <Text style={[styles.recentHeading, { color: colors.textMuted }]}>{t('RECENTLY READ')}</Text>
-            <ScrollView
-              horizontal
-              nestedScrollEnabled
-              showsHorizontalScrollIndicator={false}
-              onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
-              scrollEventThrottle={16}
-              contentContainerStyle={[styles.recentScroll, { gap: isNarrow ? 8 : 10 }, hScrollRTLStyle()]}
+        {/* 4. 2x2 Feature Tiles (side-by-side rows matching reference) */}
+        <View style={styles.tilesGrid}>
+          {/* Row 1: Audio Center & Tafsir */}
+          <View style={[styles.tileRow, { gap: isCompact ? 6 : 8 }]}>
+            <TouchableOpacity
+              style={[
+                styles.tileCard,
+                {
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
+                  alignItems: isRTL() ? 'flex-end' : 'flex-start',
+                  ...getCardShadow(mode),
+                },
+              ]}
+              onPress={onOpenAudio}
+              pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Audio Center')}
+              activeOpacity={0.75}
             >
-              {recentSurahs.map((recent) => (
-                <TouchableOpacity
-                  key={recent.surah}
-                  activeOpacity={0.7}
-                  onPress={() => {
-                    // Reopen at the marker/saved reading position for this surah (the
-                    // reader restores from surah-last-ayah cache, but passing it
-                    // explicitly is robust even if that cache is stale).
-                    const isMarked = readingPosition && readingPosition.surah === recent.surah;
-                    const cached = loadQuranCache<{ ayah: number }>(`surah-last-ayah:${recent.surah}`);
-                    const ayah = isMarked
-                      ? readingPosition.ayah
-                      : (cached && typeof cached.ayah === 'number' ? cached.ayah : undefined);
-                    const page = isMarked ? readingPosition.page : undefined;
-                    onOpenSurah(recent.surah, ayah, page);
-                  }}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${t('Open Surah')} ${recent.name}`}
-                  style={[
-                    styles.recentChip,
-                    {
-                      backgroundColor: colors.bgSurface,
-                      borderColor: colors.borderSubtle,
-                      paddingVertical: isCompact ? 8 : 10,
-                      paddingHorizontal: isCompact ? 10 : 12,
-                    },
-                  ]}
+              <View
+                style={[
+                  styles.tileIconRing,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="headset-outline" size={14} color={tokens.accent} />
+              </View>
+              <View style={styles.tileTextCol}>
+                <AppText
+                  variant="sectionTitle"
+                  style={[styles.tileTitle, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
                 >
-                  <View style={styles.recentChipTop}>
-                    <View style={[styles.recentNumBadge, { backgroundColor: colors.accentDim }]}>
-                      <Text style={[styles.recentNumText, { color: colors.accent }]}>
-                        {recent.surah}
-                      </Text>
-                    </View>
-                    <Text
-                      style={[
-                        styles.recentChipName,
-                        { color: colors.textPrimary, fontSize: isCompact ? 12 : 13 },
-                      ]}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                    >
-                      {recent.name}
-                    </Text>
-                  </View>
-                  <ArabicText size={isCompact ? 14 : 16} numberOfLines={1} style={styles.recentChipArabic}>
-                    {recent.arabicName}
-                  </ArabicText>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                  {t('Audio Center')}
+                </AppText>
+                <AppText
+                  variant="caption"
+                  style={[styles.tileSub, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Reciters & Playlists')}
+                </AppText>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.tileCard,
+                {
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
+                  alignItems: isRTL() ? 'flex-end' : 'flex-start',
+                  ...getCardShadow(mode),
+                },
+              ]}
+              onPress={onOpenTafsir}
+              pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Tafsir')}
+              activeOpacity={0.75}
+            >
+              <View
+                style={[
+                  styles.tileIconRing,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="book-outline" size={14} color={tokens.accent} />
+              </View>
+              <View style={styles.tileTextCol}>
+                <AppText
+                  variant="sectionTitle"
+                  style={[styles.tileTitle, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Tafsir')}
+                </AppText>
+                <AppText
+                  variant="caption"
+                  style={[styles.tileSub, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Jalalayn Commentary')}
+                </AppText>
+              </View>
+            </TouchableOpacity>
           </View>
-        )}
 
-        {/* Quick Hub Navigation Cards */}
-        <View style={[styles.hubGrid, { gap: isNarrow ? 8 : 10 }]}>
-          <TouchableOpacity
-            style={[
-              styles.hubCard,
-              {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
-                padding: isCompact ? 10 : isNarrow ? 11 : 12,
-              },
-            ]}
-            onPress={onOpenAudio}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
-          >
-            <View
+          {/* Row 2: Topics & Compare */}
+          <View style={[styles.tileRow, { gap: isCompact ? 6 : 8 }]}>
+            <TouchableOpacity
               style={[
-                styles.hubIconBox,
+                styles.tileCard,
                 {
-                  backgroundColor: colors.iconCircleBg || '#E0EAE5',
-                  width: isCompact ? 32 : 36,
-                  height: isCompact ? 32 : 36,
-                  borderRadius: isCompact ? 16 : 18,
-                  marginBottom: isCompact ? 6 : 8,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
+                  alignItems: isRTL() ? 'flex-end' : 'flex-start',
+                  ...getCardShadow(mode),
                 },
               ]}
+              onPress={onOpenTopics}
+              pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Topics')}
+              activeOpacity={0.75}
             >
-              <Ionicons name="headset-outline" size={isCompact ? 16 : 18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
-            </View>
-            <Text
-              style={[
-                styles.hubCardTitle,
-                { color: colors.textPrimary, fontSize: isCompact ? 12 : 13 },
-              ]}
-              numberOfLines={1}
-            >
-              {t('Audio Center')}
-            </Text>
-            <Text
-              style={[
-                styles.hubCardSub,
-                { color: colors.textMuted, fontSize: isCompact ? 10 : 11 },
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {t('Reciters & Playlists')}
-            </Text>
-          </TouchableOpacity>
+              <View
+                style={[
+                  styles.tileIconRing,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="compass-outline" size={14} color={tokens.accent} />
+              </View>
+              <View style={styles.tileTextCol}>
+                <AppText
+                  variant="sectionTitle"
+                  style={[styles.tileTitle, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Topics')}
+                </AppText>
+                <AppText
+                  variant="caption"
+                  style={[styles.tileSub, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Thematic Passages')}
+                </AppText>
+              </View>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[
-              styles.hubCard,
-              {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
-                padding: isCompact ? 10 : isNarrow ? 11 : 12,
-              },
-            ]}
-            onPress={onOpenTafsir}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
-          >
-            <View
+            <TouchableOpacity
               style={[
-                styles.hubIconBox,
+                styles.tileCard,
                 {
-                  backgroundColor: colors.iconCircleBg || '#E0EAE5',
-                  width: isCompact ? 32 : 36,
-                  height: isCompact ? 32 : 36,
-                  borderRadius: isCompact ? 16 : 18,
-                  marginBottom: isCompact ? 6 : 8,
+                  backgroundColor: tokens.cardTop,
+                  borderColor: tokens.cardBorder,
+                  alignItems: isRTL() ? 'flex-end' : 'flex-start',
+                  ...getCardShadow(mode),
                 },
               ]}
+              onPress={onOpenCompare}
+              pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Compare')}
+              activeOpacity={0.75}
             >
-              <Ionicons name="library-outline" size={isCompact ? 16 : 18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
-            </View>
-            <Text
-              style={[
-                styles.hubCardTitle,
-                { color: colors.textPrimary, fontSize: isCompact ? 12 : 13 },
-              ]}
-              numberOfLines={1}
-            >
-              {t('Tafsir')}
-            </Text>
-            <Text
-              style={[
-                styles.hubCardSub,
-                { color: colors.textMuted, fontSize: isCompact ? 10 : 11 },
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {t('Jalalayn Commentary')}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.hubCard,
-              {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
-                padding: isCompact ? 10 : isNarrow ? 11 : 12,
-              },
-            ]}
-            onPress={onOpenTopics}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
-          >
-            <View
-              style={[
-                styles.hubIconBox,
-                {
-                  backgroundColor: colors.iconCircleBg || '#E0EAE5',
-                  width: isCompact ? 32 : 36,
-                  height: isCompact ? 32 : 36,
-                  borderRadius: isCompact ? 16 : 18,
-                  marginBottom: isCompact ? 6 : 8,
-                },
-              ]}
-            >
-              <Ionicons name="compass-outline" size={isCompact ? 16 : 18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
-            </View>
-            <Text
-              style={[
-                styles.hubCardTitle,
-                { color: colors.textPrimary, fontSize: isCompact ? 12 : 13 },
-              ]}
-              numberOfLines={1}
-            >
-              {t('Topics')}
-            </Text>
-            <Text
-              style={[
-                styles.hubCardSub,
-                { color: colors.textMuted, fontSize: isCompact ? 10 : 11 },
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {t('Thematic Passages')}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.hubCard,
-              {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
-                padding: isCompact ? 10 : isNarrow ? 11 : 12,
-              },
-            ]}
-            onPress={onOpenCompare}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
-          >
-            <View
-              style={[
-                styles.hubIconBox,
-                {
-                  backgroundColor: colors.iconCircleBg || '#E0EAE5',
-                  width: isCompact ? 32 : 36,
-                  height: isCompact ? 32 : 36,
-                  borderRadius: isCompact ? 16 : 18,
-                  marginBottom: isCompact ? 6 : 8,
-                },
-              ]}
-            >
-              <Ionicons name="git-compare-outline" size={isCompact ? 16 : 18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
-            </View>
-            <Text
-              style={[
-                styles.hubCardTitle,
-                { color: colors.textPrimary, fontSize: isCompact ? 12 : 13 },
-              ]}
-              numberOfLines={1}
-            >
-              {t('Compare')}
-            </Text>
-            <Text
-              style={[
-                styles.hubCardSub,
-                { color: colors.textMuted, fontSize: isCompact ? 10 : 11 },
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {t('Dual Translations')}
-            </Text>
-          </TouchableOpacity>
+              <View
+                style={[
+                  styles.tileIconRing,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="swap-horizontal-outline" size={14} color={tokens.accent} />
+              </View>
+              <View style={styles.tileTextCol}>
+                <AppText
+                  variant="sectionTitle"
+                  style={[styles.tileTitle, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Compare')}
+                </AppText>
+                <AppText
+                  variant="caption"
+                  style={[styles.tileSub, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Dual Translations')}
+                </AppText>
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Secondary Hub Actions: Bookmarks, Notes, Plans, Hifz */}
-        <View style={styles.hubChipsRow}>
+        {/* 5. Horizontal Chips: Bookmarks, Notes, Plans, Hifz, Translation, Recent (matching reference) */}
+        <View style={styles.chipsRow}>
           <ScrollView
             horizontal
             nestedScrollEnabled
             showsHorizontalScrollIndicator={false}
             onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
             scrollEventThrottle={16}
-            contentContainerStyle={[styles.hubChipsScroll, { gap: isNarrow ? 6 : 8 }, hScrollRTLStyle()]}
+            contentContainerStyle={[styles.chipsScroll, { gap: isCompact ? 6 : 8 }, hScrollRTLStyle()]}
           >
+            {/* Bookmarks */}
             <TouchableOpacity
               style={[
-                styles.hubChip,
+                styles.chipBtn,
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
-                  paddingHorizontal: isCompact ? 10 : 12,
-                  paddingVertical: isCompact ? 6 : 7,
+                  backgroundColor: mode === 'paper' ? tokens.cardTop : tokens.ringFill,
+                  borderColor: mode === 'paper' ? tokens.cardBorder : pillBorderColor,
+                  ...getPillShadow(mode),
                 },
               ]}
               onPress={onOpenBookmarks}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Bookmarks')}
             >
-              <Ionicons name="bookmark-outline" size={isCompact ? 13 : 14} color={colors.accent} />
-              <Text
-                style={[
-                  styles.hubChipText,
-                  { color: colors.textPrimary, fontSize: isCompact ? 11 : 12 },
-                ]}
-              >
+              <Ionicons name="bookmark-outline" size={13} color={tokens.accent} />
+              <AppText variant="caption" style={styles.chipText} maxFontSizeMultiplier={1.2}>
                 {t('Bookmarks')}
-              </Text>
+              </AppText>
               {bookmarkCount > 0 && (
-                <View style={[styles.hubChipBadge, { backgroundColor: colors.accentDim }]}>
-                  <Text style={[styles.hubChipBadgeText, { color: colors.accent }]}>{bookmarkCount}</Text>
+                <View style={[styles.chipBadge, { backgroundColor: tokens.gold }]}>
+                  <AppText variant="caption" tone="onGold" style={styles.chipBadgeText} maxFontSizeMultiplier={1.2}>
+                    {bookmarkCount}
+                  </AppText>
                 </View>
               )}
             </TouchableOpacity>
 
+            {/* Notes */}
             <TouchableOpacity
               style={[
-                styles.hubChip,
+                styles.chipBtn,
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
-                  paddingHorizontal: isCompact ? 10 : 12,
-                  paddingVertical: isCompact ? 6 : 7,
+                  backgroundColor: mode === 'paper' ? tokens.cardTop : tokens.ringFill,
+                  borderColor: mode === 'paper' ? tokens.cardBorder : pillBorderColor,
+                  ...getPillShadow(mode),
                 },
               ]}
               onPress={onOpenNotes}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Notes')}
             >
-              <Ionicons name="create-outline" size={isCompact ? 13 : 14} color={colors.accent} />
-              <Text
-                style={[
-                  styles.hubChipText,
-                  { color: colors.textPrimary, fontSize: isCompact ? 11 : 12 },
-                ]}
-              >
+              <Ionicons name="create-outline" size={13} color={tokens.accent} />
+              <AppText variant="caption" style={styles.chipText} maxFontSizeMultiplier={1.2}>
                 {t('Notes')}
-              </Text>
+              </AppText>
               {noteCount > 0 && (
-                <View style={[styles.hubChipBadge, { backgroundColor: colors.accentDim }]}>
-                  <Text style={[styles.hubChipBadgeText, { color: colors.accent }]}>{noteCount}</Text>
+                <View style={[styles.chipBadge, { backgroundColor: tokens.gold }]}>
+                  <AppText variant="caption" tone="onGold" style={styles.chipBadgeText} maxFontSizeMultiplier={1.2}>
+                    {noteCount}
+                  </AppText>
                 </View>
               )}
             </TouchableOpacity>
 
+            {/* Reading Plans */}
             <TouchableOpacity
               style={[
-                styles.hubChip,
+                styles.chipBtn,
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
-                  paddingHorizontal: isCompact ? 10 : 12,
-                  paddingVertical: isCompact ? 6 : 7,
+                  backgroundColor: mode === 'paper' ? tokens.cardTop : tokens.ringFill,
+                  borderColor: mode === 'paper' ? tokens.cardBorder : pillBorderColor,
+                  ...getPillShadow(mode),
                 },
               ]}
               onPress={onOpenPlans}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Reading Plans')}
             >
-              <Ionicons name="calendar-outline" size={isCompact ? 13 : 14} color={colors.accent} />
-              <Text
-                style={[
-                  styles.hubChipText,
-                  { color: colors.textPrimary, fontSize: isCompact ? 11 : 12 },
-                ]}
-              >
+              <Ionicons name="calendar-outline" size={13} color={tokens.accent} />
+              <AppText variant="caption" style={styles.chipText} maxFontSizeMultiplier={1.2}>
                 {t('Reading Plans')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
 
+            {/* Hifz */}
             <TouchableOpacity
               style={[
-                styles.hubChip,
+                styles.chipBtn,
                 {
-                  backgroundColor: colors.bgSurface,
-                  borderColor: colors.borderSubtle,
-                  paddingHorizontal: isCompact ? 10 : 12,
-                  paddingVertical: isCompact ? 6 : 7,
+                  backgroundColor: mode === 'paper' ? tokens.cardTop : tokens.ringFill,
+                  borderColor: mode === 'paper' ? tokens.cardBorder : pillBorderColor,
+                  ...getPillShadow(mode),
                 },
               ]}
               onPress={onOpenHifz}
-            pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
+              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+              accessibilityRole="button"
+              accessibilityLabel={t('Hifz')}
             >
-              <Ionicons name="school-outline" size={isCompact ? 13 : 14} color={colors.accent} />
-              <Text
-                style={[
-                  styles.hubChipText,
-                  { color: colors.textPrimary, fontSize: isCompact ? 11 : 12 },
-                ]}
-              >
-                {t('Hifz Tracker')}
-              </Text>
+              <Ionicons name="school-outline" size={13} color={tokens.accent} />
+              <AppText variant="caption" style={styles.chipText} maxFontSizeMultiplier={1.2}>
+                {t('Hifz')}
+              </AppText>
             </TouchableOpacity>
           </ScrollView>
         </View>
 
-        <Hairline style={styles.sectionDivider} />
-
-        {/* Search Bar */}
-        <View style={styles.searchSection}>
-          {/* Filter Picker */}
-          <View style={styles.searchFilterRow}>
-            {(['all', 'name', 'meaning'] as const).map((filter) => {
-              const labels = { all: t('All'), name: t('Surah Name'), meaning: t('Meaning') };
-              const isSelected = searchFilter === filter;
-              return (
-                <TouchableOpacity
-                  key={filter}
-                  style={[
-                    styles.searchFilterBtn,
-                    {
-                      backgroundColor: isSelected ? colors.accentDim : colors.bgSurface,
-                      borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                    },
-                  ]}
-                  onPress={() => setSearchFilter(filter)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isSelected }}
-                >
-                  <Text
-                    style={[
-                      styles.searchFilterBtnText,
-                      { color: isSelected ? colors.accent : colors.textSecondary },
-                    ]}
-                  >
-                    {labels[filter]}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Verse Reference Hint */}
-          {verseRef && (
-            <View
-              style={[
-                styles.verseRefHint,
-                { backgroundColor: colors.accentDim, borderColor: colors.accent },
-              ]}
-            >
-              <Ionicons name={getForwardIcon('arrow')} size={14} color={colors.accent} />
-              <Text style={[styles.verseRefHintText, { color: colors.accent }]}>
-                {t('Verse reference detected — jumping to')} <Text style={{ fontFamily: 'Manrope_700Bold' }}>
-                  {(() => { const m = surahs?.find((s) => s.number === verseRef.surah); return m ? getLocalizedSurahName(m.number, m.englishName) : `${t('Surah')} ${verseRef.surah}`; })()} {verseRef.ayah}
-                </Text>
-              </Text>
-            </View>
-          )}
-
-          {/* Recent Search Queries */}
-          {searchHistory.length > 0 && !searchQuery && (
-            <View style={styles.searchRecentWrap}>
-              <View style={styles.searchRecentHeader}>
-                <Text style={[styles.searchRecentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
-                <TouchableOpacity
-                  onPress={clearSearchHistory}
-                  hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('Clear surah search history')}
-                >
-                  <Text style={[styles.searchRecentClear, { color: colors.textMuted }]}>{t('Clear')}</Text>
-                </TouchableOpacity>
-              </View>
-              <ScrollView
-                horizontal
-                nestedScrollEnabled
-                showsHorizontalScrollIndicator={false}
-                onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
-                scrollEventThrottle={16}
-                contentContainerStyle={[styles.searchRecentScroll, hScrollRTLStyle()]}
-              >
-                {searchHistory.map((item) => (
-                  <View
-                    key={item}
-                    style={[
-                      styles.searchRecentChip,
-                      { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      onPress={() => {
-                        setSearchQuery(item);
-                        addQuery(item);
-                      }}
-                      style={styles.searchRecentChipBtn}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${t('Search for')} ${item}`}
-                    >
-                      <Ionicons name="time-outline" size={13} color={colors.accent} />
-                      <Text style={[styles.searchRecentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
-                        {item}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => removeSearchHistoryQuery(item)}
-                      style={styles.searchRecentChipRemove}
-                      accessibilityRole="button"
-                      accessibilityLabel={t('Remove from search history')}
-                      hitSlop={{ top: 6, bottom: 6, left: 4, right: 6 }}
-                    >
-                      <Ionicons name="close" size={12} color={colors.textMuted} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {/* Empty History Hint */}
-          {searchHistory.length === 0 && !searchQuery && !loading && (
-            <View
-              style={[
-                styles.emptyHistoryHint,
-                { backgroundColor: colors.bgRaised, borderColor: colors.borderSubtle },
-              ]}
-            >
-              <Ionicons name="search-outline" size={16} color={colors.textMuted} />
-              <Text style={[styles.emptyHistoryHintText, { color: colors.textSecondary }]}>
-                {t('No recent searches yet. Type a surah name, meaning, or verse reference (e.g., "2:255").')}
-              </Text>
-            </View>
-          )}
-
-        </View>
-
-        {/* Juz Filter Scroll */}
-        <View style={[styles.juzRow, { gap: isNarrow ? 8 : 10 }]}>
-          <Text style={[styles.juzLabel, { color: colors.textMuted }]}>{t('JUZ')}</Text>
-          <ScrollView
-            horizontal
-            nestedScrollEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={(e) => { (e as any)?.stopPropagation?.(); }}
-            scrollEventThrottle={16}
-            contentContainerStyle={[
-              styles.juzScroll,
-              { gap: isNarrow ? 5 : 6 },
-              hScrollRTLStyle(),
+        {/* 6. Surahs Section Header (NO Juz selector matching reference) */}
+        <View style={[styles.surahsSectionHeader, { flexDirection: isRTL() ? 'row-reverse' : 'row' }]}>
+          <AppText
+            variant="title"
+            style={[
+              styles.surahsTitle,
+              {
+                fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                textAlign: isRTL() ? 'right' : 'left',
+              },
             ]}
+            maxFontSizeMultiplier={1.2}
           >
-            {JUZ_LIST.map((j) => {
-              const isSelected = selectedJuz === j;
-              return (
-                <TouchableOpacity
-                  key={j}
-                  style={[
-                    styles.juzPill,
-                    {
-                      backgroundColor: isSelected ? colors.accent : colors.bgSurface,
-                      borderColor: isSelected ? colors.accent : colors.borderSubtle,
-                      paddingHorizontal: isCompact ? 9 : 11,
-                      paddingVertical: isCompact ? 4 : 5,
-                    },
-                  ]}
-                  onPress={() => handleSelectJuz(j)}
-                >
-                  <Text
-                    style={[
-                      styles.juzPillText,
-                      {
-                        color: isSelected ? colors.onAccent : colors.textSecondary,
-                        fontSize: isCompact ? 11.5 : 12,
-                      },
-                    ]}
-                  >
-                    {j}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+            {t('Surahs')}
+          </AppText>
+          <AppText
+            variant="caption"
+            style={[
+              styles.surahsCount,
+              { color: tokens.gold, textAlign: isRTL() ? 'left' : 'right' },
+            ]}
+            maxFontSizeMultiplier={1.2}
+          >
+            {filteredSurahs.length === 114 ? '114' : `${filteredSurahs.length} / 114`}
+          </AppText>
         </View>
       </View>
     );
   }, [
-    colors, isCompact, isNarrow, horizontalPadding,
-    recentSurahs, searchHistory, selectedJuz, searchQuery, searchFilter, verseRef,
-    bookmarkCount, noteCount, translatedNames, filteredSurahs,
-    onOpenSurah, onOpenBookmarks, onOpenNotes, onOpenPlans, onOpenHifz,
-    handleSelectJuz, setSearchFilter, setSearchQuery, addQuery, removeSearchHistoryQuery,
-    handleResumeReading, isResuming, resumeTarget,
+    tokens, mode, isCompact,
+    inputQuery, searchHistory, searchFilter, verseRef,
+    preloadProgress, startPreload, pausePreload, setQuranPreloadRequested,
+    bookmarkCount, noteCount, filteredSurahs,
+    edition, flag,
+    onOpenAudio, onOpenTafsir, onOpenTopics, onOpenCompare,
+    onOpenBookmarks, onOpenNotes, onOpenPlans, onOpenHifz,
+    setSearchFilter, handleSearchChange, handleClearSearch, submitSearch,
+    handleSelectSearchHistory, removeSearchHistoryQuery, clearSearchHistory,
+    handleResumeReading, isResuming, resumeTarget, surahs, recentSurahs, readingPosition, handleOpenRecentSurah,
   ]);
 
-  const renderSurahRow = ({ item }: { item: SurahMeta }) => {
-    const trName = translatedNames?.[item.number];
-    return (
-      <TouchableOpacity
-        style={[
-          styles.surahRow,
-          {
-            borderBottomColor: colors.borderSubtle,
-            paddingVertical: isCompact ? 11 : 14,
-          },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={`Open Surah ${item.number} ${item.englishName}`}
-        testID={`surah-row-${item.number}`}
-        onPress={() => {
-          const isMarked = readingPosition && readingPosition.surah === item.number;
-          onOpenSurah(
-            item.number,
-            isMarked ? readingPosition.ayah : undefined,
-            isMarked ? readingPosition.page : undefined
-          );
-        }}
-        pressRetentionOffset={{ top: 20, left: 40, right: 40, bottom: 20 }}
-        activeOpacity={0.7}
-      >
-        <View style={styles.surahLeft}>
-          <View
-            style={[
-              styles.numberBadge,
-              {
-                backgroundColor: colors.iconCircleBg || '#E0EAE5',
-                width: isCompact ? 30 : 34,
-                height: isCompact ? 30 : 34,
-                borderRadius: isCompact ? 15 : 17,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.numberText,
-                { color: colors.iconCircleFg || colors.forestGreen || colors.accent, fontSize: isCompact ? 11 : 12 },
-              ]}
-            >
-              {item.number}
-            </Text>
-          </View>
-          <View style={styles.nameBlock}>
-            <Text
-              style={[
-                styles.englishName,
-                { color: colors.textPrimary, fontSize: isCompact ? 14 : 15 },
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {getLocalizedSurahName(item.number, item.englishName)}
-            </Text>
-            <Text
-              style={[
-                styles.metaSubtitle,
-                { color: colors.textMuted, fontSize: isCompact ? 11 : 12 },
-              ]}
-              numberOfLines={1}
-              ellipsizeMode="tail"
-            >
-              {trName ? `${flag} ${trName} · ` : ''}{item.englishNameTranslation} · {item.numberOfAyahs} {t('ayahs')} · {t(item.revelationType)}
-            </Text>
-          </View>
-        </View>
-        <ArabicText
-          size={isCompact ? 18 : 22}
-          numberOfLines={1}
-          style={styles.arabicName}
-        >
-          {item.name}
-        </ArabicText>
-      </TouchableOpacity>
-    );
-  };
+  // Render individual Surah Row (equal-height card matching reference)
+  const renderSurahRow = useCallback(
+    ({ item }: { item: SurahMeta }) => {
+      const isMarked = Boolean(readingPosition && readingPosition.surah === item.number);
+      return (
+        <SurahRow
+          item={item}
+          tokens={tokens}
+          mode={mode}
+          isCompact={isCompact}
+          trName={translatedNames?.[item.number]}
+          flag={flag}
+          isMarked={isMarked}
+          readingPositionAyah={isMarked ? readingPosition?.ayah : undefined}
+          readingPositionPage={isMarked ? readingPosition?.page : undefined}
+          onOpenSurah={onOpenSurah}
+        />
+      );
+    },
+    [tokens, mode, isCompact, translatedNames, flag, readingPosition, onOpenSurah]
+  );
 
   if (loading && (!surahs || surahs.length === 0)) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
+      <View style={[styles.center, { backgroundColor: tokens.bgTop }]}>
+        <ActivityIndicator size="large" color={tokens.accent} />
       </View>
     );
   }
 
   if (error && (!surahs || surahs.length === 0)) {
     return (
-      <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-        <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
+      <View style={[styles.center, { backgroundColor: tokens.bgTop }]}>
+        <AppText variant="body" style={styles.errorText}>{error}</AppText>
         <TouchableOpacity
-          style={[styles.retryBtn, { borderColor: colors.accent }]}
+          style={[styles.retryBtn, { borderColor: tokens.accent }]}
           onPress={loadData}
+          accessibilityRole="button"
+          accessibilityLabel={t('Retry')}
         >
-          <Text style={[styles.retryBtnText, { color: colors.accent }]}>{t('Retry')}</Text>
+          <AppText variant="caption" highlight style={styles.retryBtnText}>{t('Retry')}</AppText>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgBase }]}>
-      {/* Fixed search bar — OUTSIDE the FlatList header so the TextInput
-          never remounts on keystroke (which was dropping keyboard focus). */}
-      <View
-        style={[
-          styles.searchBar,
-          styles.searchBarFixed,
-          {
-            backgroundColor: colors.bgSurface,
-            borderColor: colors.borderSubtle,
-          },
-        ]}
-      >
-        <Ionicons name="search" size={16} color={colors.textMuted} />
-        <TextInput
-          style={[styles.searchInput, { color: colors.textPrimary, fontSize: isCompact ? 12.5 : 13 }]}
-          placeholder={
-            verseRef
-              ? `${t('Jumping to')} ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || t('Surah')} ${verseRef?.ayah}…`
-              : searchFilter === 'name'
-              ? t('Search surah name…')
-              : searchFilter === 'meaning'
-              ? t('Search meaning…')
-              : t('Search surah name or meaning…')
-          }
-          placeholderTextColor={colors.textMuted}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          onSubmitEditing={submitSearch}
-        />
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <FlatList
+    <View style={styles.container}>
+      <TabFlatList
         ref={listRef}
+        style={styles.list}
         data={filteredSurahs}
         keyExtractor={(item) => String(item.number)}
         renderItem={renderSurahRow}
         ListHeaderComponent={headerElement}
-        contentContainerStyle={[styles.listContent, { paddingHorizontal: horizontalPadding }]}
+        contentContainerStyle={[
+          styles.listContent,
+          {
+            paddingHorizontal: horizontalPadding,
+          },
+        ]}
         onScroll={onSurahListScroll}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
@@ -1296,7 +1603,7 @@ export default function QuranHomeScreen({
                   : `${t('No surahs match')} "${searchQuery}"${searchFilter !== 'all' ? ` ${t('in')} "${searchFilter === 'name' ? t('Surah Name') : t('Meaning')}"` : ''}`
               }
               actionLabel={t('Clear search')}
-              onAction={() => setSearchQuery('')}
+              onAction={handleClearSearch}
             />
           ) : null
         }
@@ -1308,11 +1615,17 @@ export default function QuranHomeScreen({
       />
     </View>
   );
-}
+}, (prev, next) => prev.isActive === next.isActive);
+
+export default QuranHomeScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  list: {
+    flex: 1,
+    width: '100%',
   },
   center: {
     flex: 1,
@@ -1328,7 +1641,7 @@ const styles = StyleSheet.create({
   retryBtn: {
     paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
   },
   retryBtnText: {
@@ -1339,436 +1652,492 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 40,
   },
   headerArea: {
-    marginBottom: 6,
-  },
-  langBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-    borderWidth: 1,
-    marginTop: 4,
     marginBottom: 4,
   },
-  langBarLeft: {
-    flex: 1,
-    marginRight: 10,
-  },
-  langBarLabel: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 9.5,
-    letterSpacing: 1,
-    marginBottom: 2,
-  },
-  langBarTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
-  },
-  langChangeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  langChangeBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
-  },
-  preloadBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-    borderWidth: 1,
-    marginTop: 6,
-    marginBottom: 4,
-  },
-  preloadLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  preloadIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 10,
-  },
-  preloadTextCol: {
-    flex: 1,
-  },
-  preloadTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
-  },
-  preloadSubtitle: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 10.5,
-    marginTop: 1,
-  },
-  preloadTrack: {
-    height: 3,
-    borderRadius: 1.5,
-    overflow: 'hidden',
-    marginTop: 4,
-    width: '95%',
-  },
-  preloadFill: {
-    height: '100%',
-    borderRadius: 1.5,
-  },
-  preloadActionBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  preloadActionText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-  },
-  continueCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 20,
-    borderWidth: 1,
-    marginTop: 10,
-    marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  continueLeft: {
-    flex: 1,
-  },
-  continueBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 6,
-  },
-  continueBadgeText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10,
-    letterSpacing: 0.5,
-  },
-  continueSurahName: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 22,
-  },
-  continueAyahText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    marginTop: 2,
-  },
-  resumeIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: 12,
-  },
-  recentSection: {
-    marginBottom: 14,
-  },
-  recentHeading: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 10,
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  recentScroll: {},
-  recentChip: {
-    borderRadius: 14,
-    borderWidth: 1,
-    minWidth: 116,
-    maxWidth: 170,
-  },
-  recentChipTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  recentNumBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  recentNumText: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 9,
-  },
-  recentChipName: {
-    fontFamily: 'Manrope_600SemiBold',
-    flexShrink: 1,
-  },
-  recentChipArabic: {
-    marginTop: 4,
-    textAlign: 'right',
-  },
-  hubGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 10,
-  },
-  hubCard: {
-    flexBasis: '47%',
-    flexGrow: 1,
-    minWidth: 0,
-    borderRadius: 18,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.02,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  hubIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  hubCardTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-  },
-  hubCardSub: {
-    fontFamily: 'Manrope_400Regular',
-    marginTop: 2,
-  },
-  hubChipsRow: {
-    marginBottom: 10,
-  },
-  hubChipsScroll: {},
-  hubChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  hubChipText: {
-    fontFamily: 'Manrope_600SemiBold',
-  },
-  hubChipBadge: {
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-  },
-  hubChipBadgeText: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 10,
-  },
-  sectionDivider: {
-    marginVertical: 12,
-  },
+
+  /* 1. Search Bar (pill card matching reference) */
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 16,
-    height: 46,
-    borderRadius: 23,
+    minHeight: 37,
+    borderRadius: 18.5,
     borderWidth: 1,
-    marginBottom: 12,
-  },
-  searchBarFixed: {
-    marginHorizontal: 20,
-    marginTop: 12,
+    paddingHorizontal: 12,
+    gap: 8,
+    marginBottom: 5,
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: 'Manrope_500Medium',
+    paddingVertical: 0,
   },
-  juzRow: {
+  searchDetailsWrap: {
+    marginBottom: 8,
+  },
+  searchFilterRow: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 6,
+  },
+  searchFilterBtn: {
+    paddingHorizontal: 9,
+    paddingVertical: 3.5,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  searchFilterBtnText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10.5,
+  },
+  verseRefHint: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 6,
+  },
+  verseRefHintText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11,
+    flex: 1,
   },
   searchRecentWrap: {
-    marginBottom: 12,
+    marginBottom: 5,
   },
   searchRecentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 5,
   },
   searchRecentLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
-    letterSpacing: 0.2,
+    fontSize: 10.5,
   },
   searchRecentClear: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
+    fontSize: 10.5,
   },
   searchRecentScroll: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingRight: 4,
+    gap: 5,
   },
   searchRecentChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: 11,
     borderWidth: 1,
-    paddingLeft: 10,
-    paddingRight: 6,
-    height: 30,
+    paddingLeft: 7,
+    paddingRight: 5,
+    minHeight: 24,
   },
   searchRecentChipBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 4,
+    gap: 4,
   },
   searchRecentChipText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
-    maxWidth: 140,
+    fontSize: 10.5,
+    maxWidth: 120,
   },
   searchRecentChipRemove: {
-    padding: 4,
+    padding: 2,
     marginLeft: 2,
+  },
+
+  /* 2. Offline Cache Card (spacious floating card) */
+  offlineCard: {
+    minHeight: 56,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 5,
   },
-  juzLabel: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 0.5,
+  offlineLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
   },
-  juzScroll: {},
-  juzPill: {
+  offlineRing: {
+    width: 28,
+    height: 28,
     borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 8,
+    flexShrink: 0,
   },
-  juzPillText: {
+  offlineTextCol: {
+    flex: 1,
+  },
+  offlineTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 11.5,
+  },
+  offlineSubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 9.5,
+    marginTop: 1,
+  },
+  offlineTrack: {
+    height: 2.5,
+    borderRadius: 1.5,
+    overflow: 'hidden',
+    marginTop: 3,
+    width: '98%',
+  },
+  offlineFill: {
+    height: '100%',
+    borderRadius: 1.5,
+  },
+  offlineBtn: {
+    minHeight: 25,
+    paddingHorizontal: 10,
+    borderRadius: 12.5,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  offlineBtnText: {
     fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10.5,
   },
-  surahRow: {
+  offlineDoneBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+  },
+  offlineDoneText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10.5,
+  },
+
+  /* 2b. Paired Row: Translation Switch & Recently Read Selector */
+  pairedRow: {
+    flexDirection: 'row',
+    marginBottom: 5,
+  },
+  pairedCard: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 60,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6.5,
+    justifyContent: 'space-between',
+  },
+  pairedCardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
+    marginBottom: 3,
+  },
+  pairedCardHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  pairedCardLabel: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10.5,
+  },
+  pairedCardBody: {
+    justifyContent: 'center',
+  },
+  pairedCardTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 12.5,
+  },
+  pairedCardSub: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 9.5,
+    marginTop: 1,
+  },
+  pairedEmptyText: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11,
+    fontStyle: 'italic',
+  },
+  recentMainTouchable: {
+    width: '100%',
+  },
+  recentResumeBadge: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 9.5,
+  },
+  recentSurahMainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 4,
+  },
+  recentMiniList: {
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 4,
+    alignItems: 'center',
+  },
+  recentMiniChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  recentMiniChipText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 9,
+  },
+  recentEmptyWrap: {
+    width: '100%',
+  },
+
+  /* 3. Hero Card: Start / Continue Reading */
+  heroCard: {
+    minHeight: 131,
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 5,
+  },
+  heroInnerBorder: {
+    position: 'absolute',
+    top: 3,
+    left: 3,
+    right: 3,
+    bottom: 3,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: HOME_THEME_TOKENS.hero.innerBorder,
+    opacity: 0.5,
+  },
+  heroContent: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 2,
+  },
+  heroDiamond: {
+    width: 4.5,
+    height: 4.5,
+    backgroundColor: HOME_THEME_TOKENS.paper.gold,
+    transform: [{ rotate: '45deg' }],
+  },
+  heroBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 9,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
+    color: HOME_THEME_TOKENS.paper.gold,
+  },
+  heroNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 8,
+    width: '100%',
+    minHeight: 28,
+  },
+  heroSurahName: {
+    flex: 1,
+    flexShrink: 1,
+    minWidth: 0,
+    letterSpacing: 0.2,
+  },
+  heroArabicName: {
+    flexShrink: 0,
+    maxWidth: '45%',
+    textAlign: 'right',
+  },
+  heroSubtitle: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 10,
+    marginTop: 1,
+    marginBottom: 6,
+  },
+  heroResumeBtnWrap: {
+    alignSelf: 'flex-start',
+  },
+  heroResumeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 3.5,
+    paddingHorizontal: 11,
+    borderRadius: 12,
+  },
+  heroResumeBtnText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 11,
+    color: HOME_THEME_TOKENS.paper.onGold,
+    letterSpacing: 0.2,
+  },
+
+  /* 4. 2x2 Feature Tiles (column layout matching reference) */
+  tilesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 5,
+    marginBottom: 5,
+  },
+  tileRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'stretch',
+  },
+  tileCard: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 78,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+  tileIconRing: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  tileTextCol: {
+    width: '100%',
+  },
+  tileTitle: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 12,
+    flexShrink: 1,
+  },
+  tileSub: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 9.5,
+    marginTop: 1,
+    flexShrink: 1,
+  },
+
+  /* 5. Horizontal Chips */
+  chipsRow: {
+    marginBottom: 5,
+  },
+  chipsScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+    paddingRight: 4,
+  },
+  chipBtn: {
+    minHeight: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  chipText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 10.5,
+  },
+  chipBadge: {
+    minWidth: 14,
+    minHeight: 14,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 2.5,
+  },
+  chipBadgeText: {
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 8.5,
+  },
+
+  /* 6. Surahs Section Header */
+  surahsSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 3,
+    marginBottom: 5,
+  },
+  surahsTitle: {
+    fontSize: 20,
+  },
+  surahsCount: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11.5,
+  },
+
+  /* 7. Surah Rows (equal-height card matching reference) */
+  surahRow: {
+    minHeight: 44,
+    marginBottom: 5,
+    borderRadius: 13,
+    borderWidth: 1,
+    paddingHorizontal: 11,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
   },
   surahLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
     minWidth: 0,
   },
-  numberBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 0,
+  rosetteBadge: {
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  numberText: {
+  rosetteNumberText: {
     fontFamily: 'Manrope_600SemiBold',
+    textAlign: 'center',
   },
   nameBlock: {
     flex: 1,
     minWidth: 0,
   },
   englishName: {
-    fontFamily: 'Manrope_600SemiBold',
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 13,
   },
   metaSubtitle: {
     fontFamily: 'Manrope_400Regular',
-    marginTop: 2,
+    fontSize: 9.5,
+    marginTop: 1,
   },
   arabicName: {
-    marginLeft: 6,
     flexShrink: 0,
-    maxWidth: '38%',
+    maxWidth: '42%',
     textAlign: 'right',
-  },
-  searchSection: {
-    marginBottom: 12,
-  },
-  searchFilterRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: 8,
-  },
-  searchFilterBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-  },
-  searchFilterBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-  },
-  verseRefHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    marginTop: 6,
-  },
-  verseRefHintText: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
-    flex: 1,
-  },
-  emptyHistoryHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginTop: 8,
-  },
-  emptyHistoryHintText: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
-    lineHeight: 18,
-    flex: 1,
   },
 });

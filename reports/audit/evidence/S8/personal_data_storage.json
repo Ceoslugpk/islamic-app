@@ -1,0 +1,90 @@
+{
+  "storedDataTypes": [
+    {
+      "type": "Women's Health & Cycle Tracking",
+      "tables": [
+        "period_entries",
+        "nifas_entries"
+      ],
+      "webKVPrefixes": [
+        "women:period:",
+        "women:nifas:"
+      ],
+      "sensitivity": "High",
+      "localOnly": true,
+      "networkTransmission": "None (no API endpoints for menstrual/health data)",
+      "pinProtection": "Protected by app-level Women PIN Lock when enabled (SHA-256 with salt)"
+    },
+    {
+      "type": "Salah Worship Log",
+      "tables": [
+        "salah_entries"
+      ],
+      "webKVPrefixes": [
+        "salah:"
+      ],
+      "sensitivity": "Medium",
+      "localOnly": true,
+      "networkTransmission": "None (no remote account synchronization)"
+    },
+    {
+      "type": "Fasting Tracker & Missed Fasts",
+      "tables": [
+        "fasting_entries",
+        "missed_fasts"
+      ],
+      "webKVPrefixes": [
+        "fasting:entry:",
+        "fasting:missed:"
+      ],
+      "sensitivity": "Medium",
+      "localOnly": true,
+      "networkTransmission": "None"
+    },
+    {
+      "type": "Zakat Calculation & Wealth Breakdown",
+      "tables": [
+        "zakat_history"
+      ],
+      "webKVPrefixes": [
+        "zakat:history:"
+      ],
+      "sensitivity": "High (financial wealth, gold, cash)",
+      "localOnly": true,
+      "networkTransmission": "None (calculated entirely on client)"
+    },
+    {
+      "type": "Personal Quran Notes & Bookmarks",
+      "tables": [
+        "notes",
+        "bookmarks"
+      ],
+      "webKVPrefixes": [
+        "quran:notes",
+        "quran:bookmarks"
+      ],
+      "sensitivity": "Medium",
+      "localOnly": true,
+      "networkTransmission": "None"
+    },
+    {
+      "type": "Location Coordinates",
+      "storageKey": "islamic-settings",
+      "fields": [
+        "manualLocation",
+        "city",
+        "country",
+        "latitude",
+        "longitude"
+      ],
+      "sensitivity": "Medium-High",
+      "localOnly": false,
+      "networkTransmission": "Latitude/longitude sent as query params to api.islamic.app/v1/timings for prayer calculation only"
+    }
+  ],
+  "securityAtRest": {
+    "nativeStorage": "Plaintext SQLite (salah.db) and plaintext AsyncStorage (standard React Native without SQLCipher)",
+    "webStorage": "Plaintext browser localStorage",
+    "pinProtectionMechanism": "Salted SHA-256 hash stored in islamic-settings; PIN lockout counter in AsyncStorage"
+  }
+}

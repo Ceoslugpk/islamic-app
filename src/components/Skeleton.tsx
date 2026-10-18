@@ -1,15 +1,21 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Animated, Easing, StyleSheet, View, ViewStyle, Platform } from 'react-native';
 import { useTheme } from '../lib/theme';
 
+function getInitialReducedMotion(): boolean {
+  if (Platform.OS !== 'web') return false;
+  // Guard: `window` may be absent in SSR/web-worker contexts.
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
 function useReducedMotion(): boolean {
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(getInitialReducedMotion);
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     // Guard: `window` may be absent in SSR/web-worker contexts.
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduceMotion(mediaQuery.matches);
     const handler = (e: MediaQueryListEvent) => setReduceMotion(e.matches);
     mediaQuery.addEventListener('change', handler);
     return () => mediaQuery.removeEventListener('change', handler);
@@ -34,30 +40,32 @@ export function Skeleton({
 }: SkeletonProps) {
   const { colors } = useTheme();
   const reduceMotion = useReducedMotion();
-  const animRef = useRef(new Animated.Value(0)).current;
+  const [anim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (reduceMotion) return;
-    animRef.setValue(0);
-    Animated.loop(
+    anim.setValue(0);
+    const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(animRef, {
+        Animated.timing(anim, {
           toValue: 1,
           duration: 220, // calm micro fade-in
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.delay(900), // long still pause between shimmer passes
-        Animated.timing(animRef, {
+        Animated.timing(anim, {
           toValue: 0,
           duration: 0,
           useNativeDriver: true,
         }),
       ])
-    ).start();
-  }, [reduceMotion, animRef]);
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduceMotion, anim]);
 
-  const animatedStyle = animRef.interpolate({
+  const animatedStyle = anim.interpolate({
     inputRange: [0, 1],
     outputRange: [0.35, 0.75],
   });

@@ -1,0 +1,1438 @@
+[
+  {
+    "route": "home",
+    "stateExpression": "__NAVIGATE__.setTab('home')",
+    "analysis": {
+      "textLength": 104,
+      "textSnippet": " لا يمكن تحميل أوقات الصلاة الآن. اتصل بالإنترنت للحصول على جدول الصلاة اليوم. أعد المحاولة  بيت   ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/home_ar_ink_360.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hub'})",
+    "analysis": {
+      "textLength": 674,
+      "textSnippet": "اسلامک   LIBRARY يستكشف KNOWLEDGE Hadith Library 15+ full books Arabic with English translation Browse → البخاري مسلم الترمذي KNOWLEDGE & COLLECTIONS  الأذكا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 42,
+      "sampleLatinWords": [
+        "LIBRARY",
+        "KNOWLEDGE",
+        "Library",
+        "full",
+        "books",
+        "Arabic",
+        "with",
+        "English"
+      ]
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/library_ar_ink_360.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/home",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'home'})",
+    "analysis": {
+      "textLength": 1100,
+      "textSnippet": "اسلامک     جاري تحميل القرآن... 2/114 فتح فوري مع تخزين اللغة العربية والترجمات مؤقتًا يوقف  ترجمة  🇬🇧 الإنجليزية صحيح إنترناشونال  قرأت مؤخرا لا شيء ا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 17,
+      "sampleLatinWords": [
+        "Faatiha",
+        "Faatiha",
+        "Baqara",
+        "Imraan",
+        "Nisaa",
+        "Maaida",
+        "raaf",
+        "Anfaal"
+      ]
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/quran_home_ar_ink_360.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/reader",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'reader',surah:1})",
+    "analysis": {
+      "textLength": 79,
+      "textSnippet": " القرآن  Al-Faatiha Page 1 of 604   Loading Mushaf Page 1...   القرآن  ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 5,
+      "sampleLatinWords": [
+        "Faatiha",
+        "Page",
+        "Loading",
+        "Mushaf",
+        "Page"
+      ]
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/quran_reader_ar_ink_360.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/audio",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'audio'})",
+    "analysis": {
+      "textLength": 1014,
+      "textSnippet": " مركز الصوت صوت القرآن Recitations, audio translations, playlists & player settings  القراء  ترجمة الصوت  مؤخرًا  قوائم التشغيل  طابور  إعدادات  القراء ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 55,
+      "sampleLatinWords": [
+        "Recitations",
+        "audio",
+        "translations",
+        "playlists",
+        "player",
+        "settings",
+        "Alafasy",
+        "Kuwait"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/tafsir",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'tafsir'})",
+    "analysis": {
+      "textLength": 246,
+      "textSnippet": " التفسير والشروح Tafsir al-Jalalayn Verse-by-verse scholarly exegesis سورة 1 Al-Faatiha · The Opening سُورَةُ ٱلْفَاتِحَةِ  تفسير المصدر Tafsir al-Jalalayn  ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 10,
+      "sampleLatinWords": [
+        "Tafsir",
+        "Jalalayn",
+        "Verse",
+        "verse",
+        "scholarly",
+        "exegesis",
+        "Faatiha",
+        "Opening"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/topics",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'topics'})",
+    "analysis": {
+      "textLength": 1479,
+      "textSnippet": " القرآن الموضوعي موضوعات القرآن مقاطع قرآنية منسقة مرتبة حسب الموضوعات الأساسية للحياة والإيمان والروحانية.  الصبر والمثابرة الصبر والمصابرة 4 الآيات  الثبات",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 42,
+      "sampleLatinWords": [
+        "Baqarah",
+        "have",
+        "believed",
+        "seek",
+        "help",
+        "through",
+        "patience",
+        "prayer"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/compare",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'compare'})",
+    "analysis": {
+      "textLength": 678,
+      "textSnippet": " دراسة مقارنة مقارنة الترجمة Side-by-side comparative study of translations  Al-Faatiha آية 1 ل 7  ترجمة A · 🇬🇧 الإنجليزية جميع اللغات...  🇬🇧 الإنجليزية",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 13,
+      "sampleLatinWords": [
+        "Side",
+        "side",
+        "comparative",
+        "study",
+        "translations",
+        "Faatiha",
+        "sahih",
+        "name"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/bookmarks",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'bookmarks'})",
+    "analysis": {
+      "textLength": 220,
+      "textSnippet": " الآيات المحفوظة الإشارات المرجعية Access your saved verses and reading bookmarks  لا توجد إشارات مرجعية بعد افتح القرآن واضغط على أيقونة الإشارة المرجعية على",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 6,
+      "sampleLatinWords": [
+        "Access",
+        "your",
+        "saved",
+        "verses",
+        "reading",
+        "bookmarks"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/notes",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'notes'})",
+    "analysis": {
+      "textLength": 282,
+      "textSnippet": " دراسة شخصية ملاحظات وتأملات Record thoughts and reflections on verses as you read  إضافة انعكاس جديد Capture your insights, questions, and personal dua يحفظ ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 10,
+      "sampleLatinWords": [
+        "Record",
+        "thoughts",
+        "reflections",
+        "verses",
+        "read",
+        "Capture",
+        "your",
+        "insights"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/plans",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'plans'})",
+    "analysis": {
+      "textLength": 709,
+      "textSnippet": " خاتمة خطط القراءة Structured schedules to recite the Holy Quran at your own pace اختر خطة منظمة لتلاوة القرآن الكريم بالسرعة التي تناسبك. يتم حفظ تقدمك تلقائي",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 6,
+      "sampleLatinWords": [
+        "Structured",
+        "schedules",
+        "recite",
+        "Holy",
+        "your",
+        "pace"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/hifz",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz'})",
+    "analysis": {
+      "textLength": 816,
+      "textSnippet": " الحفظ حفظ المقتفي Track memorization progress, revisions, and test recall 0 محفوظ 0 مراجعة 114 لم تبدأ  الجميع محفوظ مراجعة لم يبدأ 1 Al-Fatihah 7 الآيات · م",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 14,
+      "sampleLatinWords": [
+        "Track",
+        "memorization",
+        "progress",
+        "revisions",
+        "test",
+        "recall",
+        "Fatihah",
+        "Baqarah"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/hifz-practice",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'hifz-practice'})",
+    "analysis": {
+      "textLength": 227,
+      "textSnippet": " إخفاء ونظرة خاطفة Al-Fatihah 7 الآيات · Recite from memory & test recall آية 1 ل 7 0 ألقي نظرة خاطفة 1:1 • • • • • • • • • اقرأ من الذاكرة، ثم ألقي نظرة خاطفة",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 6,
+      "sampleLatinWords": [
+        "Fatihah",
+        "Recite",
+        "from",
+        "memory",
+        "test",
+        "recall"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "quran/surah-list",
+    "stateExpression": "__NAVIGATE__.setTab('quran');__NAVIGATE__.setQuran({screen:'surah-list'})",
+    "analysis": {
+      "textLength": 1743,
+      "textSnippet": " القرآن الكريم سور All 114 Surahs with translations, audio & verse commentary ترجمة 🇬🇧 الإنجليزية · صحيح إنترناشونال يتغير  جزء 1 2 3 4 5 6 7 8 9 10 11 12 1",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 50,
+      "sampleLatinWords": [
+        "Surahs",
+        "with",
+        "translations",
+        "audio",
+        "verse",
+        "commentary",
+        "Faatiha",
+        "Opening"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/tasbih",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tasbih'})",
+    "analysis": {
+      "textLength": 430,
+      "textSnippet": " الذِكر والتَّذكر مسبحة Tap counter, round tracking, and offline remembrance سُبْحَانَ اللَّهِ الْحَمْدُ لِلَّهِ اللَّهُ أَكْبَرُ لَا إِلَٰهَ إِلَّا اللَّهُ أَ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 5,
+      "sampleLatinWords": [
+        "counter",
+        "round",
+        "tracking",
+        "offline",
+        "remembrance"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/names",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names'})",
+    "analysis": {
+      "textLength": 887,
+      "textSnippet": " أسماء الحسنى 99 أسماء الله الحسنى Divine attributes and meanings of Allah (SWT) English Français Türkçe Español Deutsch Indonesia বাংলা Русский اردو   99 ال",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 36,
+      "sampleLatinWords": [
+        "Divine",
+        "attributes",
+        "meanings",
+        "English",
+        "Fran",
+        "Espa",
+        "Deutsch",
+        "Indonesia"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/names-prophet",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'names-prophet'})",
+    "analysis": {
+      "textLength": 937,
+      "textSnippet": " أسماء النبي 99 اسماء النبي ﷺ Noble attributes and titles of Prophet Muhammad ﷺ  99 الأسماء 1 مُحَمَّدٌ Muhammad The Highly Praised From the Arabic root meani",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 73,
+      "sampleLatinWords": [
+        "Noble",
+        "attributes",
+        "titles",
+        "Prophet",
+        "Muhammad",
+        "Muhammad",
+        "Highly",
+        "Praised"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/duas",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'duas'})",
+    "analysis": {
+      "textLength": 295,
+      "textSnippet": " أدعية الأذكار والدعاء Authentic supplications from the Quran and Sunnah الجميع (49) صباح (4) مساء (2) بعد الصلاة (1) ينام (1) استيقاظ (1) بيت (2) مسجد (2) الأ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 4,
+      "sampleLatinWords": [
+        "Authentic",
+        "supplications",
+        "from",
+        "Sunnah"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/hadith",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hadith'})",
+    "analysis": {
+      "textLength": 3154,
+      "textSnippet": " مكتبة مكتبة الحديث تصفح 17 مجموعة قانونية وكتبًا وروايات أصيلة  المجموعات  أنقذ (0)  مؤخرًا  تقدم  Sahih al-Bukhari 7,277 الأحاديث صحيح البخاري Sahih al-",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 201,
+      "sampleLatinWords": [
+        "Sahih",
+        "Bukhari",
+        "Sahih",
+        "Bukhari",
+        "recognized",
+        "overwhelming",
+        "majority",
+        "Muslim"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/ramadan-guide",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'ramadan-guide'})",
+    "analysis": {
+      "textLength": 18855,
+      "textSnippet": " أدلة دليل رمضان والعيد الصيام، ليلة القدر، الاعتكاف، زكاة الفطر، العيد والتشريق — كل رواية موثقة بمجموعها ورقمها ودرجة صحتها.  أحكام الصيام (أحكام السم) أحكا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 780,
+      "sampleLatinWords": [
+        "narrated",
+        "that",
+        "Hafsah",
+        "said",
+        "There",
+        "fast",
+        "does",
+        "intend"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/prayer-guide",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'prayer-guide'})",
+    "analysis": {
+      "textLength": 20662,
+      "textSnippet": " أدلة دليل الصلاة (الفقه) الوضوء، والصلاة، والصلاة في الجماعة، والجنازة، والاستخارة، والعيد، والتراويح، كل حديث محقق بمجموعه وعدده ودرجته. Wudu الصلاة (صلاح) ا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 1008,
+      "sampleLatinWords": [
+        "Wudu",
+        "Narrated",
+        "AbuHurayrah",
+        "Messenger",
+        "said",
+        "prayer",
+        "person",
+        "does"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/shahada",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'shahada'})",
+    "analysis": {
+      "textLength": 2215,
+      "textSnippet": " المكتبة · المعرفة الشهادة The declaration of faith and its foundational conditions in Islam إِنَّ ٱلدِّينَ عِندَ ٱللَّٰهِ ٱلْإِسْلَٰمُ إن الدين عند الله الإسل",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 28,
+      "sampleLatinWords": [
+        "declaration",
+        "faith",
+        "foundational",
+        "conditions",
+        "Islam",
+        "Imran",
+        "bear",
+        "witness"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/downloads",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'downloads'})",
+    "analysis": {
+      "textLength": 416,
+      "textSnippet": " غير متصل التنزيلات Manage offline audio surahs and cached Quran text All Downloads Audio Surahs 0 Quran Text 14/114   نص القرآن والترجمة للقراءة دون اتصال ب",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 10,
+      "sampleLatinWords": [
+        "Manage",
+        "offline",
+        "audio",
+        "surahs",
+        "cached",
+        "text",
+        "Downloads",
+        "Audio"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/vocab",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'vocab'})",
+    "analysis": {
+      "textLength": 317,
+      "textSnippet": " يتعلم مفردات القرآن أكثر كلمات القرآن تكرارا  0/60 معروف  0%  كلمة اليوم شائع جدًا بَاطِل bāṭil \"الباطل\" Quran 2:42  التدريب في المدرب  مارك معروف الجميع",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/summary",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'summary'})",
+    "analysis": {
+      "textLength": 602,
+      "textSnippet": " PERSONAL JOURNEY ملخص أسبوعي Your past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections.  7-Day Overview  O",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 29,
+      "sampleLatinWords": [
+        "PERSONAL",
+        "JOURNEY",
+        "Your",
+        "past",
+        "days",
+        "glance",
+        "recitation",
+        "prayer"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/tajweed",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'tajweed'})",
+    "analysis": {
+      "textLength": 3972,
+      "textSnippet": " يتعلم ألوان التجويد القرآن كاملا · قواعد التلاوة المرمزة بالألوان  كل سورة من القرآن بألوان التجويد القياسية – الغنة، الإدغم، القلقلة، الإخفاء، المد، والحروف",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 210,
+      "sampleLatinWords": [
+        "Fatihah",
+        "ayahs",
+        "Baqarah",
+        "ayahs",
+        "Imran",
+        "ayahs",
+        "Nisa",
+        "ayahs"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/umrah-guide",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'umrah-guide'})",
+    "analysis": {
+      "textLength": 8435,
+      "textSnippet": " الحج والعمرة دليل العمرة مناسك الحج خطوة بخطوة: الإحرام، الطواف، السعي، الحلق. 01 · الإحرام والنية 02 · دخول المسجد الحرام 03 · طواف حول الكعبة 04 · السعي بين",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 661,
+      "sampleLatinWords": [
+        "Entering",
+        "sacred",
+        "state",
+        "consecration",
+        "Ihram",
+        "before",
+        "crossing",
+        "Miqat"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/hajj-journey",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'hajj-journey'})",
+    "analysis": {
+      "textLength": 8697,
+      "textSnippet": " SACRED PILGRIMAGE رحلة الحج Day-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba. اليوم الأول · 8 ذي الحجة اليوم الثاني · 9th Dhu",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 751,
+      "sampleLatinWords": [
+        "SACRED",
+        "PILGRIMAGE",
+        "rites",
+        "from",
+        "Yawm",
+        "Tarwiyah",
+        "Mina",
+        "Farewell"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/women-purity",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-purity'})",
+    "analysis": {
+      "textLength": 13,
+      "textSnippet": "   مكتبة ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "library/women-guidance",
+    "stateExpression": "__NAVIGATE__.setTab('library');__NAVIGATE__.setLibrary({screen:'women-guidance'})",
+    "analysis": {
+      "textLength": 13,
+      "textSnippet": "   مكتبة ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/tasbih",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tasbih'})",
+    "analysis": {
+      "textLength": 430,
+      "textSnippet": " الذِكر والتَّذكر مسبحة Tap counter, round tracking, and offline remembrance سُبْحَانَ اللَّهِ الْحَمْدُ لِلَّهِ اللَّهُ أَكْبَرُ لَا إِلَٰهَ إِلَّا اللَّهُ أَ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 5,
+      "sampleLatinWords": [
+        "counter",
+        "round",
+        "tracking",
+        "offline",
+        "remembrance"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/summary",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'summary'})",
+    "analysis": {
+      "textLength": 602,
+      "textSnippet": " PERSONAL JOURNEY ملخص أسبوعي Your past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections.  7-Day Overview  O",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 29,
+      "sampleLatinWords": [
+        "PERSONAL",
+        "JOURNEY",
+        "Your",
+        "past",
+        "days",
+        "glance",
+        "recitation",
+        "prayer"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/qibla",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'qibla'})",
+    "analysis": {
+      "textLength": 735,
+      "textSnippet": " DIRECTION OF PRAYER بوصلة القبلة الاتجاه الحقيقي نحو الكعبة محسوب باستخدام صيغ الجيوديسيا الكروية الكبيرة.  Location detection unavailable GPS is not availab",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 23,
+      "sampleLatinWords": [
+        "DIRECTION",
+        "PRAYER",
+        "Location",
+        "detection",
+        "unavailable",
+        "available",
+        "this",
+        "device"
+      ]
+    },
+    "screenshotPath": "reports/audit/evidence/S5/screenshots/tools_qibla_ar_ink_360.png",
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/tracker",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'tracker'})",
+    "analysis": {
+      "textLength": 259,
+      "textSnippet": " الواجبات اليومية متتبع خاطئ تابع صلواتك الخمس اليومية وابنِ عادة ثابتة 0/5 صلوات اليوم 0  سلسلة الأيام ابدأ خطك اليوم صلوات اليوم  أوقات الصلاة غير متوفرة ت",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/location",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'location'})",
+    "analysis": {
+      "textLength": 694,
+      "textSnippet": " التفضيلات الموقع Use GPS automatically or enter a city or coordinates الكشف التلقائي (نظام تحديد المواقع) Manual Coordinates نظام تحديد المواقع للسيارة نظام ت",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 32,
+      "sampleLatinWords": [
+        "automatically",
+        "enter",
+        "city",
+        "coordinates",
+        "Manual",
+        "Coordinates",
+        "Makkah",
+        "Saudi"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/cities",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'cities'})",
+    "analysis": {
+      "textLength": 494,
+      "textSnippet": " دليل المدن اختر مدينة لتعيين موقعك   دبي الإمارات العربية المتحدة 25.20°, 55.27°  أبوظبي الإمارات العربية المتحدة 24.45°, 54.38°  الشارقة الإمارات العربية",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/notifications",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'notifications'})",
+    "analysis": {
+      "textLength": 2128,
+      "textSnippet": " أدوات تذكير الصلاة إدارة منبهات الصلاة اليومية وأصوات الأذان وعادات قراءة القرآن تذكيرات الصلاة تذكيرات الصلاة تنبيهات قبل وفي كل وقت صلاة — في الوقت المحدد ح",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 16,
+      "sampleLatinWords": [
+        "Fajr",
+        "Dhuhr",
+        "Maghrib",
+        "Isha",
+        "Mishary",
+        "Rashid",
+        "Alafasy",
+        "KUWAIT"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/prayer-reminders",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'prayer-reminders'})",
+    "analysis": {
+      "textLength": 2128,
+      "textSnippet": " أدوات تذكير الصلاة إدارة منبهات الصلاة اليومية وأصوات الأذان وعادات قراءة القرآن تذكيرات الصلاة تذكيرات الصلاة تنبيهات قبل وفي كل وقت صلاة — في الوقت المحدد ح",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 16,
+      "sampleLatinWords": [
+        "Fajr",
+        "Dhuhr",
+        "Maghrib",
+        "Isha",
+        "Mishary",
+        "Rashid",
+        "Alafasy",
+        "KUWAIT"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/fasting",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'fasting'})",
+    "analysis": {
+      "textLength": 448,
+      "textSnippet": " العبادة والمتتبع صيام Suhoor & iftar countdowns, sunnah fasts & qada logs اليوم السنة مربع تاريخ 0 هذا الشهر 0d أثَر 0 الحقل الأيسر 6 JUMADA AL-AWWAL 1448 AH ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 11,
+      "sampleLatinWords": [
+        "Suhoor",
+        "iftar",
+        "countdowns",
+        "sunnah",
+        "fasts",
+        "qada",
+        "logs",
+        "JUMADA"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/zakat",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'zakat'})",
+    "analysis": {
+      "textLength": 881,
+      "textSnippet": " العبادة والإحسان الزكاة Wealth assessment, nisab thresholds & calculation آلة حاسبة تاريخ دليل النصاب العملة النشطة AED — UAE Dirham (AED)  يتغير النصاب القي",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 6,
+      "sampleLatinWords": [
+        "Wealth",
+        "assessment",
+        "nisab",
+        "thresholds",
+        "calculation",
+        "Dirham"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/calendar",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'calendar'})",
+    "analysis": {
+      "textLength": 2508,
+      "textSnippet": " التقويم الهجري التواريخ الإسلامية Gregorian to Hijri mapping, Islamic months & holy dates اليوم 6 Jumada al-Awwal 1448 AH أكتوبر 17, 2026 يوم 6 ل 20 في Jumada",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 141,
+      "sampleLatinWords": [
+        "Gregorian",
+        "Hijri",
+        "mapping",
+        "months",
+        "holy",
+        "dates",
+        "Jumada",
+        "Awwal"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/mosque",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'mosque'})",
+    "analysis": {
+      "textLength": 350,
+      "textSnippet": " أدوات محدد المساجد Find nearby places of worship   ابحث  مركز البحث · يدوي (Makkah, Saudi Arabia) Makkah, Saudi Arabia  استخدم موقعي  Location detection ",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 28,
+      "sampleLatinWords": [
+        "Find",
+        "nearby",
+        "places",
+        "worship",
+        "Makkah",
+        "Saudi",
+        "Arabia",
+        "Makkah"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/women-cycle",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-cycle'})",
+    "analysis": {
+      "textLength": 634,
+      "textSnippet": " عبادة المرأة متعقب الدورة تسجيل الفترة ومدة الدورة والتنبؤات وحالة النقاء اليومي.  خاص ومحلي · يتم تخزينه بشكل آمن على جهازك فقط · لا يتم إرساله مطلقًا إلى ا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/women-purity",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-purity'})",
+    "analysis": {
+      "textLength": 13,
+      "textSnippet": "    أدوات",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/women-guidance",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-guidance'})",
+    "analysis": {
+      "textLength": 13,
+      "textSnippet": "    أدوات",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/women-qada",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'women-qada'})",
+    "analysis": {
+      "textLength": 597,
+      "textSnippet": " عبادة المرأة صيام القضاء تتبع وقضاء صيام رمضان الفائت بسبب الحيض أو النفاس.  خاص ومتزامن · يتم تخزينه بأمان في قاعدة بيانات الصيام المحلية الخاصة بك  التسجي",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/umrah-guide",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-guide'})",
+    "analysis": {
+      "textLength": 8435,
+      "textSnippet": " الحج والعمرة دليل العمرة مناسك الحج خطوة بخطوة: الإحرام، الطواف، السعي، الحلق. 01 · الإحرام والنية 02 · دخول المسجد الحرام 03 · طواف حول الكعبة 04 · السعي بين",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 661,
+      "sampleLatinWords": [
+        "Entering",
+        "sacred",
+        "state",
+        "consecration",
+        "Ihram",
+        "before",
+        "crossing",
+        "Miqat"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/umrah-resources",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'umrah-resources'})",
+    "analysis": {
+      "textLength": 2002,
+      "textSnippet": " الحج والعمرة موارد العمرة قائمة التعبئة الأساسية، الإتيكيت، الأخطاء الشائعة، النصائح والمراجع العلمية. قائمة التحقق من التعبئة نصائح لأول مرة الآداب المقدسة ا",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 0,
+      "sampleLatinWords": []
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/hajj-journey",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-journey'})",
+    "analysis": {
+      "textLength": 8697,
+      "textSnippet": " SACRED PILGRIMAGE رحلة الحج Day-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba. اليوم الأول · 8 ذي الحجة اليوم الثاني · 9th Dhu",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 751,
+      "sampleLatinWords": [
+        "SACRED",
+        "PILGRIMAGE",
+        "rites",
+        "from",
+        "Yawm",
+        "Tarwiyah",
+        "Mina",
+        "Farewell"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/makkah-live",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'makkah-live'})",
+    "analysis": {
+      "textLength": 1496,
+      "textSnippet": " الحج والعمرة مكة بث مباشر بث مباشر رسمي عالي الوضوح على مدار 24 ساعة من المسجد الحرام. الحرم المقدس فضائل المسجد الحرام صَلَاةٌ فِي الْمَسْجِدِ الْحَرَامِ أَف",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 13,
+      "sampleLatinWords": [
+        "Saudi",
+        "Holy",
+        "Kaaba",
+        "Hajar",
+        "Aswad",
+        "Maqam",
+        "Ibrahim",
+        "Hijr"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/madinah-live",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'madinah-live'})",
+    "analysis": {
+      "textLength": 1270,
+      "textSnippet": " الحج والعمرة المدينة المنورة لايف بث مباشر رسمي عالي الوضوح على مدار الساعة طوال أيام الأسبوع من المسجد النبوي. مدينة الرسول ﷺ فضائل المسجد النبوي صَلَاةٌ فِي",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 4,
+      "sampleLatinWords": [
+        "Saudi",
+        "Sunnah",
+        "Rawdah",
+        "Sharifah"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  },
+  {
+    "route": "tools/hajj-live",
+    "stateExpression": "__NAVIGATE__.setTab('tools');__NAVIGATE__.setTools({screen:'hajj-live'})",
+    "analysis": {
+      "textLength": 2242,
+      "textSnippet": " الحج والعمرة الحاج لايف البث الرسمي من المواقع المقدسة في منى، عرفات، مزدلفة والجمرات. Al Ekhbariya (Live News) وزارة الحج والعمرة اليوم: 6 Jumada al-Awwal 14",
+      "hasUndefined": false,
+      "hasNull": false,
+      "hasObjectObject": false,
+      "hasNaN": false,
+      "rawKeyCount": 0,
+      "rawKeyMatches": [],
+      "overflow": false,
+      "overflowDetails": null,
+      "latinWordsCount": 72,
+      "sampleLatinWords": [
+        "Ekhbariya",
+        "Live",
+        "News",
+        "Jumada",
+        "Awwal",
+        "approx",
+        "months",
+        "away"
+      ]
+    },
+    "screenshotPath": null,
+    "status": "PASS",
+    "severity": "None"
+  }
+]

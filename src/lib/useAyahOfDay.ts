@@ -223,7 +223,15 @@ export function useAyahOfDay() {
   }, []);
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        void load();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   return { ayah, loading, error, refresh: load };

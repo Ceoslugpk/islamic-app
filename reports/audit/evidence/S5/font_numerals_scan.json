@@ -1,0 +1,21 @@
+{
+  "loaded_fonts": [
+    "Manrope (Latin)",
+    "InstrumentSerif (Latin display)",
+    "Lora (Latin serif)",
+    "Poppins (Latin)",
+    "Amiri (Arabic)",
+    "NotoNaskhArabic (Arabic)",
+    "SourceSans3 (wordmark)"
+  ],
+  "missing_script_fonts": [
+    "Noto Sans Devanagari (for Hindi hi)",
+    "Noto Sans Malayalam (for Malayalam ml)",
+    "Noto Sans Sinhala (for Sinhala si)",
+    "Noto Nastaliq Urdu (for Urdu ur, falling back to Noto Naskh Arabic)"
+  ],
+  "numeral_localization": {
+    "quran_reader_ayah_marker": "toArabicNumerals (۝١, ۝٢) implemented",
+    "app_ui_numerals": "Latin digits (0-9) hardcoded across prayer times, hijri dates, tasbih counters, zakat calculator; no locale-aware numeral formatting helper (e.g. Intl.NumberFormat or toLocaleString) utilized"
+  }
+}

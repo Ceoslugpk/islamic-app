@@ -1,0 +1,47 @@
+$ npx expo-doctor
+npm warn exec The following package was not found and will be installed: expo-doctor@1.21.5
+Running 21 checks on your project...
+18/21 checks passed. 3 checks failed. Possible issues detected:
+Use the --verbose flag to see more details about passed checks.
+
+✖ Check Expo config (app.json/ app.config.js) schema
+Error validating fields in /home/ubuntu/apps/islamic_app/app.json:
+ Field: splash - Additional property "splash" is not allowed.
+Advice:
+Resolve schema errors in your app config. Learn more: https://docs.expo.dev/workflow/configuration/
+
+✖ Check that required peer dependencies are installed
+Missing peer dependency: expo-asset
+Required by: expo-audio
+Advice:
+Install missing required peer dependency with "npx expo install expo-asset"
+Your app may crash outside of Expo Go without this dependency. Native module peer dependencies must be installed directly.
+
+✖ Check that packages match versions required by installed Expo SDK
+
+🔧 Patch version mismatches
+package             expected  found
+expo                ~57.0.30  57.0.26
+expo-location       ~57.0.21  57.0.20
+expo-notifications  ~57.0.23  57.0.21
+expo-sharing        ~57.0.23  57.0.22
+expo-splash-screen  ~57.0.10  57.0.9
+expo-sqlite         ~57.0.4   57.0.3
+expo-updates        ~57.0.26  57.0.25
+
+Changelogs:
+- expo-location → https://github.com/expo/expo/blob/sdk-57/packages/expo-location/CHANGELOG.md
+- expo-notifications → https://github.com/expo/expo/blob/sdk-57/packages/expo-notifications/CHANGELOG.md
+- expo-sharing → https://github.com/expo/expo/blob/sdk-57/packages/expo-sharing/CHANGELOG.md
+- expo-splash-screen → https://github.com/expo/expo/blob/sdk-57/packages/expo-splash-screen/CHANGELOG.md
+- expo-sqlite → https://github.com/expo/expo/blob/sdk-57/packages/expo-sqlite/CHANGELOG.md
+- expo-updates → https://github.com/expo/expo/blob/sdk-57/packages/expo-updates/CHANGELOG.md
+
+7 packages out of date.
+Advice:
+Use 'npx expo install --check' to review and upgrade your dependencies.
+To ignore specific packages, add them to "expo.install.exclude" in package.json. Learn more: https://expo.fyi/dependency-validation
+
+3 checks failed, indicating possible issues with the project.
+
+EXIT_CODE=1

@@ -1,0 +1,4 @@
+$ node scripts/check-spacing.js
+✅ check-spacing passed: CONTENT_GAP = 24 contract fully satisfied across shared wrappers and tests.
+
+EXIT_CODE=0

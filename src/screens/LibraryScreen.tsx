@@ -1,18 +1,29 @@
 import React from 'react';
 import {
-  ScrollView,
+  Pressable,
   StyleSheet,
   Text,
   View,
-  TouchableOpacity,
   useWindowDimensions,
+  AccessibilityRole,
 } from 'react-native';
+import { TabScrollView } from '../components/layout/TabScreen';
+import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Rect, Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+
+
 import { useTheme } from '../lib/theme';
-import { SectionHeader } from '../components/SectionHeader';
-import { Hairline } from '../components/Hairline';
+import { HOME_THEME_TOKENS, getCardShadow, getHeroCardShadow } from '../lib/homeThemeTokens';
+import { themeTokens, GOLD_GRADIENT } from '../theme/tokens';
+import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
-import { getForwardIcon, getBackIcon } from '../lib/iconMap';
+import { getForwardIcon } from '../lib/iconMap';
+import { GeometricPattern } from '../components/GeometricPattern';
+import { useSurahDownloads } from '../lib/surahDownloads';
+import { AppText } from '../components/ui/AppText';
+
+/* ─── Route Union ────────────────────────────────────────────────────────── */
 
 export type LibraryItemKey =
   | 'hadith'
@@ -26,288 +37,1348 @@ export type LibraryItemKey =
   | 'downloads'
   | 'vocab'
   | 'summary'
-  | 'tajweed';
+  | 'tajweed'
+  | 'umrah-guide'
+  | 'hajj-journey'
+  | 'women-purity'
+  | 'women-guidance';
 
-/* ─── Item model ──────────────────────────────────────────────── */
-
-interface LibraryItem {
-  key: LibraryItemKey;
-  title: string;
-  subtitle: string;
+export interface LibraryScreenProps {
+  onOpen: (key: LibraryItemKey) => void;
+  onOpenSettings?: () => void;
+  onOpenNotifications?: () => void;
+  isActive?: boolean;
 }
 
-const ICONS: Record<LibraryItemKey, keyof typeof Ionicons.glyphMap> = {
-  hadith: 'library',
-  duas: 'hand-left',
-  tasbih: 'repeat',
-  names: 'sparkles',
-  'names-prophet': 'star',
-  'ramadan-guide': 'moon',
-  'prayer-guide': 'hand-left',
-  shahada: 'shield-checkmark',
-  downloads: 'cloud-download-outline',
-  vocab: 'language',
-  summary: 'pulse',
-  tajweed: 'color-palette',
-};
+/* ─── Shared Theme Tokens ────────────────────────────────────────────────── */
 
-/* ─── Grouped layout ──────────────────────────────────────────── */
+const GOLD_SOLID = themeTokens.paper.gold;
+const HERO_OUTER_BORDER = HOME_THEME_TOKENS.hero.outerBorder;
+const HERO_INNER_BORDER = HOME_THEME_TOKENS.hero.innerBorder;
+const HERO_IVORY = HOME_THEME_TOKENS.hero.ivory;
 
-interface LibraryGroup {
-  label: string;
-  items: LibraryItem[];
+function getTokens(isDark: boolean) {
+  return isDark ? themeTokens.ink : themeTokens.paper;
 }
 
-const GROUPS: LibraryGroup[] = [
-  {
-    label: 'Knowledge',
-    items: [
-      { key: 'hadith', title: 'Hadith Library', subtitle: 'Collections, books & saved hadith' },
-      { key: 'downloads', title: 'Downloads', subtitle: 'Offline Quran audio files' },
-    ],
-  },
-  {
-    label: 'Dhikr',
-    items: [
-      { key: 'duas', title: 'Duas & Adhkar', subtitle: 'Daily supplications' },
-      { key: 'tasbih', title: 'Tasbih', subtitle: 'Digital dhikr counter' },
-      { key: 'names', title: '99 Names of Allah', subtitle: 'Asma ul-Husna with meanings' },
-      { key: 'names-prophet', title: '99 Names of the Prophet ﷺ', subtitle: 'His ﷺ noble names & attributes' },
-    ],
-  },
-  {
-    label: 'Learn',
-    items: [
-      { key: 'vocab', title: 'Quran Vocabulary', subtitle: 'Flashcards of the most frequent Quranic words' },
-      { key: 'summary', title: 'Weekly Summary', subtitle: 'Your past 7 days of reading, salah & Hifz' },
-      { key: 'tajweed', title: 'Tajweed Colors', subtitle: 'Color-coded reading rules for the most-recited surahs' },
-    ],
-  },
-  {
-    label: 'Guides',
-    items: [
-      { key: 'ramadan-guide', title: 'Ramadan & Eid Guide', subtitle: 'Fasting, Laylatul Qadr, Zakat al-Fitr, Eid Salah' },
-      { key: 'prayer-guide', title: 'Prayer Guide (Fiqh)', subtitle: 'Wudu, Salah, Janazah, Eid, Istikhara, Taraweeh' },
-      { key: 'shahada', title: 'The Shahada', subtitle: "The declaration of faith — Qur'an & hadith" },
-    ],
-  },
-];
+/* ─── Local Micro-Components ─────────────────────────────────────────────── */
 
-/* ─── Group header ─────────────────────────────────────────────── */
+interface AccessiblePressableProps {
+  onPress?: () => void;
+  style?: any;
+  scaleOnPress?: number;
+  activeOpacity?: number;
+  children: React.ReactNode;
+  accessibilityRole?: AccessibilityRole;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  testID?: string;
+}
 
-function GroupHeader({ label }: { label: string }) {
-  const { colors } = useTheme();
+function AccessiblePressable({
+  onPress,
+  style,
+  scaleOnPress = 0.98,
+  activeOpacity = 0.85,
+  children,
+  accessibilityRole = 'button',
+  accessibilityLabel,
+  accessibilityHint,
+  testID,
+}: AccessiblePressableProps) {
   return (
-    <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
-      {t(label)}
-    </Text>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      testID={testID}
+      style={({ pressed }) => [
+        style,
+        pressed && {
+          transform: [{ scale: scaleOnPress }],
+          opacity: activeOpacity,
+        },
+      ]}
+    >
+      {children}
+    </Pressable>
   );
 }
 
-/* ─── Single row ──────────────────────────────────────────────── */
-
-function LibraryRow({
-  item,
-  onPress,
-}: {
-  item: LibraryItem;
-  onPress: () => void;
-}) {
-  const { colors } = useTheme();
+function BookStarEmblem({ size = 16, color }: { size?: number; color?: string }) {
+  const emblemColor = color || HERO_OUTER_BORDER;
+  const half = size / 2;
+  const innerR = size * 0.35;
   return (
-    <TouchableOpacity
-      style={styles.row}
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <Rect
+        x={half - innerR}
+        y={half - innerR}
+        width={innerR * 2}
+        height={innerR * 2}
+        stroke={emblemColor}
+        strokeWidth={1}
+        fill="none"
+      />
+      <Rect
+        x={half - innerR}
+        y={half - innerR}
+        width={innerR * 2}
+        height={innerR * 2}
+        stroke={emblemColor}
+        strokeWidth={1}
+        fill="none"
+        transform={`rotate(45 ${half} ${half})`}
+      />
+    </Svg>
+  );
+}
+
+function DiamondIcon({ size = 8, color }: { size?: number; color?: string }) {
+  const iconColor = color || GOLD_SOLID;
+  const half = size / 2;
+  return (
+    <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <Path
+        d={`M ${half} 0 L ${size} ${half} L ${half} ${size} L 0 ${half} Z`}
+        fill={iconColor}
+      />
+    </Svg>
+  );
+}
+
+/* ─── Main LibraryScreen ─────────────────────────────────────────────────── */
+
+const LibraryScreen = React.memo(function LibraryScreen({
+  onOpen,
+  onOpenSettings,
+  onOpenNotifications,
+  isActive = true,
+}: LibraryScreenProps) {
+  const { mode } = useTheme();
+  const isDark = mode === 'ink';
+  const tokens = getTokens(isDark);
+  const { width } = useWindowDimensions();
+  const { settings } = useSettings();
+  const { downloadedSurahs } = useSurahDownloads();
+  const fontPoppinsRegular = 'Poppins_400Regular';
+  const fontPoppinsMedium = 'Poppins_500Medium';
+  const fontLoraMedium = 'Lora_500Medium';
+  const fontNotoNaskhMedium = 'NotoNaskhArabic_500Medium';
+
+  const contentMaxWidth = Math.min(width, 680);
+  const horizontalMargin = 14.5;
+  const gridGap = 7.3;
+  const tileWidth = Math.max(0, (contentMaxWidth - 2 * horizontalMargin - gridGap) / 2);
+  const tilePaddingHorizontal = contentMaxWidth <= 360 ? 6 : 11;
+  const prophetTitleFontSize = contentMaxWidth <= 360 ? 11 : 12;
+  const prophetTitleLineHeight = contentMaxWidth <= 360 ? 14 : 15;
+
+  // Responsive scale for book spines: 0.85 at <=360 width, 1.0 at >=393 width (never <0.85)
+  const bookScale = Math.max(
+    0.85,
+    Math.min(1, 0.85 + ((contentMaxWidth - 360) / (393 - 360)) * 0.15)
+  );
+  const heroBooksRight = contentMaxWidth <= 360 ? 10 : 14;
+  const heroTextPaddingRight = contentMaxWidth <= 360 ? 120 : 130;
+
+  // Guides rows list (Women items gated by settings.womenWorshipEnabled)
+  const guideRows = [
+    {
+      key: 'prayer-guide' as LibraryItemKey,
+      title: 'Prayer Guide (Fiqh)',
+      subtitle: 'Wudu, Salah, Janazah & more',
+      icon: 'book-outline' as const,
+    },
+    {
+      key: 'ramadan-guide' as LibraryItemKey,
+      title: 'Ramadan & Eid Guide',
+      subtitle: 'Fasting, Laylatul Qadr, Zakat al-Fitr',
+      icon: 'moon-outline' as const,
+    },
+    {
+      key: 'umrah-guide' as LibraryItemKey,
+      title: 'Umrah Guide',
+      subtitle: "Step-by-step: Ihram, Tawaf, Sa'i",
+      icon: 'walk-outline' as const,
+    },
+    {
+      key: 'hajj-journey' as LibraryItemKey,
+      title: 'Hajj Journey',
+      subtitle: 'Day-by-day timeline',
+      icon: 'map-outline' as const,
+    },
+    ...(settings.womenWorshipEnabled
+      ? [
+          {
+            key: 'women-purity' as LibraryItemKey,
+            title: 'Purity & Ghusl',
+            subtitle: 'Ghusl steps, signs of tuhr & nifas',
+            icon: 'water-outline' as const,
+          },
+          {
+            key: 'women-guidance' as LibraryItemKey,
+            title: 'Worship Guidance',
+            subtitle: 'Exemptions, istihadha & fiqh references',
+            icon: 'heart-outline' as const,
+          },
+        ]
+      : []),
+    {
+      key: 'vocab' as LibraryItemKey,
+      title: 'Quran Vocabulary',
+      subtitle: 'Flashcards of frequent words',
+      icon: 'language-outline' as const,
+    },
+    {
+      key: 'tajweed' as LibraryItemKey,
+      title: 'Tajweed Colors',
+      subtitle: 'Color-coded reading rules',
+      icon: 'color-palette-outline' as const,
+    },
+  ];
+
+  const downloadedCount = downloadedSurahs ? downloadedSurahs.length : 0;
+  const downloadsSubtitle =
+    downloadedCount > 0
+      ? `${t('Offline Quran audio files')} · ${downloadedCount}`
+      : t('Offline Quran audio files');
+
+  return (
+    <View style={styles.root}>
+      <TabScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={[styles.container, { maxWidth: contentMaxWidth }]}>
+          {/* ─── Title Section ─────────────────────────────────────────── */}
+          <View style={styles.titleSection}>
+            <AppText
+              variant="eyebrow"
+              style={[
+                styles.titleEyebrow,
+                {
+                  fontFamily: fontPoppinsMedium,
+                },
+              ]}
+              maxFontSizeMultiplier={1.2}
+            >
+              LIBRARY
+            </AppText>
+            <AppText
+              variant="screenTitle"
+              style={[
+                styles.titleMain,
+                {
+                  fontFamily: fontLoraMedium,
+                },
+              ]}
+              maxFontSizeMultiplier={1.2}
+            >
+              {t('Explore')}
+            </AppText>
+          </View>
+
+          {/* ─── 3. Hero: Hadith Library ──────────────────────────────────── */}
+          <AccessiblePressable
+            onPress={() => onOpen('hadith')}
+            style={[
+              styles.heroCardWrap,
+              { backgroundColor: tokens.heroGradient[0] },
+              getHeroCardShadow(mode),
+            ]}
+            scaleOnPress={0.98}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('Hadith Library')}, 15+ ${t('full books')}`}
+            testID="library-card-hadith-hero"
+          >
+            <View style={[styles.heroCard, { borderColor: HERO_OUTER_BORDER }]}>
+              <View style={[StyleSheet.absoluteFill, { borderRadius: 17, overflow: 'hidden' }]}>
+                <LinearGradient
+                  colors={tokens.heroGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+
+                {/* Clipped Geometric SVG Pattern */}
+                <GeometricPattern
+                  variant="tessellation"
+                  color={HERO_OUTER_BORDER}
+                  opacity={0.12}
+                  style={StyleSheet.absoluteFill}
+                />
+              </View>
+
+              {/* Inner Inset 4.5 Border */}
+              <View style={styles.heroInnerBorder} pointerEvents="none" />
+
+              {/* Left Content */}
+              <View style={[styles.heroLeftContent, { paddingRight: heroTextPaddingRight }]}>
+                {/* Diamond + KNOWLEDGE */}
+                <View style={styles.heroLabelRow}>
+                  <DiamondIcon size={7} color={tokens.gold} />
+                  <AppText
+                    variant="eyebrow"
+                    onHero
+                    style={[styles.heroLabelText, { fontFamily: fontPoppinsMedium }]}
+                    allowFontScaling={false}
+                  >
+                    KNOWLEDGE
+                  </AppText>
+                </View>
+
+                {/* Hadith Library Title */}
+                <AppText
+                  variant="onHeroTitle"
+                  onHero
+                  style={[
+                    styles.heroTitle,
+                    {
+                      fontFamily: fontLoraMedium,
+                    },
+                  ]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  Hadith Library
+                </AppText>
+
+                {/* Big Count: 15+ full books */}
+                <View style={styles.heroCountRow}>
+                  <AppText
+                    variant="numeral"
+                    onHero
+                    allowFontScaling={false}
+                    style={[
+                      styles.heroBigNumber,
+                      {
+                        fontFamily: fontLoraMedium,
+                      },
+                    ]}
+                  >
+                    15+
+                  </AppText>
+                  <AppText
+                    variant="body"
+                    onHero
+                    style={[
+                      styles.heroBooksLabel,
+                      {
+                        fontFamily: fontLoraMedium,
+                      },
+                    ]}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('full books')}
+                  </AppText>
+                </View>
+
+                {/* Subtitle */}
+                <AppText
+                  variant="onHeroSubtitle"
+                  onHero
+                  style={[
+                    styles.heroSubtitle,
+                    {
+                      fontFamily: fontPoppinsRegular,
+                    },
+                  ]}
+                  numberOfLines={2}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Arabic with English translation')}
+                </AppText>
+              </View>
+
+              {/* Browse Button */}
+              <View style={styles.browseBtnWrap} pointerEvents="none">
+                <LinearGradient
+                  colors={GOLD_GRADIENT}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.browseBtn}
+                >
+                  <AppText
+                    variant="body"
+                    tone="onGold"
+                    style={[
+                      styles.browseBtnText,
+                      {
+                        fontFamily: fontPoppinsMedium,
+                      },
+                    ]}
+                    allowFontScaling={false}
+                  >
+                    {t('Browse')} →
+                  </AppText>
+                </LinearGradient>
+              </View>
+
+              {/* Right Decorative Upright Books */}
+              <View
+                style={[
+                  styles.heroBooksCluster,
+                  {
+                    right: heroBooksRight,
+                    transform: [{ scale: bookScale }],
+                    transformOrigin: 'bottom right',
+                  },
+                ]}
+                accessible={false}
+                importantForAccessibility="no"
+              >
+                {/* Book 1: Sahih al-Bukhari (Ivory) */}
+                <View
+                  style={[
+                    styles.bookSpine,
+                    {
+                      height: 124,
+                      backgroundColor: HERO_IVORY,
+                      borderColor: HERO_OUTER_BORDER,
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
+                  <View style={[styles.bookTopLine, { backgroundColor: HERO_OUTER_BORDER }]} />
+                  <View style={styles.bookEmblemWrap}>
+                    <BookStarEmblem size={13} color={HERO_OUTER_BORDER} />
+                  </View>
+                  <Text
+                    style={[
+                      styles.bookArabicTitle,
+                      {
+                        fontFamily: fontNotoNaskhMedium,
+                        color: tokens.onGold,
+                      },
+                    ]}
+                    numberOfLines={1}
+                    allowFontScaling={false}
+                  >
+                    البخاري
+                  </Text>
+                  <View style={[styles.bookBottomLine, { backgroundColor: HERO_OUTER_BORDER }]} />
+                </View>
+
+                {/* Book 2: Sahih Muslim (Gold/Tan, Taller) */}
+                <View
+                  style={[
+                    styles.bookSpine,
+                    {
+                      height: 146,
+                      backgroundColor: tokens.gold,
+                      borderColor: HERO_INNER_BORDER,
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
+                  <View style={[styles.bookTopLine, { backgroundColor: tokens.onGold }]} />
+                  <View style={styles.bookEmblemWrap}>
+                    <BookStarEmblem size={13} color={tokens.onGold} />
+                  </View>
+                  <Text
+                    style={[
+                      styles.bookArabicTitle,
+                      {
+                        fontFamily: fontNotoNaskhMedium,
+                        color: tokens.onGold,
+                      },
+                    ]}
+                    numberOfLines={1}
+                    allowFontScaling={false}
+                  >
+                    مسلم
+                  </Text>
+                  <View style={[styles.bookBottomLine, { backgroundColor: tokens.onGold }]} />
+                </View>
+
+                {/* Book 3: Jami at-Tirmidhi (Dark Emerald) */}
+                <View
+                  style={[
+                    styles.bookSpine,
+                    {
+                      height: 114,
+                      backgroundColor: tokens.brandGreen,
+                      borderColor: HERO_INNER_BORDER,
+                      borderWidth: 1,
+                    },
+                  ]}
+                >
+                  <View style={[styles.bookTopLine, { backgroundColor: tokens.gold }]} />
+                  <View style={styles.bookEmblemWrap}>
+                    <BookStarEmblem size={13} color={tokens.gold} />
+                  </View>
+                  <Text
+                    style={[
+                      styles.bookArabicTitle,
+                      {
+                        fontFamily: fontNotoNaskhMedium,
+                        color: tokens.gold,
+                        fontSize: 11,
+                      },
+                    ]}
+                    numberOfLines={1}
+                    allowFontScaling={false}
+                  >
+                    الترمذي
+                  </Text>
+                  <View style={[styles.bookBottomLine, { backgroundColor: tokens.gold }]} />
+                </View>
+              </View>
+            </View>
+          </AccessiblePressable>
+
+          {/* ─── 4. KNOWLEDGE & COLLECTIONS ───────────────────────────────── */}
+          <AppText
+            variant="eyebrow"
+            style={[
+              styles.sectionLabel,
+              {
+                fontFamily: fontPoppinsMedium,
+              },
+            ]}
+            accessibilityRole="header"
+            maxFontSizeMultiplier={1.2}
+          >
+            {t('KNOWLEDGE & COLLECTIONS')}
+          </AppText>
+
+          {/* 2x2 Knowledge Grid */}
+          <View style={styles.knowledgeGrid}>
+            {/* Tile 1: Duas & Adhkar */}
+            <AccessiblePressable
+              onPress={() => onOpen('duas')}
+              style={[
+                styles.knowledgeTileWrap,
+                {
+                  width: tileWidth,
+                  backgroundColor: tokens.cardTop,
+                },
+                getCardShadow(mode),
+              ]}
+              scaleOnPress={0.98}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('Duas & Adhkar')}, ${t('Daily supplications')}`}
+              testID="library-card-duas"
+            >
+              <View
+                style={[
+                  styles.knowledgeTileInner,
+                  {
+                    paddingHorizontal: tilePaddingHorizontal,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={[tokens.cardTop, tokens.cardBottom]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View
+                  style={[
+                    styles.tileRingIcon,
+                    {
+                      borderColor: tokens.ringBorder,
+                      backgroundColor: tokens.ringFill,
+                    },
+                  ]}
+                >
+                  <Ionicons name="hand-left" size={14} color={tokens.accent} />
+                </View>
+                <View style={styles.tileTextWrap}>
+                  <AppText
+                    variant="title"
+                    style={[
+                      styles.tileTitle,
+                      {
+                        fontFamily: fontPoppinsMedium,
+                      },
+                    ]}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('Duas & Adhkar')}
+                  </AppText>
+                  <AppText
+                    variant="subtitle"
+                    style={[
+                      styles.tileSubtitle,
+                      {
+                        fontFamily: fontPoppinsRegular,
+                      },
+                    ]}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('Daily supplications')}
+                  </AppText>
+                </View>
+              </View>
+            </AccessiblePressable>
+
+            {/* Tile 2: 99 Names of Allah */}
+            <AccessiblePressable
+              onPress={() => onOpen('names')}
+              style={[
+                styles.knowledgeTileWrap,
+                {
+                  width: tileWidth,
+                  backgroundColor: tokens.cardTop,
+                },
+                getCardShadow(mode),
+              ]}
+              scaleOnPress={0.98}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('99 Names of Allah')}, ${t('Asma ul-Husna')}`}
+              testID="library-card-names-allah"
+            >
+              <View
+                style={[
+                  styles.knowledgeTileInner,
+                  {
+                    paddingHorizontal: tilePaddingHorizontal,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={[tokens.cardTop, tokens.cardBottom]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View
+                  style={[
+                    styles.tileRingIcon,
+                    {
+                      borderColor: tokens.ringBorder,
+                      backgroundColor: tokens.ringFill,
+                    },
+                  ]}
+                >
+                  <Ionicons name="sparkles" size={14} color={tokens.accent} />
+                </View>
+                <View style={styles.tileTextWrap}>
+                  <AppText
+                    variant="title"
+                    style={[
+                      styles.tileTitle,
+                      {
+                        fontFamily: fontPoppinsMedium,
+                      },
+                    ]}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('99 Names of Allah')}
+                  </AppText>
+                  <AppText
+                    variant="subtitle"
+                    style={[
+                      styles.tileSubtitle,
+                      {
+                        fontFamily: fontPoppinsRegular,
+                      },
+                    ]}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('Asma ul-Husna')}
+                  </AppText>
+                </View>
+              </View>
+            </AccessiblePressable>
+
+            {/* Tile 3: 99 Names of the Prophet */}
+            <AccessiblePressable
+              onPress={() => onOpen('names-prophet')}
+              style={[
+                styles.knowledgeTileWrap,
+                {
+                  width: tileWidth,
+                  backgroundColor: tokens.cardTop,
+                },
+                getCardShadow(mode),
+              ]}
+              scaleOnPress={0.98}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('99 Names of the Prophet')}, ${t('Noble names & attributes')}`}
+              testID="library-card-names-prophet"
+            >
+              <View
+                style={[
+                  styles.knowledgeTileInner,
+                  {
+                    paddingHorizontal: tilePaddingHorizontal,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={[tokens.cardTop, tokens.cardBottom]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View
+                  style={[
+                    styles.tileRingIcon,
+                    {
+                      borderColor: tokens.ringBorder,
+                      backgroundColor: tokens.ringFill,
+                    },
+                  ]}
+                >
+                  <Ionicons name="star" size={14} color={tokens.accent} />
+                </View>
+                <View style={styles.tileTextWrap}>
+                  <AppText
+                    variant="title"
+                    style={[
+                      styles.tileTitle,
+                      {
+                        fontFamily: fontPoppinsMedium,
+                        fontSize: prophetTitleFontSize,
+                        lineHeight: prophetTitleLineHeight,
+                        letterSpacing: contentMaxWidth <= 360 ? -0.2 : undefined,
+                      },
+                    ]}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('99 Names of the Prophet')}
+                  </AppText>
+                  <AppText
+                    variant="subtitle"
+                    style={[
+                      styles.tileSubtitle,
+                      {
+                        fontFamily: fontPoppinsRegular,
+                        letterSpacing: contentMaxWidth <= 360 ? -0.15 : undefined,
+                      },
+                    ]}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('Noble names & attributes')}
+                  </AppText>
+                </View>
+              </View>
+            </AccessiblePressable>
+
+            {/* Tile 4: The Shahada */}
+            <AccessiblePressable
+              onPress={() => onOpen('shahada')}
+              style={[
+                styles.knowledgeTileWrap,
+                {
+                  width: tileWidth,
+                  backgroundColor: tokens.cardTop,
+                },
+                getCardShadow(mode),
+              ]}
+              scaleOnPress={0.98}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('The Shahada')}, ${t('Declaration of faith')}`}
+              testID="library-card-shahada"
+            >
+              <View
+                style={[
+                  styles.knowledgeTileInner,
+                  {
+                    paddingHorizontal: tilePaddingHorizontal,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+              >
+                <LinearGradient
+                  colors={[tokens.cardTop, tokens.cardBottom]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <View
+                  style={[
+                    styles.tileRingIcon,
+                    {
+                      borderColor: tokens.ringBorder,
+                      backgroundColor: tokens.ringFill,
+                    },
+                  ]}
+                >
+                  <Ionicons name="shield-checkmark" size={14} color={tokens.accent} />
+                </View>
+                <View style={styles.tileTextWrap}>
+                  <AppText
+                    variant="title"
+                    style={[
+                      styles.tileTitle,
+                      {
+                        fontFamily: fontPoppinsMedium,
+                      },
+                    ]}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('The Shahada')}
+                  </AppText>
+                  <AppText
+                    variant="subtitle"
+                    style={[
+                      styles.tileSubtitle,
+                      {
+                        fontFamily: fontPoppinsRegular,
+                      },
+                    ]}
+                    numberOfLines={2}
+                    maxFontSizeMultiplier={1.2}
+                  >
+                    {t('Declaration of faith')}
+                  </AppText>
+                </View>
+              </View>
+            </AccessiblePressable>
+          </View>
+
+          {/* Downloads Row */}
+          <AccessiblePressable
+            onPress={() => onOpen('downloads')}
+            style={[
+              styles.downloadsCardWrap,
+              {
+                backgroundColor: tokens.cardTop,
+              },
+              getCardShadow(mode),
+            ]}
+            scaleOnPress={0.98}
+            accessibilityRole="button"
+            accessibilityLabel={`${t('Downloads')}, ${downloadsSubtitle}`}
+            testID="library-card-downloads"
+          >
+            <View
+              style={[
+                styles.downloadsCardInner,
+                {
+                  borderColor: tokens.cardBorder,
+                },
+              ]}
+            >
+              <LinearGradient
+                colors={[tokens.cardTop, tokens.cardBottom]}
+                style={StyleSheet.absoluteFill}
+              />
+              <View
+                style={[
+                  styles.downloadsRingIcon,
+                  {
+                    borderColor: tokens.ringBorder,
+                    backgroundColor: tokens.ringFill,
+                  },
+                ]}
+              >
+                <Ionicons name="cloud-download-outline" size={14} color={tokens.accent} />
+              </View>
+              <View style={styles.downloadsTextWrap}>
+                <AppText
+                  variant="title"
+                  style={[
+                    styles.downloadsTitle,
+                    {
+                      fontFamily: fontPoppinsMedium,
+                    },
+                  ]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {t('Downloads')}
+                </AppText>
+                <AppText
+                  variant="subtitle"
+                  style={[
+                    styles.downloadsSubtitle,
+                    {
+                      fontFamily: fontPoppinsRegular,
+                    },
+                  ]}
+                  numberOfLines={1}
+                  maxFontSizeMultiplier={1.2}
+                >
+                  {downloadsSubtitle}
+                </AppText>
+              </View>
+              <Ionicons
+                name={getForwardIcon()}
+                size={14}
+                color={tokens.accent}
+                style={{ opacity: 0.8 }}
+              />
+            </View>
+          </AccessiblePressable>
+
+          {/* ─── 5. GUIDES & EDUCATION ─────────────────────────────────────── */}
+          <AppText
+            variant="eyebrow"
+            style={[
+              styles.guidesSectionLabel,
+              {
+                fontFamily: fontPoppinsMedium,
+              },
+            ]}
+            accessibilityRole="header"
+            maxFontSizeMultiplier={1.2}
+          >
+            {t('GUIDES & EDUCATION')}
+          </AppText>
+
+          {/* Guides Card with 8 rows */}
+          <View
+            style={[
+              styles.guidesCardWrap,
+              {
+                backgroundColor: tokens.cardTop,
+              },
+              getCardShadow(mode),
+            ]}
+            testID="library-card-guides"
+          >
+            <View
+              style={[
+                styles.guidesCardInner,
+                {
+                  borderColor: tokens.cardBorder,
+                },
+              ]}
+            >
+              <LinearGradient
+                colors={[tokens.cardTop, tokens.cardBottom]}
+                style={StyleSheet.absoluteFill}
+              />
+
+              {guideRows.map((row, index) => {
+                const isLast = index === guideRows.length - 1;
+                return (
+                  <View key={row.key} style={styles.guideRowWrap}>
+                    <GuideRowItem
+                      row={row}
+                      tokens={tokens}
+                      isDark={isDark}
+                      fontPoppinsMedium={fontPoppinsMedium}
+                      fontPoppinsRegular={fontPoppinsRegular}
+                      onPress={() => onOpen(row.key)}
+                    />
+                    {!isLast && (
+                      <View
+                        style={[
+                          styles.guideSeparator,
+                          {
+                            backgroundColor: tokens.cardBorder,
+                          },
+                        ]}
+                      />
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+      </TabScrollView>
+    </View>
+  );
+});
+
+/* ─── Guide Row Sub-Component with Pressed Tint ──────────────────────────── */
+
+interface GuideRowItemProps {
+  row: {
+    key: LibraryItemKey;
+    title: string;
+    subtitle: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  };
+  tokens: ReturnType<typeof getTokens>;
+  isDark: boolean;
+  fontPoppinsMedium?: string;
+  fontPoppinsRegular?: string;
+  onPress: () => void;
+}
+
+function GuideRowItem({
+  row,
+  tokens,
+  isDark,
+  fontPoppinsMedium,
+  fontPoppinsRegular,
+  onPress,
+}: GuideRowItemProps) {
+  const pressedBg = isDark ? 'rgba(222, 184, 110, 0.08)' : 'rgba(16, 90, 75, 0.08)';
+
+  return (
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.7}
+      style={({ pressed }) => [
+        styles.guideRow,
+        pressed && { backgroundColor: pressedBg },
+      ]}
       accessibilityRole="button"
-      accessibilityLabel={`${t('Open')} ${t(item.title)}`}
+      accessibilityLabel={`${t(row.title)}, ${t(row.subtitle)}`}
     >
       <View
         style={[
-          styles.iconTile,
+          styles.guideRingIcon,
           {
-            backgroundColor: colors.iconCircleBg,
+            borderColor: tokens.ringBorder,
+            backgroundColor: tokens.ringFill,
           },
         ]}
       >
-        <Ionicons name={ICONS[item.key]} size={18} color={colors.iconCircleFg || colors.forestGreen || colors.accent} />
+        <Ionicons name={row.icon} size={11.6} color={tokens.accent} />
       </View>
-      <View style={styles.rowText}>
-        <Text
-          style={[styles.rowTitle, { color: colors.textPrimary }]}
+      <View style={styles.guideTextWrap}>
+        <AppText
+          variant="title"
+          style={[
+            styles.guideTitle,
+            {
+              fontFamily: fontPoppinsMedium,
+            },
+          ]}
           numberOfLines={1}
+          maxFontSizeMultiplier={1.2}
         >
-          {t(item.title)}
-        </Text>
-        <Text
-          style={[styles.rowSub, { color: colors.textSecondary }]}
-          numberOfLines={1}
+          {t(row.title)}
+        </AppText>
+        <AppText
+          variant="subtitle"
+          style={[
+            styles.guideSubtitle,
+            {
+              fontFamily: fontPoppinsRegular,
+            },
+          ]}
+          numberOfLines={2}
+          maxFontSizeMultiplier={1.2}
         >
-          {t(item.subtitle)}
-        </Text>
+          {t(row.subtitle)}
+        </AppText>
       </View>
-      <View style={[styles.chevronCircle, { backgroundColor: colors.iconCircleBg }]}>
-        <Ionicons
-          name={getForwardIcon()}
-          size={14}
-          color={colors.forestGreen || colors.accent}
-        />
-      </View>
-    </TouchableOpacity>
+      <Ionicons
+        name={getForwardIcon()}
+        size={12}
+        color={tokens.accent}
+        style={{ opacity: 0.8 }}
+      />
+    </Pressable>
   );
 }
 
-/* ─── Main screen ─────────────────────────────────────────────── */
-
-export default function LibraryScreen({
-  onOpen,
-}: {
-  onOpen: (key: LibraryItemKey) => void;
-}) {
-  const { colors } = useTheme();
-  const { width } = useWindowDimensions();
-  const maxW = Math.min(width, 680);
-  const isCompact = width < 380;
-  const isWide = width >= 600;
-  const paddingH = isCompact ? 16 : 20;
-
-  return (
-    <ScrollView
-      style={{ backgroundColor: colors.bgBase }}
-      contentContainerStyle={[styles.scroll, { paddingHorizontal: paddingH }]}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={[styles.container, { maxWidth: maxW }]}>
-        <SectionHeader compact eyebrow={t('Library')} title={t('Explore')} />
-
-        {/* Grouped items */}
-        {GROUPS.map((group, gi) => (
-          <View key={group.label} style={gi > 0 ? styles.groupGap : undefined}>
-            <GroupHeader label={group.label} />
-            <View
-                            style={[
-                              styles.groupCard,
-                              isWide && styles.groupCardWide,
-                              {
-                                backgroundColor: colors.bgSurface,
-                                borderColor: colors.borderSubtle,
-                              },
-                            ]}
-                          >
-                            {group.items.map((item, i) => (
-                              <View
-                                key={item.key}
-                                style={isWide && styles.itemCard}
-                              >
-                                {i > 0 && !isWide && <Hairline style={styles.insetHairline} />}
-                                <LibraryRow item={item} onPress={() => onOpen(item.key)} />
-                              </View>
-                            ))}
-                          </View>
-          </View>
-        ))}
-
-        {/* Bottom breathing room */}
-        <View style={styles.bottomSpacer} />
-      </View>
-    </ScrollView>
-  );
-}
-
-/* ─── Styles ──────────────────────────────────────────────────── */
+/* ─── Stylesheet ─────────────────────────────────────────────────────────── */
 
 const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+  root: {
+    flex: 1,
+    minHeight: '100%',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 0,
   },
   container: {
     width: '100%',
     alignSelf: 'center',
-    paddingTop: 10,
   },
 
-  /* Group headers */
-  groupLabel: {
-    fontFamily: 'Manrope_600SemiBold',
+  /* Title Section */
+  titleSection: {
+    paddingLeft: 26,
+  },
+  titleEyebrow: {
     fontSize: 11,
-    letterSpacing: 2,
+    lineHeight: 14,
+    letterSpacing: 2.2,
     textTransform: 'uppercase',
-    marginBottom: 10,
-    marginLeft: 4,
   },
-  groupGap: {
-    marginTop: 24,
+  titleMain: {
+    fontSize: 33.5,
+    lineHeight: 38,
+    marginTop: 2,
   },
 
-  /* Group card wrapping rows */
-  groupCard: {
-    borderRadius: 24,
+  /* Hero: Hadith Library */
+  heroCardWrap: {
+    marginHorizontal: 14.5,
+    marginTop: 19.5,
+    borderRadius: 18,
+  },
+  heroCard: {
+    minHeight: 185.5,
+    borderRadius: 18,
     borderWidth: 1,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.03,
-    shadowRadius: 14,
-    elevation: 2,
+    position: 'relative',
+    paddingLeft: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
-  groupCardWide: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    padding: 12,
-    gap: 12,
+  heroInnerBorder: {
+    position: 'absolute',
+    top: 4.5,
+    left: 4.5,
+    right: 4.5,
+    bottom: 4.5,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: HERO_INNER_BORDER,
   },
-  itemCard: {
-    flexBasis: '47%',
-    minWidth: 0,
+  heroLeftContent: {
+    flex: 1,
+    paddingRight: 130,
+    justifyContent: 'flex-start',
+    paddingBottom: 44,
   },
-
-  /* Individual row */
-  row: {
+  heroLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 14,
-    minHeight: 56,
+    gap: 5,
   },
-  iconTile: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  heroLabelText: {
+    fontSize: 10,
+    lineHeight: 12,
+    letterSpacing: 2,
+  },
+  heroTitle: {
+    fontSize: 24,
+    lineHeight: 28,
+    marginTop: 4,
+  },
+  heroCountRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginTop: 2,
+  },
+  heroBigNumber: {
+    fontSize: 54.5,
+    lineHeight: 56,
+  },
+  heroBooksLabel: {
+    fontSize: 17,
+    lineHeight: 22,
+    marginLeft: 7,
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    fontSize: 12,
+    lineHeight: 15,
+    marginTop: -2,
+  },
+  browseBtnWrap: {
+    position: 'absolute',
+    bottom: 14,
+    left: 16,
+  },
+  browseBtn: {
+    width: 93,
+    height: 27.6,
+    borderRadius: 13.8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowText: {
+  browseBtnText: {
+    fontSize: 12,
+    lineHeight: 15,
+  },
+
+  /* Decorative Books */
+  heroBooksCluster: {
+    position: 'absolute',
+    right: 14,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 3,
+  },
+  bookSpine: {
+    width: 40,
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 7,
+    overflow: 'hidden',
+  },
+  bookTopLine: {
+    width: 24,
+    height: 1.5,
+    borderRadius: 1,
+  },
+  bookBottomLine: {
+    width: 24,
+    height: 1.5,
+    borderRadius: 1,
+  },
+  bookEmblemWrap: {
+    marginVertical: 4,
+  },
+  bookArabicTitle: {
+    fontSize: 12,
+    lineHeight: 22,
+    textAlign: 'center',
+    paddingVertical: 2,
+    includeFontPadding: true,
+  },
+
+  /* Section Labels */
+  sectionLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginTop: 22.5,
+    marginLeft: 26,
+  },
+  guidesSectionLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginTop: 29,
+    marginLeft: 26,
+  },
+
+  /* Knowledge 2x2 Grid */
+  knowledgeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: 14.5,
+    gap: 7.3,
+    marginTop: 10,
+  },
+  knowledgeTileWrap: {
+    minHeight: 83.5,
+    borderRadius: 14,
+  },
+  knowledgeTileInner: {
+    flex: 1,
+    minHeight: 83.5,
+    borderRadius: 13,
+    borderWidth: 1,
+    overflow: 'hidden',
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    justifyContent: 'space-between',
+  },
+  tileRingIcon: {
+    width: 30.5,
+    height: 30.5,
+    borderRadius: 15.25,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tileTextWrap: {
+    minWidth: 0,
+    flexShrink: 1,
+  },
+  tileTitle: {
+    fontSize: 12,
+    lineHeight: 15,
+  },
+  tileSubtitle: {
+    fontSize: 11,
+    lineHeight: 14,
+    marginTop: 1,
+  },
+
+  /* Downloads Row */
+  downloadsCardWrap: {
+    marginHorizontal: 14.5,
+    marginTop: 7.3,
+    minHeight: 43.6,
+    borderRadius: 14,
+  },
+  downloadsCardInner: {
+    flex: 1,
+    minHeight: 43.6,
+    borderRadius: 13,
+    borderWidth: 1,
+    overflow: 'hidden',
+    paddingHorizontal: 11,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  downloadsRingIcon: {
+    width: 30.5,
+    height: 30.5,
+    borderRadius: 15.25,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  downloadsTextWrap: {
     flex: 1,
     minWidth: 0,
   },
-  rowTitle: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 14.5,
-    lineHeight: 19,
-  },
-  rowSub: {
-    fontFamily: 'Manrope_400Regular',
+  downloadsTitle: {
     fontSize: 12,
-    lineHeight: 16,
-    marginTop: 2,
+    lineHeight: 15,
   },
-  chevronCircle: {
-    width: 28,
-    height: 28,
+  downloadsSubtitle: {
+    fontSize: 11,
+    lineHeight: 14,
+    marginTop: 1,
+  },
+
+  /* Guides Card */
+  guidesCardWrap: {
+    marginHorizontal: 14.5,
+    marginTop: 10,
     borderRadius: 14,
+  },
+  guidesCardInner: {
+    borderRadius: 13,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  guideRowWrap: {
+    width: '100%',
+  },
+  guideRow: {
+    minHeight: 40.7,
+    paddingHorizontal: 11,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  guideRingIcon: {
+    width: 24.7,
+    height: 24.7,
+    borderRadius: 12.35,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 9,
   },
-
-  /* Inset hairline (doesn't span to card edges) */
-  insetHairline: {
-    marginLeft: 68,
-    marginRight: 16,
+  guideTextWrap: {
+    flex: 1,
+    minWidth: 0,
   },
-
-  bottomSpacer: {
-    height: 20,
+  guideTitle: {
+    fontSize: 12,
+    lineHeight: 15,
+  },
+  guideSubtitle: {
+    fontSize: 11,
+    lineHeight: 13,
+    marginTop: 1,
+  },
+  guideSeparator: {
+    height: StyleSheet.hairlineWidth,
+    marginLeft: 44.7,
+    marginRight: 11,
+    opacity: 0.35,
   },
 });
+
+export default LibraryScreen;

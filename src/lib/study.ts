@@ -3,8 +3,9 @@
  * Keys: 'bookmarks', 'notes', 'study_tags', 'verse_highlights' stored as JSON arrays.
  */
 
-import { saveQuranCache, loadQuranCache } from './db';
 import {
+  saveQuranCache,
+  loadQuranCache,
   addStudyTag,
   removeStudyTag,
   getStudyTagsForAyah,

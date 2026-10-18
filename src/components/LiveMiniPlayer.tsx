@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   useWindowDimensions,
@@ -9,6 +8,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { ActiveLiveStream, toggleLiveStreamPlayPause } from '../lib/liveStream';
+import { AppText } from './ui/AppText';
 import { t } from '../lib/i18n';
 
 interface LiveMiniPlayerProps {
@@ -47,24 +47,26 @@ export function LiveMiniPlayer({ stream, onClose, onExpand }: LiveMiniPlayerProp
         {/* Left: Live status badge */}
         <View style={styles.liveBadge}>
           <View style={styles.liveDot} />
-          <Text style={styles.liveText}>{t('LIVE')}</Text>
+          <AppText variant="caption" tone="danger" style={styles.liveText}>{t('LIVE')}</AppText>
         </View>
 
         {/* Center: Title & subtitle */}
         <View style={styles.infoCol}>
-          <Text
-            style={[styles.title, { color: colors.textPrimary }]}
+          <AppText
+            variant="rowTitle"
+            style={styles.title}
             numberOfLines={1}
           >
             {stream.title}
-          </Text>
+          </AppText>
           {stream.subtitle ? (
-            <Text
-              style={[styles.subtitle, { color: colors.textSecondary }]}
+            <AppText
+              variant="subtitle"
+              style={styles.subtitle}
               numberOfLines={1}
             >
               {stream.subtitle}
-            </Text>
+            </AppText>
           ) : null}
         </View>
 
@@ -136,7 +138,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
   },
   liveText: {
-    color: '#EF4444',
     fontFamily: 'Manrope_700Bold',
     fontSize: 9.5,
     letterSpacing: 0.5,

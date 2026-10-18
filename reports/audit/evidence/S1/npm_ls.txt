@@ -1,0 +1,50 @@
+$ npm ls --depth=0
+scaffold@1.1.70 /home/ubuntu/apps/islamic_app
+├── @expo-google-fonts/amiri@0.4.1
+├── @expo-google-fonts/instrument-serif@0.4.1
+├── @expo-google-fonts/lora@0.4.2
+├── @expo-google-fonts/manrope@0.4.2
+├── @expo-google-fonts/noto-naskh-arabic@0.4.5
+├── @expo-google-fonts/noto-nastaliq-urdu@0.4.2
+├── @expo-google-fonts/poppins@0.4.1
+├── @expo-google-fonts/source-sans-3@0.4.1
+├── @expo/vector-icons@15.1.1
+├── @react-native-async-storage/async-storage@2.2.0
+├── @types/react@19.2.18
+├── eslint-config-expo@57.0.2
+├── eslint@9.39.5
+├── expo-audio@57.0.5
+├── expo-background-fetch@57.0.21
+├── expo-document-picker@57.0.3
+├── expo-file-system@57.0.7
+├── expo-font@57.0.4
+├── expo-haptics@57.0.3
+├── expo-linear-gradient@57.0.2
+├── expo-local-authentication@57.0.3
+├── expo-localization@57.0.2
+├── expo-location@57.0.20
+├── expo-notifications@57.0.21
+├── expo-sensors@57.0.3
+├── expo-sharing@57.0.22
+├── expo-splash-screen@57.0.9
+├── expo-sqlite@57.0.3
+├── expo-status-bar@57.0.1
+├── expo-system-ui@57.0.4
+├── expo-task-manager@57.0.21
+├── expo-updates@57.0.25
+├── expo-video@57.0.5
+├── expo@57.0.26
+├── i18next@26.4.2
+├── react-dom@19.2.3
+├── react-i18next@17.0.16
+├── react-native-safe-area-context@5.7.0
+├── react-native-svg@15.15.4
+├── react-native-view-shot@5.1.0
+├── react-native-web@0.21.3
+├── react-native-webview@13.16.1
+├── react-native@0.86.3
+├── react@19.2.3
+└── typescript@6.0.3
+
+
+EXIT_CODE=0

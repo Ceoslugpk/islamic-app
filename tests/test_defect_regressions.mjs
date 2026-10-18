@@ -373,6 +373,40 @@ assert.ok(
 }
 
 console.log('  ✓ Task 4 Settings queue assertions passed.');
+
+// ---------------------------------------------------------------------------
+// 5. BATCH 6D-B REGRESSIONS: Quran Home parent-tab identity & Reader midpoint clearance
+// ---------------------------------------------------------------------------
+console.log('\n--- 5. Batch 6D-B Regressions: Quran Home parent tab & reader clearance ---');
+
+// 5a. Authoritative routeToTab distinguishes top-level Home from Quran Home
+const routeToTabCode = fs.readFileSync('src/navigation/routeToTab.ts', 'utf8');
+assert.ok(routeToTabCode.includes("screen === 'home' && parentTab === 'quran'"), 'routeToTab must check screen === home and parentTab === quran');
+
+const { routeToTab } = await import('../src/navigation/routeToTab.ts');
+assert.equal(routeToTab('home'), 'home', 'top-level home string must resolve to home tab');
+assert.equal(routeToTab('home', 'home'), 'home', 'top-level home with home parentTab must resolve to home tab');
+assert.equal(routeToTab({ screen: 'home' }), 'home', 'top-level home object without parentTab must resolve to home tab');
+assert.equal(routeToTab({ screen: 'home' }, 'quran'), 'quran', 'Quran Home state ({ screen: "home" }, "quran") must resolve to quran tab');
+assert.equal(routeToTab({ screen: 'home' }, { parentTab: 'quran' }), 'quran', 'Quran Home state with options must resolve to quran tab');
+assert.equal(routeToTab({ screen: 'home', tab: 'quran' }), 'quran', 'Quran Home state with tab property must resolve to quran tab');
+assert.equal(routeToTab('quran-home'), 'quran', 'quran-home must resolve to quran tab');
+assert.equal(routeToTab({ screen: 'reader', surah: 2 }, 'quran'), 'quran', 'Quran reader must resolve to quran tab');
+console.log('  ✓ routeToTab correctly distinguishes top-level Home from Quran Home');
+
+// 5b. QuranReaderScreen production layout geometry contract
+const readerCode = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
+assert.ok(readerCode.includes('readerBottomClearance'), 'QuranReaderScreen must define readerBottomClearance');
+assert.ok(
+  readerCode.includes('paddingBottom: readerBottomClearance'),
+  'QuranReaderScreen DetailScreen must apply paddingBottom: readerBottomClearance to bound scroll owner'
+);
+assert.ok(
+  readerCode.includes('NAV_TOP(insets.bottom)'),
+  'QuranReaderScreen must calculate readerBottomClearance relative to NAV_TOP(insets.bottom)'
+);
+console.log('  ✓ QuranReaderScreen readerBottomClearance and scroll owner geometry contract verified');
+
 console.log('\n========================================================');
 console.log('ALL DEFECT REGRESSION TESTS PASSED!');
 console.log('========================================================\n');

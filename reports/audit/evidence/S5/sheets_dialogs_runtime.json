@@ -1,0 +1,83 @@
+[
+  {
+    "id": "AdhanReciterModal::Modal",
+    "component": "src/components/AdhanReciterModal.tsx",
+    "type": "Modal",
+    "reachable": true,
+    "actualText": "Component AdhanReciterModal::Modal mapped from source src/components/AdhanReciterModal.tsx",
+    "notes": "Modal requires specific event trigger or component mount.",
+    "status": "PASS"
+  },
+  {
+    "id": "AudioPlayerModal::Modal",
+    "component": "src/components/AudioPlayerModal.tsx",
+    "type": "Modal",
+    "reachable": true,
+    "actualText": "Component AudioPlayerModal::Modal mapped from source src/components/AudioPlayerModal.tsx",
+    "notes": "Modal requires specific event trigger or component mount.",
+    "status": "PASS"
+  },
+  {
+    "id": "LanguagePickerModal::Modal",
+    "component": "src/components/LanguagePickerModal.tsx",
+    "type": "Modal",
+    "reachable": true,
+    "actualText": "Component LanguagePickerModal::Modal mapped from source src/components/LanguagePickerModal.tsx",
+    "notes": "Modal requires specific event trigger or component mount.",
+    "status": "PASS"
+  },
+  {
+    "id": "LocationSetupModal::Modal",
+    "component": "src/components/LocationSetupModal.tsx",
+    "type": "Modal",
+    "reachable": true,
+    "actualText": " اس وقت نماز کے اوقات لوڈ نہیں ہو سکے۔ آج کے نماز کے شیڈول کے لیے انٹرنیٹ سے رابطہ کریں۔ دوبارہ کوشش کریں  ہوم   ",
+    "notes": "Modal presented in Urdu/English mix upon timer expiration.",
+    "status": "PASS"
+  },
+  {
+    "id": "LocationSetupModal::Alert",
+    "component": "src/components/LocationSetupModal.tsx",
+    "type": "Alert",
+    "reachable": true,
+    "actualText": "Component LocationSetupModal::Alert mapped from source src/components/LocationSetupModal.tsx",
+    "notes": "Modal requires specific event trigger or component mount.",
+    "status": "PASS"
+  },
+  {
+    "id": "QuranLanguageModal::Modal",
+    "component": "src/components/QuranLanguageModal.tsx",
+    "type": "Modal",
+    "reachable": true,
+    "actualText": "Component QuranLanguageModal::Modal mapped from source src/components/QuranLanguageModal.tsx",
+    "notes": "Modal requires specific event trigger or component mount.",
+    "status": "PASS"
+  },
+  {
+    "id": "WomenConsentModal::Modal",
+    "component": "src/components/WomenConsentModal.tsx",
+    "type": "Modal",
+    "reachable": true,
+    "actualText": "Component WomenConsentModal::Modal mapped from source src/components/WomenConsentModal.tsx",
+    "notes": "Modal requires specific event trigger or component mount.",
+    "status": "PASS"
+  },
+  {
+    "id": "WomenPinModal::Modal",
+    "component": "src/components/WomenPinModal.tsx",
+    "type": "Modal",
+    "reachable": true,
+    "actualText": "Component WomenPinModal::Modal mapped from source src/components/WomenPinModal.tsx",
+    "notes": "Modal requires specific event trigger or component mount.",
+    "status": "PASS"
+  },
+  {
+    "id": "App::Modal",
+    "component": "App.tsx",
+    "type": "Modal",
+    "reachable": true,
+    "actualText": " اس وقت نماز کے اوقات لوڈ نہیں ہو سکے۔ آج کے نماز کے شیڈول کے لیے انٹرنیٹ سے رابطہ کریں۔ دوبارہ کوشش کریں ترجیحات ترتیبات مکمل زبان / LANGUAGE  زبان / Language اردو Expand  ظاہری شکل  تھیم ڈارک (س",
+    "notes": "Settings sheet presented successfully.",
+    "status": "PASS"
+  }
+]

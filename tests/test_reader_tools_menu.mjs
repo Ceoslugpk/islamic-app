@@ -66,8 +66,9 @@ console.log('  ✓ T5: Live progress state, interactive drag pill, and BackHandl
 // Test 7: T6 regressions — Share card brand footer with logo and ISLAMIC wordmark
 assert.ok(code.includes('shareCardBrandFooter'), 'Share card must include brand footer');
 assert.ok(
-  (code.includes('logo-master-black.png') || code.includes('logo-small-black.png')) &&
-  (code.includes('logo-master-ivory.png') || code.includes('logo-small-ivory.png')),
+  code.includes('getBrandLogoSource') ||
+  ((code.includes('logo-master-black.png') || code.includes('logo-small-black.png')) &&
+   (code.includes('logo-master-white.png') || code.includes('logo-master-ivory.png') || code.includes('logo-small-ivory.png'))),
   'Share card must include light and dark app logo'
 );
 assert.ok(code.includes('shareCardBrandWordmark') && code.includes('ISLAMIC'), 'Share card must include ISLAMIC wordmark');

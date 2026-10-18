@@ -1,0 +1,107 @@
+{
+  "batch": "3C",
+  "status": "PASS",
+  "totalScreenshots": 10,
+  "screenshots": [
+    {
+      "id": "women-cycle",
+      "name": "WomenCycle",
+      "theme": "paper",
+      "file": "women-cycle_paper_393x852.png",
+      "title": "Cycle Tracker",
+      "bytes": 87813,
+      "rootBackground": "rgb(248, 244, 234)",
+      "gradients": 36
+    },
+    {
+      "id": "women-guidance",
+      "name": "WomenGuidance",
+      "theme": "paper",
+      "file": "women-guidance_paper_393x852.png",
+      "title": "Worship Guidance",
+      "bytes": 125635,
+      "rootBackground": "rgb(248, 244, 234)",
+      "gradients": 48
+    },
+    {
+      "id": "women-purity",
+      "name": "WomenPurity",
+      "theme": "paper",
+      "file": "women-purity_paper_393x852.png",
+      "title": "Purity & Ghusl",
+      "bytes": 109313,
+      "rootBackground": "rgb(248, 244, 234)",
+      "gradients": 45
+    },
+    {
+      "id": "women-qada",
+      "name": "WomenQada",
+      "theme": "paper",
+      "file": "women-qada_paper_393x852.png",
+      "title": "Qada Fasts",
+      "bytes": 74451,
+      "rootBackground": "rgb(248, 244, 234)",
+      "gradients": 38
+    },
+    {
+      "id": "zakat",
+      "name": "Zakat",
+      "theme": "paper",
+      "file": "zakat_paper_393x852.png",
+      "title": "Zakat",
+      "bytes": 91967,
+      "rootBackground": "rgb(248, 244, 234)",
+      "gradients": 43
+    },
+    {
+      "id": "women-cycle",
+      "name": "WomenCycle",
+      "theme": "ink",
+      "file": "women-cycle_ink_393x852.png",
+      "title": "Cycle Tracker",
+      "bytes": 87467,
+      "rootBackground": "rgb(18, 18, 28)",
+      "gradients": 36
+    },
+    {
+      "id": "women-guidance",
+      "name": "WomenGuidance",
+      "theme": "ink",
+      "file": "women-guidance_ink_393x852.png",
+      "title": "Worship Guidance",
+      "bytes": 123817,
+      "rootBackground": "rgb(18, 18, 28)",
+      "gradients": 48
+    },
+    {
+      "id": "women-purity",
+      "name": "WomenPurity",
+      "theme": "ink",
+      "file": "women-purity_ink_393x852.png",
+      "title": "Purity & Ghusl",
+      "bytes": 109749,
+      "rootBackground": "rgb(18, 18, 28)",
+      "gradients": 45
+    },
+    {
+      "id": "women-qada",
+      "name": "WomenQada",
+      "theme": "ink",
+      "file": "women-qada_ink_393x852.png",
+      "title": "Qada Fasts",
+      "bytes": 75288,
+      "rootBackground": "rgb(18, 18, 28)",
+      "gradients": 38
+    },
+    {
+      "id": "zakat",
+      "name": "Zakat",
+      "theme": "ink",
+      "file": "zakat_ink_393x852.png",
+      "title": "Zakat",
+      "bytes": 92470,
+      "rootBackground": "rgb(18, 18, 28)",
+      "gradients": 43
+    }
+  ]
+}

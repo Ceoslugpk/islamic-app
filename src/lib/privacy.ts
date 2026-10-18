@@ -3,6 +3,8 @@
  * Slow pure-JS KDF, legacy upgrade support, and persistent lockout tracking.
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export const KDF_ROUNDS = 100000;
 export const KDF_PREFIX = 'kdf_v2_';
 
@@ -117,7 +119,6 @@ export function getLockoutDurationMs(attempts: number): number {
 
 export async function loadPinLockoutState(): Promise<PinLockoutState> {
   try {
-    const AsyncStorage = require('@react-native-async-storage/async-storage');
     const raw = await AsyncStorage.getItem(PIN_LOCKOUT_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
@@ -138,7 +139,6 @@ export async function loadPinLockoutState(): Promise<PinLockoutState> {
 
 export async function savePinLockoutState(state: PinLockoutState): Promise<void> {
   try {
-    const AsyncStorage = require('@react-native-async-storage/async-storage');
     await AsyncStorage.setItem(PIN_LOCKOUT_STORAGE_KEY, JSON.stringify(state));
   } catch {
     // non-fatal
@@ -170,7 +170,6 @@ export async function recordFailedPinAttempt(): Promise<{ locked: boolean; remai
 /** Directly update womenPinHash in stored islamic-settings on upgrade */
 export async function persistUpgradedPinHash(newHash: string): Promise<void> {
   try {
-    const AsyncStorage = require('@react-native-async-storage/async-storage');
     const raw = await AsyncStorage.getItem('islamic-settings');
     if (raw) {
       const parsed = JSON.parse(raw);

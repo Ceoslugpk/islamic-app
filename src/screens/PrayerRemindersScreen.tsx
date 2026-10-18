@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ActivityIndicator,
@@ -20,6 +19,7 @@ import {
   OutlineButton,
   Chip,
 } from '../components/ui';
+import { AppText } from '../components/ui/AppText';
 import { Hairline } from '../components/Hairline';
 import {
   notificationsRescheduled,
@@ -47,6 +47,7 @@ import {
   sendTestPrayerNotification,
   sendTestPrePrayerNotification,
   sendTestQuranNotification,
+  isNotificationSchedulingSupported,
 } from '../lib/notifications';
 import {
   playAdhan,
@@ -347,12 +348,26 @@ export default function PrayerRemindersScreen({
   }
 
   async function onSnoozePress() {
-    await snoozePrayer('Prayer', 10);
-    setTestStatusMessage(t(snoozedTenMinutes));
+    if (!isNotificationSchedulingSupported()) {
+      setTestStatusMessage(t('Reminders deliver on your device'));
+      setTimeout(() => setTestStatusMessage(null), 3500);
+      return;
+    }
+    const ok = await snoozePrayer('Prayer', 10);
+    if (ok) {
+      setTestStatusMessage(t(snoozedTenMinutes));
+    } else {
+      setTestStatusMessage(t(testAlertPermission));
+    }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
 
   async function onTestPrayerAlert(prayer: PrayerNameKey) {
+    if (!isNotificationSchedulingSupported()) {
+      setTestStatusMessage(t('Reminders deliver on your device'));
+      setTimeout(() => setTestStatusMessage(null), 3500);
+      return;
+    }
     const id = await sendTestPrayerNotification(prayer, 'prayer-times-adhan');
     if (id) {
       setTestStatusMessage(`✓ ${t(testAlertSent)}`);
@@ -363,6 +378,11 @@ export default function PrayerRemindersScreen({
   }
 
   async function onTestPrePrayerAlert() {
+    if (!isNotificationSchedulingSupported()) {
+      setTestStatusMessage(t('Reminders deliver on your device'));
+      setTimeout(() => setTestStatusMessage(null), 3500);
+      return;
+    }
     const id = await sendTestPrePrayerNotification('Maghrib', reminderOffsetMinutes || 15);
     if (id) {
       setTestStatusMessage(`✓ ${t(testAlertSent)}`);
@@ -373,6 +393,11 @@ export default function PrayerRemindersScreen({
   }
 
   async function onTestQuranAlert() {
+    if (!isNotificationSchedulingSupported()) {
+      setTestStatusMessage(t('Reminders deliver on your device'));
+      setTimeout(() => setTestStatusMessage(null), 3500);
+      return;
+    }
     const id = await sendTestQuranNotification();
     if (id) {
       setTestStatusMessage(t('✓ Quran reminder test sent — tap "Read Now" to try the reader link.'));
@@ -458,19 +483,19 @@ export default function PrayerRemindersScreen({
           {testStatusMessage && (
             <View style={[styles.bannerBox, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
               <Ionicons name="information-circle" size={18} color={colors.accent} />
-              <Text style={[styles.bannerText, { color: colors.textPrimary }]}>{testStatusMessage}</Text>
+              <AppText variant="body" style={styles.bannerText}>{testStatusMessage}</AppText>
             </View>
           )}
 
           {/* Master Reminder Card */}
-          <Text style={[styles.groupLabel, { color: colors.textMuted }]}>{t('Prayer reminders')}</Text>
+          <AppText variant="eyebrow" tone="faint" style={[styles.groupLabel, styles.firstGroupLabel]}>{t('Prayer reminders')}</AppText>
           <PremiumCard style={styles.groupCard} padded={false}>
             <View style={styles.row}>
               <View style={styles.rowFlex}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{t('Prayer reminders')}</Text>
-                <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+                <AppText variant="rowTitle" style={styles.rowTitle}>{t('Prayer reminders')}</AppText>
+                <AppText variant="caption" tone="faint" style={styles.rowDesc}>
                   {t('Alarms before and at each prayer time — on time even when the app is closed')}
-                </Text>
+                </AppText>
               </View>
               <TouchableOpacity
                 style={[styles.toggle, { borderColor: colors.accent }]}
@@ -493,7 +518,7 @@ export default function PrayerRemindersScreen({
             {permissionError && (
               <View style={[styles.errorBox, { backgroundColor: colors.accentDim }]}>
                 <Ionicons name="alert-circle-outline" size={18} color={colors.accent} />
-                <Text style={[styles.errorText, { color: colors.textPrimary }]}>{permissionError}</Text>
+                <AppText variant="body" style={styles.errorText}>{permissionError}</AppText>
                 <TouchableOpacity
                   onPress={() => Linking.openSettings().catch(() => {})}
                   style={[styles.errorAction, { borderColor: colors.accent }]}
@@ -502,7 +527,7 @@ export default function PrayerRemindersScreen({
                   accessibilityLabel={t('Open device settings to enable notifications')}
                 >
                   <Ionicons name="settings-outline" size={14} color={colors.accent} />
-                  <Text style={[styles.errorActionText, { color: colors.accent }]}>{t('Open Settings')}</Text>
+                  <AppText variant="link" highlight style={styles.errorActionText}>{t('Open Settings')}</AppText>
                 </TouchableOpacity>
               </View>
             )}
@@ -513,14 +538,14 @@ export default function PrayerRemindersScreen({
             {isLoadingHealth ? (
               <View style={styles.healthLoading}>
                 <ActivityIndicator size="small" color={colors.accent} />
-                <Text style={[styles.healthLoadingText, { color: colors.textMuted }]}>
+                <AppText variant="body" tone="faint" style={styles.healthLoadingText}>
                   {t('Checking your alarms…')}
-                </Text>
+                </AppText>
               </View>
             ) : (
               <View style={styles.healthRow}>
                 <View style={styles.healthItem}>
-                  <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Status')}</Text>
+                  <AppText variant="eyebrow" tone="faint" style={styles.healthLabel}>{t('Status')}</AppText>
                   <View style={styles.healthStatusRow}>
                     <View
                       style={[
@@ -535,7 +560,8 @@ export default function PrayerRemindersScreen({
                         },
                       ]}
                     />
-                    <Text
+                    <AppText
+                      variant="body"
                       style={[
                         styles.healthValue,
                         {
@@ -553,22 +579,22 @@ export default function PrayerRemindersScreen({
                         : health?.status === 'permission-needed'
                         ? t('Permission needed')
                         : t('Paused')}
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
 
                 <View style={styles.healthItem}>
-                  <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Next prayer')}</Text>
-                  <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
+                  <AppText variant="eyebrow" tone="faint" style={styles.healthLabel}>{t('Next prayer')}</AppText>
+                  <AppText variant="body" style={styles.healthValue}>
                     {health?.nextPrayer ? `${health.nextPrayer.name} · ${health.nextPrayer.time}` : '—'}
-                  </Text>
+                  </AppText>
                 </View>
 
                 <View style={styles.healthItem}>
-                  <Text style={[styles.healthLabel, { color: colors.textMuted }]}>{t('Today')}</Text>
-                  <Text style={[styles.healthValue, { color: colors.textPrimary }]}>
+                  <AppText variant="eyebrow" tone="faint" style={styles.healthLabel}>{t('Today')}</AppText>
+                  <AppText variant="body" style={styles.healthValue}>
                     {health ? `${health.scheduledCounts.today} ${t('today')}` : '—'}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             )}
@@ -601,8 +627,8 @@ export default function PrayerRemindersScreen({
             <View style={styles.playingLeft}>
               <Ionicons name="musical-notes" size={20} color={colors.accent} />
               <View>
-                <Text style={[styles.playingTitle, { color: colors.textPrimary }]}>{t('Adhan Playing')}</Text>
-                <Text style={[styles.playingReciter, { color: colors.accent }]}>{currentReciter.name}</Text>
+                <AppText variant="rowTitle" style={styles.playingTitle}>{t('Adhan Playing')}</AppText>
+                <AppText variant="caption" highlight style={styles.playingReciter}>{currentReciter.name}</AppText>
               </View>
             </View>
             <TouchableOpacity
@@ -620,15 +646,15 @@ export default function PrayerRemindersScreen({
                 style={StyleSheet.absoluteFill}
               />
               <Ionicons name="stop" size={16} color={tokens.onGold} />
-              <Text style={[styles.stopAdhanText, { color: tokens.onGold }]}>{t('Stop Adhan')}</Text>
+              <AppText variant="body" tone="onGold" style={styles.stopAdhanText}>{t('Stop Adhan')}</AppText>
             </TouchableOpacity>
           </View>
         )}
 
         {/* Per-Prayer Controls (Fajr, Dhuhr, Asr, Maghrib, Isha) */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
+        <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Per-prayer alerts & audio')}
-        </Text>
+        </AppText>
         <PremiumCard style={styles.groupCard} padded={false}>
           {PRAYER_LIST.map((p, idx) => {
             const config = prayerConfigs[p.key] || { enabled: true, adhan: true, vibration: true };
@@ -646,20 +672,17 @@ export default function PrayerRemindersScreen({
                         size={18}
                         color={config.enabled && remindersEnabled ? colors.accent : colors.textMuted}
                       />
-                      <Text
-                        style={[
-                          styles.prayerName,
-                          {
-                            color: config.enabled && remindersEnabled ? colors.textPrimary : colors.textMuted,
-                          },
-                        ]}
+                      <AppText
+                        variant="rowTitle"
+                        tone={config.enabled && remindersEnabled ? undefined : 'faint'}
+                        style={styles.prayerName}
                       >
                         {p.key}
-                      </Text>
-                      <Text style={[styles.prayerArabic, { color: colors.accent }]}>{p.arabic}</Text>
+                      </AppText>
+                      <AppText variant="rowTitle" highlight style={styles.prayerArabic}>{p.arabic}</AppText>
                       {time && (
                         <View style={[styles.timeBadge, { backgroundColor: colors.bgBase }]}>
-                          <Text style={[styles.timeBadgeText, { color: colors.textSecondary }]}>{time}</Text>
+                          <AppText variant="caption" tone="faint" style={styles.timeBadgeText}>{time}</AppText>
                         </View>
                       )}
                     </View>
@@ -682,14 +705,14 @@ export default function PrayerRemindersScreen({
                           size={13}
                           color={config.adhan && config.enabled ? colors.accent : colors.textMuted}
                         />
-                        <Text
-                          style={[
-                            styles.miniPillText,
-                            { color: config.adhan && config.enabled ? colors.accent : colors.textMuted },
-                          ]}
+                        <AppText
+                          variant="caption"
+                          highlight={Boolean(config.adhan && config.enabled)}
+                          tone={config.adhan && config.enabled ? undefined : 'faint'}
+                          style={styles.miniPillText}
                         >
                           {t('Adhan')}
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -708,14 +731,14 @@ export default function PrayerRemindersScreen({
                           size={13}
                           color={config.vibration && config.enabled ? colors.accent : colors.textMuted}
                         />
-                        <Text
-                          style={[
-                            styles.miniPillText,
-                            { color: config.vibration && config.enabled ? colors.accent : colors.textMuted },
-                          ]}
+                        <AppText
+                          variant="caption"
+                          highlight={Boolean(config.vibration && config.enabled)}
+                          tone={config.vibration && config.enabled ? undefined : 'faint'}
+                          style={styles.miniPillText}
                         >
                           {t('Vibrate')}
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -724,7 +747,7 @@ export default function PrayerRemindersScreen({
                         accessibilityLabel={`Test notification for ${p.key}`}
                       >
                         <Ionicons name="notifications-outline" size={13} color={colors.textSecondary} />
-                        <Text style={[styles.miniPillText, { color: colors.textSecondary }]}>{t('Test')}</Text>
+                        <AppText variant="caption" tone="faint" style={styles.miniPillText}>{t('Test')}</AppText>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -753,13 +776,13 @@ export default function PrayerRemindersScreen({
         </PremiumCard>
 
         {/* Pre-Prayer Advance Notice Offset */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
+        <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Pre-prayer advance notice')} — {reminderOffsetMinutes === 0 ? t('off') : `${reminderOffsetMinutes} ${t('min before')}`}
-        </Text>
+        </AppText>
         <PremiumCard style={styles.groupCard} padded={false}>
-          <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>
+          <AppText variant="caption" tone="faint" style={styles.groupDesc}>
             {t('Send an early heads-up before each prayer so you can prepare wudu. Choose "Off" for alerts only at prayer time.')}
-          </Text>
+          </AppText>
           <View style={styles.segRow}>
             {REMINDER_OFFSETS.map((item) => {
               const isSelected = reminderOffsetMinutes === item.value;
@@ -778,9 +801,9 @@ export default function PrayerRemindersScreen({
         </PremiumCard>
 
         {/* Adhan Reciter Choice */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
+        <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Adhan reciter')}
-        </Text>
+        </AppText>
         <PremiumCard style={styles.groupCard} padded={false}>
           <TouchableOpacity
             style={styles.row}
@@ -790,22 +813,22 @@ export default function PrayerRemindersScreen({
           >
             <View style={styles.rowFlex}>
               <View style={styles.reciterHeaderRow}>
-                <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{currentReciter.name}</Text>
+                <AppText variant="rowTitle" style={styles.rowTitle}>{currentReciter.name}</AppText>
                 <View style={[styles.reciterBadge, { backgroundColor: colors.accentDim }]}>
-                  <Text style={[styles.reciterBadgeText, { color: colors.accent }]}>
+                  <AppText variant="eyebrow" highlight style={styles.reciterBadgeText}>
                     {currentReciter.location}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
-              <Text style={[styles.reciterArabic, { color: colors.accent }]}>
+              <AppText variant="caption" highlight style={styles.reciterArabic}>
                 {currentReciter.arabicName}
-              </Text>
-              <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              </AppText>
+              <AppText variant="caption" tone="faint" style={styles.rowDesc}>
                 {currentReciter.description}
-              </Text>
+              </AppText>
             </View>
             <View style={styles.chevronWrap}>
-              <Text style={[styles.changeText, { color: colors.accent }]}>{t('Change')}</Text>
+              <AppText variant="link" highlight style={styles.changeText}>{t('Change')}</AppText>
               <Ionicons name={getForwardIcon()} size={16} color={colors.accent} />
             </View>
           </TouchableOpacity>
@@ -841,14 +864,14 @@ export default function PrayerRemindersScreen({
                 size={16}
                 color={isPlayingAdhan ? tokens.onGold : colors.accent}
               />
-              <Text
-                style={[
-                  styles.reciterActionBtnText,
-                  { color: isPlayingAdhan ? tokens.onGold : colors.accent },
-                ]}
+              <AppText
+                variant="body"
+                tone={isPlayingAdhan ? 'onGold' : undefined}
+                highlight={!isPlayingAdhan}
+                style={styles.reciterActionBtnText}
               >
                 {isPlayingAdhan ? t('Stop Playing') : `${t('Preview')} ${currentReciter.name}`}
-              </Text>
+              </AppText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -858,19 +881,19 @@ export default function PrayerRemindersScreen({
               accessibilityLabel={t('Stop adhan')}
             >
               <Ionicons name="stop-circle-outline" size={16} color={colors.textPrimary} />
-              <Text style={[styles.stopIconBtnText, { color: colors.textPrimary }]}>{t('Stop Adhan')}</Text>
+              <AppText variant="body" style={styles.stopIconBtnText}>{t('Stop Adhan')}</AppText>
             </TouchableOpacity>
           </View>
         </PremiumCard>
 
         {/* Test Notification Buttons */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
+        <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Test notifications')}
-        </Text>
+        </AppText>
         <PremiumCard style={styles.groupCard} padded={false}>
-          <Text style={[styles.groupDesc, { color: colors.textSecondary }]}>
+          <AppText variant="caption" tone="faint" style={styles.groupDesc}>
             {t('Send a test alert to try sounds, vibration, and notification buttons (Mark Prayed, Stop Adhan, Snooze 10m).')}
-          </Text>
+          </AppText>
 
           <View style={styles.testGrid}>
             <TouchableOpacity
@@ -880,10 +903,10 @@ export default function PrayerRemindersScreen({
               accessibilityLabel={t('Test at-prayer notification')}
             >
               <Ionicons name="notifications" size={20} color={colors.accent} />
-              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>{t('Test at-prayer alert')}</Text>
-              <Text style={[styles.testCardDesc, { color: colors.textMuted }]}>
+              <AppText variant="rowTitle" style={styles.testCardTitle}>{t('Test at-prayer alert')}</AppText>
+              <AppText variant="caption" tone="faint" style={styles.testCardDesc}>
                 {t('Includes Mark Prayed, Stop Adhan & Snooze buttons')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -893,10 +916,10 @@ export default function PrayerRemindersScreen({
               accessibilityLabel={t('Test pre-prayer countdown alert')}
             >
               <Ionicons name="hourglass-outline" size={20} color={colors.accent} />
-              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>{t('Test pre-prayer alert')}</Text>
-              <Text style={[styles.testCardDesc, { color: colors.textMuted }]}>
+              <AppText variant="rowTitle" style={styles.testCardTitle}>{t('Test pre-prayer alert')}</AppText>
+              <AppText variant="caption" tone="faint" style={styles.testCardDesc}>
                 {t('Includes Open Prayer & Snooze buttons')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -906,28 +929,28 @@ export default function PrayerRemindersScreen({
               accessibilityLabel={t('Test Quran reminder alert')}
             >
               <Ionicons name="book-outline" size={20} color={colors.accent} />
-              <Text style={[styles.testCardTitle, { color: colors.textPrimary }]}>{t('Test Quran reminder')}</Text>
-              <Text style={[styles.testCardDesc, { color: colors.textMuted }]}>
+              <AppText variant="rowTitle" style={styles.testCardTitle}>{t('Test Quran reminder')}</AppText>
+              <AppText variant="caption" tone="faint" style={styles.testCardDesc}>
                 {t('Includes Read Now, Snooze & Dismiss buttons')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
           </View>
         </PremiumCard>
 
         {/* Daily Quran Reminder & Reading Goal */}
-        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>
+        <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Daily Quran reminder & reading goal')}
-        </Text>
+        </AppText>
         <PremiumCard style={styles.groupCard} padded={false}>
           {/* Quran Reminder Master Toggle */}
           <View style={styles.row}>
             <View style={styles.rowFlex}>
-              <Text style={[styles.rowTitle, { color: colors.textPrimary }]}>{t('Quran reading reminder')}</Text>
-              <Text style={[styles.rowDesc, { color: colors.textSecondary }]}>
+              <AppText variant="rowTitle" style={styles.rowTitle}>{t('Quran reading reminder')}</AppText>
+              <AppText variant="caption" tone="faint" style={styles.rowDesc}>
                 {quranReminderEnabled
                   ? `${t('On')} · ${t('daily at')} ${quranReminderTime}`
                   : t('Off — no daily reminder')}
-              </Text>
+              </AppText>
             </View>
             <TouchableOpacity
               style={[styles.toggle, { borderColor: colors.accent }]}
@@ -951,10 +974,10 @@ export default function PrayerRemindersScreen({
 
           {/* Configurable Reminder Time */}
           <View style={styles.sectionInner}>
-            <Text style={[styles.innerTitle, { color: colors.textPrimary }]}>{t('Reminder time')}</Text>
-            <Text style={[styles.innerDesc, { color: colors.textMuted }]}>
+            <AppText variant="rowTitle" style={styles.innerTitle}>{t('Reminder time')}</AppText>
+            <AppText variant="caption" tone="faint" style={styles.innerDesc}>
               {t('Scheduled on your device — fires even without internet')}
-            </Text>
+            </AppText>
 
             <View style={styles.presetTimeRow}>
               {QURAN_REMINDER_PRESETS.map((tVal) => {
@@ -981,10 +1004,10 @@ export default function PrayerRemindersScreen({
 
           {/* Reading Goal Type & Target */}
           <View style={styles.sectionInner}>
-            <Text style={[styles.innerTitle, { color: colors.textPrimary }]}>{t('Daily reading goal')}</Text>
-            <Text style={[styles.innerDesc, { color: colors.textMuted }]}>
+            <AppText variant="rowTitle" style={styles.innerTitle}>{t('Daily reading goal')}</AppText>
+            <AppText variant="caption" tone="faint" style={styles.innerDesc}>
               {t("The reminder pauses automatically once today's goal is met")}
-            </Text>
+            </AppText>
 
             <View style={styles.goalTypeRow}>
               {(['minutes', 'pages', 'custom'] as QuranGoalType[]).map((type) => {
@@ -1020,9 +1043,9 @@ export default function PrayerRemindersScreen({
                 <Ionicons name="remove" size={18} color={colors.textPrimary} />
               </TouchableOpacity>
 
-              <Text style={[styles.stepperVal, { color: colors.textPrimary }]}>
+              <AppText variant="numeral" style={styles.stepperVal}>
                 {goalTarget} {goalType === 'minutes' ? t('minutes / day') : goalType === 'pages' ? t('pages / day') : t('ayahs / day')}
-              </Text>
+              </AppText>
 
               <TouchableOpacity
                 style={styles.stepBtn}
@@ -1042,12 +1065,12 @@ export default function PrayerRemindersScreen({
             <View style={[styles.goalProgressCard, { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase }]}>
               <View style={styles.goalProgressHeader}>
                 <View>
-                  <Text style={[styles.goalProgressLabel, { color: colors.textMuted }]}>
+                  <AppText variant="eyebrow" tone="faint" style={styles.goalProgressLabel}>
                     {t("Today's progress")}
-                  </Text>
-                  <Text style={[styles.goalProgressValue, { color: colors.textPrimary }]}>
+                  </AppText>
+                  <AppText variant="numeral" style={styles.goalProgressValue}>
                     {goalCurrent} / {goalTarget} {goalType === 'minutes' ? t('mins') : goalType === 'pages' ? t('pages') : t('ayahs')}
-                  </Text>
+                  </AppText>
                 </View>
                 <View
                   style={[
@@ -1058,14 +1081,15 @@ export default function PrayerRemindersScreen({
                     },
                   ]}
                 >
-                  <Text
+                  <AppText
+                    variant="caption"
                     style={[
                       styles.goalStatusText,
                       { color: isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent },
                     ]}
                   >
                     {isGoalMet ? t('✓ Goal met') : t('In progress')}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
@@ -1100,9 +1124,15 @@ export default function PrayerRemindersScreen({
                     size={16}
                     color={isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent}
                   />
-                  <Text style={[styles.markGoalText, { color: isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent }]}>
+                  <AppText
+                    variant="caption"
+                    style={[
+                      styles.markGoalText,
+                      { color: isGoalMet ? (colors.forestGreen || colors.accent) : colors.accent },
+                    ]}
+                  >
                     {isGoalMet ? t('Done for today') : t('Mark done for today')}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -1118,7 +1148,7 @@ export default function PrayerRemindersScreen({
                     style={styles.readNowBtn}
                   >
                     <Ionicons name="book" size={14} color={tokens.onGold} />
-                    <Text style={[styles.readNowText, { color: tokens.onGold }]}>{t('Read Now')}</Text>
+                    <AppText variant="body" tone="onGold" style={styles.readNowText}>{t('Read Now')}</AppText>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -1128,16 +1158,16 @@ export default function PrayerRemindersScreen({
 
         {/* Android Reliability Info Card */}
         <PremiumCard style={styles.groupCard} padded>
-          <Text style={[styles.infoTitle, { color: colors.textPrimary }]}>
+          <AppText variant="sectionTitle" style={styles.infoTitle}>
             {t('How your reminders work')}
-          </Text>
-          <Text style={[styles.infoText, { color: colors.textMuted }]}>
-            • <Text style={{ color: colors.textPrimary }}>{t('On time, even offline:')}</Text> {t('Your alarms use the same prayer schedule saved on your device, so they fire without an internet connection.')}{'\n\n'}
-            • <Text style={{ color: colors.textPrimary }}>{t('Your preferences, honored:')}</Text> {t('Dedicated alarm channels keep adhan, sound, vibration, and silent alerts exactly as you set them.')}{'\n\n'}
-            • <Text style={{ color: colors.textPrimary }}>{t('Handy notification buttons:')}</Text> {t("Tap 'Mark Prayed' to log your salah, 'Stop Adhan' to silence recitation, or 'Snooze' for 10 more minutes.")}{'\n\n'}
-            • <Text style={{ color: colors.textPrimary }}>{t('Recovers on its own:')}</Text> {t('Alarms come back after a device restart and adjust automatically for timezone changes and new days.')}{'\n\n'}
-            • <Text style={{ color: colors.textPrimary }}>{t('Goal-aware:')}</Text> {t('Once you finish your daily reading goal (minutes, pages, or ayahs), the Quran reminder stays quiet for the rest of the day.')}
-          </Text>
+          </AppText>
+          <AppText variant="body" tone="faint" style={styles.infoText}>
+            • <AppText variant="body" style={{ fontWeight: '600' }}>{t('On time, even offline:')}</AppText> {t('Your alarms use the same prayer schedule saved on your device, so they fire without an internet connection.')}{'\n\n'}
+            • <AppText variant="body" style={{ fontWeight: '600' }}>{t('Your preferences, honored:')}</AppText> {t('Dedicated alarm channels keep adhan, sound, vibration, and silent alerts exactly as you set them.')}{'\n\n'}
+            • <AppText variant="body" style={{ fontWeight: '600' }}>{t('Handy notification buttons:')}</AppText> {t("Tap 'Mark Prayed' to log your salah, 'Stop Adhan' to silence recitation, or 'Snooze' for 10 more minutes.")}{'\n\n'}
+            • <AppText variant="body" style={{ fontWeight: '600' }}>{t('Recovers on its own:')}</AppText> {t('Alarms come back after a device restart and adjust automatically for timezone changes and new days.')}{'\n\n'}
+            • <AppText variant="body" style={{ fontWeight: '600' }}>{t('Goal-aware:')}</AppText> {t('Once you finish your daily reading goal (minutes, pages, or ayahs), the Quran reminder stays quiet for the rest of the day.')}
+          </AppText>
         </PremiumCard>
         </View>
 
@@ -1161,7 +1191,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  content: { paddingHorizontal: 20, paddingTop: 10 },
+  content: {},
   contentWrap: {
     maxWidth: 680,
     width: '100%',
@@ -1175,11 +1205,14 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 8,
     marginLeft: 4,
+    paddingVertical: 2,
+  },
+  firstGroupLabel: {
+    marginTop: 0,
   },
   groupDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 18,
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 4,
@@ -1199,7 +1232,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  rowFlex: { flex: 1 },
+  rowFlex: { flex: 1, minWidth: 0 },
   rowTitle: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
@@ -1208,7 +1241,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     marginTop: 2,
-    lineHeight: 18,
   },
   toggle: {
     width: 44,
@@ -1348,11 +1380,15 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     marginTop: 12,
+    flexWrap: 'wrap',
+    gap: 8,
   },
   playingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    flex: 1,
+    minWidth: 0,
   },
   playingTitle: {
     fontFamily: 'Manrope_700Bold',
@@ -1369,6 +1405,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 8,
+    minHeight: 32,
   },
   stopAdhanText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1383,10 +1420,12 @@ const styles = StyleSheet.create({
   },
   prayerInfo: {
     flex: 1,
+    minWidth: 0,
   },
   prayerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
   },
   prayerName: {
@@ -1402,14 +1441,17 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 6,
     marginLeft: 4,
+    minHeight: 20,
   },
   timeBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    paddingVertical: 2,
   },
   prayerPillsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 6,
     marginTop: 8,
   },
@@ -1461,16 +1503,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
+    minHeight: 18,
   },
   reciterBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     textTransform: 'uppercase',
+    paddingVertical: 2,
   },
   reciterArabic: {
     fontFamily: 'Amiri_700Bold',
     fontSize: 14,
     marginTop: 2,
+    paddingVertical: 2,
   },
   chevronWrap: {
     flexDirection: 'row',
@@ -1531,7 +1576,6 @@ const styles = StyleSheet.create({
   testCardDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
-    lineHeight: 16,
   },
   sectionInner: {
     padding: 14,
@@ -1609,27 +1653,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   goalProgressLabel: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    paddingVertical: 2,
   },
   goalProgressValue: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 15,
     marginTop: 2,
+    paddingVertical: 2,
   },
   goalStatusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
     borderWidth: 1,
+    minHeight: 24,
   },
   goalStatusText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
   progressBarTrack: {
     height: 6,
@@ -1645,6 +1695,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginTop: 4,
+    flexWrap: 'wrap',
   },
   markGoalBtn: {
     flex: 1,
@@ -1653,12 +1704,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     paddingVertical: 8,
+    paddingHorizontal: 8,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 36,
   },
   markGoalText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    paddingVertical: 2,
   },
   readNowBtn: {
     flexDirection: 'row',
@@ -1667,10 +1721,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 14,
+    minHeight: 36,
   },
   readNowText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    paddingVertical: 2,
   },
   infoCard: {
     marginTop: 20,

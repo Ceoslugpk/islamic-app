@@ -2,17 +2,16 @@ import React, { useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, fontRoles } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, Chip, PrimaryButton } from '../components/ui';
-import { fontRoles } from '../theme/tokens';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -201,7 +200,7 @@ export default function UmrahGuideScreen({
   backLabel?: string;
 }) {
   const { t } = useTranslation();
-  const { tokens, mode } = useThemeTokens();
+  const { tokens } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const isCompact = width < 380;
@@ -263,20 +262,21 @@ export default function UmrahGuideScreen({
           <View style={styles.overviewHeader}>
             <View style={[styles.badge, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
               <Ionicons name="sparkles" size={13} color={tokens.goldText} />
-              <Text style={[styles.badgeText, { color: tokens.goldText }]}>{t('The 4 Pillars of Umrah')}</Text>
+              <AppText variant="eyebrow" highlight style={styles.badgeText}>{t('The 4 Pillars of Umrah')}</AppText>
             </View>
           </View>
-          <Text style={[styles.overviewTitle, { color: tokens.text }]}>
+          <AppText variant="title" style={styles.overviewTitle}>
             {t('A Journey of Spiritual Rebirth')}
-          </Text>
-          <Text style={[styles.overviewDesc, { color: tokens.muted }]}>
+          </AppText>
+          <AppText variant="body" tone="faint" style={styles.overviewDesc}>
             {t('The Prophet ﷺ said: "From one Umrah to another is an expiation for whatever sins come between them, and an accepted Hajj brings no less a reward than Paradise." (Sahih al-Bukhari)')}
-          </Text>
+          </AppText>
         </PremiumCard>
 
         {/* Step by Step Cards */}
-        {UMRAH_STEPS.map((step) => {
+        {UMRAH_STEPS.map((step, si) => {
           const isHighlighted = step.id === activeStepId;
+          const isLastStep = si === UMRAH_STEPS.length - 1;
           return (
             <PremiumCard
               key={step.id}
@@ -285,6 +285,7 @@ export default function UmrahGuideScreen({
                 isHighlighted && {
                   borderColor: tokens.gold,
                 },
+                !onOpenDuas && isLastStep && { marginBottom: 0 },
               ]}
               padded
             >
@@ -299,22 +300,22 @@ export default function UmrahGuideScreen({
                     },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.stepNumText,
-                      { color: isHighlighted ? tokens.onGold : tokens.goldText },
-                    ]}
+                  <AppText
+                    variant="numeral"
+                    tone={isHighlighted ? 'onGold' : undefined}
+                    highlight={!isHighlighted}
+                    style={styles.stepNumText}
                   >
                     {step.stepNumber}
-                  </Text>
+                  </AppText>
                 </View>
                 <View style={styles.stepTitleCol}>
-                  <Text style={[styles.stageName, { color: tokens.goldText }]}>
+                  <AppText variant="eyebrow" highlight style={styles.stageName}>
                     {t(step.stageName).toUpperCase()}
-                  </Text>
-                  <Text style={[styles.stepTitle, { color: tokens.text }]}>
+                  </AppText>
+                  <AppText variant="sectionTitle" style={styles.stepTitle}>
                     {t(step.title)}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
@@ -324,9 +325,9 @@ export default function UmrahGuideScreen({
                 </ArabicText>
               </View>
 
-              <Text style={[styles.stepDescription, { color: tokens.muted }]}>
+              <AppText variant="body" tone="faint" style={styles.stepDescription}>
                 {step.description}
-              </Text>
+              </AppText>
 
               {/* Location Pill */}
               <View
@@ -339,32 +340,32 @@ export default function UmrahGuideScreen({
                 ]}
               >
                 <Ionicons name="location-outline" size={14} color={tokens.goldText} />
-                <Text style={[styles.locationText, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.locationText}>
                   {t(step.location)}
-                </Text>
+                </AppText>
               </View>
 
               <Hairline style={{ marginVertical: 14 }} />
 
               {/* Actions list */}
-              <Text style={[styles.subSectionTitle, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.subSectionTitle}>
                 {t('Prescribed Actions')}
-              </Text>
+              </AppText>
               {step.keyActions.map((action, idx) => (
                 <View key={idx} style={styles.actionRow}>
                   <Ionicons name="checkmark-circle-outline" size={16} color={tokens.success} style={{ marginTop: 2 }} />
-                  <Text style={[styles.actionText, { color: tokens.muted }]}>
+                  <AppText variant="body" tone="faint" style={styles.actionText}>
                     {action}
-                  </Text>
+                  </AppText>
                 </View>
               ))}
 
               {/* Duas Section */}
               {step.duas && step.duas.length > 0 && (
                 <View style={styles.duasBlock}>
-                  <Text style={[styles.subSectionTitle, { color: tokens.text, marginTop: 12 }]}>
+                  <AppText variant="sectionTitle" style={[styles.subSectionTitle, { marginTop: 12 }]}>
                     {t("Key Supplications (Ad'iyah)")}
-                  </Text>
+                  </AppText>
                   {step.duas.map((dua, di) => (
                     <View
                       key={di}
@@ -376,21 +377,21 @@ export default function UmrahGuideScreen({
                         },
                       ]}
                     >
-                      <Text style={[styles.duaTitle, { color: tokens.goldText }]}>
+                      <AppText variant="rowTitle" highlight style={styles.duaTitle}>
                         {dua.title}
-                      </Text>
+                      </AppText>
                       <ArabicText style={[styles.duaArabic, { color: tokens.text }]}>
                         {dua.arabic}
                       </ArabicText>
-                      <Text style={[styles.duaTranslit, { color: tokens.muted }]}>
+                      <AppText variant="subtitle" tone="faint" style={styles.duaTranslit}>
                         {dua.transliteration}
-                      </Text>
-                      <Text style={[styles.duaTrans, { color: tokens.muted }]}>
+                      </AppText>
+                      <AppText variant="body" tone="faint" style={styles.duaTrans}>
                         &quot;{dua.translation}&quot;
-                      </Text>
-                      <Text style={[styles.duaRef, { color: tokens.muted }]}>
+                      </AppText>
+                      <AppText variant="caption" tone="faint" style={styles.duaRef}>
                         {t('Source')}: {dua.reference}
-                      </Text>
+                      </AppText>
                     </View>
                   ))}
                 </View>
@@ -409,14 +410,14 @@ export default function UmrahGuideScreen({
                 >
                   <View style={styles.warningHeader}>
                     <Ionicons name="information-circle" size={16} color={tokens.goldText} />
-                    <Text style={[styles.warningTitle, { color: tokens.goldText }]}>
+                    <AppText variant="rowTitle" highlight style={styles.warningTitle}>
                       {t('Important Notes & Cautions')}
-                    </Text>
+                    </AppText>
                   </View>
                   {step.criticalNotes.map((note, ni) => (
-                    <Text key={ni} style={[styles.warningText, { color: tokens.muted }]}>
+                    <AppText key={ni} variant="body" tone="faint" style={styles.warningText}>
                       • {note}
-                    </Text>
+                    </AppText>
                   ))}
                 </View>
               )}
@@ -428,13 +429,13 @@ export default function UmrahGuideScreen({
         {onOpenDuas && (
           <PremiumCard style={styles.duaRedirectCard} padded>
             <View style={styles.duaRedirectRow}>
-              <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={[styles.duaBannerTitle, { color: tokens.text }]}>
+              <View style={styles.duaRedirectTextCol}>
+                <AppText variant="sectionTitle" style={styles.duaBannerTitle}>
                   {t('Hajj & Umrah Duas Library')}
-                </Text>
-                <Text style={[styles.duaBannerSub, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.duaBannerSub}>
                   {t('Browse full authentic supplications with Arabic, transliteration and audio.')}
-                </Text>
+                </AppText>
               </View>
               <PrimaryButton
                 title={t('Open Duas')}
@@ -450,7 +451,7 @@ export default function UmrahGuideScreen({
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 14 },
+  content: {},
   pillsContainer: {
     flexDirection: 'row',
     gap: 8,
@@ -472,6 +473,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
+    flexShrink: 0,
   },
   badgeText: {
     fontFamily: fontRoles.uiBold,
@@ -486,7 +488,6 @@ const styles = StyleSheet.create({
   overviewDesc: {
     fontFamily: fontRoles.ui,
     fontSize: 13,
-    lineHeight: 19,
   },
   stepCard: {
     marginBottom: 16,
@@ -503,6 +504,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   stepNumText: {
     fontFamily: fontRoles.uiBold,
@@ -510,6 +512,7 @@ const styles = StyleSheet.create({
   },
   stepTitleCol: {
     flex: 1,
+    minWidth: 0,
   },
   stageName: {
     fontFamily: fontRoles.eyebrow,
@@ -533,7 +536,6 @@ const styles = StyleSheet.create({
   stepDescription: {
     fontFamily: fontRoles.ui,
     fontSize: 13.5,
-    lineHeight: 20,
     marginTop: 4,
   },
   locationRow: {
@@ -545,10 +547,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     marginTop: 10,
+    maxWidth: '100%',
   },
   locationText: {
     fontFamily: fontRoles.ui,
     fontSize: 12,
+    flexShrink: 1,
   },
   subSectionTitle: {
     fontFamily: fontRoles.eyebrow,
@@ -559,14 +563,15 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: 10,
     marginBottom: 8,
   },
   actionText: {
     flex: 1,
+    minWidth: 0,
     fontFamily: fontRoles.ui,
     fontSize: 13,
-    lineHeight: 19,
   },
   duasBlock: {
     marginTop: 8,
@@ -585,20 +590,17 @@ const styles = StyleSheet.create({
   duaArabic: {
     fontFamily: fontRoles.arabic,
     fontSize: 18,
-    lineHeight: 28,
     marginVertical: 4,
   },
   duaTranslit: {
     fontFamily: fontRoles.ui,
     fontSize: 12,
     fontStyle: 'italic',
-    lineHeight: 18,
     marginBottom: 4,
   },
   duaTrans: {
     fontFamily: fontRoles.ui,
     fontSize: 12,
-    lineHeight: 18,
     marginBottom: 4,
   },
   duaRef: {
@@ -614,26 +616,34 @@ const styles = StyleSheet.create({
   warningHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 6,
     marginBottom: 6,
   },
   warningTitle: {
     fontFamily: fontRoles.uiBold,
     fontSize: 12,
+    flexShrink: 1,
   },
   warningText: {
     fontFamily: fontRoles.ui,
     fontSize: 12.5,
-    lineHeight: 18,
     marginBottom: 4,
   },
   duaRedirectCard: {
-    marginBottom: 24,
+    marginBottom: 0,
   },
   duaRedirectRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
+  },
+  duaRedirectTextCol: {
+    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
+    paddingRight: 8,
   },
   duaBannerTitle: {
     fontFamily: fontRoles.title,
@@ -643,6 +653,5 @@ const styles = StyleSheet.create({
     fontFamily: fontRoles.ui,
     fontSize: 12,
     marginTop: 2,
-    lineHeight: 17,
   },
 });

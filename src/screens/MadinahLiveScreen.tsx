@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Platform,
@@ -15,6 +14,7 @@ import { getPillShadow } from '../lib/homeThemeTokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
+import { AppText } from '../components/ui/AppText';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { LiveVideoPlayer } from '../components/LiveVideoPlayer';
@@ -59,41 +59,41 @@ export default function MadinahLiveScreen({
         />
       }
     >
-      <View style={styles.contentWrap}>
-        <DetailScreen.ScrollView
-          key={reloadKey}
-          contentContainerStyle={[
-            styles.content,
-            { paddingHorizontal: paddingH },
-          ]}
-          style={{ flex: 1 }}
-        >
+      <DetailScreen.ScrollView
+        key={reloadKey}
+        contentContainerStyle={[
+          styles.content,
+          { paddingHorizontal: paddingH },
+        ]}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.contentWrap}>
           {/* Virtues of the Prophet's Mosque */}
           <PremiumCard style={{ marginBottom: 14 }}>
-            <Text style={[styles.cardLead, { color: tokens.goldText }]}>{t('CITY OF THE MESSENGER ﷺ')}</Text>
-            <Text style={[styles.cardTitle, { color: tokens.text }]}>
+            <AppText variant="eyebrow" highlight style={styles.cardLead}>{t('CITY OF THE MESSENGER ﷺ')}</AppText>
+            <AppText variant="sectionTitle" style={styles.cardTitle}>
               {t('Virtues of Al-Masjid an-Nabawi')}
-            </Text>
+            </AppText>
             <ArabicText style={[styles.hadithArabic, { color: tokens.muted }]}>
               صَلَاةٌ فِي مَسْجِدِي هَذَا أَفْضَلُ مِنْ أَلْفِ صَلَاةٍ فِيمَا سِوَاهُ إِلَّا الْمَسْجِدَ الْحَرَامَ
             </ArabicText>
-            <Text style={[styles.hadithTranslation, { color: tokens.muted }]}>
+            <AppText variant="body" style={styles.hadithTranslation}>
               {t('The Messenger of Allah ﷺ said: "One prayer in this mosque of mine is better than one thousand prayers elsewhere, except the Sacred Mosque in Makkah."')}
-            </Text>
-            <Text style={[styles.hadithRef, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="caption" tone="faint" style={styles.hadithRef}>
               {t('Sahih al-Bukhari 1190 · Sahih Muslim 1394')}
-            </Text>
+            </AppText>
           </PremiumCard>
 
           {/* Live Badge Bar */}
           <View style={styles.statusBar}>
             <View style={[styles.liveIndicator, { backgroundColor: tokens.danger + '20' }]}>
               <View style={[styles.liveDot, { backgroundColor: tokens.danger }]} />
-              <Text style={[styles.liveText, { color: tokens.danger }]}>{t('LIVE STREAM')}</Text>
+              <AppText variant="caption" tone="danger" style={styles.liveText}>{t('LIVE STREAM')}</AppText>
             </View>
-            <Text style={[styles.channelTag, { color: tokens.muted }]}>
+            <AppText variant="caption" tone="faint" style={styles.channelTag}>
               {t('قناة السنة النبوية · Saudi Sunnah TV')}
-            </Text>
+            </AppText>
           </View>
 
           {/* Video Container: Mini Live Player (HLS native / YouTube embed web / fallback) */}
@@ -115,9 +115,9 @@ export default function MadinahLiveScreen({
                 accessibilityLabel={t('Reload Stream')}
               >
                 <Ionicons name="refresh" size={14} color={tokens.goldText} />
-                <Text style={[styles.controlBtnText, { color: tokens.text }]}>
+                <AppText variant="rowTitle" style={styles.controlBtnText}>
                   {t('Reload Stream')}
-                </Text>
+                </AppText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -127,52 +127,52 @@ export default function MadinahLiveScreen({
                 accessibilityLabel={t('Open in YouTube')}
               >
                 <Ionicons name="open-outline" size={14} color={tokens.goldText} />
-                <Text style={[styles.controlBtnText, { color: tokens.text }]}>
+                <AppText variant="rowTitle" style={styles.controlBtnText}>
                   {t('Open in YouTube')}
-                </Text>
+                </AppText>
               </TouchableOpacity>
             </View>
           )}
 
           {/* Ar-Rawdah ash-Sharifah */}
           <PremiumCard style={{ marginBottom: 14 }}>
-            <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 8 }]}>
+            <AppText variant="sectionTitle" style={[styles.cardTitle, { marginBottom: 8 }]}>
               {t('Ar-Rawdah ash-Sharifah (الروضة الشريفة)')}
-            </Text>
+            </AppText>
             <ArabicText style={[styles.hadithArabic, { color: tokens.muted }]}>
               مَا بَيْنَ بَيْتِي وَمِنْبَرِي رَوْضَةٌ مِنْ رِيَاضِ الْجَنَّةِ، وَمِنْبَرِي عَلَىٰ حَوْضِي
             </ArabicText>
-            <Text style={[styles.hadithTranslation, { color: tokens.muted }]}>
+            <AppText variant="body" style={styles.hadithTranslation}>
               {t('The Prophet ﷺ said: "Between my house and my pulpit is a garden from the gardens of Paradise, and my pulpit is above my pool (Al-Kawthar)."')}
-            </Text>
-            <Text style={[styles.hadithRef, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="caption" tone="faint" style={styles.hadithRef}>
               {t('Sahih al-Bukhari 1196 · Sahih Muslim 1391')}
-            </Text>
+            </AppText>
 
             <Hairline style={{ marginVertical: 12 }} />
 
-            <Text style={[styles.landmarkDesc, { color: tokens.muted }]}>
+            <AppText variant="subtitle" style={styles.landmarkDesc}>
               {t("The Rawdah is recognized in the mosque by its distinct green carpeting, contrasting with the dark red carpets throughout the rest of the Prophet's Mosque. Pilgrims visit to offer voluntary prayers and make personal supplications in this heavenly sanctuary.")}
-            </Text>
+            </AppText>
           </PremiumCard>
 
           {/* Salawat and Greeting upon the Prophet */}
-          <PremiumCard style={{ marginBottom: 20 }}>
-            <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 6 }]}>
+          <PremiumCard style={{ marginBottom: 0 }}>
+            <AppText variant="sectionTitle" style={[styles.cardTitle, { marginBottom: 6 }]}>
               {t('Salawat & Greeting Upon the Beloved ﷺ')}
-            </Text>
+            </AppText>
             <ArabicText style={[styles.hadithArabic, { color: tokens.text }]}>
               السَّلَامُ عَلَيْكَ يَا رَسُولَ اللَّهِ وَرَحْمَةُ اللَّهِ وَبَرَكَاتُهُ، أَشْهَدُ أَنَّكَ قَدْ بَلَّغْتَ الرِّسَالَةَ، وَأَدَّيْتَ الْأَمَانَةَ، وَنَصَحْتَ الْأُمَّةَ
             </ArabicText>
-            <Text style={[styles.hadithTranslation, { color: tokens.muted }]}>
+            <AppText variant="body" style={styles.hadithTranslation}>
               {t('"Peace be upon you, O Messenger of Allah, and the mercy of Allah and His blessings. I bear witness that you have conveyed the message, fulfilled the trust, and advised the nation faithfully."')}
-            </Text>
-            <Text style={[styles.hadithRef, { color: tokens.muted }]}>
+            </AppText>
+            <AppText variant="caption" tone="faint" style={styles.hadithRef}>
               {t("Sunnah greeting when passing the Prophet's noble chamber")}
-            </Text>
+            </AppText>
           </PremiumCard>
-        </DetailScreen.ScrollView>
-      </View>
+        </View>
+      </DetailScreen.ScrollView>
     </DetailScreen>
   );
 }
@@ -187,14 +187,13 @@ const styles = StyleSheet.create({
     maxWidth: 720,
     alignSelf: 'center',
   },
-  content: {
-    paddingTop: 10,
-  },
+  content: {},
   statusBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
+    gap: 8,
   },
   liveIndicator: {
     flexDirection: 'row',
@@ -202,7 +201,9 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    minHeight: 22,
     borderRadius: 12,
+    flexShrink: 0,
   },
   liveDot: {
     width: 7,
@@ -213,10 +214,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 0.8,
+    paddingVertical: 2,
   },
   channelTag: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11.5,
+    flexShrink: 1,
+    minWidth: 0,
+    paddingVertical: 2,
   },
   playerContainer: {
     width: '100%',
@@ -238,18 +243,21 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
+    minHeight: 36,
     borderRadius: 14,
     borderWidth: 1,
   },
   controlBtnText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
+    paddingVertical: 2,
   },
   cardLead: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 1.2,
     marginBottom: 4,
+    paddingVertical: 2,
   },
   cardTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -257,22 +265,20 @@ const styles = StyleSheet.create({
   },
   hadithArabic: {
     fontSize: 17,
-    lineHeight: 28,
     marginVertical: 8,
   },
   hadithTranslation: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 19,
     marginBottom: 4,
   },
   hadithRef: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11,
+    paddingVertical: 2,
   },
   landmarkDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12.5,
-    lineHeight: 18,
   },
 });

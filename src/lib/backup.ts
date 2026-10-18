@@ -17,6 +17,11 @@
  * text & audio download entries, hadith API caches, preload state, etc.
  */
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SQLite from 'expo-sqlite';
+import * as db from './db';
+import { sanitizeSettings } from './settings';
+import { webKV } from './webStorage';
 
 export const BACKUP_FORMAT_VERSION = 1;
 export const BACKUP_MIME = 'application/json';
@@ -143,8 +148,7 @@ export function filterAllowedStorage(storage: Record<string, string>): Record<st
         // cannot inject arbitrary settings (methodId, locationMode, nested
         // objects) past validation — sanitizeSettings strips unknown keys and
         // clamps every known field to safe values.
-        const sanitized = (require('./settings') as typeof import('./settings'))
-          .sanitizeSettings(parsed);
+        const sanitized = sanitizeSettings(parsed);
         filtered[key] = JSON.stringify(sanitized);
       } catch {
         // reject malformed JSON
@@ -243,17 +247,16 @@ export function formatTableSummary(tableCounts: Record<string, number>): string 
 /* ---------------------------- Native (SQLite) ---------------------------- */
 
 async function exportNativeTables(): Promise<Record<string, unknown[]>> {
-  const SQLite = require('expo-sqlite');
   if (!SQLite?.openDatabaseSync) {
     throw new Error('SQLite database is unavailable on this platform.');
   }
-  const db = SQLite.openDatabaseSync('salah.db');
+  const sqliteDb = SQLite.openDatabaseSync('salah.db');
   const out: Record<string, unknown[]> = {};
 
   // 1. Export real SQLite tables
   for (const table of SQLITE_USER_TABLES) {
     try {
-      out[table] = db.getAllSync(`SELECT * FROM ${table}`);
+      out[table] = sqliteDb.getAllSync(`SELECT * FROM ${table}`);
     } catch {
       // Table may not exist on older installs — skip gracefully.
       out[table] = [];
@@ -263,7 +266,7 @@ async function exportNativeTables(): Promise<Record<string, unknown[]>> {
   // 2. Export virtual user data from quran_cache (bookmarks, notes, etc.)
   for (const { table, cacheKey, isSingleObject } of VIRTUAL_USER_TABLES) {
     try {
-      const row = db.getFirstSync(
+      const row = sqliteDb.getFirstSync(
         'SELECT payload FROM quran_cache WHERE key = ?',
         cacheKey
       ) as { payload: string } | null;
@@ -286,21 +289,20 @@ async function exportNativeTables(): Promise<Record<string, unknown[]>> {
 }
 
 async function importNativeTables(tables: Record<string, unknown[]>): Promise<void> {
-  const SQLite = require('expo-sqlite');
   if (!SQLite?.openDatabaseSync) {
     throw new Error('SQLite database is unavailable on this platform.');
   }
-  const db = SQLite.openDatabaseSync('salah.db');
+  const sqliteDb = SQLite.openDatabaseSync('salah.db');
 
   // Wipe user tables, then re-insert inside a single transaction for atomicity & integrity.
   try {
-    db.withTransactionSync(() => {
+    sqliteDb.withTransactionSync(() => {
       // 1. Wipe real SQLite tables — ONLY those present in the backup (a partial
       //    backup must not silently destroy tables it doesn't cover). M1.
       for (const table of SQLITE_USER_TABLES) {
         if (tables[table] === undefined) continue;
         try {
-          db.execSync(`DELETE FROM ${table}`);
+          sqliteDb.execSync(`DELETE FROM ${table}`);
         } catch (e: any) {
           const msg = String(e?.message || e);
           if (msg.includes('SQLITE_FULL') || msg.includes('full') || msg.includes('disk')) {
@@ -326,9 +328,9 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
             if (cols.length > 64) continue;
             const placeholders = cols.map(() => '?').join(', ');
             const values = cols.map((c) => rowObj[c]);
-            db.runSync(
+            sqliteDb.runSync(
               `INSERT OR REPLACE INTO ${table} (${cols.map((c) => `"${c}"`).join(', ')}) VALUES (${placeholders})`,
-              ...values
+              ...(values as any[])
             );
           } catch (e: any) {
             const msg = String(e?.message || e);
@@ -348,12 +350,12 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
             try {
               if (isSingleObject) {
                 const val = rows[0] ? JSON.stringify(rows[0]) : '{}';
-                db.runSync(
+                sqliteDb.runSync(
                   'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
                   cacheKey, val, Date.now()
                 );
               } else {
-                db.runSync(
+                sqliteDb.runSync(
                   'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
                   cacheKey, JSON.stringify(rows), Date.now()
                 );
@@ -410,17 +412,15 @@ async function importWebStorage(storage: Record<string, string>): Promise<void> 
 }
 
 async function exportNativeStorage(): Promise<Record<string, string>> {
-  const AsyncStorage = require('@react-native-async-storage/async-storage');
-  const keys: string[] = await AsyncStorage.getAllKeys();
+  const keys = await AsyncStorage.getAllKeys();
   const wanted = keys.filter((k: string) => isAllowedStorageKey(k));
-  const entries: [string, string | null][] = await AsyncStorage.multiGet(wanted);
+  const entries = await AsyncStorage.multiGet(wanted);
   const out: Record<string, string> = {};
   for (const [k, v] of entries) if (v !== null) out[k] = v;
   return sanitizeExportStorage(out);
 }
 
 async function importNativeStorage(storage: Record<string, string>): Promise<void> {
-  const AsyncStorage = require('@react-native-async-storage/async-storage');
   const filtered = filterAllowedStorage(storage);
   const entries = Object.entries(filtered);
   if (entries.length > 0) {
@@ -430,7 +430,6 @@ async function importNativeStorage(storage: Record<string, string>): Promise<voi
 
 async function exportWebTables(): Promise<Record<string, unknown[]>> {
   const out: Record<string, unknown[]> = {};
-  const db = require('./db');
 
   // salah_entries
   try {
@@ -456,7 +455,6 @@ async function exportWebTables(): Promise<Record<string, unknown[]>> {
 
   // tasbih_daily
   try {
-    const { webKV } = require('./webStorage');
     const rows = webKV.getAll('tasbih:daily:');
     out['tasbih_daily'] = rows.map((r: { key: string; value: string }) => {
       const parts = r.key.split(':');
@@ -474,7 +472,6 @@ async function exportWebTables(): Promise<Record<string, unknown[]>> {
 
   // plan_entries
   try {
-    const { webKV } = require('./webStorage');
     const rows = webKV.getAll('plan:');
     out['plan_entries'] = rows.map((r: { key: string; value: string }) => {
       const parts = r.key.split(':');
@@ -691,9 +688,6 @@ async function exportWebTables(): Promise<Record<string, unknown[]>> {
 }
 
 async function importWebTables(tables: Record<string, unknown[]>): Promise<void> {
-  const db = require('./db');
-  const { webKV } = require('./webStorage');
-
   // Wipe existing user keys in webKV
   const userPrefixes = [
     'salah:', 'tasbih:', 'plan:', 'hifz:', 'hadith:saved:', 'hadith:recent:',
@@ -920,12 +914,12 @@ async function importWebTables(tables: Record<string, unknown[]>): Promise<void>
 
   // Restore audio_queue
   if (tables['audio_queue'] !== undefined && Array.isArray(tables['audio_queue'])) {
-    db.saveAudioQueue(tables['audio_queue']);
+    db.saveAudioQueue(tables['audio_queue'] as any);
   }
 
   // Restore audio_settings
   if (tables['audio_settings'] !== undefined && Array.isArray(tables['audio_settings']) && tables['audio_settings'][0]) {
-    db.saveAudioSettings(tables['audio_settings'][0]);
+    db.saveAudioSettings(tables['audio_settings'][0] as any);
   }
 }
 

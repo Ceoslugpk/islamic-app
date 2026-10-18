@@ -1,0 +1,199 @@
+ M App.tsx
+ M eslint.config.js
+ M package-lock.json
+ M package.json
+ M rules.md
+ M src/components/AdhanReciterModal.tsx
+ M src/components/AnimatedBrandIcons.tsx
+ M src/components/AnimatedPattern.tsx
+ M src/components/AnimatedSplash.tsx
+ M src/components/ArabicText.tsx
+ M src/components/AudioMiniPlayer.tsx
+ M src/components/AudioPlayerModal.tsx
+ M src/components/AyahCard.tsx
+ M src/components/AyahCardRow.tsx
+ M src/components/Card.tsx
+ M src/components/CompactPrayerBar.tsx
+ M src/components/ContinueReadingCard.tsx
+ M src/components/DailyContentRail.tsx
+ M src/components/EmptyState.tsx
+ M src/components/GeometricPattern.tsx
+ M src/components/HadithCard.tsx
+ M src/components/Hairline.tsx
+ M src/components/LanguagePickerModal.tsx
+ M src/components/LiveMiniPlayer.tsx
+ M src/components/LiveVideoPlayer.tsx
+ M src/components/LocationPermissionNote.tsx
+ M src/components/LocationSetupModal.tsx
+ M src/components/NotificationPermissionNote.tsx
+ M src/components/NowPlayingHeroCard.tsx
+ M src/components/OfflineBanner.tsx
+ M src/components/PhaseWash.tsx
+ M src/components/PrayerCountdown.tsx
+ M src/components/PrayerHeroAtmosphere.tsx
+ M src/components/PrayerTimeline.tsx
+ M src/components/QiblaCompass.tsx
+ M src/components/QuickActionsStrip.tsx
+ M src/components/QuranLanguageModal.tsx
+ M src/components/ScreenHeader.tsx
+ M src/components/SectionHeader.tsx
+ M src/components/Skeleton.tsx
+ M src/components/TajweedText.tsx
+ M src/components/WomenConsentModal.tsx
+ M src/components/WomenLockGate.tsx
+ M src/components/WomenPinModal.tsx
+ M src/components/layout/AppHeader.tsx
+ M src/components/layout/DetailScreen.tsx
+ M src/components/layout/FloatingNav.tsx
+ M src/components/layout/HeaderRingButton.tsx
+ M src/components/layout/LayoutAudit.tsx
+ M src/components/layout/ReaderHeader.tsx
+ M src/components/layout/SheetHeader.tsx
+ M src/components/layout/SubHeader.tsx
+ M src/components/layout/TabScreen.tsx
+ M src/components/layout/layout.constants.ts
+ M src/lib/afterPrayerDuas.ts
+ M src/lib/backgroundPreload.ts
+ M src/lib/backup.ts
+ M src/lib/constants.ts
+ M src/lib/fasting.ts
+ M src/lib/fonts.ts
+ M src/lib/globalSearch.ts
+ M src/lib/hijri.ts
+ M src/lib/i18n.ts
+ M src/lib/iconMap.ts
+ M src/lib/islamicEvents.ts
+ M src/lib/onboardingState.ts
+ M src/lib/privacy.ts
+ M src/lib/quran.ts
+ M src/lib/quranAudio.ts
+ M src/lib/quranLanguageState.ts
+ M src/lib/settings.tsx
+ M src/lib/study.ts
+ M src/lib/systemMediaAdapter.ts
+ M src/lib/tafsirLanguageState.ts
+ M src/lib/theme.tsx
+ M src/lib/typography.ts
+ M src/lib/undoToast.tsx
+ M src/lib/useAudioMiniPlayer.ts
+ M src/lib/useAyahOfDay.ts
+ M src/lib/useConnectivity.ts
+ M src/lib/useHadithOfDay.ts
+ M src/lib/useLocation.ts
+ M src/lib/useScrollRestore.ts
+ M src/lib/warmup.ts
+ M src/lib/zakat.ts
+ M src/locales/kk.json
+ M src/screens/BackupRestoreScreen.tsx
+ M src/screens/BookmarksScreen.tsx
+ M src/screens/CalendarScreen.tsx
+ M src/screens/CitiesScreen.tsx
+ M src/screens/DownloadsScreen.tsx
+ M src/screens/DuasScreen.tsx
+ M src/screens/FastingScreen.tsx
+ M src/screens/HadithLibraryScreen.tsx
+ M src/screens/HajjJourneyScreen.tsx
+ M src/screens/HajjLiveScreen.tsx
+ M src/screens/HifzPracticeScreen.tsx
+ M src/screens/HifzScreen.tsx
+ M src/screens/HomeScreen.tsx
+ M src/screens/LegalScreen.tsx
+ M src/screens/LibraryScreen.tsx
+ M src/screens/LocationScreen.tsx
+ M src/screens/MadinahLiveScreen.tsx
+ M src/screens/MakkahLiveScreen.tsx
+ M src/screens/MosqueFinderScreen.tsx
+ M src/screens/NamesScreen.tsx
+ M src/screens/NotesScreen.tsx
+ M src/screens/OnboardingScreen.tsx
+ M src/screens/PrayerGuideScreen.tsx
+ M src/screens/PrayerRemindersScreen.tsx
+ M src/screens/QiblaScreen.tsx
+ M src/screens/QuranAudioScreen.tsx
+ M src/screens/QuranHomeScreen.tsx
+ M src/screens/QuranReaderScreen.tsx
+ M src/screens/QuranScreen.tsx
+ M src/screens/QuranTopicsScreen.tsx
+ M src/screens/RamadanGuideScreen.tsx
+ M src/screens/ReadingPlansScreen.tsx
+ M src/screens/SalahTrackerScreen.tsx
+ M src/screens/SettingsScreen.tsx
+ M src/screens/ShahadaScreen.tsx
+ M src/screens/TafsirScreen.tsx
+ M src/screens/TajweedScreen.tsx
+ M src/screens/TasbihScreen.tsx
+ M src/screens/ToolsScreen.tsx
+ M src/screens/TranslationCompareScreen.tsx
+ M src/screens/UmrahGuideScreen.tsx
+ M src/screens/UmrahResourcesScreen.tsx
+ M src/screens/VocabTrainerScreen.tsx
+ M src/screens/WeeklySummaryScreen.tsx
+ M src/screens/WomenCycleScreen.tsx
+ M src/screens/WomenGuidanceScreen.tsx
+ M src/screens/WomenPurityScreen.tsx
+ M src/screens/WomenQadaScreen.tsx
+ M src/screens/ZakatScreen.tsx
+ M tests/test_animated_brand_and_splash_alignment.mjs
+ M tests/test_continue_reading_page_first.mjs
+ M tests/test_defect_regressions.mjs
+ M tests/test_header_ux.mjs
+ M tests/test_onboarding.mjs
+ M tests/test_reader_mount_safety.mjs
+ M tests/test_reader_tools_menu.mjs
+ M tests/test_urdu_device_defects.mjs
+?? assets/logo-dark.jpg
+?? metro.config.js
+?? proof/
+?? reports/
+?? screenshots/floating_prayer_bar_proof/
+?? screenshots/tools_hub_verification/
+?? screenshots/verification_2026-10-13/
+?? scripts/check-colors.js
+?? scripts/check-spacing.js
+?? src/components/ui/
+?? src/lib/homeThemeTokens.ts
+?? src/navigation/routeToTab.ts
+?? src/theme/
+?? test-results/
+?? tests/header-gap.spec.ts
+?? tests/rework_batch_1_proof.mjs
+?? tests/rework_batch_2_proof.mjs
+?? tests/rework_batch_3a_proof.mjs
+?? tests/rework_batch_3b_proof.mjs
+?? tests/rework_batch_4a_proof.mjs
+?? tests/rework_batch_5a_proof.mjs
+?? tests/rework_batch_5b_proof.mjs
+?? tests/rework_batch_5c_proof.mjs
+?? tests/rework_batch_6a_proof.mjs
+?? tests/rework_batch_6b_proof.mjs
+?? tests/test_browser_reader_compare_proof.mjs
+?? tests/test_floating_dock_viewport.mjs
+?? tests/test_floating_prayer_bar_proof.mjs
+?? tests/test_foundation_layout_contracts.mjs
+?? tests/test_header_floating_nav_verification.mjs
+?? tests/test_hijri_conversion_regression.mjs
+?? tests/test_hub_headers_non_sticky.mjs
+?? tests/test_light_mode_batch_2.mjs
+?? tests/test_light_mode_batch_3.mjs
+?? tests/test_logo_variant_proof.mjs
+?? tests/test_onboarding_6da_proof.mjs
+?? tests/test_onboarding_persistence_and_rtl.mjs
+?? tests/test_quran_home_visual_reference.mjs
+?? tests/test_reader_compare_integration.mjs
+?? tests/test_rework_batch_1_pixel_diff.mjs
+?? tests/test_secondary_theming_batch_1.mjs
+?? tests/test_secondary_theming_batch_2.mjs
+?? tests/test_secondary_theming_batch_2a.mjs
+?? tests/test_secondary_theming_batch_2b.mjs
+?? tests/test_secondary_theming_batch_3a.mjs
+?? tests/test_secondary_theming_batch_3b.mjs
+?? tests/test_secondary_theming_batch_3c.mjs
+?? tests/test_secondary_theming_batch_3d.mjs
+?? tests/test_settings_redesign_contract.mjs
+?? tests/test_splash_theme_alignment_proof.mjs
+?? tests/test_tools_correction.mjs
+?? tests/text-clipping.spec.ts
+?? tests/text-contrast.spec.ts
+94f9073a134af7c2c5a7a2a2ecb8eca50362d7c6
+
+EXIT_CODE=0

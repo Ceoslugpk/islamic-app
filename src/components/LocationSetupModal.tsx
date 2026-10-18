@@ -2,13 +2,13 @@ import React from 'react';
 import {
   Modal,
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ActivityIndicator,
   useWindowDimensions,
   Pressable,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { t } from '../lib/i18n';
@@ -46,6 +46,7 @@ export function LocationSetupModal({
       transparent
       animationType="fade"
       onRequestClose={onDismiss}
+      statusBarTranslucent
     >
       <Pressable style={styles.backdrop} onPress={onDismiss}>
         <Pressable
@@ -84,14 +85,14 @@ export function LocationSetupModal({
           </View>
 
           {/* Title & Concise Education */}
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
+          <AppText variant="title" style={styles.title}>
             {t('Location for prayer times')}
-          </Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
+          </AppText>
+          <AppText variant="body" style={styles.description}>
             Islamic uses your location to calculate accurate prayer times and
             the Qibla direction for where you are. You can use your device
             location, choose a city, or decide later in Settings.
-          </Text>
+          </AppText>
 
           {/* Action Buttons Column */}
           <View style={styles.btnCol}>
@@ -113,7 +114,7 @@ export function LocationSetupModal({
               ) : (
                 <>
                   <Ionicons name="navigate-outline" size={18} color="#ffffff" />
-                  <Text style={styles.primaryBtnText}>{t('Use current location')}</Text>
+                  <AppText variant="rowTitle" tone="onGold" style={styles.primaryBtnText}>{t('Use current location')}</AppText>
                 </>
               )}
             </TouchableOpacity>
@@ -138,11 +139,12 @@ export function LocationSetupModal({
                 size={18}
                 color={colors.textPrimary}
               />
-              <Text
-                style={[styles.secondaryBtnText, { color: colors.textPrimary }]}
+              <AppText
+                variant="rowTitle"
+                style={styles.secondaryBtnText}
               >
                 {t('Choose a city')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
 
             {/* Tertiary: Not now */}
@@ -154,11 +156,12 @@ export function LocationSetupModal({
               accessibilityRole="button"
               accessibilityLabel={t('Dismiss location setup and use default location')}
             >
-              <Text
-                style={[styles.tertiaryBtnText, { color: colors.textSecondary }]}
+              <AppText
+                variant="body"
+                style={styles.tertiaryBtnText}
               >
                 {t('Not now')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
           </View>
         </Pressable>
@@ -191,10 +194,10 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    width: 32,
-    height: 32,
+    top: 10,
+    right: 10,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1,
@@ -237,7 +240,6 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 15,
-    color: '#ffffff',
   },
   secondaryBtn: {
     width: '100%',

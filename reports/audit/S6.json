@@ -1,0 +1,1654 @@
+{
+  "schemaVersion": "S6-accessibility-usability-audit-1",
+  "audit": {
+    "phase": "S6",
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "sourceRef": "94f9073a134af7c2c5a7a2a2ecb8eca50362d7c6",
+    "viewports": [
+      "393x852",
+      "360x800"
+    ],
+    "themes": [
+      "light",
+      "dark"
+    ],
+    "textScale": "130%",
+    "reducedMotion": "reduce",
+    "inventory": "reports/audit/inventory.json",
+    "rules": "rules.md",
+    "scope": "Read-only accessibility and usability audit of all 52 routes and 9 sheets/dialogs across viewports, themes, text scaling, reduced motion, keyboard focus, and modal focus. No source code or git state modified."
+  },
+  "summary": {
+    "routeCount": 52,
+    "sheetDialogCount": 9,
+    "totalEntitiesAudited": 61,
+    "routeResults": {
+      "total": 52,
+      "PASS": 0,
+      "FAIL": 52,
+      "BLOCKED": 0
+    },
+    "sheetResults": {
+      "total": 9,
+      "PASS": 0,
+      "FAIL": 5,
+      "BLOCKED": 4
+    },
+    "overallResults": {
+      "PASS": 0,
+      "FAIL": 57,
+      "BLOCKED": 4
+    },
+    "findingsCount": 12,
+    "severityCounts": {
+      "Critical": 2,
+      "Serious": 5,
+      "Moderate": 3,
+      "Minor": 1,
+      "High": 1
+    }
+  },
+  "flakyVerification": {
+    "runs": 3,
+    "status": "VERIFIED_DETERMINISTIC",
+    "evidence": "reports/audit/evidence/S6/flaky-reruns.json",
+    "details": [
+      {
+        "run": 1,
+        "seriousCriticalViolations": [
+          "aria-required-parent"
+        ],
+        "identical": true
+      },
+      {
+        "run": 2,
+        "seriousCriticalViolations": [
+          "aria-required-parent"
+        ],
+        "identical": true
+      },
+      {
+        "run": 3,
+        "seriousCriticalViolations": [
+          "aria-required-parent"
+        ],
+        "identical": true
+      }
+    ]
+  },
+  "dimensions": {
+    "axe": {
+      "status": "FAIL",
+      "engine": "axe-core 4.10.2 (wcag2a, wcag2aa, wcag21a, wcag21aa)",
+      "summary": "Axe detected 1 critical violation (aria-required-parent) across all 52 routes with FloatingNav. Color contrast violations detected on 25 dark and 26 light routes. Specific routes trigger nested-interactive (quran/hifz, tools/hajj-live), scrollable-region-focusable (6 routes), and missing form labels (tools/zakat)."
+    },
+    "keyboardFocus": {
+      "status": "FAIL",
+      "summary": "Tab navigation reaches FloatingNav tabs and Retry button with visible focus outline (rgb(16, 16, 16) auto 1px). However, primary interactive cards in feed lack tabindex=\"0\", skipping feed navigation via keyboard.",
+      "evidence": "reports/audit/evidence/S6/keyboard-focus-summary.json"
+    },
+    "accessibleNamesRolesStates": {
+      "status": "FAIL",
+      "summary": "25 interactive elements across 15 routes lack accessible names (unlabelled search inputs and textareas). 34 radio options in Settings omit required aria-checked. FloatingNav tabs omit aria-selected.",
+      "evidence": "reports/audit/evidence/S6/routes-393-dark.json"
+    },
+    "targetSize44px": {
+      "status": "FAIL",
+      "summary": "Over 340 interactive elements across routes fail the 44x44px minimum target size requirement. Top bar icon buttons (32x32px), modal close buttons (32x32px), pill chips (32-35px height), retry button (38px height), and search inputs (42px height) fail.",
+      "evidence": "reports/audit/evidence/S6/routes-393-dark.json"
+    },
+    "textScale130": {
+      "status": "FAIL",
+      "summary": "No horizontal overflow detected at 130% text scaling (docEl.scrollWidth === docEl.clientWidth). However, compact header badges and sub-captions in library, quran/home, and quran/reader exhibit text clipping/ellipsis overflow.",
+      "evidence": "reports/audit/evidence/S6/text-scale-audit.json"
+    },
+    "reducedMotion": {
+      "status": "FAIL",
+      "summary": "Browser correctly matches prefers-reduced-motion: reduce, but 0 CSS media rules for reduced motion are bundled in the stylesheets.",
+      "evidence": "reports/audit/evidence/S6/reduced-motion-audit.json"
+    },
+    "screenReaderHeaderOrder": {
+      "status": "FAIL",
+      "summary": "All 52 routes render multiple <h1> section headers without logical nesting (e.g. h2/h3).",
+      "evidence": "reports/audit/evidence/S6/routes-393-dark.json"
+    },
+    "floatingNavSemantics": {
+      "status": "FAIL",
+      "summary": "FloatingNav completely lacks landmark role=\"navigation\", lacks parent role=\"tablist\", and fails to set aria-selected or aria-current on active tab.",
+      "evidence": "reports/audit/evidence/S6/routes-393-dark.json"
+    },
+    "modalFocus": {
+      "status": "PASS_WITH_WARNINGS",
+      "summary": "React Native Web modal implementation correctly provides role=\"dialog\", aria-modal=\"true\", and traps keyboard focus within the dialog. Focus does not escape to background elements. However, inner modal controls contain axe and target size violations.",
+      "evidence": "reports/audit/evidence/S6/modals-audit.json"
+    }
+  },
+  "findings": [
+    {
+      "id": "S6-001",
+      "title": "FloatingNav tabs lack parent role=\"tablist\" causing Critical ARIA violation on all routes",
+      "status": "FAIL",
+      "severity": "Critical",
+      "wcag": "WCAG 2.1 A 1.3.1 Info and Relationships, 4.1.2 Name, Role, Value",
+      "route": "all 52 routes with FloatingNav mounted",
+      "expected": "Any element with role=\"tab\" must be contained within an ancestor element with role=\"tablist\".",
+      "actual": "FloatingNav renders 4 tabs (<div role=\"tab\"> for Home, Quran, Library, Tools) inside a container <div> that lacks role=\"tablist\". Axe flags aria-required-parent as CRITICAL on every crawled route.",
+      "evidence": [
+        "src/components/FloatingNav.tsx:320-370",
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/flaky-reruns.json"
+      ]
+    },
+    {
+      "id": "S6-002",
+      "title": "FloatingNav lacks landmark role=\"navigation\" and active tab state (aria-selected/aria-current)",
+      "status": "FAIL",
+      "severity": "Serious",
+      "wcag": "WCAG 2.1 A 1.3.1 Info and Relationships, 4.1.2 Name, Role, Value",
+      "route": "all 52 routes",
+      "expected": "Navigation bar has landmark role=\"navigation\" and the active tab indicates active state with aria-selected=\"true\" or aria-current=\"page\".",
+      "actual": "The FloatingNav container has no role=\"navigation\" or <nav> tag. The active tab has role=\"tab\" but aria-selected and aria-current are both null/absent.",
+      "evidence": [
+        "src/components/FloatingNav.tsx",
+        "reports/audit/evidence/S6/routes-393-dark.json"
+      ]
+    },
+    {
+      "id": "S6-003",
+      "title": "Color contrast ratio falls below 4.5:1 on 25 dark routes and 26 light routes",
+      "status": "FAIL",
+      "severity": "Serious",
+      "wcag": "WCAG 2.1 AA 1.4.3 Contrast (Minimum)",
+      "route": "25 routes in dark theme, 26 routes in light theme (e.g. quran/audio, quran/tafsir, quran/compare, library/downloads, tools/fasting)",
+      "expected": "Text and images of text must have a contrast ratio of at least 4.5:1 against their background (3:1 for large text).",
+      "actual": "Muted secondary text tokens (such as Arabic surah subtitles, edition identifiers, timestamps, and metadata pills) fail 4.5:1 threshold (measured between 2.1:1 and 3.8:1).",
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json"
+      ]
+    },
+    {
+      "id": "S6-004",
+      "title": "Over 340 interactive touch targets measure below 44x44px minimum target size",
+      "status": "FAIL",
+      "severity": "Serious",
+      "wcag": "WCAG 2.5.5 Target Size (Enhanced), WCAG 2.5.8 Target Size (Minimum)",
+      "route": "all 52 routes (340 cumulative element occurrences)",
+      "expected": "All interactive targets have an effective touch target size of at least 44x44 CSS pixels.",
+      "actual": "Widespread target size failures: Top header icon buttons (Notifications, Settings) measure 32x32px. Modal close buttons measure 32x32px. Pill filter tabs (Tasbih, Umrah, Hajj steps) measure 32-35px in height. Home retry button measures 75x38px. Search input fields measure 42px height.",
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/modal-LocationSetupModal.png"
+      ]
+    },
+    {
+      "id": "S6-005",
+      "title": "Missing required aria-checked on role=\"radio\" and prohibited aria-label in Settings modal",
+      "status": "FAIL",
+      "severity": "Critical",
+      "wcag": "WCAG 2.1 A 4.1.2 Name, Role, Value",
+      "route": "App::Modal (Settings modal)",
+      "expected": "Elements with role=\"radio\" must provide aria-checked=\"true|false\". Generic <div> elements without interactive roles must not have aria-label.",
+      "actual": "In Settings modal, 34 radio options (Theme: System/Dark/Light and Accent color pickers) have role=\"radio\" but omit aria-checked. The backdrop dismissal element <div aria-label=\"Close settings\"> has no role, causing axe aria-prohibited-attr.",
+      "evidence": [
+        "src/screens/SettingsScreen.tsx:1850-1920",
+        "reports/audit/evidence/S6/modals-audit.json",
+        "reports/audit/evidence/S6/modal-AppModal-Settings.png"
+      ]
+    },
+    {
+      "id": "S6-006",
+      "title": "Search inputs and textareas lack accessible labels across 15 routes",
+      "status": "FAIL",
+      "severity": "Serious",
+      "wcag": "WCAG 2.1 A 1.3.1 Info and Relationships, 4.1.2 Name, Role, Value",
+      "route": "15 routes (e.g. quran/home, quran/audio, quran/notes, quran/hifz, quran/surah-list, tools/zakat)",
+      "expected": "All form input elements and textareas must have an accessible name via <label>, aria-label, or aria-labelledby.",
+      "actual": "Text inputs and textareas rely solely on the placeholder attribute with no aria-label or associated <label>. Tools/zakat form inputs trigger axe \"label\" violation.",
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json"
+      ]
+    },
+    {
+      "id": "S6-007",
+      "title": "Flat screen-reader heading structure uses multiple H1s without hierarchical levels",
+      "status": "FAIL",
+      "severity": "Moderate",
+      "wcag": "WCAG 2.1 A 1.3.1 Info and Relationships, WCAG 2.4.6 Headings and Labels",
+      "route": "all 52 routes",
+      "expected": "Page has one primary h1 heading followed by logically nested h2 and h3 subheadings.",
+      "actual": "All 52 routes render multiple <h1> elements for individual section dividers (e.g. \"KNOWLEDGE & COLLECTIONS\", \"GUIDES & EDUCATION\" on Home are both <h1>) with no hierarchy.",
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json"
+      ]
+    },
+    {
+      "id": "S6-008",
+      "title": "Primary interactive feed cards not reachable via keyboard Tab traversal",
+      "status": "FAIL",
+      "severity": "Moderate",
+      "wcag": "WCAG 2.1 A 2.1.1 Keyboard",
+      "route": "Home and hub screens",
+      "expected": "All interactive items (feed cards, action buttons) are navigable using the Tab key.",
+      "actual": "Pressable cards rendered with TouchableOpacity lack explicit tabindex=\"0\" on web. Tabbing skips feed cards and only focuses the Retry button and FloatingNav tabs.",
+      "evidence": [
+        "reports/audit/evidence/S6/keyboard-focus-summary.json"
+      ]
+    },
+    {
+      "id": "S6-009",
+      "title": "Zero compiled prefers-reduced-motion CSS rules in web bundle",
+      "status": "FAIL",
+      "severity": "Moderate",
+      "wcag": "WCAG 2.1 AA 2.3.3 Animation from Interactions",
+      "route": "application root",
+      "expected": "Web bundle includes @media (prefers-reduced-motion: reduce) rules to suppress non-essential animations and transitions.",
+      "actual": "reduced-motion-audit.json confirms prefersReducedMotion matches true in browser, but 0 CSS media rules for reduced motion exist in bundled stylesheets.",
+      "evidence": [
+        "reports/audit/evidence/S6/reduced-motion-audit.json"
+      ]
+    },
+    {
+      "id": "S6-010",
+      "title": "Text scaling at 130% exhibits text clipping in compact header bars",
+      "status": "FAIL",
+      "severity": "Minor",
+      "wcag": "WCAG 2.1 AA 1.4.4 Resize text",
+      "route": "library, quran/home, quran/reader",
+      "expected": "Content and text scale to 130% without clipping, truncation, or horizontal scrollbar emergence.",
+      "actual": "No page horizontal overflow occurs (clientWidth === scrollWidth), but compact header subtitles and pill badges clip text under 130% zoom (1 clipped element in library, quran/home, and quran/reader).",
+      "evidence": [
+        "reports/audit/evidence/S6/text-scale-audit.json",
+        "reports/audit/evidence/S6/textscale-library-130pct.png",
+        "reports/audit/evidence/S6/textscale-quran_reader-130pct.png"
+      ]
+    },
+    {
+      "id": "S6-011",
+      "title": "AdhanReciterModal contains nested interactive elements (buttons inside touchables)",
+      "status": "FAIL",
+      "severity": "Serious",
+      "wcag": "WCAG 2.1 A 4.1.2 Name, Role, Value",
+      "route": "AdhanReciterModal::Modal",
+      "expected": "Interactive controls must not be nested inside other interactive controls.",
+      "actual": "AdhanReciterModal renders audio preview play buttons directly inside touchable reciter selection rows, triggering axe nested-interactive across 10 nodes.",
+      "evidence": [
+        "reports/audit/evidence/S6/modals-audit.json",
+        "reports/audit/evidence/S6/modal-AdhanReciterModal.png"
+      ]
+    },
+    {
+      "id": "S6-012",
+      "title": "Four modals/alerts blocked from runtime audit by platform or session constraints",
+      "status": "BLOCKED",
+      "severity": "High",
+      "wcag": "Audit runtime coverage",
+      "route": "LocationSetupModal::Alert, AudioPlayerModal::Modal, WomenConsentModal::Modal, WomenPinModal::Modal",
+      "expected": "All 9 inventory dialogs can be audited in live browser session.",
+      "actual": "LocationSetupModal::Alert is Android native Alert.alert; AudioPlayerModal requires native expo-av stream; WomenConsentModal is unmounted component superseded by inline consent; WomenPinModal requires local PIN enrollment.",
+      "evidence": [
+        "reports/audit/evidence/S6/modals-audit.json"
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "id": "home",
+      "area": "home",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 1 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 1,
+      "unnamedElementsCount": 0,
+      "headingsCount": 5,
+      "keyboardFocusableCount": 5,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json",
+        "reports/audit/evidence/S6/home-dark-393x852.png"
+      ]
+    },
+    {
+      "id": "library",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 10 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 10,
+      "unnamedElementsCount": 0,
+      "headingsCount": 5,
+      "keyboardFocusableCount": 20,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json",
+        "reports/audit/evidence/S6/library-dark-393x852.png"
+      ]
+    },
+    {
+      "id": "quran/home",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 8 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 8,
+      "unnamedElementsCount": 1,
+      "headingsCount": 5,
+      "keyboardFocusableCount": 38,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json",
+        "reports/audit/evidence/S6/quran_home-dark-393x852.png"
+      ]
+    },
+    {
+      "id": "quran/reader",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-progressbar-name, aria-required-parent; 3 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-progressbar-name",
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 3,
+      "unnamedElementsCount": 0,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 17,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json",
+        "reports/audit/evidence/S6/quran_reader-dark-393x852.png"
+      ]
+    },
+    {
+      "id": "quran/audio",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 22 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 22,
+      "unnamedElementsCount": 1,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 42,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/tafsir",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 14,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/topics",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 19,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/compare",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 2 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 2,
+      "unnamedElementsCount": 0,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 23,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/bookmarks",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 6,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/notes",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 2 interactive targets < 44px; 2 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 2,
+      "unnamedElementsCount": 2,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 8,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/plans",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 9,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/hifz",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast, nested-interactive; 15 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 3,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast",
+        "nested-interactive"
+      ],
+      "targetSizeFailuresCount": 15,
+      "unnamedElementsCount": 1,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 30,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/hifz-practice",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 2 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 2,
+      "unnamedElementsCount": 0,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 10,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "quran/surah-list",
+      "area": "quran",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 34 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 34,
+      "unnamedElementsCount": 1,
+      "headingsCount": 6,
+      "keyboardFocusableCount": 65,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/tasbih",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 9 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 9,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 15,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/names",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 23 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 23,
+      "unnamedElementsCount": 1,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 28,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/names-prophet",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 13 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 13,
+      "unnamedElementsCount": 1,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 18,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/duas",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 30 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 30,
+      "unnamedElementsCount": 1,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 35,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/hadith",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 5 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 5,
+      "unnamedElementsCount": 1,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 27,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/ramadan-guide",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, scrollable-region-focusable",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "scrollable-region-focusable"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 5,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/prayer-guide",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 7 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 7,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 12,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/shahada",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, scrollable-region-focusable",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "scrollable-region-focusable"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 5,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/downloads",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 5 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 5,
+      "unnamedElementsCount": 1,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 11,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/vocab",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 7 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 7,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 16,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/summary",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, scrollable-region-focusable",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "scrollable-region-focusable"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 5,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/tajweed",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 2 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 2,
+      "unnamedElementsCount": 1,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 121,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/umrah-guide",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 5 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 5,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 11,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/hajj-journey",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 5 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 5,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 11,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/women-purity",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-attr, aria-required-parent, color-contrast; 3 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 3,
+      "seriousCriticalViolations": [
+        "aria-required-attr",
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 3,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 15,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "library/women-guidance",
+      "area": "library",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast, scrollable-region-focusable",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 3,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast",
+        "scrollable-region-focusable"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 7,
+      "keyboardFocusableCount": 5,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/tasbih",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 9 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 9,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 15,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json",
+        "reports/audit/evidence/S6/tools_tasbih-dark-393x852.png"
+      ]
+    },
+    {
+      "id": "tools/summary",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, scrollable-region-focusable",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "scrollable-region-focusable"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 5,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json",
+        "reports/audit/evidence/S6/tools_summary-dark-393x852.png"
+      ]
+    },
+    {
+      "id": "tools/qibla",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 2 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 2,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 7,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/tracker",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 6,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/location",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-attr, aria-required-parent; 10 interactive targets < 44px; 3 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-attr",
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 10,
+      "unnamedElementsCount": 3,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 21,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/cities",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 1 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 1,
+      "unnamedElementsCount": 1,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 26,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/notifications",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-attr, aria-required-parent, aria-toggle-field-name; 18 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 3,
+      "seriousCriticalViolations": [
+        "aria-required-attr",
+        "aria-required-parent",
+        "aria-toggle-field-name"
+      ],
+      "targetSizeFailuresCount": 18,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 53,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/prayer-reminders",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-attr, aria-required-parent, aria-toggle-field-name; 18 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 3,
+      "seriousCriticalViolations": [
+        "aria-required-attr",
+        "aria-required-parent",
+        "aria-toggle-field-name"
+      ],
+      "targetSizeFailuresCount": 18,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 53,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/fasting",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 5 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 5,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 11,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/zakat",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast, label; 14 interactive targets < 44px; 8 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 3,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast",
+        "label"
+      ],
+      "targetSizeFailuresCount": 14,
+      "unnamedElementsCount": 8,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 21,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/calendar",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 12 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 12,
+      "unnamedElementsCount": 0,
+      "headingsCount": 9,
+      "keyboardFocusableCount": 34,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/mosque",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 6 interactive targets < 44px; 1 unnamed interactive elements",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 6,
+      "unnamedElementsCount": 1,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 13,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/women-cycle",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 2 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 2,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 9,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/women-purity",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-attr, aria-required-parent, color-contrast; 3 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 3,
+      "seriousCriticalViolations": [
+        "aria-required-attr",
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 3,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 15,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/women-guidance",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast, scrollable-region-focusable",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 3,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast",
+        "scrollable-region-focusable"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 5,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/women-qada",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 0,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 7,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/umrah-guide",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 5 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 5,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 11,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/umrah-resources",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 5 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 5,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 29,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/hajj-journey",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 5 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 5,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 11,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/makkah-live",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, color-contrast; 2 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "color-contrast"
+      ],
+      "targetSizeFailuresCount": 2,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 7,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/madinah-live",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent; 2 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 1,
+      "seriousCriticalViolations": [
+        "aria-required-parent"
+      ],
+      "targetSizeFailuresCount": 2,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 7,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    },
+    {
+      "id": "tools/hajj-live",
+      "area": "tools",
+      "expected": "Zero serious/critical axe violations, all touch targets >= 44x44px, valid accessible names/roles, semantic navigation structure.",
+      "actual": "Axe serious/critical violations: aria-required-parent, nested-interactive; 8 interactive targets < 44px",
+      "status": "FAIL",
+      "severity": "Critical",
+      "axeViolationsCount": 2,
+      "seriousCriticalViolations": [
+        "aria-required-parent",
+        "nested-interactive"
+      ],
+      "targetSizeFailuresCount": 8,
+      "unnamedElementsCount": 0,
+      "headingsCount": 8,
+      "keyboardFocusableCount": 15,
+      "floatingNavPresent": true,
+      "evidence": [
+        "reports/audit/evidence/S6/routes-393-dark.json",
+        "reports/audit/evidence/S6/routes-393-light.json",
+        "reports/audit/evidence/S6/routes-360-dark.json",
+        "reports/audit/evidence/S6/routes-360-light.json"
+      ]
+    }
+  ],
+  "sheetsDialogs": [
+    {
+      "id": "App::Modal",
+      "type": "Modal",
+      "expected": "Settings sheet renders with role=\"dialog\", aria-modal=\"true\", keyboard focus trapped within modal, no axe serious/critical violations.",
+      "actual": "Settings dialog renders with role=\"dialog\" and aria-modal=\"true\". Focus is trapped within modal. Axe detects CRITICAL aria-required-attr (34 radio buttons missing aria-checked) and SERIOUS aria-prohibited-attr (backdrop div with aria-label has no interactive role). Multiple theme radio options measure < 44px height.",
+      "status": "FAIL",
+      "severity": "Critical",
+      "evidence": [
+        "reports/audit/evidence/S6/modals-audit.json",
+        "reports/audit/evidence/S6/modal-AppModal-Settings.png"
+      ]
+    },
+    {
+      "id": "LocationSetupModal::Modal",
+      "type": "Modal",
+      "expected": "Location setup modal provides accessible title, role=\"dialog\", aria-modal=\"true\", minimum 44px close target, and accessible names for all choices.",
+      "actual": "Rendered with aria-modal=\"true\", but fails WCAG: axe reports SERIOUS aria-dialog-name (dialog lacks accessible name) and SERIOUS color-contrast on body copy. Top-right close button bounding box is 32x32px (< 44px target size).",
+      "status": "FAIL",
+      "severity": "Serious",
+      "evidence": [
+        "reports/audit/evidence/S6/modals-audit.json",
+        "reports/audit/evidence/S6/modal-LocationSetupModal.png"
+      ]
+    },
+    {
+      "id": "LocationSetupModal::Alert",
+      "type": "Alert",
+      "expected": "Native Android Alert.alert provides accessible permission rationale prompt on Android.",
+      "actual": "Alert.alert location rationale is an Android-only native dialog. In web runtime, Platform.OS === \"web\" bypasses Alert.alert and resolves true immediately per src/lib/firstLaunchPermissions.ts:51. Runtime evaluation on web target is BLOCKED.",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": [
+        "src/lib/firstLaunchPermissions.ts:50-70",
+        "reports/audit/evidence/S6/modals-audit.json"
+      ]
+    },
+    {
+      "id": "LanguagePickerModal::Modal",
+      "type": "Modal",
+      "expected": "Language picker dialog renders with role=\"dialog\", aria-modal=\"true\", accessible title, search input label, and 44px row targets.",
+      "actual": "Language picker dialog mounts with role=\"dialog\" and aria-modal=\"true\". Title \"APP LANGUAGE (6)\" is announced. Search input lacks explicit <label> (relies on placeholder). Axe flags color contrast on sub-captions.",
+      "status": "FAIL",
+      "severity": "Serious",
+      "evidence": [
+        "reports/audit/evidence/S6/modals-audit.json",
+        "reports/audit/evidence/S6/modal-LanguagePickerModal.png"
+      ]
+    },
+    {
+      "id": "QuranLanguageModal::Modal",
+      "type": "Modal",
+      "expected": "Quran language/translation picker renders with role=\"dialog\", aria-modal=\"true\", valid ARIA attributes, and 44px targets.",
+      "actual": "Quran language dialog mounts with role=\"dialog\" and aria-modal=\"true\". Axe flags CRITICAL aria-allowed-attr, SERIOUS aria-dialog-name, and inherits Settings radio aria-required-attr (missing aria-checked). Search input lacks label.",
+      "status": "FAIL",
+      "severity": "Critical",
+      "evidence": [
+        "reports/audit/evidence/S6/modals-audit.json",
+        "reports/audit/evidence/S6/modal-QuranLanguageModal.png"
+      ]
+    },
+    {
+      "id": "AdhanReciterModal::Modal",
+      "type": "Modal",
+      "expected": "Adhan reciter picker dialog renders with role=\"dialog\", aria-modal=\"true\", and no nested interactive elements.",
+      "actual": "Adhan reciter dialog mounts with role=\"dialog\" and aria-modal=\"true\". Axe flags SERIOUS nested-interactive on 10 reciter row buttons (nested pressables/audio previews inside touchable container), plus SERIOUS aria-dialog-name.",
+      "status": "FAIL",
+      "severity": "Serious",
+      "evidence": [
+        "reports/audit/evidence/S6/modals-audit.json",
+        "reports/audit/evidence/S6/modal-AdhanReciterModal.png"
+      ]
+    },
+    {
+      "id": "AudioPlayerModal::Modal",
+      "type": "Modal",
+      "expected": "Full-screen audio player modal opens from MiniPlayer or QuranAudio screen with playback controls >= 44px and valid accessible labels.",
+      "actual": "AudioPlayerModal is conditioned on active audio playback (playback !== null) and user tap on MiniPlayer in App.tsx:1384. In headless web runtime without native audio device, expo-av playback fails to initialize, blocking modal invocation.",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": [
+        "App.tsx:756-758,1384-1399",
+        "reports/audit/evidence/S6/modals-audit.json"
+      ]
+    },
+    {
+      "id": "WomenConsentModal::Modal",
+      "type": "Modal",
+      "expected": "Women consent dialog renders as accessible modal when women worship features are enabled.",
+      "actual": "Component exists in src/components/WomenConsentModal.tsx, but SettingsScreen uses an inline consent block (styles.inlineConsent, SettingsScreen.tsx:1696) to prevent web modal stacking bugs. Standalone modal is never invoked in active app navigation.",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": [
+        "src/components/WomenConsentModal.tsx",
+        "src/screens/SettingsScreen.tsx:1696-1705",
+        "reports/audit/evidence/S6/modals-audit.json"
+      ]
+    },
+    {
+      "id": "WomenPinModal::Modal",
+      "type": "Modal",
+      "expected": "PIN setup and verification modal opens with numeric pad, role=\"dialog\", and focus trap.",
+      "actual": "PIN modal trigger requires biometric or PIN security enrollment in SettingsScreen.tsx:1780. In automated unauthenticated web audit session, local security enrollment is not established, blocking PIN modal invocation.",
+      "status": "BLOCKED",
+      "severity": "High",
+      "evidence": [
+        "src/components/WomenPinModal.tsx",
+        "src/screens/SettingsScreen.tsx:1780-1808",
+        "reports/audit/evidence/S6/modals-audit.json"
+      ]
+    }
+  ]
+}

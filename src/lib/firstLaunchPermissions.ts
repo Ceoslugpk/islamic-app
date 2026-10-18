@@ -79,29 +79,52 @@ export function explainLocation(): void {
   // no-op: replaced by non-blocking promptLocationRationale()
 }
 
+// In-memory session dismissal flag to guarantee dismissal is honored immediately
+// and persistently across subsequent route changes within the session, even if
+// AsyncStorage read/write fails or is delayed.
+let sessionLocationSetupDismissed = false;
+
+/** Synchronous check for session dismissal of location setup. */
+export function hasDismissedLocationSetupSync(): boolean {
+  return sessionLocationSetupDismissed;
+}
+
 /** Check if location setup was previously dismissed or completed by user. */
 export async function hasDismissedLocationSetup(): Promise<boolean> {
+  if (sessionLocationSetupDismissed) {
+    return true;
+  }
   try {
-    const raw = await AsyncStorage.getItem(LOCATION_SETUP_DISMISSED_KEY);
-    return raw === 'true';
-  } catch {
+    const storage = (AsyncStorage as any)?.default || AsyncStorage;
+    const raw = await storage.getItem(LOCATION_SETUP_DISMISSED_KEY);
+    if (raw === 'true') {
+      sessionLocationSetupDismissed = true;
+      return true;
+    }
     return false;
+  } catch {
+    // If persistent storage read fails, honour the in-memory session dismissal flag
+    return sessionLocationSetupDismissed;
   }
 }
 
 /** Record that location setup has been dismissed or completed. */
 export async function markLocationSetupDismissed(): Promise<void> {
+  sessionLocationSetupDismissed = true;
   try {
-    await AsyncStorage.setItem(LOCATION_SETUP_DISMISSED_KEY, 'true');
+    const storage = (AsyncStorage as any)?.default || AsyncStorage;
+    await storage.setItem(LOCATION_SETUP_DISMISSED_KEY, 'true');
   } catch {
-    // non-fatal write error
+    // non-fatal write error; sessionLocationSetupDismissed remains true in memory
   }
 }
 
 /** Reset location setup marker (for testing or debugging). */
 export async function resetLocationSetupDismissed(): Promise<void> {
+  sessionLocationSetupDismissed = false;
   try {
-    await AsyncStorage.removeItem(LOCATION_SETUP_DISMISSED_KEY);
+    const storage = (AsyncStorage as any)?.default || AsyncStorage;
+    await storage.removeItem(LOCATION_SETUP_DISMISSED_KEY);
   } catch {
     // non-fatal
   }

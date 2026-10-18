@@ -1,11 +1,11 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { useTheme } from '../lib/theme';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
 import { t } from '../lib/i18n';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
 import { Hairline } from './Hairline';
 import { AyahOfDay } from '../lib/useAyahOfDay';
+import { AppText } from './ui/AppText';
 
 interface AyahCardProps {
   ayah: AyahOfDay;
@@ -14,12 +14,10 @@ interface AyahCardProps {
 }
 
 export function AyahCard({ ayah, onRefresh }: AyahCardProps) {
-  const { colors } = useTheme();
-
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>{t('Ayah of the Day')}</Text>
+        <AppText variant="eyebrow" style={styles.eyebrow}>{t('Ayah of the Day')}</AppText>
         {onRefresh && (
           <TouchableOpacity
             onPress={onRefresh}
@@ -28,7 +26,7 @@ export function AyahCard({ ayah, onRefresh }: AyahCardProps) {
             accessibilityLabel={t('Refresh Ayah of the Day')}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.refreshText, { color: colors.accent }]}>{t('Refresh')}</Text>
+            <AppText variant="link" style={styles.refreshText}>{t('Refresh')}</AppText>
           </TouchableOpacity>
         )}
       </View>
@@ -40,10 +38,10 @@ export function AyahCard({ ayah, onRefresh }: AyahCardProps) {
       </ArabicText>
 
       <View style={styles.translationWrap}>
-        <Text style={[styles.translation, { color: colors.textSecondary }]}>{ayah.translation}</Text>
+        <AppText variant="body" style={styles.translation}>{ayah.translation}</AppText>
       </View>
 
-      <Text style={[styles.source, { color: colors.textSecondary }]}>{ayah.reference}</Text>
+      <AppText variant="caption" style={styles.source}>{ayah.reference}</AppText>
     </Card>
   );
 }

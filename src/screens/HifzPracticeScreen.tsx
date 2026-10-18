@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { getPillShadow } from '../lib/homeThemeTokens';
@@ -103,12 +103,12 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={tokens.gold} size="large" />
-            <Text style={[styles.hint, { color: tokens.muted }]}>{t('Loading surah text...')}</Text>
+            <AppText variant="caption" tone="faint" style={styles.hint}>{t('Loading surah text...')}</AppText>
           </View>
         ) : error ? (
           <View style={styles.center}>
             <Ionicons name="cloud-offline-outline" size={40} color={tokens.muted} />
-            <Text style={[styles.errorText, { color: tokens.muted }]}>{error}</Text>
+            <AppText variant="body" tone="faint" style={styles.errorText}>{error}</AppText>
             <TouchableOpacity
               style={[styles.primaryBtn, getPillShadow(mode), { backgroundColor: tokens.gold, borderColor: tokens.goldBorder }]}
               onPress={() => {
@@ -121,7 +121,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
               }}
               accessibilityRole="button"
             >
-              <Text style={[styles.primaryBtnText, { color: tokens.onGold }]}>{t('Retry')}</Text>
+              <AppText variant="rowTitle" tone="onGold" style={styles.primaryBtnText}>{t('Retry')}</AppText>
             </TouchableOpacity>
           </View>
         ) : (
@@ -141,12 +141,12 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
               borderRadius={16}
             >
               <View style={styles.progressRow}>
-                <Text style={[styles.progressText, { color: tokens.text }]}>
+                <AppText variant="caption" style={styles.progressText}>
                   {t('Ayah')} {index + 1} {t('of')} {ayahs.length}
-                </Text>
-                <Text style={[styles.progressText, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.progressText}>
                   {peekedCount} {t('peeked')}
-                </Text>
+                </AppText>
               </View>
               <View style={[styles.progressTrack, { backgroundColor: tokens.trackColor }]}>
                 <View
@@ -165,9 +165,9 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
                 padded
                 borderRadius={20}
               >
-                <Text style={[styles.ayahNum, { color: tokens.goldText }]}>
+                <AppText variant="eyebrow" highlight style={styles.ayahNum}>
                   {surahNumber}:{current.numberInSurah}
-                </Text>
+                </AppText>
 
                 {revealed ? (
                   <ArabicText size={24} align="right" style={[styles.ayahArabic, { color: tokens.text }]}>
@@ -175,19 +175,19 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
                   </ArabicText>
                 ) : (
                   <View style={styles.hiddenBox}>
-                    <Text style={[styles.hiddenDots, { color: tokens.muted }]}>
+                    <AppText variant="title" tone="faint" style={styles.hiddenDots}>
                       • • • • • • • • •
-                    </Text>
-                    <Text style={[styles.hiddenHint, { color: tokens.muted }]}>
+                    </AppText>
+                    <AppText variant="caption" tone="faint" style={styles.hiddenHint}>
                       {t('Recite from memory, then peek to check.')}
-                    </Text>
+                    </AppText>
                   </View>
                 )}
 
                 {revealed && current.translation ? (
-                  <Text style={[styles.ayahTrans, { color: tokens.muted }]}>
+                  <AppText variant="body" tone="faint" style={styles.ayahTrans}>
                     {current.translation}
-                  </Text>
+                  </AppText>
                 ) : null}
 
                 {!revealed && (
@@ -202,7 +202,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
                     accessibilityLabel={t('Reveal this ayah')}
                   >
                     <Ionicons name="eye-outline" size={16} color={tokens.onGold} />
-                    <Text style={[styles.peekBtnText, { color: tokens.onGold }]}>{t('Peek')}</Text>
+                    <AppText variant="rowTitle" tone="onGold" style={styles.peekBtnText}>{t('Peek')}</AppText>
                   </TouchableOpacity>
                 )}
               </PremiumCard>
@@ -243,9 +243,9 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
                   accessibilityRole="button"
                   accessibilityLabel={revealed ? t('Next ayah') : t('Reveal this ayah')}
                 >
-                  <Text style={[styles.ctrlPrimaryText, { color: tokens.onGold }]}>
+                  <AppText variant="rowTitle" tone="onGold" style={styles.ctrlPrimaryText}>
                     {revealed ? t('Next Ayah') : t('Peek')}
-                  </Text>
+                  </AppText>
                   <Ionicons
                     name={revealed ? 'chevron-forward' : 'eye-outline'}
                     size={18}
@@ -289,7 +289,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
                 accessibilityLabel={t('Restart practice from the beginning')}
               >
                 <Ionicons name="refresh-outline" size={15} color={tokens.muted} />
-                <Text style={[styles.restartText, { color: tokens.muted }]}>{t('Restart')}</Text>
+                <AppText variant="caption" tone="faint" style={styles.restartText}>{t('Restart')}</AppText>
               </TouchableOpacity>
             </PremiumCard>
           </DetailScreen.ScrollView>
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
   },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30, gap: 12 },
   hint: { fontFamily: 'Manrope_400Regular', fontSize: 13 },
-  errorText: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  errorText: { fontFamily: 'Manrope_400Regular', fontSize: 13, textAlign: 'center' },
   primaryBtn: { paddingHorizontal: 22, minHeight: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   primaryBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
   content: { paddingTop: 10, paddingBottom: 40 },
@@ -318,12 +318,12 @@ const styles = StyleSheet.create({
   progressText: { fontFamily: 'Manrope_500Medium', fontSize: 12 },
   progressTrack: { height: 4, borderRadius: 2, overflow: 'hidden' },
   progressFill: { height: 4, borderRadius: 2 },
-  ayahCard: { marginBottom: 14 },
+  ayahCard: { marginBottom: 14, minHeight: 140 },
   controlsCard: { marginBottom: 20 },
   ayahNum: { fontFamily: 'Manrope_600SemiBold', fontSize: 12, letterSpacing: 0.4, marginBottom: 12 },
-  ayahArabic: { marginBottom: 12 },
-  ayahTrans: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19 },
-  hiddenBox: { alignItems: 'center', paddingVertical: 24 },
+  ayahArabic: { marginBottom: 12, paddingVertical: 4 },
+  ayahTrans: { fontFamily: 'Manrope_400Regular', fontSize: 13 },
+  hiddenBox: { alignItems: 'center', paddingVertical: 24, minHeight: 80 },
   hiddenDots: { fontSize: 26, letterSpacing: 8, marginBottom: 10 },
   hiddenHint: { fontFamily: 'Manrope_400Regular', fontSize: 12, textAlign: 'center' },
   peekBtn: {
@@ -331,30 +331,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    paddingHorizontal: 20,
     minHeight: 42,
     borderRadius: 21,
     marginTop: 10,
   },
   peekBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
-  controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14 },
+  controlsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 14 },
   ctrlBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    minWidth: 92,
+    minWidth: 84,
+    flexShrink: 1,
     minHeight: 46,
     borderRadius: 23,
     borderWidth: cardTokens.borderWidth,
     paddingHorizontal: 16,
   },
   ctrlPrimary: { borderWidth: cardTokens.borderWidth },
-  ctrlPrimaryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 15 },
+  ctrlPrimaryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 15, flexShrink: 1 },
   restartBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
+    paddingHorizontal: 16,
     minHeight: 40,
     borderRadius: 20,
     borderWidth: cardTokens.borderWidth,

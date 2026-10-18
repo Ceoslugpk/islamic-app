@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Location } from './prayerTimes';
 import { AccentKey, ACCENT_KEYS, DEFAULT_ACCENT } from './accents';
@@ -599,25 +599,28 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     settingsRef.current = settings;
   }, [settings]);
 
-  function enqueueWrite(
-    nextClean: AppSettings,
-    verify?: StoredValueVerifier<AppSettings>,
-  ): Promise<AppSettings> {
-    return writeSettings(nextClean, verify)
-      .then((persisted) => {
-        lastPersistedRef.current = persisted;
-        return persisted;
-      })
-      .catch((err) => {
-        if (settingsRef.current === nextClean) {
-          const rollback = lastPersistedRef.current;
-          settingsRef.current = rollback;
-          preloadRequestedMem = rollback.quranPreloadRequested;
-          setSettings(rollback);
-        }
-        throw err;
-      });
-  }
+  const enqueueWrite = useCallback(
+    (
+      nextClean: AppSettings,
+      verify?: StoredValueVerifier<AppSettings>,
+    ): Promise<AppSettings> => {
+      return writeSettings(nextClean, verify)
+        .then((persisted) => {
+          lastPersistedRef.current = persisted;
+          return persisted;
+        })
+        .catch((err) => {
+          if (settingsRef.current === nextClean) {
+            const rollback = lastPersistedRef.current;
+            settingsRef.current = rollback;
+            preloadRequestedMem = rollback.quranPreloadRequested;
+            setSettings(rollback);
+          }
+          throw err;
+        });
+    },
+    [writeSettings],
+  );
 
   useEffect(() => {
     (async () => {
@@ -725,7 +728,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setReady(true);
       }
     })();
-  }, []);
+  }, [enqueueWrite]);
 
   function updateSettings(update: (current: AppSettings) => AppSettings): AppSettings {
     const clean = sanitizeSettings(update(settingsRef.current));

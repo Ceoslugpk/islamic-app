@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   FlatList,
-  I18nManager,
   Modal,
   StyleSheet,
-  Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
   View,
@@ -16,6 +14,7 @@ import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Hairline } from './Hairline';
 import { isRTL, t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 import {
   ADHAN_RECITERS,
   AdhanReciter,
@@ -103,11 +102,11 @@ export function AdhanReciterModal({
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
             <View style={styles.headerTitles}>
-              <Text style={[styles.eyebrow, { color: colors.accent }]}>{t('PRAYER CALL')}</Text>
-              <Text style={[styles.title, { color: colors.textPrimary }]}>{t('Adhan Reciters')}</Text>
-              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              <AppText variant="eyebrow" style={styles.eyebrow}>{t('PRAYER CALL')}</AppText>
+              <AppText variant="headerTitle" style={styles.title}>{t('Adhan Reciters')}</AppText>
+              <AppText variant="subtitle" style={styles.subtitle}>
                 {t('Choose who calls the prayer')}
-              </Text>
+              </AppText>
             </View>
             <TouchableOpacity
               style={[styles.closeBtn, { backgroundColor: colors.bgBase }]}
@@ -123,9 +122,9 @@ export function AdhanReciterModal({
           {/* Notice Card */}
           <View style={[styles.infoBanner, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
             <Ionicons name="volume-medium-outline" size={18} color={colors.accent} />
-            <Text style={[styles.infoBannerText, { color: colors.textSecondary }]}>
+            <AppText variant="body" style={styles.infoBannerText}>
               Preview adhans with the play button. The chosen reciter will sound when prayer time arrives in-app.
-            </Text>
+            </AppText>
           </View>
 
           {/* Reciters List */}
@@ -143,7 +142,7 @@ export function AdhanReciterModal({
               const isLoadingThis = loadingId === item.id;
 
               return (
-                <TouchableOpacity
+                <View
                   style={[
                     styles.reciterRow,
                     {
@@ -151,13 +150,10 @@ export function AdhanReciterModal({
                       borderColor: isSelected ? colors.accent : 'transparent',
                     },
                   ]}
-                  onPress={() => handleSelect(item)}
-                  activeOpacity={0.75}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${item.name}, ${item.location}. ${isSelected ? 'Selected' : 'Tap to select'}`}
                 >
                   {/* Play / Preview Button */}
                   <TouchableOpacity
+                    testID="adhan-reciter-preview-btn"
                     style={[
                       styles.previewBtn,
                       {
@@ -169,6 +165,7 @@ export function AdhanReciterModal({
                     activeOpacity={0.75}
                     accessibilityRole="button"
                     accessibilityLabel={isPlayingThis ? `Stop ${item.name}` : `Preview ${item.name}`}
+                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                   >
                     {isLoadingThis ? (
                       <ActivityIndicator size="small" color={colors.accent} />
@@ -181,57 +178,66 @@ export function AdhanReciterModal({
                     )}
                   </TouchableOpacity>
 
-                  {/* Reciter Details */}
-                  <View style={styles.textWrap}>
-                    <View style={styles.titleRow}>
-                      <Text
-                        style={[
-                          styles.nameText,
-                          { color: isSelected ? colors.accent : colors.textPrimary },
-                        ]}
-                      >
-                        {item.name}
-                      </Text>
-                      <View
-                        style={[
-                          styles.badge,
-                          { backgroundColor: isSelected ? colors.accent : colors.bgBase },
-                        ]}
-                      >
-                        <Text
+                  {/* Reciter Details & Selection Button */}
+                  <TouchableOpacity
+                    testID="adhan-reciter-select-btn"
+                    style={styles.reciterSelectTouch}
+                    onPress={() => handleSelect(item)}
+                    activeOpacity={0.75}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${item.name}, ${item.location}. ${isSelected ? 'Selected' : 'Tap to select'}`}
+                  >
+                    <View style={styles.textWrap}>
+                      <View style={styles.titleRow}>
+                        <AppText
+                          variant="rowTitle"
+                          highlight={isSelected}
+                          style={styles.nameText}
+                        >
+                          {item.name}
+                        </AppText>
+                        <View
                           style={[
-                            styles.badgeText,
-                            { color: isSelected ? colors.onAccent : colors.textMuted },
+                            styles.badge,
+                            { backgroundColor: isSelected ? colors.accent : colors.bgBase },
                           ]}
                         >
-                          {item.location}
-                        </Text>
+                          <AppText
+                            variant="caption"
+                            tone={isSelected ? 'onGold' : undefined}
+                            style={styles.badgeText}
+                          >
+                            {item.location}
+                          </AppText>
+                        </View>
                       </View>
+
+                      <AppText
+                        variant="caption"
+                        highlight
+                        style={styles.arabicText}
+                      >
+                        {item.arabicName}
+                      </AppText>
+
+                      <AppText
+                        variant={isSelected ? 'body' : 'caption'}
+                        style={styles.descText}
+                      >
+                        {item.description}
+                      </AppText>
                     </View>
 
-                    <Text style={[styles.arabicText, { color: colors.accent }]}>
-                      {item.arabicName}
-                    </Text>
-
-                    <Text
-                      style={[
-                        styles.descText,
-                        { color: isSelected ? colors.textPrimary : colors.textSecondary },
-                      ]}
-                    >
-                      {item.description}
-                    </Text>
-                  </View>
-
-                  {/* Selected Checkmark Indicator */}
-                  <View style={styles.rightAction}>
-                    {isSelected ? (
-                      <Ionicons name="checkmark-circle" size={24} color={colors.accent} />
-                    ) : (
-                      <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textMuted} />
-                    )}
-                  </View>
-                </TouchableOpacity>
+                    {/* Selected Checkmark Indicator */}
+                    <View style={styles.rightAction}>
+                      {isSelected ? (
+                        <Ionicons name="checkmark-circle" size={24} color={colors.accent} />
+                      ) : (
+                        <Ionicons name={isRTL() ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textMuted} />
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                </View>
               );
             }}
           />
@@ -348,13 +354,20 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   previewBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginEnd: 12,
+  },
+  reciterSelectTouch: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 44,
   },
   textWrap: {
     flex: 1,

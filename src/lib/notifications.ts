@@ -306,6 +306,9 @@ export async function clearStoredFingerprint(): Promise<void> {
 }
 
 export async function getScheduledNotificationsHealth(): Promise<{ today: number; tomorrow: number }> {
+  if (!isNotificationSchedulingSupported()) {
+    return { today: 0, tomorrow: 0 };
+  }
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const now = new Date();
@@ -754,6 +757,7 @@ export async function schedulePrayerNotifications(
  * notifications from older builds) is cancelled.
  */
 export async function cancelPrayerNotifications() {
+  if (!isNotificationSchedulingSupported()) return;
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     for (const n of scheduled) {
@@ -826,6 +830,7 @@ export async function scheduleQuranReminder(
  * Cancel only the daily Quran reminder.
  */
 export async function cancelQuranReminder() {
+  if (!isNotificationSchedulingSupported()) return;
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     for (const n of scheduled) {
@@ -861,7 +866,9 @@ export function isValidNotificationUrl(url: unknown): boolean {
 
 /** Notification response listener setup - call once at app startup. */
 export function setupNotificationResponseHandler() {
-  Notifications.addNotificationResponseReceivedListener((response) => {
+  if (!isNotificationSchedulingSupported()) return;
+  try {
+    Notifications.addNotificationResponseReceivedListener((response) => {
     const { actionIdentifier, notification } = response;
     const data = notification.request.content.data as
       | { url?: string; prayer?: string; date?: string; type?: string }
@@ -959,6 +966,9 @@ export function setupNotificationResponseHandler() {
       return;
     }
   });
+  } catch {
+    // ignore
+  }
 }
 
 /** Stop Adhan helper for UI and background handlers */
@@ -967,22 +977,28 @@ export async function stopAdhanPlayback(): Promise<void> {
 }
 
 /** Snooze prayer reminder for N minutes (default 10) */
-export async function snoozePrayer(prayerName?: string, minutes = 10): Promise<void> {
+export async function snoozePrayer(prayerName?: string, minutes = 10): Promise<boolean> {
   await stopAdhan();
-  const name = prayerName || 'Prayer';
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: `🕌 ${name} (Snoozed ${minutes}m)`,
-      body: `Reminder for ${name} prayer.`,
-      data: { prayer: name, type: 'prayer-snooze', url: buildDeepLink({ type: 'tracker' }) },
-      categoryIdentifier: 'prayer',
-      sound: 'default',
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: minutes * 60,
-    },
-  });
+  if (!isNotificationSchedulingSupported()) return false;
+  try {
+    const name = prayerName || 'Prayer';
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `🕌 ${name} (Snoozed ${minutes}m)`,
+        body: `Reminder for ${name} prayer.`,
+        data: { prayer: name, type: 'prayer-snooze', url: buildDeepLink({ type: 'tracker' }) },
+        categoryIdentifier: 'prayer',
+        sound: 'default',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: minutes * 60,
+      },
+    });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Send immediate test prayer alert (sound & vibration test per channel) */
@@ -994,21 +1010,25 @@ export async function sendTestPrayerNotification(
   const permission = await checkNotificationPermission();
   if (permission !== 'granted') return null;
   await configureNotifications();
-  return await Notifications.scheduleNotificationAsync({
-    content: {
-      title: `🕌 Test: ${prayerName} Prayer Alert`,
-      body: `This is a test notification for ${prayerName} to verify sound, vibration & action buttons.`,
-      data: { prayer: prayerName, type: 'prayer-at', url: buildDeepLink({ type: 'tracker' }) },
-      categoryIdentifier: 'prayer-at',
-      sound: channelId === 'prayer-times-silent' || channelId === 'prayer-times-vibrate-only' ? undefined : 'default',
-      vibrate: channelId === 'prayer-times-silent' || channelId === 'prayer-times-sound-only' ? undefined : [0, 250, 250, 250],
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 1,
-      channelId: Platform.OS === 'android' ? channelId : undefined,
-    },
-  });
+  try {
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `🕌 Test: ${prayerName} Prayer Alert`,
+        body: `This is a test notification for ${prayerName} to verify sound, vibration & action buttons.`,
+        data: { prayer: prayerName, type: 'prayer-at', url: buildDeepLink({ type: 'tracker' }) },
+        categoryIdentifier: 'prayer-at',
+        sound: channelId === 'prayer-times-silent' || channelId === 'prayer-times-vibrate-only' ? undefined : 'default',
+        vibrate: channelId === 'prayer-times-silent' || channelId === 'prayer-times-sound-only' ? undefined : [0, 250, 250, 250],
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 1,
+        channelId: Platform.OS === 'android' ? channelId : undefined,
+      },
+    });
+  } catch {
+    return null;
+  }
 }
 
 /** Send immediate test pre-prayer countdown alert */
@@ -1020,21 +1040,25 @@ export async function sendTestPrePrayerNotification(
   const permission = await checkNotificationPermission();
   if (permission !== 'granted') return null;
   await configureNotifications();
-  return await Notifications.scheduleNotificationAsync({
-    content: {
-      title: `🕌 Test: ${prayerName} in ${offsetMinutes} minutes`,
-      body: 'Upcoming prayer notice to prepare for Salah.',
-      data: { prayer: prayerName, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
-      categoryIdentifier: 'prayer-before',
-      sound: 'default',
-      vibrate: [0, 250, 250, 250],
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 1,
-      channelId: Platform.OS === 'android' ? 'prayer-times-adhan' : undefined,
-    },
-  });
+  try {
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `🕌 Test: ${prayerName} in ${offsetMinutes} minutes`,
+        body: 'Upcoming prayer notice to prepare for Salah.',
+        data: { prayer: prayerName, type: 'prayer-before', url: buildDeepLink({ type: 'tracker' }) },
+        categoryIdentifier: 'prayer-before',
+        sound: 'default',
+        vibrate: [0, 250, 250, 250],
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 1,
+        channelId: Platform.OS === 'android' ? 'prayer-times-adhan' : undefined,
+      },
+    });
+  } catch {
+    return null;
+  }
 }
 
 /** Send immediate test Quran reading reminder */
@@ -1043,32 +1067,36 @@ export async function sendTestQuranNotification(): Promise<string | null> {
   const permission = await checkNotificationPermission();
   if (permission !== 'granted') return null;
   await configureNotifications();
-  const { getContinueReadingPosition } = await import('./continuing');
-  const { SURAHS_114 } = await import('./surahs114');
-  const position = await getContinueReadingPosition();
-  const surah = position ? SURAHS_114.find((s) => s.number === position.surah) : undefined;
-  const body =
-    position && surah
-      ? `You stopped at ${surah.englishName} ${position.surah}:${position.ayah}.`
-      : 'Open the Quran and keep your daily reading habit alive.';
-  const data: Record<string, unknown> = { type: 'quran-reminder' };
-  if (position) {
-    data.url = buildDeepLink({ type: 'quran', surah: position.surah, ayah: position.ayah });
+  try {
+    const { getContinueReadingPosition } = await import('./continuing');
+    const { SURAHS_114 } = await import('./surahs114');
+    const position = await getContinueReadingPosition();
+    const surah = position ? SURAHS_114.find((s) => s.number === position.surah) : undefined;
+    const body =
+      position && surah
+        ? `You stopped at ${surah.englishName} ${position.surah}:${position.ayah}.`
+        : 'Open the Quran and keep your daily reading habit alive.';
+    const data: Record<string, unknown> = { type: 'quran-reminder' };
+    if (position) {
+      data.url = buildDeepLink({ type: 'quran', surah: position.surah, ayah: position.ayah });
+    }
+    return await Notifications.scheduleNotificationAsync({
+      content: {
+        title: '📖 Test: Quran Reading Reminder',
+        body,
+        data,
+        categoryIdentifier: 'quran',
+        sound: 'default',
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 1,
+        channelId: Platform.OS === 'android' ? 'quran-reminders' : undefined,
+      },
+    });
+  } catch {
+    return null;
   }
-  return await Notifications.scheduleNotificationAsync({
-    content: {
-      title: '📖 Test: Quran Reading Reminder',
-      body,
-      data,
-      categoryIdentifier: 'quran',
-      sound: 'default',
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: 1,
-      channelId: Platform.OS === 'android' ? 'quran-reminders' : undefined,
-    },
-  });
 }
 
 /** Request notification permission with platform options. */

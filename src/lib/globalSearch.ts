@@ -1,8 +1,8 @@
-import { SURAHS_114, SurahSummary } from './surahs114';
-import { HADITHS, Hadith } from './hadith';
-import { DUAS_DATA, DuaItem } from './duas';
-import { NAMES_99, Name99 } from './names99';
-import { TOPICS, Topic } from './topics';
+import { SURAHS_114 } from './surahs114';
+import { HADITHS } from './hadith';
+import { DUAS_DATA } from './duas';
+import { NAMES_99 } from './names99';
+import { TOPICS } from './topics';
 
 export type SearchCategory = 'quran' | 'hadith' | 'duas' | 'names' | 'topics';
 

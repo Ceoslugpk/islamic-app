@@ -1,0 +1,90 @@
+root agent idle; waiting up to 30m0s for 1 background task(s)
+I have initiated the S12 visual regression and consistency audit crawl in headless Playwright. It is currently executing the matrix of 52 routes and reachable sheets across viewports (`393x852`, `360x800`) and themes (light/dark), recording DOM metrics and taking full screen captures into `reports/audit/evidence/S12/`. I will proceed as soon as the crawl finishes.
+### S12 Visual Regression & Consistency Audit Completed
+
+The read-only **S12** visual-regression and consistency audit has completed against target `http://15.235.203.134:9998` (`FIX_MODE=false`), auditing all **52 inventory routes** and **9 sheets/dialogs** from [`inventory.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/inventory.json) across both **viewports** (`393x852` and `360x800`) and **themes** (`paper` / light and `ink` / dark).
+
+All evidence and screen captures have been generated under [`reports/audit/evidence/S12/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S12/) and compiled into the authoritative report [`reports/audit/S12.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S12.json). No source, package, test, or git files were modified.
+
+---
+
+### Audit Summary
+
+| Total Checks | PASS | FAIL | BLOCKED | FLAKY | SKIPPED |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **73** | **61** | **1** | **11** | **0** | **0** |
+
+- **Global Visual & Layout Dimension Checks:** 11 rows (9 PASS, 1 FAIL, 1 BLOCKED)
+- **Sheets / Dialogs:** 10 rows (4 PASS, 0 FAIL, 6 BLOCKED)
+- **Inventory Routes:** 52 rows (48 PASS, 0 FAIL, 4 BLOCKED)
+
+#### Severity Breakdown
+- **Critical:** 0
+- **High:** 0
+- **Medium:** 4 (Privacy session lock on women's worship routes)
+- **Low:** 1 (Touch target minHeight on offline Retry button)
+- **Info:** 68 (Passing verifications & documented BLOCKED conditions)
+
+---
+
+### Key Visual Consistency Findings
+
+1. **Floating Navigation Dock (`layout.constants.ts` Conformance - PASS):**
+   - Exact geometry confirmed across all 208 route captures:
+     - **393x852 Viewport:** `w=365px`, `h=54.5px`, `x=14px`, `bottom=14px`, `borderRadius=27px`.
+     - **360x800 Viewport:** `w=332px`, `h=54.5px`, `x=14px`, `bottom=14px`, `borderRadius=27px`.
+   - The dock floats with `NAV_SIDE_MARGIN = 14px`, `NAV_BOTTOM = 14px`, and `NAV_HEIGHT = 54.5px` consistently in both light and dark themes.
+
+2. **Header Frames & Types (PASS):**
+   - `AppHeader` maintains `HEADER_ROW_HEIGHT = 32px` at top 2px.
+   - `SubHeader` and `ScreenHeader` maintain `SUBHEADER_HEIGHT = 54px` aligned with safeTop.
+   - `SheetHeader` maintains `SHEET_HEADER_HEIGHT = 54px` on sheets and full modals (`SettingsModal`).
+   - Non-sticky layout configuration confirmed on hub screens.
+
+3. **Card Radii & Surface Elevation (PASS):**
+   - Standard cards strictly exhibit `cardTokens.borderRadius = 14px` (outer) and 13px (inner) with 0.75px gold border. Hero cards utilize 16–18px proportional radii.
+   - Drop shadows conform to theme tokens:
+     - Dark (`ink`): `boxShadow: 0 6px 20px rgba(0,0,0,0.60), 0 2px 6px rgba(0,0,0,0.40)`.
+     - Light (`paper`): `boxShadow: 0 4px 14px rgba(40,35,24,0.12), 0 1px 3px rgba(40,35,24,0.06)`.
+
+4. **Horizontal Scroll & Layout Spill (PASS):**
+   - `hasDocHorizontalScroll = false` across all 208 route captures and both viewports.
+   - `scrollWidth == clientWidth` (393px and 360px), verifying zero unintended horizontal overflow.
+
+5. **Typography & Assets (PASS):**
+   - 0 broken image elements detected (`brokenImageCount = 0`).
+   - 0 unicode replacement characters / tofu glyphs (`\uFFFD`) in visible text.
+   - Correct font family cascading (Lora / Amiri / Noto Naskh Arabic for headers and Arabic verses; Poppins / Manrope for UI controls).
+
+6. **Button & Touch Target Finding (FAIL - Severity: Low):**
+   - The offline prayer times error banner `Retry` button on `HomeScreen` renders with `height = 38px`, which falls below the 44px WCAG 2.1 AA (2.5.5 / 2.5.8) minimum touch target guideline (`PrimaryButton` and other buttons satisfy `minHeight >= 44px`).
+
+7. **Baseline Commit Comparison (BLOCKED per Specification):**
+   - No `BASELINE_COMMIT` was supplied in the execution context; baseline pixel diff regression comparison is recorded as `BLOCKED` (not pass).
+
+8. **Reachable Sheets & First-Launch / API Blockers:**
+   - **Captured Sheets (PASS):** `OnboardingScreen`, `LocationSetupModal::Modal`, `LanguagePickerModal::Modal`, `App::Modal` (`SettingsModal`).
+   - **Privacy Gated Routes (BLOCKED):** `library/women-purity`, `library/women-guidance`, `tools/women-purity`, `tools/women-guidance` are protected behind session privacy locking (`womenUnlocked=false`); content is withheld from the unauthenticated DOM.
+   - **Hardware/Sensor/Streaming Sheets (BLOCKED):** `LocationSetupModal::Alert` (native alert), `QuranLanguageModal::Modal`, `AdhanReciterModal::Modal`, `AudioPlayerModal::Modal`, `WomenConsentModal::Modal`, and `WomenPinModal::Modal` require user interaction/biometric enrollment/streaming channels not triggerable in headless audit.
+
+---
+
+### Screenshot Reconciliation
+
+Evidence reconciliation confirmed 100% parity across captured files:
+- **Expected Files:** 224
+- **Captured on Disk:** 224
+- **Missing Files:** 0
+- **Extra Files:** 0
+- **File Sizes:** Non-empty valid PNGs ranging from 16.37 KB to 145.03 KB.
+
+---
+
+### Generated Evidence Artifacts
+
+- Report: [`reports/audit/S12.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S12.json)
+- Reconciliation Ledger: [`reports/audit/evidence/S12/reconciliation.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S12/reconciliation.json)
+- Raw Crawl & DOM Metrics: [`reports/audit/evidence/S12/visual_audit_raw.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S12/visual_audit_raw.json)
+- Aggregated Consistency Metrics: [`reports/audit/evidence/S12/consistency_metrics.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S12/consistency_metrics.json)
+- First-Launch Verification: [`reports/audit/evidence/S12/first_launch_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S12/first_launch_audit.json)
+- 224 Captured PNG Screenshots: [`reports/audit/evidence/S12/screenshots/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S12/screenshots/)

@@ -1,20 +1,16 @@
 import React from 'react';
 import {
   View,
-  Text,
   Image,
-  TouchableOpacity,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../lib/theme';
+import { useTheme, getAppLogoSource } from '../../lib/theme';
 import { HOME_THEME_TOKENS } from '../../lib/homeThemeTokens';
 import { isRTL, t } from '../../lib/i18n';
+import { AppText } from '../ui/AppText';
 import {
   HEADER_ROW_HEIGHT,
-  HEADER_FADE,
   HEADER_ROW_TOP,
   HEADER_BOTTOM,
 } from './layout.constants';
@@ -24,12 +20,16 @@ export interface AppHeaderProps {
   onOpenSettings: () => void;
   onOpenNotifications?: () => void;
   hasNotificationBadge?: boolean;
+  testID?: string;
+  transparent?: boolean;
 }
 
 export function AppHeader({
   onOpenSettings,
   onOpenNotifications,
   hasNotificationBadge,
+  testID,
+  transparent = false,
 }: AppHeaderProps) {
   const { mode } = useTheme();
   const tokens = HOME_THEME_TOKENS[mode];
@@ -48,48 +48,56 @@ export function AppHeader({
         {
           height: containerHeight,
           paddingTop: rowTop,
-          backgroundColor: tokens.bgTop,
+          backgroundColor: transparent ? 'transparent' : tokens.bgTop,
+          elevation: transparent ? 0 : 4,
         },
       ]}
-      testID="app-header-container"
+      testID="app-header"
+      {...(testID && testID !== 'app-header' && testID !== 'app-header-container' ? { testID } : {})}
     >
-      {/* Background: Solid tokens.bgTop to HEADER_BOTTOM */}
+      {/* Background: Solid tokens.bgTop to HEADER_BOTTOM if not transparent */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none" testID="app-header-bg">
-        <View style={{ height: headerBottom, backgroundColor: tokens.bgTop }} />
+        <View style={{ height: headerBottom, backgroundColor: transparent ? 'transparent' : tokens.bgTop }} />
       </View>
 
-      {/* Row: height 32, paddingStart 26, paddingEnd 19, centered */}
-      <View
-        style={[
-          styles.row,
-          {
-            paddingStart: 26,
-            paddingEnd: 19,
-            flexDirection: rtl ? 'row-reverse' : 'row',
-          },
-        ]}
-        testID="app-header-row"
-      >
+      <View style={[styles.headerContainer, { backgroundColor: transparent ? 'transparent' : tokens.bgTop }]} testID="app-header-container">
+        {/* Row: height 32, paddingStart 26, paddingEnd 19, centered */}
+        <View
+          style={[
+            styles.row,
+            {
+              paddingStart: 26,
+              paddingEnd: 19,
+              flexDirection: rtl ? 'row-reverse' : 'row',
+            },
+          ]}
+          testID="app-header-row"
+        >
         {/* Brand: Logo (24x24 radius 6.5) + gap 6 + ISLAMIC wordmark */}
         <View
           style={[styles.brand, { flexDirection: rtl ? 'row-reverse' : 'row' }]}
           testID="app-header-brand"
         >
           <View
-            style={[styles.logoWrap, { backgroundColor: HOME_THEME_TOKENS.paper.accent }]}
+            style={[
+              styles.logoWrap,
+              {
+                backgroundColor: mode === 'paper' ? HOME_THEME_TOKENS.paper.accent : 'transparent',
+              },
+            ]}
             testID="app-header-logo"
           >
             <Image
-              source={require('../../../assets/icon.png')}
+              source={getAppLogoSource(mode)}
               style={styles.logoImg}
               resizeMode="cover"
             />
           </View>
-          <Text
+          <AppText
+            variant="rowTitle"
             style={[
               styles.wordmark,
               {
-                color: tokens.text,
                 fontFamily: rtl ? 'Amiri_700Bold' : 'Poppins_500Medium',
                 letterSpacing: rtl ? 0 : 3,
               },
@@ -98,7 +106,7 @@ export function AppHeader({
             testID="app-header-wordmark"
           >
             {rtl ? 'اسلامک' : 'ISLAMIC'}
-          </Text>
+          </AppText>
         </View>
 
         {/* Actions: two 32 circular buttons, gap 4, cardTop fill, tokens.cardBorder 0.75 border, 14 gold icons */}
@@ -129,6 +137,7 @@ export function AppHeader({
           />
         </View>
       </View>
+      </View>
     </View>
   );
 }
@@ -137,7 +146,11 @@ const styles = StyleSheet.create({
   container: {
     width: '100%',
     position: 'relative',
-    marginBottom: 8,
+    zIndex: 10,
+    elevation: 4,
+  },
+  headerContainer: {
+    width: '100%',
   },
   row: {
     height: HEADER_ROW_HEIGHT,
@@ -162,7 +175,7 @@ const styles = StyleSheet.create({
   },
   wordmark: {
     fontSize: 11,
-    includeFontPadding: false,
+    paddingVertical: 2,
   },
   actions: {
     alignItems: 'center',

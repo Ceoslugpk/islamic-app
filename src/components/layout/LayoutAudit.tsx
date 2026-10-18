@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import {
   HEADER_BOTTOM,
-  NAV_HEIGHT,
   NAV_BOTTOM,
 } from './layout.constants';
 
@@ -210,10 +209,10 @@ export function computeAuditAssertions(
   const expectedNavBottom = viewportHeight - NAV_BOTTOM(0);
   const sampleNav = records[presentTabs[0]]?.nav;
   if (sampleNav) {
-    const navPassed = Math.abs(sampleNav.bottom - (viewportHeight - 14)) <= 1;
+    const navPassed = Math.abs(sampleNav.bottom - expectedNavBottom) <= 1;
     assertions.push({
       name: 'Nav bottom position',
-      expected: `${viewportHeight - 14}dp`,
+      expected: `${expectedNavBottom}dp`,
       actual: `${sampleNav.bottom}dp`,
       passed: navPassed,
     });

@@ -1,11 +1,9 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Animated,
-  Platform,
   useWindowDimensions,
   StyleProp,
   ViewStyle,
@@ -16,6 +14,7 @@ import { HOME_THEME_TOKENS, getPillShadow } from '../../lib/homeThemeTokens';
 import { getBackIcon, getForwardIcon } from '../../lib/iconMap';
 import { isRTL, t } from '../../lib/i18n';
 import { HEADER_MAX_WIDTH } from '../../lib/headerTokens';
+import { AppText } from '../ui/AppText';
 
 export interface ReaderHeaderProps {
   /** Back navigation callback */
@@ -81,7 +80,7 @@ export function ReaderHeader({
   opacity,
   hidden = false,
   style,
-  testID = 'reader-header',
+  testID,
 }: ReaderHeaderProps) {
   const { colors, mode } = useTheme();
   const tokens = HOME_THEME_TOKENS[mode];
@@ -89,6 +88,7 @@ export function ReaderHeader({
   const isCompact = width < 380;
   const rtl = isRTL();
 
+  const childPrefix = testID ?? 'reader-header';
   const navBarPaddingH = isCompact ? 10 : 16;
   const navBarPaddingV = isCompact ? 8 : 10;
   const backTextSize = isCompact ? 13 : 14;
@@ -102,10 +102,12 @@ export function ReaderHeader({
 
   return (
     <Animated.View
-      testID={testID}
+      testID="reader-header"
+      {...(testID && testID !== 'reader-header' ? { testID } : {})}
       style={[
         styles.navBar,
         {
+          backgroundColor: tokens.bgTop,
           borderBottomColor: tokens.cardBorder,
           paddingHorizontal: navBarPaddingH,
           paddingVertical: navBarPaddingV,
@@ -118,7 +120,7 @@ export function ReaderHeader({
     >
       {/* Back button - fixed left */}
       <TouchableOpacity
-        testID={`${testID}-back-btn`}
+        testID={`${childPrefix}-back-btn`}
         style={[
           styles.backButton,
           {
@@ -133,9 +135,9 @@ export function ReaderHeader({
         activeOpacity={0.7}
       >
         <Ionicons name={getBackIcon('chevron')} size={backIconSize} color={colors.accent} />
-        <Text style={[styles.backText, { color: colors.accent, fontSize: backTextSize }]}>
+        <AppText variant="link" style={[styles.backText, { fontSize: backTextSize }]}>
           {t(backLabel)}
-        </Text>
+        </AppText>
       </TouchableOpacity>
 
       {/* Center: Surah name / Page as centerpiece with prev/next inline */}
@@ -148,12 +150,13 @@ export function ReaderHeader({
         >
           {onPrev ? (
             <TouchableOpacity
-              testID={prevTestID ?? `${testID}-prev-btn`}
+              testID={prevTestID ?? `${childPrefix}-prev-btn`}
               style={[
                 styles.surahNavBtn,
                 { opacity: prevDisabled ? 0.4 : 1 },
                 { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
               ]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               onPress={onPrev}
               disabled={prevDisabled}
               accessibilityRole="button"
@@ -165,12 +168,12 @@ export function ReaderHeader({
           ) : null}
 
           <View style={styles.navTitleColumn}>
-            <Text
-              testID={`${testID}-title`}
+            <AppText
+              variant="headerTitle"
+              testID={`${childPrefix}-title`}
               style={[
                 styles.navSurahTitle,
                 {
-                  color: colors.textPrimary,
                   fontSize: titleFontSizeNav,
                   fontFamily: rtl ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
                 },
@@ -180,32 +183,34 @@ export function ReaderHeader({
               accessibilityRole="header"
             >
               {title}
-            </Text>
+            </AppText>
             {subtitle ? (
-              <Text
-                testID={`${testID}-subtitle`}
+              <AppText
+                variant="subtitle"
+                highlight
+                testID={`${childPrefix}-subtitle`}
                 style={[
                   styles.navPageSubTitle,
                   {
-                    color: colors.accent,
                     fontFamily: 'Manrope_600SemiBold',
                   },
                 ]}
                 numberOfLines={1}
               >
                 {subtitle}
-              </Text>
+              </AppText>
             ) : null}
           </View>
 
           {onNext ? (
             <TouchableOpacity
-              testID={nextTestID ?? `${testID}-next-btn`}
+              testID={nextTestID ?? `${childPrefix}-next-btn`}
               style={[
                 styles.surahNavBtn,
                 { opacity: nextDisabled ? 0.4 : 1 },
                 { minWidth: surahNavBtnSize, minHeight: surahNavBtnSize, padding: 4 },
               ]}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               onPress={onNext}
               disabled={nextDisabled}
               accessibilityRole="button"
@@ -260,6 +265,7 @@ const styles = StyleSheet.create({
     maxWidth: HEADER_MAX_WIDTH,
     alignSelf: 'center',
     zIndex: 10,
+    elevation: 4,
   },
   navBarCompact: {
     paddingVertical: 6,
@@ -271,8 +277,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 4,
-    minHeight: 40,
-    minWidth: 40,
+    minHeight: 44,
+    minWidth: 44,
   },
   backText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -297,6 +303,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 8,
     maxWidth: 200,
+    flexShrink: 1,
   },
   navSurahTitle: {
     textAlign: 'center',

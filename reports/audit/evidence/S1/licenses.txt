@@ -1,0 +1,36 @@
+$ sh -c grep -RniE "Open Source Licen|license" src/screens src/components App.tsx --include="*.ts" --include="*.tsx" | head -200
+src/screens/UmrahGuideScreen.tsx:177:    location: 'Licensed barber shops outside the Haram',
+src/screens/UmrahGuideScreen.tsx:187:      'Use licensed, hygienic barber shops located across the clock tower and hotels surrounding the Haram that use sterilized single-use blades.',
+src/screens/LegalScreen.tsx:19:  | 'licenses'
+src/screens/LegalScreen.tsx:101:  license: string;
+src/screens/LegalScreen.tsx:105:function LibItem({ name, license, desc }: LibItemProps) {
+src/screens/LegalScreen.tsx:111:        <Badge label={license} />
+src/screens/LegalScreen.tsx:168:      case 'licenses':
+src/screens/LegalScreen.tsx:170:          title: 'Open Source Licenses',
+src/screens/LegalScreen.tsx:192:    { id: 'licenses', label: t('Licenses') },
+src/screens/LegalScreen.tsx:507:          {activeScreen === 'licenses' && (
+src/screens/LegalScreen.tsx:518:                  license="MIT"
+src/screens/LegalScreen.tsx:524:                  license="MIT"
+src/screens/LegalScreen.tsx:530:                  license="MIT"
+src/screens/LegalScreen.tsx:538:                  license="MIT"
+src/screens/LegalScreen.tsx:544:                  license="MIT"
+src/screens/LegalScreen.tsx:550:                  license="MIT"
+src/screens/LegalScreen.tsx:556:                  license="MIT"
+src/screens/LegalScreen.tsx:562:                  license="MIT"
+src/screens/LegalScreen.tsx:568:                  license="MIT"
+src/screens/LegalScreen.tsx:574:                  license="MIT"
+src/screens/LegalScreen.tsx:575:                  desc="Ionicons vector iconography package (MIT License)."
+src/screens/LegalScreen.tsx:580:                  license="MIT"
+src/screens/LegalScreen.tsx:586:                  license="MIT"
+src/screens/LegalScreen.tsx:591:              <LegalSection title={t("Open Font Licenses (OFL)")}>
+src/screens/LegalScreen.tsx:594:                  license="OFL 1.1"
+src/screens/LegalScreen.tsx:600:                  license="OFL 1.1"
+src/screens/LegalScreen.tsx:606:                  license="OFL 1.1"
+src/screens/LegalScreen.tsx:612:                  license="OFL 1.1"
+src/screens/LegalScreen.tsx:618:                  license="OFL 1.1"
+src/screens/LegalScreen.tsx:685:                  {t("Each external service operates under its respective terms of service and open data attribution licenses. We are profoundly grateful to every provider for their selfless contribution to Islamic technology. May Allah reward them all abundantly.")}
+src/screens/SettingsScreen.tsx:2016:            title={t("Open Source Licenses")}
+src/screens/SettingsScreen.tsx:2019:              setActiveLegalScreen('licenses');
+src/screens/SettingsScreen.tsx:2069:              setActiveLegalScreen('licenses');
+
+EXIT_CODE=0

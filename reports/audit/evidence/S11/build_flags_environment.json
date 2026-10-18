@@ -1,0 +1,43 @@
+{
+  "sdk_versions": {
+    "compileSdkVersion": 36,
+    "targetSdkVersion": 36,
+    "minSdkVersion": 24,
+    "play_store_min_target_sdk_required": 34,
+    "compliant": true
+  },
+  "architectures_64bit": {
+    "configured": [
+      "armeabi-v7a",
+      "arm64-v8a",
+      "x86",
+      "x86_64"
+    ],
+    "has_arm64": true,
+    "has_x86_64": true,
+    "compliant": true
+  },
+  "minify_r8": {
+    "enableMinifyInReleaseBuilds": false,
+    "enableShrinkResources": false,
+    "proguardRulesPresent": true,
+    "note": "Minification is disabled by default in release builds (gradle.properties omits android.enableMinifyInReleaseBuilds)"
+  },
+  "hermes": {
+    "hermesEnabled": true,
+    "hermesvm_in_aab": true,
+    "hermesvm_in_apk": true
+  },
+  "debug_flags": {
+    "debuggable_in_release_manifest": false,
+    "EX_DEV_CLIENT_NETWORK_INSPECTOR": true,
+    "reactNativeReleaseLevel": "stable",
+    "note": "EX_DEV_CLIENT_NETWORK_INSPECTOR=true present in gradle.properties"
+  },
+  "dev_urls_and_cleartext": {
+    "cleartext_traffic_permitted_in_release": false,
+    "usesCleartextTraffic_in_release_manifest": false,
+    "hardcoded_dev_urls_in_src": [],
+    "note": "All endpoints in src/ use https://"
+  }
+}

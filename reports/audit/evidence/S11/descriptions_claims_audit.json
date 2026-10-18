@@ -1,0 +1,31 @@
+{
+  "title": "Islamic - Your Daily Companion",
+  "short_description": "Prayer times, Qur'an, Hadith, Duas & Qibla \u2014 free forever as Sadaqah Jariyah.",
+  "claims_audit": [
+    {
+      "claim": "No accounts. No ads. No data sale.",
+      "status": "PASS",
+      "evidence": "0 auth libraries, 0 ad SDKs, 0 tracking code in codebase"
+    },
+    {
+      "claim": "Single authoritative provider for prayer times (Islamic.app)",
+      "status": "PASS",
+      "evidence": "src/lib/prayerTimes.ts only requests api.islamic.app"
+    },
+    {
+      "claim": "11 adhan reciters with preview",
+      "status": "PASS",
+      "evidence": "src/lib/audio.ts declares exactly 11 adhan reciters with preview audio streams"
+    },
+    {
+      "claim": "Works offline \u2014 Quran, prayer times, notes",
+      "status": "PARTIAL",
+      "evidence": "Native SQLite caches Quran metadata, prayer schedules, bookmarks, and notes; Hadith fallback bundled. S8 verified native offline readiness; web service worker offline boot failed."
+    },
+    {
+      "claim": "Home-screen widgets (Android)",
+      "status": "FAIL",
+      "evidence": "Claimed in README.md line 51 and docs/publishing.md line 98, but AndroidManifest.xml and merged release manifest contain no AppWidgetProvider or widget receivers."
+    }
+  ]
+}

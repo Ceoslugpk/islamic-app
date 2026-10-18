@@ -1,0 +1,24 @@
+{
+  "blockers": [
+    {
+      "id": "BLOCKER-01",
+      "name": "Preview Origin CORS Rejection on api.islamic.app",
+      "description": "https://api.islamic.app rejects requests from origin http://15.235.203.134:9998 with missing Access-Control-Allow-Origin header, causing prayer times and online hadith fetches to fail on the web preview.",
+      "impact": "Web client displays offline / retry error states when attempting remote API fetches.",
+      "workaround": "App falls back cleanly to local bundled offline data (surahs114, names99, fallback hadiths)."
+    },
+    {
+      "id": "BLOCKER-02",
+      "name": "LocationSetupModal First-Launch Overlay",
+      "description": "When location-setup-dismissed-v1 is missing, LocationSetupModal overlays UI after splash, blocking navigation until dismissed or city selected.",
+      "impact": "Automated clicks on top-level tabs can be intercepted by modal overlay.",
+      "workaround": "Audits pre-populate location-setup-dismissed-v1: true."
+    },
+    {
+      "id": "BLOCKER-03",
+      "name": "Plain HTTP Insecure Web Context",
+      "description": "Preview served over plain HTTP disables navigator.serviceWorker and CacheStorage registration in modern Chromium browsers.",
+      "impact": "Web PWA offline caching cannot be registered."
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+$ npx --no-install depcheck --json
+npm error npx canceled due to missing packages and no YES option: ["depcheck@1.4.7"]
+npm error A complete log of this run can be found in: /home/ubuntu/.npm/_logs/2026-10-17T10_11_24_153Z-debug-0.log
+
+EXIT_CODE=1

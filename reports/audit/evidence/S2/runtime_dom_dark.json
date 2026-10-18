@@ -1,0 +1,12 @@
+{
+  "url": "http://15.235.203.134:9998/",
+  "viewport": [
+    393,
+    852
+  ],
+  "theme": "dark",
+  "state": "home/error-state",
+  "status": "BLOCKED",
+  "reason": "isolated localStorage themeMode=dark reload did not produce a dark rendered surface before browser daemon capture timeout; computed inline surfaces remained light",
+  "screenshot": null
+}

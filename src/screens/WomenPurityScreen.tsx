@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   TextInput,
@@ -9,15 +8,14 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useThemeTokens } from '../theme/tokens';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getPillShadow } from '../lib/homeThemeTokens';
-import { TAB_PAD_BOTTOM } from '../components/layout/layout.constants';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
+import { AppText } from '../components/ui/AppText';
 import { ArabicText } from '../components/ArabicText';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import { buttonTokens, touchTargetTokens } from '../lib/buttonTokens';
@@ -52,7 +50,6 @@ function WomenPurityScreen({
 }: WomenPurityScreenProps) {
   const { t } = useTranslation();
   const { tokens, mode } = useThemeTokens();
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
   const { saveUndoState } = useUndoToast();
@@ -221,32 +218,32 @@ function WomenPurityScreen({
         {/* Discreet Privacy Note */}
         <View style={[styles.privacyBadge, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
           <Ionicons name="shield-checkmark" size={14} color={tokens.goldText} />
-          <Text style={[styles.privacyText, { color: tokens.muted }]}>
+          <AppText variant="caption" tone="faint" style={styles.privacyText}>
             {t('Private & local · Stored securely on your device only')}
-          </Text>
+          </AppText>
         </View>
 
         {/* Postpartum / Nifas Tracker Card */}
         <PremiumCard style={styles.sectionCard}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="heart-outline" size={16} color={tokens.goldText} />
-            <Text style={[styles.cardTitle, { color: tokens.text }]}>
+            <AppText variant="sectionTitle" style={styles.cardTitle}>
               {t('Postpartum Tracker (Nifas)')}
-            </Text>
+            </AppText>
           </View>
-          <Text style={[styles.cardSub, { color: tokens.muted }]}>
+          <AppText variant="caption" tone="faint" style={styles.cardSub}>
             {t('Bleeding following childbirth. Standard Prophetic norm is up to 40 days (majority).')}
-          </Text>
+          </AppText>
 
           {activeNifas ? (
             <View style={[styles.activeNifasBox, { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder }]}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.activeNifasTitle, { color: tokens.goldText }]}>
+                <AppText variant="rowTitle" highlight style={styles.activeNifasTitle}>
                   {t('Active Nifas · Day')} {nifasDay} {t('of ~40')}
-                </Text>
-                <Text style={[styles.activeNifasSub, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="caption" tone="faint" style={styles.activeNifasSub}>
                   {t('Started:')} {activeNifas.startDate} · {t('Once bleeding ceases completely, perform Ghusl.')}
-                </Text>
+                </AppText>
               </View>
               <TouchableOpacity
                 style={[styles.smallBtn, getPillShadow(mode), { borderColor: tokens.goldBorder }]}
@@ -255,7 +252,7 @@ function WomenPurityScreen({
                 accessibilityLabel={t('Mark Pure')}
               >
                 <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 6 }]} />
-                <Text style={[styles.smallBtnText, { color: tokens.onGold }]}>{t('Mark Pure')}</Text>
+                <AppText variant="caption" tone="onGold" style={styles.smallBtnText}>{t('Mark Pure')}</AppText>
               </TouchableOpacity>
             </View>
           ) : (
@@ -267,28 +264,28 @@ function WomenPurityScreen({
             >
               <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
               <Ionicons name="add" size={16} color={tokens.onGold} />
-              <Text style={[styles.secondaryBtnText, { color: tokens.onGold }]}>
+              <AppText variant="rowTitle" tone="onGold" style={styles.secondaryBtnText}>
                 {t('Log Postpartum (Nifas) Delivery Date')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
           )}
 
         {showLogNifas && (
           <View style={[styles.innerForm, { borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}>
             <View style={styles.labelRow}>
-              <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Delivery Date (YYYY-MM-DD)')}</Text>
+              <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('Delivery Date (YYYY-MM-DD)')}</AppText>
               <View style={styles.quickPillsRow}>
                 <TouchableOpacity
                   style={[styles.quickPill, { borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop }]}
                   onPress={() => setNewNifasStart(todayStr)}
                 >
-                  <Text style={[styles.quickPillText, { color: tokens.goldText }]}>{t('Today')}</Text>
+                  <AppText variant="caption" highlight style={styles.quickPillText}>{t('Today')}</AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.quickPill, { borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop }]}
                   onPress={() => setNewNifasStart(yesterdayStr)}
                 >
-                  <Text style={[styles.quickPillText, { color: tokens.muted }]}>{t('Yesterday')}</Text>
+                  <AppText variant="caption" tone="faint" style={styles.quickPillText}>{t('Yesterday')}</AppText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -298,17 +295,18 @@ function WomenPurityScreen({
               onChangeText={setNewNifasStart}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={tokens.muted}
+              accessibilityLabel={t('Start Date (YYYY-MM-DD)')}
               keyboardType="numbers-and-punctuation"
             />
 
             <View style={styles.labelRow}>
-              <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('End Date (Optional)')}</Text>
+              <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('End Date (Optional)')}</AppText>
               {newNifasEnd ? (
                 <TouchableOpacity
                   style={[styles.quickPill, { borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop }]}
                   onPress={() => setNewNifasEnd('')}
                 >
-                  <Text style={[styles.quickPillText, { color: tokens.muted }]}>{t('Clear')}</Text>
+                  <AppText variant="caption" tone="faint" style={styles.quickPillText}>{t('Clear')}</AppText>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -318,16 +316,18 @@ function WomenPurityScreen({
               onChangeText={setNewNifasEnd}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={tokens.muted}
+              accessibilityLabel={t('End Date (YYYY-MM-DD)')}
               keyboardType="numbers-and-punctuation"
             />
 
-            <Text style={[styles.inputLabel, { color: tokens.muted }]}>{t('Notes (Optional)')}</Text>
+            <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('Notes (Optional)')}</AppText>
             <TextInput
               style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop }]}
               value={newNifasNotes}
               onChangeText={setNewNifasNotes}
               placeholder={t('Delivery notes, physician guidance...')}
               placeholderTextColor={tokens.muted}
+              accessibilityLabel={t('Notes (Optional)')}
             />
             <View style={styles.formBtnRow}>
               <TouchableOpacity
@@ -336,7 +336,7 @@ function WomenPurityScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t('Cancel')}
               >
-                <Text style={{ color: tokens.muted, fontSize: 12 }}>{t('Cancel')}</Text>
+                <AppText variant="caption" tone="faint">{t('Cancel')}</AppText>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.submitBtn, getPillShadow(mode), { borderColor: tokens.goldBorder }]}
@@ -345,7 +345,7 @@ function WomenPurityScreen({
                 accessibilityLabel={t('Save Postpartum Record')}
               >
                 <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 6 }]} />
-                <Text style={{ color: tokens.onGold, fontSize: 12, fontFamily: 'Manrope_700Bold' }}>{t('Save')}</Text>
+                <AppText variant="caption" tone="onGold" style={{ fontFamily: 'Manrope_700Bold' }}>{t('Save')}</AppText>
               </TouchableOpacity>
             </View>
           </View>
@@ -356,11 +356,11 @@ function WomenPurityScreen({
             {nifasEntries.map((item) => (
               <View key={item.id} style={[styles.nifasHistoryItem, { borderColor: tokens.cardBorder }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.nifasHistoryText, { color: tokens.text }]}>
+                  <AppText variant="body" style={styles.nifasHistoryText}>
                     {item.startDate} {item.endDate ? `→ ${item.endDate}` : `· (${t('Active')})`}
-                  </Text>
+                  </AppText>
                   {item.notes && (
-                    <Text style={[styles.nifasHistoryNotes, { color: tokens.muted }]}>{item.notes}</Text>
+                    <AppText variant="caption" tone="faint" style={styles.nifasHistoryNotes}>{item.notes}</AppText>
                   )}
                 </View>
                 <TouchableOpacity
@@ -381,40 +381,40 @@ function WomenPurityScreen({
         <PremiumCard style={{ ...styles.infoCard, borderColor: tokens.goldBorder, backgroundColor: tokens.ringFill }}>
           <Ionicons name="sparkles" size={18} color={tokens.goldText} />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.infoCardTitle, { color: tokens.goldText }]}>
+            <AppText variant="rowTitle" highlight style={styles.infoCardTitle}>
               {t('Recognizing Purity (Tuhr)')}
-            </Text>
-            <Text style={[styles.infoCardDesc, { color: tokens.text }]}>
+            </AppText>
+            <AppText variant="body" style={styles.infoCardDesc}>
               {t('A woman knows her menses or postpartum has ended by either:')}
-              {'\n'}1. <Text style={{ fontFamily: 'Manrope_700Bold' }}>{t('Al-Qassah Al-Bayda:')}</Text> {t('A clear, white fluid discharged at the conclusion of menses.')}
-              {'\n'}2. <Text style={{ fontFamily: 'Manrope_700Bold' }}>{t('Al-Jufuf (Complete Dryness):')}</Text> {t('Clean cotton emerges completely dry without any trace of blood, yellowish, or brownish discharge.')}
-            </Text>
+              {'\n'}1. <AppText variant="body" style={{ fontFamily: 'Manrope_700Bold' }}>{t('Al-Qassah Al-Bayda:')}</AppText> {t('A clear, white fluid discharged at the conclusion of menses.')}
+              {'\n'}2. <AppText variant="body" style={{ fontFamily: 'Manrope_700Bold' }}>{t('Al-Jufuf (Complete Dryness):')}</AppText> {t('Clean cotton emerges completely dry without any trace of blood, yellowish, or brownish discharge.')}
+            </AppText>
           </View>
         </PremiumCard>
 
         {/* When Ghusl is Obligatory */}
-        <Text style={[styles.sectionTitle, { color: tokens.text, marginTop: 18, marginBottom: 8 }]}>
+        <AppText variant="sectionTitle" style={[styles.sectionTitle, { marginTop: 18, marginBottom: 8 }]}>
           {t('When is Ghusl Required?')}
-        </Text>
+        </AppText>
         {GHUSL_REASONS.map((r) => (
           <PremiumCard key={r.id} style={{ marginBottom: 10 }}>
-            <Text style={[styles.reasonTitle, { color: tokens.text }]}>{t(r.title)}</Text>
-            <Text style={[styles.reasonDesc, { color: tokens.muted }]}>{t(r.description)}</Text>
-            <Text style={[styles.reasonRef, { color: tokens.goldText }]}>{t(r.reference)}</Text>
+            <AppText variant="rowTitle" style={styles.reasonTitle}>{t(r.title)}</AppText>
+            <AppText variant="body" tone="faint" style={styles.reasonDesc}>{t(r.description)}</AppText>
+            <AppText variant="caption" highlight style={styles.reasonRef}>{t(r.reference)}</AppText>
           </PremiumCard>
         ))}
 
         {/* How to Perform Ghusl */}
         <View style={[styles.historyHeader, { marginTop: 18, marginBottom: 10 }]}>
           <View>
-            <Text style={[styles.sectionTitle, { color: tokens.text }]}>{t('How to Perform Ghusl')}</Text>
-            <Text style={[styles.progressSubtitle, { color: tokens.muted }]}>
+            <AppText variant="sectionTitle" style={styles.sectionTitle}>{t('How to Perform Ghusl')}</AppText>
+            <AppText variant="caption" tone="faint" style={styles.progressSubtitle}>
               {completedCount} {t('of')} 6 {t('steps marked · Tap any step to track progress')}
-            </Text>
+            </AppText>
           </View>
           {completedCount > 0 && (
             <TouchableOpacity onPress={resetGhuslSteps} hitSlop={touchTargetTokens.hitSlop8}>
-              <Text style={[styles.resetText, { color: tokens.goldText }]}>{t('Reset')}</Text>
+              <AppText variant="link" highlight style={styles.resetText}>{t('Reset')}</AppText>
             </TouchableOpacity>
           )}
         </View>
@@ -434,25 +434,25 @@ function WomenPurityScreen({
               accessibilityState={{ selected: ghuslFilter === f }}
             >
               {ghuslFilter === f && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />}
-              <Text
-                style={[
-                  styles.filterPillText,
-                  { color: ghuslFilter === f ? tokens.onGold : tokens.muted },
-                ]}
+              <AppText
+                variant="caption"
+                tone={ghuslFilter === f ? 'onGold' : 'faint'}
+                style={styles.filterPillText}
               >
                 {f === 'all' ? t('All Steps') : f === 'obligatory' ? t('Obligatory (Rukn)') : t('Sunnah')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
           ))}
         </View>
 
-        {GHUSL_STEPS.filter((s) => ghuslFilter === 'all' || s.type === ghuslFilter).map((s) => {
+        {GHUSL_STEPS.filter((s) => ghuslFilter === 'all' || s.type === ghuslFilter).map((s, idx, arr) => {
           const isDone = completedSteps[s.id] === true;
+          const isLast = idx === arr.length - 1;
           return (
             <PremiumCard
               key={s.id}
               style={{
-                marginBottom: 10,
+                marginBottom: isLast ? 0 : 10,
                 borderColor: isDone ? tokens.success : tokens.cardBorder,
               }}
             >
@@ -473,15 +473,16 @@ function WomenPurityScreen({
                     >
                       {isDone && <Ionicons name="checkmark" size={13} color={tokens.onGold} />}
                     </View>
-                    <Text
+                    <AppText
+                      variant="rowTitle"
+                      tone={isDone ? 'faint' : undefined}
                       style={[
                         styles.stepTitle,
-                        { color: isDone ? tokens.muted : tokens.text },
                         isDone && { textDecorationLine: 'line-through' },
                       ]}
                     >
                       {t(s.title)}
-                    </Text>
+                    </AppText>
                   </View>
                   <View
                     style={[
@@ -492,9 +493,14 @@ function WomenPurityScreen({
                       },
                     ]}
                   >
-                    <Text style={[styles.stepBadgeText, { color: s.type === 'obligatory' ? tokens.goldText : tokens.muted }]}>
+                    <AppText
+                      variant="caption"
+                      highlight={s.type === 'obligatory'}
+                      tone={s.type === 'obligatory' ? undefined : 'faint'}
+                      style={styles.stepBadgeText}
+                    >
                       {s.type === 'obligatory' ? t('Obligatory') : t('Sunnah')}
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
                 {s.arabic && (
@@ -503,11 +509,11 @@ function WomenPurityScreen({
                   </ArabicText>
                 )}
                 {s.transliteration && (
-                  <Text style={[styles.stepTranslit, { color: tokens.goldText }]}>
+                  <AppText variant="subtitle" highlight style={styles.stepTranslit}>
                     {s.transliteration}
-                  </Text>
+                  </AppText>
                 )}
-                <Text style={[styles.stepDesc, { color: tokens.muted }]}>{t(s.description)}</Text>
+                <AppText variant="body" tone="faint" style={styles.stepDesc}>{t(s.description)}</AppText>
               </TouchableOpacity>
             </PremiumCard>
           );
@@ -523,9 +529,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
-    paddingTop: 10,
-  },
+  content: {},
   backBtn: {
     alignSelf: 'flex-start',
     minHeight: 32,
@@ -548,7 +552,6 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
-    marginTop: -4,
     marginBottom: 12,
   },
   privacyText: {

@@ -1,0 +1,28 @@
+{
+  "in_app_privacy_screen": {
+    "component": "src/screens/LegalScreen.tsx",
+    "lines": "234-342",
+    "has_comprehensive_text": true,
+    "covers_data_types": [
+      "location",
+      "bookmarks",
+      "women_worship",
+      "local_sqlite",
+      "no_analytics",
+      "zero_ads",
+      "no_accounts"
+    ]
+  },
+  "app_json_privacy_field": {
+    "configured": false,
+    "note": "app.json contains no privacy url or policy metadata"
+  },
+  "external_hosted_url": {
+    "configured_in_publishing_md": "http://38.60.176.137:9998 (dev note)",
+    "tested_target_url": "http://15.235.203.134:9998",
+    "is_public_https": false,
+    "has_custom_domain": false,
+    "status": "FAIL",
+    "recommendation": "Host privacy policy at https://qashi.uz/privacy or GitHub Pages https://ceoslugpk.github.io/islamic-app/privacy before Play Store submission"
+  }
+}

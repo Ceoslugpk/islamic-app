@@ -1,0 +1,1246 @@
+{
+  "timestamp": "2026-10-17T11:17:46.194Z",
+  "phase": "S10",
+  "verification": "Exact 99 Names of Allah and 99 Names of the Prophet with No Duplicates",
+  "allah": {
+    "count": 99,
+    "exactCount99": true,
+    "hasDuplicates": false,
+    "duplicateNumbers": [],
+    "duplicateArabic": [],
+    "duplicateTranslit": [
+      "Al-Majid"
+    ],
+    "issues": [],
+    "names": [
+      {
+        "number": 1,
+        "arabic": "الرَّحْمَنُ",
+        "transliteration": "Ar-Rahman",
+        "meaning": "The Most Gracious"
+      },
+      {
+        "number": 2,
+        "arabic": "الرَّحِيمُ",
+        "transliteration": "Ar-Raheem",
+        "meaning": "The Most Merciful"
+      },
+      {
+        "number": 3,
+        "arabic": "الْمَلِكُ",
+        "transliteration": "Al-Malik",
+        "meaning": "The Sovereign / King"
+      },
+      {
+        "number": 4,
+        "arabic": "الْقُدُّوسُ",
+        "transliteration": "Al-Quddus",
+        "meaning": "The Most Holy"
+      },
+      {
+        "number": 5,
+        "arabic": "السَّلَامُ",
+        "transliteration": "As-Salam",
+        "meaning": "The Source of Peace"
+      },
+      {
+        "number": 6,
+        "arabic": "الْمُؤْمِنُ",
+        "transliteration": "Al-Mu’min",
+        "meaning": "The Guardian of Faith"
+      },
+      {
+        "number": 7,
+        "arabic": "الْمُهَيْمِنُ",
+        "transliteration": "Al-Muhaymin",
+        "meaning": "The Protector"
+      },
+      {
+        "number": 8,
+        "arabic": "الْعَزِيزُ",
+        "transliteration": "Al-Aziz",
+        "meaning": "The All-Mighty"
+      },
+      {
+        "number": 9,
+        "arabic": "الْجَبَّارُ",
+        "transliteration": "Al-Jabbar",
+        "meaning": "The Compeller"
+      },
+      {
+        "number": 10,
+        "arabic": "الْمُتَكَبِّرُ",
+        "transliteration": "Al-Mutakabbir",
+        "meaning": "The Supreme"
+      },
+      {
+        "number": 11,
+        "arabic": "الْخَالِقُ",
+        "transliteration": "Al-Khaliq",
+        "meaning": "The Creator"
+      },
+      {
+        "number": 12,
+        "arabic": "الْبَارِئُ",
+        "transliteration": "Al-Bari’",
+        "meaning": "The Maker of Order"
+      },
+      {
+        "number": 13,
+        "arabic": "الْمُصَوِّرُ",
+        "transliteration": "Al-Musawwir",
+        "meaning": "The Fashioner of Forms"
+      },
+      {
+        "number": 14,
+        "arabic": "الْغَفَّارُ",
+        "transliteration": "Al-Ghaffar",
+        "meaning": "The Ever-Forgiving"
+      },
+      {
+        "number": 15,
+        "arabic": "الْقَهَّارُ",
+        "transliteration": "Al-Qahhar",
+        "meaning": "The All-Subduing"
+      },
+      {
+        "number": 16,
+        "arabic": "الْوَهَّابُ",
+        "transliteration": "Al-Wahhab",
+        "meaning": "The Bestower"
+      },
+      {
+        "number": 17,
+        "arabic": "الرَّزَّاقُ",
+        "transliteration": "Ar-Razzaq",
+        "meaning": "The Provider"
+      },
+      {
+        "number": 18,
+        "arabic": "الْفَتَّاحُ",
+        "transliteration": "Al-Fattah",
+        "meaning": "The Opener"
+      },
+      {
+        "number": 19,
+        "arabic": "الْعَلِيمُ",
+        "transliteration": "Al-Alim",
+        "meaning": "The All-Knowing"
+      },
+      {
+        "number": 20,
+        "arabic": "الْقَابِضُ",
+        "transliteration": "Al-Qabid",
+        "meaning": "The Withholder"
+      },
+      {
+        "number": 21,
+        "arabic": "الْبَاسِطُ",
+        "transliteration": "Al-Basit",
+        "meaning": "The Expander"
+      },
+      {
+        "number": 22,
+        "arabic": "الْخَافِضُ",
+        "transliteration": "Al-Khafid",
+        "meaning": "The Abaser"
+      },
+      {
+        "number": 23,
+        "arabic": "الرَّافِعُ",
+        "transliteration": "Ar-Rafi’",
+        "meaning": "The Exalter"
+      },
+      {
+        "number": 24,
+        "arabic": "الْمُعِزُّ",
+        "transliteration": "Al-Mu’izz",
+        "meaning": "The Bestower of Honor"
+      },
+      {
+        "number": 25,
+        "arabic": "الْمُذِلُّ",
+        "transliteration": "Al-Mudhill",
+        "meaning": "The Humiliator"
+      },
+      {
+        "number": 26,
+        "arabic": "السَّمِيعُ",
+        "transliteration": "As-Sami’",
+        "meaning": "The All-Hearing"
+      },
+      {
+        "number": 27,
+        "arabic": "الْبَصِيرُ",
+        "transliteration": "Al-Basir",
+        "meaning": "The All-Seeing"
+      },
+      {
+        "number": 28,
+        "arabic": "الْحَكَمُ",
+        "transliteration": "Al-Hakam",
+        "meaning": "The Impartial Judge"
+      },
+      {
+        "number": 29,
+        "arabic": "الْعَدْلُ",
+        "transliteration": "Al-Adl",
+        "meaning": "The Utterly Just"
+      },
+      {
+        "number": 30,
+        "arabic": "اللَّطِيفُ",
+        "transliteration": "Al-Latif",
+        "meaning": "The Subtle One"
+      },
+      {
+        "number": 31,
+        "arabic": "الْخَبِيرُ",
+        "transliteration": "Al-Khabir",
+        "meaning": "The All-Aware"
+      },
+      {
+        "number": 32,
+        "arabic": "الْحَلِيمُ",
+        "transliteration": "Al-Halim",
+        "meaning": "The Forbearing"
+      },
+      {
+        "number": 33,
+        "arabic": "الْعَظِيمُ",
+        "transliteration": "Al-Azim",
+        "meaning": "The Magnificent"
+      },
+      {
+        "number": 34,
+        "arabic": "الْغَفُورُ",
+        "transliteration": "Al-Ghafur",
+        "meaning": "The All-Forgiving"
+      },
+      {
+        "number": 35,
+        "arabic": "الشَّكُورُ",
+        "transliteration": "Ash-Shakur",
+        "meaning": "The Most Appreciative"
+      },
+      {
+        "number": 36,
+        "arabic": "الْعَلِيُّ",
+        "transliteration": "Al-Aliyy",
+        "meaning": "The Most High"
+      },
+      {
+        "number": 37,
+        "arabic": "الْكَبِيرُ",
+        "transliteration": "Al-Kabir",
+        "meaning": "The Greatest"
+      },
+      {
+        "number": 38,
+        "arabic": "الْحَفِيظُ",
+        "transliteration": "Al-Hafiz",
+        "meaning": "The Preserver"
+      },
+      {
+        "number": 39,
+        "arabic": "الْمُقِيتُ",
+        "transliteration": "Al-Muqit",
+        "meaning": "The Sustainer"
+      },
+      {
+        "number": 40,
+        "arabic": "الْحَسِيبُ",
+        "transliteration": "Al-Hasib",
+        "meaning": "The Reckoner"
+      },
+      {
+        "number": 41,
+        "arabic": "الْجَلِيلُ",
+        "transliteration": "Al-Jalil",
+        "meaning": "The Majestic"
+      },
+      {
+        "number": 42,
+        "arabic": "الْكَرِيمُ",
+        "transliteration": "Al-Karim",
+        "meaning": "The Most Generous"
+      },
+      {
+        "number": 43,
+        "arabic": "الرَّقِيبُ",
+        "transliteration": "Ar-Raqib",
+        "meaning": "The Watchful"
+      },
+      {
+        "number": 44,
+        "arabic": "الْمُجِيبُ",
+        "transliteration": "Al-Mujib",
+        "meaning": "The Responsive"
+      },
+      {
+        "number": 45,
+        "arabic": "الْوَاسِعُ",
+        "transliteration": "Al-Wasi’",
+        "meaning": "The Boundless"
+      },
+      {
+        "number": 46,
+        "arabic": "الْحَكِيمُ",
+        "transliteration": "Al-Hakim",
+        "meaning": "The All-Wise"
+      },
+      {
+        "number": 47,
+        "arabic": "الْوَدُودُ",
+        "transliteration": "Al-Wadud",
+        "meaning": "The Most Loving"
+      },
+      {
+        "number": 48,
+        "arabic": "الْمَجِيدُ",
+        "transliteration": "Al-Majid",
+        "meaning": "The Glorious"
+      },
+      {
+        "number": 49,
+        "arabic": "الْبَاعِثُ",
+        "transliteration": "Al-Ba’ith",
+        "meaning": "The Resurrector"
+      },
+      {
+        "number": 50,
+        "arabic": "الشَّهِيدُ",
+        "transliteration": "Ash-Shahid",
+        "meaning": "The Universal Witness"
+      },
+      {
+        "number": 51,
+        "arabic": "الْحَقُّ",
+        "transliteration": "Al-Haqq",
+        "meaning": "The Absolute Truth"
+      },
+      {
+        "number": 52,
+        "arabic": "الْوَكِيلُ",
+        "transliteration": "Al-Wakil",
+        "meaning": "The Trustee"
+      },
+      {
+        "number": 53,
+        "arabic": "الْقَوِيُّ",
+        "transliteration": "Al-Qawiyy",
+        "meaning": "The Most Strong"
+      },
+      {
+        "number": 54,
+        "arabic": "الْمَتِينُ",
+        "transliteration": "Al-Matin",
+        "meaning": "The Firm"
+      },
+      {
+        "number": 55,
+        "arabic": "الْوَلِيُّ",
+        "transliteration": "Al-Waliyy",
+        "meaning": "The Protecting Associate"
+      },
+      {
+        "number": 56,
+        "arabic": "الْحَمِيدُ",
+        "transliteration": "Al-Hamid",
+        "meaning": "The All-Praiseworthy"
+      },
+      {
+        "number": 57,
+        "arabic": "الْمُحْصِي",
+        "transliteration": "Al-Muhsi",
+        "meaning": "The Accounter"
+      },
+      {
+        "number": 58,
+        "arabic": "الْمُبْدِئُ",
+        "transliteration": "Al-Mubdi’",
+        "meaning": "The Originator"
+      },
+      {
+        "number": 59,
+        "arabic": "الْمُعِيدُ",
+        "transliteration": "Al-Mu’id",
+        "meaning": "The Restorer"
+      },
+      {
+        "number": 60,
+        "arabic": "الْمُحْيِي",
+        "transliteration": "Al-Muhyi",
+        "meaning": "The Giver of Life"
+      },
+      {
+        "number": 61,
+        "arabic": "الْمُمِيتُ",
+        "transliteration": "Al-Mumit",
+        "meaning": "The Bringer of Death"
+      },
+      {
+        "number": 62,
+        "arabic": "الْحَيُّ",
+        "transliteration": "Al-Hayy",
+        "meaning": "The Ever-Living"
+      },
+      {
+        "number": 63,
+        "arabic": "الْقَيُّومُ",
+        "transliteration": "Al-Qayyum",
+        "meaning": "The Self-Existing Sustainer"
+      },
+      {
+        "number": 64,
+        "arabic": "الْوَاجِدُ",
+        "transliteration": "Al-Wajid",
+        "meaning": "The Perceiver"
+      },
+      {
+        "number": 65,
+        "arabic": "الْمَاجِدُ",
+        "transliteration": "Al-Majid",
+        "meaning": "The Illustrious"
+      },
+      {
+        "number": 66,
+        "arabic": "الْوَاحِدُ",
+        "transliteration": "Al-Wahid",
+        "meaning": "The One"
+      },
+      {
+        "number": 67,
+        "arabic": "الْأَحَدُ",
+        "transliteration": "Al-Ahad",
+        "meaning": "The Unique Indivisible"
+      },
+      {
+        "number": 68,
+        "arabic": "الصَّمَدُ",
+        "transliteration": "As-Samad",
+        "meaning": "The Eternal Refuge"
+      },
+      {
+        "number": 69,
+        "arabic": "الْقَادِرُ",
+        "transliteration": "Al-Qadir",
+        "meaning": "The All-Capable"
+      },
+      {
+        "number": 70,
+        "arabic": "الْمُقْتَدِرُ",
+        "transliteration": "Al-Muqtadir",
+        "meaning": "The Determiner"
+      },
+      {
+        "number": 71,
+        "arabic": "الْمُقَدِّمُ",
+        "transliteration": "Al-Muqaddim",
+        "meaning": "The Expediter"
+      },
+      {
+        "number": 72,
+        "arabic": "الْمُؤَخِّرُ",
+        "transliteration": "Al-Mu’akhkhir",
+        "meaning": "The Delayer"
+      },
+      {
+        "number": 73,
+        "arabic": "الْأَوَّلُ",
+        "transliteration": "Al-Awwal",
+        "meaning": "The First"
+      },
+      {
+        "number": 74,
+        "arabic": "الْآخِرُ",
+        "transliteration": "Al-Akhir",
+        "meaning": "The Last"
+      },
+      {
+        "number": 75,
+        "arabic": "الظَّاهِرُ",
+        "transliteration": "Az-Zahir",
+        "meaning": "The Manifest"
+      },
+      {
+        "number": 76,
+        "arabic": "الْبَاطِنُ",
+        "transliteration": "Al-Batin",
+        "meaning": "The Hidden"
+      },
+      {
+        "number": 77,
+        "arabic": "الْوَالِي",
+        "transliteration": "Al-Wali",
+        "meaning": "The Sole Governor"
+      },
+      {
+        "number": 78,
+        "arabic": "الْمُتَعَالِي",
+        "transliteration": "Al-Muta’ali",
+        "meaning": "The Self-Exalted"
+      },
+      {
+        "number": 79,
+        "arabic": "الْبَرُّ",
+        "transliteration": "Al-Barr",
+        "meaning": "The Source of All Goodness"
+      },
+      {
+        "number": 80,
+        "arabic": "التَّوَّابُ",
+        "transliteration": "At-Tawwab",
+        "meaning": "The Ever-Acceptor of Repentance"
+      },
+      {
+        "number": 81,
+        "arabic": "الْمُنْتَقِمُ",
+        "transliteration": "Al-Muntaqim",
+        "meaning": "The Just Avenger"
+      },
+      {
+        "number": 82,
+        "arabic": "الْعَفُوُّ",
+        "transliteration": "Al-Afuww",
+        "meaning": "The Pardoner"
+      },
+      {
+        "number": 83,
+        "arabic": "الرَّءُوفُ",
+        "transliteration": "Ar-Ra’uf",
+        "meaning": "The Most Kind"
+      },
+      {
+        "number": 84,
+        "arabic": "مَالِكُ الْمُلْكِ",
+        "transliteration": "Malik-ul-Mulk",
+        "meaning": "The Owner of All Sovereignty"
+      },
+      {
+        "number": 85,
+        "arabic": "ذُو الْجَلَالِ وَالْإِكْرَامِ",
+        "transliteration": "Dhul-Jalali wal-Ikram",
+        "meaning": "Lord of Majesty and Generosity"
+      },
+      {
+        "number": 86,
+        "arabic": "الْمُقْسِطُ",
+        "transliteration": "Al-Muqsit",
+        "meaning": "The Equitable"
+      },
+      {
+        "number": 87,
+        "arabic": "الْجَامِعُ",
+        "transliteration": "Al-Jami’",
+        "meaning": "The Gatherer"
+      },
+      {
+        "number": 88,
+        "arabic": "الْغَنِيُّ",
+        "transliteration": "Al-Ghaniyy",
+        "meaning": "The Self-Sufficient"
+      },
+      {
+        "number": 89,
+        "arabic": "الْمُغْنِي",
+        "transliteration": "Al-Mughni",
+        "meaning": "The Enricher"
+      },
+      {
+        "number": 90,
+        "arabic": "الْمَانِعُ",
+        "transliteration": "Al-Mani’",
+        "meaning": "The Preventer of Harm"
+      },
+      {
+        "number": 91,
+        "arabic": "الضَّارُّ",
+        "transliteration": "Ad-Darr",
+        "meaning": "The Creator of the Harmful"
+      },
+      {
+        "number": 92,
+        "arabic": "النَّافِعُ",
+        "transliteration": "An-Nafi’",
+        "meaning": "The Creator of Good"
+      },
+      {
+        "number": 93,
+        "arabic": "النُّورُ",
+        "transliteration": "An-Nur",
+        "meaning": "The Illuminating Light"
+      },
+      {
+        "number": 94,
+        "arabic": "الْهَادِي",
+        "transliteration": "Al-Hadi",
+        "meaning": "The Guide"
+      },
+      {
+        "number": 95,
+        "arabic": "الْبَدِيعُ",
+        "transliteration": "Al-Badi’",
+        "meaning": "The Incomparable Originator"
+      },
+      {
+        "number": 96,
+        "arabic": "الْبَاقِي",
+        "transliteration": "Al-Baqi",
+        "meaning": "The Everlasting"
+      },
+      {
+        "number": 97,
+        "arabic": "الْوَارِثُ",
+        "transliteration": "Al-Warith",
+        "meaning": "The Supreme Inheritor"
+      },
+      {
+        "number": 98,
+        "arabic": "الرَّشِيدُ",
+        "transliteration": "Ar-Rashid",
+        "meaning": "The Infallible Teacher"
+      },
+      {
+        "number": 99,
+        "arabic": "الصَّبُورُ",
+        "transliteration": "As-Sabur",
+        "meaning": "The Timeless Patient"
+      }
+    ]
+  },
+  "prophet": {
+    "count": 99,
+    "exactCount99": true,
+    "hasDuplicates": false,
+    "duplicateNumbers": [],
+    "duplicateArabic": [],
+    "duplicateTranslit": [],
+    "issues": [],
+    "names": [
+      {
+        "number": 1,
+        "arabic": "مُحَمَّدٌ",
+        "transliteration": "Muhammad",
+        "meaning": "The Highly Praised",
+        "note": "From the Arabic root meaning praise; mentioned by name four times in the Qur’an."
+      },
+      {
+        "number": 2,
+        "arabic": "أَحْمَدٌ",
+        "transliteration": "Ahmad",
+        "meaning": "The Most Commendable",
+        "note": "Prophet Isa (Jesus) announced his coming (Qur’an 61:6)."
+      },
+      {
+        "number": 3,
+        "arabic": "حَامِدٌ",
+        "transliteration": "Hamid",
+        "meaning": "The One Who Praises"
+      },
+      {
+        "number": 4,
+        "arabic": "مَحْمُودٌ",
+        "transliteration": "Mahmud",
+        "meaning": "The Praised"
+      },
+      {
+        "number": 5,
+        "arabic": "قَاسِمٌ",
+        "transliteration": "Qasim",
+        "meaning": "The Distributor",
+        "note": "His kunya was Abu al-Qasim — father of Qasim."
+      },
+      {
+        "number": 6,
+        "arabic": "عَاقِبٌ",
+        "transliteration": "Aqib",
+        "meaning": "The Last in Succession",
+        "note": "“I am the Aqib, after whom there will be no prophet.” (Bukhari & Muslim)"
+      },
+      {
+        "number": 7,
+        "arabic": "فَاتِحٌ",
+        "transliteration": "Fatih",
+        "meaning": "The Opener and Victor",
+        "note": "A title linked to the opening (conquest) of Makkah."
+      },
+      {
+        "number": 8,
+        "arabic": "شَاهِدٌ",
+        "transliteration": "Shahid",
+        "meaning": "The Witness"
+      },
+      {
+        "number": 9,
+        "arabic": "حَاشِرٌ",
+        "transliteration": "Hashir",
+        "meaning": "The Gatherer",
+        "note": "“I am the Hashir, at whose feet people will be resurrected.” (Muslim)"
+      },
+      {
+        "number": 10,
+        "arabic": "رَشِيدٌ",
+        "transliteration": "Rashid",
+        "meaning": "The Rightly Guiding"
+      },
+      {
+        "number": 11,
+        "arabic": "مَشْهُودٌ",
+        "transliteration": "Mashhud",
+        "meaning": "The Witnessed"
+      },
+      {
+        "number": 12,
+        "arabic": "بَشِيرٌ",
+        "transliteration": "Bashir",
+        "meaning": "The Bringer of Good News"
+      },
+      {
+        "number": 13,
+        "arabic": "نَذِيرٌ",
+        "transliteration": "Nadhir",
+        "meaning": "The Warner"
+      },
+      {
+        "number": 14,
+        "arabic": "دَاعٍ",
+        "transliteration": "Dae'i",
+        "meaning": "The Caller"
+      },
+      {
+        "number": 15,
+        "arabic": "شَافٍ",
+        "transliteration": "Shafi",
+        "meaning": "The Healer"
+      },
+      {
+        "number": 16,
+        "arabic": "هَادٍ",
+        "transliteration": "Hadi",
+        "meaning": "The Guide"
+      },
+      {
+        "number": 17,
+        "arabic": "مَهْدِيٌّ",
+        "transliteration": "Mahdi",
+        "meaning": "The Guided"
+      },
+      {
+        "number": 18,
+        "arabic": "مَاحٍ",
+        "transliteration": "Mahi",
+        "meaning": "The Effacer of Disbelief",
+        "note": "“I am the Mahi — through me Allah will erase disbelief.” (Bukhari & Muslim)"
+      },
+      {
+        "number": 19,
+        "arabic": "مُنْجٍ",
+        "transliteration": "Munji",
+        "meaning": "The Deliverer"
+      },
+      {
+        "number": 20,
+        "arabic": "نَاهٍ",
+        "transliteration": "Nahi",
+        "meaning": "The One Who Forbids Wrong"
+      },
+      {
+        "number": 21,
+        "arabic": "رَسُولٌ",
+        "transliteration": "Rasul",
+        "meaning": "The Messenger"
+      },
+      {
+        "number": 22,
+        "arabic": "نَبِيٌّ",
+        "transliteration": "Nabi",
+        "meaning": "The Prophet"
+      },
+      {
+        "number": 23,
+        "arabic": "أُمِّيٌّ",
+        "transliteration": "Ummi",
+        "meaning": "The Unlettered Prophet",
+        "note": "The unlettered prophet, mentioned by name (Qur’an 7:158)."
+      },
+      {
+        "number": 24,
+        "arabic": "تِهَامِيٌّ",
+        "transliteration": "Tihami",
+        "meaning": "The One from Tihama"
+      },
+      {
+        "number": 25,
+        "arabic": "هَاشِمِيٌّ",
+        "transliteration": "Hashimi",
+        "meaning": "The One from Banu Hashim"
+      },
+      {
+        "number": 26,
+        "arabic": "أَبْطَحِيٌّ",
+        "transliteration": "Abtahi",
+        "meaning": "The One from al-Bathaa"
+      },
+      {
+        "number": 27,
+        "arabic": "عَزِيزٌ",
+        "transliteration": "Aziz",
+        "meaning": "The Noble and Dear"
+      },
+      {
+        "number": 28,
+        "arabic": "حَرِيصٌ عَلَيْكُمْ",
+        "transliteration": "Harisun Alaykum",
+        "meaning": "Full of Concern for You",
+        "note": "A Qur’anic description of his deep concern for the believers (9:128)."
+      },
+      {
+        "number": 29,
+        "arabic": "رَؤُوفٌ",
+        "transliteration": "Rauf",
+        "meaning": "The Most Kind"
+      },
+      {
+        "number": 30,
+        "arabic": "رَحِيمٌ",
+        "transliteration": "Rahim",
+        "meaning": "The Merciful"
+      },
+      {
+        "number": 31,
+        "arabic": "طٰهٰ",
+        "transliteration": "Ta Ha",
+        "meaning": "A Traditional Prophetic Name",
+        "note": "The opening letters of Surah Ta-Ha (20)."
+      },
+      {
+        "number": 32,
+        "arabic": "مُجْتَبَىٰ",
+        "transliteration": "Mujtaba",
+        "meaning": "The Chosen",
+        "note": "Chosen and well-pleasing to Allah."
+      },
+      {
+        "number": 33,
+        "arabic": "طٰسٓ",
+        "transliteration": "Ta Sin",
+        "meaning": "A Traditional Prophetic Name",
+        "note": "The opening letters of Surah Ash-Shu’ara’ (26) and Al-Qasas (27)."
+      },
+      {
+        "number": 34,
+        "arabic": "مُرْتَضَىٰ",
+        "transliteration": "Murtada",
+        "meaning": "The One Pleasing to Allah"
+      },
+      {
+        "number": 35,
+        "arabic": "حٰمٓ",
+        "transliteration": "Ha Mim",
+        "meaning": "A Traditional Prophetic Name",
+        "note": "The opening letters of seven suras, from Ghafir (40) to Al-Ahqaf (46)."
+      },
+      {
+        "number": 36,
+        "arabic": "مُصْطَفَىٰ",
+        "transliteration": "Mustafa",
+        "meaning": "The Chosen One",
+        "note": "Purified and selected by Allah for prophethood."
+      },
+      {
+        "number": 37,
+        "arabic": "يٰسٓ",
+        "transliteration": "Ya Sin",
+        "meaning": "A Traditional Prophetic Name",
+        "note": "The opening letters of Surah Ya-Sin (36)."
+      },
+      {
+        "number": 38,
+        "arabic": "أَوْلَىٰ",
+        "transliteration": "Awla",
+        "meaning": "The Most Worthy"
+      },
+      {
+        "number": 39,
+        "arabic": "مُزَّمِّلٌ",
+        "transliteration": "Muzammil",
+        "meaning": "The Enwrapped",
+        "note": "Named in Surah Al-Muzzammil (73)."
+      },
+      {
+        "number": 40,
+        "arabic": "وَلِيٌّ",
+        "transliteration": "Wali",
+        "meaning": "The Protecting Friend"
+      },
+      {
+        "number": 41,
+        "arabic": "مُدَّثِّرٌ",
+        "transliteration": "Mudaththir",
+        "meaning": "The Cloaked",
+        "note": "Named in Surah Al-Mudaththir (74)."
+      },
+      {
+        "number": 42,
+        "arabic": "مَتِينٌ",
+        "transliteration": "Matin",
+        "meaning": "The Firm"
+      },
+      {
+        "number": 43,
+        "arabic": "مُصَدِّقٌ",
+        "transliteration": "Musaddiq",
+        "meaning": "The Confirmer of Truth"
+      },
+      {
+        "number": 44,
+        "arabic": "طَيِّبٌ",
+        "transliteration": "Tayyib",
+        "meaning": "The Good and Pure"
+      },
+      {
+        "number": 45,
+        "arabic": "نَاصِرٌ",
+        "transliteration": "Nasir",
+        "meaning": "The Helper"
+      },
+      {
+        "number": 46,
+        "arabic": "مَنْصُورٌ",
+        "transliteration": "Mansur",
+        "meaning": "The Divinely Aided",
+        "note": "Described as divinely aided (Qur’an 48:29)."
+      },
+      {
+        "number": 47,
+        "arabic": "مِصْبَاحٌ",
+        "transliteration": "Misbah",
+        "meaning": "The Lamp"
+      },
+      {
+        "number": 48,
+        "arabic": "آمِرٌ",
+        "transliteration": "Amir",
+        "meaning": "The Commander"
+      },
+      {
+        "number": 49,
+        "arabic": "حِجَازِيٌّ",
+        "transliteration": "Hijazi",
+        "meaning": "The One from the Hijaz"
+      },
+      {
+        "number": 50,
+        "arabic": "نِزَارِيٌّ",
+        "transliteration": "Nizari",
+        "meaning": "The Descendant of Nizar"
+      },
+      {
+        "number": 51,
+        "arabic": "قُرَيْشِيٌّ",
+        "transliteration": "Qurashi",
+        "meaning": "The One from Quraysh"
+      },
+      {
+        "number": 52,
+        "arabic": "مُضَرِيٌّ",
+        "transliteration": "Mudari",
+        "meaning": "The Descendant of Mudar"
+      },
+      {
+        "number": 53,
+        "arabic": "نَبِيُّ التَّوْبَةِ",
+        "transliteration": "Nabiyy al-Tawbah",
+        "meaning": "The Prophet of Repentance",
+        "note": "Mentioned in Surah At-Tawbah (9:118)."
+      },
+      {
+        "number": 54,
+        "arabic": "حَافِظٌ",
+        "transliteration": "Hafiz",
+        "meaning": "The Preserver"
+      },
+      {
+        "number": 55,
+        "arabic": "كَامِلٌ",
+        "transliteration": "Kamil",
+        "meaning": "The Complete"
+      },
+      {
+        "number": 56,
+        "arabic": "صَادِقٌ",
+        "transliteration": "Sadiq",
+        "meaning": "The Truthful",
+        "note": "Known as As-Sadiq — the truthful one, by the people of Makkah."
+      },
+      {
+        "number": 57,
+        "arabic": "أَمِينٌ",
+        "transliteration": "Amin",
+        "meaning": "The Trustworthy",
+        "note": "Called the Trustworthy by the Quraysh long before his prophethood."
+      },
+      {
+        "number": 58,
+        "arabic": "عَبْدُ اللهِ",
+        "transliteration": "Abdullah",
+        "meaning": "The Servant of Allah"
+      },
+      {
+        "number": 59,
+        "arabic": "كَلِيمُ اللهِ",
+        "transliteration": "Kalimullah",
+        "meaning": "The One Addressed by Allah"
+      },
+      {
+        "number": 60,
+        "arabic": "حَبِيبُ اللهِ",
+        "transliteration": "Habibullah",
+        "meaning": "The Beloved of Allah"
+      },
+      {
+        "number": 61,
+        "arabic": "نَجِيُّ اللهِ",
+        "transliteration": "Najiyyullah",
+        "meaning": "The Intimate of Allah"
+      },
+      {
+        "number": 62,
+        "arabic": "صَفِيُّ اللهِ",
+        "transliteration": "Safiyyullah",
+        "meaning": "The Chosen Friend of Allah"
+      },
+      {
+        "number": 63,
+        "arabic": "خَاتَمُ الْأَنْبِيَاءِ",
+        "transliteration": "Khatam al-Anbiya",
+        "meaning": "The Seal of the Prophets",
+        "note": "Allah sealed the line of prophets through him (Qur’an 33:40)."
+      },
+      {
+        "number": 64,
+        "arabic": "حَسِيبٌ",
+        "transliteration": "Hasib",
+        "meaning": "The Esteemed"
+      },
+      {
+        "number": 65,
+        "arabic": "مُجِيبٌ",
+        "transliteration": "Mujib",
+        "meaning": "The Responsive"
+      },
+      {
+        "number": 66,
+        "arabic": "شَكُورٌ",
+        "transliteration": "Shakur",
+        "meaning": "The Most Grateful"
+      },
+      {
+        "number": 67,
+        "arabic": "مُقْتَصِدٌ",
+        "transliteration": "Muqtasid",
+        "meaning": "The Balanced"
+      },
+      {
+        "number": 68,
+        "arabic": "رَسُولُ الرَّحْمَةِ",
+        "transliteration": "Rasul al-Rahmah",
+        "meaning": "The Messenger of Mercy",
+        "note": "Sent as a mercy to all the worlds (Qur’an 21:107)."
+      },
+      {
+        "number": 69,
+        "arabic": "قَوِيٌّ",
+        "transliteration": "Qawi",
+        "meaning": "The Strong"
+      },
+      {
+        "number": 70,
+        "arabic": "حَفِيٌّ",
+        "transliteration": "Hafi",
+        "meaning": "The Caring and Well-Informed"
+      },
+      {
+        "number": 71,
+        "arabic": "مَأْمُونٌ",
+        "transliteration": "Ma'mun",
+        "meaning": "The Trusted"
+      },
+      {
+        "number": 72,
+        "arabic": "مَعْلُومٌ",
+        "transliteration": "Ma'lum",
+        "meaning": "The Well-Known"
+      },
+      {
+        "number": 73,
+        "arabic": "حَقٌّ",
+        "transliteration": "Haqq",
+        "meaning": "The True"
+      },
+      {
+        "number": 74,
+        "arabic": "مُبِينٌ",
+        "transliteration": "Mubin",
+        "meaning": "The Clear and Evident"
+      },
+      {
+        "number": 75,
+        "arabic": "مُطِيعٌ",
+        "transliteration": "Muti",
+        "meaning": "The Obedient"
+      },
+      {
+        "number": 76,
+        "arabic": "أَوَّلٌ",
+        "transliteration": "Awwal",
+        "meaning": "The First"
+      },
+      {
+        "number": 77,
+        "arabic": "آخِرٌ",
+        "transliteration": "Akhir",
+        "meaning": "The Last"
+      },
+      {
+        "number": 78,
+        "arabic": "ظَاهِرٌ",
+        "transliteration": "Zahir",
+        "meaning": "The Manifest"
+      },
+      {
+        "number": 79,
+        "arabic": "بَاطِنٌ",
+        "transliteration": "Batin",
+        "meaning": "The Inward"
+      },
+      {
+        "number": 80,
+        "arabic": "يَتِيمٌ",
+        "transliteration": "Yatim",
+        "meaning": "The Orphan",
+        "note": "Allah found him an orphan and sheltered him (Qur’an 93:6)."
+      },
+      {
+        "number": 81,
+        "arabic": "كَرِيمٌ",
+        "transliteration": "Karim",
+        "meaning": "The Generous"
+      },
+      {
+        "number": 82,
+        "arabic": "حَكِيمٌ",
+        "transliteration": "Hakim",
+        "meaning": "The Wise"
+      },
+      {
+        "number": 83,
+        "arabic": "سَيِّدٌ",
+        "transliteration": "Sayyid",
+        "meaning": "The Master",
+        "note": "Master of the children of Adam (Tirmidhi)."
+      },
+      {
+        "number": 84,
+        "arabic": "سِرَاجٌ",
+        "transliteration": "Siraj",
+        "meaning": "The Lamp",
+        "note": "The Qur’an calls him a lamp conveying light (Qur’an 33:46)."
+      },
+      {
+        "number": 85,
+        "arabic": "مُنِيرٌ",
+        "transliteration": "Munir",
+        "meaning": "The Illuminating"
+      },
+      {
+        "number": 86,
+        "arabic": "مُحَرَّمٌ",
+        "transliteration": "Muhram",
+        "meaning": "The Sacred and Protected"
+      },
+      {
+        "number": 87,
+        "arabic": "مُكَرَّمٌ",
+        "transliteration": "Mukarram",
+        "meaning": "The Honoured"
+      },
+      {
+        "number": 88,
+        "arabic": "مُبَشِّرٌ",
+        "transliteration": "Mubashshir",
+        "meaning": "The Bearer of Glad Tidings"
+      },
+      {
+        "number": 89,
+        "arabic": "مُذَكِّرٌ",
+        "transliteration": "Mudhakkir",
+        "meaning": "The Reminder"
+      },
+      {
+        "number": 90,
+        "arabic": "مُطَهَّرٌ",
+        "transliteration": "Mutahhar",
+        "meaning": "The Purified",
+        "note": "Purified from every fault by Allah."
+      },
+      {
+        "number": 91,
+        "arabic": "قَرِيبٌ",
+        "transliteration": "Qarib",
+        "meaning": "The Near"
+      },
+      {
+        "number": 92,
+        "arabic": "خَلِيلٌ",
+        "transliteration": "Khalil",
+        "meaning": "The Close Friend"
+      },
+      {
+        "number": 93,
+        "arabic": "مَدْعُوٌّ",
+        "transliteration": "Maduww",
+        "meaning": "The One Who Is Called"
+      },
+      {
+        "number": 94,
+        "arabic": "جَوَّادٌ",
+        "transliteration": "Jawwad",
+        "meaning": "The Magnanimous"
+      },
+      {
+        "number": 95,
+        "arabic": "خَاتِمٌ",
+        "transliteration": "Khatim",
+        "meaning": "The Seal"
+      },
+      {
+        "number": 96,
+        "arabic": "عَادِلٌ",
+        "transliteration": "Adil",
+        "meaning": "The Just"
+      },
+      {
+        "number": 97,
+        "arabic": "شَهِيرٌ",
+        "transliteration": "Shahir",
+        "meaning": "The Renowned"
+      },
+      {
+        "number": 98,
+        "arabic": "شَهِيدٌ",
+        "transliteration": "Shaheed",
+        "meaning": "The Witness"
+      },
+      {
+        "number": 99,
+        "arabic": "رَسُولُ الْمَلَاحِمِ",
+        "transliteration": "Rasul al-Malahim",
+        "meaning": "The Messenger of the Final Battles",
+        "note": "The messenger of the great events before the Day of Judgement."
+      }
+    ]
+  },
+  "overallPass": true
+}

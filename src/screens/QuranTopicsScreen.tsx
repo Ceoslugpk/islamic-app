@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
@@ -53,22 +53,22 @@ export default function QuranTopicsScreen({
       >
         <View style={styles.verseHeader}>
           <View style={[styles.refBadge, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
-            <Text style={[styles.refBadgeText, { color: tokens.gold }]}>
+            <AppText variant="caption" highlight style={styles.refBadgeText}>
               {verse.surahName} {verse.surah}:{verse.ayah}
-            </Text>
+            </AppText>
           </View>
-          <Text style={[styles.openLinkText, { color: tokens.goldText }]}>
+          <AppText variant="link" style={styles.openLinkText}>
             {t('Read in Surah →')}
-          </Text>
+          </AppText>
         </View>
 
         <ArabicText size={20} style={[styles.verseArabic, { color: tokens.text }]}>
           {verse.arabicExcerpt}
         </ArabicText>
 
-        <Text style={[styles.verseTranslation, { color: tokens.muted }]}>
+        <AppText variant="body" tone="faint" style={styles.verseTranslation}>
           {`"${verse.translation}"`}
-        </Text>
+        </AppText>
       </TouchableOpacity>
     );
   };
@@ -105,9 +105,9 @@ export default function QuranTopicsScreen({
               />
             </View>
             <View style={styles.topicTextWrap}>
-              <Text style={[styles.topicTitle, { color: tokens.text }]}>
+              <AppText variant="sectionTitle" style={styles.topicTitle} numberOfLines={2}>
                 {t(item.title)}
-              </Text>
+              </AppText>
               <ArabicText size={16} style={[styles.topicArabicTitle, { color: tokens.arabicName }]}>
                 {item.arabicTitle}
               </ArabicText>
@@ -115,9 +115,9 @@ export default function QuranTopicsScreen({
           </View>
           <View style={styles.topicActionWrap}>
             <View style={[styles.countPill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
-              <Text style={[styles.countPillText, { color: tokens.gold }]}>
+              <AppText variant="caption" highlight style={styles.countPillText}>
                 {item.verses.length} {t('verses')}
-              </Text>
+              </AppText>
             </View>
             <Ionicons
               name={isExpanded ? 'chevron-up' : 'chevron-down'}
@@ -130,9 +130,9 @@ export default function QuranTopicsScreen({
         {isExpanded && (
           <View style={styles.expandedContent}>
             <Hairline style={styles.divider} />
-            <Text style={[styles.topicDesc, { color: tokens.muted }]}>
+            <AppText variant="body" tone="faint" style={styles.topicDesc} numberOfLines={2}>
               {t(item.description)}
-            </Text>
+            </AppText>
             <View style={styles.versesList}>
               {item.verses.map((v, i) => renderVerseItem(v, i))}
             </View>
@@ -156,17 +156,17 @@ export default function QuranTopicsScreen({
         />
       }
     >
-      <View style={styles.contentWrap}>
-        <DetailScreen.FlatList
-          data={QURAN_TOPICS}
-          keyExtractor={(item) => item.id}
-          renderItem={renderTopicCard}
-          contentContainerStyle={[
-            styles.listContent,
-            { paddingHorizontal: paddingH },
-          ]}
-        />
-      </View>
+      <DetailScreen.FlatList
+        style={styles.contentWrap}
+        data={QURAN_TOPICS}
+        keyExtractor={(item) => item.id}
+        renderItem={renderTopicCard}
+        ItemSeparatorComponent={() => <View style={{ height: 12 }} />}
+        contentContainerStyle={[
+          styles.listContent,
+          { paddingHorizontal: paddingH },
+        ]}
+      />
     </DetailScreen>
   );
 }
@@ -190,21 +190,18 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     marginTop: 4,
-    lineHeight: 19,
   },
-  listContent: {
-    paddingTop: 8,
-    gap: 12,
-  },
+  listContent: {},
   topicCard: {
     borderRadius: 14,
+    minHeight: 56,
   },
   topicHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    minHeight: 48,
+    minHeight: 52,
     gap: 10,
   },
   topicTitleRow: {
@@ -212,6 +209,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     flex: 1,
+    minWidth: 0,
     marginRight: 8,
   },
   iconWrap: {
@@ -225,6 +223,7 @@ const styles = StyleSheet.create({
   },
   topicTextWrap: {
     flex: 1,
+    minWidth: 0,
   },
   topicTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -233,7 +232,6 @@ const styles = StyleSheet.create({
   },
   topicArabicTitle: {
     marginTop: 2,
-    lineHeight: 22,
     textAlign: 'left',
   },
   topicActionWrap: {
@@ -262,7 +260,6 @@ const styles = StyleSheet.create({
   topicDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 20,
     marginBottom: 14,
   },
   versesList: {
@@ -272,6 +269,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 16,
     borderWidth: 1,
+    minHeight: 80,
   },
   verseHeader: {
     flexDirection: 'row',
@@ -300,12 +298,10 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     writingDirection: 'rtl',
     marginBottom: 6,
-    lineHeight: 30,
   },
   verseTranslation: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 19,
     fontStyle: 'italic',
   },
 });

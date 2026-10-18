@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   ActivityIndicator,
   TouchableOpacity,
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import * as Location from 'expo-location';
 import { Magnetometer } from 'expo-sensors';
 import { Ionicons } from '@expo/vector-icons';
@@ -83,13 +83,8 @@ export default function QiblaScreen({
     refresh: refreshLocation,
   } = useLocation(false);
 
-  // Heading & Bearing state
+  // Heading state
   const [heading, setHeading] = useState<number | null>(null);
-  const [bearing, setBearing] = useState<number | null>(null);
-  const [distance, setDistance] = useState<number | null>(null);
-  const [declination, setDeclination] = useState<number>(0);
-  const [locLabel, setLocLabel] = useState<string>(t('Detecting location…'));
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // Status & Provider states
   const [source, setSource] = useState<CompassSource>('static');
@@ -98,21 +93,44 @@ export default function QiblaScreen({
   const [error, setError] = useState<string | null>(null);
   const [recalibrating, setRecalibrating] = useState<boolean>(false);
 
-  // Calibration guidance
-  const [calibrationGuidance, setCalibrationGuidance] = useState<CalibrationGuidance>({
-    step: 'hold-flat',
-    title: '',
-    description: '',
-    icon: '',
-    progress: 0,
-  });
-
   // Interference detection
   const [interference, setInterference] = useState<{
     hasInterference: boolean;
     level: 'none' | 'low' | 'medium' | 'high';
     details: string;
   }>({ hasInterference: false, level: 'none', details: '' });
+
+  // Effective location: GPS if available, otherwise saved autoLocation (if in auto mode), otherwise manual location
+  const effectiveLocation = useMemo(() => {
+    if (gpsLocation) return gpsLocation;
+    if (settings.locationMode === 'auto' && settings.autoLocation) return settings.autoLocation;
+    return settings.manualLocation;
+  }, [gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation]);
+
+  const coords = useMemo(() => ({
+    lat: effectiveLocation.latitude,
+    lng: effectiveLocation.longitude,
+  }), [effectiveLocation.latitude, effectiveLocation.longitude]);
+
+  const bearing = useMemo(() => {
+    return qiblaBearing(effectiveLocation.latitude, effectiveLocation.longitude);
+  }, [effectiveLocation.latitude, effectiveLocation.longitude]);
+
+  const distance = useMemo(() => {
+    return distanceToKaabaKm(effectiveLocation.latitude, effectiveLocation.longitude);
+  }, [effectiveLocation.latitude, effectiveLocation.longitude]);
+
+  const declination = useMemo(() => {
+    return magneticDeclination(effectiveLocation.latitude, effectiveLocation.longitude);
+  }, [effectiveLocation.latitude, effectiveLocation.longitude]);
+
+  const locLabel = useMemo(() => {
+    const activeLoc = gpsLocation || (settings.locationMode === 'auto' ? settings.autoLocation : null);
+    if (activeLoc) {
+      return activeLoc.label;
+    }
+    return `${t('Using manual location')} (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`;
+  }, [gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation.label]);
 
   // Refs for subscriptions & smoothing
   const smoothHeadingRef = useRef<number>(0);
@@ -123,10 +141,16 @@ export default function QiblaScreen({
   const magSubRef = useRef<{ remove: () => void } | null>(null);
   const watchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const latRef = useRef<number | null>(null);
-  const lngRef = useRef<number | null>(null);
+  const latRef = useRef<number | null>(effectiveLocation.latitude);
+  const lngRef = useRef<number | null>(effectiveLocation.longitude);
   const interferenceCheckTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hapticAlignedRef = useRef<boolean>(false);
+
+  // Sync refs when location coordinates change
+  useEffect(() => {
+    latRef.current = effectiveLocation.latitude;
+    lngRef.current = effectiveLocation.longitude;
+  }, [effectiveLocation.latitude, effectiveLocation.longitude]);
 
   // Needle rotation: bearing - heading
   // When heading=0 (phone points true north), needle points at bearing
@@ -136,40 +160,10 @@ export default function QiblaScreen({
   const isAligned = heading !== null && bearing !== null && isFacingQibla(rotation, 4);
   const isPreciselyAligned = heading !== null && bearing !== null && isFacingQibla(rotation, 3);
 
-  // Effective location: GPS if available, otherwise saved autoLocation (if in auto mode), otherwise manual location
-  const effectiveLocation = useMemo(() => {
-    if (gpsLocation) return gpsLocation;
-    if (settings.locationMode === 'auto' && settings.autoLocation) return settings.autoLocation;
-    return settings.manualLocation;
-  }, [gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation]);
-
-  // Compute bearing and distance whenever effective location changes
-  useEffect(() => {
-    const lat = effectiveLocation.latitude;
-    const lng = effectiveLocation.longitude;
-    latRef.current = lat;
-    lngRef.current = lng;
-    setCoords({ lat, lng });
-
-    const qBearing = qiblaBearing(lat, lng);
-    const qDistance = distanceToKaabaKm(lat, lng);
-    const qDecl = magneticDeclination(lat, lng);
-    setBearing(qBearing);
-    setDistance(qDistance);
-    setDeclination(qDecl);
-
-    const activeLoc = gpsLocation || (settings.locationMode === 'auto' ? settings.autoLocation : null);
-    if (activeLoc) {
-      setLocLabel(activeLoc.label);
-    } else {
-      setLocLabel(`${t('Using manual location')} (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`);
-    }
-  }, [effectiveLocation, gpsLocation, settings.locationMode, settings.autoLocation, settings.manualLocation.label]);
-
-  // Calibration guidance update
-  useEffect(() => {
+  // Calibration guidance derived from compass state
+  const calibrationGuidance = useMemo<CalibrationGuidance>(() => {
     const isStaticMode = Platform.OS === 'web' || source === 'static';
-    const guidance = getCalibrationGuidance(
+    return getCalibrationGuidance(
       isStaticMode,
       calibrating,
       heading,
@@ -177,19 +171,29 @@ export default function QiblaScreen({
       accuracy,
       isAligned
     );
-    setCalibrationGuidance(guidance);
   }, [calibrating, heading, bearing, accuracy, isAligned, source]);
 
   // Interference detection - check periodically when we have heading data
   useEffect(() => {
+    let cancelled = false;
     if (heading === null || Platform.OS === 'web' || source === 'static') {
-      setInterference({ hasInterference: false, level: 'none', details: '' });
-      return;
+      Promise.resolve().then(() => {
+        if (!cancelled) {
+          setInterference({ hasInterference: false, level: 'none', details: '' });
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
     }
 
     // Initial check
-    const result = checkMagneticInterference(heading, accuracy);
-    setInterference(result);
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        const result = checkMagneticInterference(heading, accuracy);
+        setInterference(result);
+      }
+    });
 
     // Periodic check every 2 seconds
     interferenceCheckTimerRef.current = setInterval(() => {
@@ -200,6 +204,7 @@ export default function QiblaScreen({
     }, 2000);
 
     return () => {
+      cancelled = true;
       if (interferenceCheckTimerRef.current) {
         clearInterval(interferenceCheckTimerRef.current);
         interferenceCheckTimerRef.current = null;
@@ -434,14 +439,30 @@ export default function QiblaScreen({
   }, [cleanupSubscriptions, handleHeadingSample, startMagnetometerFallback, startPollingFallback]);
 
   useEffect(() => {
-    startCompass();
-    return cleanupSubscriptions;
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        startCompass();
+      }
+    });
+    return () => {
+      cancelled = true;
+      cleanupSubscriptions();
+    };
   }, [startCompass, cleanupSubscriptions]);
 
   useEffect(() => {
+    let cancelled = false;
     if (locStatus === 'granted') {
-      startCompass();
+      Promise.resolve().then(() => {
+        if (!cancelled) {
+          startCompass();
+        }
+      });
     }
+    return () => {
+      cancelled = true;
+    };
   }, [locStatus, startCompass]);
 
   const handleRecalibrate = async () => {
@@ -492,13 +513,13 @@ export default function QiblaScreen({
             <Card style={[styles.errorCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} padded>
               <View style={styles.errorHeader}>
                 <Ionicons name="warning-outline" size={20} color={tokens.accent} />
-                <Text style={[styles.errorTitle, { color: tokens.text }]}>
+                <AppText variant="rowTitle" style={styles.errorTitle}>
                   {t('Compass Notice')}
-                </Text>
+                </AppText>
               </View>
-              <Text style={[styles.errorDescription, { color: tokens.muted }]}>
+              <AppText variant="body" tone="faint" style={styles.errorDescription}>
                 {error}
-              </Text>
+              </AppText>
             </Card>
           )}
 
@@ -506,6 +527,7 @@ export default function QiblaScreen({
           {(locStatus === 'denied' || locStatus === 'unavailable') && (
             <LocationPermissionNote
               status={locStatus}
+              style={error ? undefined : { marginTop: 0 }}
               onEnable={async () => {
                 const loc = await requestLocation(true);
                 if (loc && settings.locationMode === 'auto') {
@@ -544,7 +566,7 @@ export default function QiblaScreen({
                   },
                 ]}
               />
-              <Text style={[styles.statusText, { color: tokens.muted }]}>
+              <AppText variant="caption" tone="faint" style={styles.statusText}>
                 {calibrating && heading === null
                   ? t('Calibrating compass…')
                   : isAligned
@@ -556,7 +578,7 @@ export default function QiblaScreen({
                   : source === 'magnetometer'
                   ? t('Live Compass (Magnetometer)')
                   : t('Static Direction Mode')}
-              </Text>
+              </AppText>
             </View>
 
             {/* Recalibrate button */}
@@ -576,9 +598,9 @@ export default function QiblaScreen({
                 ) : (
                   <>
                     <Ionicons name="refresh" size={13} color={tokens.goldText} />
-                    <Text style={[styles.recalibrateText, { color: tokens.goldText }]}>
+                    <AppText variant="link" style={styles.recalibrateText}>
                       {t('Recalibrate')}
-                    </Text>
+                    </AppText>
                   </>
                 )}
               </TouchableOpacity>
@@ -593,12 +615,12 @@ export default function QiblaScreen({
                   <Ionicons name="infinite" size={20} color={tokens.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.bannerTitle, { color: tokens.text }]}>
+                  <AppText variant="rowTitle" style={styles.bannerTitle}>
                     {t('Compass Calibration Required')}
-                  </Text>
-                  <Text style={[styles.bannerText, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={styles.bannerText}>
                     {t('Compass accuracy is low. Wave phone slowly in a figure-8 motion to calibrate.')}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             </PremiumCard>
@@ -612,16 +634,16 @@ export default function QiblaScreen({
                   <Ionicons name="compass-outline" size={20} color={tokens.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.bannerTitle, { color: tokens.text }]}>
+                  <AppText variant="rowTitle" style={styles.bannerTitle}>
                     {t('Static Direction Mode')}
-                  </Text>
-                  <Text style={[styles.bannerText, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={styles.bannerText}>
                     {t('Hardware compass is not available on this platform. Align the top of your device toward')}{' '}
-                    <Text style={{ fontFamily: 'Manrope_700Bold', color: tokens.accent }}>
+                    <AppText variant="caption" highlight style={{ fontFamily: 'Manrope_700Bold' }}>
                       {bearing !== null ? `${Math.round(bearing)}°` : '--'}
-                    </Text>{' '}
+                    </AppText>{' '}
                     {t('relative to true north.')}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             </PremiumCard>
@@ -639,12 +661,12 @@ export default function QiblaScreen({
                   />
                 </View>
                 <View style={styles.calibrationTextWrap}>
-                  <Text style={[styles.calibrationTitle, { color: tokens.text }]}>
+                  <AppText variant="sectionTitle" style={styles.calibrationTitle}>
                     {t(calibrationGuidance.title)}
-                  </Text>
-                  <Text style={[styles.calibrationDescription, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="body" tone="faint" style={styles.calibrationDescription}>
                     {t(calibrationGuidance.description)}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
               <View style={styles.calibrationProgressWrap}>
@@ -659,11 +681,11 @@ export default function QiblaScreen({
                     ]}
                   />
                 </View>
-                <Text style={[styles.calibrationStepText, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.calibrationStepText}>
                   {t('Step')} {['Hold Flat', 'Rotate Slowly', 'Align', 'Ready'].indexOf(
                     calibrationGuidance.step.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                   ) + 1} {t('of')} 4
-                </Text>
+                </AppText>
               </View>
             </PremiumCard>
           )}
@@ -706,9 +728,9 @@ export default function QiblaScreen({
                     : tokens.muted
                 }
               />
-              <Text style={[styles.interferenceText, { color: tokens.muted }]}>
+              <AppText variant="caption" tone="faint" style={styles.interferenceText}>
                 {interference.details}
-              </Text>
+              </AppText>
             </View>
           )}
 
@@ -719,9 +741,9 @@ export default function QiblaScreen({
               {calibrating && heading === null && bearing === null ? (
                 <View style={[styles.loadingCompass, { height: compassSize }]}>
                   <ActivityIndicator size="large" color={tokens.accent} />
-                  <Text style={[styles.loadingText, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.loadingText}>
                     {t('Calibrating directional sensors…')}
-                  </Text>
+                  </AppText>
                 </View>
               ) : (
                 <QiblaCompass
@@ -737,16 +759,16 @@ export default function QiblaScreen({
 
             {/* Prominent Instrument Serif Bearing Readout */}
             <View style={styles.bearingHero} testID="qibla-bearing-hero">
-              <Text style={[styles.bearingValue, { color: tokens.text }]}>
+              <AppText variant="screenTitle" style={styles.bearingValue}>
                 {bearing !== null ? `${Math.round(bearing)}°` : '--'}
-              </Text>
-              <Text style={[styles.bearingSubtitle, { color: tokens.goldText }]}>
+              </AppText>
+              <AppText variant="eyebrow" highlight style={styles.bearingSubtitle}>
                 {t('Qibla Bearing')}
-              </Text>
+              </AppText>
               {distance !== null && (
-                <Text style={[styles.distanceHero, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.distanceHero}>
                   {formatDistanceToKaaba(distance)}
-                </Text>
+                </AppText>
               )}
             </View>
           </PremiumCard>
@@ -757,13 +779,13 @@ export default function QiblaScreen({
             <View style={styles.telemetryRow}>
               <View style={styles.telemetryLabelWrap}>
                 <Ionicons name="location-outline" size={16} color={tokens.muted} />
-                <Text style={[styles.telemetryLabel, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.telemetryLabel}>
                   {t('Location')}
-                </Text>
+                </AppText>
               </View>
-              <Text style={[styles.telemetryValue, { color: tokens.text }]} numberOfLines={1}>
+              <AppText variant="rowTitle" style={styles.telemetryValue} numberOfLines={2}>
                 {locLabel}
-              </Text>
+              </AppText>
             </View>
 
             <Hairline style={[styles.cardDivider, { backgroundColor: tokens.cardBorder }]} />
@@ -772,15 +794,15 @@ export default function QiblaScreen({
             <View style={styles.telemetryRow}>
               <View style={styles.telemetryLabelWrap}>
                 <Ionicons name="navigate-outline" size={16} color={tokens.muted} />
-                <Text style={[styles.telemetryLabel, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.telemetryLabel}>
                   {t('Current Heading')}
-                </Text>
+                </AppText>
               </View>
-              <Text style={[styles.telemetryValue, { color: tokens.text }]}>
+              <AppText variant="rowTitle" style={styles.telemetryValue}>
                 {heading !== null
                   ? `${Math.round(heading)}° (${getCardinalDirection(heading)})`
                   : t('Unavailable (rotate device)')}
-              </Text>
+              </AppText>
             </View>
 
             <Hairline style={[styles.cardDivider, { backgroundColor: tokens.cardBorder }]} />
@@ -789,15 +811,15 @@ export default function QiblaScreen({
             <View style={styles.telemetryRow}>
               <View style={styles.telemetryLabelWrap}>
                 <Ionicons name="globe-outline" size={16} color={tokens.muted} />
-                <Text style={[styles.telemetryLabel, { color: tokens.muted }]}>
+                <AppText variant="caption" tone="faint" style={styles.telemetryLabel}>
                   {t('Coordinates')}
-                </Text>
+                </AppText>
               </View>
-              <Text style={[styles.telemetryValueSub, { color: tokens.muted }]}>
+              <AppText variant="caption" tone="faint" style={styles.telemetryValueSub}>
                 {coords
                   ? `${coords.lat.toFixed(4)}°, ${coords.lng.toFixed(4)}°`
                   : '--'}
-              </Text>
+              </AppText>
             </View>
 
             {declination !== 0 && (
@@ -806,13 +828,13 @@ export default function QiblaScreen({
                 <View style={styles.telemetryRow}>
                   <View style={styles.telemetryLabelWrap}>
                     <Ionicons name="magnet-outline" size={16} color={tokens.muted} />
-                    <Text style={[styles.telemetryLabel, { color: tokens.muted }]}>
+                    <AppText variant="caption" tone="faint" style={styles.telemetryLabel}>
                       {t('Magnetic Declination')}
-                    </Text>
+                    </AppText>
                   </View>
-                  <Text style={[styles.telemetryValueSub, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.telemetryValueSub}>
                     {`${declination >= 0 ? '+' : ''}${declination.toFixed(1)}°`}
-                  </Text>
+                  </AppText>
                 </View>
               </>
             )}
@@ -820,9 +842,9 @@ export default function QiblaScreen({
 
           {/* Guidance Footer */}
           <View style={styles.footerNoteWrap} testID="qibla-guidance-footer">
-            <Text style={[styles.footerNote, { color: tokens.muted }]}>
+            <AppText variant="caption" tone="faint" style={styles.footerNote}>
               {t('Hold phone level with the ground. Turn your body until the amber needle points straight forward into the top notch marker.')}
-            </Text>
+            </AppText>
           </View>
         </View>
       </DetailScreen.ScrollView>
@@ -844,7 +866,6 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     width: '100%',
     alignSelf: 'center',
-    paddingTop: 12,
   },
   pattern: {
     top: -20,
@@ -861,6 +882,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   statusPill: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -875,10 +898,13 @@ const styles = StyleSheet.create({
     borderRadius: 3.5,
   },
   statusText: {
+    flexShrink: 1,
+    minWidth: 0,
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
   },
   recalibrateBtn: {
+    flexShrink: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
@@ -990,12 +1016,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 12,
     marginBottom: 8,
+    paddingHorizontal: 16,
   },
   bearingValue: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 60,
-    lineHeight: 64,
     letterSpacing: -1,
+    paddingVertical: 4,
+    textAlign: 'center',
   },
   bearingSubtitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1003,6 +1031,8 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: 2,
+    paddingVertical: 2,
+    textAlign: 'center',
   },
   distanceHero: {
     fontFamily: 'Manrope_500Medium',
@@ -1013,15 +1043,18 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   telemetryRow: {
+    minHeight: 40,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 10,
+    gap: 8,
   },
   telemetryLabelWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   telemetryLabel: {
     fontFamily: 'Manrope_500Medium',
@@ -1030,13 +1063,15 @@ const styles = StyleSheet.create({
   telemetryValue: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 14,
-    maxWidth: '55%',
+    maxWidth: '65%',
+    flexShrink: 1,
     textAlign: 'right',
   },
   telemetryValueSub: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
-    maxWidth: '55%',
+    maxWidth: '65%',
+    flexShrink: 1,
     textAlign: 'right',
   },
   cardDivider: {
@@ -1070,6 +1105,7 @@ const styles = StyleSheet.create({
   },
   calibrationTextWrap: {
     flex: 1,
+    minWidth: 0,
   },
   calibrationTitle: {
     fontFamily: 'Manrope_600SemiBold',

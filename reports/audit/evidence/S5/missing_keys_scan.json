@@ -1,0 +1,1137 @@
+{
+  "total_missing_keys_in_code": 159,
+  "impact": "Calls to t(key) fallback to returning the key string itself in all non-English locales, causing untranslated English text to display in UI.",
+  "missing_keys": [
+    {
+      "key": "All 114 Surahs with translations, audio & verse commentary",
+      "occurrences": [
+        "src/screens/QuranScreen.tsx",
+        "src/screens/QuranScreen.tsx",
+        "src/screens/QuranScreen.tsx"
+      ],
+      "files_count": 3
+    },
+    {
+      "key": "Enable Location",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx",
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Retry Detection",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx",
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Remove bookmark for ayah",
+      "occurrences": [
+        "src/components/AyahCardRow.tsx",
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Bookmark ayah",
+      "occurrences": [
+        "src/components/AyahCardRow.tsx",
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Previous Page",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx",
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Next Page",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx",
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Side-by-side comparative study of translations",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx",
+        "src/screens/TranslationCompareScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "NAVIGATION",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx",
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "full books",
+      "occurrences": [
+        "src/screens/LibraryScreen.tsx",
+        "src/screens/LibraryScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "99 Names of the Prophet",
+      "occurrences": [
+        "src/screens/LibraryScreen.tsx",
+        "src/screens/LibraryScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Noble names & attributes",
+      "occurrences": [
+        "src/screens/LibraryScreen.tsx",
+        "src/screens/LibraryScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Declaration of faith",
+      "occurrences": [
+        "src/screens/LibraryScreen.tsx",
+        "src/screens/LibraryScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Visit Official Channel",
+      "occurrences": [
+        "src/screens/HajjLiveScreen.tsx",
+        "src/screens/HajjLiveScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Salah Today",
+      "occurrences": [
+        "src/screens/HomeScreen.tsx",
+        "src/screens/HomeScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Collapsed",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx",
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "{{n}}/114 cached · {{edition}}",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx",
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 2
+    },
+    {
+      "key": "Location permission needed",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Location detection unavailable",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Enable location access so prayer times and Qibla direction are calculated for where you are. Until then, the app uses the saved location ({{city}}). You'll only be asked once on first launch.",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "GPS is not available on this device or platform. Currently using saved location ({{city}}).",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Choose city from world cities",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Choose City",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Open device settings to enable location",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Device Settings",
+      "occurrences": [
+        "src/components/LocationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Notifications not allowed yet",
+      "occurrences": [
+        "src/components/NotificationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Notifications are turned off",
+      "occurrences": [
+        "src/components/NotificationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Allow notifications so Islamic can play the Adhan at prayer time and remind you to read the Quran daily.",
+      "occurrences": [
+        "src/components/NotificationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "To receive Adhan calls, timely prayer alerts, and daily dhikr reminders, please enable notifications for Islamic in your device settings.",
+      "occurrences": [
+        "src/components/NotificationPermissionNote.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Remote stream unavailable",
+      "occurrences": [
+        "src/components/LiveVideoPlayer.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Launch the official uninterrupted live stream in the YouTube app or your browser.",
+      "occurrences": [
+        "src/components/LiveVideoPlayer.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Search…",
+      "occurrences": [
+        "src/components/ui/SearchField.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Remove offline audio for Surah {surah} ({size})?",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Close selection",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Marker",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Mushaf Pages",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Ayah by Ayah",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Decrease line height",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Increase line height",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Retry loading page",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Loading surah...",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Renowned Qaris & recitation styles",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Search translation edition or language...",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "COMMENTARY",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Scholarly explanations & exegesis",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "30 equal divisions of the Holy Quran",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "60 sections (half-juz markers)",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "TYPOGRAPHY",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Choose Arabic orthography & script",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Personal reflections & study notes",
+      "occurrences": [
+        "src/screens/QuranReaderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Use GPS automatically or enter a city or coordinates",
+      "occurrences": [
+        "src/screens/LocationScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Manual Coordinates",
+      "occurrences": [
+        "src/screens/LocationScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Quick City Select",
+      "occurrences": [
+        "src/screens/LocationScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Direction of Prayer",
+      "occurrences": [
+        "src/screens/QiblaScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Compass Calibration Required",
+      "occurrences": [
+        "src/screens/QiblaScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Your past 7 days, at a glance: Quran recitation, prayer consistency, Hifz milestones, and study reflections.",
+      "occurrences": [
+        "src/screens/WeeklySummaryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Personal Journey",
+      "occurrences": [
+        "src/screens/WeeklySummaryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "7-Day Overview",
+      "occurrences": [
+        "src/screens/WeeklySummaryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "A Week of Devotion & Learning",
+      "occurrences": [
+        "src/screens/WeeklySummaryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Gentle on-device reflection of your daily habits and spiritual consistency.",
+      "occurrences": [
+        "src/screens/WeeklySummaryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Salah Days",
+      "occurrences": [
+        "src/screens/WeeklySummaryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Mins Listened",
+      "occurrences": [
+        "src/screens/WeeklySummaryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Arabic with English translation",
+      "occurrences": [
+        "src/screens/LibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Browse",
+      "occurrences": [
+        "src/screens/LibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "KNOWLEDGE & COLLECTIONS",
+      "occurrences": [
+        "src/screens/LibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "GUIDES & EDUCATION",
+      "occurrences": [
+        "src/screens/LibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Please enter a valid start date (YYYY-MM-DD).",
+      "occurrences": [
+        "src/screens/WomenCycleScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Please enter a valid end date (YYYY-MM-DD) or leave it blank.",
+      "occurrences": [
+        "src/screens/WomenCycleScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Date Order Error",
+      "occurrences": [
+        "src/screens/WomenCycleScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Mark Period Ended?",
+      "occurrences": [
+        "src/screens/WomenCycleScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "This will set today as the end date of your active cycle. You should perform Ghusl before resuming Salah & fasting.",
+      "occurrences": [
+        "src/screens/WomenCycleScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "End & Mark Pure",
+      "occurrences": [
+        "src/screens/WomenCycleScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Tap counter, round tracking, and offline remembrance",
+      "occurrences": [
+        "src/screens/TasbihScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "prayers completed",
+      "occurrences": [
+        "src/screens/ToolsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "done",
+      "occurrences": [
+        "src/screens/ToolsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "not done",
+      "occurrences": [
+        "src/screens/ToolsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "TRACKERS & CALCULATORS",
+      "occurrences": [
+        "src/screens/ToolsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "UTILITIES & LOCATION",
+      "occurrences": [
+        "src/screens/ToolsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "LIVE BROADCASTS",
+      "occurrences": [
+        "src/screens/ToolsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "live stream",
+      "occurrences": [
+        "src/screens/ToolsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "offline",
+      "occurrences": [
+        "src/screens/ToolsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Access your saved verses and reading bookmarks",
+      "occurrences": [
+        "src/screens/BookmarksScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Error",
+      "occurrences": [
+        "src/screens/OnboardingScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Failed to save settings. Please try again.",
+      "occurrences": [
+        "src/screens/OnboardingScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Al Ekhbariya (Live News)",
+      "occurrences": [
+        "src/screens/HajjLiveScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Hajj live broadcasts are active exclusively during the pilgrimage season (8–13 Dhu al-Hijjah). Outside this window, recorded broadcasts and documentaries are available via the official channel.",
+      "occurrences": [
+        "src/screens/HajjLiveScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Hajj live streams are unavailable outside Hajj season",
+      "occurrences": [
+        "src/screens/HajjLiveScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Official multi-site broadcasts from Mina, Mount Arafat, Muzdalifah, and the Jamarat bridge air exclusively during the sacred Hajj pilgrimage (8–13 Dhu al-Hijjah). During the off-season, you can visit the verified official channel for news, documentaries, and archival coverage.",
+      "occurrences": [
+        "src/screens/HajjLiveScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "8, 10–13 Dhu al-Hijjah",
+      "occurrences": [
+        "src/screens/HajjLiveScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Night of 9th Dhu al-Hijjah",
+      "occurrences": [
+        "src/screens/HajjLiveScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "The declaration of faith and its foundational conditions in Islam",
+      "occurrences": [
+        "src/screens/ShahadaScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Hadith Detail",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Authentic Narration",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Browse narrations in this book",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Browse books in this collection",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "saved narrations",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Recent Hadiths",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "recently viewed narrations",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Reading Stats",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "hadiths read across collections",
+      "occurrences": [
+        "src/screens/HadithLibraryScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Verse-by-verse scholarly exegesis",
+      "occurrences": [
+        "src/screens/TafsirScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Privacy",
+      "occurrences": [
+        "src/screens/LegalScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Terms",
+      "occurrences": [
+        "src/screens/LegalScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Licenses",
+      "occurrences": [
+        "src/screens/LegalScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Services",
+      "occurrences": [
+        "src/screens/LegalScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Contact",
+      "occurrences": [
+        "src/screens/LegalScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "NEXT PRAYER",
+      "occurrences": [
+        "src/screens/HomeScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "until",
+      "occurrences": [
+        "src/screens/HomeScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "next",
+      "occurrences": [
+        "src/screens/HomeScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "upcoming",
+      "occurrences": [
+        "src/screens/HomeScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "SALAH STREAK",
+      "occurrences": [
+        "src/screens/HomeScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Non-Salah checkpoint",
+      "occurrences": [
+        "src/screens/HomeScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Find nearby places of worship",
+      "occurrences": [
+        "src/screens/MosqueFinderScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Khatmah milestone progress & daily readings",
+      "occurrences": [
+        "src/screens/ReadingPlansScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Structured schedules to recite the Holy Quran at your own pace",
+      "occurrences": [
+        "src/screens/ReadingPlansScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Expanded",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Expand",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Setting",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Checking local cache…",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Reminders on",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Reminders off",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Cycle & purity information is sensitive. Your data:\\n• Stays on this device by default\\n• Needs no account or sign-in\\n• Is never uploaded or included in analytics or logs\\n• Can be deleted anytime",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Close calculation method sheet",
+      "occurrences": [
+        "src/screens/SettingsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Gregorian to Hijri mapping, Islamic months & holy dates",
+      "occurrences": [
+        "src/screens/CalendarScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Hijri date shown under each day\\nAmber = today · Orange = Friday · Amber dot + icon = Islamic event",
+      "occurrences": [
+        "src/screens/CalendarScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Track memorization progress, revisions, and test recall",
+      "occurrences": [
+        "src/screens/HifzScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Please enter delivery date in YYYY-MM-DD format (e.g. 2026-10-05).",
+      "occurrences": [
+        "src/screens/WomenPurityScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Could not restore backup.",
+      "occurrences": [
+        "src/screens/BackupRestoreScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Included in Backup",
+      "occurrences": [
+        "src/screens/BackupRestoreScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Prayer History",
+      "occurrences": [
+        "src/screens/BackupRestoreScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Quran Bookmarks",
+      "occurrences": [
+        "src/screens/BackupRestoreScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Fasting Logs",
+      "occurrences": [
+        "src/screens/BackupRestoreScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Hifz Progress",
+      "occurrences": [
+        "src/screens/BackupRestoreScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "App Settings",
+      "occurrences": [
+        "src/screens/BackupRestoreScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Sacred Pilgrimage",
+      "occurrences": [
+        "src/screens/HajjJourneyScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Day-by-day rites from Yawm al-Tarwiyah in Mina to the Farewell Tawaf at the Kaaba.",
+      "occurrences": [
+        "src/screens/HajjJourneyScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "All Downloads",
+      "occurrences": [
+        "src/screens/DownloadsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Audio Surahs",
+      "occurrences": [
+        "src/screens/DownloadsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Quran Text",
+      "occurrences": [
+        "src/screens/DownloadsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Search downloads…",
+      "occurrences": [
+        "src/screens/DownloadsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Manage offline audio surahs and cached Quran text",
+      "occurrences": [
+        "src/screens/DownloadsScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Wealth assessment, nisab thresholds & calculation",
+      "occurrences": [
+        "src/screens/ZakatScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Annual Hawl Tracking",
+      "occurrences": [
+        "src/screens/ZakatScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Zakat is due once per lunar year on wealth maintained above Nisab",
+      "occurrences": [
+        "src/screens/ZakatScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Set a fixed annual calculation date (such as Ramadan or Muharram). Comparing your saved calculations year-over-year ensures timely discharge and helps verify whether your Hawl has completed.",
+      "occurrences": [
+        "src/screens/ZakatScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Read",
+      "occurrences": [
+        "src/screens/NotesScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Read in Quran",
+      "occurrences": [
+        "src/screens/NotesScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Capture your insights, questions, and personal dua",
+      "occurrences": [
+        "src/screens/NotesScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Reflecting on the Quran (Tadabbur)",
+      "occurrences": [
+        "src/screens/NotesScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "“Do they not then reflect upon the Quran, or are there locks upon their hearts?” (Surah Muhammad 47:24)",
+      "occurrences": [
+        "src/screens/NotesScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Notes are saved privately on your device. Review your reflections periodically to deepen your understanding.",
+      "occurrences": [
+        "src/screens/NotesScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Record thoughts and reflections on verses as you read",
+      "occurrences": [
+        "src/screens/NotesScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Recite from memory & test recall",
+      "occurrences": [
+        "src/screens/HifzPracticeScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Authentic supplications from the Quran and Sunnah",
+      "occurrences": [
+        "src/screens/DuasScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Search duas...",
+      "occurrences": [
+        "src/screens/DuasScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Suhoor & iftar countdowns, sunnah fasts & qada logs",
+      "occurrences": [
+        "src/screens/FastingScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Recitations, audio translations, playlists & player settings",
+      "occurrences": [
+        "src/screens/QuranAudioScreen.tsx"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Notifications let Islamic play the Adhan at prayer time and remind you to read the Quran daily.\\n\\nYou can change or turn these off anytime in Settings.",
+      "occurrences": [
+        "src/lib/firstLaunchPermissions.ts"
+      ],
+      "files_count": 1
+    },
+    {
+      "key": "Islamic uses your location only to calculate accurate prayer times and the Qibla direction for where you are.\\n\\nIf you prefer, you can skip this and choose a city instead — you can change this anytime in Settings.",
+      "occurrences": [
+        "src/lib/firstLaunchPermissions.ts"
+      ],
+      "files_count": 1
+    }
+  ]
+}

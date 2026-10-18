@@ -314,13 +314,57 @@ export function parseHm(hm: string): number {
   return (h || 0) * 60 + (m || 0);
 }
 
+export interface NextPrayer {
+  name: string;
+  time: string;
+  index: number;
+  isTomorrow?: boolean;
+  date?: Date;
+  targetDate?: Date;
+}
+
 /** Current + next prayer index for countdown */
-export function getNextPrayer(timings: PrayerTimes, now = new Date()): { name: string; time: string; index: number } | null {
+export function getNextPrayer(timings: PrayerTimes, now = new Date()): NextPrayer | null {
+  if (!timings) return null;
   const order = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'] as const;
   const nowMin = now.getHours() * 60 + now.getMinutes();
+
   for (let i = 0; i < order.length; i++) {
-    const t = parseHm(timings[order[i]] || '00:00');
-    if (nowMin < t) return { name: order[i], time: timings[order[i]], index: i };
+    const raw = timings[order[i]];
+    if (!raw || typeof raw !== 'string' || !raw.includes(':')) continue;
+    const t = parseHm(raw);
+    if (nowMin < t) {
+      const targetDate = new Date(now);
+      const [h, m] = raw.split(':').map(Number);
+      targetDate.setHours(h || 0, m || 0, 0, 0);
+      return {
+        name: order[i],
+        time: raw,
+        index: i,
+        isTomorrow: false,
+        date: targetDate,
+        targetDate,
+      };
+    }
   }
-  return null; // after Isha; next is tomorrow's Fajr
+
+  // After Isha: next prayer is tomorrow's Fajr
+  const fajrRaw = timings.Fajr;
+  if (!fajrRaw || typeof fajrRaw !== 'string' || !fajrRaw.includes(':')) {
+    return null;
+  }
+
+  const [fH, fM] = fajrRaw.split(':').map(Number);
+  const tomorrowFajr = new Date(now);
+  tomorrowFajr.setDate(tomorrowFajr.getDate() + 1);
+  tomorrowFajr.setHours(fH || 0, fM || 0, 0, 0);
+
+  return {
+    name: 'Fajr',
+    time: fajrRaw,
+    index: 0,
+    isTomorrow: true,
+    date: tomorrowFajr,
+    targetDate: tomorrowFajr,
+  };
 }

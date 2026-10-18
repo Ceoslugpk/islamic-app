@@ -1,0 +1,63 @@
+{
+  "name": {
+    "app_json": "Islamic - Your Daily Companion",
+    "package_json": "scaffold",
+    "strings_xml": "Islamic - Your Daily Companion",
+    "match": true
+  },
+  "slug": {
+    "app_json": "islamic"
+  },
+  "version": {
+    "app_json": "1.1.70",
+    "package_json": "1.1.70",
+    "build_gradle": "1.1.70",
+    "match": true
+  },
+  "versionCode": {
+    "app_json": null,
+    "build_gradle": 89,
+    "app_json_missing_version_code": true
+  },
+  "package": {
+    "app_json": "com.qashi.islamic",
+    "build_gradle_applicationId": "com.qashi.islamic",
+    "build_gradle_namespace": "com.qashi.islamic",
+    "rule3_compliant": true
+  },
+  "orientation": {
+    "app_json": "portrait",
+    "manifest_activity": "portrait"
+  },
+  "permissions": {
+    "app_json_android_permissions": [
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+      "android.permission.WAKE_LOCK"
+    ],
+    "app_json_plugin_notifications": [
+      "RECEIVE_BOOT_COMPLETED",
+      "SCHEDULE_EXACT_ALARM"
+    ],
+    "manifest_permissions": [
+      "android.permission.ACCESS_COARSE_LOCATION",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+      "android.permission.INTERNET",
+      "android.permission.MODIFY_AUDIO_SETTINGS",
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.RECEIVE_BOOT_COMPLETED",
+      "android.permission.USE_BIOMETRIC",
+      "android.permission.USE_FINGERPRINT",
+      "android.permission.VIBRATE",
+      "android.permission.WAKE_LOCK",
+      "android.permission.WRITE_EXTERNAL_STORAGE"
+    ],
+    "removed_by_plugin": [
+      "android.permission.ACTIVITY_RECOGNITION",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.SYSTEM_ALERT_WINDOW"
+    ]
+  }
+}

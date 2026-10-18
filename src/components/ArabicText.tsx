@@ -1,15 +1,15 @@
 import React from 'react';
-import { StyleSheet, Text, TextStyle, StyleProp, PixelRatio } from 'react-native';
+import { StyleSheet, Text, TextStyle, StyleProp, PixelRatio, Platform } from 'react-native';
 import { useTheme } from '../lib/theme';
 import type { QuranArabicFont } from '../lib/settings';
 
 /**
- * Quran Arabic is a critical dense layout: fixed lineHeights (1.6x base) and
+ * Quran Arabic is a critical dense layout: fixed lineHeights (1.8x base) and
  * diacritics break when the system font scale pushes the rendered size past
  * the lineHeight. Cap the multiplier and scale lineHeight by the same factor
  * so glyphs always fit inside their line box.
  */
-const MAX_ARABIC_FONT_SCALE = 1.4;
+const DEFAULT_MAX_ARABIC_FONT_SCALE = 1.3;
 
 /**
  * Registered font families for each Quran Arabic font option.
@@ -30,6 +30,7 @@ interface ArabicTextProps {
   numberOfLines?: number;
   fontFamily?: string;
   lineHeight?: number;
+  maxFontSizeMultiplier?: number;
 }
 
 /**
@@ -45,20 +46,22 @@ export function ArabicText({
   numberOfLines,
   fontFamily,
   lineHeight,
+  maxFontSizeMultiplier = DEFAULT_MAX_ARABIC_FONT_SCALE,
 }: ArabicTextProps) {
   const { colors } = useTheme();
   const resolvedFamily = fontFamily ?? (bold ? QURAN_FONT_FAMILIES.amiri.bold : QURAN_FONT_FAMILIES.amiri.regular);
   // Clamp the system font multiplier: Quran Arabic must stay legible inside
-  // its fixed 1.6x line boxes even at large accessibility font settings.
+  // its fixed line boxes even at large accessibility font settings.
+  const resolvedMaxMultiplier = maxFontSizeMultiplier ?? DEFAULT_MAX_ARABIC_FONT_SCALE;
   const fontScale = Math.min(
     Math.max(PixelRatio.getFontScale() || 1, 1),
-    MAX_ARABIC_FONT_SCALE,
+    resolvedMaxMultiplier,
   );
-  // Arabic needs generous line-height (~1.6x) or diacritics/ascenders clip.
+  // Arabic needs generous line-height (~1.8x minimum) or diacritics/ascenders clip.
   // Callers may override via the `lineHeight` prop or a `style` lineHeight —
   // both win because `style` sits last in the array. The base lineHeight
   // scales with the font multiplier so glyphs keep fitting at larger sizes.
-  const resolvedLineHeight = (lineHeight ?? Math.round(size * 1.6)) * fontScale;
+  const resolvedLineHeight = (lineHeight ?? Math.round(size * 1.8)) * fontScale;
   return (
     <Text
       style={[
@@ -74,7 +77,7 @@ export function ArabicText({
       ]}
       numberOfLines={numberOfLines}
       allowFontScaling
-      maxFontSizeMultiplier={MAX_ARABIC_FONT_SCALE}
+      maxFontSizeMultiplier={resolvedMaxMultiplier}
     >
       {children}
     </Text>
@@ -91,16 +94,23 @@ export function AyahText({
   size = 28,
   fontFamily,
   lineHeight,
+  maxFontSizeMultiplier,
 }: {
   text: string;
   numberInSurah: number;
   size?: number;
   fontFamily?: string;
   lineHeight?: number;
+  maxFontSizeMultiplier?: number;
 }) {
   const markerFamily = fontFamily ?? QURAN_FONT_FAMILIES.amiri.regular;
   return (
-    <ArabicText size={size} fontFamily={fontFamily} lineHeight={lineHeight}>
+    <ArabicText
+      size={size}
+      fontFamily={fontFamily}
+      lineHeight={lineHeight}
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
+    >
       {text}{' '}
       <Text style={[styles.ayahMarker, { fontFamily: markerFamily }]}>۝{numberInSurah}</Text>
     </ArabicText>
@@ -110,7 +120,12 @@ export function AyahText({
 const styles = StyleSheet.create({
   base: {
     writingDirection: 'rtl',
-    includeFontPadding: false,
+    ...Platform.select({
+      android: {
+        includeFontPadding: true,
+      },
+      default: {},
+    }),
   },
   ayahMarker: {
     fontSize: 18,

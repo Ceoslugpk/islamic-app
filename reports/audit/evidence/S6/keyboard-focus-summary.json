@@ -1,0 +1,128 @@
+{
+  "tabSequence": [
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "ariaLabel": "Retry loading prayer times",
+      "text": "Retry",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "DIV",
+      "role": "tab",
+      "ariaLabel": "Home",
+      "text": "\nHome",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "DIV",
+      "role": "tab",
+      "ariaLabel": "Quran",
+      "text": "",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "DIV",
+      "role": "tab",
+      "ariaLabel": "Library",
+      "text": "",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "DIV",
+      "role": "tab",
+      "ariaLabel": "Tools",
+      "text": "",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "BODY",
+      "role": null,
+      "ariaLabel": null,
+      "text": "\nCan't load prayer times righ",
+      "tabIndex": -1,
+      "outline": "rgb(0, 0, 0) none 3px",
+      "outlineStyle": "none",
+      "hasVisibleOutline": false
+    },
+    {
+      "tag": "BUTTON",
+      "role": "button",
+      "ariaLabel": "Retry loading prayer times",
+      "text": "Retry",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "DIV",
+      "role": "tab",
+      "ariaLabel": "Home",
+      "text": "\nHome",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "DIV",
+      "role": "tab",
+      "ariaLabel": "Quran",
+      "text": "",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "DIV",
+      "role": "tab",
+      "ariaLabel": "Library",
+      "text": "",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "DIV",
+      "role": "tab",
+      "ariaLabel": "Tools",
+      "text": "",
+      "tabIndex": 0,
+      "outline": "rgb(16, 16, 16) auto 1px",
+      "outlineStyle": "auto",
+      "hasVisibleOutline": true
+    },
+    {
+      "tag": "BODY",
+      "role": null,
+      "ariaLabel": null,
+      "text": "\nCan't load prayer times righ",
+      "tabIndex": -1,
+      "outline": "rgb(0, 0, 0) none 3px",
+      "outlineStyle": "none",
+      "hasVisibleOutline": false
+    }
+  ],
+  "counts": {
+    "totalButtonsAndRoleButtons": 65,
+    "tabStopCount": 70
+  }
+}

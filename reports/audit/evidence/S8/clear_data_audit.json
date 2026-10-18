@@ -1,0 +1,31 @@
+{
+  "clearFunctions": [
+    {
+      "name": "clearWomenData",
+      "webImpl": true,
+      "nativeImpl": true,
+      "deletesPeriod": true,
+      "deletesNifas": true,
+      "deletesQadaFasts": true
+    },
+    {
+      "name": "clearCycleHistory",
+      "webImpl": true,
+      "nativeImpl": true,
+      "deletesPeriodOnly": true
+    },
+    {
+      "name": "clearAllDownloads",
+      "exists": true,
+      "wipesDiskFiles": true,
+      "clearsMetadata": false
+    }
+  ],
+  "uiExposure": {
+    "settingsClearCycle": true,
+    "settingsClearWomenAll": true,
+    "downloadsClearAll": true,
+    "globalFactoryResetInSettings": false,
+    "globalFactoryResetInBackup": false
+  }
+}

@@ -1,7 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Animated,
@@ -9,9 +8,12 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme, getCardShadow } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
+import { HOME_THEME_TOKENS } from '../lib/constants';
 import { isRTL, t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -26,19 +28,20 @@ export interface QuickActionsStripProps {
 interface ActionItemProps {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+  subtitle: string;
   onPress?: () => void;
 }
 
-function ActionButton({ icon, label, onPress }: ActionItemProps) {
-  const { colors } = useTheme();
+function ActionButton({ icon, label, subtitle, onPress }: ActionItemProps) {
+  const { mode } = useTheme();
+  const homeTokens = HOME_THEME_TOKENS[mode];
   const { haptic } = useHaptics();
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [scaleAnim] = useState(() => new Animated.Value(1));
 
   const handlePressIn = () => {
-    // Calm press feedback: 120ms cubic-out scale, no springy overshoot.
     Animated.timing(scaleAnim, {
-      toValue: 0.94,
-      duration: 120,
+      toValue: 0.96,
+      duration: 100,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
@@ -47,7 +50,7 @@ function ActionButton({ icon, label, onPress }: ActionItemProps) {
   const handlePressOut = () => {
     Animated.timing(scaleAnim, {
       toValue: 1,
-      duration: 180,
+      duration: 160,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: USE_NATIVE_DRIVER,
     }).start();
@@ -59,31 +62,86 @@ function ActionButton({ icon, label, onPress }: ActionItemProps) {
   };
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      onPress={handlePress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={styles.actionCol}
-      accessibilityRole="button"
-      accessibilityLabel={t(label)}
+    <Animated.View
+      style={[
+        styles.cardWrap,
+        {
+          transform: [{ scale: scaleAnim }],
+          borderRadius: 14,
+          backgroundColor: homeTokens.cardTop,
+          ...getCardShadow(mode),
+        },
+      ]}
     >
-      <Animated.View
+      <TouchableOpacity
+        activeOpacity={0.88}
+        onPress={handlePress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
         style={[
-          styles.iconCircle,
+          styles.actionCard,
           {
-            backgroundColor: colors.iconCircleBg || colors.bgSurface,
-            borderColor: colors.borderSubtle,
-            transform: [{ scale: scaleAnim }],
+            backgroundColor: homeTokens.cardTop,
+            borderColor: homeTokens.cardBorder,
           },
         ]}
+        accessibilityRole="button"
+        accessibilityLabel={`${t(label)}, ${t(subtitle)}`}
+        focusable={true}
+        {...(Platform.OS === 'web'
+          ? ({
+              tabIndex: 0,
+              onKeyDown: (e: any) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault?.();
+                  handlePress();
+                }
+              },
+            } as any)
+          : {})}
       >
-        <Ionicons name={icon} size={20} color={colors.iconCircleFg || colors.accent} />
-      </Animated.View>
-      <Text style={[styles.actionLabel, { color: colors.textSecondary }]}>
-        {t(label)}
-      </Text>
-    </TouchableOpacity>
+        <LinearGradient
+          colors={[homeTokens.cardTop, homeTokens.cardBottom]}
+          style={StyleSheet.absoluteFill}
+        />
+        <View
+          style={[
+            styles.iconCircle,
+            {
+              backgroundColor: homeTokens.ringFill,
+              borderColor: homeTokens.ringBorder,
+            },
+          ]}
+        >
+          <Ionicons name={icon} size={16} color={homeTokens.accent} />
+        </View>
+        <AppText
+          variant="rowTitle"
+          style={[
+            styles.actionLabel,
+            {
+              fontFamily: isRTL() ? 'Amiri_700Bold' : 'Manrope_700Bold',
+              textAlign: isRTL() ? 'right' : 'left',
+            },
+          ]}
+          numberOfLines={2}
+        >
+          {t(label)}
+        </AppText>
+        <AppText
+          variant="caption"
+          style={[
+            styles.actionSubtitle,
+            {
+              textAlign: isRTL() ? 'right' : 'left',
+            },
+          ]}
+          numberOfLines={2}
+        >
+          {t(subtitle)}
+        </AppText>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -98,22 +156,20 @@ export function QuickActionsStrip({
     {
       icon: 'compass-outline',
       label: 'Qibla',
+      subtitle: 'Direction',
       onPress: onOpenQibla,
-    },
-    {
-      icon: 'book-outline',
-      label: 'Duas',
-      onPress: onOpenDuas,
-    },
-    {
-      icon: 'library-outline',
-      label: 'Hadith',
-      onPress: onOpenHadith,
     },
     {
       icon: 'repeat-outline',
       label: 'Tasbih',
+      subtitle: 'Dhikr counter',
       onPress: onOpenTasbih,
+    },
+    {
+      icon: 'hand-left-outline',
+      label: 'Duas',
+      subtitle: 'Adhkar',
+      onPress: onOpenDuas,
     },
   ];
 
@@ -124,6 +180,7 @@ export function QuickActionsStrip({
           key={act.label}
           icon={act.icon}
           label={act.label}
+          subtitle={act.subtitle}
           onPress={act.onPress}
         />
       ))}
@@ -134,29 +191,44 @@ export function QuickActionsStrip({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
+    gap: 7,
+    marginBottom: 14.5,
+    width: '100%',
   },
-  actionCol: {
-    alignItems: 'center',
+  cardWrap: {
+    flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
+  },
+  actionCard: {
+    minHeight: 92,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    overflow: 'hidden',
     justifyContent: 'center',
-    minWidth: 54,
   },
   iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 6,
   },
   actionLabel: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 0.3,
-    textAlign: 'center',
+    fontSize: 13.5,
+    letterSpacing: 0.2,
+    marginBottom: 1,
+    flexShrink: 1,
+  },
+  actionSubtitle: {
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 10.5,
+    flexShrink: 1,
   },
 });

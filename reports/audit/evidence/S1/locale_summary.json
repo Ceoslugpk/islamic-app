@@ -1,0 +1,25 @@
+{
+  "locale_count": 49,
+  "base_keys": 2302,
+  "bad_locales": [
+    {
+      "file": "src/locales/kk.json",
+      "keys": 2263,
+      "missing": 39,
+      "extra": 0,
+      "empty": 0,
+      "missing_sample": [
+        "Authentication failed. Try again.",
+        "Authentication unavailable on this device.",
+        "Choose a 4-digit PIN to lock sensitive tools",
+        "Confirm PIN",
+        "Confirming PIN",
+        "Create 4-Digit PIN",
+        "Current PIN is incorrect.",
+        "Digit {{digit}}",
+        "Enable controls",
+        "Enable notifications to control Quran recitation from your lock screen, notification shade, and headphones while listening in the background."
+      ]
+    }
+  ]
+}

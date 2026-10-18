@@ -1,7 +1,6 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ViewStyle,
@@ -9,9 +8,11 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { HOME_THEME_TOKENS } from '../lib/homeThemeTokens';
 import { getBackIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
-import { t } from '../lib/i18n';
+import { t, isRTL } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 import {
   HEADER_HORIZONTAL_PADDING,
   HEADER_MAX_WIDTH,
@@ -54,10 +55,12 @@ export function ScreenHeader({
   style,
   borderBottom = HEADER_SEPARATOR,
 }: ScreenHeaderProps) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
+  const tokens = HOME_THEME_TOKENS[mode];
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = HEADER_HORIZONTAL_PADDING;
+  const rtl = isRTL();
 
   const backIconName = getBackIcon('chevron');
 
@@ -66,32 +69,44 @@ export function ScreenHeader({
       style={[
         styles.container,
         {
+          backgroundColor: tokens.bgTop,
           paddingHorizontal: paddingH,
           borderBottomColor: colors.borderSubtle,
           borderBottomWidth: borderBottom ? 1 : 0,
         },
         style,
       ]}
+      testID="screen-header"
     >
-      <View style={styles.innerRow}>
+      <View
+        style={[
+          styles.innerRow,
+          { flexDirection: rtl ? 'row-reverse' : 'row' },
+        ]}
+      >
         {/* Left: Back Button or spacer */}
         {onBack ? (
           <TouchableOpacity
-            style={styles.backButton}
+            style={[
+              styles.backButton,
+              { flexDirection: rtl ? 'row-reverse' : 'row' },
+            ]}
             onPress={onBack}
             accessibilityRole="button"
             accessibilityLabel={backLabel ? `${t('Back')} ${t(backLabel)}` : t('Back')}
             hitSlop={touchTargetTokens.hitSlop8}
             activeOpacity={0.7}
+            testID="screen-header-back"
           >
             <Ionicons name={backIconName} size={iconSizes.header} color={colors.accent} />
             {backLabel && !isCompact ? (
-              <Text
-                style={[styles.backLabelText, { color: colors.accent }]}
+              <AppText
+                variant="link"
+                style={styles.backLabelText}
                 numberOfLines={1}
               >
                 {t(backLabel)}
-              </Text>
+              </AppText>
             ) : null}
           </TouchableOpacity>
         ) : (
@@ -101,24 +116,31 @@ export function ScreenHeader({
         {/* Center / Fill: Title, Eyebrow & Subtitle */}
         <View style={styles.titleColumn}>
           {eyebrow ? (
-            <Text
+            <AppText
+              variant="eyebrow"
               style={[
                 styles.eyebrow,
-                { color: colors.accent, fontSize: isCompact ? 9.5 : 10.5 },
+                {
+                  color: tokens.gold,
+                  fontSize: isCompact ? 9.5 : 10.5,
+                  textAlign: rtl ? 'right' : 'left',
+                },
               ]}
               numberOfLines={1}
               maxFontSizeMultiplier={1.4}
             >
               {t(eyebrow)}
-            </Text>
+            </AppText>
           ) : null}
-          <Text
+          <AppText
+            variant="headerTitle"
             style={[
               styles.title,
               {
-                color: colors.textPrimary,
                 fontSize: isCompact ? 21 : 23,
                 lineHeight: isCompact ? 25 : 27,
+                textAlign: rtl ? 'right' : 'left',
+                fontFamily: rtl ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
               },
             ]}
             numberOfLines={1}
@@ -127,19 +149,23 @@ export function ScreenHeader({
             maxFontSizeMultiplier={1.4}
           >
             {t(title)}
-          </Text>
+          </AppText>
           {subtitle ? (
-            <Text
+            <AppText
+              variant="subtitle"
               style={[
                 styles.subtitle,
-                { color: colors.textSecondary, fontSize: isCompact ? 11 : 12 },
+                {
+                  fontSize: isCompact ? 11 : 12,
+                  textAlign: rtl ? 'right' : 'left',
+                },
               ]}
-              numberOfLines={1}
+              numberOfLines={2}
               ellipsizeMode="tail"
               maxFontSizeMultiplier={1.4}
             >
               {t(subtitle)}
-            </Text>
+            </AppText>
           ) : null}
         </View>
 
@@ -165,6 +191,9 @@ const styles = StyleSheet.create({
     maxWidth: HEADER_MAX_WIDTH,
     alignSelf: 'center',
     paddingVertical: HEADER_PADDING_VERTICAL,
+    position: 'relative',
+    zIndex: 10,
+    elevation: 4,
   },
   innerRow: {
     flexDirection: 'row',

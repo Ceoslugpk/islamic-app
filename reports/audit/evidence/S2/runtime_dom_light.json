@@ -1,0 +1,12 @@
+{
+  "url": "http://15.235.203.134:9998/",
+  "viewport": [
+    393,
+    852
+  ],
+  "theme": "light",
+  "state": "home/error-state with first-launch location sheet overlay",
+  "dom_text": "Can't load prayer times right now. Connect to the internet to get today's prayer schedule. Retry; Home",
+  "computed_observation": "home error text was present in DOM; visible first-launch location sheet overlays the viewport; sheet uses cream surface and forest-green primary action",
+  "screenshot": "reports/audit/evidence/S2/location-sheet-light-393x852.png"
+}

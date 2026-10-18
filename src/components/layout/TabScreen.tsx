@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, forwardRef } from 'react';
+import React, { createContext, useContext, useMemo, useCallback, useState, forwardRef } from 'react';
 import {
   View,
   ScrollView,
@@ -10,9 +10,10 @@ import {
   Platform,
   StyleProp,
   ViewStyle,
+  RefreshControlProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TAB_PAD_TOP, TAB_PAD_BOTTOM } from './layout.constants';
+import { TAB_PAD_TOP, TAB_PAD_BOTTOM, HEADER_BOTTOM, CONTENT_GAP, HEADER_FADE } from './layout.constants';
 
 export interface TabScreenContextValue {
   padTop: number;
@@ -20,6 +21,9 @@ export interface TabScreenContextValue {
   safeTop: number;
   safeBottom: number;
   header?: React.ReactNode;
+  headerHeight: number;
+  measuredHeaderHeight: number;
+  onHeaderLayout?: (height: number) => void;
 }
 
 const defaultContextValue: TabScreenContextValue = {
@@ -27,6 +31,8 @@ const defaultContextValue: TabScreenContextValue = {
   padBottom: TAB_PAD_BOTTOM(0),
   safeTop: 0,
   safeBottom: 0,
+  headerHeight: HEADER_BOTTOM(0) - HEADER_FADE,
+  measuredHeaderHeight: HEADER_BOTTOM(0),
 };
 
 export const TabScreenContext = createContext<TabScreenContextValue>(defaultContextValue);
@@ -57,8 +63,19 @@ export function TabScreen({
   const safeTop = insets.top;
   const safeBottom = insets.bottom;
 
-  const padTop = useMemo(() => (header ? 0 : TAB_PAD_TOP(safeTop)), [header, safeTop]);
+  const defaultH = HEADER_BOTTOM(safeTop);
+  const [headerHeight, setHeaderHeight] = useState<number>(defaultH);
+  const effectiveHeaderHeight = Math.max(0, headerHeight - HEADER_FADE);
+
+  const padTop = useMemo(
+    () => (header ? effectiveHeaderHeight + CONTENT_GAP : TAB_PAD_TOP(safeTop)),
+    [header, safeTop, effectiveHeaderHeight]
+  );
   const padBottom = useMemo(() => TAB_PAD_BOTTOM(safeBottom), [safeBottom]);
+
+  const onHeaderLayout = useCallback((h: number) => {
+    setHeaderHeight((prev) => (Math.abs(prev - h) > 0.5 ? h : prev));
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -67,8 +84,11 @@ export function TabScreen({
       safeTop,
       safeBottom,
       header,
+      headerHeight: effectiveHeaderHeight,
+      measuredHeaderHeight: headerHeight,
+      onHeaderLayout,
     }),
-    [padTop, padBottom, safeTop, safeBottom, header]
+    [padTop, padBottom, safeTop, safeBottom, header, effectiveHeaderHeight, headerHeight, onHeaderLayout]
   );
 
   return (
@@ -94,28 +114,37 @@ export function TabScreen({
 }
 
 /**
- * TabScrollView automatically applies unified tab padding and scroller configs:
- * - paddingTop: TAB_PAD_TOP
- * - paddingBottom: TAB_PAD_BOTTOM
- * - indicators: false
- * - contentInsetAdjustmentBehavior: 'never'
- * - automaticallyAdjustContentInsets: false
- * - bounces: true
+ * TabScrollView automatically applies unified tab padding, scroller configs,
+ * and renders the non-sticky shared header inside the scroll owner.
  */
 export const TabScrollView = forwardRef<ScrollView, ScrollViewProps>(
-  ({ contentContainerStyle, children, ...rest }, ref) => {
-    const { padTop, padBottom, header } = useTabScreen();
-    const flatStyle = StyleSheet.flatten(contentContainerStyle);
-    const padH =
-      typeof flatStyle?.paddingHorizontal === 'number'
-        ? flatStyle.paddingHorizontal
-        : 0;
-    const headerNode =
-      header && padH > 0 ? (
-        <View style={{ marginHorizontal: -padH }}>{header}</View>
-      ) : (
-        header
-      );
+  ({ contentContainerStyle, children, refreshControl, testID = 'screen-content', ...rest }, ref) => {
+    const { header, padTop, padBottom, headerHeight, measuredHeaderHeight, onHeaderLayout } = useTabScreen();
+
+    const flat = StyleSheet.flatten(contentContainerStyle);
+    const padH = flat?.paddingHorizontal;
+    const padL = flat?.paddingLeft ?? padH;
+    const padR = flat?.paddingRight ?? padH;
+
+    const headerMargin = useMemo(() => {
+      const s: ViewStyle = {
+        marginBottom: Math.max(0, CONTENT_GAP - HEADER_FADE),
+      };
+      if (typeof padH === 'number' && padH > 0) {
+        s.marginHorizontal = -padH;
+      } else {
+        if (typeof padL === 'number' && padL > 0) s.marginLeft = -padL;
+        if (typeof padR === 'number' && padR > 0) s.marginRight = -padR;
+      }
+      return s;
+    }, [padH, padL, padR]);
+
+    const injectedRefreshControl = useMemo(() => {
+      if (!refreshControl || !React.isValidElement(refreshControl)) return refreshControl;
+      const rc = refreshControl as React.ReactElement<RefreshControlProps>;
+      if (rc.props.progressViewOffset !== undefined) return refreshControl;
+      return React.cloneElement(rc, { progressViewOffset: headerHeight });
+    }, [refreshControl, headerHeight]);
 
     return (
       <ScrollView
@@ -125,13 +154,27 @@ export const TabScrollView = forwardRef<ScrollView, ScrollViewProps>(
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         bounces={true}
+        refreshControl={injectedRefreshControl}
+        testID={testID}
         {...rest}
         contentContainerStyle={[
           contentContainerStyle,
-          { paddingTop: padTop, paddingBottom: padBottom },
+          { paddingTop: header ? 0 : padTop, paddingBottom: padBottom },
         ]}
       >
-        {headerNode}
+        {header ? (
+          <View
+            style={[styles.scrollHeaderWrapper, headerMargin]}
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              if (h > 0 && Math.abs(h - measuredHeaderHeight) > 0.5) {
+                onHeaderLayout?.(h);
+              }
+            }}
+          >
+            {header}
+          </View>
+        ) : null}
         {children}
       </ScrollView>
     );
@@ -140,23 +183,37 @@ export const TabScrollView = forwardRef<ScrollView, ScrollViewProps>(
 TabScrollView.displayName = 'TabScrollView';
 
 /**
- * TabAnimatedScrollView applies unified tab padding and scroller configs
- * for animated scroll views (e.g. HomeScreen compact prayer bar scroll listener).
+ * TabAnimatedScrollView applies unified tab padding, scroller configs,
+ * and renders the non-sticky shared header inside the animated scroll owner.
  */
 export const TabAnimatedScrollView = forwardRef<any, ScrollViewProps>(
-  ({ contentContainerStyle, children, ...rest }, ref) => {
-    const { padTop, padBottom, header } = useTabScreen();
-    const flatStyle = StyleSheet.flatten(contentContainerStyle);
-    const padH =
-      typeof flatStyle?.paddingHorizontal === 'number'
-        ? flatStyle.paddingHorizontal
-        : 0;
-    const headerNode =
-      header && padH > 0 ? (
-        <View style={{ marginHorizontal: -padH }}>{header}</View>
-      ) : (
-        header
-      );
+  ({ contentContainerStyle, children, refreshControl, testID = 'screen-content', ...rest }, ref) => {
+    const { header, padTop, padBottom, headerHeight, measuredHeaderHeight, onHeaderLayout } = useTabScreen();
+
+    const flat = StyleSheet.flatten(contentContainerStyle);
+    const padH = flat?.paddingHorizontal;
+    const padL = flat?.paddingLeft ?? padH;
+    const padR = flat?.paddingRight ?? padH;
+
+    const headerMargin = useMemo(() => {
+      const s: ViewStyle = {
+        marginBottom: Math.max(0, CONTENT_GAP - HEADER_FADE),
+      };
+      if (typeof padH === 'number' && padH > 0) {
+        s.marginHorizontal = -padH;
+      } else {
+        if (typeof padL === 'number' && padL > 0) s.marginLeft = -padL;
+        if (typeof padR === 'number' && padR > 0) s.marginRight = -padR;
+      }
+      return s;
+    }, [padH, padL, padR]);
+
+    const injectedRefreshControl = useMemo(() => {
+      if (!refreshControl || !React.isValidElement(refreshControl)) return refreshControl;
+      const rc = refreshControl as React.ReactElement<RefreshControlProps>;
+      if (rc.props.progressViewOffset !== undefined) return refreshControl;
+      return React.cloneElement(rc, { progressViewOffset: headerHeight });
+    }, [refreshControl, headerHeight]);
 
     return (
       <Animated.ScrollView
@@ -166,13 +223,27 @@ export const TabAnimatedScrollView = forwardRef<any, ScrollViewProps>(
         contentInsetAdjustmentBehavior="never"
         automaticallyAdjustContentInsets={false}
         bounces={true}
+        refreshControl={injectedRefreshControl}
+        testID={testID}
         {...rest}
         contentContainerStyle={[
           contentContainerStyle,
-          { paddingTop: padTop, paddingBottom: padBottom },
+          { paddingTop: header ? 0 : padTop, paddingBottom: padBottom },
         ]}
       >
-        {headerNode}
+        {header ? (
+          <View
+            style={[styles.scrollHeaderWrapper, headerMargin]}
+            onLayout={(e) => {
+              const h = e.nativeEvent.layout.height;
+              if (h > 0 && Math.abs(h - measuredHeaderHeight) > 0.5) {
+                onHeaderLayout?.(h);
+              }
+            }}
+          >
+            {header}
+          </View>
+        ) : null}
         {children}
       </Animated.ScrollView>
     );
@@ -181,44 +252,67 @@ export const TabAnimatedScrollView = forwardRef<any, ScrollViewProps>(
 TabAnimatedScrollView.displayName = 'TabAnimatedScrollView';
 
 /**
- * TabFlatList automatically applies unified tab padding and scroller configs.
+ * TabFlatList automatically applies unified tab padding, scroller configs,
+ * and prepends the non-sticky shared header to ListHeaderComponent.
  */
 export function TabFlatList<T>(
   props: FlatListProps<T> & { ref?: React.Ref<FlatList<T>> }
 ) {
-  const { padTop, padBottom, header } = useTabScreen();
-  const { contentContainerStyle, ListHeaderComponent, ...rest } = props;
-  const flatStyle = StyleSheet.flatten(contentContainerStyle);
-  const padH =
-    typeof flatStyle?.paddingHorizontal === 'number'
-      ? flatStyle.paddingHorizontal
-      : 0;
+  const { header, padTop, padBottom, headerHeight, measuredHeaderHeight, onHeaderLayout } = useTabScreen();
+  const { contentContainerStyle, refreshControl, testID = 'screen-content', ListHeaderComponent, ...rest } = props;
 
-  const combinedHeader = useMemo<React.ReactElement | null>(() => {
-    if (!header && !ListHeaderComponent) return null;
-    const headerNode =
-      header && padH > 0 ? (
-        <View style={{ marginHorizontal: -padH }}>{header}</View>
-      ) : header ? (
-        <View>{header}</View>
-      ) : null;
-    if (!headerNode) {
-      return React.isValidElement(ListHeaderComponent)
-        ? (ListHeaderComponent as React.ReactElement)
-        : typeof ListHeaderComponent === 'function'
-        ? React.createElement(ListHeaderComponent)
-        : null;
+  const flat = StyleSheet.flatten(contentContainerStyle);
+  const padH = flat?.paddingHorizontal;
+  const padL = flat?.paddingLeft ?? padH;
+  const padR = flat?.paddingRight ?? padH;
+
+  const headerMargin = useMemo(() => {
+    const s: ViewStyle = {
+      marginBottom: Math.max(0, CONTENT_GAP - HEADER_FADE),
+    };
+    if (typeof padH === 'number' && padH > 0) {
+      s.marginHorizontal = -padH;
+    } else {
+      if (typeof padL === 'number' && padL > 0) s.marginLeft = -padL;
+      if (typeof padR === 'number' && padR > 0) s.marginRight = -padR;
     }
-    if (!ListHeaderComponent) return headerNode;
+    return s;
+  }, [padH, padL, padR]);
+
+  const combinedHeader = useMemo(() => {
+    if (!header && !ListHeaderComponent) return null;
+    const originalHeader = React.isValidElement(ListHeaderComponent)
+      ? ListHeaderComponent
+      : typeof ListHeaderComponent === 'function'
+      ? React.createElement(ListHeaderComponent as any)
+      : ListHeaderComponent;
+
+    if (!header) return originalHeader;
+
     return (
-      <View>
-        {headerNode}
-        {typeof ListHeaderComponent === 'function'
-          ? React.createElement(ListHeaderComponent)
-          : ListHeaderComponent}
+      <View style={styles.flatListHeaderWrap}>
+        <View
+          style={[styles.scrollHeaderWrapper, headerMargin]}
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0 && Math.abs(h - measuredHeaderHeight) > 0.5) {
+              onHeaderLayout?.(h);
+            }
+          }}
+        >
+          {header}
+        </View>
+        {originalHeader}
       </View>
     );
-  }, [header, ListHeaderComponent, padH]);
+  }, [header, ListHeaderComponent, headerMargin, measuredHeaderHeight, onHeaderLayout]);
+
+  const injectedRefreshControl = useMemo(() => {
+    if (!refreshControl || !React.isValidElement(refreshControl)) return refreshControl;
+    const rc = refreshControl as React.ReactElement<RefreshControlProps>;
+    if (rc.props.progressViewOffset !== undefined) return refreshControl;
+    return React.cloneElement(rc, { progressViewOffset: headerHeight });
+  }, [refreshControl, headerHeight]);
 
   return (
     <FlatList
@@ -227,11 +321,13 @@ export function TabFlatList<T>(
       contentInsetAdjustmentBehavior="never"
       automaticallyAdjustContentInsets={false}
       bounces={true}
-      {...rest}
+      refreshControl={injectedRefreshControl}
+      testID={testID}
       ListHeaderComponent={combinedHeader}
+      {...rest}
       contentContainerStyle={[
         contentContainerStyle,
-        { paddingTop: padTop, paddingBottom: padBottom },
+        { paddingTop: header ? 0 : padTop, paddingBottom: padBottom },
       ]}
     />
   );
@@ -247,6 +343,17 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     backgroundColor: 'transparent',
+    position: 'relative',
+  },
+  scrollHeaderWrapper: {
+    alignSelf: 'stretch',
+    zIndex: 10,
+    elevation: 4,
+    position: 'relative',
+  },
+  flatListHeaderWrap: {
+    alignSelf: 'stretch',
+    width: '100%',
   },
   webDvh: Platform.select({
     web: {

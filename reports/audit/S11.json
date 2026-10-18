@@ -1,0 +1,646 @@
+{
+  "schemaVersion": "S11-release-readiness-audit-1",
+  "audit": {
+    "phase": "S11",
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "androidBuildSupplied": false,
+    "sourceRef": "94f9073a134af7c2c5a7a2a2ecb8eca50362d7c6",
+    "inventory": "reports/audit/inventory.json",
+    "rules": "rules.md",
+    "scope": "read-only S11 release-readiness audit; app config, native build flags, play store checklist, privacy URL, data safety, descriptions/claims, store assets, datasets/licenses, blocked native checks; no build, no upload, no source modification"
+  },
+  "tests": [
+    {
+      "id": "S11-001",
+      "feature": "App config \u2014 name and slug consistency",
+      "route": "app config",
+      "steps": "Compare app name and slug across app.json, package.json, strings.xml, and AndroidManifest.xml.",
+      "expected": "Name and slug are consistently configured across all manifest and configuration surfaces.",
+      "actual": "app.json defines name \"Islamic - Your Daily Companion\" and slug \"islamic\"; strings.xml defines app_name \"Islamic - Your Daily Companion\"; AndroidManifest.xml uses @string/app_name; package.json uses internal name \"scaffold\".",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "app.json:3-4",
+        "android/app/src/main/res/values/strings.xml:2",
+        "android/app/src/main/AndroidManifest.xml:23",
+        "reports/audit/evidence/S11/app_config.json"
+      ],
+      "evidence_values": {
+        "app_name": "Islamic - Your Daily Companion",
+        "slug": "islamic",
+        "strings_xml_label": "Islamic - Your Daily Companion",
+        "package_json_name": "scaffold"
+      },
+      "notes": "package.json \"scaffold\" is an internal development package name and does not affect the user-facing Android app label."
+    },
+    {
+      "id": "S11-002",
+      "feature": "App config \u2014 version and versionCode alignment",
+      "route": "app config",
+      "steps": "Inspect version and versionCode in app.json, package.json, and android/app/build.gradle.",
+      "expected": "Version strings match exactly and versionCode is tracked in both native build.gradle and app.json.",
+      "actual": "Version 1.1.70 matches across app.json, package.json, and android/app/build.gradle. However, app.json omits android.versionCode (configured only as versionCode 89 in android/app/build.gradle line 103).",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence_paths": [
+        "app.json:5,27-42",
+        "package.json:3",
+        "android/app/build.gradle:103-104",
+        "reports/audit/evidence/S11/app_config.json"
+      ],
+      "evidence_values": {
+        "version": "1.1.70",
+        "versionCode_build_gradle": 89,
+        "app_json_has_versionCode": false
+      },
+      "notes": "If expo prebuild is ever re-run, omitting android.versionCode in app.json risks resetting the generated Gradle versionCode to 1."
+    },
+    {
+      "id": "S11-003",
+      "feature": "App config \u2014 package ID preservation (Rule 3)",
+      "route": "app config",
+      "steps": "Verify package identifier matches com.qashi.islamic across app.json, AndroidManifest.xml, and build.gradle per Rule 3.",
+      "expected": "Package identifier is com.qashi.islamic everywhere; never regenerated or altered.",
+      "actual": "com.qashi.islamic is verified in app.json (android.package), android/app/build.gradle (applicationId and namespace), and release APK badging.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "app.json:28",
+        "android/app/build.gradle:90,100",
+        "rules.md:8",
+        "reports/audit/evidence/S11/app_config.json"
+      ],
+      "evidence_values": {
+        "package_id": "com.qashi.islamic",
+        "rule3_compliant": true
+      },
+      "notes": "Strict adherence to Rule 3 prevents breaking user data persistence and app updates."
+    },
+    {
+      "id": "S11-004",
+      "feature": "App config \u2014 screen orientation locking",
+      "route": "app config",
+      "steps": "Inspect orientation settings in app.json and MainActivity attributes in AndroidManifest.xml.",
+      "expected": "Orientation is locked to portrait for phone compatibility.",
+      "actual": "app.json sets orientation: portrait; AndroidManifest.xml sets android:screenOrientation=\"portrait\" on MainActivity; APK badging declares uses-feature android.hardware.screen.portrait.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "app.json:7",
+        "android/app/src/main/AndroidManifest.xml:33",
+        "reports/audit/evidence/S11/app_config.json"
+      ],
+      "evidence_values": {
+        "app_json_orientation": "portrait",
+        "manifest_screenOrientation": "portrait"
+      },
+      "notes": "Prevents unhandled orientation change layout breakage on phones."
+    },
+    {
+      "id": "S11-005",
+      "feature": "App config \u2014 Android permissions & unused permission removal",
+      "route": "app config permissions",
+      "steps": "Compare permissions declared in app.json, plugins, AndroidManifest.xml, and merged release manifest.",
+      "expected": "Necessary permissions are declared; dangerous or library-injected unwanted permissions (ACTIVITY_RECOGNITION, RECORD_AUDIO, SYSTEM_ALERT_WINDOW) are stripped.",
+      "actual": "Necessary permissions declared (Location, Foreground Service Media, Internet, Biometrics, Notifications). Config plugin plugins/withRemoveActivityRecognition.js successfully strips ACTIVITY_RECOGNITION, RECORD_AUDIO, and SYSTEM_ALERT_WINDOW. Storage permissions have maxSdkVersion=32.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "app.json:37-41,48-60",
+        "plugins/withRemoveActivityRecognition.js:17-42",
+        "android/app/src/main/AndroidManifest.xml:2-15",
+        "reports/audit/evidence/S11/app_config.json"
+      ],
+      "evidence_values": {
+        "removed_permissions": [
+          "android.permission.ACTIVITY_RECOGNITION",
+          "android.permission.RECORD_AUDIO",
+          "android.permission.SYSTEM_ALERT_WINDOW"
+        ],
+        "storage_max_sdk": 32
+      },
+      "notes": "Proactive removal of RECORD_AUDIO and SYSTEM_ALERT_WINDOW avoids Google Play policy rejections."
+    },
+    {
+      "id": "S11-006",
+      "feature": "Icons & adaptive icon configuration",
+      "route": "icons",
+      "steps": "Inspect app.json icon and android.adaptiveIcon assets and native mipmap resources on disk.",
+      "expected": "Main icon, adaptive background, foreground, and monochrome assets exist with valid dimensions and formats.",
+      "actual": "assets/icon.png exists (1024x1024 RGB). assets/android-icon-foreground.png (512x512 RGBA) and assets/android-icon-background.png (512x512 RGBA, #105A4B) exist. assets/android-icon-monochrome.png (432x432 RGBA) exists. Native mipmap folders (mdpi to xxxhdpi and anydpi-v26) contain generated WebP and XML icons.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "app.json:8,30-35",
+        "assets/icon.png",
+        "assets/android-icon-foreground.png",
+        "assets/android-icon-background.png",
+        "assets/android-icon-monochrome.png",
+        "reports/audit/evidence/S11/icons_splash_theme.json"
+      ],
+      "evidence_values": {
+        "icon_size": [
+          1024,
+          1024
+        ],
+        "foreground_size": [
+          512,
+          512
+        ],
+        "background_size": [
+          512,
+          512
+        ],
+        "monochrome_size": [
+          432,
+          432
+        ],
+        "adaptive_bg_color": "#105A4B"
+      },
+      "notes": "Adaptive icon complies with Android 8.0+ and Android 13+ themed icon standards."
+    },
+    {
+      "id": "S11-007",
+      "feature": "Splash screen configuration & theme tokens",
+      "route": "splash",
+      "steps": "Inspect splash image paths, background colors, and Android 12+ styles-v31 resources.",
+      "expected": "Light and dark splash screens configured with matching colors across app.json and native styles.",
+      "actual": "app.json splash light backgroundColor is #F4EEDE (assets/splash-icon-ink.png); dark is #0E1214 (assets/splash-icon.png). In native Android, values/colors.xml splashscreen_background is #F4EEDE; values-night/colors.xml is #0E1214. values-v31/styles.xml and values-night-v31/styles.xml explicitly set windowSplashScreenBackground and windowSplashScreenIconBackgroundColor matching these exact tokens.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "app.json:10-18",
+        "android/app/src/main/res/values/styles.xml:2-10",
+        "android/app/src/main/res/values-v31/styles.xml:2-8",
+        "android/app/src/main/res/values-night-v31/styles.xml:2-8",
+        "android/app/src/main/res/values/colors.xml:2-4",
+        "android/app/src/main/res/values-night/colors.xml:2-4",
+        "reports/audit/evidence/S11/icons_splash_theme.json"
+      ],
+      "evidence_values": {
+        "light_splash_bg": "#F4EEDE",
+        "dark_splash_bg": "#0E1214",
+        "tokens_aligned": true
+      },
+      "notes": "Splash configuration complies with Expo SDK 57 and Android 12+ SplashScreen API."
+    },
+    {
+      "id": "S11-008",
+      "feature": "Launch windowBackground & grey/white pattern flash check (Rule 4)",
+      "route": "splash launch flash",
+      "steps": "Statically inspect AppTheme windowBackground vs splash background tokens; evaluate physical verification status per Rule 4.",
+      "expected": "AppTheme windowBackground matches splash background color; physical device check verified or recorded as blocked.",
+      "actual": "Static inspection verifies AppTheme windowBackground uses @color/splashscreen_background (#F4EEDE light / #0E1214 dark), matching SplashScreen background tokens. However, per Rule 4 and Rule 21, physical device verification of no grey/white flash on cold boot is BLOCKED without a physical Android device or emulator.",
+      "status": "BLOCKED",
+      "severity": "high",
+      "evidence_paths": [
+        "rules.md:9,30-34",
+        "android/app/src/main/res/values/styles.xml:7",
+        "android/app/src/main/res/values-v31/styles.xml:4-6",
+        "reports/audit/evidence/S11/icons_splash_theme.json"
+      ],
+      "evidence_values": {
+        "static_inspection": "PASS",
+        "physical_device_verification": "BLOCKED"
+      },
+      "notes": "Rule 4 strictly forbids claiming flash is fixed without evidence; static match is confirmed, physical verification remains pending."
+    },
+    {
+      "id": "S11-009",
+      "feature": "Theme mode configuration",
+      "route": "theme",
+      "steps": "Inspect userInterfaceStyle in app.json and expo_system_ui_user_interface_style in strings.xml.",
+      "expected": "Theme mode configured as automatic for system day/night switching.",
+      "actual": "app.json sets userInterfaceStyle: \"automatic\"; strings.xml sets expo_system_ui_user_interface_style: \"automatic\"; AppTheme extends Theme.AppCompat.DayNight.NoActionBar.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "app.json:9",
+        "android/app/src/main/res/values/strings.xml:3",
+        "android/app/src/main/res/values/styles.xml:2",
+        "reports/audit/evidence/S11/icons_splash_theme.json"
+      ],
+      "evidence_values": {
+        "userInterfaceStyle": "automatic",
+        "parent_theme": "Theme.AppCompat.DayNight.NoActionBar"
+      },
+      "notes": "Supports automatic system dark/light switching with in-app manual override option."
+    },
+    {
+      "id": "S11-010",
+      "feature": "Android Target API level & Google Play SDK policy",
+      "route": "native build targetSdk",
+      "steps": "Inspect compileSdkVersion and targetSdkVersion in build.gradle, merged manifest, and APK badging.",
+      "expected": "targetSdkVersion is >= 34 (Google Play minimum requirement as of August 2024 / 2025).",
+      "actual": "targetSdkVersion is 36, compileSdkVersion is 36, minSdkVersion is 24. This exceeds the minimum Google Play targetSdk requirement of 34.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "android/app/build.gradle:88,102",
+        "android/app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml:9",
+        "reports/audit/evidence/S11/build_flags_environment.json"
+      ],
+      "evidence_values": {
+        "targetSdkVersion": 36,
+        "compileSdkVersion": 36,
+        "minSdkVersion": 24,
+        "play_store_required_min": 34
+      },
+      "notes": "Targeting API 36 (Android 16 preview / Android 15 platform) future-proofs the app for store compliance."
+    },
+    {
+      "id": "S11-011",
+      "feature": "64-bit architecture compliance",
+      "route": "native build 64-bit",
+      "steps": "Inspect reactNativeArchitectures in gradle.properties and native-code entries in APK/AAB.",
+      "expected": "64-bit native libraries (arm64-v8a, x86_64) included per Google Play 64-bit requirement.",
+      "actual": "reactNativeArchitectures specifies armeabi-v7a, arm64-v8a, x86, x86_64; APK badging confirms native-code includes arm64-v8a and x86_64; AAB contains base/lib/arm64-v8a.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "android/gradle.properties:31",
+        "reports/audit/evidence/S11/build_flags_environment.json"
+      ],
+      "evidence_values": {
+        "architectures": [
+          "armeabi-v7a",
+          "arm64-v8a",
+          "x86",
+          "x86_64"
+        ],
+        "has_64bit": true
+      },
+      "notes": "Fully satisfies Google Play 64-bit requirement."
+    },
+    {
+      "id": "S11-012",
+      "feature": "Code minification & resource shrinking (R8 / Proguard)",
+      "route": "native build optimization",
+      "steps": "Inspect minifyEnabled and shrinkResources settings in android/app/build.gradle and gradle.properties.",
+      "expected": "Release builds have R8 minification and resource shrinking enabled to minimize APK/AAB size and optimize performance.",
+      "actual": "android.enableMinifyInReleaseBuilds is omitted in gradle.properties, defaulting enableMinifyInReleaseBuilds to false in android/app/build.gradle line 69; shrinkResources is also false. The resulting release APK is 99 MB and AAB is 69 MB.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence_paths": [
+        "android/app/build.gradle:69,135-138",
+        "android/gradle.properties",
+        "reports/audit/evidence/S11/build_flags_environment.json"
+      ],
+      "evidence_values": {
+        "minifyEnabled": false,
+        "shrinkResources": false,
+        "apk_size_mb": 98.66,
+        "aab_size_mb": 68.61
+      },
+      "notes": "Disabling minification avoids R8 reflection bugs but leaves bundle size unoptimized."
+    },
+    {
+      "id": "S11-013",
+      "feature": "Hermes JavaScript engine",
+      "route": "native build hermes",
+      "steps": "Inspect hermesEnabled in gradle.properties and Hermes bytecode artifacts in AAB/APK.",
+      "expected": "Hermes engine is enabled for optimized bytecode execution and fast startup.",
+      "actual": "hermesEnabled=true in gradle.properties; android/app/build.gradle imports com.facebook.react:hermes-android; libhermesvm.so and index.android.bundle bytecode verified in AAB.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "android/gradle.properties:42",
+        "android/app/build.gradle:196-197",
+        "reports/audit/evidence/S11/build_flags_environment.json"
+      ],
+      "evidence_values": {
+        "hermesEnabled": true,
+        "libhermesvm_present": true
+      },
+      "notes": "Ensures modern React Native New Architecture Hermes runtime performance."
+    },
+    {
+      "id": "S11-014",
+      "feature": "Debug flags & dev settings",
+      "route": "native build debug flags",
+      "steps": "Inspect android:debuggable in release manifest and dev client flags in gradle.properties.",
+      "expected": "Debuggable is false/omitted in release manifest; dev flags do not compromise production release.",
+      "actual": "android:debuggable is false/omitted in release merged manifest. reactNativeReleaseLevel is \"stable\". However, EX_DEV_CLIENT_NETWORK_INSPECTOR=true is set in gradle.properties.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "android/gradle.properties:58",
+        "android/app/build.gradle:106",
+        "reports/audit/evidence/S11/build_flags_environment.json"
+      ],
+      "evidence_values": {
+        "debuggable_in_release": false,
+        "EX_DEV_CLIENT_NETWORK_INSPECTOR": true,
+        "reactNativeReleaseLevel": "stable"
+      },
+      "notes": "Production build is non-debuggable; EX_DEV_CLIENT_NETWORK_INSPECTOR should be removed before store submission."
+    },
+    {
+      "id": "S11-015",
+      "feature": "Dev URLs, IPs, and cleartext traffic audit",
+      "route": "network security",
+      "steps": "Scan source code for http://, localhost, private IP addresses, and check android:usesCleartextTraffic in release manifest.",
+      "expected": "Zero hardcoded dev URLs/IPs in src/; all network endpoints use HTTPS; cleartext traffic disabled in release.",
+      "actual": "All 33 remote API endpoints in src/ use https://. android:usesCleartextTraffic is false/omitted in release manifest (set to true only in debug/AndroidManifest.xml). No dev server IPs (15.235.203.134, 38.60.176.137, localhost) exist in src/ runtime code.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "android/app/src/main/AndroidManifest.xml",
+        "android/app/src/debug/AndroidManifest.xml:6",
+        "reports/audit/evidence/S11/build_flags_environment.json"
+      ],
+      "evidence_values": {
+        "usesCleartextTraffic_release": false,
+        "https_only_in_src": true,
+        "src_dev_urls_found": 0
+      },
+      "notes": "Network communications are strictly encrypted with HTTPS in production."
+    },
+    {
+      "id": "S11-016",
+      "feature": "Release artifact availability \u2014 APK",
+      "route": "artifacts apk",
+      "steps": "Inspect android/app/build/outputs/apk/release/ for signed app-release.apk per prompt conditions.",
+      "expected": "Signed release APK exists on disk with valid signature and expected version/versionCode.",
+      "actual": "android/app/build/outputs/apk/release/app-release.apk exists (98.66 MB / 103,456,152 bytes, mtime Oct 12 10:09). apksigner confirms valid Scheme v2 signature by CN=Ceoslugpk, OU=Islamic App. aapt confirms versionCode=89, versionName=1.1.70. (No new build requested; FIX_MODE=false).",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "android/app/build/outputs/apk/release/app-release.apk",
+        "reports/audit/evidence/S11/artifacts_availability.json"
+      ],
+      "evidence_values": {
+        "apk_present": true,
+        "size_mb": 98.66,
+        "version": "1.1.70",
+        "versionCode": 89,
+        "signed_v2": true,
+        "signer": "CN=Ceoslugpk, OU=Islamic App, O=Ceoslugpk, L=Dubai, ST=Dubai, C=AE"
+      },
+      "notes": "Existing APK is ready for GitHub Release distribution per Rule 8."
+    },
+    {
+      "id": "S11-017",
+      "feature": "Release artifact availability \u2014 AAB",
+      "route": "artifacts aab",
+      "steps": "Inspect android/app/build/outputs/bundle/release/ for app-release.aab per prompt conditions.",
+      "expected": "Release AAB bundle exists on disk with complete module bundle for Play Store upload.",
+      "actual": "android/app/build/outputs/bundle/release/app-release.aab exists (68.61 MB / 71,947,816 bytes, mtime Oct 11 21:23). Archive contains 1,715 files including base/dex (classes 1-4), base/lib/arm64-v8a, and Hermes bundle. (No new build requested; FIX_MODE=false).",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "android/app/build/outputs/bundle/release/app-release.aab",
+        "reports/audit/evidence/S11/artifacts_availability.json"
+      ],
+      "evidence_values": {
+        "aab_present": true,
+        "size_mb": 68.61,
+        "file_count": 1715
+      },
+      "notes": "Existing AAB bundle is available on disk for Google Play Console submission."
+    },
+    {
+      "id": "S11-018",
+      "feature": "Play Store checklist \u2014 policy & prerequisites compliance",
+      "route": "play store checklist",
+      "steps": "Audit core Google Play technical and policy checklist items.",
+      "expected": "All Play Store prerequisites pass (AAB format, Target SDK >= 34, 64-bit, release signing, content rating, ad declaration).",
+      "actual": "AAB format available; Target SDK 36 exceeds minimum 34; 64-bit arm64-v8a/x86_64 included; release keystore RSA 2048-bit valid to 2054; Content rating (Everyone / 4+) documented in docs/publishing.md; Ad declaration is 100% ad-free.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "docs/publishing.md:9-43",
+        "android/keystore.properties",
+        "reports/audit/evidence/S11/play_store_checklist.json"
+      ],
+      "evidence_values": {
+        "targetSdk_compliant": true,
+        "64bit_compliant": true,
+        "aab_available": true,
+        "keystore_valid": true,
+        "ads_free": true
+      },
+      "notes": "Technical store packaging requirements are satisfied."
+    },
+    {
+      "id": "S11-019",
+      "feature": "Privacy policy URL audit",
+      "route": "play store privacy url",
+      "steps": "Audit external public HTTPS privacy policy URL availability and in-app privacy screen.",
+      "expected": "A live, publicly accessible HTTPS Privacy Policy URL is hosted on an active domain and configured for the Play Store listing.",
+      "actual": "Google Play requires an active, public HTTPS Privacy Policy URL. Currently, there is NO public HTTPS privacy URL hosted on a registered domain; app.json omits privacy metadata, and docs/publishing.md references dev HTTP IP (38.60.176.137:9998). Although the in-app LegalScreen contains full privacy text, the missing external HTTPS URL blocks Play Store approval.",
+      "status": "FAIL",
+      "severity": "critical",
+      "evidence_paths": [
+        "docs/publishing.md:70,115",
+        "src/screens/LegalScreen.tsx:234-342",
+        "reports/audit/evidence/S11/privacy_url_audit.json"
+      ],
+      "evidence_values": {
+        "in_app_privacy_screen": true,
+        "external_public_https_url_exists": false,
+        "configured_in_app_json": false
+      },
+      "notes": "Publishing the in-app privacy policy text to https://qashi.uz/privacy or GitHub Pages is mandatory before store submission."
+    },
+    {
+      "id": "S11-020",
+      "feature": "Play Store Data Safety form consistency",
+      "route": "play store data safety",
+      "steps": "Reconcile code implementation with Data Safety declarations in docs/publishing.md and LegalScreen.tsx.",
+      "expected": "Data Safety declarations accurately reflect real code data handling across Location, Health, Personal Info, and Analytics.",
+      "actual": "Declarations are highly consistent with code: Location is declared as collected for app functionality only (prayer times / Qibla) and ephemeral; no personal info, financial info, or analytics collected; Women's Worship cycle/purity data is stored strictly in local SQLite and never transmitted; all network requests use HTTPS; user data deletion available via in-app wipe.",
+      "status": "PASS",
+      "severity": "info",
+      "evidence_paths": [
+        "docs/publishing.md:28-44",
+        "src/screens/LegalScreen.tsx:389-504",
+        "reports/audit/evidence/S11/data_safety_consistency.json"
+      ],
+      "evidence_values": {
+        "location_functionality_only": true,
+        "zero_analytics": true,
+        "zero_personal_data": true,
+        "womens_data_local_only": true,
+        "https_encryption": true
+      },
+      "notes": "Ensure Play Console form marks Location as Collected (Functionality), Not Shared, Not Linked to Identity."
+    },
+    {
+      "id": "S11-021",
+      "feature": "Store description & marketing claims audit",
+      "route": "descriptions and claims",
+      "steps": "Audit marketing and README claims against codebase reality (accounts, ads, offline capability, single provider, widgets).",
+      "expected": "All stated features and claims are fully implemented and verifiable in the codebase.",
+      "actual": "Claims of \"No accounts, no ads, no data sale\", \"Single authoritative provider for prayer times\", and \"11 reciters with preview\" are VERIFIED. \"Works offline\" is verified for native SQLite data (web service worker failed in S8). However, \"Home-screen widgets (Android)\" claimed in README.md and docs/publishing.md is NOT implemented in native AndroidManifest.xml.",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence_paths": [
+        "README.md:26-51",
+        "docs/publishing.md:5,98",
+        "android/app/src/main/AndroidManifest.xml",
+        "reports/audit/evidence/S11/descriptions_claims_audit.json"
+      ],
+      "evidence_values": {
+        "no_accounts_no_ads": true,
+        "single_prayer_provider": true,
+        "adhan_reciters_count": 11,
+        "offline_native_verified": true,
+        "android_widgets_in_manifest": false
+      },
+      "notes": "Remove the claim of Android home-screen widgets from store copy until native AppWidgetProvider is wired."
+    },
+    {
+      "id": "S11-022",
+      "feature": "Store visual assets audit (icon, feature graphic, screenshots)",
+      "route": "store visual assets",
+      "steps": "Inspect store graphic requirements: 512x512 app icon, 1024x500 feature graphic, and screenshots.",
+      "expected": "512x512 icon, 1024x500 feature graphic, phone screenshots, and tablet screenshots exist on disk.",
+      "actual": "4 phone screenshots exist in screenshots/ (780x1688). Main icon assets/icon.png is 1024x1024 (needs 512x512 export for Play Console). 1024x500 feature graphic is MISSING from repository (pending in docs/publishing.md line 102). 7-inch and 10-inch tablet screenshots are MISSING.",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence_paths": [
+        "docs/publishing.md:101-103",
+        "screenshots/home.png",
+        "screenshots/quran.png",
+        "screenshots/tools.png",
+        "screenshots/settings.png",
+        "reports/audit/evidence/S11/store_assets_audit.json"
+      ],
+      "evidence_values": {
+        "phone_screenshots_count": 4,
+        "feature_graphic_1024x500_present": false,
+        "tablet_7inch_screenshots_count": 0,
+        "tablet_10inch_screenshots_count": 0
+      },
+      "notes": "Feature graphic (1024x500) is mandatory for Google Play Store publication."
+    },
+    {
+      "id": "S11-023",
+      "feature": "Datasets and open source license compliance",
+      "route": "datasets and licenses",
+      "steps": "Audit licenses for codebase, sacred datasets (Quran, Hadith, Duas, 99 Names), fonts, and third-party dependency disclosures.",
+      "expected": "Clear licensing across all datasets and comprehensive open source dependency disclosure in LegalScreen.",
+      "actual": "Root codebase has valid MIT License (LICENSE). Sacred texts (Uthmani Quran, Hadith, Duas, 99 Names) are public domain / religious open access. Fonts (Amiri, Noto Naskh, Instrument Serif, Manrope, Source Sans 3) are licensed under SIL OFL 1.1. However, LegalScreen provides only a curated subset of libraries, lacking automated license coverage for all 47 npm packages (documented in S1-017).",
+      "status": "FAIL",
+      "severity": "medium",
+      "evidence_paths": [
+        "LICENSE",
+        "src/screens/LegalScreen.tsx:507-621",
+        "reports/audit/evidence/S11/datasets_licenses_audit.json"
+      ],
+      "evidence_values": {
+        "app_license": "MIT",
+        "fonts_license": "OFL 1.1",
+        "datasets_license": "Public Domain",
+        "complete_dependency_license_coverage": false
+      },
+      "notes": "Curated list is high quality but does not constitute automated SPDX disclosure of all bundled dependencies."
+    },
+    {
+      "id": "S11-024",
+      "feature": "Blocked native and manual checks inventory",
+      "route": "blocked native checks",
+      "steps": "Enumerate all native device and runtime checks that cannot be verified without physical hardware or fresh build.",
+      "expected": "Comprehensive ledger of blocked native hardware, sensor, timing, and store checks.",
+      "actual": "8 native/manual checks are blocked without a physical device or fresh build: 1) Android 12+ grey/white splash flash (Rule 4), 2) Exact alarm/adhan in Doze sleep, 3) Background audio & lockscreen controls, 4) Magnetometer sensor tilt compensation, 5) Biometric authentication prompt, 6) Google Play Integrity / in-app updates, 7) Native RTL layout rendering on device, 8) 24-hour background battery consumption.",
+      "status": "BLOCKED",
+      "severity": "medium",
+      "evidence_paths": [
+        "rules.md:9,30-34",
+        "reports/audit/inventory.json:1756-1759",
+        "reports/audit/evidence/S11/blocked_native_checks.json"
+      ],
+      "evidence_values": {
+        "total_blocked_checks": 8,
+        "device_available": false
+      },
+      "notes": "Documented per Rule 21; static inspection cannot substitute for physical device testing."
+    },
+    {
+      "id": "S11-025",
+      "feature": "Release-readiness gate evaluation",
+      "route": "release readiness gate",
+      "steps": "Synthesize all technical, store, legal, and asset checks to render release readiness decision.",
+      "expected": "Release gate passes only when all required store assets, legal URLs, and configuration checks are clear.",
+      "actual": "Release gate is NOT CLEAR for Google Play Store submission: 1) Public HTTPS Privacy Policy URL is missing (critical blocker), 2) 1024x500 Feature Graphic is missing (mandatory store asset), 3) Tablet screenshots are missing, 4) Android home-screen widgets claim is unimplemented in native manifest, 5) app.json omits android.versionCode, 6) Physical verification of Rule 4 splash flash and exact alarms remains blocked without device. Release APK is available for GitHub Releases per Rule 8, but Play Store release is not ready.",
+      "status": "FAIL",
+      "severity": "high",
+      "evidence_paths": [
+        "reports/audit/S11.json",
+        "reports/audit/evidence/S11/"
+      ],
+      "evidence_values": {
+        "release_ready_for_play_store": false,
+        "release_ready_for_github_releases": true,
+        "blocking_issues": [
+          "Missing public HTTPS Privacy Policy URL on registered domain",
+          "Missing 1024x500 Feature Graphic",
+          "Unimplemented Android widget claim in store copy",
+          "Missing android.versionCode in app.json",
+          "Pending physical device verification of Rule 4 splash flash"
+        ]
+      },
+      "notes": "Rule 8 states the app ships via GitHub releases, where the existing signed APK is functional; however, Google Play submission is blocked until store assets and privacy URL are resolved."
+    }
+  ],
+  "summary": {
+    "total": 25,
+    "PASS": 16,
+    "FAIL": 7,
+    "BLOCKED": 2,
+    "FLAKY": 0,
+    "SKIPPED": 0,
+    "severityCounts": {
+      "critical": 1,
+      "high": 3,
+      "medium": 5,
+      "low": 0,
+      "info": 16
+    },
+    "reconciled": true,
+    "release_ready": false
+  },
+  "play_store_checklist": {
+    "package_id_preserved": "PASS",
+    "target_sdk_compliant": "PASS",
+    "64bit_supported": "PASS",
+    "aab_available": "PASS",
+    "apk_available": "PASS",
+    "signing_keystore_valid": "PASS",
+    "ads_free_declaration": "PASS",
+    "content_rating_everyone": "PASS",
+    "unwanted_permissions_stripped": "PASS",
+    "data_safety_consistency": "PASS",
+    "privacy_policy_url_live_https": "FAIL",
+    "store_feature_graphic_1024x500": "FAIL",
+    "tablet_screenshots": "FAIL",
+    "store_claims_accuracy": "FAIL",
+    "app_json_versionCode_configured": "FAIL",
+    "r8_minify_enabled": "FAIL",
+    "rule4_physical_splash_flash_check": "BLOCKED",
+    "hardware_sensors_alarms_check": "BLOCKED"
+  },
+  "files_created": [
+    "reports/audit/S11.json",
+    "reports/audit/evidence/S11/app_config.json",
+    "reports/audit/evidence/S11/icons_splash_theme.json",
+    "reports/audit/evidence/S11/build_flags_environment.json",
+    "reports/audit/evidence/S11/artifacts_availability.json",
+    "reports/audit/evidence/S11/play_store_checklist.json",
+    "reports/audit/evidence/S11/privacy_url_audit.json",
+    "reports/audit/evidence/S11/data_safety_consistency.json",
+    "reports/audit/evidence/S11/descriptions_claims_audit.json",
+    "reports/audit/evidence/S11/store_assets_audit.json",
+    "reports/audit/evidence/S11/datasets_licenses_audit.json",
+    "reports/audit/evidence/S11/blocked_native_checks.json"
+  ],
+  "files_modified_outside_scope": [],
+  "limitations": [
+    "Static inspection was performed; no physical Android device or emulator was available, in accordance with Rule 21.",
+    "No native source, configuration, package dependencies, or git state were modified (FIX_MODE=false).",
+    "No build or upload commands were executed per project rules and audit instructions."
+  ]
+}

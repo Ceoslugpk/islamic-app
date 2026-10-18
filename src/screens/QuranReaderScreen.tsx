@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,7 +13,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  Pressable,
   ScrollView,
   Share,
   StyleSheet,
@@ -30,12 +30,13 @@ import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
+import { AppText } from '../components/ui/AppText';
 import {
   getCardShadow,
   getFloatingCardShadow,
   getPillShadow,
 } from '../lib/homeThemeTokens';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, getBrandLogoSource } from '../theme/tokens';
 import { TAB_PAD_BOTTOM, NAV_TOP } from '../components/layout/layout.constants';
 import { ReaderHeader } from '../components/layout/ReaderHeader';
 import { SheetHeader } from '../components/layout/SheetHeader';
@@ -52,19 +53,19 @@ import {
   MushafPageDetail,
   MushafPageAyah,
   TOTAL_MUSHAF_PAGES,
-  getSurahStartPage,
   getPrimarySurahForPage,
+  getBundledSurahs114,
+  SurahMeta,
 } from '../lib/quran';
 import {
   resolveMushafRestorationTarget,
   calculateMushafScrollTarget,
-  MushafRestorationTarget,
 } from '../lib/mushafRestoration';
 import { TajweedText } from '../components/TajweedText';
 import { ArabicText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { stripTajweedHtml } from '../lib/tajweed';
 import { QuranScript, QURAN_SCRIPTS, fetchSurahWithScript, getScriptCacheKey } from '../lib/quranScripts';
-import { retry, cancel, remove, copy, share, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
+import { retry, cancel, remove, surahLoadFailed, tafsirLoadFailed, downloadFailedTitle, downloadFailedBody } from '../lib/strings';
 import { t, isRTL } from '../lib/i18n';
 import {
   useSettings,
@@ -80,7 +81,6 @@ import {
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
-import { QuranLanguageModal } from '../components/QuranLanguageModal';
 import { clearReadingMarker, getReadingMarker, getReadingPosition, saveReadingMarker, saveReadingPosition, getReadingMarkerSync, getReadingPositionSync, addReadingPositionListener, ReadingPosition, ReadingMarker } from '../lib/continuing';
 import { recordQuranReadingSession } from '../lib/quranProgress';
 import { recordSurahVisit } from '../lib/recentSurahs';
@@ -92,16 +92,9 @@ import {
   removeBookmark,
   VerseRef,
   addNote,
-  addStudyTagFn,
-  removeVerseHighlightFn,
-  addVerseHighlightFn,
-  getVerseHighlightFn,
-  getStudyTagsForAyahFn,
-  StudyTag,
 } from '../lib/study';
 import { SURAH_AYAH_COUNTS } from '../lib/surahAyahCounts';
 import {
-  addPlaybackListener,
   addPlaybackStatusListener,
   fetchReciters,
   getAyahAudioUrl,
@@ -118,7 +111,6 @@ import {
   downloadSurah,
   removeSurahDownload,
   isSurahDownloaded,
-  getDownloadProgress,
   getDownloadedSurahs,
   formatBytes,
 } from '../lib/surahDownloads';
@@ -130,14 +122,11 @@ import {
   saveQuranCache,
   saveRecentlyPlayed,
 } from '../lib/db';
-import { getBundledSurahs114, SurahMeta } from '../lib/quran';
-import { hScrollRTLStyle, isRtlScript } from '../lib/rtl';
 import { getLocalizedSurahName, getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import {
   getLocalizedTranslatorName,
   getLocalizedTranslationTitle,
   QURAN_LANGUAGE_EDITIONS,
-  QuranLanguageEdition,
 } from '../lib/quranLanguages';
 import {
   getQuranLayoutCacheKey,
@@ -148,7 +137,7 @@ import {
   configureQuranLayoutStorage,
 } from '../lib/quranLayoutCache';
 import { AyahCardRow } from '../components/AyahCardRow';
-import { getBackIcon, getForwardIcon, iconSizes } from '../lib/iconMap';
+import { getBackIcon, getForwardIcon } from '../lib/iconMap';
 
 configureQuranLayoutStorage({
   loadQuranCache,
@@ -220,7 +209,6 @@ const HIZB_STARTS: Record<number, { surah: number; ayah: number }> = {};
 // Compute hizb starts: each juz has 2 hizbs
 for (let juz = 1; juz <= 30; juz++) {
   const juzStart = JUZ_STARTS[juz];
-  const nextJuzStart = JUZ_STARTS[juz + 1] || { surah: 114, ayah: 6 };
   // For simplicity, use the juz start for first hizb, and midpoint for second
   // A more accurate mapping would require the full ayah index
   HIZB_STARTS[juz * 2 - 1] = juzStart;
@@ -299,64 +287,6 @@ export function getDisplayedAyahText(
   return stripBismillah(text);
 }
 
-interface AyahBookmarkButtonProps {
-  isBookmarked: boolean;
-  onPress: () => void;
-  accentColor: string;
-  inactiveColor: string;
-  ayahNumber: number;
-}
-
-function AyahBookmarkButton({
-  isBookmarked,
-  onPress,
-  accentColor,
-  inactiveColor,
-  ayahNumber,
-}: AyahBookmarkButtonProps) {
-  const bounceAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePress = () => {
-    Animated.sequence([
-      Animated.timing(bounceAnim, {
-        toValue: 1.35,
-        duration: 110,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-      Animated.spring(bounceAnim, {
-        toValue: 1,
-        friction: 4,
-        tension: 160,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
-    ]).start();
-    onPress();
-  };
-
-  return (
-    <TouchableOpacity
-      onPress={handlePress}
-      activeOpacity={0.75}
-      style={{
-        padding: 6,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={`${t('Bookmark')} ${t('Ayah')} ${ayahNumber}`}
-    >
-      <Animated.View style={{ transform: [{ scale: bounceAnim }] }}>
-        <Ionicons
-          name={isBookmarked ? 'heart' : 'heart-outline'}
-          size={iconSizes.inlineLg}
-          color={isBookmarked ? accentColor : inactiveColor}
-        />
-      </Animated.View>
-    </TouchableOpacity>
-  );
-}
-
 export default function QuranReaderScreen({
   surahNumber,
   initialAyah,
@@ -381,7 +311,6 @@ export default function QuranReaderScreen({
   const insets = useSafeAreaInsets();
   // Ensure reader scroll owner viewport and content clearance stay >= 16px above the floating dock
   const readerBottomClearance = Math.max(NAV_TOP(insets.bottom) + 20, TAB_PAD_BOTTOM(insets.bottom));
-  const bottomClearance = readerBottomClearance;
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const [langPickerOpen, setLangPickerOpen] = useState<boolean>(false);
@@ -401,7 +330,7 @@ export default function QuranReaderScreen({
       return null;
     }
   });
-  const [scriptLoading, setScriptLoading] = useState<boolean>(false);
+  const [, setScriptLoading] = useState<boolean>(false);
   const [scriptOfflineNotice, setScriptOfflineNotice] = useState<string | null>(null);
   const [surah, setSurah] = useState<SurahDetail | null>(() => {
     try {
@@ -438,6 +367,7 @@ export default function QuranReaderScreen({
     return 'mushaf';
   });
   const [bookmarks, setBookmarks] = useState<VerseRef[]>([]);
+  const [reciters, setReciters] = useState<Reciter[]>([]);
 
   // Mushaf page architecture state
   const initialResolvedPage = useMemo(() => {
@@ -483,7 +413,9 @@ export default function QuranReaderScreen({
   const currentPageRef = useRef<number>(initialResolvedPage);
   const pageRequestRef = useRef<number>(0);
   const mushafListRef = useRef<FlatList<number>>(null);
-  currentPageRef.current = currentPage;
+  useEffect(() => {
+    currentPageRef.current = currentPage;
+  }, [currentPage]);
 
   // Continue Reading tracking refs (MUST be declared before any memo/effects)
   const surahNumberRef = useRef<number>(safeSurahNumber);
@@ -636,7 +568,9 @@ export default function QuranReaderScreen({
         ? markerAyah
         : (saved && typeof saved.ayah === 'number' && saved.ayah > 1 ? saved.ayah : 1));
     lastSavedAyahRef.current = resolvedAyah;
-    setCurrentVisibleAyah(resolvedAyah);
+    queueMicrotask(() => {
+      setCurrentVisibleAyah(resolvedAyah);
+    });
     // Position tracking stays off while the positioning jump settles. The jump
     // may take several frames (progressive render + retries); enabling tracking
     // before it lands lets the jump's first viewability event overwrite the
@@ -668,9 +602,11 @@ export default function QuranReaderScreen({
   // Fetch / update script text when script or surah changes
   useEffect(() => {
     if (currentScript === 'uthmani') {
-      setScriptAyahs(null);
-      setScriptLoading(false);
-      setScriptOfflineNotice(null);
+      queueMicrotask(() => {
+        setScriptAyahs(null);
+        setScriptLoading(false);
+        setScriptOfflineNotice(null);
+      });
       return;
     }
 
@@ -679,15 +615,21 @@ export default function QuranReaderScreen({
     try {
       const cached = loadQuranCache<Record<number, string>>(scriptKey);
       if (cached && Object.keys(cached).length > 0) {
-        setScriptAyahs(cached);
-        setScriptLoading(false);
-        setScriptOfflineNotice(null);
+        queueMicrotask(() => {
+          if (cancelled) return;
+          setScriptAyahs(cached);
+          setScriptLoading(false);
+          setScriptOfflineNotice(null);
+        });
         return;
       }
     } catch {}
 
-    setScriptLoading(true);
-    setScriptOfflineNotice(null);
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setScriptLoading(true);
+      setScriptOfflineNotice(null);
+    });
 
     fetchSurahWithScript(safeSurahNumber, currentScript)
       .then((data) => {
@@ -737,12 +679,19 @@ export default function QuranReaderScreen({
 
 // Reading experience state
   const [keepAwake, setKeepAwake] = useState<boolean>(false);
-  const [lastReadTimestamp, setLastReadTimestamp] = useState<number | null>(null);
   const [juzPickerOpen, setJuzPickerOpen] = useState<boolean>(false);
   const [selectedJuz, setSelectedJuz] = useState<number | null>(null);
   const [hizbPickerOpen, setHizbPickerOpen] = useState<boolean>(false);
   const [selectedHizb, setSelectedHizb] = useState<number | null>(null);
-  const [surahsList, setSurahsList] = useState<SurahMeta[]>([]);
+  const [surahsList] = useState<SurahMeta[]>(() => {
+    try {
+      const cached = loadQuranCache<SurahMeta[]>('surah-list');
+      if (cached && Array.isArray(cached) && cached.length === 114) {
+        return cached;
+      }
+    } catch {}
+    return getBundledSurahs114();
+  });
 
   // Keep awake effect using fallback timer (install expo-keep-awake for production)
   const KEEP_AWAKE_TAG = 12345;
@@ -764,41 +713,14 @@ export default function QuranReaderScreen({
       .catch(() => {});
   }, []);
 
-  // Load surahs list for Juz/Hizb pickers
-  useEffect(() => {
-    try {
-      const cached = loadQuranCache<SurahMeta[]>('surah-list');
-      if (cached && Array.isArray(cached) && cached.length === 114) {
-        setSurahsList(cached);
-      } else {
-        setSurahsList(getBundledSurahs114());
-      }
-    } catch {
-      setSurahsList(getBundledSurahs114());
-    }
-  }, []);
-
-  // Load last read timestamp for this surah
-  useEffect(() => {
-    AsyncStorage.getItem(`${STORAGE_KEY_LAST_READ}:${surahNumber}`)
-      .then((val) => {
-        if (val) setLastReadTimestamp(parseInt(val, 10));
-      })
-      .catch(() => {});
-  }, [surahNumber]);
-
   // Save last read timestamp when surah loads
   useEffect(() => {
     if (surah) {
       const now = Date.now();
-      setLastReadTimestamp(now);
       AsyncStorage.setItem(`${STORAGE_KEY_LAST_READ}:${surahNumber}`, String(now)).catch(() => {});
     }
   }, [surahNumber, surah]);
 
-  // Study Tools: Selection Mode State
-  const [selectionMode, setSelectionMode] = useState<boolean>(false);
-  const [selectedAyahs, setSelectedAyahs] = useState<Set<number>>(new Set());
   // Note composer state for ayah reflections
   const [noteComposerTarget, setNoteComposerTarget] = useState<{ surah: number; ayah: number; surahName?: string } | null>(null);
   const noteComposerAyah = noteComposerTarget?.ayah ?? null;
@@ -823,11 +745,6 @@ export default function QuranReaderScreen({
   // Share-as-image: the ayah being shared renders a clean card, captured to PNG.
   const shareCardRef = useRef<View>(null);
   const [shareAyahItem, setShareAyahItem] = useState<Ayah | null>(null);
-  const [isSharingImage, setIsSharingImage] = useState(false);
-  const [selectionActionBarVisible, setSelectionActionBarVisible] = useState<boolean>(false);
-  const [showTagInput, setShowTagInput] = useState<boolean>(false);
-  const [tagInput, setTagInput] = useState<string>('');
-  const [highlightColorPickerOpen, setHighlightColorPickerOpen] = useState<boolean>(false);
 
   const openNoteComposer = useCallback((ayahNumber: number, customSurah?: number, customSurahName?: string) => {
     const targetSurah = customSurah || surahNumberRef.current || safeSurahNumber;
@@ -838,14 +755,14 @@ export default function QuranReaderScreen({
       surahName: resolvedName,
     });
     setNoteComposerText('');
-  }, [safeSurahNumber, surah?.englishName]);
+  }, [safeSurahNumber, surah?.englishName, setNoteComposerText]);
 
   const closeNoteComposer = useCallback(() => {
     Keyboard.dismiss();
     setNoteComposerTarget(null);
     setNoteComposerText('');
     setKeyboardHeight(0);
-  }, []);
+  }, [setNoteComposerText]);
 
   const handleSaveNote = useCallback(() => {
     if (!noteComposerTarget) return;
@@ -859,159 +776,10 @@ export default function QuranReaderScreen({
     closeNoteComposer();
   }, [noteComposerTarget, noteComposerText, closeNoteComposer, haptic]);
 
-  // Highlight color palette
-  const HIGHLIGHT_COLORS = [
-    { name: 'Amber', color: '#C26E1740' },    // Amber 25%
-    { name: 'Green', color: '#0F5A4A40' },    // Green 25%
-    { name: 'Blue', color: '#1E40AF40' },     // Blue 25%
-    { name: 'Purple', color: '#7C3AED40' },   // Purple 25%
-    { name: 'Rose', color: '#BE185D40' },     // Rose 25%
-    { name: 'Clear', color: 'transparent' },  // Remove highlight
-  ];
-
-  // Toggle ayah selection
-  const toggleAyahSelection = (ayahNumber: number) => {
-    setSelectedAyahs((prev) => {
-      const next = new Set(prev);
-      if (next.has(ayahNumber)) {
-        next.delete(ayahNumber);
-      } else {
-        next.add(ayahNumber);
-      }
-      return next;
-    });
-    haptic('selection');
-  };
-
-  // Enter selection mode on long press
-  const enterSelectionMode = (ayahNumber: number) => {
-    if (!selectionMode) {
-      setSelectionMode(true);
-      setSelectionActionBarVisible(true);
-    }
-    toggleAyahSelection(ayahNumber);
-  };
-
-  // Exit selection mode
-  const exitSelectionMode = () => {
-    setSelectionMode(false);
-    setSelectedAyahs(new Set());
-    setSelectionActionBarVisible(false);
-    setShowTagInput(false);
-    setTagInput('');
-    setHighlightColorPickerOpen(false);
-  };
-
-  // Clear selection
-  const clearSelection = () => {
-    setSelectedAyahs(new Set());
-  };
-
-  // Copy selected verses
-  const copySelectedVerses = () => {
-    if (!surah || selectedAyahs.size === 0) return;
-    
-    const sortedAyahs = Array.from(selectedAyahs).sort((a, b) => a - b);
-    const verses = sortedAyahs.map((ayahNum) => {
-      const ayah = Array.isArray(surah.ayahs) ? surah.ayahs.find((a) => a && a.numberInSurah === ayahNum) : null;
-      if (!ayah) return '';
-      const exportText = getAyahTextForExport(ayahNum, ayah.text || '');
-      return `"${exportText}"\n${ayah.translation || ''}\n— Quran ${safeSurahNumber}:${ayahNum}`;
-    }).filter(Boolean).join('\n\n');
-
-    const fullText = `${verses}\n\n— Surah ${surah.englishName || safeSurahNumber} (${safeSurahNumber})`;
-    
-    try {
-      Clipboard.setString(fullText);
-      haptic('success');
-    } catch {}
-    exitSelectionMode();
-  };
-
-  // Add tag to selected verses
-  const addTagToSelected = async () => {
-    if (selectedAyahs.size === 0 || !tagInput.trim()) return;
-    
-    const trimmedTag = tagInput.trim();
-    for (const ayahNum of selectedAyahs) {
-      await addStudyTagFn(safeSurahNumber, ayahNum, trimmedTag);
-    }
-    setTagInput('');
-    setShowTagInput(false);
-    haptic('success');
-    exitSelectionMode();
-  };
-
-  // Add highlight to selected verses
-  const addHighlightToSelected = (color: string) => {
-    if (selectedAyahs.size === 0) return;
-    
-    for (const ayahNum of selectedAyahs) {
-      if (color === 'transparent') {
-        removeVerseHighlightFn(safeSurahNumber, ayahNum);
-      } else {
-        addVerseHighlightFn(safeSurahNumber, ayahNum, color);
-      }
-    }
-    haptic('success');
-    setHighlightColorPickerOpen(false);
-    exitSelectionMode();
-  };
-
-  // Add note to selected verses (uses first selected ayah)
-  const addNoteToSelected = () => {
-    if (selectedAyahs.size === 0) return;
-    const firstAyah = Array.from(selectedAyahs).sort((a, b) => a - b)[0];
-    exitSelectionMode();
-    if (typeof firstAyah === 'number') {
-      openNoteComposer(firstAyah);
-    }
-  };
-
-  // Add bookmark to selected verses
-  const addBookmarkToSelected = () => {
-    if (!surah || selectedAyahs.size === 0) return;
-    
-    for (const ayahNum of selectedAyahs) {
-      const ayah = Array.isArray(surah.ayahs) ? surah.ayahs.find((a) => a && a.numberInSurah === ayahNum) : null;
-      if (ayah) {
-        addBookmark({
-          surah: safeSurahNumber,
-          ayah: ayahNum,
-          surahName: surah.englishName || `Surah ${safeSurahNumber}`,
-          text: (ayah.text || '').slice(0, 100),
-          translation: (ayah.translation || '').slice(0, 120),
-        });
-      }
-    }
-    setBookmarks(getBookmarks());
-    haptic('success');
-    exitSelectionMode();
-  };
-
-  // Get highlight color for an ayah
-  const getAyahHighlightColor = (ayahNumber: number): string => {
-    try {
-      const highlight = getVerseHighlightFn(safeSurahNumber, ayahNumber);
-      return highlight?.color || 'transparent';
-    } catch {
-      return 'transparent';
-    }
-  };
-
-  // Get tags for an ayah
-  const getAyahTags = (ayahNumber: number): StudyTag[] => {
-    try {
-      return getStudyTagsForAyahFn(safeSurahNumber, ayahNumber);
-    } catch {
-      return [];
-    }
-  };
-
   // Reading progress calculation
   const readingProgress = useMemo(() => {
     const fallbackCount = SURAH_AYAH_COUNTS[safeSurahNumber - 1] || 7;
-    const currentAyah = currentVisibleAyah || lastSavedAyahRef?.current || initialAyah || 1;
+    const currentAyah = currentVisibleAyah || initialAyah || 1;
     if (!surah) return { percent: 0, currentAyah, totalAyahs: fallbackCount };
     const totalAyahs = surah.numberOfAyahs || fallbackCount;
     const percent = Math.min(100, Math.round((currentAyah / totalAyahs) * 100));
@@ -1020,7 +788,7 @@ export default function QuranReaderScreen({
 
   // Current position indicator
   const currentPosition = useMemo(() => {
-    const currentAyah = currentVisibleAyah || lastSavedAyahRef?.current || initialAyah || 1;
+    const currentAyah = currentVisibleAyah || initialAyah || 1;
     if (readingMode === 'mushaf') {
       const page = currentPage;
       const primarySurah = currentPageData?.surahs?.[0]?.number || getPrimarySurahForPage(page);
@@ -1050,7 +818,7 @@ export default function QuranReaderScreen({
   }, [currentPosition.juz, currentPosition.hizb]);
 
   // Auto-hide top nav while scrolling down; reappear on scroll up / back to top
-  const navOpacity = useRef(new Animated.Value(1)).current;
+  const [navOpacity] = useState(() => new Animated.Value(1));
   const [navHidden, setNavHidden] = useState<boolean>(false);
   const navHiddenRef = useRef(false);
   const lastScrollYRef = useRef(0);
@@ -1102,7 +870,6 @@ export default function QuranReaderScreen({
   );
 
   // Audio state
-  const [reciters, setReciters] = useState<Reciter[]>([]);
   const [selectedReciter, setSelectedReciter] = useState<string>('ar.alafasy');
   const [reciterChooserOpen, setReciterChooserOpen] = useState<boolean>(false);
   const [reciterSearch, setReciterSearch] = useState<string>('');
@@ -1206,7 +973,9 @@ export default function QuranReaderScreen({
   }, [settings.quranGoal]);
 
   const surahRef = useRef<SurahDetail | null>(surah);
-  surahRef.current = surah;
+  useEffect(() => {
+    surahRef.current = surah;
+  }, [surah]);
 
   // Continue Reading tracking (handler must stay stable across renders)
   const handleViewableItemsChanged = useCallback(
@@ -1258,7 +1027,7 @@ export default function QuranReaderScreen({
         // use defaults
       }
     })();
-  }, []);
+  }, [initialPage]);
 
   // Android hardware back button handler to dismiss open modals/pickers before falling back to navigation
   useEffect(() => {
@@ -1444,19 +1213,21 @@ export default function QuranReaderScreen({
     } finally {
       setLoading(false);
     }
-  }, [safeSurahNumber, initialAyah, edition?.editionIdentifier]);
+  }, [safeSurahNumber, initialAyah, edition, readingMode, targetAyahForPosition]);
 
   // Synchronously update surah from cache on param/edition change to avoid unrendered frames
   useEffect(() => {
     const key = `surah:${safeSurahNumber}:${edition?.editionIdentifier || 'en.sahih'}`;
     const cached = loadQuranCache<SurahDetail>(key);
-    if (cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
-      setSurah(cached);
-      setLoading(false);
-    } else {
-      setSurah((prev) => (prev && prev.number === safeSurahNumber ? prev : null));
-      setLoading(true);
-    }
+    queueMicrotask(() => {
+      if (cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0) {
+        setSurah(cached);
+        setLoading(false);
+      } else {
+        setSurah((prev) => (prev && prev.number === safeSurahNumber ? prev : null));
+        setLoading(true);
+      }
+    });
   }, [safeSurahNumber, edition?.editionIdentifier]);
 
   useEffect(() => {
@@ -1677,7 +1448,7 @@ export default function QuranReaderScreen({
         setPageLoading(false);
       }
     },
-    [initialResolvedPage, showTranslation, edition?.editionIdentifier]
+    [initialResolvedPage, showTranslation, edition, pageOnly]
   );
 
   const goToPage = useCallback(
@@ -1724,7 +1495,7 @@ export default function QuranReaderScreen({
       }
       loadPageData(targetPage);
     },
-    [haptic, showTranslation, edition?.editionIdentifier, loadPageData, clearHighlightTimer]
+    [haptic, showTranslation, edition?.editionIdentifier, loadPageData, clearHighlightTimer, setCurrentPage, setSelectedAyahY, setSelectedAyahHeight]
   );
 
   const lastInitialPagePropRef = useRef<number | undefined>(initialPage);
@@ -1748,7 +1519,9 @@ export default function QuranReaderScreen({
   // Fetch page data when in mushaf mode
   useEffect(() => {
     if (readingMode === 'mushaf') {
-      loadPageData(currentPage);
+      queueMicrotask(() => {
+        loadPageData(currentPage);
+      });
     }
   }, [readingMode, currentPage, loadPageData]);
 
@@ -2174,9 +1947,11 @@ export default function QuranReaderScreen({
     if (activeTafsirAyah !== null) {
       const targetSurah = activeTafsirSurah || safeSurahNumber;
       const currentSource = TAFSIR_SOURCES.find((s) => s.id === settings.tafsirSourceId) || TAFSIR_SOURCES[0];
-      setTafsirLoading(true);
-      setTafsirText(null);
-      setTafsirEdition(null);
+      queueMicrotask(() => {
+        setTafsirLoading(true);
+        setTafsirText(null);
+        setTafsirEdition(null);
+      });
       fetchAyahTafsir(targetSurah, activeTafsirAyah, currentSource.identifier)
         .then((res) => {
           const isIntroRepeat = (res as { introOnly?: boolean }).introOnly === true && activeTafsirAyah !== 1;
@@ -2221,7 +1996,9 @@ export default function QuranReaderScreen({
   }, [selectedReciter, safeSurahNumber]);
 
   useEffect(() => {
-    refreshDownloadState();
+    queueMicrotask(() => {
+      refreshDownloadState();
+    });
   }, [refreshDownloadState, safeSurahNumber, selectedReciter]);
 
   const handleSaveOffline = async () => {
@@ -2283,13 +2060,11 @@ export default function QuranReaderScreen({
         return;
       }
       try {
-        setIsSharingImage(true);
         setShareAyahItem(item);
         // Wait a frame for the card to render off-screen.
         await new Promise((r) => setTimeout(r, 250));
         const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
         setShareAyahItem(null);
-        setIsSharingImage(false);
         const isSharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
         if (isSharingAvailable) {
           await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share verse' });
@@ -2298,7 +2073,6 @@ export default function QuranReaderScreen({
         }
       } catch {
         setShareAyahItem(null);
-        setIsSharingImage(false);
         // Fall back to text share on any capture failure.
         const textToShare = `"${arabicText}"\n\n${item.translation || ''}\n\n— Quran ${targetSurah}:${targetAyah}`;
         Share.share({ message: textToShare }).catch(() => {});
@@ -2355,31 +2129,33 @@ export default function QuranReaderScreen({
         }}
       >
         <View style={styles.surahEyebrowRow}>
-          <Text style={[styles.surahEyebrow, { color: colors.accent }]}>
+          <AppText variant="eyebrow" highlight style={styles.surahEyebrow}>
             {t('SURAH')} {surahMeta.number || safeSurahNumber}
-          </Text>
-          <Text style={[styles.surahAyahCount, { color: colors.textMuted }]}>
+          </AppText>
+          <AppText variant="eyebrow" style={styles.surahAyahCount}>
             {totalAyahs} {t('AYAHS')}
-          </Text>
+          </AppText>
         </View>
 
         <View style={styles.titleRow}>
           <View style={[styles.titleInfo, { minWidth: 0, flex: 1 }]}>
-            <Text
-              style={[styles.englishTitle, { color: colors.textPrimary, fontSize: titleFontSize }]}
+            <AppText
+              variant="title"
+              style={[styles.englishTitle, { fontSize: titleFontSize }]}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {getLocalizedSurahName(safeSurahNumber, surahMeta.englishName || `Surah ${safeSurahNumber}`)}
-            </Text>
+            </AppText>
             {surahMeta.englishNameTranslation ? (
-              <Text
-                style={[styles.englishTranslation, { color: colors.textSecondary, fontSize: translationFontSize }]}
-                numberOfLines={1}
+              <AppText
+                variant="subtitle"
+                style={[styles.englishTranslation, { fontSize: translationFontSize }]}
+                numberOfLines={2}
                 ellipsizeMode="tail"
               >
                 {surahMeta.englishNameTranslation}
-              </Text>
+              </AppText>
             ) : null}
           </View>
           {surahMeta.name ? (
@@ -2411,14 +2187,14 @@ export default function QuranReaderScreen({
               size={16}
               color={isPlayingSurah ? tokens.onGold : tokens.goldText}
             />
-            <Text
-              style={[
-                styles.playSurahBtnText,
-                { color: isPlayingSurah ? tokens.onGold : tokens.goldText },
-              ]}
+            <AppText
+              variant="caption"
+              tone={isPlayingSurah ? 'onGold' : undefined}
+              highlight={!isPlayingSurah}
+              style={styles.playSurahBtnText}
             >
               {isPlayingSurah ? t('Playing Surah') : t('Play Full Surah')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -2428,9 +2204,9 @@ export default function QuranReaderScreen({
             accessibilityLabel={t('Choose reciter')}
           >
             <Ionicons name="mic-outline" size={14} color={colors.textSecondary} />
-            <Text style={[styles.reciterNameText, { color: colors.textSecondary }]} numberOfLines={1}>
+            <AppText variant="caption" style={[styles.reciterNameText, { flexShrink: 1, minWidth: 0 }]} numberOfLines={1}>
               {reciterLabel}
-            </Text>
+            </AppText>
             <Ionicons name="chevron-down" size={12} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
@@ -2457,9 +2233,9 @@ export default function QuranReaderScreen({
             ]}
           >
             <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
-            <Text style={[styles.scriptNoticeText, { color: colors.textSecondary }]}>
+            <AppText variant="caption" style={styles.scriptNoticeText}>
               {scriptOfflineNotice}
-            </Text>
+            </AppText>
           </View>
         ) : null}
 
@@ -2554,7 +2330,6 @@ export default function QuranReaderScreen({
       currentScript,
       scriptAyahs,
       getAyahScriptText,
-      getDisplayedAyahText,
       safeSurahNumber,
       showTranslation,
       fontSize,
@@ -2588,11 +2363,11 @@ export default function QuranReaderScreen({
   // Group ayahs on the current page by Surah for authentic multi-surah layout
   const surahGroups = useMemo(() => {
     if (!currentPageData || !Array.isArray(currentPageData.ayahs)) return [];
-    const groups: Array<{
+    const groups: {
       surah: MushafPageAyah['surah'];
       hasSurahStart: boolean;
       ayahs: MushafPageAyah[];
-    }> = [];
+    }[] = [];
 
     for (const ayah of currentPageData.ayahs) {
       const lastGroup = groups[groups.length - 1];
@@ -2669,7 +2444,7 @@ export default function QuranReaderScreen({
         }
       }
     },
-    [selectedAyah, currentPage, haptic, clearHighlightTimer]
+    [selectedAyah, currentPage, haptic, clearHighlightTimer, setSelectedAyahY, setSelectedAyahHeight]
   );
 
   const handleLongPressMushafAyah = useCallback(
@@ -2689,7 +2464,7 @@ export default function QuranReaderScreen({
       lastSavedAyahRef.current = ayahItem.numberInSurah;
       setCurrentVisibleAyah(ayahItem.numberInSurah);
     },
-    [haptic]
+    [haptic, setSelectedAyahY, setSelectedAyahHeight]
   );
 
   const handleCopyMushafAyah = useCallback(
@@ -2710,7 +2485,7 @@ export default function QuranReaderScreen({
         copyResetTimerRef.current = setTimeout(() => setCopiedAyah(null), 2000);
       } catch {}
     },
-    [getDisplayedAyahText, getAyahScriptText, haptic]
+    [getAyahScriptText, haptic]
   );
 
   const handleShareMushafAyah = useCallback(
@@ -2735,7 +2510,7 @@ export default function QuranReaderScreen({
       haptic('selection');
       handleShareAyah(shareItem);
     },
-    [currentPage, getDisplayedAyahText, getAyahScriptText, handleShareAyah, haptic]
+    [currentPage, getAyahScriptText, handleShareAyah, haptic]
   );
 
   const handleToggleBookmarkForMushafAyah = useCallback(
@@ -2778,9 +2553,9 @@ export default function QuranReaderScreen({
           <Text style={[styles.surahBannerArabicName, { color: colors.accent, fontFamily: arabicFamilies.bold }]}>
             {surahMeta.name}
           </Text>
-          <Text style={[styles.surahBannerMetaText, { color: colors.textSecondary }]}>
+          <AppText variant="caption" style={styles.surahBannerMetaText}>
             {surahMeta.englishName} ({surahMeta.englishNameTranslation}) • {revelationLabel} • {surahMeta.numberOfAyahs} {t('Verses')}
-          </Text>
+          </AppText>
         </View>
         {!isTawbah && !isFatiha && (
           <View style={styles.bismillahContainer}>
@@ -2828,9 +2603,9 @@ export default function QuranReaderScreen({
         ]}
       >
         <View style={styles.mushafSelectedMeta}>
-          <Text style={[styles.mushafSelectedRef, { color: tokens.accent }]}>
+          <AppText variant="rowTitle" highlight style={styles.mushafSelectedRef}>
             {selectedAyah.surah.englishName} {selectedAyah.surah.number}:{selectedAyah.numberInSurah}
-          </Text>
+          </AppText>
           <TouchableOpacity
             testID="mushaf-action-close"
             onPress={() => {
@@ -2866,9 +2641,9 @@ export default function QuranReaderScreen({
               size={18}
               color={tokens.accent}
             />
-            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+            <AppText variant="caption" style={styles.mushafSelectedActionText}>
               {isPlayingCurrent ? t('Pause') : t('Play')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -2889,9 +2664,9 @@ export default function QuranReaderScreen({
               size={18}
               color={tokens.accent}
             />
-            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+            <AppText variant="caption" style={styles.mushafSelectedActionText}>
               {t('Tafsir')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -2916,9 +2691,9 @@ export default function QuranReaderScreen({
               size={18}
               color={tokens.accent}
             />
-            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+            <AppText variant="caption" style={styles.mushafSelectedActionText}>
               {t('Compare')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -2943,9 +2718,9 @@ export default function QuranReaderScreen({
               size={18}
               color={tokens.accent}
             />
-            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+            <AppText variant="caption" style={styles.mushafSelectedActionText}>
               {t('Bookmark')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -2966,9 +2741,9 @@ export default function QuranReaderScreen({
               size={18}
               color={tokens.accent}
             />
-            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+            <AppText variant="caption" style={styles.mushafSelectedActionText}>
               {t('Marker')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -2989,9 +2764,9 @@ export default function QuranReaderScreen({
               size={18}
               color={tokens.accent}
             />
-            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+            <AppText variant="caption" style={styles.mushafSelectedActionText}>
               {t('Note')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -3012,9 +2787,9 @@ export default function QuranReaderScreen({
               size={18}
               color={tokens.accent}
             />
-            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+            <AppText variant="caption" style={styles.mushafSelectedActionText}>
               {isCopiedCurrent ? t('Copied') : t('Copy')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -3031,9 +2806,9 @@ export default function QuranReaderScreen({
             accessibilityLabel={t('Share')}
           >
             <Ionicons name="share-social-outline" size={18} color={tokens.accent} />
-            <Text style={[styles.mushafSelectedActionText, { color: colors.textPrimary }]}>
+            <AppText variant="caption" style={styles.mushafSelectedActionText}>
               {t('Share')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
         </View>
 
@@ -3046,9 +2821,9 @@ export default function QuranReaderScreen({
             ]}
           >
             <View style={styles.tafsirHeader}>
-              <Text style={[styles.tafsirTitle, { color: colors.accent }]}>
+              <AppText variant="rowTitle" highlight style={styles.tafsirTitle}>
                 {tafsirEdition || t('Tafsir')}
-              </Text>
+              </AppText>
               <TouchableOpacity
                 onPress={() => {
                   setActiveTafsirAyah(null);
@@ -3064,14 +2839,15 @@ export default function QuranReaderScreen({
             {tafsirLoading ? (
               <ActivityIndicator size="small" color={colors.accent} style={{ marginVertical: 8 }} />
             ) : (
-              <Text
+              <AppText
+                variant="body"
                 style={[
                   styles.inlineTafsirText,
-                  { color: colors.textPrimary, fontFamily: 'Manrope_400Regular' },
+                  { fontFamily: 'Manrope_400Regular' },
                 ]}
               >
                 {tafsirText || ''}
-              </Text>
+              </AppText>
             )}
           </View>
         )}
@@ -3095,19 +2871,19 @@ export default function QuranReaderScreen({
           accessibilityLabel={t('Previous Page')}
         >
           <Ionicons name={getBackIcon()} size={18} color={tokens.accent} />
-          <Text style={[styles.mushafPageNavBtnText, { color: tokens.accent }]}>
+          <AppText variant="caption" highlight style={styles.mushafPageNavBtnText}>
             {`Page ${Math.max(1, currentPage - 1)}`}
-          </Text>
+          </AppText>
         </TouchableOpacity>
 
         <View style={styles.mushafPageBadgeCenter} testID="mushaf-footer-badge">
-          <Text style={[styles.mushafPageBadgeText, { color: colors.textPrimary }]}>
+          <AppText variant="rowTitle" style={styles.mushafPageBadgeText}>
             {`Page ${displayedMushafPage} of ${TOTAL_MUSHAF_PAGES}`}
-          </Text>
+          </AppText>
           {currentPageData?.ayahs?.length ? (
-            <Text style={[styles.mushafPageBadgeSub, { color: colors.textMuted }]}>
+            <AppText variant="caption" style={styles.mushafPageBadgeSub}>
               {`Juz ${currentPageData.juz ?? currentPageData.ayahs.find((a) => typeof a.juz === 'number')?.juz ?? '—'} • Hizb ${Math.ceil((currentPageData.hizbQuarter ?? currentPageData.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter ?? 0) / 4)}`}
-            </Text>
+            </AppText>
           ) : null}
         </View>
 
@@ -3123,303 +2899,19 @@ export default function QuranReaderScreen({
           accessibilityRole="button"
           accessibilityLabel={t('Next Page')}
         >
-          <Text style={[styles.mushafPageNavBtnText, { color: tokens.accent }]}>
+          <AppText variant="caption" highlight style={styles.mushafPageNavBtnText}>
             {`Page ${Math.min(TOTAL_MUSHAF_PAGES, currentPage + 1)}`}
-          </Text>
+          </AppText>
           <Ionicons name={getForwardIcon()} size={18} color={tokens.accent} />
         </TouchableOpacity>
       </View>
     );
   };
 
-  // Mushaf page view
-  const renderMushafMode = () => {
-    if ((pageLoading && (!currentPageData || currentPageData.pageNumber !== currentPage)) ||
-        (!currentPageData && !pageError) ||
-        (currentPageData && currentPageData.pageNumber !== currentPage && !pageError)) {
-      return (
-        <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-          <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.mushafLoadingText, { color: colors.textSecondary }]}>
-            {`Loading Mushaf Page ${currentPage}...`}
-          </Text>
-        </View>
-      );
-    }
-
-    if (pageError && (!currentPageData || currentPageData.pageNumber !== currentPage)) {
-      return (
-        <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-          <Text style={[styles.errorText, { color: colors.textSecondary }]}>{pageError}</Text>
-          <TouchableOpacity
-            style={[styles.retryBtn, { borderColor: colors.accent }]}
-            onPress={() => loadPageData(currentPage, true)}
-            accessibilityRole="button"
-            accessibilityLabel={t('Retry loading page')}
-          >
-            <Text style={[styles.retryBtnText, { color: colors.accent }]}>{retry}</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    if (!currentPageData || currentPageData.pageNumber !== currentPage) return null;
-
-    const pageJuz = currentPageData.juz ?? currentPageData.ayahs.find((a) => typeof a.juz === 'number')?.juz;
-    const pageHizbQuarter = currentPageData.hizbQuarter ?? currentPageData.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter;
-    const pageSurahNames = currentPageData.surahs.map((s) => s.name).filter(Boolean).join(' • ');
-
-    return (
-      <FlatList
-        key={`mushaf-page-list-${currentPage}`}
-        ref={mushafListRef}
-        data={[currentPage]}
-        keyExtractor={(item) => `mushaf-page-${item}`}
-        extraData={`${currentPage}:${fontSize}:${quranLineHeight}:${showTranslation}`}
-        renderItem={() => (
-          <View style={styles.mushafPageCard}>
-            {/* Header strip: Juz, Hizb, Surahs, Page number */}
-            <View style={[styles.mushafPageHeaderStrip, { borderBottomColor: tokens.cardBorder }]}>
-              <Text style={[styles.mushafPageHeaderLeft, { color: colors.textSecondary }]}>
-                {`Juz ${pageJuz ?? '—'} • Hizb ${Math.ceil((pageHizbQuarter ?? 0) / 4)}`}
-              </Text>
-              <Text style={[styles.mushafPageHeaderCenter, { color: colors.textPrimary }]}>
-                {pageSurahNames}
-              </Text>
-              <Text style={[styles.mushafPageHeaderRight, { color: colors.textSecondary }]}>
-                {`Page ${displayedMushafPage}`}
-              </Text>
-            </View>
-
-            {/* Continuous Mushaf Text Area */}
-            <View
-              style={[
-                styles.mushafContainer,
-                getCardShadow(mode),
-                width < 380 && { padding: 10, borderRadius: 8 },
-                { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
-              ]}
-            >
-              {currentScript === 'tajweed' && scriptAyahs ? (
-                <View style={styles.mushafTajweedList}>
-                  {currentPageData.ayahs.map((a) => (
-                    <View
-                      key={`mushaf-tajweed-${a.surah.number}-${a.numberInSurah}`}
-                      style={styles.mushafTajweedAyahRow}
-                      onLayout={(event) => {
-                        const { y, height } = event.nativeEvent.layout;
-                        ayahLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y, height };
-                        ayahLayoutsRef.current[a.number] = { y, height };
-                        if (selectedAyah?.number === a.number) {
-                          setSelectedAyahY(y);
-                          setSelectedAyahHeight(height);
-                        }
-                        handleMushafAyahLayout(a.surah.number, a.numberInSurah, y, height);
-                      }}
-                    >
-                      {a.numberInSurah === 1 && renderSurahStartBanner(a.surah)}
-                      <TouchableOpacity
-                        onPress={() => handleSelectMushafAyah(a)}
-                        onLongPress={() => handleLongPressMushafAyah(a)}
-                        delayLongPress={500}
-                        activeOpacity={0.7}
-                        testID={`mushaf-ayah-${a.surah.number}-${a.numberInSurah}`}
-                        style={[
-                          styles.mushafTajweedAyahTouch,
-                          highlightedAyahKey === `${a.surah.number}:${a.numberInSurah}` && {
-                            backgroundColor: colors.accentDim,
-                            borderColor: colors.accent,
-                            borderWidth: 1,
-                            borderRadius: 6,
-                          },
-                          selectedAyah?.number === a.number && { backgroundColor: colors.accentDim, borderRadius: 6 },
-                        ]}
-                      >
-                        <TajweedText
-                          text={getAyahScriptText(a.numberInSurah, a.text)}
-                          size={fontSize + 2}
-                          fontFamily={arabicFamilies.regular}
-                          lineHeight={Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6))}
-                          numberInSurah={a.numberInSurah}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <View style={styles.mushafSurahSectionsWrap}>
-                  {surahGroups.map((group) => (
-                    <View
-                      key={`mushaf-group-${group.surah.number}`}
-                      style={styles.mushafSurahGroup}
-                      onLayout={(event) => {
-                        const gy = event.nativeEvent.layout.y;
-                        groupOffsetsRef.current[group.surah.number] = gy;
-                        checkPendingMushafGroupLayout(group, gy);
-                      }}
-                    >
-                      {group.hasSurahStart && (
-                        <View
-                          onLayout={(event) => {
-                            const bh = event.nativeEvent.layout.height;
-                            bannerHeightsRef.current[group.surah.number] = bh;
-                            checkPendingMushafGroupLayout(group);
-                          }}
-                        >
-                          {renderSurahStartBanner(group.surah)}
-                        </View>
-                      )}
-                      <View style={styles.mushafAyahsContainer}>
-                        {group.ayahs.map((a) => {
-                          const isSelected = selectedAyah?.number === a.number;
-                          const isRestorationHighlight = highlightedAyahKey === `${a.surah.number}:${a.numberInSurah}`;
-                          return (
-                            <TouchableOpacity
-                              key={`mushaf-${a.surah.number}-${a.numberInSurah}`}
-                              onPress={() => handleSelectMushafAyah(a)}
-                              onLongPress={() => handleLongPressMushafAyah(a)}
-                              delayLongPress={500}
-                              activeOpacity={0.7}
-                              testID={`mushaf-ayah-${a.surah.number}-${a.numberInSurah}`}
-                              onLayout={(event) => {
-                                const { y, height } = event.nativeEvent.layout;
-                                ayahLocalLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y, height };
-                                const groupY = groupOffsetsRef.current[group.surah.number];
-                                const hasBannerHeight = !group.hasSurahStart || typeof bannerHeightsRef.current[group.surah.number] === 'number';
-                                const bannerH = group.hasSurahStart ? (bannerHeightsRef.current[group.surah.number] || 0) : 0;
-                                if (typeof groupY === 'number' && hasBannerHeight) {
-                                  const absoluteY = groupY + bannerH + y;
-                                  ayahLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y: absoluteY, height };
-                                  ayahLayoutsRef.current[a.number] = { y: absoluteY, height };
-                                  if (selectedAyah?.number === a.number) {
-                                    setSelectedAyahY(absoluteY);
-                                    setSelectedAyahHeight(height);
-                                  }
-                                  handleMushafAyahLayout(a.surah.number, a.numberInSurah, absoluteY, height);
-                                }
-                              }}
-                              style={[
-                                styles.mushafAyahTouch,
-                                isRestorationHighlight && {
-                                  backgroundColor: colors.accentDim,
-                                  borderColor: colors.accent,
-                                  borderWidth: 1,
-                                  borderRadius: 8,
-                                },
-                                isSelected && { backgroundColor: colors.accentDim, borderRadius: 8 },
-                              ]}
-                            >
-                              <Text style={styles.mushafAyahText}>
-                                <Text
-                                  style={{
-                                    fontFamily: arabicFamilies.regular,
-                                    fontSize: fontSize + 2,
-                                    color: isSelected ? colors.accent : colors.textPrimary,
-                                    lineHeight: Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6)),
-                                    writingDirection: 'rtl',
-                                  }}
-                                >
-                                  {getDisplayedAyahText(
-                                    a.surah.number,
-                                    a.numberInSurah,
-                                    getAyahScriptText(a.numberInSurah, a.text)
-                                  )}{' '}
-                                </Text>
-                                <Text
-                                  style={{
-                                    fontFamily: arabicFamilies.regular,
-                                    fontSize: Math.max(12, fontSize - 2),
-                                    color: colors.accent,
-                                    fontWeight: 'bold',
-                                  }}
-                                >
-                                  ۝{toArabicNumerals(a.numberInSurah)}{' '}
-                                </Text>
-                              </Text>
-                            </TouchableOpacity>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
-              {selectedAyah && (
-                <View
-                  pointerEvents="box-none"
-                  style={[
-                    styles.mushafInlineSelectedToolbar,
-                    {
-                      top: selectedAyahY >= 88
-                        ? Math.max(0, selectedAyahY - 24)
-                        : Math.max(0, selectedAyahY + (selectedAyahHeight || 44) + 4),
-                    },
-                  ]}
-                >
-                  {renderSelectedAyahToolbar()}
-                </View>
-              )}
-            </View>
-
-            {/* Translation Section (if enabled) */}
-            {showTranslation && (
-              <View style={[styles.mushafTranslationsWrap, { borderTopColor: colors.borderSubtle }]}>
-                <Text style={[styles.mushafTranslationsHeading, { color: colors.accent }]}>
-                  {t('TRANSLATION')} ({flag} {(edition?.name || '').toUpperCase()})
-                </Text>
-                {currentPageData.ayahs.map((a) => (
-                  <View
-                    key={`tr-${a.surah.number}-${a.numberInSurah}`}
-                    style={[
-                      styles.mushafTranslationRow,
-                      selectedAyah?.number === a.number && { backgroundColor: colors.accentDim, borderRadius: 8 },
-                    ]}
-                  >
-                    <View style={styles.mushafTranslationMeta}>
-                      <Text style={[styles.mushafAyahBadge, { color: colors.accent }]}>
-                        {a.surah.number}:{a.numberInSurah}
-                      </Text>
-                      <Text style={[styles.mushafSurahSmallName, { color: colors.textMuted }]}>
-                        {a.surah.englishName}
-                      </Text>
-                    </View>
-                    <Text style={[styles.mushafTranslationText, { color: colors.textSecondary }]}>
-                      {a.translation || ''}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        )}
-        contentContainerStyle={[styles.mushafScrollContent, { paddingBottom: bottomClearance }]}
-        initialNumToRender={1}
-        maxToRenderPerBatch={1}
-        windowSize={3}
-        showsVerticalScrollIndicator={true}
-        onContentSizeChange={(_w, _h) => {
-          if (
-            restorationCompletedRef.current &&
-            mushafRestorationLandedOffsetRef.current !== null &&
-            mushafRestorationLandedOffsetRef.current > 0
-          ) {
-            mushafListRef.current?.scrollToOffset({
-              offset: mushafRestorationLandedOffsetRef.current,
-              animated: false,
-            });
-          }
-        }}
-        onScrollBeginDrag={() => {
-          mushafRestorationLandedOffsetRef.current = null;
-        }}
-        ListFooterComponent={renderMushafPaginationFooter()}
-      />
-    );
-  };
 
   const cardsAyahs = useMemo(() => {
-    const targetNum = safeSurahNumber || surahNumberRef.current;
-    if (surah && Array.isArray(surah.ayahs) && surah.ayahs.length > 0 && (surah.number === safeSurahNumber || surah.number === surahNumberRef.current)) {
+    const targetNum = safeSurahNumber;
+    if (surah && Array.isArray(surah.ayahs) && surah.ayahs.length > 0 && surah.number === safeSurahNumber) {
       return surah.ayahs;
     }
     const cached = loadQuranCache<SurahDetail>(`surah:${targetNum}:${edition?.editionIdentifier || 'en.sahih'}`) ||
@@ -3455,17 +2947,11 @@ export default function QuranReaderScreen({
       }
     }
     return [];
-  }, [surah, safeSurahNumber, edition?.editionIdentifier, currentPageData]);
+  }, [surah, safeSurahNumber, edition, currentPageData]);
 
-  const navBarPaddingH = isCompact ? 12 : 16;
-  const navBarPaddingV = isCompact ? 8 : 10;
-  const backTextSize = isCompact ? 13 : 14;
-  const backIconSize = isCompact ? 18 : 20;
-  const surahNavBtnSize = isCompact ? 32 : 36;
-  const surahNavIconSize = isCompact ? 20 : 22;
-  const dotsBtnSize = isCompact ? 36 : 40;
-  const dotsIconSize = isCompact ? 20 : 22;
-  const titleFontSizeNav = isCompact ? 16 : 18;
+  const mushafPageJuz = currentPageData?.juz ?? currentPageData?.ayahs.find((a) => typeof a.juz === 'number')?.juz;
+  const mushafPageHizbQuarter = currentPageData?.hizbQuarter ?? currentPageData?.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter;
+  const mushafPageSurahNames = currentPageData?.surahs.map((s) => s.name).filter(Boolean).join(' • ');
 
   const readerTitle =
     readingMode === 'mushaf'
@@ -3481,7 +2967,7 @@ export default function QuranReaderScreen({
 
   return (
     <DetailScreen
-      style={[styles.container, { backgroundColor: tokens.bgTop, paddingBottom: readerBottomClearance }]}
+      style={[styles.container, { backgroundColor: tokens.bgTop }]}
       header={
         <ReaderHeader
           onBack={onBack}
@@ -3553,9 +3039,9 @@ export default function QuranReaderScreen({
                     { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder },
                   ]}
                 >
-                  <Text style={[styles.toolsMenuJuzText, { color: tokens.accent }]}>
+                  <AppText variant="caption" highlight style={styles.toolsMenuJuzText}>
                     {selectedJuz ? `Juz ${selectedJuz}` : '—'}
-                  </Text>
+                  </AppText>
                 </View>
               }
               onClose={() => setToolsMenuOpen(false)}
@@ -3594,9 +3080,9 @@ export default function QuranReaderScreen({
             >
               {/* DISPLAY */}
               <View style={styles.toolsMenuGroup}>
-                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                <AppText variant="eyebrow" tone="faint" style={styles.toolsMenuSectionLabel}>
                   {t('DISPLAY')}
-                </Text>
+                </AppText>
                 <View
                   style={[
                     styles.toolsMenuGroupCard,
@@ -3631,14 +3117,14 @@ export default function QuranReaderScreen({
                       />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Reading Mode')}
-                      </Text>
-                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                      </AppText>
+                      <AppText variant="caption" tone="faint" style={styles.toolsMenuItemSubtitle}>
                         {readingMode === 'mushaf'
                           ? t('Mushaf Pages', 'Mushaf Pages')
                           : t('Ayah by Ayah', 'Ayah by Ayah')}
-                      </Text>
+                      </AppText>
                     </View>
                     <View
                       style={[
@@ -3672,12 +3158,12 @@ export default function QuranReaderScreen({
                         <Ionicons name="text-outline" size={20} color={colors.accent} />
                       </View>
                       <View style={styles.toolsMenuTextGroup}>
-                        <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                           {t('Font Size')}
-                        </Text>
-                        <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
+                        </AppText>
+                        <AppText variant="caption" tone="faint" style={styles.toolsMenuItemSubtitle}>
                           {fontSize}pt
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
                     <View style={styles.toolsMenuFontControls}>
@@ -3696,9 +3182,9 @@ export default function QuranReaderScreen({
                         accessibilityLabel={t('Decrease font size')}
                         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       >
-                        <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
+                        <AppText variant="caption" style={styles.toolsMenuFontBtnText}>
                           A−
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[
@@ -3715,9 +3201,9 @@ export default function QuranReaderScreen({
                         accessibilityLabel={t('Increase font size')}
                         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       >
-                        <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
+                        <AppText variant="caption" style={styles.toolsMenuFontBtnText}>
                           A+
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -3741,12 +3227,12 @@ export default function QuranReaderScreen({
                         <Ionicons name="reorder-three-outline" size={20} color={colors.accent} />
                       </View>
                       <View style={styles.toolsMenuTextGroup}>
-                        <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                        <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                           {t('Line Height')}
-                        </Text>
-                        <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
+                        </AppText>
+                        <AppText variant="caption" tone="faint" style={styles.toolsMenuItemSubtitle}>
                           {quranLineHeight.toFixed(1)}×
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
                     <View style={styles.toolsMenuFontControls}>
@@ -3765,9 +3251,9 @@ export default function QuranReaderScreen({
                         accessibilityLabel={t('Decrease line height')}
                         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       >
-                        <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
+                        <AppText variant="caption" style={styles.toolsMenuFontBtnText}>
                           −
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[
@@ -3784,9 +3270,9 @@ export default function QuranReaderScreen({
                         accessibilityLabel={t('Increase line height')}
                         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                       >
-                        <Text style={[styles.toolsMenuFontBtnText, { color: colors.textPrimary }]}>
+                        <AppText variant="caption" style={styles.toolsMenuFontBtnText}>
                           +
-                        </Text>
+                        </AppText>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -3818,15 +3304,17 @@ export default function QuranReaderScreen({
                       <Ionicons name="color-palette-outline" size={20} color={colors.accent} />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Script')}
-                      </Text>
-                      <Text
-                        style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
-                        numberOfLines={1}
+                      </AppText>
+                      <AppText
+                        variant="caption"
+                        tone="faint"
+                        style={styles.toolsMenuItemSubtitle}
+                        numberOfLines={2}
                       >
                         {t(selectedScriptOption.label)} — {t(selectedScriptOption.description)}
-                      </Text>
+                      </AppText>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
@@ -3866,12 +3354,12 @@ export default function QuranReaderScreen({
                       />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Keep Screen Awake')}
-                      </Text>
-                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                      </AppText>
+                      <AppText variant="caption" tone="faint" style={styles.toolsMenuItemSubtitle}>
                         {keepAwake ? t('Screen stays on while reading', 'Screen stays on while reading') : t('Screen may dim', 'Screen may dim')}
-                      </Text>
+                      </AppText>
                     </View>
                     <View
                       style={[
@@ -3888,9 +3376,9 @@ export default function QuranReaderScreen({
 
               {/* LANGUAGE & TAFSIR */}
               <View style={styles.toolsMenuGroup}>
-                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                <AppText variant="eyebrow" tone="faint" style={styles.toolsMenuSectionLabel}>
                   {t('LANGUAGE & TAFSIR')}
-                </Text>
+                </AppText>
                 <View
                   style={[
                     styles.toolsMenuGroupCard,
@@ -3918,15 +3406,17 @@ export default function QuranReaderScreen({
                       <Ionicons name="globe-outline" size={20} color={colors.accent} />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Translation Language')}
-                      </Text>
-                      <Text
-                        style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
-                        numberOfLines={1}
+                      </AppText>
+                      <AppText
+                        variant="caption"
+                        tone="faint"
+                        style={styles.toolsMenuItemSubtitle}
+                        numberOfLines={2}
                       >
                         {flag} {getLocalizedLanguageName(language).toUpperCase()} — {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}
-                      </Text>
+                      </AppText>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
@@ -3968,12 +3458,12 @@ export default function QuranReaderScreen({
                       />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Translation')}
-                      </Text>
-                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                      </AppText>
+                      <AppText variant="caption" tone="faint" style={styles.toolsMenuItemSubtitle}>
                         {showTranslation ? t('Shown', 'Shown') : t('Hidden', 'Hidden')}
-                      </Text>
+                      </AppText>
                     </View>
                     <View
                       style={[
@@ -4013,15 +3503,17 @@ export default function QuranReaderScreen({
                       <Ionicons name="book-outline" size={20} color={colors.accent} />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Tafsir Source')}
-                      </Text>
-                      <Text
-                        style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
-                        numberOfLines={1}
+                      </AppText>
+                      <AppText
+                        variant="caption"
+                        tone="faint"
+                        style={styles.toolsMenuItemSubtitle}
+                        numberOfLines={2}
                       >
                         {currentTafsirSource.name} ({currentTafsirSource.language})
-                      </Text>
+                      </AppText>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
@@ -4056,15 +3548,17 @@ export default function QuranReaderScreen({
                       <Ionicons name="swap-horizontal-outline" size={20} color={colors.accent} />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Translation Compare')}
-                      </Text>
-                      <Text
-                        style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}
-                        numberOfLines={1}
+                      </AppText>
+                      <AppText
+                        variant="caption"
+                        tone="faint"
+                        style={styles.toolsMenuItemSubtitle}
+                        numberOfLines={2}
                       >
                         {t('Side-by-side comparative study of translations')}
-                      </Text>
+                      </AppText>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
@@ -4073,9 +3567,9 @@ export default function QuranReaderScreen({
 
               {/* NAVIGATE */}
               <View style={styles.toolsMenuGroup}>
-                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                <AppText variant="eyebrow" tone="faint" style={styles.toolsMenuSectionLabel}>
                   {t('NAVIGATE')}
-                </Text>
+                </AppText>
                 <View
                   style={[
                     styles.toolsMenuGroupCard,
@@ -4103,16 +3597,16 @@ export default function QuranReaderScreen({
                       <Ionicons name="grid-outline" size={20} color={colors.accent} />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Jump to Juz')}
-                      </Text>
-                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textSecondary }]}>
+                      </AppText>
+                      <AppText variant="caption" tone="faint" style={styles.toolsMenuItemSubtitle}>
                         {(() => {
                           const activeJuz = selectedJuz || currentPosition.juz;
                           return (t('Juz {n} selected', { n: activeJuz, defaultValue: `Juz ${activeJuz} selected` }) || `Juz ${activeJuz} selected`)
                             .replace(/\{[nنjp]\}/g, String(activeJuz));
                         })()}
-                      </Text>
+                      </AppText>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
@@ -4144,16 +3638,16 @@ export default function QuranReaderScreen({
                       <Ionicons name="apps-outline" size={20} color={colors.accent} />
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {t('Jump to Hizb')}
-                      </Text>
-                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                      </AppText>
+                      <AppText variant="caption" tone="faint" style={styles.toolsMenuItemSubtitle}>
                         {(() => {
                           const activeHizb = selectedHizb || currentPosition.hizb;
                           return (t('Hizb {n} selected', { n: activeHizb, defaultValue: `Hizb ${activeHizb} selected` }) || `Hizb ${activeHizb} selected`)
                             .replace(/\{[nنjp]\}/g, String(activeHizb));
                         })()}
-                      </Text>
+                      </AppText>
                     </View>
                     <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
                   </TouchableOpacity>
@@ -4162,9 +3656,9 @@ export default function QuranReaderScreen({
 
               {/* OFFLINE */}
               <View style={styles.toolsMenuGroup}>
-                <Text style={[styles.toolsMenuSectionLabel, { color: colors.textMuted }]}>
+                <AppText variant="eyebrow" tone="faint" style={styles.toolsMenuSectionLabel}>
                   {t('OFFLINE')}
-                </Text>
+                </AppText>
                 <View
                   style={[
                     styles.toolsMenuGroupCard,
@@ -4210,16 +3704,16 @@ export default function QuranReaderScreen({
                       )}
                     </View>
                     <View style={styles.toolsMenuTextGroup}>
-                      <Text style={[styles.toolsMenuItemTitle, { color: colors.textPrimary }]}>
+                      <AppText variant="rowTitle" style={styles.toolsMenuItemTitle}>
                         {surahDownloaded ? t('Available Offline') : t('Save for Offline')}
-                      </Text>
-                      <Text style={[styles.toolsMenuItemSubtitle, { color: colors.textMuted }]}>
+                      </AppText>
+                      <AppText variant="caption" tone="faint" style={styles.toolsMenuItemSubtitle}>
                         {surahDownloading
                           ? `${surahDownloadProgress ?? 0}%`
                           : surahDownloaded
                           ? surahDownloadSize || 'Full Surah audio'
                           : 'Download this surah'}
-                      </Text>
+                      </AppText>
                     </View>
                     {surahDownloaded ? (
                       <Ionicons name={getForwardIcon()} size={18} color={colors.textMuted} />
@@ -4234,24 +3728,291 @@ export default function QuranReaderScreen({
 
       {/* Main View: Cards vs Mushaf */}
       {readingMode === 'mushaf' ? (
-        renderMushafMode()
+        (pageLoading && (!currentPageData || currentPageData.pageNumber !== currentPage)) ||
+        (!currentPageData && !pageError) ||
+        (currentPageData && currentPageData.pageNumber !== currentPage && !pageError) ? (
+          <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
+            <ActivityIndicator size="large" color={colors.accent} />
+            <AppText variant="caption" style={styles.mushafLoadingText}>
+              {`Loading Mushaf Page ${currentPage}...`}
+            </AppText>
+          </View>
+        ) : pageError && (!currentPageData || currentPageData.pageNumber !== currentPage) ? (
+          <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
+            <AppText variant="body" tone="danger" style={styles.errorText}>{pageError}</AppText>
+            <TouchableOpacity
+              style={[styles.retryBtn, { borderColor: colors.accent }]}
+              onPress={() => loadPageData(currentPage, true)}
+              accessibilityRole="button"
+              accessibilityLabel={t('Retry loading page')}
+            >
+              <AppText variant="caption" highlight style={styles.retryBtnText}>{retry}</AppText>
+            </TouchableOpacity>
+          </View>
+        ) : !currentPageData || currentPageData.pageNumber !== currentPage ? null : (
+          <FlatList
+            key={`mushaf-page-list-${currentPage}`}
+            ref={mushafListRef}
+            data={[currentPage]}
+            keyExtractor={(item) => `mushaf-page-${item}`}
+            extraData={`${currentPage}:${fontSize}:${quranLineHeight}:${showTranslation}`}
+            renderItem={() => (
+              <View style={styles.mushafPageCard}>
+                {/* Header strip: Juz, Hizb, Surahs, Page number */}
+                <View style={[styles.mushafPageHeaderStrip, { borderBottomColor: tokens.cardBorder }]}>
+                  <AppText variant="caption" style={styles.mushafPageHeaderLeft}>
+                    {`Juz ${mushafPageJuz ?? '—'} • Hizb ${Math.ceil((mushafPageHizbQuarter ?? 0) / 4)}`}
+                  </AppText>
+                  <AppText variant="rowTitle" style={styles.mushafPageHeaderCenter}>
+                    {mushafPageSurahNames}
+                  </AppText>
+                  <AppText variant="caption" style={styles.mushafPageHeaderRight}>
+                    {`Page ${displayedMushafPage}`}
+                  </AppText>
+                </View>
+
+                {/* Continuous Mushaf Text Area */}
+                <View
+                  style={[
+                    styles.mushafContainer,
+                    getCardShadow(mode),
+                    width < 380 && { padding: 10, borderRadius: 8 },
+                    { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
+                  ]}
+                >
+                  {currentScript === 'tajweed' && scriptAyahs ? (
+                    <View style={styles.mushafTajweedList}>
+                      {currentPageData.ayahs.map((a) => (
+                        <View
+                          key={`mushaf-tajweed-${a.surah.number}-${a.numberInSurah}`}
+                          style={styles.mushafTajweedAyahRow}
+                          onLayout={(event) => {
+                            const { y, height } = event.nativeEvent.layout;
+                            ayahLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y, height };
+                            ayahLayoutsRef.current[a.number] = { y, height };
+                            if (selectedAyah?.number === a.number) {
+                              setSelectedAyahY(y);
+                              setSelectedAyahHeight(height);
+                            }
+                            handleMushafAyahLayout(a.surah.number, a.numberInSurah, y, height);
+                          }}
+                        >
+                          {a.numberInSurah === 1 && renderSurahStartBanner(a.surah)}
+                          <TouchableOpacity
+                            onPress={() => handleSelectMushafAyah(a)}
+                            onLongPress={() => handleLongPressMushafAyah(a)}
+                            delayLongPress={500}
+                            activeOpacity={0.7}
+                            testID={`mushaf-ayah-${a.surah.number}-${a.numberInSurah}`}
+                            style={[
+                              styles.mushafTajweedAyahTouch,
+                              highlightedAyahKey === `${a.surah.number}:${a.numberInSurah}` && {
+                                backgroundColor: colors.accentDim,
+                                borderColor: colors.accent,
+                                borderWidth: 1,
+                                borderRadius: 6,
+                              },
+                              selectedAyah?.number === a.number && { backgroundColor: colors.accentDim, borderRadius: 6 },
+                            ]}
+                          >
+                            <TajweedText
+                              text={getAyahScriptText(a.numberInSurah, a.text)}
+                              size={fontSize + 2}
+                              fontFamily={arabicFamilies.regular}
+                              lineHeight={Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6))}
+                              numberInSurah={a.numberInSurah}
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      ))}
+                    </View>
+                  ) : (
+                    <View style={styles.mushafSurahSectionsWrap}>
+                      {surahGroups.map((group) => (
+                        <View
+                          key={`mushaf-group-${group.surah.number}`}
+                          style={styles.mushafSurahGroup}
+                          onLayout={(event) => {
+                            const gy = event.nativeEvent.layout.y;
+                            groupOffsetsRef.current[group.surah.number] = gy;
+                            checkPendingMushafGroupLayout(group, gy);
+                          }}
+                        >
+                          {group.hasSurahStart && (
+                            <View
+                              onLayout={(event) => {
+                                const bh = event.nativeEvent.layout.height;
+                                bannerHeightsRef.current[group.surah.number] = bh;
+                                checkPendingMushafGroupLayout(group);
+                              }}
+                            >
+                              {renderSurahStartBanner(group.surah)}
+                            </View>
+                          )}
+                          <View style={styles.mushafAyahsContainer}>
+                            {group.ayahs.map((a) => {
+                              const isSelected = selectedAyah?.number === a.number;
+                              const isRestorationHighlight = highlightedAyahKey === `${a.surah.number}:${a.numberInSurah}`;
+                              return (
+                                <TouchableOpacity
+                                  key={`mushaf-${a.surah.number}-${a.numberInSurah}`}
+                                  onPress={() => handleSelectMushafAyah(a)}
+                                  onLongPress={() => handleLongPressMushafAyah(a)}
+                                  delayLongPress={500}
+                                  activeOpacity={0.7}
+                                  testID={`mushaf-ayah-${a.surah.number}-${a.numberInSurah}`}
+                                  onLayout={(event) => {
+                                    const { y, height } = event.nativeEvent.layout;
+                                    ayahLocalLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y, height };
+                                    const groupY = groupOffsetsRef.current[group.surah.number];
+                                    const hasBannerHeight = !group.hasSurahStart || typeof bannerHeightsRef.current[group.surah.number] === 'number';
+                                    const bannerH = group.hasSurahStart ? (bannerHeightsRef.current[group.surah.number] || 0) : 0;
+                                    if (typeof groupY === 'number' && hasBannerHeight) {
+                                      const absoluteY = groupY + bannerH + y;
+                                      ayahLayoutsRef.current[`${a.surah.number}:${a.numberInSurah}`] = { y: absoluteY, height };
+                                      ayahLayoutsRef.current[a.number] = { y: absoluteY, height };
+                                      if (selectedAyah?.number === a.number) {
+                                        setSelectedAyahY(absoluteY);
+                                        setSelectedAyahHeight(height);
+                                      }
+                                      handleMushafAyahLayout(a.surah.number, a.numberInSurah, absoluteY, height);
+                                    }
+                                  }}
+                                  style={[
+                                    styles.mushafAyahTouch,
+                                    isRestorationHighlight && {
+                                      backgroundColor: colors.accentDim,
+                                      borderColor: colors.accent,
+                                      borderWidth: 1,
+                                      borderRadius: 8,
+                                    },
+                                    isSelected && { backgroundColor: colors.accentDim, borderRadius: 8 },
+                                  ]}
+                                >
+                                  <Text style={styles.mushafAyahText}>
+                                    <Text
+                                      style={{
+                                        fontFamily: arabicFamilies.regular,
+                                        fontSize: fontSize + 2,
+                                        color: isSelected ? colors.accent : colors.textPrimary,
+                                        lineHeight: Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6)),
+                                        includeFontPadding: Platform.OS === 'android' ? true : undefined,
+                                        writingDirection: 'rtl',
+                                      }}
+                                    >
+                                      {getDisplayedAyahText(
+                                        a.surah.number,
+                                        a.numberInSurah,
+                                        getAyahScriptText(a.numberInSurah, a.text)
+                                      )}{' '}
+                                    </Text>
+                                    <Text
+                                      style={{
+                                        fontFamily: arabicFamilies.regular,
+                                        fontSize: Math.max(12, fontSize - 2),
+                                        color: colors.accent,
+                                        fontWeight: 'bold',
+                                      }}
+                                    >
+                                      ۝{toArabicNumerals(a.numberInSurah)}{' '}
+                                    </Text>
+                                  </Text>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                  {selectedAyah && (
+                    <View
+                      pointerEvents="box-none"
+                      style={[
+                        styles.mushafInlineSelectedToolbar,
+                        {
+                          top: selectedAyahY >= 88
+                            ? Math.max(0, selectedAyahY - 24)
+                            : Math.max(0, selectedAyahY + (selectedAyahHeight || 44) + 4),
+                        },
+                      ]}
+                    >
+                      {renderSelectedAyahToolbar()}
+                    </View>
+                  )}
+                </View>
+
+                {/* Translation Section (if enabled) */}
+                {showTranslation && (
+                  <View style={[styles.mushafTranslationsWrap, { borderTopColor: colors.borderSubtle }]}>
+                    <AppText variant="eyebrow" highlight style={styles.mushafTranslationsHeading}>
+                      {t('TRANSLATION')} ({flag} {(edition?.name || '').toUpperCase()})
+                    </AppText>
+                    {currentPageData.ayahs.map((a) => (
+                      <View
+                        key={`tr-${a.surah.number}-${a.numberInSurah}`}
+                        style={[
+                          styles.mushafTranslationRow,
+                          selectedAyah?.number === a.number && { backgroundColor: colors.accentDim, borderRadius: 8 },
+                        ]}
+                      >
+                        <View style={styles.mushafTranslationMeta}>
+                          <AppText variant="numeral" highlight style={styles.mushafAyahBadge}>
+                            {a.surah.number}:{a.numberInSurah}
+                          </AppText>
+                          <AppText variant="caption" style={styles.mushafSurahSmallName}>
+                            {a.surah.englishName}
+                          </AppText>
+                        </View>
+                        <AppText variant="body" style={styles.mushafTranslationText}>
+                          {a.translation || ''}
+                        </AppText>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            )}
+            contentContainerStyle={[styles.mushafScrollContent, { paddingBottom: readerBottomClearance }]}
+            initialNumToRender={1}
+            maxToRenderPerBatch={1}
+            windowSize={3}
+            showsVerticalScrollIndicator={true}
+            onContentSizeChange={(_w, _h) => {
+              if (
+                restorationCompletedRef.current &&
+                mushafRestorationLandedOffsetRef.current !== null &&
+                mushafRestorationLandedOffsetRef.current > 0
+              ) {
+                mushafListRef.current?.scrollToOffset({
+                  offset: mushafRestorationLandedOffsetRef.current,
+                  animated: false,
+                });
+              }
+            }}
+            onScrollBeginDrag={() => {
+              mushafRestorationLandedOffsetRef.current = null;
+            }}
+            ListFooterComponent={renderMushafPaginationFooter()}
+          />
+        )
       ) : readingMode === 'cards' && loading && cardsAyahs.length === 0 ? (
         <View style={[styles.center, { backgroundColor: colors.bgBase, flex: 1, paddingVertical: 40 }]}>
           <ActivityIndicator size="large" color={colors.accent} />
-          <Text style={[styles.mushafLoadingText, { color: colors.textSecondary, marginTop: 12 }]}>
+          <AppText variant="caption" style={[styles.mushafLoadingText, { marginTop: 12 }]}>
             {t('Loading surah...')}
-          </Text>
+          </AppText>
         </View>
       ) : readingMode === 'cards' && error && cardsAyahs.length === 0 ? (
         <View style={[styles.center, { backgroundColor: colors.bgBase, flex: 1, paddingVertical: 40 }]}>
-          <Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
+          <AppText variant="body" style={styles.errorText}>{error}</AppText>
           <TouchableOpacity
             style={[styles.retryBtn, { borderColor: colors.accent, marginTop: 12 }]}
             onPress={() => loadSurah(true)}
             accessibilityRole="button"
             accessibilityLabel={t('Retry loading surah')}
           >
-            <Text style={[styles.retryBtnText, { color: colors.accent }]}>{retry}</Text>
+            <AppText variant="caption" highlight style={styles.retryBtnText}>{retry}</AppText>
           </TouchableOpacity>
         </View>
       ) : (
@@ -4263,7 +4024,7 @@ export default function QuranReaderScreen({
           keyExtractor={(item) => String(item.numberInSurah)}
           renderItem={renderAyahItem}
           ListHeaderComponent={renderSurahHeader}
-          contentContainerStyle={[styles.listContent, { paddingBottom: bottomClearance }]}
+          contentContainerStyle={[styles.listContent, { paddingBottom: readerBottomClearance }]}
           initialNumToRender={initialNumToRender}
           maxToRenderPerBatch={15}
           windowSize={7}
@@ -4320,6 +4081,7 @@ export default function QuranReaderScreen({
               <TextInput
                 placeholder={t('Search reciter name...')}
                 placeholderTextColor={colors.textMuted}
+                accessibilityLabel={t('Search reciter name...')}
                 value={reciterSearch}
                 onChangeText={setReciterSearch}
                 style={[styles.reciterSearchInput, { color: colors.textPrimary }]}
@@ -4364,24 +4126,23 @@ export default function QuranReaderScreen({
                     accessibilityLabel={`Select ${item.englishName}${country ? `, ${country}` : ''}`}
                   >
                     <View style={styles.reciterInfo}>
-                      <Text
-                        style={[
-                          styles.reciterEngName,
-                          { color: isSelected ? colors.accent : colors.textPrimary },
-                        ]}
-                        numberOfLines={1}
+                      <AppText
+                        variant="rowTitle"
+                        highlight={isSelected}
+                        style={styles.reciterEngName}
+                        numberOfLines={2}
                       >
                         {item.englishName}
-                      </Text>
+                      </AppText>
                       {country ? (
-                        <Text style={[styles.reciterCountry, { color: colors.textMuted }]}>
+                        <AppText variant="caption" tone="faint" style={styles.reciterCountry}>
                           {country}
-                        </Text>
+                        </AppText>
                       ) : null}
                       {item.name ? (
-                        <Text style={[styles.reciterArabicName, { color: colors.textSecondary }]}>
+                        <AppText variant="caption" tone="faint" style={styles.reciterArabicName}>
                           {item.name}
-                        </Text>
+                        </AppText>
                       ) : null}
                     </View>
                     <View style={styles.reciterTrailing}>
@@ -4425,9 +4186,9 @@ export default function QuranReaderScreen({
                     { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder },
                   ]}
                 >
-                  <Text style={[styles.toolsMenuJuzText, { color: tokens.accent }]}>
+                  <AppText variant="caption" highlight style={styles.toolsMenuJuzText}>
                     {`${flag} ${language.toUpperCase()}`}
-                  </Text>
+                  </AppText>
                 </View>
               }
               onClose={() => setLangPickerOpen(false)}
@@ -4446,6 +4207,7 @@ export default function QuranReaderScreen({
               <TextInput
                 placeholder={t('Search translation edition or language...')}
                 placeholderTextColor={colors.textMuted}
+                accessibilityLabel={t('Search translation edition or language...')}
                 value={translationSearch}
                 onChangeText={setTranslationSearch}
                 style={[styles.reciterSearchInput, { color: colors.textPrimary }]}
@@ -4482,9 +4244,9 @@ export default function QuranReaderScreen({
                   >
                     <View style={styles.reciterInfo}>
                       <View style={styles.reciterTitleRow}>
-                        <Text style={[styles.reciterEngName, { color: colors.textPrimary }]} numberOfLines={1}>
+                        <AppText variant="rowTitle" style={styles.reciterEngName} numberOfLines={2}>
                           {item.flag} {locLang}
-                        </Text>
+                        </AppText>
                         <View
                           style={[
                             styles.reciterLangBadge,
@@ -4494,19 +4256,18 @@ export default function QuranReaderScreen({
                             },
                           ]}
                         >
-                          <Text
-                            style={[
-                              styles.reciterLangBadgeText,
-                              { color: isSelected ? colors.textPrimary : colors.textMuted },
-                            ]}
+                          <AppText
+                            variant="eyebrow"
+                            tone={isSelected ? undefined : 'faint'}
+                            style={styles.reciterLangBadgeText}
                           >
                             {item.languageCode.toUpperCase()}
-                          </Text>
+                          </AppText>
                         </View>
                       </View>
-                      <Text style={[styles.reciterArabicName, { color: colors.textMuted }]}>
+                      <AppText variant="caption" tone="faint" style={styles.reciterArabicName}>
                         {locName} · {item.name}
-                      </Text>
+                      </AppText>
                     </View>
                     {isSelected && (
                       <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
@@ -4562,9 +4323,9 @@ export default function QuranReaderScreen({
                   >
                     <View style={styles.reciterInfo}>
                       <View style={styles.reciterTitleRow}>
-                        <Text style={[styles.reciterEngName, { color: colors.textPrimary }]} numberOfLines={1}>
+                        <AppText variant="rowTitle" style={styles.reciterEngName} numberOfLines={2}>
                           {item.name}
-                        </Text>
+                        </AppText>
                         <View
                           style={[
                             styles.reciterLangBadge,
@@ -4574,19 +4335,19 @@ export default function QuranReaderScreen({
                             },
                           ]}
                         >
-                          <Text
-                            style={[
-                              styles.reciterLangBadgeText,
-                              { color: item.languageCode === 'ar' ? colors.textMuted : colors.accent },
-                            ]}
+                          <AppText
+                            variant="eyebrow"
+                            highlight={item.languageCode !== 'ar'}
+                            tone={item.languageCode === 'ar' ? 'faint' : undefined}
+                            style={styles.reciterLangBadgeText}
                           >
                             {item.language.toUpperCase()}
-                          </Text>
+                          </AppText>
                         </View>
                       </View>
-                      <Text style={[styles.reciterArabicName, { color: colors.textMuted }]}>
+                      <AppText variant="caption" tone="faint" style={styles.reciterArabicName}>
                         {item.author}
-                      </Text>
+                      </AppText>
                     </View>
                     {isSelected && (
                       <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
@@ -4621,7 +4382,7 @@ export default function QuranReaderScreen({
               chip={
                 selectedJuz ? (
                   <View style={[styles.toolsMenuJuzChip, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
-                    <Text style={[styles.toolsMenuJuzText, { color: tokens.accent }]}>{`Juz ${selectedJuz}`}</Text>
+                    <AppText variant="caption" highlight style={styles.toolsMenuJuzText}>{`Juz ${selectedJuz}`}</AppText>
                   </View>
                 ) : undefined
               }
@@ -4673,18 +4434,23 @@ export default function QuranReaderScreen({
                   >
                     <View style={styles.reciterInfo}>
                       <View style={styles.reciterTitleRow}>
-                        <Text style={[styles.reciterEngName, { color: isSelected ? colors.accent : colors.textPrimary }]} numberOfLines={1}>
+                        <AppText
+                          variant="rowTitle"
+                          highlight={isSelected}
+                          style={styles.reciterEngName}
+                          numberOfLines={1}
+                        >
                           Juz {item}
-                        </Text>
+                        </AppText>
                         <View
                           style={[
                             styles.reciterLangBadge,
                             { backgroundColor: colors.accentDim, borderColor: colors.accent },
                           ]}
                         >
-                          <Text style={[styles.reciterLangBadgeText, { color: colors.accent }]}>
+                          <AppText variant="caption" highlight style={styles.reciterLangBadgeText}>
                             {surahName} {juzStart?.ayah}
-                          </Text>
+                          </AppText>
                         </View>
                       </View>
                     </View>
@@ -4719,7 +4485,7 @@ export default function QuranReaderScreen({
               chip={
                 selectedHizb ? (
                   <View style={[styles.toolsMenuJuzChip, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
-                    <Text style={[styles.toolsMenuJuzText, { color: tokens.accent }]}>{`Hizb ${selectedHizb}`}</Text>
+                    <AppText variant="caption" highlight style={styles.toolsMenuJuzText}>{`Hizb ${selectedHizb}`}</AppText>
                   </View>
                 ) : undefined
               }
@@ -4767,18 +4533,23 @@ export default function QuranReaderScreen({
                   >
                     <View style={styles.reciterInfo}>
                       <View style={styles.reciterTitleRow}>
-                        <Text style={[styles.reciterEngName, { color: isSelected ? colors.accent : colors.textPrimary }]} numberOfLines={1}>
+                        <AppText
+                          variant="rowTitle"
+                          highlight={isSelected}
+                          style={styles.reciterEngName}
+                          numberOfLines={1}
+                        >
                           Hizb {item}
-                        </Text>
+                        </AppText>
                         <View
                           style={[
                             styles.reciterLangBadge,
                             { backgroundColor: colors.accentDim, borderColor: colors.accent },
                           ]}
                         >
-                          <Text style={[styles.reciterLangBadgeText, { color: colors.accent }]}>
+                          <AppText variant="caption" highlight style={styles.reciterLangBadgeText}>
                             {surahName} {hizbStart?.ayah}
-                          </Text>
+                          </AppText>
                         </View>
                       </View>
                     </View>
@@ -4840,15 +4611,14 @@ export default function QuranReaderScreen({
                   >
                     <View style={styles.reciterInfo}>
                       <View style={styles.reciterTitleRow}>
-                        <Text
-                          style={[
-                            styles.reciterEngName,
-                            { color: isSelected ? colors.accent : colors.textPrimary },
-                          ]}
+                        <AppText
+                          variant="rowTitle"
+                          highlight={isSelected}
+                          style={styles.reciterEngName}
                           numberOfLines={1}
                         >
                           {item.label}
-                        </Text>
+                        </AppText>
                         {item.id === 'uthmani' ? (
                           <View
                             style={[
@@ -4856,15 +4626,15 @@ export default function QuranReaderScreen({
                               { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
                             ]}
                           >
-                            <Text style={[styles.reciterLangBadgeText, { color: colors.textMuted }]}>
+                            <AppText variant="eyebrow" tone="faint" style={styles.reciterLangBadgeText}>
                               {t('DEFAULT')}
-                            </Text>
+                            </AppText>
                           </View>
                         ) : null}
                       </View>
-                      <Text style={[styles.reciterArabicName, { color: colors.textMuted }]}>
+                      <AppText variant="caption" tone="faint" style={styles.reciterArabicName}>
                         {item.description}
-                      </Text>
+                      </AppText>
                     </View>
                     {isSelected && (
                       <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
@@ -4909,7 +4679,7 @@ export default function QuranReaderScreen({
             <SheetHeader
               testID="note-sheet-header"
               eyebrow={t('REFLECTIONS')}
-              title={`${noteComposerTarget?.surahName || (noteComposerTarget ? `Surah ${noteComposerTarget.surah}` : '')} · ${t('Ayah')} ${noteComposerTarget?.ayah ?? ''}`}
+              title={`${noteComposerTarget?.surahName || (noteComposerTarget ? `Surah ${noteComposerTarget.surah}` : '')} · ${t('Ayah')} ${noteComposerAyah ?? ''}`}
               subtitle={t('Personal reflections & study notes')}
               onClose={closeNoteComposer}
               showDragPill
@@ -4921,6 +4691,7 @@ export default function QuranReaderScreen({
               <TextInput
                 placeholder={t('Write your reflection, thoughts, or lessons from this verse...')}
                 placeholderTextColor={colors.textMuted}
+                accessibilityLabel={t('Write your reflection, thoughts, or lessons from this verse...')}
                 multiline
                 numberOfLines={4}
                 value={noteComposerText}
@@ -4948,9 +4719,9 @@ export default function QuranReaderScreen({
                   accessibilityRole="button"
                   accessibilityLabel={t('Cancel note')}
                 >
-                  <Text style={[styles.noteModalBtnCancelText, { color: colors.textSecondary }]}>
+                  <AppText variant="caption" tone="faint" style={styles.noteModalBtnCancelText}>
                     {t('Cancel')}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSaveNote}
@@ -4964,9 +4735,9 @@ export default function QuranReaderScreen({
                     end={{ x: 1, y: 1 }}
                     style={styles.noteModalBtnSave}
                   >
-                    <Text style={[styles.noteModalBtnSaveText, { color: tokens.onGold }]}>
+                    <AppText variant="caption" tone="onGold" style={styles.noteModalBtnSaveText}>
                       {t('Save Note')}
-                    </Text>
+                    </AppText>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -4983,42 +4754,36 @@ export default function QuranReaderScreen({
             collapsable={false}
             style={[styles.shareCard, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}
           >
-            <Text style={[styles.shareCardEyebrow, { color: colors.accent }]}>القرآن الكريم</Text>
+            <AppText variant="eyebrow" highlight style={styles.shareCardEyebrow}>القرآن الكريم</AppText>
             <Text style={[styles.shareCardArabic, { color: colors.textPrimary }]}>
               {getAyahTextForExport(shareAyahItem.numberInSurah, shareAyahItem.text)}
             </Text>
             <View style={[styles.shareCardRule, { backgroundColor: colors.accent }]} />
             {shareAyahItem.translation ? (
-              <Text style={[styles.shareCardTrans, { color: colors.textSecondary }]}>
+              <AppText variant="body" tone="faint" style={styles.shareCardTrans}>
                 {shareAyahItem.translation}
-              </Text>
+              </AppText>
             ) : null}
-            <Text style={[styles.shareCardRef, { color: colors.textMuted }]}>
+            <AppText variant="caption" tone="faint" style={styles.shareCardRef}>
               Quran {shareAyahItem.surah?.number || surahNumber}:{shareAyahItem.numberInSurah}
-            </Text>
+            </AppText>
 
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}
             <View style={styles.shareCardBrandFooter} collapsable={false}>
               <View collapsable={false} style={styles.shareCardLogoWrap}>
                 <Image
-                  source={
-                    mode === 'paper'
-                      ? require('../../assets/logo-master-black.png')
-                      : require('../../assets/logo-master-ivory.png')
-                  }
+                  source={getBrandLogoSource(mode)}
                   style={styles.shareCardLogo}
                   resizeMode="contain"
                   fadeDuration={0}
                 />
               </View>
-              <Text
-                style={[
-                  styles.shareCardBrandWordmark,
-                  { color: colors.textPrimary },
-                ]}
+              <AppText
+                variant="sectionTitle"
+                style={styles.shareCardBrandWordmark}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
-              </Text>
+              </AppText>
             </View>
           </View>
         </View>
@@ -5242,6 +5007,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 18,
     borderRadius: 1.5,
     overflow: 'hidden',
+    marginTop: 12,
     marginBottom: 12,
   },
   toolsMenuProgressBarFill: {
@@ -5357,7 +5123,8 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   listContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 0,
     gap: 14,
     paddingBottom: 40,
   },
@@ -5508,7 +5275,8 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   mushafScrollContent: {
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingTop: 0,
     paddingBottom: 40,
   },
   mushafContainer: {
@@ -5553,7 +5321,6 @@ const styles = StyleSheet.create({
   mushafTranslationText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 20,
     flex: 1,
   },
   modalOverlay: {
@@ -5650,6 +5417,7 @@ const styles = StyleSheet.create({
   },
   reciterInfo: {
     flex: 1,
+    minWidth: 0,
     paddingRight: 12,
   },
   reciterEngName: {
@@ -5712,7 +5480,6 @@ const styles = StyleSheet.create({
     lineHeight: 44,
     textAlign: 'right',
     writingDirection: 'rtl',
-    includeFontPadding: false,
     marginBottom: 14,
   },
   shareCardRule: {
@@ -5725,7 +5492,6 @@ const styles = StyleSheet.create({
   shareCardTrans: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 14,
-    lineHeight: 21,
     textAlign: 'center',
     marginBottom: 14,
   },

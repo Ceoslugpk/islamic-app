@@ -1,0 +1,51 @@
+I have dispatched the comprehensive multi-screen crawl against http://15.235.203.134:9998 to capture screenshots, audit rendered Arabic glyphs, and verify the absence of placeholder text across all target screens. Waiting for execution to complete.
+I am monitoring the audit crawl as it systematically tests each screen in the isolated browser runtime.
+I am continuing to wait for the remaining screens to be audited.
+I am waiting for the remaining two screens (Zakat and Fasting) to complete their audit.
+A read-only **S10 Content-Integrity Audit** has been conducted against the repository [`/home/ubuntu/apps/islamic_app`](file:///home/ubuntu/apps/islamic_app) and the running web preview target [`http://15.235.203.134:9998`](http://15.235.203.134:9998) with `FIX_MODE=false`.
+
+All required data structures, canonical tables, and isolated browser runtime screens were verified and documented with on-disk evidence in [`reports/audit/S10.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S10.json) and [`reports/audit/evidence/S10/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/).
+
+---
+
+### Executive Summary
+
+| Category | Expected | Actual | Evidence | Status | Severity |
+| :--- | :--- | :--- | :--- | :---: | :---: |
+| **Quran Surah Count** | 114 surahs indexed 1..114 | Exactly 114 surahs in [`SURAHS_114`](file:///home/ubuntu/apps/islamic_app/src/lib/surahs114.ts#L8-L125) and [`SURAH_AYAH_COUNTS`](file:///home/ubuntu/apps/islamic_app/src/lib/surahAyahCounts.ts#L8-L23) | [surah_ayah_counts_verification.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/surah_ayah_counts_verification.json) | **PASS** | info |
+| **Total Ayah Count** | 6,236 ayahs (standard Hafs) | Cumulative sum across all 114 surahs equals exactly 6,236 ayahs | [surah_ayah_counts_verification.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/surah_ayah_counts_verification.json) | **PASS** | info |
+| **Surah Counts vs Known Table** | Every surah (1..114) matches known Hafs table | 114 / 114 surahs match standard Hafs table exactly (0 mismatches) | [surah_ayah_counts_verification.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/surah_ayah_counts_verification.json) | **PASS** | info |
+| **Mushaf 604 Pages** | 604 pages, authentic start pages | `TOTAL_MUSHAF_PAGES = 604`; all 114 start pages in [`SURAH_START_PAGES`](file:///home/ubuntu/apps/islamic_app/src/lib/surahPageData.ts#L8-L21) match King Fahd Complex standard; boundary clamping verified | [mushaf_604_pages_verification.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/mushaf_604_pages_verification.json) | **PASS** | info |
+| **Arabic Glyph / Tofu Integrity** | Zero tofu replacement chars (`\uFFFD`), BOMs, or broken marks | 14,400 Arabic strings audited across 16 files and live DOM: 0 replacement chars, 0 BOMs, 0 control chars, 0 isolated combining marks. Amiri & Noto Naskh loaded | [arabic_glyph_tofu_audit.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/arabic_glyph_tofu_audit.json) | **PASS** | info |
+| **48 Translations Sample Verse** | All 48 editions return valid verse | 48/48 editions in [`QURAN_LANGUAGE_EDITIONS`](file:///home/ubuntu/apps/islamic_app/src/lib/quranLanguages.ts#L63-L114) returned authentic, non-empty sample verses from AlQuran Cloud | [translations_48_audit.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/translations_48_audit.json) | **PASS** | info |
+| **48 Translations Direction** | RTL scripts (8) mapped to RTL; LTR (40) mapped to LTR | 47 / 48 match. Kurdish (`ku`, `ku.asan`) in Arabic/Sorani script is omitted from [`isRtlScript`](file:///home/ubuntu/apps/islamic_app/src/lib/rtl.ts#L22-L25), defaulting to LTR. Upstream AlQuran Cloud API also reports `direction: "ltr"` for `ku.asan` | [translations_48_audit.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/translations_48_audit.json) | **FAIL** | medium |
+| **17 Hadith Collections** | 17 collections, all non-empty | Exactly 17 collections in [`FALLBACK_COLLECTIONS`](file:///home/ubuntu/apps/islamic_app/src/lib/hadithApi.ts#L73-L295); all 17 have `totalHadith > 0` (79,640 total ahadith). Sunan ad-Darimi has `totalAvailable: 0` in remote API | [hadith_17_collections_audit.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/hadith_17_collections_audit.json) | **PASS** | info |
+| **99 Names of Allah** | Exactly 99 names, no duplicates | Exactly 99 names in [`NAMES_99`](file:///home/ubuntu/apps/islamic_app/src/lib/names99.ts#L24-L525); numbers 1..99 sequential, 99 unique Arabic names, 0 duplicates, all fields present | [names_99_allah_prophet_audit.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/names_99_allah_prophet_audit.json) | **PASS** | info |
+| **99 Names of Prophet** | Exactly 99 names, no duplicates | Exactly 99 names in [`PROPHET_NAMES_99`](file:///home/ubuntu/apps/islamic_app/src/lib/prophetNames.ts#L10-L410); numbers 1..99 sequential, 99 unique Arabic names, 0 duplicates, all fields present | [names_99_allah_prophet_audit.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/names_99_allah_prophet_audit.json) | **PASS** | info |
+| **49 Duas** | Exactly 49 duas with Arabic, translit, trans, source | Exactly 49 duas in [`DUAS_DATA`](file:///home/ubuntu/apps/islamic_app/src/lib/duas.ts#L9-L435); 100% (49/49) possess non-empty Arabic, transliteration, English translation, and canonical reference | [duas_49_audit.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/duas_49_audit.json) | **PASS** | info |
+| **No Placeholder Text** | Zero placeholders in rendered views | Playwright crawl across 13 screens (Onboarding, Home, Quran, Reader, Library, Duas, 99 Names Allah, 99 Names Prophet, Hadith, Tools, Qibla, Zakat, Fasting) found 0 "Lorem ipsum", 0 "TODO", 0 stub brackets, 0 unrendered `{{...}}` tokens, 0 leaked literals | [rendered_pages_placeholder_audit.json](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/rendered_pages_placeholder_audit.json) | **PASS** | info |
+
+---
+
+### Audit Test Matrix (`reports/audit/S10.json`)
+
+- **Total Test Checks**: 21
+- **PASS**: 20
+- **FAIL**: 1 (`S10-010`: Kurdish translation direction discrepancy in [`isRtlScript`](file:///home/ubuntu/apps/islamic_app/src/lib/rtl.ts#L22-L25))
+- **FLAKY**: 0
+- **BLOCKED**: 0
+- **SKIPPED**: 0
+- **Reconciliation**: Validated byte-for-byte; JSON syntax verified against strict parser.
+
+### Key Evidence Artifacts
+
+- **Report**: [`reports/audit/S10.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S10.json)
+- **Surahs & Ayahs (6236)**: [`reports/audit/evidence/S10/surah_ayah_counts_verification.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/surah_ayah_counts_verification.json)
+- **Mushaf 604 Pages**: [`reports/audit/evidence/S10/mushaf_604_pages_verification.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/mushaf_604_pages_verification.json)
+- **Arabic Glyph/Tofu Checks**: [`reports/audit/evidence/S10/arabic_glyph_tofu_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/arabic_glyph_tofu_audit.json)
+- **48 Translations Sample Verse/Direction**: [`reports/audit/evidence/S10/translations_48_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/translations_48_audit.json)
+- **17 Hadith Collections**: [`reports/audit/evidence/S10/hadith_17_collections_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/hadith_17_collections_audit.json)
+- **99 Allah & 99 Prophet Names**: [`reports/audit/evidence/S10/names_99_allah_prophet_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/names_99_allah_prophet_audit.json)
+- **49 Duas Invocations**: [`reports/audit/evidence/S10/duas_49_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/duas_49_audit.json)
+- **13 Rendered Screen Captures & Placeholders**: [`reports/audit/evidence/S10/rendered_pages_placeholder_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/rendered_pages_placeholder_audit.json)
+- **Screenshots (13 screens)**: [`screen_01_onboarding.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/screen_01_onboarding.png) through [`screen_13_fasting_screen.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S10/screen_13_fasting_screen.png)

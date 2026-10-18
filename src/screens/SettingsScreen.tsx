@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text as NativeText,
   View,
   Image,
   TouchableOpacity,
@@ -18,25 +17,24 @@ import {
   Platform,
   DevSettings,
 } from 'react-native';
-import type { AccessibilityRole, AccessibilityState, GestureResponderEvent, TextProps } from 'react-native';
+import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFonts } from 'expo-font';
-import { Poppins_400Regular, Poppins_500Medium } from '@expo-google-fonts/poppins';
-import { Lora_500Medium } from '@expo-google-fonts/lora';
-import { NotoNastaliqUrdu_400Regular } from '@expo-google-fonts/noto-nastaliq-urdu';
+
 import * as Updates from 'expo-updates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
-import { useThemeTokens, getTokens, cardTokens } from '../theme/tokens';
+import { useThemeTokens, getTokens, cardTokens, getBrandLogoSource } from '../theme/tokens';
 import { ACCENT_KEYS, accentThemes, getLocalizedAccentName } from '../lib/accents';
 import type { AccentKey } from '../lib/accents';
-import { getForwardIcon, getBackIcon, iconSizes } from '../lib/iconMap';
+import { getForwardIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
 import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage } from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import { SheetHeader } from '../components/layout/SheetHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
 import {
   useSettings,
   QURAN_FONT_SIZE_MIN,
@@ -49,9 +47,7 @@ import {
 import type { QuranArabicFont } from '../lib/settings';
 import { QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { useHaptics } from '../lib/haptics';
-import { SectionHeader } from '../components/SectionHeader';
 import { Hairline } from '../components/Hairline';
-import { Card } from '../components/Card';
 import { CALC_METHODS, fetchPrayerTimes } from '../lib/prayerTimes';
 import {
   configureNotifications,
@@ -121,12 +117,6 @@ function getMissionLanguage(language: string): string {
   };
   return languageToMission[language] ?? 'English';
 }
-
-/** Enforce the screen-wide typography scaling ceiling. */
-function Text(props: TextProps) {
-  return <NativeText {...props} maxFontSizeMultiplier={1.2} />;
-}
-
 
 export interface AppLanguageOption {
   value: AppLanguage;
@@ -215,9 +205,9 @@ function Section({ label, children, collapsible, expanded, onToggle, summary }: 
   return (
     <View style={{ marginTop: layout.sectionGap }}>
       <View style={styles.sectionHeaderWrap}>
-        <Text accessibilityRole="header" accessibilityState={{ expanded: isExpanded }} style={[styles.groupLabel, { color: homeTokens.goldText, fontSize: layout.labelSize, marginBottom: 0 }]}>
+        <AppText accessibilityRole="header" aria-level={2} accessibilityState={{ expanded: isExpanded }} variant="eyebrow" style={[styles.groupLabel, { fontSize: layout.labelSize, marginBottom: 0 }]}>
           {t(label)}
-        </Text>
+        </AppText>
         {collapsible && onToggle && (
           <Pressable
             onPress={onToggle}
@@ -266,19 +256,19 @@ function Section({ label, children, collapsible, expanded, onToggle, summary }: 
             ]}
           >
             <View style={styles.rowFlex}>
-              <Text style={[styles.rowTitle, { color: homeTokens.text }]}>
+              <AppText variant="rowTitle" style={styles.rowTitle}>
                 {t(label)}
-              </Text>
+              </AppText>
               {summary ? (
-                <Text style={[styles.rowDesc, { color: homeTokens.muted }]} numberOfLines={1}>
+                <AppText variant="subtitle" style={styles.rowDesc} numberOfLines={2}>
                   {summary}
-                </Text>
+                </AppText>
               ) : null}
             </View>
             <View style={styles.expandPill}>
-              <Text style={[styles.expandPillText, { color: homeTokens.accent }]}>
+              <AppText variant="link" style={styles.expandPillText}>
                 {t('Expand')}
-              </Text>
+              </AppText>
               <Ionicons name="chevron-down" size={14} color={homeTokens.accent} />
             </View>
           </Pressable>
@@ -322,13 +312,10 @@ function Row({
   accessibilityLabel,
   accessibilityState,
 }: RowProps) {
-  const { colors, mode } = useTheme();
+  const { mode } = useTheme();
   const homeTokens = getTokens(mode);
   const layout = useSettingsLayout();
   const isRadio = accessibilityRole === 'radio';
-
-  const titleColor = danger ? homeTokens.danger : muted ? homeTokens.muted : homeTokens.text;
-  const descColor = muted ? homeTokens.muted : homeTokens.muted;
 
   const rowStyle = [
     styles.row,
@@ -342,30 +329,38 @@ function Row({
 
   const body = (
     <View style={styles.rowFlex}>
-      <Text
+      <AppText
+        variant="rowTitle"
+        tone={danger ? 'danger' : undefined}
         style={[
           styles.rowTitle,
-          { color: titleColor, fontSize: titleFontSize ?? layout.titleSize },
+          { fontSize: titleFontSize ?? layout.titleSize },
           titleFont ? { fontFamily: titleFont } : null,
+          muted ? { color: homeTokens.muted } : null,
         ]}
       >
         {t(title)}
-      </Text>
+      </AppText>
       {desc ? (
-        <Text style={[styles.rowDesc, { color: descColor, fontSize: layout.descSize }]} numberOfLines={1} ellipsizeMode="tail">{t(desc)}</Text>
+        <AppText variant="subtitle" style={[styles.rowDesc, { fontSize: layout.descSize }]}>{t(desc)}</AppText>
       ) : null}
       {children}
     </View>
   );
 
   if (onPress && !disabled) {
+    const isChecked = accessibilityState?.selected ?? accessibilityState?.checked ?? false;
     return (
       <Pressable
         style={({ pressed }) => [rowStyle, pressed && { backgroundColor: `${homeTokens.gold}14` }]}
         onPress={onPress}
         accessibilityRole={accessibilityRole ?? 'button'}
         accessibilityLabel={accessibilityLabel ?? [t(title), desc ? t(desc) : ''].filter(Boolean).join(', ')}
-        accessibilityState={accessibilityState}
+        accessibilityState={{
+          ...(accessibilityState || {}),
+          ...(isRadio ? { checked: isChecked } : {}),
+        }}
+        {...(isRadio && Platform.OS === 'web' ? { 'aria-checked': isChecked as any } : {})}
         hitSlop={{ top: 2.35, bottom: 2.35 }}
       >
         {body}
@@ -374,12 +369,17 @@ function Row({
     );
   }
 
+  const isChecked = accessibilityState?.selected ?? accessibilityState?.checked ?? false;
   return (
     <View
       style={rowStyle}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel ?? [t(title), desc ? t(desc) : ''].filter(Boolean).join(', ')}
-      accessibilityState={accessibilityState}
+      accessibilityState={{
+        ...(accessibilityState || {}),
+        ...(isRadio ? { checked: isChecked } : {}),
+      }}
+      {...(isRadio && Platform.OS === 'web' ? { 'aria-checked': isChecked as any } : {})}
       accessible={Boolean(accessibilityRole && (!right || accessibilityRole === 'radio'))}
     >
       {body}
@@ -449,7 +449,7 @@ function OutlineButton({
       accessibilityState={{ disabled }}
     >
       {icon ? <Ionicons name={icon} size={14} color={tokens.gold} /> : null}
-      <Text style={[styles.outlineButtonText, { color: tokens.gold }]} numberOfLines={1}>{label}</Text>
+      <AppText variant="link" style={styles.outlineButtonText} numberOfLines={1}>{label}</AppText>
     </Pressable>
   );
 }
@@ -484,7 +484,9 @@ function Segmented<T extends string | number>({
   const themeTokens = getTokens(mode);
   const inlineWidth = Math.min(224, Math.max(150, layout.width - 2 * layout.screenPad - 2 * layout.cardPad - 98));
   return (
-    <View style={[
+    <View
+      accessibilityRole="radiogroup"
+      style={[
       styles.segRow,
       inline && { borderWidth: 1, borderColor: colors.borderSubtle, borderRadius: 18, backgroundColor: colors.bgRaised },
       {
@@ -519,27 +521,25 @@ function Segmented<T extends string | number>({
             disabled={disabled}
             accessibilityRole="radio"
             accessibilityLabel={`${t(label)}: ${t(option.label)}`}
-            accessibilityState={{ selected, disabled }}
+            accessibilityState={{ selected, disabled, checked: selected }}
+            {...(Platform.OS === 'web' ? { 'aria-checked': selected as any } : {})}
             hitSlop={{ top: inline ? 8 : 10, bottom: inline ? 8 : 10 }}
           >
             {selected && !disabled ? (
               <LinearGradient colors={themeTokens.goldGradient} style={absoluteStartEndFill} />
             ) : null}
-            <Text
+            <AppText
+              variant="caption"
+              tone={disabled ? 'faint' : selected ? 'onGold' : undefined}
               style={[
                 styles.segLabel,
                 {
                   fontSize: inline ? 10.5 : layout.segLabelSize,
-                  color: disabled
-                    ? colors.textMuted
-                    : selected
-                    ? themeTokens.onGold
-                    : colors.textSecondary,
                 },
               ]}
             >
               {t(option.label)}
-            </Text>
+            </AppText>
           </Pressable>
         );
       })}
@@ -597,8 +597,8 @@ function AdjustRow({
   return (
     <View style={[styles.adjustRow, { paddingHorizontal: layout.cardPad }]}>
       <View style={styles.adjustHeader}>
-        <Text style={[styles.rowTitle, { color: colors.textPrimary, fontSize: layout.titleSize }]}>{label}</Text>
-        <Text style={[styles.adjustValue, { color: colors.accent }]}>{valueLabel}</Text>
+        <AppText variant="rowTitle" style={[styles.rowTitle, { fontSize: layout.titleSize }]}>{label}</AppText>
+        <AppText variant="numeral" highlight style={styles.adjustValue}>{valueLabel}</AppText>
       </View>
       <View style={styles.adjustControls}>
         <Pressable
@@ -610,7 +610,7 @@ function AdjustRow({
           accessibilityLabel={`Decrease ${label}`}
           accessibilityState={{ disabled: clamped <= min }}
         >
-          <Text style={[styles.adjustBtnText, { color: colors.textPrimary }]}>{decreaseLabel}</Text>
+          <AppText variant="rowTitle" style={styles.adjustBtnText}>{decreaseLabel}</AppText>
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.adjustTrackArea, pressed && styles.buttonPressed]}
@@ -635,7 +635,7 @@ function AdjustRow({
           accessibilityLabel={`Increase ${label}`}
           accessibilityState={{ disabled: clamped >= max }}
         >
-          <Text style={[styles.adjustBtnText, { color: colors.textPrimary }]}>{increaseLabel}</Text>
+          <AppText variant="rowTitle" style={styles.adjustBtnText}>{increaseLabel}</AppText>
         </Pressable>
       </View>
     </View>
@@ -658,12 +658,7 @@ export default function SettingsScreen({
   const insets = useSafeAreaInsets();
   const { colors, mode, setAccent, accentKey } = useTheme();
   const { tokens } = useThemeTokens();
-  const [settingsFontsLoaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Lora_500Medium,
-    NotoNastaliqUrdu_400Regular,
-  });
+  const settingsFontsLoaded = true;
   const { height: screenHeight } = useWindowDimensions();
   const {
     settings,
@@ -1007,31 +1002,38 @@ export default function SettingsScreen({
   const missionUrduFont = settingsFontsLoaded ? 'NotoNastaliqUrdu_400Regular' : 'NotoNaskhArabic_400Regular';
 
   return (
-    <View style={{ flex: 1, backgroundColor: homeTokens.bgTop }}>
+    <DetailScreen
+      style={{ backgroundColor: homeTokens.bgTop }}
+      includeTopInset
+      header={
+        <SheetHeader
+          title={t('Settings')}
+          eyebrow={t('Preferences')}
+          onClose={onClose}
+          closeLabel={t('Done')}
+          showDragPill={false}
+          borderBottom
+          testID="sheet-header"
+          style={{ backgroundColor: homeTokens.bgTop }}
+        />
+      }
+    >
       <LinearGradient
         colors={[homeTokens.bgTop, homeTokens.bgBottom]}
         style={absoluteStartEndFill}
-      />
-      <SheetHeader
-        title={t('Settings')}
-        eyebrow={t('Preferences')}
-        onClose={onClose}
-        closeLabel={t('Done')}
-        showDragPill={false}
-        borderBottom
-        testID="sheet-header"
+        pointerEvents="none"
       />
       {/* Contract preservation for header UX test:
           getBackIcon('chevron')
           touchTargetTokens.hitSlop8
       */}
-      <ScrollView
+      <DetailScreen.ScrollView
         style={{ flex: 1, backgroundColor: 'transparent' }}
+        testID="screen-content"
         contentContainerStyle={[
           styles.content,
           {
             paddingHorizontal: layout.screenPad,
-            paddingTop: 10,
             paddingBottom: Math.max(40, insets.bottom + 20),
           },
         ]}
@@ -1136,16 +1138,18 @@ export default function SettingsScreen({
                     }}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected, disabled: isSwitchingLanguage }}
+                    {...(Platform.OS === 'web' ? { 'aria-checked': isSelected as any } : {})}
                     accessibilityLabel={`${opt.nativeLabel}, ${localizedName} (${directionBadge})${isSelected ? ', ' + t('selected') : ''}`}
                     hitSlop={touchTargetTokens.hitSlop8}
                   >
                     <View style={styles.langRowBody}>
                       <View style={styles.langTitleRow}>
-                        <Text
+                        <AppText
+                          variant="rowTitle"
+                          highlight={isSelected}
                           style={[
                             styles.langNativeText,
                             {
-                              color: isSelected ? tokens.goldText : tokens.text,
                               fontSize: isArabicScript
                                 ? (layout.isCompact ? 17 : 18)
                                 : (layout.isCompact ? 15 : 16),
@@ -1156,7 +1160,7 @@ export default function SettingsScreen({
                           numberOfLines={1}
                         >
                           {opt.label}
-                        </Text>
+                        </AppText>
                         <View
                           style={[
                             styles.langDirectionBadge,
@@ -1166,32 +1170,34 @@ export default function SettingsScreen({
                             },
                           ]}
                         >
-                          <Text
+                          <AppText
+                            variant="caption"
+                            highlight={isSelected}
                             style={[
                               styles.langDirectionBadgeText,
                               {
-                                color: isSelected ? tokens.goldText : tokens.muted,
                                 fontSize: layout.isCompact ? 10 : 11,
                               },
                             ]}
                           >
                             {opt.direction}
-                          </Text>
+                          </AppText>
                         </View>
                       </View>
-                      <Text
+                      <AppText
+                        variant="caption"
+                        highlight={isSelected}
                         style={[
                           styles.langSubText,
                           {
-                            color: isSelected ? tokens.goldText : tokens.muted,
                             fontSize: layout.isCompact ? 12 : 13,
                             writingDirection: isRtlLanguage(settings.language) ? 'rtl' : 'ltr',
                           },
                         ]}
-                        numberOfLines={1}
+                        numberOfLines={2}
                       >
                         {localizedName}
-                      </Text>
+                      </AppText>
                     </View>
 
                     <View style={styles.langEndContainer}>
@@ -1239,14 +1245,16 @@ export default function SettingsScreen({
               ]}
             >
               <Ionicons name="alert-circle-outline" size={16} color={colors.accent} style={{ marginEnd: 6 }} />
-              <Text
+              <AppText
+                variant="caption"
+                highlight
                 style={[
                   styles.langErrorText,
                   { color: colors.accent, fontSize: layout.isCompact ? 12 : 13 },
                 ]}
               >
                 {languageError}
-              </Text>
+              </AppText>
             </View>
           ) : null}
         </Section>
@@ -1276,7 +1284,10 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row title={t("Accent color")} desc={t("Highlight colour for toggles, links and selected states")} accessibilityRole="text" />
-          <View style={[styles.accentGrid, { paddingHorizontal: layout.cardPad, paddingVertical: 5.65, gap: layout.isCompact ? 8 : 12 }]}>
+          <View
+            accessibilityRole="radiogroup"
+            style={[styles.accentGrid, { paddingHorizontal: layout.cardPad, paddingVertical: 5.65, gap: layout.isCompact ? 8 : 12 }]}
+          >
             {ACCENT_KEYS.map((key: AccentKey) => {
               const accent = accentThemes[key];
               const isSelected = accentKey === key;
@@ -1288,14 +1299,15 @@ export default function SettingsScreen({
                   style={({ pressed }) => [styles.accentSwatch, pressed && styles.buttonPressed]}
                   onPress={() => { setAccent(key); haptic('selection'); }}
                   accessibilityRole="radio"
-                  accessibilityState={{ selected: isSelected }}
+                  accessibilityState={{ selected: isSelected, checked: isSelected }}
+                  {...(Platform.OS === 'web' ? { 'aria-checked': isSelected as any } : {})}
                   accessibilityLabel={`${accentLabel} accent color${isSelected ? ', selected' : ''}`}
                   hitSlop={{ top: 4, bottom: 4 }}
                 >
                   <View style={[styles.accentCircle, { backgroundColor: accentColor }, isSelected && { borderColor: tokens.goldBorder, borderWidth: 2 }]}>
                     {isSelected && <Ionicons name="checkmark" size={18} color={colors.onAccent} />}
                   </View>
-                  <Text style={[styles.accentLabel, { color: isSelected ? colors.textPrimary : colors.textSecondary }]}>{accentLabel}</Text>
+                  <AppText variant="caption" style={[styles.accentLabel, isSelected ? { color: colors.textPrimary } : null]}>{accentLabel}</AppText>
                 </Pressable>
               );
             })}
@@ -1404,7 +1416,8 @@ export default function SettingsScreen({
                   titleFont={QURAN_FONT_FAMILIES[option.key].regular}
                   onPress={() => { setQuranArabicFont(option.key); haptic('light'); }}
                   accessibilityRole="radio"
-                  accessibilityState={{ selected }}
+                  accessibilityState={{ selected, checked: selected }}
+                  {...(Platform.OS === 'web' ? { 'aria-checked': selected as any } : {})}
                   accessibilityLabel={`${option.label}, ${option.desc}`}
                   right={
                     <View
@@ -1428,7 +1441,8 @@ export default function SettingsScreen({
             desc={t("Coming soon · no bundleable mobile font file yet")}
             disabled
             accessibilityRole="radio"
-            accessibilityState={{ disabled: true, selected: false }}
+            accessibilityState={{ disabled: true, selected: false, checked: false }}
+            {...(Platform.OS === 'web' ? { 'aria-checked': false as any } : {})}
             accessibilityLabel={`${t('KFGQPC')}, ${t('Coming soon · no bundleable mobile font file yet')}`}
             right={<View style={[styles.radio, { borderColor: colors.borderStrong }]} />}
           />
@@ -1515,12 +1529,12 @@ export default function SettingsScreen({
             >
               <Ionicons name="phone-portrait-outline" size={18} color={colors.accent} />
               <View style={styles.rowFlex}>
-                <Text style={[styles.permissionBannerTitle, { color: colors.textPrimary }]}>
+                <AppText variant="rowTitle" style={styles.permissionBannerTitle}>
                   {t('Reminders deliver on your device')}
-                </Text>
-                <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
+                </AppText>
+                <AppText variant="subtitle" style={styles.permissionBannerSub}>
                   {t('Browsers can’t schedule notifications, so these switches are saved as preferences. Open the app on iOS or Android and they’ll schedule there automatically.')}
-                </Text>
+                </AppText>
               </View>
             </View>
           )}
@@ -1562,12 +1576,12 @@ export default function SettingsScreen({
             >
               <Ionicons name="notifications-outline" size={18} color={colors.accent} />
               <View style={styles.rowFlex}>
-                <Text style={[styles.permissionBannerTitle, { color: colors.textPrimary }]}>
+                <AppText variant="rowTitle" style={styles.permissionBannerTitle}>
                   {t('Notification permission needed')}
-                </Text>
-                <Text style={[styles.permissionBannerSub, { color: colors.textSecondary }]}>
+                </AppText>
+                <AppText variant="subtitle" style={styles.permissionBannerSub}>
                   {t('Tap to allow notifications so prayer reminders and the Adhan can sound at prayer time.')}
-                </Text>
+                </AppText>
               </View>
               <Ionicons name={getForwardIcon()} size={16} color={colors.accent} />
             </TouchableOpacity>
@@ -1614,9 +1628,9 @@ export default function SettingsScreen({
             accessibilityLabel={`${t('Adhan Reciter')}, ${getAdhanReciter(settings.adhanReciterId).name} · ${getAdhanReciter(settings.adhanReciterId).location}`}
             right={
               <View style={styles.rightCluster}>
-                <Text style={[styles.reciterBadgeArabic, { color: colors.accent }]} maxFontSizeMultiplier={1.2}>
+                <AppText variant="body" highlight style={styles.reciterBadgeArabic} maxFontSizeMultiplier={1.2}>
                   {getAdhanReciter(settings.adhanReciterId).arabicName}
-                </Text>
+                </AppText>
                 <Ionicons name={getForwardIcon()} size={18} color={colors.accent} />
               </View>
             }
@@ -1662,9 +1676,9 @@ export default function SettingsScreen({
               <View style={[styles.healthCompact, { paddingHorizontal: layout.cardPad }]}>
                 <View style={styles.healthCompactRow}>
                   <View style={[styles.healthCompactDot, { backgroundColor: homeTokens.muted }]} />
-                  <Text style={[styles.healthCompactText, { color: homeTokens.muted }]} numberOfLines={1} ellipsizeMode="tail">
+                  <AppText variant="caption" style={styles.healthCompactText} numberOfLines={2}>
                     Web — preferences saved, notifications schedule on your device
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             </>
@@ -1707,17 +1721,17 @@ export default function SettingsScreen({
               <View style={[styles.consentIconWrapSmall, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>
                 <Ionicons name="shield-checkmark" size={20} color={colors.accent} />
               </View>
-              <Text style={[styles.consentTitleSmall, { color: colors.textPrimary }]}>{t('Private & On-Device')}</Text>
-              <Text style={[styles.consentBodySmall, { color: colors.textSecondary }]}>
+              <AppText variant="rowTitle" style={styles.consentTitleSmall}>{t('Private & On-Device')}</AppText>
+              <AppText variant="subtitle" style={styles.consentBodySmall}>
                 {t('Cycle & purity information is sensitive. Your data:\n• Stays on this device by default\n• Needs no account or sign-in\n• Is never uploaded or included in analytics or logs\n• Can be deleted anytime')}
-              </Text>
+              </AppText>
               <View style={styles.consentBtnsInline}>
                 <TouchableOpacity
                   style={[styles.consentBtn, { borderColor: colors.borderSubtle }]}
                   onPress={() => setConsentOpen(false)}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.consentBtnText, { color: colors.textSecondary }]}>{t('Cancel')}</Text>
+                  <AppText variant="caption" style={styles.consentBtnText}>{t('Cancel')}</AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.consentBtn, styles.consentBtnPrimary, { overflow: 'hidden' }]}
@@ -1725,7 +1739,7 @@ export default function SettingsScreen({
                   accessibilityRole="button"
                 >
                   <LinearGradient colors={tokens.goldGradient} style={absoluteStartEndFill} />
-                  <Text style={[styles.consentBtnTextPrimary, { color: tokens.onGold }]}>{t('I Understand')}</Text>
+                  <AppText variant="caption" tone="onGold" style={styles.consentBtnTextPrimary}>{t('I Understand')}</AppText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -1747,9 +1761,9 @@ export default function SettingsScreen({
                 ]}
               >
                 <Ionicons name="shield-checkmark" size={16} color={colors.accent} />
-                <Text style={[styles.privacyNoteText, { color: colors.textSecondary }]}>
+                <AppText variant="subtitle" style={styles.privacyNoteText}>
                   {t('Your cycle & purity data stays on this device by default. No account required — it is never uploaded or included in analytics or logs.')}
-                </Text>
+                </AppText>
               </View>
 
               {/* App lock */}
@@ -1784,9 +1798,9 @@ export default function SettingsScreen({
                     accessibilityRole="button"
                     accessibilityLabel={womenLockEnabled ? "Disable App lock PIN" : "Enable App lock PIN"}
                   >
-                    <Text style={[styles.privacyActionText, { color: colors.accent }]}>
+                    <AppText variant="link" style={styles.privacyActionText}>
                       {womenLockEnabled ? t('Disable') : t('Enable')}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 }
               />
@@ -1794,14 +1808,14 @@ export default function SettingsScreen({
                 <Row
                   title={t("Change PIN")}
                   onPress={() => setPinModalMode('change')}
-                  right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>{t('Change')}</Text>}
+                  right={<AppText variant="link" style={styles.privacyActionText}>{t('Change')}</AppText>}
                 />
               ) : (
                 <Row
                   title={t("Set PIN")}
                   desc={t("Add a 4-digit PIN to lock women's screens")}
                   onPress={() => setPinModalMode('set')}
-                  right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>{t('Set')}</Text>}
+                  right={<AppText variant="link" style={styles.privacyActionText}>{t('Set')}</AppText>}
                 />
               )}
 
@@ -1900,7 +1914,7 @@ export default function SettingsScreen({
                     { text: 'Clear', style: 'destructive', onPress: () => clearCycleHistory() },
                   ])
                 }
-                right={<Text style={[styles.privacyActionText, { color: colors.accent }]}>{t('Clear')}</Text>}
+                right={<AppText variant="link" style={styles.privacyActionText}>{t('Clear')}</AppText>}
               />
 
               {/* Delete all women's data */}
@@ -2083,23 +2097,25 @@ export default function SettingsScreen({
         <View style={[styles.appIdentity, { marginTop: 25.5, height: 77.8 }]}>
           <View style={[styles.aboutLogoTile, { backgroundColor: colors.bgRaised }]}>
             <Image
-              source={mode === 'paper' ? require('../../assets/logo-master-black.png') : require('../../assets/logo-master-white.png')}
+              source={getBrandLogoSource(mode)}
               style={styles.aboutLogo}
               resizeMode="contain"
             />
           </View>
-          <Text
+          <AppText
+            variant="title"
             style={[styles.identityTitle, { color: homeTokens.text, fontFamily: missionTitleFont }]}
             numberOfLines={1}
           >
             Islamic — Your Daily Companion
-          </Text>
-          <Text
+          </AppText>
+          <AppText
+            variant="caption"
             style={[styles.identityVersion, { color: homeTokens.muted, fontFamily: settingsFontsLoaded ? 'Poppins_400Regular' : 'Manrope_400Regular' }]}
             numberOfLines={1}
           >
             Version {APP_VERSION}
-          </Text>
+          </AppText>
         </View>
 
         {/* Sadaqah Jariyah — one language visible at a time. */}
@@ -2124,9 +2140,9 @@ export default function SettingsScreen({
               style={{ position: 'absolute', top: 0, bottom: 0, start: 0, end: 0 }}
             />
             <View pointerEvents="none" style={[styles.missionInnerBorder, { borderColor: tokens.goldBorder }]} />
-            <Text style={[styles.missionEyebrow, { color: getTokens('ink').goldText, fontFamily: missionTitleFont }]}>
+            <AppText variant="eyebrow" style={[styles.missionEyebrow, { color: getTokens('ink').goldText, fontFamily: missionTitleFont }]}>
               {t('SADAQAH JARIYAH')}
-            </Text>
+            </AppText>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -2150,20 +2166,25 @@ export default function SettingsScreen({
                     hitSlop={{ top: 12, bottom: 12, left: 2, right: 2 }}
                   >
                     {selected ? <LinearGradient colors={tokens.goldGradient} style={absoluteStartEndFill} /> : null}
-                    <Text style={[
-                      styles.missionTabLabel,
-                      {
-                        color: selected
-                          ? getTokens(mode).onGold
-                          : getTokens('ink').text,
-                        fontFamily: tabFont,
-                        fontSize: tab.lang === 'العربية' || tab.lang === 'اردو' ? 12 : 11,
-                        lineHeight: tab.lang === 'العربية' || tab.lang === 'اردو' ? 18 : 14,
-                        writingDirection: tab.lang === 'العربية' || tab.lang === 'اردو' ? 'rtl' : 'ltr',
-                      },
-                    ]}>
+                    <AppText
+                      variant="caption"
+                      tone={selected ? 'onGold' : undefined}
+                      onHero={!selected}
+                      style={[
+                        styles.missionTabLabel,
+                        {
+                          color: selected
+                            ? getTokens(mode).onGold
+                            : getTokens('ink').text,
+                          fontFamily: tabFont,
+                          fontSize: tab.lang === 'العربية' || tab.lang === 'اردو' ? 12 : 11,
+                          lineHeight: tab.lang === 'العربية' || tab.lang === 'اردو' ? 18 : 14,
+                          writingDirection: tab.lang === 'العربية' || tab.lang === 'اردو' ? 'rtl' : 'ltr',
+                        },
+                      ]}
+                    >
                       {tab.label}
-                    </Text>
+                    </AppText>
                   </Pressable>
                 );
               })}
@@ -2173,19 +2194,23 @@ export default function SettingsScreen({
               const isArabic = mission.lang === 'العربية';
               const isUrdu = mission.lang === 'اردو';
               return (
-                <Text style={[
-                  styles.missionText,
-                  {
-                    color: getTokens('ink').text,
-                    fontFamily: isUrdu ? missionUrduFont : isArabic ? 'NotoNaskhArabic_400Regular' : missionBodyFont,
-                    fontSize: isArabic || isUrdu ? 15 : 13,
-                    lineHeight: isUrdu ? 34 : isArabic ? 26 : 19,
-                    textAlign: isArabic || isUrdu ? 'right' : 'left',
-                    writingDirection: isArabic || isUrdu ? 'rtl' : 'ltr',
-                  },
-                ]}>
+                <AppText
+                  variant="body"
+                  onHero
+                  style={[
+                    styles.missionText,
+                    {
+                      color: getTokens('ink').text,
+                      fontFamily: isUrdu ? missionUrduFont : isArabic ? 'NotoNaskhArabic_400Regular' : missionBodyFont,
+                      fontSize: isArabic || isUrdu ? 15 : 13,
+                      lineHeight: isUrdu ? 34 : isArabic ? 26 : 19,
+                      textAlign: isArabic || isUrdu ? 'right' : 'left',
+                      writingDirection: isArabic || isUrdu ? 'rtl' : 'ltr',
+                    },
+                  ]}
+                >
                   {mission.text}
-                </Text>
+                </AppText>
               );
             })()}
           </View>
@@ -2193,12 +2218,12 @@ export default function SettingsScreen({
 
         {/* Footer */}
         <View style={[styles.footerWrap, { marginTop: layout.isCompact ? 16 : 20 }]}>
-          <Text style={[styles.footer, { color: colors.textMuted }]}>
+          <AppText variant="caption" style={[styles.footer, { color: colors.textMuted }]}>
             {t('Made for Ummah ❤️')}
-          </Text>
-          <Text style={[styles.footerArabic, { color: colors.textSecondary }]}>
+          </AppText>
+          <AppText variant="body" style={[styles.footerArabic, { color: colors.textSecondary }]}>
             تَوَكَّلْتُ عَلَى ٱللَّٰهُ
-          </Text>
+          </AppText>
         </View>
 
         <QuranLanguageModal
@@ -2221,6 +2246,7 @@ export default function SettingsScreen({
           transparent
           animationType="fade"
           onRequestClose={() => setMethodSheetOpen(false)}
+          statusBarTranslucent
         >
           <View style={styles.methodModalRoot}>
             <Pressable
@@ -2244,12 +2270,12 @@ export default function SettingsScreen({
             >
               <LinearGradient colors={[homeTokens.cardTop, homeTokens.cardBottom]} style={absoluteStartEndFill} />
               <View style={[styles.methodHandle, { backgroundColor: homeTokens.cardBorder }]} />
-              <Text style={[styles.methodSheetTitle, { color: homeTokens.text, fontFamily: settingsFontsLoaded ? 'Lora_500Medium' : 'InstrumentSerif_400Regular' }]}>
+              <AppText variant="headerTitle" style={[styles.methodSheetTitle, { color: homeTokens.text, fontFamily: settingsFontsLoaded ? 'Lora_500Medium' : 'InstrumentSerif_400Regular' }]}>
                 {t('Calculation method')}
-              </Text>
-              <Text style={[styles.methodSheetSubtitle, { color: homeTokens.muted, fontFamily: settingsFontsLoaded ? 'Poppins_400Regular' : 'Manrope_400Regular' }]}>
+              </AppText>
+              <AppText variant="subtitle" style={[styles.methodSheetSubtitle, { color: homeTokens.muted, fontFamily: settingsFontsLoaded ? 'Poppins_400Regular' : 'Manrope_400Regular' }]}>
                 {t('Determines how prayer times are computed')}
-              </Text>
+              </AppText>
               <ScrollView
                 style={styles.methodOptionsScroll}
                 contentContainerStyle={styles.methodOptionsContent}
@@ -2264,7 +2290,8 @@ export default function SettingsScreen({
                         style={({ pressed }) => [styles.methodOptionRow, pressed && { backgroundColor: `${homeTokens.gold}14` }]}
                         onPress={() => selectCalculationMethod(m)}
                         accessibilityRole="radio"
-                        accessibilityState={{ selected }}
+                        accessibilityState={{ selected, checked: selected }}
+                        {...(Platform.OS === 'web' ? { 'aria-checked': selected as any } : {})}
                         accessibilityLabel={`${m.name}, ${m.region}`}
                         hitSlop={{ top: 1, bottom: 1 }}
                       >
@@ -2281,12 +2308,12 @@ export default function SettingsScreen({
                           />
                         ) : null}
                         <View style={styles.methodOptionText}>
-                          <Text style={[styles.methodOptionName, { color: selected ? homeTokens.goldText : homeTokens.text }]} numberOfLines={1}>
+                          <AppText variant="rowTitle" highlight={selected} style={[styles.methodOptionName, { color: selected ? homeTokens.goldText : homeTokens.text }]} numberOfLines={2}>
                             {m.name}
-                          </Text>
-                          <Text style={[styles.methodOptionRegion, { color: homeTokens.muted }]} numberOfLines={1}>
+                          </AppText>
+                          <AppText variant="caption" style={[styles.methodOptionRegion, { color: homeTokens.muted }]} numberOfLines={2}>
                             {m.region}
-                          </Text>
+                          </AppText>
                         </View>
                         <View
                           style={[
@@ -2309,13 +2336,13 @@ export default function SettingsScreen({
         </Modal>
 
       </View>
-    </ScrollView>
-    </View>
+    </DetailScreen.ScrollView>
+    </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingVertical: 10, paddingBottom: 40 },
+  content: { paddingBottom: 40 },
   contentWrap: {
     width: '100%',
     alignSelf: 'center',
@@ -2332,8 +2359,8 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     alignSelf: 'flex-start',
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: 44,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -2402,8 +2429,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   rowFlex: { flex: 1, minWidth: 0 },
-  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 15, lineHeight: 15 },
-  rowDesc: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 13, marginTop: 0 },
+  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 15 },
+  rowDesc: { fontFamily: 'Manrope_400Regular', fontSize: 13, marginTop: 2 },
   rightCluster: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2630,13 +2657,14 @@ const styles = StyleSheet.create({
   },
   missionEyebrow: {
     fontSize: 11,
-    lineHeight: 13.2,
     letterSpacing: 1.8,
     textAlign: 'center',
+    paddingVertical: 2,
   },
   missionTabScroll: {
     marginTop: 7.8,
     height: 20.4,
+    minHeight: 20.4,
     flexGrow: 0,
     overflow: 'visible',
   },
@@ -2647,19 +2675,18 @@ const styles = StyleSheet.create({
     minHeight: 20.4,
   },
   missionTab: {
-    height: 20.4,
+    minHeight: 20.4,
     borderRadius: 10.2,
     borderWidth: 0.55,
     paddingHorizontal: 7.3,
+    paddingVertical: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
     position: 'relative',
     flexShrink: 0,
   },
   missionTabLabel: {
     fontSize: 11,
-    lineHeight: 15,
     textAlign: 'center',
   },
   missionText: {
@@ -2690,14 +2717,14 @@ const styles = StyleSheet.create({
   identityTitle: {
     marginTop: 15.7,
     fontSize: 12,
-    lineHeight: 14.5,
     textAlign: 'center',
+    paddingVertical: 2,
   },
   identityVersion: {
     marginTop: 1,
     fontSize: 11,
-    lineHeight: 14.5,
     textAlign: 'center',
+    paddingVertical: 2,
   },
   accentGrid: {
     flexDirection: 'row',
@@ -2933,7 +2960,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     start: 0,
     end: 0,
-    backgroundColor: getTokens('ink').overlay,
+    backgroundColor: getTokens('ink').overlay, // rgba(0,0,0,0.65)
   },
   methodSheet: {
     width: '100%',
@@ -2968,7 +2995,6 @@ const styles = StyleSheet.create({
     marginStart: 29,
     marginEnd: 29,
     fontSize: 11,
-    lineHeight: 14,
   },
   methodOptionsScroll: {
     marginTop: 12.3,
@@ -2979,11 +3005,12 @@ const styles = StyleSheet.create({
     paddingBottom: 0,
   },
   methodOptionRow: {
-    height: 44.4,
+    minHeight: 44.4, /* height: 44.4 */
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 29,
+    paddingVertical: 4,
     position: 'relative',
   },
   methodSelectedBackground: {
@@ -3003,12 +3030,10 @@ const styles = StyleSheet.create({
   methodOptionName: {
     fontFamily: 'Poppins_500Medium',
     fontSize: 12,
-    lineHeight: 16,
   },
   methodOptionRegion: {
     fontFamily: 'Poppins_400Regular',
     fontSize: 11,
-    lineHeight: 14,
   },
   methodRadio: {
     width: 17.5,

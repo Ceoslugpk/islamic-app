@@ -1,0 +1,102 @@
+================================================================================
+S7 AUDIT RAW METRICS & REPEATABILITY LOG
+Target: http://15.235.203.134:9998
+Timestamp: 2026-10-17T10:36:50.951Z
+================================================================================
+
+1. COLD LOAD / FCP ON FAST 3G (Threshold: 2.50s / 2500ms)
+--------------------------------------------------------------------------------
+Network Profile: Fast 3G (1.6 Mbps down / 750 kbps up / 150ms RTT)
+  Run 1: TTFB=1.60ms | DCL=30515.00ms | Load=30516.80ms | Transferred=7594167 B | Pass=false
+  Run 2: TTFB=2.00ms | DCL=30516.10ms | Load=30518.10ms | Transferred=7594167 B | Pass=false
+  Run 3: TTFB=2.30ms | DCL=30524.00ms | Load=30525.80ms | Transferred=7594167 B | Pass=false
+  Verdict: FAIL (Initial load takes ~30.52s, exceeding 2.5s budget by +28.02s)
+
+Unthrottled Loopback Baseline (3 runs):
+  Run 1: FCP=360ms | TTFB=3.40ms | Load=262.10ms | Transferred=9190571 B | Pass=true
+  Run 2: FCP=460ms | TTFB=2.50ms | Load=361.20ms | Transferred=9190571 B | Pass=true
+  Run 3: FCP=372ms | TTFB=3.00ms | Load=274.50ms | Transferred=9190571 B | Pass=true
+  Average FCP Unthrottled: 397ms (0.40s)
+
+2. JS BUNDLE SIZE & SERVING AUDIT
+--------------------------------------------------------------------------------
+  File: index-8bef5dc7bb202c9cefece7879a263ea5.js
+    Raw disk:    6,285,990 B (5.995 MB)
+    Gzip:        1,432,508 B (1.366 MB)
+    Brotli:      931,467 B (0.888 MB)
+  File: worker-fa9615d75330bcd5bb60ba0db2d42bb1.js
+    Raw disk:    132,625 B (0.126 MB)
+    Gzip:        35,410 B (0.034 MB)
+    Brotli:      30,344 B (0.029 MB)
+  Total JS Raw:    6,418,615 B (6.121 MB)
+  Total JS Gzip:   1,467,918 B (1.400 MB)
+  Total JS Brotli: 961,811 B (0.917 MB)
+  Server Serving:  Python SimpleHTTP/0.6 without Content-Encoding (serves full uncompressed 6.29MB)
+
+3. LONG-LIST DOM NODES & SCROLL PERFORMANCE
+--------------------------------------------------------------------------------
+  Surahs List (114 Surahs):
+    Initial DOM Nodes: 3509
+    Post-Scroll DOM Nodes: 4169 (+660)
+    FPS: 60 | Dropped (>16ms): 11 | Jank (>33ms): 0
+
+  Hadith Library (Books / Collections):
+    Initial DOM Nodes: 4431
+    Post-Scroll DOM Nodes: 4431 (+0)
+    FPS: 60 | Dropped (>16ms): 11 | Jank (>33ms): 0
+
+  99 Names of Allah:
+    Initial DOM Nodes: 4425
+    Post-Scroll DOM Nodes: 4613 (+188)
+    FPS: 60 | Dropped (>16ms): 12 | Jank (>33ms): 1
+
+4. INTERVAL LEAKS AFTER HOME
+--------------------------------------------------------------------------------
+  HomeScreen clock interval: timeout=30000ms ("()=>ze(new Date)")
+  Active on Home: 1
+  Active after switching to Quran: 1
+  Active after switching to Library: 1
+  Active after returning to Home: 1
+  Architecture Note: TabPane uses display:'none'. Intervals continue executing while hidden.
+
+5. 3-MINUTE MONKEY TESTING PER TAB (4 Tabs Concurrent, 180s each)
+--------------------------------------------------------------------------------
+  Tab: Home
+    Duration: 180s | Actions: 820 (Clicks: 459, Scrolls: 236, Keys: 125)
+    Uncaught UI Errors: 0
+    Unhandled Rejections: 0
+    API Network Failures: 913
+    White Screens: 0
+    Status: PASS
+
+  Tab: Quran
+    Duration: 180s | Actions: 805 (Clicks: 461, Scrolls: 239, Keys: 105)
+    Uncaught UI Errors: 0
+    Unhandled Rejections: 0
+    API Network Failures: 1186
+    White Screens: 0
+    Status: PASS
+
+  Tab: Library
+    Duration: 180s | Actions: 810 (Clicks: 450, Scrolls: 234, Keys: 126)
+    Uncaught UI Errors: 1
+    Unhandled Rejections: 1
+    API Network Failures: 1035
+    White Screens: 0
+    Status: FAIL
+
+  Tab: Tools
+    Duration: 180s | Actions: 795 (Clicks: 440, Scrolls: 234, Keys: 121)
+    Uncaught UI Errors: 1
+    Unhandled Rejections: 1
+    API Network Failures: 1418
+    White Screens: 0
+    Status: FAIL
+
+6. NAVIGATION MEMORY SOAK (300s, 150 Cycles)
+--------------------------------------------------------------------------------
+  Baseline Heap Used: 31.76 MB (3886 nodes)
+  Final Heap Used:    34.41 MB (5284 nodes)
+  Net Heap Delta:     +2.65 MB (+0.529 MB/min)
+  Projected 10-Min Growth: 5.29 MB
+  Garbage Collection: V8 scavenge and mark-sweep actively collected transient memory throughout the test.

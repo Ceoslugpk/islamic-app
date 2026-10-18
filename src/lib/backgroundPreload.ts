@@ -1,6 +1,6 @@
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
-import { startQuranPreload, getQuranPreloadProgress, isSurahCached } from './quranPreloader';
+import { startQuranPreload, getQuranPreloadProgress } from './quranPreloader';
 
 /**
  * Background preload task.

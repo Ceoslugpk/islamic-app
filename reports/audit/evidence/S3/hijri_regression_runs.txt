@@ -1,0 +1,125 @@
+
+=== RUN 1 ===
+=== FOCUSED HIJRI CONVERSION REGRESSION TEST ===
+
+--- 1. Stdlib Intl Umm al-Qura Reference Validation ---
+  Intl Umm al-Qura for 2026-10-14: { day: 3, month: 5, year: 1448 }
+  ✓ Stdlib Intl benchmark confirmed: 3 Jumada al-Awwal 1448 AH
+
+--- 2. Production Helpers Agreement (Calendar & Fasting) ---
+  Calendar gregorianToHijri(2026, 10, 14): { day: 3, month: 5, year: 1448, monthName: 'Jumada al-Awwal' }
+  Fasting getHijriDate(2026-10-14): { day: 3, month: 5, year: 1448 }
+  ✓ Calendar and Fasting shared conversion verified: "3 Jumada al-Awwal 1448 AH"
+
+--- 3. Multi-Date Sequence & Boundary Checks (Non-hardcoded) ---
+  ✓ 1 Muharram 1448 start: 1 Muharram 1448 AH (matches Intl)
+  ✓ 1 Safar 1448 start: 1 Safar 1448 AH (matches Intl)
+  ✓ 1 Rabi al-Awwal 1448 start: 1 Rabi' al-Awwal 1448 AH (matches Intl)
+  ✓ 1 Rabi al-Thani 1448 start: 1 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 1 (20 Rabi al-Thani 1448): 20 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 11 (30 Rabi al-Thani 1448 month end): 30 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 12 (1 Jumada al-Awwal 1448 month start): 1 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 13 (2 Jumada al-Awwal 1448): 2 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 14 (3 Jumada al-Awwal 1448 target): 3 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 31 (20 Jumada al-Awwal 1448): 20 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ 1 Jumada al-Thani 1448: 1 Jumada al-Thani 1448 AH (matches Intl)
+  ✓ 1 Ramadan 1448 start: 1 Ramadan 1448 AH (matches Intl)
+
+--- 4. Month Labels & Chips Integrity ---
+  ✓ Month labels & chips indices (Rab I, Rab II, Jum I, Jum II) intact
+
+--- 5. Monthly Grid Primary Month Resolution ---
+  fetchHijriMonth(2026, 10): primaryMonth=5 (Jumada al-Awwal), year=1448
+  ✓ October 2026 grid resolves Day 14 as 3 Jumada al-Awwal 1448 AH
+
+--- 6. Sighting Offset Policy Support ---
+  ✓ OffsetDays policy preserved: base=3, +1=4, -1=2
+
+======================================================
+ALL FOCUSED HIJRI CONVERSION REGRESSION TESTS PASSED!
+======================================================
+
+
+=== RUN 2 ===
+=== FOCUSED HIJRI CONVERSION REGRESSION TEST ===
+
+--- 1. Stdlib Intl Umm al-Qura Reference Validation ---
+  Intl Umm al-Qura for 2026-10-14: { day: 3, month: 5, year: 1448 }
+  ✓ Stdlib Intl benchmark confirmed: 3 Jumada al-Awwal 1448 AH
+
+--- 2. Production Helpers Agreement (Calendar & Fasting) ---
+  Calendar gregorianToHijri(2026, 10, 14): { day: 3, month: 5, year: 1448, monthName: 'Jumada al-Awwal' }
+  Fasting getHijriDate(2026-10-14): { day: 3, month: 5, year: 1448 }
+  ✓ Calendar and Fasting shared conversion verified: "3 Jumada al-Awwal 1448 AH"
+
+--- 3. Multi-Date Sequence & Boundary Checks (Non-hardcoded) ---
+  ✓ 1 Muharram 1448 start: 1 Muharram 1448 AH (matches Intl)
+  ✓ 1 Safar 1448 start: 1 Safar 1448 AH (matches Intl)
+  ✓ 1 Rabi al-Awwal 1448 start: 1 Rabi' al-Awwal 1448 AH (matches Intl)
+  ✓ 1 Rabi al-Thani 1448 start: 1 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 1 (20 Rabi al-Thani 1448): 20 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 11 (30 Rabi al-Thani 1448 month end): 30 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 12 (1 Jumada al-Awwal 1448 month start): 1 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 13 (2 Jumada al-Awwal 1448): 2 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 14 (3 Jumada al-Awwal 1448 target): 3 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 31 (20 Jumada al-Awwal 1448): 20 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ 1 Jumada al-Thani 1448: 1 Jumada al-Thani 1448 AH (matches Intl)
+  ✓ 1 Ramadan 1448 start: 1 Ramadan 1448 AH (matches Intl)
+
+--- 4. Month Labels & Chips Integrity ---
+  ✓ Month labels & chips indices (Rab I, Rab II, Jum I, Jum II) intact
+
+--- 5. Monthly Grid Primary Month Resolution ---
+  fetchHijriMonth(2026, 10): primaryMonth=5 (Jumada al-Awwal), year=1448
+  ✓ October 2026 grid resolves Day 14 as 3 Jumada al-Awwal 1448 AH
+
+--- 6. Sighting Offset Policy Support ---
+  ✓ OffsetDays policy preserved: base=3, +1=4, -1=2
+
+======================================================
+ALL FOCUSED HIJRI CONVERSION REGRESSION TESTS PASSED!
+======================================================
+
+
+=== RUN 3 ===
+=== FOCUSED HIJRI CONVERSION REGRESSION TEST ===
+
+--- 1. Stdlib Intl Umm al-Qura Reference Validation ---
+  Intl Umm al-Qura for 2026-10-14: { day: 3, month: 5, year: 1448 }
+  ✓ Stdlib Intl benchmark confirmed: 3 Jumada al-Awwal 1448 AH
+
+--- 2. Production Helpers Agreement (Calendar & Fasting) ---
+  Calendar gregorianToHijri(2026, 10, 14): { day: 3, month: 5, year: 1448, monthName: 'Jumada al-Awwal' }
+  Fasting getHijriDate(2026-10-14): { day: 3, month: 5, year: 1448 }
+  ✓ Calendar and Fasting shared conversion verified: "3 Jumada al-Awwal 1448 AH"
+
+--- 3. Multi-Date Sequence & Boundary Checks (Non-hardcoded) ---
+  ✓ 1 Muharram 1448 start: 1 Muharram 1448 AH (matches Intl)
+  ✓ 1 Safar 1448 start: 1 Safar 1448 AH (matches Intl)
+  ✓ 1 Rabi al-Awwal 1448 start: 1 Rabi' al-Awwal 1448 AH (matches Intl)
+  ✓ 1 Rabi al-Thani 1448 start: 1 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 1 (20 Rabi al-Thani 1448): 20 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 11 (30 Rabi al-Thani 1448 month end): 30 Rabi' al-Thani 1448 AH (matches Intl)
+  ✓ Oct 12 (1 Jumada al-Awwal 1448 month start): 1 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 13 (2 Jumada al-Awwal 1448): 2 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 14 (3 Jumada al-Awwal 1448 target): 3 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ Oct 31 (20 Jumada al-Awwal 1448): 20 Jumada al-Awwal 1448 AH (matches Intl)
+  ✓ 1 Jumada al-Thani 1448: 1 Jumada al-Thani 1448 AH (matches Intl)
+  ✓ 1 Ramadan 1448 start: 1 Ramadan 1448 AH (matches Intl)
+
+--- 4. Month Labels & Chips Integrity ---
+  ✓ Month labels & chips indices (Rab I, Rab II, Jum I, Jum II) intact
+
+--- 5. Monthly Grid Primary Month Resolution ---
+  fetchHijriMonth(2026, 10): primaryMonth=5 (Jumada al-Awwal), year=1448
+  ✓ October 2026 grid resolves Day 14 as 3 Jumada al-Awwal 1448 AH
+
+--- 6. Sighting Offset Policy Support ---
+  ✓ OffsetDays policy preserved: base=3, +1=4, -1=2
+
+======================================================
+ALL FOCUSED HIJRI CONVERSION REGRESSION TESTS PASSED!
+======================================================
+
+
+EXIT_CODE=0

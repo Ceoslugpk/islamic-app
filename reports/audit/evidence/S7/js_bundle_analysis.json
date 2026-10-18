@@ -1,0 +1,42 @@
+{
+  "jsFiles": [
+    {
+      "file": "index-8bef5dc7bb202c9cefece7879a263ea5.js",
+      "rawBytes": 6285990,
+      "rawMB": "5.995",
+      "gzipBytes": 1432508,
+      "gzipMB": "1.366",
+      "brotliBytes": 931467,
+      "brotliMB": "0.888"
+    },
+    {
+      "file": "worker-fa9615d75330bcd5bb60ba0db2d42bb1.js",
+      "rawBytes": 132625,
+      "rawMB": "0.126",
+      "gzipBytes": 35410,
+      "gzipMB": "0.034",
+      "brotliBytes": 30344,
+      "brotliMB": "0.029"
+    }
+  ],
+  "totals": {
+    "totalJsRawBytes": 6418615,
+    "totalJsRawMB": "6.121",
+    "totalJsGzipBytes": 1467918,
+    "totalJsGzipMB": "1.400",
+    "totalJsBrotliBytes": 961811,
+    "totalJsBrotliMB": "0.917",
+    "totalDistDirectoryBytes": 26052600,
+    "totalDistDirectoryMB": "24.846"
+  },
+  "serverServingAnalysis": {
+    "target": "http://15.235.203.134:9998",
+    "serverType": "Python SimpleHTTP/0.6",
+    "compressionEnabled": false,
+    "contentEncoding": "none (raw uncompressed transferred over wire)",
+    "networkTransferForInitialJS": 6418615,
+    "networkTransferForInitialJS_MB": "6.121",
+    "theoreticalFast3GTransferTimeSeconds_Raw": "31.34",
+    "theoreticalFast3GTransferTimeSeconds_Gzip": "7.17"
+  }
+}

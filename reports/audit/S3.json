@@ -1,0 +1,837 @@
+{
+  "schemaVersion": "S3-feature-audit-1",
+  "scope": {
+    "repo": "/home/ubuntu/apps/islamic_app",
+    "target": "http://15.235.203.134:9998",
+    "fixMode": false,
+    "browserSession": "islamic-audit-s3",
+    "isolatedStorage": true,
+    "deterministicClock": "not injectable; blocked where required"
+  },
+  "sourceInventory": {
+    "featureRowsExpected": 56,
+    "featureRowsAudited": 56,
+    "reconciled": true
+  },
+  "runtime": {
+    "status": "PARTIAL",
+    "expectedRoutes": 52,
+    "capturedRoutes": [
+      "home"
+    ],
+    "blockedRoutes": 51,
+    "actual": "Onboarding and Home were rendered. No real notifications, sharing, purchases, destructive actions, personal data, or native sensor/audio behavior was invoked.",
+    "evidence": [
+      "reports/audit/evidence/S3/runtime_scope.txt"
+    ]
+  },
+  "checks": [
+    {
+      "id": "prayer-methods",
+      "status": "PASS",
+      "severity": "High",
+      "expected": "Exactly 8 calculation methods are available and each method is represented in the prayer configuration path.",
+      "actual": "CALC_METHODS contains 8 entries: 16,4,8,3,2,1,5,13; architecture test passed 3/3 runs using mocked provider/cache paths.",
+      "evidence": [
+        "src/lib/prayerTimes.ts:45-54",
+        "reports/audit/evidence/S3/prayer_architecture_runs.txt"
+      ]
+    },
+    {
+      "id": "prayer-12-24-hour",
+      "status": "PASS",
+      "severity": "Medium",
+      "expected": "05:00 and 12:05 format correctly in 12-hour and 24-hour modes.",
+      "actual": "formatTime returned 12:05 PM, 12:05 AM for 00:05, and unchanged 12:05 in 24h mode.",
+      "evidence": [
+        "src/lib/timeFormat.ts:1-10",
+        "reports/audit/evidence/S3/core_correctness.json"
+      ]
+    },
+    {
+      "id": "prayer-next-rollover-after-isha",
+      "status": "FAIL",
+      "severity": "High",
+      "expected": "After Isha, next prayer is tomorrow Fajr.",
+      "actual": "getNextPrayer returned null at 21:00 for schedule with Isha 20:00; source explicitly returns null after Isha instead of tomorrow Fajr.",
+      "evidence": [
+        "src/lib/prayerTimes.ts:317-326",
+        "reports/audit/evidence/S3/core_correctness.json"
+      ]
+    },
+    {
+      "id": "hijri-30-random-intl",
+      "status": "PASS",
+      "severity": "High",
+      "expected": "30 deterministic dates equal Intl Umm al-Qura day/month/year with no undefined.",
+      "actual": "30/30 matched; no undefined values. Boundary dates and 29/30-day month behavior were covered by the regression suite.",
+      "evidence": [
+        "src/lib/hijri.ts:35-74,234-258",
+        "reports/audit/evidence/S3/hijri_regression_runs.txt",
+        "reports/audit/evidence/S3/core_correctness.json"
+      ]
+    },
+    {
+      "id": "zakat-threshold-calculation-liabilities",
+      "status": "PASS",
+      "severity": "High",
+      "expected": "Gold nisab 85g, silver nisab 595g, 2.5% of eligible net wealth, liabilities subtracted and clamped at zero.",
+      "actual": "USD fixture: gold threshold 6630, net 10000, due 250; liability fixture: net 6000 and due 0.",
+      "evidence": [
+        "src/lib/zakat.ts:34-36,109-131",
+        "reports/audit/evidence/S3/core_correctness.json"
+      ]
+    },
+    {
+      "id": "qibla-four-cities",
+      "status": "PASS",
+      "severity": "High",
+      "expected": "Dubai, London, Karachi, New York bearings within 2 degrees.",
+      "actual": "All four bearings matched expected values within 2 degrees.",
+      "evidence": [
+        "src/lib/qibla.ts:9-18",
+        "reports/audit/evidence/S3/core_correctness.json"
+      ]
+    },
+    {
+      "id": "salah-fasting-streak-math",
+      "status": "BLOCKED",
+      "severity": "High",
+      "expected": "Deterministic consecutive-day Salah and fasting streak fixtures, including gaps and today/yesterday rollover, pass.",
+      "actual": "Production helpers were not exercised with injectable clock/storage fixtures; source computeStreak sorts all keys and stops on the first incomplete day, while fasting streak uses real Date, so full correctness remains unverified.",
+      "evidence": [
+        "src/lib/db.ts:315-326",
+        "src/lib/fasting.ts:147-180"
+      ]
+    },
+    {
+      "id": "tasbih",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Increment, daily aggregation, reset, and persistence survive reopen.",
+      "actual": "No deterministic production storage round-trip was run; native haptic/audio side effects are device-dependent and were not called.",
+      "evidence": [
+        "src/lib/db.ts:479-490",
+        "src/screens/TasbihScreen.tsx"
+      ]
+    },
+    {
+      "id": "weekly-summary-equality",
+      "status": "BLOCKED",
+      "severity": "High",
+      "expected": "Summary fields exactly equal seeded seven-day reading, salah, hifz, and notes fixtures.",
+      "actual": "No seeded production AsyncStorage/SQLite fixture was installed; UI summary was not reached in the deployed session.",
+      "evidence": [
+        "src/lib/weeklySummary.ts:25-86",
+        "src/screens/WeeklySummaryScreen.tsx"
+      ]
+    },
+    {
+      "id": "names-scale-search-filters-index-favorites",
+      "status": "FAIL",
+      "severity": "High",
+      "expected": "14,000+ unique records; search <300 ms; filters/index/favorites persist across reopen.",
+      "actual": "Static bundled list is 99 records (NAMES_99); NamesScreen filters transliteration/meaning/name/note/number but no 14,000+ dataset or favorites persistence evidence was found in this audit.",
+      "evidence": [
+        "src/lib/names99.ts:27-127",
+        "src/screens/NamesScreen.tsx:132-200,330-430"
+      ]
+    }
+  ],
+  "featureRows": [
+    {
+      "id": "BackupRestoreScreen",
+      "area": "unreachable/secondary",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/BackupRestoreScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "BookmarksScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/BookmarksScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "CalendarScreen",
+      "area": "tools",
+      "status": "PASS",
+      "severity": "Low",
+      "expected": "Calendar conversion and month grid match Intl reference.",
+      "actual": "Hijri conversion core passed 30 deterministic dates against Intl en-u-ca-islamic-umalqura, including month boundaries and no undefined values; deployed Calendar UI not exercised.",
+      "evidence": [
+        "src/screens/CalendarScreen.tsx",
+        "reports/audit/evidence/S3/core_correctness.json"
+      ]
+    },
+    {
+      "id": "CitiesScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/CitiesScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "DownloadsScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/DownloadsScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "DuasScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/DuasScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "FastingScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/FastingScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "HadithLibraryScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/HadithLibraryScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "HajjJourneyScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/HajjJourneyScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "HajjLiveScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/HajjLiveScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "HifzPracticeScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/HifzPracticeScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "HifzScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/HifzScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "HomeScreen",
+      "area": "home",
+      "status": "PASS",
+      "severity": "Low",
+      "expected": "Onboarding transitions to Home and visible Home controls render without crash.",
+      "actual": "Deployed preview rendered onboarding, Get Started, then Home with TODAY, Salah Tracker, and tool controls in an isolated browser session; prayer schedule remained loading.",
+      "evidence": [
+        "src/screens/HomeScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "LegalScreen",
+      "area": "unreachable/secondary",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/LegalScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "LibraryScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/LibraryScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "LocationScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/LocationScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "MadinahLiveScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/MadinahLiveScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "MakkahLiveScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/MakkahLiveScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "MosqueFinderScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/MosqueFinderScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "NamesScreen",
+      "area": "library",
+      "status": "FAIL",
+      "severity": "High",
+      "expected": "14,000+ unique names, search under 300 ms, filters/index/favorites persistence verified.",
+      "actual": "Bundled source dataset NAMES_99 contains 99 records; no evidence of 14,000+ unique records. NamesScreen filters the active feed but the available static dataset is 99.",
+      "evidence": [
+        "src/screens/NamesScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "NotesScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/NotesScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "NotificationsScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/NotificationsScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "OnboardingScreen",
+      "area": "unreachable/secondary",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/OnboardingScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "PrayerGuideScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/PrayerGuideScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "PrayerRemindersScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/PrayerRemindersScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "QiblaScreen",
+      "area": "tools",
+      "status": "PASS",
+      "severity": "Low",
+      "expected": "Bearing within 2 degrees for all four fixtures; device sensor path separately verified or blocked.",
+      "actual": "Core bearing helper passed Dubai/London/Karachi/New York against expected bearings within 2 degrees; device compass behavior not tested.",
+      "evidence": [
+        "src/screens/QiblaScreen.tsx",
+        "reports/audit/evidence/S3/core_correctness.json"
+      ]
+    },
+    {
+      "id": "QuranAudioScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/QuranAudioScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "QuranHomeScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/QuranHomeScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "QuranReaderScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/QuranReaderScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "QuranScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/QuranScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "QuranTopicsScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/QuranTopicsScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "RamadanGuideScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/RamadanGuideScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "ReadingPlansScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/ReadingPlansScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "SalahTrackerScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/SalahTrackerScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "SettingsScreen",
+      "area": "unreachable/secondary",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/SettingsScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "ShahadaScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/ShahadaScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "TafsirScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/TafsirScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "TajweedScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/TajweedScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "TasbihScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/TasbihScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "ToolsScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/ToolsScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "TranslationCompareScreen",
+      "area": "quran",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/TranslationCompareScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "UmrahGuideScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/UmrahGuideScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "UmrahResourcesScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/UmrahResourcesScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "VocabTrainerScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/VocabTrainerScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "WeeklySummaryScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/WeeklySummaryScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "WomenCycleScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/WomenCycleScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "WomenGuidanceScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/WomenGuidanceScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "WomenPurityScreen",
+      "area": "library",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/WomenPurityScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "WomenQadaScreen",
+      "area": "tools",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "src/screens/WomenQadaScreen.tsx",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "ZakatScreen",
+      "area": "tools",
+      "status": "PASS",
+      "severity": "Low",
+      "expected": "Threshold, calculation, liability subtraction, and persistence correct.",
+      "actual": "Core calculator passed gold nisab eligibility, 2.5% due, and liabilities reducing net wealth below threshold; UI persistence not exercised.",
+      "evidence": [
+        "src/screens/ZakatScreen.tsx",
+        "reports/audit/evidence/S3/core_correctness.json"
+      ]
+    },
+    {
+      "id": "onboarding",
+      "area": "bootstrap",
+      "status": "PASS",
+      "severity": "Low",
+      "expected": "Onboarding transitions to Home and visible Home controls render without crash.",
+      "actual": "Deployed preview rendered onboarding, Get Started, then Home with TODAY, Salah Tracker, and tool controls in an isolated browser session; prayer schedule remained loading.",
+      "evidence": [
+        "App.tsx:1535-1609",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "settings-modal",
+      "area": "settings",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "App.tsx:1391-1523",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "global-audio-mini-player",
+      "area": "global",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "App.tsx:289-290,1363-1371",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "global-live-mini-player",
+      "area": "global",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "App.tsx:293-296,1353-1362",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "women-pin-gate",
+      "area": "privacy",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "App.tsx:234-278,1400-1422",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    },
+    {
+      "id": "location-setup",
+      "area": "bootstrap",
+      "status": "BLOCKED",
+      "severity": "Medium",
+      "expected": "Feature happy path, edge cases, persistence, and data correctness verified with isolated deterministic fixtures.",
+      "actual": "Not exercised in the deployed runtime; source inventory identifies the entry point but deterministic fixtures/time/location were unavailable for this row.",
+      "evidence": [
+        "App.tsx:320-391,1424-1431",
+        "reports/audit/evidence/S3/runtime_scope.txt"
+      ]
+    }
+  ],
+  "summary": {
+    "checkPass": 5,
+    "checkFail": 2,
+    "checkBlocked": 3,
+    "featurePass": 5,
+    "featureFail": 1,
+    "featureBlocked": 50
+  },
+  "validation": {
+    "json": "valid JSON parsed successfully",
+    "featureRowCount": 56,
+    "checkRowCount": 10,
+    "allRowsHaveExpectedActualStatusSeverityEvidence": true,
+    "evidenceFiles": [
+      "core_correctness.mjs",
+      "core_correctness.json",
+      "hijri_regression_runs.txt",
+      "prayer_architecture_runs.txt",
+      "runtime_scope.txt"
+    ],
+    "noSourceEdits": true
+  }
+}

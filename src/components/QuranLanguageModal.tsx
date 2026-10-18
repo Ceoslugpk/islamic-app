@@ -1,11 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
-  I18nManager,
   Modal,
   Platform,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -14,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
+import { AppText } from './ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { iconSizes } from '../lib/iconMap';
 import {
@@ -26,6 +25,7 @@ import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import { useQuranLanguage } from '../lib/quranLanguageState';
 import { Hairline } from './Hairline';
 import { isRTL, t } from '../lib/i18n';
+import { HOME_THEME_TOKENS, getCardShadow } from '../lib/homeThemeTokens';
 
 interface QuranLanguageModalProps {
   visible: boolean;
@@ -44,7 +44,8 @@ export function QuranLanguageModal({
   title = 'Quran Translation',
   subtitle = 'Choose translation edition & language',
 }: QuranLanguageModalProps) {
-  const { colors } = useTheme();
+  const { colors, mode } = useTheme();
+  const tokens = HOME_THEME_TOKENS[mode];
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isCompact = width <= 360;
@@ -98,8 +99,9 @@ export function QuranLanguageModal({
         <View
           style={[
             styles.sheet,
+            getCardShadow(mode),
             isTablet && styles.sheetTablet,
-            { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
+            { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder },
           ]}
         >
           {/* Drag Pill */}
@@ -108,11 +110,11 @@ export function QuranLanguageModal({
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
             <View style={styles.headerTitles}>
-              <Text style={[styles.eyebrow, { color: colors.accent }]}>
+              <AppText variant="eyebrow" style={styles.eyebrow}>
                 {t('TRANSLATION')} ({QURAN_LANGUAGE_EDITIONS.length})
-              </Text>
-              <Text style={[styles.title, { color: colors.textPrimary }]}>{t(title)}</Text>
-              <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t(subtitle)}</Text>
+              </AppText>
+              <AppText variant="headerTitle" style={styles.title}>{t(title)}</AppText>
+              <AppText variant="subtitle" style={styles.subtitle}>{t(subtitle)}</AppText>
             </View>
             <TouchableOpacity
               style={[
@@ -144,6 +146,7 @@ export function QuranLanguageModal({
                 ]}
                 placeholder={t('Search language or translator...')}
                 placeholderTextColor={colors.textMuted}
+                accessibilityLabel={t('Search language or translator...')}
                 value={search}
                 onChangeText={setSearch}
                 autoCapitalize="none"
@@ -164,9 +167,9 @@ export function QuranLanguageModal({
             </View>
             {search.trim().length > 0 && (
               <View style={styles.searchMetaRow}>
-                <Text style={[styles.searchMetaText, { color: colors.textSecondary }]}>
+                <AppText variant="caption" style={styles.searchMetaText}>
                   {t('Found')} {filtered.length} / {QURAN_LANGUAGE_EDITIONS.length}
-                </Text>
+                </AppText>
               </View>
             )}
           </View>
@@ -204,21 +207,22 @@ export function QuranLanguageModal({
                 >
                   {/* Country Flag */}
                   <View style={styles.flagWrap}>
-                    <Text style={styles.flagEmoji}>{item.flag}</Text>
+                    <AppText variant="body" style={styles.flagEmoji}>{item.flag}</AppText>
                   </View>
 
                   {/* Language & Translator info */}
                   <View style={[styles.textWrap, isRTL() && { alignItems: 'flex-end' }]}>
                     <View style={[styles.langNameRow, isRTL() && { flexDirection: 'row-reverse' }]}>
-                      <Text
+                      <AppText
+                        variant="rowTitle"
+                        highlight={isSelected}
                         style={[
                           styles.languageText,
-                          { color: isSelected ? colors.accent : colors.textPrimary },
                           isRTL() && { textAlign: 'right' },
                         ]}
                       >
                         {getLocalizedLanguageName(item.language)}
-                      </Text>
+                      </AppText>
                       <View
                         style={[
                           styles.codeBadge,
@@ -228,26 +232,25 @@ export function QuranLanguageModal({
                           },
                         ]}
                       >
-                        <Text
-                          style={[
-                            styles.codeBadgeText,
-                            { color: isSelected ? colors.onAccent : colors.textMuted },
-                          ]}
+                        <AppText
+                          variant="caption"
+                          tone={isSelected ? 'onGold' : undefined}
+                          style={styles.codeBadgeText}
                         >
                           {item.languageCode.toUpperCase()}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
-                    <Text
+                    <AppText
+                      variant={isSelected ? 'body' : 'caption'}
                       style={[
                         styles.editionNameText,
-                        { color: isSelected ? colors.textPrimary : colors.textSecondary },
                         isRTL() && { textAlign: 'right' },
                       ]}
                       numberOfLines={1}
                     >
                       {getLocalizedTranslatorName(item.editionIdentifier, item.name)}
-                    </Text>
+                    </AppText>
                   </View>
 
                   {/* Checkmark indicator */}
@@ -264,19 +267,19 @@ export function QuranLanguageModal({
             ListEmptyComponent={
               <View style={styles.emptyWrap}>
                 <Ionicons name="search-outline" size={36} color={colors.textMuted} />
-                <Text style={[styles.emptyText, { color: colors.textPrimary }]}>
+                <AppText variant="rowTitle" style={styles.emptyText}>
                   {t('No matches for')} &ldquo;{search}&rdquo;
-                </Text>
-                <Text style={[styles.emptySub, { color: colors.textMuted }]}>
+                </AppText>
+                <AppText variant="caption" style={styles.emptySub}>
                   {t('Try searching by language name, country, or translator')}
-                </Text>
+                </AppText>
                 <TouchableOpacity
                   style={[styles.resetSearchBtn, { borderColor: colors.accent, backgroundColor: colors.accentDim }]}
                   onPress={() => setSearch('')}
                   accessibilityRole="button"
                   accessibilityLabel={t('Clear search')}
                 >
-                  <Text style={[styles.resetSearchText, { color: colors.accent }]}>{t('Clear Search')}</Text>
+                  <AppText variant="link" style={styles.resetSearchText}>{t('Clear Search')}</AppText>
                 </TouchableOpacity>
               </View>
             }
@@ -309,11 +312,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     borderTopWidth: 1,
     overflow: 'hidden',
-    elevation: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
+    elevation: 16,
   },
   sheetTablet: {
     borderRadius: 24,
@@ -415,7 +414,7 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginEnd: 12,
   },
   flagEmoji: {
     fontSize: 24,

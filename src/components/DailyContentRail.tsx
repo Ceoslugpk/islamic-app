@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Animated,
@@ -9,16 +8,20 @@ import {
   useWindowDimensions,
   Platform,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
+import { getFloatingCardShadow } from '../lib/homeThemeTokens';
 import { useHaptics } from '../lib/haptics';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
-import { AnimatedPattern } from './AnimatedPattern';
+import { GeometricPattern } from './GeometricPattern';
 import { AyahOfDay } from '../lib/useAyahOfDay';
 import { Hadith } from '../lib/hadith';
 import { isRTL, t } from '../lib/i18n';
 import { hScrollRTLStyle } from '../lib/rtl';
+import { HOME_THEME_TOKENS } from '../lib/constants';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
@@ -53,7 +56,8 @@ export function DailyContentRail({
   onOpenNames,
   style,
 }: DailyContentRailProps) {
-  const { colors } = useTheme();
+  const { mode } = useTheme();
+  const homeTokens = HOME_THEME_TOKENS[mode];
   const { haptic } = useHaptics();
   const { width: windowWidth } = useWindowDimensions();
   const [measuredWidth, setMeasuredWidth] = useState(0);
@@ -64,12 +68,12 @@ export function DailyContentRail({
   const cardWidth = Math.min(effectiveWidth, 620);
   const snapInterval = cardWidth + gap;
 
-  const scrollX = useRef(new Animated.Value(0)).current;
+  const [scrollX] = useState(() => new Animated.Value(0));
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Entrance animation
-  const entranceAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(14)).current;
+  const [entranceAnim] = useState(() => new Animated.Value(0));
+  const [slideAnim] = useState(() => new Animated.Value(14));
 
   useEffect(() => {
     Animated.parallel([
@@ -139,7 +143,17 @@ export function DailyContentRail({
       {/* Header Row: TODAY Eyebrow + Paging Dots */}
       <View style={styles.headerRow}>
         <View style={styles.eyebrowWrap}>
-          <Text style={[styles.eyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>{t('TODAY')}</Text>
+          <AppText
+            variant="eyebrow"
+            style={[
+              styles.eyebrow,
+              {
+                textAlign: isRTL() ? 'right' : 'left',
+              },
+            ]}
+          >
+            {t('TODAY')}
+          </AppText>
         </View>
 
         {/* Paging Indicators */}
@@ -152,7 +166,8 @@ export function DailyContentRail({
                 style={[
                   styles.dot,
                   {
-                    backgroundColor: isActive ? colors.accent : colors.borderSubtle,
+                    backgroundColor: isActive ? homeTokens.gold : homeTokens.ringBorder,
+                    opacity: isActive ? 1 : 0.45,
                     width: isActive ? 16 : 6,
                   },
                 ]}
@@ -205,12 +220,33 @@ export function DailyContentRail({
                 styles.cardSlideWrap,
                 {
                   width: cardWidth,
+                  ...getFloatingCardShadow(mode),
                   transform: [{ scale }],
                   opacity,
                 },
               ]}
             >
-              <Card style={styles.card} padded={false}>
+              <Card
+                style={StyleSheet.flatten([
+                  styles.card,
+                  {
+                    borderColor: mode === 'ink' ? 'rgba(142,116,64,0.38)' : 'rgba(234,226,210,0.58)',
+                    backgroundColor: homeTokens.cardTop,
+                  },
+                ])}
+                padded={false}
+              >
+                <LinearGradient
+                  colors={[homeTokens.cardTop, homeTokens.cardBottom]}
+                  style={StyleSheet.absoluteFill}
+                />
+                <GeometricPattern
+                  variant="tessellation"
+                  tileSize={40}
+                  color={homeTokens.accent}
+                  opacity={mode === 'ink' ? 0.045 : 0.025}
+                />
+
                 {/* 1. AYAH OF THE DAY */}
                 {cardItem.type === 'ayah' && (
                   <TouchableOpacity
@@ -222,10 +258,35 @@ export function DailyContentRail({
                   >
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
-                        <Ionicons name="book-outline" size={12} color={colors.accent} />
-                        <Text style={[styles.cardTag, { color: colors.accent }]}>
+                        <View
+                          style={[
+                            styles.iconBadge,
+                            {
+                              backgroundColor: homeTokens.ringFill,
+                              borderColor: homeTokens.ringBorder,
+                            },
+                          ]}
+                        >
+                          <Ionicons name="book-outline" size={14} color={homeTokens.accent} />
+                        </View>
+                        <AppText variant="eyebrow" style={styles.cardTag}>
                           {t('AYAH OF THE DAY')}
-                        </Text>
+                        </AppText>
+                      </View>
+                      <View
+                        style={[
+                          styles.headerAccessory,
+                          {
+                            backgroundColor: homeTokens.ringFill,
+                            borderColor: homeTokens.ringBorder,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+                          size={12}
+                          color={homeTokens.gold}
+                        />
                       </View>
                     </View>
 
@@ -234,16 +295,17 @@ export function DailyContentRail({
                         <ArabicText
                           size={19}
                           align="right"
+                          lineHeight={36}
                           numberOfLines={3}
-                          style={styles.arabicText}
+                          style={[styles.arabicText, { color: homeTokens.text }]}
                         >
                           {ayah.arabic || ayah.text}
                         </ArabicText>
-                        <Text
+                        <AppText
+                          variant="body"
                           style={[
                             styles.translationText,
                             {
-                              color: colors.textSecondary,
                               textAlign: isRTL() ? 'right' : 'left',
                               writingDirection: isRTL() ? 'rtl' : 'ltr',
                             },
@@ -251,34 +313,42 @@ export function DailyContentRail({
                           numberOfLines={3}
                         >
                           {ayah.translation}
-                        </Text>
+                        </AppText>
                         {ayah.reflection ? (
                           <View style={styles.reflectionRow}>
-                            <Ionicons name="sparkles-outline" size={12} color={colors.accent} />
-                            <Text
+                            <Ionicons name="sparkles-outline" size={12} color={homeTokens.gold} />
+                            <AppText
+                              variant="subtitle"
                               style={[
                                 styles.reflectionText,
                                 {
-                                  color: colors.textMuted,
                                   textAlign: isRTL() ? 'right' : 'left',
                                   writingDirection: isRTL() ? 'rtl' : 'ltr',
                                 },
                               ]}
                             >
                               {ayah.reflection}
-                            </Text>
+                            </AppText>
                           </View>
                         ) : null}
                         <View style={styles.footerRow}>
-                          <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
+                          <AppText
+                            variant="caption"
+                            style={[
+                              styles.referenceText,
+                              {
+                                textAlign: isRTL() ? 'right' : 'left',
+                              },
+                            ]}
+                          >
                             {ayah.reference}
-                          </Text>
+                          </AppText>
                         </View>
                       </>
                     ) : (
-                      <Text style={[styles.placeholderText, { color: colors.textMuted }]}>
+                      <AppText variant="caption" style={styles.placeholderText}>
                         {t('Loading daily verse...')}
-                      </Text>
+                      </AppText>
                     )}
                   </TouchableOpacity>
                 )}
@@ -294,10 +364,35 @@ export function DailyContentRail({
                   >
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
-                        <Ionicons name="library-outline" size={12} color={colors.accent} />
-                        <Text style={[styles.cardTag, { color: colors.accent }]}>
+                        <View
+                          style={[
+                            styles.iconBadge,
+                            {
+                              backgroundColor: homeTokens.ringFill,
+                              borderColor: homeTokens.ringBorder,
+                            },
+                          ]}
+                        >
+                          <Ionicons name="library-outline" size={14} color={homeTokens.accent} />
+                        </View>
+                        <AppText variant="eyebrow" style={styles.cardTag}>
                           {t('HADITH OF THE DAY')}
-                        </Text>
+                        </AppText>
+                      </View>
+                      <View
+                        style={[
+                          styles.headerAccessory,
+                          {
+                            backgroundColor: homeTokens.ringFill,
+                            borderColor: homeTokens.ringBorder,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+                          size={12}
+                          color={homeTokens.gold}
+                        />
                       </View>
                     </View>
 
@@ -308,34 +403,42 @@ export function DailyContentRail({
                             size={18}
                             align="right"
                             numberOfLines={2}
-                            style={[styles.arabicText, { marginBottom: 6 }]}
+                            style={[styles.arabicText, { color: homeTokens.text, marginBottom: 6 }]}
                           >
                             {hadith.arabic}
                           </ArabicText>
                         ) : null}
-                        <Text
+                        <AppText
+                          variant="body"
                           style={[
                             styles.translationText,
                             {
-                              color: colors.textSecondary,
                               textAlign: isRTL() ? 'right' : 'left',
                               writingDirection: isRTL() ? 'rtl' : 'ltr',
                             },
                           ]}
                           numberOfLines={4}
                         >
-                          "{hadith.translation}"
-                        </Text>
+                          {`"${hadith.translation}"`}
+                        </AppText>
                         <View style={styles.footerRow}>
-                          <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
+                          <AppText
+                            variant="caption"
+                            style={[
+                              styles.referenceText,
+                              {
+                                textAlign: isRTL() ? 'right' : 'left',
+                              },
+                            ]}
+                          >
                             {hadith.reference || hadith.source}
-                          </Text>
+                          </AppText>
                         </View>
                       </>
                     ) : (
-                      <Text style={[styles.placeholderText, { color: colors.textMuted }]}>
+                      <AppText variant="caption" style={styles.placeholderText}>
                         {t('Loading daily hadith...')}
-                      </Text>
+                      </AppText>
                     )}
                   </TouchableOpacity>
                 )}
@@ -351,30 +454,55 @@ export function DailyContentRail({
                   >
                     <View style={styles.cardHeader}>
                       <View style={styles.tagBadge}>
-                        <Ionicons name="sparkles-outline" size={12} color={colors.accent} />
-                        <Text style={[styles.cardTag, { color: colors.accent }]}>
+                        <View
+                          style={[
+                            styles.iconBadge,
+                            {
+                              backgroundColor: homeTokens.ringFill,
+                              borderColor: homeTokens.ringBorder,
+                            },
+                          ]}
+                        >
+                          <Ionicons name="sparkles-outline" size={14} color={homeTokens.accent} />
+                        </View>
+                        <AppText variant="eyebrow" style={styles.cardTag}>
                           {t('NAME OF THE DAY')} · #{nameOfDay.number}
-                        </Text>
+                        </AppText>
+                      </View>
+                      <View
+                        style={[
+                          styles.headerAccessory,
+                          {
+                            backgroundColor: homeTokens.ringFill,
+                            borderColor: homeTokens.ringBorder,
+                          },
+                        ]}
+                      >
+                        <Ionicons
+                          name={isRTL() ? 'chevron-back' : 'chevron-forward'}
+                          size={12}
+                          color={homeTokens.gold}
+                        />
                       </View>
                     </View>
 
                     <View style={styles.nameRow}>
                       <ArabicText
-                        size={28}
+                        size={30}
                         bold
                         align={isRTL() ? 'right' : 'left'}
                         numberOfLines={1}
-                        style={styles.nameArabic}
+                        style={[styles.nameArabic, { color: homeTokens.text }]}
                       >
                         {nameOfDay.arabic || nameOfDay.name || ''}
                       </ArabicText>
 
                       <View style={styles.nameInfoCol}>
-                        <Text
+                        <AppText
+                          variant="title"
                           style={[
                             styles.nameTranslit,
                             {
-                              color: colors.textPrimary,
                               textAlign: isRTL() ? 'right' : 'left',
                               fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
                             },
@@ -382,12 +510,12 @@ export function DailyContentRail({
                           numberOfLines={1}
                         >
                           {nameOfDay.transliteration}
-                        </Text>
-                        <Text
+                        </AppText>
+                        <AppText
+                          variant="subtitle"
                           style={[
                             styles.nameMeaning,
                             {
-                              color: colors.textSecondary,
                               textAlign: isRTL() ? 'right' : 'left',
                               writingDirection: isRTL() ? 'rtl' : 'ltr',
                             },
@@ -395,14 +523,22 @@ export function DailyContentRail({
                           numberOfLines={2}
                         >
                           {nameOfDay.meaning}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
 
                     <View style={styles.footerRow}>
-                      <Text style={[styles.referenceText, { color: colors.textSecondary, textAlign: isRTL() ? 'right' : 'left' }]}>
+                      <AppText
+                        variant="caption"
+                        style={[
+                          styles.referenceText,
+                          {
+                            textAlign: isRTL() ? 'right' : 'left',
+                          },
+                        ]}
+                      >
                         {t('Asma ul-Husna · The Divine Attributes')}
-                      </Text>
+                      </AppText>
                     </View>
                   </TouchableOpacity>
                 )}
@@ -417,13 +553,13 @@ export function DailyContentRail({
 
 const styles = StyleSheet.create({
   root: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   eyebrowWrap: {
     flexDirection: 'row',
@@ -435,6 +571,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     letterSpacing: 2,
     textTransform: 'uppercase',
+    paddingVertical: 2,
   },
   dotsWrap: {
     flexDirection: 'row',
@@ -442,23 +579,26 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   dot: {
-    height: 5,
-    borderRadius: 2.5,
+    height: 4,
+    borderRadius: 2,
   },
   cardSlideWrap: {
-    borderRadius: 20,
-    overflow: 'hidden',
+    borderRadius: 14,
+    overflow: 'visible',
   },
   card: {
-    borderRadius: 20,
+    borderRadius: 14,
+    borderWidth: 1,
     overflow: 'hidden',
-    minHeight: 180,
+    minHeight: 194,
     flex: 1,
+    position: 'relative',
+    justifyContent: 'space-between',
   },
   cardContent: {
     position: 'relative',
     padding: 18,
-    minHeight: 180,
+    minHeight: 194,
     justifyContent: 'space-between',
     zIndex: 1,
     flex: 1,
@@ -472,23 +612,44 @@ const styles = StyleSheet.create({
   tagBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  iconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   cardTag: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10.5,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
+    paddingVertical: 2,
+    flexShrink: 1,
+  },
+  headerAccessory: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   arabicText: {
-    lineHeight: 32,
     marginBottom: 8,
   },
   translationText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
-    lineHeight: 19,
-    marginBottom: 10,
+    fontSize: 13.5,
+    lineHeight: 20,
+    marginBottom: 8,
   },
   reflectionRow: {
     flexDirection: 'row',
@@ -502,41 +663,50 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     fontStyle: 'italic',
     flex: 1,
+    paddingVertical: 2,
   },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    width: '100%',
     marginTop: 4,
   },
   referenceText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    letterSpacing: 0.3,
+    paddingVertical: 2,
+    flexShrink: 1,
   },
   nameRow: {
-    marginVertical: 6,
-    gap: 6,
+    marginVertical: 4,
+    gap: 4,
+    minWidth: 0,
   },
   nameInfoCol: {
     gap: 2,
+    flex: 1,
+    minWidth: 0,
   },
   nameTranslit: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 22,
     lineHeight: 28,
+    paddingVertical: 2,
   },
   nameMeaning: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     lineHeight: 18,
+    paddingVertical: 1,
   },
   nameArabic: {
-    lineHeight: 36,
+    lineHeight: 38,
   },
   placeholderText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    paddingVertical: 20,
+    paddingVertical: 24,
     textAlign: 'center',
   },
 });

@@ -1,0 +1,7 @@
+$ npm run lint
+
+> scaffold@1.1.70 lint
+> expo lint
+
+
+EXIT_CODE=0

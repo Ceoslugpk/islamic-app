@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Alert,
   Platform,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy'; // require('expo-file-system/legacy')
 import { useTranslation } from 'react-i18next';
 import { useThemeTokens } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
@@ -43,7 +44,7 @@ interface BackupActivityInfo {
 
 export function BackupRestoreScreen({ onBack }: Props) {
   const { t } = useTranslation();
-  const { tokens, mode } = useThemeTokens();
+  const { tokens } = useThemeTokens();
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
   const [lastInfo, setLastInfo] = useState<BackupActivityInfo | null>(null);
 
@@ -72,7 +73,6 @@ export function BackupRestoreScreen({ onBack }: Props) {
           `${t('File')}: ${fileName}\n\n${t('Included in backup')}:\n${summaryText}`
         );
       } else {
-        const FileSystem = require('expo-file-system/legacy');
         const isSharingAvailable = Sharing?.isAvailableAsync ? await Sharing.isAvailableAsync().catch(() => false) : false;
 
         if (isSharingAvailable && Sharing?.shareAsync) {
@@ -144,7 +144,6 @@ export function BackupRestoreScreen({ onBack }: Props) {
         }
         text = await picked.text();
       } else {
-        const FileSystem = require('expo-file-system/legacy');
         if (!DocumentPicker?.getDocumentAsync) {
           throw new Error(t('Document picker is unavailable on this device.'));
         }
@@ -266,11 +265,11 @@ export function BackupRestoreScreen({ onBack }: Props) {
             <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
               <Ionicons name="cloud-upload-outline" size={22} color={tokens.accent} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: tokens.text }]}>{t('Export backup')}</Text>
-              <Text style={[styles.cardSub, { color: tokens.muted }]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="rowTitle" style={styles.cardTitle}>{t('Export backup')}</AppText>
+              <AppText variant="subtitle" style={styles.cardSub}>
                 {t('Saves your prayer history, Quran bookmarks, notes, study tags, reading plans, Hifz, settings, and more to a file.')}
-              </Text>
+              </AppText>
             </View>
           </View>
           <PrimaryButton
@@ -290,11 +289,11 @@ export function BackupRestoreScreen({ onBack }: Props) {
             <View style={[styles.iconWrap, { backgroundColor: tokens.ringFill }]}>
               <Ionicons name="cloud-download-outline" size={22} color={tokens.accent} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: tokens.text }]}>{t('Restore backup')}</Text>
-              <Text style={[styles.cardSub, { color: tokens.muted }]}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="rowTitle" style={styles.cardTitle}>{t('Restore backup')}</AppText>
+              <AppText variant="subtitle" style={styles.cardSub}>
                 {t('Pick a backup file. It is validated before restoring, and your current data is overwritten only after you review and confirm.')}
-              </Text>
+              </AppText>
             </View>
           </View>
           <PrimaryButton
@@ -310,9 +309,9 @@ export function BackupRestoreScreen({ onBack }: Props) {
 
         {/* Included Data Categories */}
         <PremiumCard style={styles.card}>
-          <Text style={[styles.cardTitle, { color: tokens.text, marginBottom: 8 }]}>
+          <AppText variant="rowTitle" style={[styles.cardTitle, { marginBottom: 8 }]}>
             {t('Included in Backup')}
-          </Text>
+          </AppText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
             <Chip label={t('Prayer History')} selected={false} />
             <Chip label={t('Quran Bookmarks')} selected={false} />
@@ -333,51 +332,51 @@ export function BackupRestoreScreen({ onBack }: Props) {
                   size={14}
                   color={tokens.success}
                 />
-                <Text style={[styles.infoBadgeText, { color: tokens.success }]}>
+                <AppText variant="caption" style={[styles.infoBadgeText, { color: tokens.success }]}>
                   {lastInfo.type === 'export' ? t('Recent Export') : t('Recent Restore')}
-                </Text>
+                </AppText>
               </View>
-              <Text style={[styles.infoMeta, { color: tokens.muted }]}>
+              <AppText variant="caption" style={styles.infoMeta}>
                 v{lastInfo.version} · format v{BACKUP_FORMAT_VERSION}
-              </Text>
+              </AppText>
             </View>
 
             {lastInfo.fileName ? (
-              <Text style={[styles.infoFileName, { color: tokens.text }]}>
+              <AppText variant="rowTitle" style={styles.infoFileName}>
                 {lastInfo.fileName}
-              </Text>
+              </AppText>
             ) : null}
 
-            <Text style={[styles.infoDetail, { color: tokens.muted }]}>
+            <AppText variant="subtitle" style={styles.infoDetail}>
               {lastInfo.summary}
-            </Text>
+            </AppText>
 
             <View style={styles.infoFooter}>
               <Ionicons name="time-outline" size={13} color={tokens.muted} />
-              <Text style={[styles.infoTimestamp, { color: tokens.muted }]}>
+              <AppText variant="caption" style={styles.infoTimestamp}>
                 {lastInfo.at}
-              </Text>
+              </AppText>
             </View>
           </PremiumCard>
         ) : (
           <PremiumCard style={styles.emptyCard}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
               <Ionicons name="shield-checkmark-outline" size={20} color={tokens.accent} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.emptyTitle, { color: tokens.text }]}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <AppText variant="rowTitle" style={styles.emptyTitle}>
                   {t('Ready for on-device backup')}
-                </Text>
-                <Text style={[styles.emptySub, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="subtitle" style={styles.emptySub}>
                   {t('No backup activity yet in this session. Export a file anytime to keep your prayer history, bookmarks, and notes secure.')}
-                </Text>
+                </AppText>
               </View>
             </View>
           </PremiumCard>
         )}
 
-        <Text style={[styles.footnote, { color: tokens.muted }]}>
+        <AppText variant="caption" style={styles.footnote}>
           {t('Backups are stored on your device only. No data is uploaded to any server. Audio files, prayer caches, and downloads are never included.')}
-        </Text>
+        </AppText>
         </View>
       </DetailScreen.ScrollView>
     </DetailScreen>
@@ -405,7 +404,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
   iconWrap: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontFamily: 'Manrope_700Bold', fontSize: 15 },
-  cardSub: { fontFamily: 'Manrope_400Regular', fontSize: 12, lineHeight: 17, marginTop: 2 },
+  cardSub: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
   infoCard: {
     marginBottom: 16,
     gap: 8,
@@ -414,6 +413,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   infoBadge: {
     flexDirection: 'row',
@@ -422,14 +423,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
+    minHeight: 24,
   },
   infoBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
   infoMeta: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
+    paddingVertical: 2,
   },
   infoFileName: {
     fontFamily: 'Manrope_600SemiBold',
@@ -438,17 +442,18 @@ const styles = StyleSheet.create({
   infoDetail: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
-    lineHeight: 18,
   },
   infoFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 4,
     marginTop: 2,
   },
   infoTimestamp: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
+    paddingVertical: 2,
   },
   emptyCard: {
     marginBottom: 16,
@@ -460,14 +465,13 @@ const styles = StyleSheet.create({
   emptySub: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
-    lineHeight: 16,
     marginTop: 2,
   },
   footnote: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
-    lineHeight: 16,
     textAlign: 'center',
     marginTop: 4,
+    paddingVertical: 2,
   },
 });

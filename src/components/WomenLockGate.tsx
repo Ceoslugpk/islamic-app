@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   AppState,
@@ -11,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 
 /**
  * System-biometric + device-credential gate for the Women's Worship screens.
@@ -36,17 +36,8 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
   const [unlocked, setUnlocked] = useState(false);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const lastUnlockRef = useRef(0);
   const appStateRef = useRef(AppState.currentState);
   const backgroundAtRef = useRef<number | null>(null);
-
-  // If the lock is disabled, no gate.
-  useEffect(() => {
-    if (!lockEnabled) {
-      setUnlocked(true);
-      setChecking(false);
-    }
-  }, [lockEnabled]);
 
   // Re-lock when the app returns from background after the timeout.
   useEffect(() => {
@@ -71,7 +62,6 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
   // Ask once on mount if a lock is configured.
   useEffect(() => {
     if (lockEnabled) {
-      setChecking(true);
       authenticate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,7 +74,7 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
   if (checking) {
     return (
       <View style={[styles.center, { backgroundColor: colors.bgBase }]}>
-        <Text style={[styles.message, { color: colors.textSecondary }]}>{t('Unlocking…')}</Text>
+        <AppText variant="subtitle" style={styles.message}>{t('Unlocking…')}</AppText>
       </View>
     );
   }
@@ -95,11 +85,11 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
         <View style={[styles.lockIconWrap, { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle }]}>
           <Ionicons name="lock-closed" size={40} color={colors.accent} />
         </View>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>{t('Protected')}</Text>
-        <Text style={[styles.message, { color: colors.textSecondary }]}>
+        <AppText variant="title" style={styles.title}>{t('Protected')}</AppText>
+        <AppText variant="subtitle" style={styles.message}>
           {t("Use your device security (fingerprint, face, or PIN) to view Women's Worship.")}
-        </Text>
-        {error && <Text style={[styles.errorText, { color: colors.destructive }]}>{error}</Text>}
+        </AppText>
+        {error && <AppText variant="caption" tone="danger" style={styles.errorText}>{error}</AppText>}
         <TouchableOpacity
           style={[styles.button, { backgroundColor: colors.accent }]}
           activeOpacity={0.75}
@@ -108,7 +98,7 @@ export function WomenLockGate({ children }: { children: React.ReactNode }) {
           accessibilityLabel={t("Unlock Women's Worship")}
         >
           <Ionicons name="finger-print" size={18} color={colors.onAccent} />
-          <Text style={[styles.buttonText, { color: colors.onAccent }]}>{t('Unlock')}</Text>
+          <AppText variant="rowTitle" tone="onGold" style={styles.buttonText}>{t('Unlock')}</AppText>
         </TouchableOpacity>
       </View>
     );

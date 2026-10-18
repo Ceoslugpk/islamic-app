@@ -1,13 +1,13 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Linking,
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { t } from '../lib/i18n';
@@ -87,10 +87,10 @@ export function NotificationPermissionNote({
         </View>
 
         <View style={styles.textWrap}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>{title}</Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
+          <AppText variant="title" style={styles.title}>{title}</AppText>
+          <AppText variant="body" style={styles.description}>
             {description}
-          </Text>
+          </AppText>
         </View>
       </View>
 
@@ -108,9 +108,9 @@ export function NotificationPermissionNote({
           accessibilityLabel={t('Open device settings to enable notifications')}
         >
           <Ionicons name="settings-outline" size={14} color={colors.onAccent} />
-          <Text style={[styles.settingsBtnText, { color: colors.onAccent }]}>
+          <AppText variant="body" tone="onGold" style={styles.settingsBtnText}>
             {t('Open Settings')}
-          </Text>
+          </AppText>
         </TouchableOpacity>
       </View>
     </View>

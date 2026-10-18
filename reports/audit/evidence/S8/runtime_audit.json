@@ -1,0 +1,117 @@
+{
+  "httpAudit": {
+    "status": 200,
+    "server": "SimpleHTTP/0.6 Python/3.14.7",
+    "contentType": "text/html",
+    "cacheControl": "NONE (header absent)",
+    "lastModified": "Sat, 17 Oct 2026 09:54:30 GMT",
+    "etag": null,
+    "serviceWorkerFileStatus": 404,
+    "manifestStatus": 404
+  },
+  "serviceWorkerAndCacheAudit": {
+    "isSecureContext": false,
+    "hasSW": false,
+    "registrations": [],
+    "hasCaches": false,
+    "cacheKeys": []
+  },
+  "reloadPersistenceRuns": [
+    {
+      "run": 1,
+      "onboardingInitial": true,
+      "hasOnboardingDone": true,
+      "onboardingRecurred": false,
+      "homeRendered": true,
+      "persistencePass": true
+    },
+    {
+      "run": 2,
+      "onboardingInitial": true,
+      "hasOnboardingDone": true,
+      "onboardingRecurred": false,
+      "homeRendered": true,
+      "persistencePass": true
+    },
+    {
+      "run": 3,
+      "onboardingInitial": true,
+      "hasOnboardingDone": true,
+      "onboardingRecurred": false,
+      "homeRendered": true,
+      "persistencePass": true
+    }
+  ],
+  "offlineReloadRuns": [
+    {
+      "run": 1,
+      "offlineReloadErr": "page.reload: net::ERR_INTERNET_DISCONNECTED\nCall log:\n  - waiting for navigation until \"networkidle\"\n",
+      "expectedDisconnected": true
+    },
+    {
+      "run": 2,
+      "offlineReloadErr": "page.reload: net::ERR_INTERNET_DISCONNECTED\nCall log:\n  - waiting for navigation until \"networkidle\"\n",
+      "expectedDisconnected": true
+    },
+    {
+      "run": 3,
+      "offlineReloadErr": "page.reload: net::ERR_INTERNET_DISCONNECTED\nCall log:\n  - waiting for navigation until \"networkidle\"\n",
+      "expectedDisconnected": true
+    }
+  ],
+  "offlineFeaturesRuns": [
+    {
+      "run": 1,
+      "hasOfflineBanner": true,
+      "hasPrayerTimesOfflineMsg": true,
+      "namesOfflineNotice": true,
+      "namesHasArRahman": true,
+      "namesHas99Names": true,
+      "hadithHasBukhari": true,
+      "hadithHasMuslim": true,
+      "quranHasOfflineCard": true,
+      "locationModalRecurred": true
+    },
+    {
+      "run": 2,
+      "hasOfflineBanner": true,
+      "hasPrayerTimesOfflineMsg": true,
+      "namesOfflineNotice": true,
+      "namesHasArRahman": true,
+      "namesHas99Names": true,
+      "hadithHasBukhari": true,
+      "hadithHasMuslim": true,
+      "quranHasOfflineCard": true,
+      "locationModalRecurred": true
+    },
+    {
+      "run": 3,
+      "hasOfflineBanner": true,
+      "hasPrayerTimesOfflineMsg": true,
+      "namesOfflineNotice": true,
+      "namesHasArRahman": true,
+      "namesHas99Names": true,
+      "hadithHasBukhari": true,
+      "hadithHasMuslim": true,
+      "quranHasOfflineCard": true,
+      "locationModalRecurred": true
+    }
+  ],
+  "runtimeBlockerAudit": {
+    "locationModalRecurrence": {
+      "blocked": true,
+      "description": "LocationSetupModal triggers on route state transitions, overlaying and blocking screen interaction.",
+      "evidence": "Observed repeatedly across S2, S4, and S8 runs when navigating via __NAVIGATE__."
+    },
+    "corsApiBlocking": {
+      "blocked": true,
+      "description": "External API https://api.islamic.app does not provide Access-Control-Allow-Origin headers for the preview web origin http://15.235.203.134:9998, causing all network fetches to fail at browser client level.",
+      "evidence": "Browser console logs show CORS policy ERR_FAILED on /v1/timings, /v1/verses, /v1/hadith."
+    },
+    "offlineWebLoadability": {
+      "blocked": true,
+      "description": "No Service Worker or CacheStorage is deployed on the web target (insecure HTTP context prohibits serviceWorker registration, and no sw.js exists); cold boot or page refresh while offline results in net::ERR_INTERNET_DISCONNECTED.",
+      "evidence": "runtimeResults.offlineReloadRuns shows ERR_INTERNET_DISCONNECTED across all runs."
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -6,7 +6,6 @@ import {
   PanResponder,
   Platform,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { iconSizes } from '../lib/iconMap';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
 import { formatProgress } from '../lib/formatDuration';
 import { t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 
 interface AudioMiniPlayerProps {
   playback: CurrentPlayback;
@@ -29,9 +29,9 @@ interface AudioMiniPlayerProps {
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
 
 function EqualizerBars({ color, isPlaying }: { color: string; isPlaying: boolean }) {
-  const anim1 = useRef(new Animated.Value(0.4)).current;
-  const anim2 = useRef(new Animated.Value(0.85)).current;
-  const anim3 = useRef(new Animated.Value(0.5)).current;
+  const [anim1] = useState(() => new Animated.Value(0.4));
+  const [anim2] = useState(() => new Animated.Value(0.85));
+  const [anim3] = useState(() => new Animated.Value(0.5));
 
   useEffect(() => {
     if (!isPlaying) {
@@ -149,60 +149,58 @@ export function AudioMiniPlayer({
 }: AudioMiniPlayerProps) {
   const { colors } = useTheme();
   const [touchX, setTouchX] = useState<number | null>(null);
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const progressWidth = useRef(0);
+  const [progressAnim] = useState(() => new Animated.Value(0));
+  const [progressWidth, setProgressWidth] = useState(0);
 
   const handleProgressPress = useCallback(
     (e: any) => {
-      const width = progressWidth.current;
-      if (width <= 0 || status.durationMillis <= 0) return;
+      if (progressWidth <= 0 || status.durationMillis <= 0) return;
       const x = e.nativeEvent.locationX;
-      const ratio = Math.max(0, Math.min(1, x / width));
+      const ratio = Math.max(0, Math.min(1, x / progressWidth));
       const positionMillis = Math.round(ratio * status.durationMillis);
       onSeek(positionMillis);
     },
-    [status.durationMillis, onSeek]
+    [progressWidth, status.durationMillis, onSeek]
   );
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e: any) => {
-        const width = progressWidth.current;
-        if (width <= 0 || status.durationMillis <= 0) return;
-        const x = e.nativeEvent.locationX;
-        setTouchX(x);
-      },
-      onPanResponderMove: (e: any) => {
-        if (touchX === null) return;
-        const width = progressWidth.current;
-        if (width <= 0 || status.durationMillis <= 0) return;
-        const x = e.nativeEvent.locationX;
-        const ratio = Math.max(0, Math.min(1, x / width));
-        progressAnim.setValue(ratio);
-        setTouchX(x);
-      },
-      onPanResponderRelease: (e: any) => {
-        if (touchX === null) return;
-        const width = progressWidth.current;
-        if (width <= 0 || status.durationMillis <= 0) {
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (e: any) => {
+          if (progressWidth <= 0 || status.durationMillis <= 0) return;
+          const x = e.nativeEvent.locationX;
+          setTouchX(x);
+        },
+        onPanResponderMove: (e: any) => {
+          if (touchX === null) return;
+          if (progressWidth <= 0 || status.durationMillis <= 0) return;
+          const x = e.nativeEvent.locationX;
+          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          progressAnim.setValue(ratio);
+          setTouchX(x);
+        },
+        onPanResponderRelease: (e: any) => {
+          if (touchX === null) return;
+          if (progressWidth <= 0 || status.durationMillis <= 0) {
+            setTouchX(null);
+            return;
+          }
+          const x = e.nativeEvent.locationX;
+          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          const positionMillis = Math.round(ratio * status.durationMillis);
+          onSeek(positionMillis);
+          progressAnim.setValue(status.positionMillis / Math.max(1, status.durationMillis));
           setTouchX(null);
-          return;
-        }
-        const x = e.nativeEvent.locationX;
-        const ratio = Math.max(0, Math.min(1, x / width));
-        const positionMillis = Math.round(ratio * status.durationMillis);
-        onSeek(positionMillis);
-        progressAnim.setValue(status.positionMillis / Math.max(1, status.durationMillis));
-        setTouchX(null);
-      },
-      onPanResponderTerminate: () => {
-        setTouchX(null);
-        progressAnim.setValue(status.positionMillis / Math.max(1, status.durationMillis));
-      },
-    })
-  ).current;
+        },
+        onPanResponderTerminate: () => {
+          setTouchX(null);
+          progressAnim.setValue(status.positionMillis / Math.max(1, status.durationMillis));
+        },
+      }),
+    [touchX, progressWidth, status.durationMillis, status.positionMillis, onSeek, progressAnim]
+  );
 
   const progressRatio = status.durationMillis > 0 ? status.positionMillis / status.durationMillis : 0;
 
@@ -221,7 +219,7 @@ export function AudioMiniPlayer({
         {...panResponder.panHandlers}
         style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}
         onLayout={(e) => {
-          progressWidth.current = e.nativeEvent.layout.width;
+          setProgressWidth(e.nativeEvent.layout.width);
         }}
         onTouchEnd={handleProgressPress}
       >
@@ -269,34 +267,32 @@ export function AudioMiniPlayer({
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    styles.segmentBadgeText,
-                    {
-                      color:
-                        playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary,
-                    },
-                  ]}
+                <AppText
+                  variant="caption"
+                  highlight={playback.segmentType === 'arabic'}
+                  style={styles.segmentBadgeText}
                 >
                   {playback.segmentType === 'arabic' ? 'AR' : 'TR'}
-                </Text>
+                </AppText>
               </View>
             )}
-            <Text
-              style={[styles.title, { color: colors.textPrimary }]}
+            <AppText
+              variant="rowTitle"
+              style={styles.title}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
               {playback.title}
-            </Text>
+            </AppText>
           </View>
-          <Text
-            style={[styles.subtitle, { color: colors.textMuted }]}
-            numberOfLines={1}
+          <AppText
+            variant="caption"
+            style={styles.subtitle}
+            numberOfLines={2}
             ellipsizeMode="tail"
           >
             {playback.reciterName} · {formatProgress(status.positionMillis / 1000, status.durationMillis / 1000)}
-          </Text>
+          </AppText>
         </View>
       </TouchableOpacity>
 
@@ -343,6 +339,7 @@ const styles = StyleSheet.create({
   container: {
     position: 'relative',
     width: '100%',
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -366,9 +363,10 @@ const styles = StyleSheet.create({
   },
   infoArea: {
     flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
+    marginEnd: 12,
     gap: 10,
   },
   iconWrap: {
@@ -377,42 +375,54 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   textWrap: {
     flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    minWidth: 0,
   },
   segmentBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
+    flexShrink: 0,
   },
   segmentBadgeText: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 9,
     letterSpacing: 0.5,
+    paddingVertical: 1,
   },
   title: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
     lineHeight: 17,
     flex: 1,
+    minWidth: 0,
+    flexShrink: 1,
+    paddingVertical: 2,
   },
   subtitle: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
     lineHeight: 15,
     marginTop: 2,
+    paddingVertical: 2,
+    minWidth: 0,
   },
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   ctrlBtn: {
     width: 36,

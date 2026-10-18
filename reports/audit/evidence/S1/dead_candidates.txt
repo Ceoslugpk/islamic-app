@@ -1,0 +1,280 @@
+$ python3 -c import os,re,json; root="src/screens"; app=open("App.tsx",encoding="utf8").read(); rows=[]
+for f in sorted(os.listdir(root)):
+ if not f.endswith((".ts",".tsx")): continue
+ stem=f.rsplit(".",1)[0]; s=open(os.path.join(root,f),encoding="utf8",errors="ignore").read(); imported=(stem in app)
+ rows.append({"file":os.path.join(root,f),"imported_by_App":imported,"exports":len(re.findall(r"export\\s+(?:default\\s+)?(?:function|const|class|type|interface)",s))})
+print(json.dumps({"screen_files":len(rows),"not_imported_by_App":[r for r in rows if not r["imported_by_App"]],"rows":rows},indent=2))
+{
+  "screen_files": 50,
+  "not_imported_by_App": [
+    {
+      "file": "src/screens/BackupRestoreScreen.tsx",
+      "imported_by_App": false,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/LegalScreen.tsx",
+      "imported_by_App": false,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/NotificationsScreen.tsx",
+      "imported_by_App": false,
+      "exports": 0
+    }
+  ],
+  "rows": [
+    {
+      "file": "src/screens/BackupRestoreScreen.tsx",
+      "imported_by_App": false,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/BookmarksScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/CalendarScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/CitiesScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/DownloadsScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/DuasScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/FastingScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/HadithLibraryScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/HajjJourneyScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/HajjLiveScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/HifzPracticeScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/HifzScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/HomeScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/LegalScreen.tsx",
+      "imported_by_App": false,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/LibraryScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/LocationScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/MadinahLiveScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/MakkahLiveScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/MosqueFinderScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/NamesScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/NotesScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/NotificationsScreen.tsx",
+      "imported_by_App": false,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/OnboardingScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/PrayerGuideScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/PrayerRemindersScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/QiblaScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/QuranAudioScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/QuranHomeScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/QuranReaderScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/QuranScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/QuranTopicsScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/RamadanGuideScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/ReadingPlansScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/SalahTrackerScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/SettingsScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/ShahadaScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/TafsirScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/TajweedScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/TasbihScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/ToolsScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/TranslationCompareScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/UmrahGuideScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/UmrahResourcesScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/VocabTrainerScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/WeeklySummaryScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/WomenCycleScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/WomenGuidanceScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/WomenPurityScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/WomenQadaScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    },
+    {
+      "file": "src/screens/ZakatScreen.tsx",
+      "imported_by_App": true,
+      "exports": 0
+    }
+  ]
+}
+
+EXIT_CODE=0

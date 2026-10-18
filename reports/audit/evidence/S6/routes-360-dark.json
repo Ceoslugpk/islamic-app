@@ -1,0 +1,7163 @@
+{
+  "home": {
+    "status": "PASS",
+    "textSnippet": "\nCan't load prayer times right now.\nConnect to the internet to get today's pray",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 1,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Retry loading prayer times",
+          "width": 75,
+          "height": 38
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 5,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 5
+    }
+  },
+  "library": {
+    "status": "PASS",
+    "textSnippet": "ISLAMIC\n\n\nLIBRARY\nExplore\nKNOWLEDGE\nHadith Library\n15+\nfull books\nArabic with ",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 10,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Notifications",
+          "width": 32,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Open settings",
+          "width": 32,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Prayer Guide (Fiqh), Wudu, Salah, Janaza",
+          "width": 329,
+          "height": 41
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Ramadan & Eid Guide, Fasting, Laylatul Q",
+          "width": 329,
+          "height": 41
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Umrah Guide, Step-by-step: Ihram, Tawaf,",
+          "width": 329,
+          "height": 41
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 5,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 20
+    }
+  },
+  "quran/home": {
+    "status": "PASS",
+    "textSnippet": "ISLAMIC\n\n\n\n\nPreloading Quran… 1/114\nInstant opening with Arabic & translatio",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 8,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Notifications",
+          "width": 32,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Open settings",
+          "width": 32,
+          "height": 32
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 286,
+          "height": 17
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Pause preloading",
+          "width": 53,
+          "height": 25
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Bookmarks",
+          "width": 95,
+          "height": 28
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search surah name or meaning…\" autocapitalize=\"none\" autocor"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 5,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 38
+    }
+  },
+  "quran/reader": {
+    "status": "PASS",
+    "textSnippet": "\nQuran\n\nAl-Faatiha\nPage 1 of 604\n\n\nLoading Mushaf Page 1...\n\n\nQuran\n\n",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-progressbar-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA progressbar node has an accessible name",
+          "nodeCount": 1,
+          "sampleTarget": [
+            "div[role=\"progressbar\"]"
+          ]
+        },
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 3,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Back to Quran",
+          "width": 68,
+          "height": 40
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Previous Page",
+          "width": 32,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Next Page",
+          "width": 32,
+          "height": 32
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Al-Faatiha"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 17
+    }
+  },
+  "quran/audio": {
+    "status": "PASS",
+    "textSnippet": "\nAUDIO CENTER\nQuran Audio\nRecitations, audio translations, playlists & player s",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 10,
+          "sampleTarget": [
+            ".r-wgabs5.r-n7gxbd.r-11f147o:nth-child(1)"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 9,
+          "sampleTarget": [
+            ".r-wgabs5.r-n7gxbd.r-11f147o:nth-child(2) > .r-1grwqd5.r-r3d3ba.css-146c3p1"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 22,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nReciters",
+          "width": 78,
+          "height": 35
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nTranslation Audio",
+          "width": 132,
+          "height": 35
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nRecent",
+          "width": 71,
+          "height": 35
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nPlaylists",
+          "width": 78,
+          "height": 35
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nQueue",
+          "width": 68,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search by reciter name or style...\" autocapitalize=\"sentence"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Quran Audio"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 10,
+      "tabs": [
+        {
+          "label": "\nReciters",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "\nTranslation Audio",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "\nRecent",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "\nPlaylists",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "\nQueue",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "\nSettings",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 42
+    }
+  },
+  "quran/tafsir": {
+    "status": "PASS",
+    "textSnippet": "\nEXEGESIS & COMMENTARY\nTafsir al-Jalalayn\nVerse-by-verse scholarly exegesis\nSUR",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 2,
+          "sampleTarget": [
+            ".css-g5y9jx:nth-child(1) > .r-nsbfu8.r-1867qdf.r-l53udc > .r-ojf8lh.css-g5y9jx > .r-1ikidpy.r-1gkfh8e.r-r3d3ba"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Tafsir al-Jalalayn"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 14
+    }
+  },
+  "quran/topics": {
+    "status": "PASS",
+    "textSnippet": "\nTHEMATIC QURAN\nQuran Topics\nCurated Quranic passages arranged by core themes o",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 3,
+          "sampleTarget": [
+            ".r-mjyw6.r-1slz7xr.r-1867qdf:nth-child(1) > .r-n6v787.r-36ujnk.r-1h8sfbr"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Quran Topics"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 19
+    }
+  },
+  "quran/compare": {
+    "status": "PASS",
+    "textSnippet": "\nCOMPARATIVE STUDY\nTranslation Compare\nSide-by-side comparative study of transl",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 9,
+          "sampleTarget": [
+            ".r-ojf8lh.css-g5y9jx:nth-child(1) > .r-lltvgl.r-buy8e9.r-150rngu > .r-1559e4e.r-1cmwbt1.r-18u37iz > .r-y47klf.r-2yi16.r-u4gi5m:nth-child(2) > .r-r3d3ba.r-1enofrn.css-146c3p1"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 2,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Choose Translation A Language",
+          "width": 120,
+          "height": 34
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Choose Translation B Language",
+          "width": 120,
+          "height": 34
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Translation Compare"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 23
+    }
+  },
+  "quran/bookmarks": {
+    "status": "PASS",
+    "textSnippet": "\nSAVED VERSES\nBookmarks\nAccess your saved verses and reading bookmarks\n\nNo boo",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Bookmarks"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 6
+    }
+  },
+  "quran/notes": {
+    "status": "PASS",
+    "textSnippet": "\nPERSONAL STUDY\nNotes & Reflections\nRecord thoughts and reflections on verses a",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 2,
+      "failures": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 222,
+          "height": 40
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Save reflection",
+          "width": 68,
+          "height": 42
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 2,
+      "unnamed": [
+        {
+          "tag": "TEXTAREA",
+          "role": null,
+          "html": "<textarea placeholder=\"Write your thoughts or lessons from this verse...\" autoca"
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Verse: e.g. 2:255\" autocapitalize=\"sentences\" autocomplete=\""
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Notes & Reflections"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 8
+    }
+  },
+  "quran/plans": {
+    "status": "PASS",
+    "textSnippet": "\nKHATMAH\nReading Plans\nStructured schedules to recite the Holy Quran at your ow",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-1grwqd5"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Reading Plans"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 9
+    }
+  },
+  "quran/hifz": {
+    "status": "PASS",
+    "textSnippet": "\nMEMORIZATION\nHifz Tracker\nTrack memorization progress, revisions, and test rec",
+    "axe": {
+      "totalViolations": 3,
+      "seriousCriticalCount": 3,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 19,
+          "sampleTarget": [
+            ".r-13awgt0.r-1awozwy.css-g5y9jx:nth-child(1) > .r-3b040n.r-1exf2r.r-1bymd8e"
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "nodeCount": 10,
+          "sampleTarget": [
+            ".css-g5y9jx:nth-child(1) > .r-1ssbvtb.r-1slz7xr.r-6ncur5"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 15,
+      "failures": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 278,
+          "height": 18
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "All",
+          "width": 77,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Memorized",
+          "width": 77,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Revising",
+          "width": 77,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Not started",
+          "width": 77,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search surahs by name or number...\" autocapitalize=\"none\" au"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Hifz Tracker"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 30
+    }
+  },
+  "quran/hifz-practice": {
+    "status": "PASS",
+    "textSnippet": "\nHIDE & PEEK\nAl-Fatihah\n7 ayahs · Recite from memory & test recall\nAyah 1 of 7\n",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-n6v787"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 2,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Reveal this ayah",
+          "width": 298,
+          "height": 42
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Restart practice from the beginning",
+          "width": 298,
+          "height": 40
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Al-Fatihah"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 10
+    }
+  },
+  "quran/surah-list": {
+    "status": "PASS",
+    "textSnippet": "\nTHE HOLY QURAN\nSurahs\nAll 114 Surahs with translations, audio & verse commenta",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 11,
+          "sampleTarget": [
+            "span"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 34,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Change translation language",
+          "width": 81,
+          "height": 34
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Juz 1",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Juz 2",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Juz 3",
+          "width": 36,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Juz 4",
+          "width": 36,
+          "height": 36
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search by name or meaning...\" autocapitalize=\"none\" autocorr"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 6,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 65
+    }
+  },
+  "library/tasbih": {
+    "status": "PASS",
+    "textSnippet": "\nDHIKR & REMEMBRANCE\nTasbih\nTap counter, round tracking, and offline remembranc",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 9,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "SubhanAllah",
+          "width": 102,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Alhamdulillah",
+          "width": 107,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Allahu Akbar",
+          "width": 101,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "La ilaha illallah",
+          "width": 112,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Astaghfirullah",
+          "width": 111,
+          "height": 32
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Tasbih"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 15
+    }
+  },
+  "library/names": {
+    "status": "PASS",
+    "textSnippet": "\nASMA UL-HUSNA\n99 Names of Allah\nDivine attributes and meanings of Allah (SWT)\n",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 23,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Show names in English",
+          "width": 70,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Show names in Français",
+          "width": 76,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Show names in Türkçe",
+          "width": 67,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Show names in Español",
+          "width": 74,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Show names in Deutsch",
+          "width": 77,
+          "height": 32
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search by name, meaning, or number...\" autocapitalize=\"none\""
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "99 Names of Allah"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 28
+    }
+  },
+  "library/names-prophet": {
+    "status": "PASS",
+    "textSnippet": "\nASMA UN-NABI\n99 Names of the Prophet ﷺ\nNoble attributes and titles of Prophet ",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 13,
+      "failures": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 284,
+          "height": 17
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Share Muhammad",
+          "width": 24,
+          "height": 25
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Share Ahmad",
+          "width": 24,
+          "height": 25
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Share Hamid",
+          "width": 24,
+          "height": 25
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Share Mahmud",
+          "width": 24,
+          "height": 25
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search by name, meaning, or number...\" autocapitalize=\"none\""
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "99 Names of the Prophet ﷺ"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 18
+    }
+  },
+  "library/duas": {
+    "status": "PASS",
+    "textSnippet": "\nSUPPLICATIONS\nDuas & Adhkar\nAuthentic supplications from the Quran and Sunnah\n",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 30,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "All (49)",
+          "width": 62,
+          "height": 30
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Morning (4)",
+          "width": 86,
+          "height": 30
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Evening (2)",
+          "width": 85,
+          "height": 30
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "After Prayer (1)",
+          "width": 104,
+          "height": 30
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Sleep (1)",
+          "width": 70,
+          "height": 30
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search duas...\" autocapitalize=\"none\" autocorrect=\"off\" auto"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Duas & Adhkar"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 35
+    }
+  },
+  "library/hadith": {
+    "status": "PASS",
+    "textSnippet": "\nLIBRARY\nHadith Library\nBrowse 17 canonical collections, books & authentic narr",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 8,
+          "sampleTarget": [
+            ".r-cpet4d.r-174vidy[role=\"tab\"]:nth-child(1)"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 5,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nCollections",
+          "width": 104,
+          "height": 28
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nSaved (0)",
+          "width": 94,
+          "height": 28
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nRecent",
+          "width": 80,
+          "height": 28
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "\nProgress",
+          "width": 90,
+          "height": 28
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 272,
+          "height": 19
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search collections...\" autocapitalize=\"sentences\" autocomple"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Hadith Library"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 8,
+      "tabs": [
+        {
+          "label": "\nCollections",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "\nSaved (0)",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "\nRecent",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "\nProgress",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 27
+    }
+  },
+  "library/ramadan-guide": {
+    "status": "PASS",
+    "textSnippet": "\nGUIDES\nRamadan & Eid Guide\nFasting, Laylatul Qadr, Itikaf, Zakat al-Fitr, Eid ",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-13qz1uu.r-13awgt0.css-g5y9jx > .r-11yh6sk.r-1rnoaur[data-testid=\"screen-content\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Ramadan & Eid Guide"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 5
+    }
+  },
+  "library/prayer-guide": {
+    "status": "PASS",
+    "textSnippet": "\nGUIDES\nPrayer Guide (Fiqh)\nWudu, Salah, praying in congregation, Janazah, Isti",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 7,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Wudu",
+          "width": 61,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "The Prayer (Salah)",
+          "width": 143,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Praying in Congregation",
+          "width": 180,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Funeral Prayer (Salat al-Janazah)",
+          "width": 241,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Seeking Guidance (Istikhara)",
+          "width": 210,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Prayer Guide (Fiqh)"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 12
+    }
+  },
+  "library/shahada": {
+    "status": "PASS",
+    "textSnippet": "\nLIBRARY · KNOWLEDGE\nThe Shahada\nThe declaration of faith and its foundational ",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-13qz1uu.r-13awgt0.css-g5y9jx > .r-11yh6sk.r-1rnoaur[data-testid=\"screen-content\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "The Shahada"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 5
+    }
+  },
+  "library/downloads": {
+    "status": "PASS",
+    "textSnippet": "\nOFFLINE\nDownloads\nManage offline audio surahs and cached Quran text\nAll Downlo",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 7,
+          "sampleTarget": [
+            ".r-1yadl64"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            "div[data-testid=\"tab-text\"] > .r-18c5d7m.r-1dzdj1l.r-1559e4e > .r-1ozpbmi.r-140o7m9.css-146c3p1"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 5,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "All Downloads",
+          "width": 93,
+          "height": 37
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Audio Surahs\n0",
+          "width": 117,
+          "height": 37
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Quran Text\n25/114",
+          "width": 117,
+          "height": 37
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 281,
+          "height": 42
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Pause",
+          "width": 66,
+          "height": 34
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search downloads…\" autocorrect=\"off\" autocapitalize=\"sentenc"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Downloads"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 7,
+      "tabs": [
+        {
+          "label": "All Downloads",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Audio Surahs\n0",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran Text\n25/114",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 11
+    }
+  },
+  "library/vocab": {
+    "status": "PASS",
+    "textSnippet": "\nLEARN\nQuran Vocabulary\nMost frequent words of the Quran\n\n0/60 known\n\n0%\n\nTO",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 3,
+          "sampleTarget": [
+            ".r-gu64tb.r-1867qdf.r-1wron08:nth-child(2) > .r-1enofrn.r-r3d3ba.css-146c3p1"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 7,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Practice bāṭil in flashcards",
+          "width": 149,
+          "height": 34
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Mark as known",
+          "width": 115,
+          "height": 34
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "All",
+          "width": 44,
+          "height": 33
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Today's Set",
+          "width": 95,
+          "height": 33
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Most frequent",
+          "width": 112,
+          "height": 33
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Quran Vocabulary"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 16
+    }
+  },
+  "library/summary": {
+    "status": "PASS",
+    "textSnippet": "\nPERSONAL JOURNEY\nWeekly Summary\nYour past 7 days, at a glance: Quran recitatio",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-13qz1uu.r-13awgt0.css-g5y9jx > .r-11yh6sk.r-1rnoaur[data-testid=\"screen-content\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Weekly Summary"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 5
+    }
+  },
+  "library/tajweed": {
+    "status": "PASS",
+    "textSnippet": "\nLEARN\nTajweed Colors\nFull Quran · color-coded recitation rules\n\nEvery surah o",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 2,
+      "failures": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 277,
+          "height": 42
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "\nShow color legend",
+          "width": 332,
+          "height": 40
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search surah...\" autocorrect=\"off\" autocapitalize=\"sentences"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Tajweed Colors"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 121
+    }
+  },
+  "library/umrah-guide": {
+    "status": "PASS",
+    "textSnippet": "\nHAJJ & UMRAH\nUmrah Guide\nStep-by-step rituals of the sacred pilgrimage: Ihram,",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-1ifxtd0.r-l53udc[data-testid=\"card\"]:nth-child(3) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-nsbfu8.r-13qz1uu.css-g5y9jx > .r-1xfd6ze.r-156q2ks.r-vuvdlw > .r-1wbh5a2.r-xwgrit.r-1enofrn"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 5,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 1: Ihram & Niyyah",
+          "width": 137,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 2: Entering Al-Masjid Al-Haram",
+          "width": 231,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 3: Tawaf Around the Kaaba",
+          "width": 208,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 4: Sa'i between Safa and Marwah",
+          "width": 247,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 5: Halq or Taqsir (Exit from Ihram)",
+          "width": 249,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Umrah Guide"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 11
+    }
+  },
+  "library/hajj-journey": {
+    "status": "PASS",
+    "textSnippet": "\nSACRED PILGRIMAGE\nHajj Journey\nDay-by-day rites from Yawm al-Tarwiyah in Mina ",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-le4sbl.r-l53udc[data-testid=\"card\"]:nth-child(3) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-nsbfu8.r-13qz1uu.css-g5y9jx > .r-15d164r.r-1yd117h.r-ojf8lh > .r-xwgrit.r-1enofrn.css-146c3p1"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 5,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Day 1 · 8th Dhu al-Hijjah",
+          "width": 166,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Day 2 · 9th Dhu al-Hijjah",
+          "width": 177,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Day 3 · 10th Dhu al-Hijjah",
+          "width": 182,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Days 4–5 · 11th & 12th Dhu al-Hijjah",
+          "width": 242,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Day 6 · 13th Dhu al-Hijjah",
+          "width": 182,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Hajj Journey"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 11
+    }
+  },
+  "library/women-purity": {
+    "status": "PASS",
+    "textSnippet": "\nWOMEN'S WORSHIP\nPurity & Ghusl\nStep-by-step ghusl guide, signs of tuhr, and po",
+    "axe": {
+      "totalViolations": 3,
+      "seriousCriticalCount": 3,
+      "seriousCritical": [
+        {
+          "id": "aria-required-attr",
+          "impact": "critical",
+          "description": "Ensure elements with ARIA roles have all required ARIA attributes",
+          "nodeCount": 6,
+          "sampleTarget": [
+            ".r-l53udc.r-bnwqim[data-testid=\"card\"]:nth-child(10) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-nsbfu8.r-13qz1uu.css-g5y9jx > .r-1i6wzkk.r-1loqt21[role=\"checkbox\"]"
+          ]
+        },
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 7,
+          "sampleTarget": [
+            ".r-vuvdlw.r-1867qdf[role=\"tab\"]:nth-child(1)"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-1j4l7u5.r-1ws2f5x.r-13awgt0"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 3,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "All Steps",
+          "width": 70,
+          "height": 31
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Obligatory (Rukn)",
+          "width": 119,
+          "height": 31
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Sunnah",
+          "width": 64,
+          "height": 31
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Purity & Ghusl"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 7,
+      "tabs": [
+        {
+          "label": "All Steps",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Obligatory (Rukn)",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Sunnah",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 15
+    }
+  },
+  "library/women-guidance": {
+    "status": "PASS",
+    "textSnippet": "\nWOMEN'S WORSHIP\nWorship Guidance\nAuthentic fiqh on exemptions, permitted worsh",
+    "axe": {
+      "totalViolations": 3,
+      "seriousCriticalCount": 3,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 2,
+          "sampleTarget": [
+            ".r-1xfd6ze > .r-1ws2f5x.r-bcqeeo.r-13awgt0"
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-13qz1uu.r-13awgt0.css-g5y9jx > .r-11yh6sk.r-1rnoaur[data-testid=\"screen-content\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 7,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 5
+    }
+  },
+  "tools/tasbih": {
+    "status": "PASS",
+    "textSnippet": "\nDHIKR & REMEMBRANCE\nTasbih\nTap counter, round tracking, and offline remembranc",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 9,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "SubhanAllah",
+          "width": 102,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Alhamdulillah",
+          "width": 107,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Allahu Akbar",
+          "width": 101,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "La ilaha illallah",
+          "width": 112,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Astaghfirullah",
+          "width": 111,
+          "height": 32
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Tasbih"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 15
+    }
+  },
+  "tools/summary": {
+    "status": "PASS",
+    "textSnippet": "\nPERSONAL JOURNEY\nWeekly Summary\nYour past 7 days, at a glance: Quran recitatio",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-6koalj > .r-5swwoo.r-1m6ou43[data-testid=\"detail-screen-root\"] > .r-13qz1uu.r-13awgt0.css-g5y9jx > .r-11yh6sk.r-1rnoaur[data-testid=\"screen-content\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Weekly Summary"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 5
+    }
+  },
+  "tools/qibla": {
+    "status": "PASS",
+    "textSnippet": "\nDIRECTION OF PRAYER\nQibla Compass\nTrue bearing towards the Kaaba calculated us",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-1j4l7u5.r-1wbh5a2.r-1enofrn"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 2,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Choose city from world cities",
+          "width": 119,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Retry Detection",
+          "width": 142,
+          "height": 36
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Qibla Compass"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 7
+    }
+  },
+  "tools/tracker": {
+    "status": "PASS",
+    "textSnippet": "\nDAILY OBLIGATIONS\nSalah Tracker\nTrack your daily 5 prayers and build a consist",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Salah Tracker"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 6
+    }
+  },
+  "tools/location": {
+    "status": "PASS",
+    "textSnippet": "\nPREFERENCES\nLocation\nUse GPS automatically or enter a city or coordinates\nAuto",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-attr",
+          "impact": "critical",
+          "description": "Ensure elements with ARIA roles have all required ARIA attributes",
+          "nodeCount": 1,
+          "sampleTarget": [
+            "div[role=\"switch\"]"
+          ]
+        },
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 6,
+          "sampleTarget": [
+            ".r-1yadl64"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 10,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Auto-detect (GPS)",
+          "width": 148,
+          "height": 37
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Manual Coordinates",
+          "width": 172,
+          "height": 37
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "GPS Auto",
+          "width": 99,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Makkah",
+          "width": 75,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Madinah",
+          "width": 82,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 3,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"e.g. Cairo, Egypt\" autocapitalize=\"sentences\" autocomplete=\""
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"25.2048\" autocapitalize=\"sentences\" autocomplete=\"on\" autoco"
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"55.2708\" autocapitalize=\"sentences\" autocomplete=\"on\" autoco"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Location"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 6,
+      "tabs": [
+        {
+          "label": "Auto-detect (GPS)",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Manual Coordinates",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 21
+    }
+  },
+  "tools/cities": {
+    "status": "PASS",
+    "textSnippet": "\nDIRECTORY\nCities\nPick a city to set your location\n\n\nDubai\nUnited Arab Emirat",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 1,
+      "failures": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 273,
+          "height": 42
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search city or country…\" autocorrect=\"off\" autocapitalize=\"s"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Cities"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 26
+    }
+  },
+  "tools/notifications": {
+    "status": "PASS",
+    "textSnippet": "\nTOOLS\nPrayer Reminders\nManage daily prayer alarms, adhan voices & Quran readin",
+    "axe": {
+      "totalViolations": 3,
+      "seriousCriticalCount": 3,
+      "seriousCritical": [
+        {
+          "id": "aria-required-attr",
+          "impact": "critical",
+          "description": "Ensure elements with ARIA roles have all required ARIA attributes",
+          "nodeCount": 7,
+          "sampleTarget": [
+            ".r-1cad53l.r-l53udc[data-testid=\"card\"]:nth-child(2) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-13qz1uu.css-g5y9jx > .r-1ssbvtb.r-nsbfu8.r-1wtj0ep > .r-1rf8fdq.r-zhp00w[role=\"switch\"]"
+          ]
+        },
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "aria-toggle-field-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA toggle field has an accessible name",
+          "nodeCount": 7,
+          "sampleTarget": [
+            ".r-1cad53l.r-l53udc[data-testid=\"card\"]:nth-child(2) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-13qz1uu.css-g5y9jx > .r-1ssbvtb.r-nsbfu8.r-1wtj0ep > .r-1rf8fdq.r-zhp00w[role=\"switch\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 18,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Off",
+          "width": 44,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "5 minutes before",
+          "width": 47,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "10 minutes before",
+          "width": 51,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "15 minutes before",
+          "width": 50,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "30 minutes before",
+          "width": 54,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Prayer Reminders"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 53
+    }
+  },
+  "tools/prayer-reminders": {
+    "status": "PASS",
+    "textSnippet": "\nTOOLS\nPrayer Reminders\nManage daily prayer alarms, adhan voices & Quran readin",
+    "axe": {
+      "totalViolations": 3,
+      "seriousCriticalCount": 3,
+      "seriousCritical": [
+        {
+          "id": "aria-required-attr",
+          "impact": "critical",
+          "description": "Ensure elements with ARIA roles have all required ARIA attributes",
+          "nodeCount": 7,
+          "sampleTarget": [
+            ".r-1cad53l.r-l53udc[data-testid=\"card\"]:nth-child(2) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-13qz1uu.css-g5y9jx > .r-1ssbvtb.r-nsbfu8.r-1wtj0ep > .r-1rf8fdq.r-zhp00w[role=\"switch\"]"
+          ]
+        },
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "aria-toggle-field-name",
+          "impact": "serious",
+          "description": "Ensure every ARIA toggle field has an accessible name",
+          "nodeCount": 7,
+          "sampleTarget": [
+            ".r-1cad53l.r-l53udc[data-testid=\"card\"]:nth-child(2) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-13qz1uu.css-g5y9jx > .r-1ssbvtb.r-nsbfu8.r-1wtj0ep > .r-1rf8fdq.r-zhp00w[role=\"switch\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 18,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Off",
+          "width": 44,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "5 minutes before",
+          "width": 47,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "10 minutes before",
+          "width": 51,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "15 minutes before",
+          "width": 50,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "30 minutes before",
+          "width": 54,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Prayer Reminders"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 53
+    }
+  },
+  "tools/fasting": {
+    "status": "PASS",
+    "textSnippet": "\nWORSHIP & TRACKER\nFasting\nSuhoor & iftar countdowns, sunnah fasts & qada logs\n",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 8,
+          "sampleTarget": [
+            ".r-1nrc83j.r-n7gxbd.r-1dzdj1l:nth-child(1)"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 5,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Today",
+          "width": 80,
+          "height": 38
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Sunnah",
+          "width": 80,
+          "height": 38
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Qada",
+          "width": 80,
+          "height": 38
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "History",
+          "width": 80,
+          "height": 38
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Add missed fast",
+          "width": 64,
+          "height": 32
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Fasting"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 8,
+      "tabs": [
+        {
+          "label": "Today",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Sunnah",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Qada",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "History",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 11
+    }
+  },
+  "tools/zakat": {
+    "status": "PASS",
+    "textSnippet": "\nWORSHIP & CHARITY\nZakat\nWealth assessment, nisab thresholds & calculation\nCalc",
+    "axe": {
+      "totalViolations": 3,
+      "seriousCriticalCount": 3,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 7,
+          "sampleTarget": [
+            ".r-1867qdf.r-11f147o[role=\"tab\"]:nth-child(1)"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 6,
+          "sampleTarget": [
+            ".r-42olwf.r-1867qdf[role=\"tab\"]:nth-child(2) > .r-1enofrn.r-r3d3ba.css-146c3p1"
+          ]
+        },
+        {
+          "id": "label",
+          "impact": "critical",
+          "description": "Ensure every form element has a label",
+          "nodeCount": 2,
+          "sampleTarget": [
+            "input[value=\"286.5\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 14,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Calculator",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "History",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Nisab Guide",
+          "width": 106,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Change currency",
+          "width": 91,
+          "height": 32
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 126,
+          "height": 31
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 8,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input autocapitalize=\"sentences\" autocomplete=\"on\" autocorrect=\"on\" dir=\"auto\" "
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input autocapitalize=\"sentences\" autocomplete=\"on\" autocorrect=\"on\" dir=\"auto\" "
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"0 AED\" autocapitalize=\"sentences\" autocomplete=\"on\" autocorr"
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"0 grams\" autocapitalize=\"sentences\" autocomplete=\"on\" autoco"
+        },
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"0 grams\" autocapitalize=\"sentences\" autocomplete=\"on\" autoco"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Zakat"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 7,
+      "tabs": [
+        {
+          "label": "Calculator",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "History",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Nisab Guide",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 21
+    }
+  },
+  "tools/calendar": {
+    "status": "PASS",
+    "textSnippet": "\nHIJRI CALENDAR\nIslamic Dates\nGregorian to Hijri mapping, Islamic months & holy",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-1ws2f5x.r-1cvj4g8.r-1h8sfbr"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 12,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Jump to Muharram",
+          "width": 48,
+          "height": 30
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Jump to Safar",
+          "width": 48,
+          "height": 30
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Jump to Rabi' al-Awwal",
+          "width": 50,
+          "height": 30
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Jump to Rabi' al-Thani",
+          "width": 53,
+          "height": 30
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Jump to Jumada al-Awwal",
+          "width": 51,
+          "height": 30
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 9,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Islamic Dates"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "This Year"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 34
+    }
+  },
+  "tools/mosque": {
+    "status": "PASS",
+    "textSnippet": "\nTOOLS\nMosque Finder\nFind nearby places of worship\n\n\nFind\n\nSEARCH CENTER · M",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 6,
+      "failures": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "name": "",
+          "width": 271,
+          "height": 42
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Choose city from world cities",
+          "width": 119,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Retry Detection",
+          "width": 142,
+          "height": 36
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "5 kilometers radius",
+          "width": 57,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "10 kilometers radius",
+          "width": 60,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 1,
+      "unnamed": [
+        {
+          "tag": "INPUT",
+          "role": null,
+          "html": "<input placeholder=\"Search area or city, e.g. 'Dubai Marina' or 'Lahore'...\" aut"
+        }
+      ],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Mosque Finder"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 13
+    }
+  },
+  "tools/women-cycle": {
+    "status": "PASS",
+    "textSnippet": "\nWOMEN'S WORSHIP\nCycle Tracker\nPeriod logging, cycle duration, predictions & da",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 2,
+          "sampleTarget": [
+            ".r-1j4l7u5.r-1ws2f5x.r-13awgt0"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 2,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Log New Period Start",
+          "width": 163,
+          "height": 40
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "View Ghusl Guide",
+          "width": 117,
+          "height": 40
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Cycle Tracker"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 9
+    }
+  },
+  "tools/women-purity": {
+    "status": "PASS",
+    "textSnippet": "\nWOMEN'S WORSHIP\nPurity & Ghusl\nStep-by-step ghusl guide, signs of tuhr, and po",
+    "axe": {
+      "totalViolations": 3,
+      "seriousCriticalCount": 3,
+      "seriousCritical": [
+        {
+          "id": "aria-required-attr",
+          "impact": "critical",
+          "description": "Ensure elements with ARIA roles have all required ARIA attributes",
+          "nodeCount": 6,
+          "sampleTarget": [
+            ".r-l53udc.r-bnwqim[data-testid=\"card\"]:nth-child(10) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-nsbfu8.r-13qz1uu.css-g5y9jx > .r-1i6wzkk.r-1loqt21[role=\"checkbox\"]"
+          ]
+        },
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 7,
+          "sampleTarget": [
+            ".r-vuvdlw.r-1867qdf[role=\"tab\"]:nth-child(1)"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-1j4l7u5.r-1ws2f5x.r-13awgt0"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 3,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "All Steps",
+          "width": 70,
+          "height": 31
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Obligatory (Rukn)",
+          "width": 119,
+          "height": 31
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Sunnah",
+          "width": 64,
+          "height": 31
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Purity & Ghusl"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 7,
+      "tabs": [
+        {
+          "label": "All Steps",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Obligatory (Rukn)",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Sunnah",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 15
+    }
+  },
+  "tools/women-guidance": {
+    "status": "PASS",
+    "textSnippet": "\nWOMEN'S WORSHIP\nWorship Guidance\nAuthentic fiqh on exemptions, permitted worsh",
+    "axe": {
+      "totalViolations": 3,
+      "seriousCriticalCount": 3,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 2,
+          "sampleTarget": [
+            ".r-6koalj > .r-5swwoo.r-1m6ou43[data-testid=\"detail-screen-root\"] > .r-13qz1uu.r-13awgt0.css-g5y9jx > .r-11yh6sk.r-1rnoaur[data-testid=\"screen-content\"] > .css-g5y9jx > .r-1xfd6ze.r-6gpygo.r-1cmwbt1 > .r-1ws2f5x.r-bcqeeo.r-13awgt0"
+          ]
+        },
+        {
+          "id": "scrollable-region-focusable",
+          "impact": "serious",
+          "description": "Ensure elements that have scrollable content are accessible by keyboard",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-6koalj > .r-5swwoo.r-1m6ou43[data-testid=\"detail-screen-root\"] > .r-13qz1uu.r-13awgt0.css-g5y9jx > .r-11yh6sk.r-1rnoaur[data-testid=\"screen-content\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 5
+    }
+  },
+  "tools/women-qada": {
+    "status": "PASS",
+    "textSnippet": "\nWOMEN'S WORSHIP\nQada Fasts\nTrack and make up missed Ramadan fasts due to menst",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 3,
+          "sampleTarget": [
+            ".r-1j4l7u5.r-1ws2f5x.r-13awgt0"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 0,
+      "failures": []
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Qada Fasts"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 7
+    }
+  },
+  "tools/umrah-guide": {
+    "status": "PASS",
+    "textSnippet": "\nHAJJ & UMRAH\nUmrah Guide\nStep-by-step rituals of the sacred pilgrimage: Ihram,",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-1ifxtd0.r-l53udc[data-testid=\"card\"]:nth-child(3) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-nsbfu8.r-13qz1uu.css-g5y9jx > .r-1xfd6ze.r-156q2ks.r-vuvdlw > .r-1wbh5a2.r-xwgrit.r-1enofrn"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 5,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 1: Ihram & Niyyah",
+          "width": 137,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 2: Entering Al-Masjid Al-Haram",
+          "width": 231,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 3: Tawaf Around the Kaaba",
+          "width": 208,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 4: Sa'i between Safa and Marwah",
+          "width": 247,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Step 5: Halq or Taqsir (Exit from Ihram)",
+          "width": 249,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Umrah Guide"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 11
+    }
+  },
+  "tools/umrah-resources": {
+    "status": "PASS",
+    "textSnippet": "\nHAJJ & UMRAH\nUmrah Resources\nEssential packing checklist, etiquette, common er",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-hjklzo"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 5,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Packing Checklist",
+          "width": 134,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "First-Timer Tips",
+          "width": 123,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Sacred Etiquette",
+          "width": 130,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Common Errors",
+          "width": 125,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Books & Guides",
+          "width": 123,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Umrah Resources"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 29
+    }
+  },
+  "tools/hajj-journey": {
+    "status": "PASS",
+    "textSnippet": "\nSACRED PILGRIMAGE\nHajj Journey\nDay-by-day rites from Yawm al-Tarwiyah in Mina ",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-le4sbl.r-l53udc[data-testid=\"card\"]:nth-child(3) > .r-13qz1uu.r-1udh08x.css-g5y9jx > .r-nsbfu8.r-13qz1uu.css-g5y9jx > .r-15d164r.r-1yd117h.r-ojf8lh > .r-xwgrit.r-1enofrn.css-146c3p1"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 5,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Day 1 · 8th Dhu al-Hijjah",
+          "width": 166,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Day 2 · 9th Dhu al-Hijjah",
+          "width": 177,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Day 3 · 10th Dhu al-Hijjah",
+          "width": 182,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Days 4–5 · 11th & 12th Dhu al-Hijjah",
+          "width": 242,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Day 6 · 13th Dhu al-Hijjah",
+          "width": 182,
+          "height": 35
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Hajj Journey"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 11
+    }
+  },
+  "tools/makkah-live": {
+    "status": "PASS",
+    "textSnippet": "\nHAJJ & UMRAH\nMakkah Live TV\n24/7 Official High-Definition Live Broadcast from ",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        },
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-1j4l7u5.r-1559e4e.r-1ws2f5x"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 2,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Reload Stream",
+          "width": 128,
+          "height": 38
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Open in YouTube",
+          "width": 140,
+          "height": 38
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Makkah Live TV"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 7
+    }
+  },
+  "tools/madinah-live": {
+    "status": "PASS",
+    "textSnippet": "\nHAJJ & UMRAH\nMadinah Live\n24/7 Official High-Definition Live Broadcast from Al",
+    "axe": {
+      "totalViolations": 1,
+      "seriousCriticalCount": 1,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 4,
+          "sampleTarget": [
+            "div[aria-label=\"Home\"]"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 2,
+      "failures": [
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Reload Stream",
+          "width": 128,
+          "height": 38
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Open in YouTube",
+          "width": 140,
+          "height": 38
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Madinah Live"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 4,
+      "tabs": [
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 7
+    }
+  },
+  "tools/hajj-live": {
+    "status": "PASS",
+    "textSnippet": "\nHAJJ & UMRAH\nHajj Live\nOfficial broadcasts from the Holy Sites of Mina, Arafat",
+    "axe": {
+      "totalViolations": 2,
+      "seriousCriticalCount": 2,
+      "seriousCritical": [
+        {
+          "id": "aria-required-parent",
+          "impact": "critical",
+          "description": "Ensure elements with an ARIA role that require parent roles are contained by them",
+          "nodeCount": 6,
+          "sampleTarget": [
+            ".r-1yadl64"
+          ]
+        },
+        {
+          "id": "nested-interactive",
+          "impact": "serious",
+          "description": "Ensure interactive controls are not nested as they are not always announced by screen readers or can cause focus problems for assistive technologies",
+          "nodeCount": 1,
+          "sampleTarget": [
+            ".r-52n98w"
+          ]
+        }
+      ]
+    },
+    "targets": {
+      "failuresCount": 8,
+      "failures": [
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Al Ekhbariya (Live News)",
+          "width": 148,
+          "height": 37
+        },
+        {
+          "tag": "DIV",
+          "role": "tab",
+          "name": "Ministry of Hajj & Umrah",
+          "width": 172,
+          "height": 37
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "Today: 6 Jumada al-Awwal 1448 AH",
+          "width": 252,
+          "height": 35
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "8, 10–13 Dhu al-Hijjah",
+          "width": 150,
+          "height": 32
+        },
+        {
+          "tag": "BUTTON",
+          "role": "button",
+          "name": "9th Dhu al-Hijjah",
+          "width": 124,
+          "height": 32
+        }
+      ]
+    },
+    "namesRoles": {
+      "unnamedCount": 0,
+      "unnamed": [],
+      "missingStatesCount": 0,
+      "missingStates": []
+    },
+    "headings": {
+      "count": 8,
+      "headings": [
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Surahs"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "KNOWLEDGE & COLLECTIONS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "GUIDES & EDUCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Worship Guidance"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "TRACKERS & CALCULATORS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "UTILITIES & LOCATION"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "LIVE BROADCASTS"
+        },
+        {
+          "tag": "H1",
+          "level": 1,
+          "text": "Hajj Live"
+        }
+      ],
+      "skippedHierarchy": false,
+      "hasH1": true
+    },
+    "nav": {
+      "present": true,
+      "hasNavigationLandmark": false,
+      "hasTabList": false,
+      "tabCount": 6,
+      "tabs": [
+        {
+          "label": "Al Ekhbariya (Live News)",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Ministry of Hajj & Umrah",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Home",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Quran",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Library",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        },
+        {
+          "label": "Tools",
+          "ariaSelected": null,
+          "ariaCurrent": null
+        }
+      ]
+    },
+    "keyboard": {
+      "totalFocusableInDOM": 15
+    }
+  }
+}

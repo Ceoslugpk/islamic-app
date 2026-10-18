@@ -2,11 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   StyleSheet,
-  Text,
   TouchableOpacity,
   useWindowDimensions,
   View,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,7 +17,6 @@ import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, PrimaryButton, OutlineButton, ScreenTabs, SearchField } from '../components/ui';
 import { NAV_BOTTOM, NAV_HEIGHT } from '../components/layout/layout.constants';
-import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
 import {
   clearAllDownloads,
@@ -57,7 +56,7 @@ function DownloadsScreen({
   onOpenSurah,
   backLabel = 'Library',
 }: DownloadsScreenProps) {
-  const { tokens, mode } = useThemeTokens();
+  const { tokens } = useThemeTokens();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width <= 360;
@@ -245,12 +244,12 @@ function DownloadsScreen({
             />
           </View>
           <View style={styles.textHeaderMain}>
-            <Text style={[styles.textTitle, { color: tokens.text }]}>
+            <AppText variant="rowTitle" style={styles.textTitle}>
               {t('Quran Text & Translation')}
-            </Text>
-            <Text style={[styles.textSubtitle, { color: tokens.muted }]} numberOfLines={2}>
+            </AppText>
+            <AppText variant="subtitle" style={styles.textSubtitle} numberOfLines={3}>
               {t('For offline reading (not audio)')} · {flag} {getLocalizedTranslatorName(edition.editionIdentifier, edition.name)}
-            </Text>
+            </AppText>
           </View>
           <OutlineButton
             title={
@@ -273,7 +272,7 @@ function DownloadsScreen({
         </View>
 
         <View style={styles.textStatusRow}>
-          <Text style={[styles.textStatus, { color: tokens.muted }]}>
+          <AppText variant="caption" style={styles.textStatus}>
             {preloadProgress.isRunning
               ? `${t('Downloading text…')} ${preloadProgress.cached}/114` +
                 (preloadProgress.currentSurah
@@ -282,7 +281,7 @@ function DownloadsScreen({
               : preloadProgress.isComplete
               ? t('All 114 surahs available offline')
               : `${preloadProgress.cached}/114 ${t('surahs cached')}`}
-          </Text>
+          </AppText>
           {!preloadProgress.isRunning && (
             <TouchableOpacity
               onPress={handleVerifyText}
@@ -293,9 +292,9 @@ function DownloadsScreen({
               activeOpacity={0.75}
               style={verifyingText ? { opacity: 0.6 } : undefined}
             >
-              <Text style={[styles.textVerifyBtn, { color: tokens.goldText }]}>
+              <AppText variant="link" style={styles.textVerifyBtn}>
                 {verifyingText ? t('Checking…') : t('Verify')}
-              </Text>
+              </AppText>
             </TouchableOpacity>
           )}
         </View>
@@ -323,11 +322,11 @@ function DownloadsScreen({
 
         {textVerification && !textVerification.ok && (
           <View style={[styles.verifyNote, { borderColor: tokens.cardBorder }]}>
-            <Text style={[styles.verifyNoteText, { color: tokens.muted }]}>
+            <AppText variant="caption" style={styles.verifyNoteText}>
               {textVerification.valid + textVerification.invalidSurahs.length}/114 {t('verified')} ·{' '}
               {textVerification.missingSurahs.length} {t('missing')} ·{' '}
               {textVerification.invalidSurahs.length} {t('incomplete')}
-            </Text>
+            </AppText>
             <OutlineButton
               title={t('Repair')}
               onPress={handleRepairText}
@@ -337,9 +336,9 @@ function DownloadsScreen({
           </View>
         )}
         {textVerification && textVerification.ok && (
-          <Text style={[styles.verifyOkText, { color: tokens.goldText }]}>
+          <AppText variant="caption" highlight style={styles.verifyOkText}>
             {t('Verified offline')} · {textVerification.valid}/114 {t('surahs valid')}
-          </Text>
+          </AppText>
         )}
       </PremiumCard>
       )}
@@ -350,13 +349,13 @@ function DownloadsScreen({
         <View style={styles.storageInfo}>
           <View style={styles.storageHeaderRow}>
             <Ionicons name="cloud-done-outline" size={16} color={tokens.accent} />
-            <Text style={[styles.storageTitle, { color: tokens.text }]}>
+            <AppText variant="rowTitle" style={styles.storageTitle}>
               {t('Storage Used')}: {formatBytes(totalStorageUsed)}
-            </Text>
+            </AppText>
           </View>
-          <Text style={[styles.storageSub, { color: tokens.muted }]}>
+          <AppText variant="subtitle" style={styles.storageSub}>
             {downloadedSurahs.length} {t('surahs saved for offline playback')}
-          </Text>
+          </AppText>
         </View>
         {downloadedSurahs.length > 0 && (
           <OutlineButton
@@ -395,9 +394,9 @@ function DownloadsScreen({
           />
         }
       >
-      <View style={styles.contentWrap}>
         <DetailScreen.FlatList
-          data={filteredSurahs}
+        style={styles.contentWrap}
+        data={filteredSurahs}
           keyExtractor={(item) => `${item.edition}:${item.surah}:${item.bitrate}`}
           contentContainerStyle={[
             styles.listContent,
@@ -416,12 +415,12 @@ function DownloadsScreen({
                 >
                   <Ionicons name="cloud-download-outline" size={iconSizes.emptyState} color={tokens.accent} />
                 </View>
-                <Text style={[styles.emptyTitle, { color: tokens.text }]}>
+                <AppText variant="title" style={styles.emptyTitle}>
                   {t('No Downloads Yet')}
-                </Text>
-                <Text style={[styles.emptySubtitle, { color: tokens.muted }]}>
+                </AppText>
+                <AppText variant="subtitle" style={styles.emptySubtitle}>
                   {t('You can download full surahs from the Quran screen to listen offline without internet.')}
-                </Text>
+                </AppText>
                 {onOpenSurah && (
                   <PrimaryButton
                     title={t('Browse Surahs')}
@@ -468,14 +467,16 @@ function DownloadsScreen({
                       },
                     ]}
                   >
-                    <Text
+                    <AppText
+                      variant="numeral"
+                      highlight
                       style={[
                         styles.number,
-                        { color: tokens.goldText, fontSize: isCompact ? 12 : 13 },
+                        { fontSize: isCompact ? 12 : 13 },
                       ]}
                     >
                       {item.surah}
-                    </Text>
+                    </AppText>
                   </View>
 
                   {/* Details */}
@@ -485,30 +486,32 @@ function DownloadsScreen({
                     activeOpacity={0.7}
                   >
                     <View style={styles.nameRow}>
-                      <Text
+                      <AppText
+                        variant="rowTitle"
                         style={[
                           styles.englishName,
-                          { color: tokens.text, fontSize: isCompact ? 14 : 15 },
+                          { fontSize: isCompact ? 14 : 15 },
                         ]}
                         numberOfLines={1}
                       >
                         {englishName}
-                      </Text>
+                      </AppText>
                       {arabicName ? (
                         <ArabicText size={isCompact ? 15 : 16} style={[styles.arabicName, { color: tokens.arabicName }]}>
                           {arabicName}
                         </ArabicText>
                       ) : null}
                     </View>
-                    <Text
+                    <AppText
+                      variant="caption"
                       style={[
                         styles.metadataText,
-                        { color: tokens.muted, fontSize: isCompact ? 11 : 12 },
+                        { fontSize: isCompact ? 11 : 12 },
                       ]}
-                      numberOfLines={1}
+                      numberOfLines={2}
                     >
                       {reciterLabel} · {item.bitrate} kbps · {formatBytes(item.size)}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
 
                   {/* Actions */}
@@ -559,8 +562,7 @@ function DownloadsScreen({
             );
           }}
         />
-      </View>
-    </DetailScreen>
+      </DetailScreen>
     </View>
   );
 }
@@ -622,6 +624,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 10,
     marginTop: 10,
   },
@@ -629,10 +632,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 11,
     flex: 1,
+    minWidth: 0,
   },
   textVerifyBtn: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
   textTrack: {
     height: 4,
@@ -736,6 +741,7 @@ const styles = StyleSheet.create({
   metadataText: {
     fontFamily: 'Manrope_400Regular',
     marginTop: 2,
+    flexShrink: 1,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -787,7 +793,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     textAlign: 'center',
-    lineHeight: 18,
     marginBottom: 20,
     maxWidth: 320,
   },

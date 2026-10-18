@@ -1,0 +1,77 @@
+{
+  "icon": {
+    "size": [
+      1024,
+      1024
+    ],
+    "format": "PNG",
+    "mode": "RGB",
+    "file_bytes": 13636
+  },
+  "adaptive_foreground": {
+    "size": [
+      512,
+      512
+    ],
+    "format": "PNG",
+    "mode": "RGBA",
+    "file_bytes": 5108
+  },
+  "adaptive_background": {
+    "size": [
+      512,
+      512
+    ],
+    "format": "PNG",
+    "mode": "RGBA",
+    "file_bytes": 2204
+  },
+  "adaptive_monochrome": {
+    "size": [
+      432,
+      432
+    ],
+    "format": "PNG",
+    "mode": "RGBA",
+    "file_bytes": 3277
+  },
+  "splash_light": {
+    "asset": {
+      "size": [
+        1024,
+        1024
+      ],
+      "format": "PNG",
+      "mode": "RGBA",
+      "file_bytes": 8848
+    },
+    "color": "#F4EEDE",
+    "app_json_backgroundColor": "#F4EEDE",
+    "colors_xml_splashscreen_background": "#F4EEDE",
+    "styles_v31_windowSplashScreenBackground": "@color/splashscreen_background"
+  },
+  "splash_dark": {
+    "asset": {
+      "size": [
+        1024,
+        1024
+      ],
+      "format": "PNG",
+      "mode": "RGBA",
+      "file_bytes": 9675
+    },
+    "color": "#0E1214",
+    "app_json_dark_backgroundColor": "#0E1214",
+    "colors_night_xml_splashscreen_background": "#0E1214",
+    "styles_night_v31_windowSplashScreenBackground": "#0E1214"
+  },
+  "theme": {
+    "userInterfaceStyle": "automatic",
+    "app_theme_parent": "Theme.AppCompat.DayNight.NoActionBar",
+    "windowBackground": "@color/splashscreen_background"
+  },
+  "rule4_grey_white_flash_check": {
+    "static_inspection": "PASSED - windowBackground and splashscreen_background aligned to #F4EEDE (light) and #0E1214 (dark)",
+    "physical_device_verification": "BLOCKED - requires real Android 12+ hardware or emulator launch"
+  }
+}

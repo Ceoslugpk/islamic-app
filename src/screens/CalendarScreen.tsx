@@ -3,14 +3,12 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   useWindowDimensions,
-  Platform,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeTokens } from '../theme/tokens';
@@ -22,7 +20,6 @@ import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
 import { Hairline } from '../components/Hairline';
-import { Card } from '../components/Card';
 import { CalendarGridSkeleton } from '../components/Skeleton';
 import { t } from '../lib/i18n';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -49,7 +46,6 @@ export default function CalendarScreen({
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
-  const cellSize = isCompact ? 40 : 44;
 
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -60,7 +56,8 @@ export default function CalendarScreen({
 
   // Current hijri date (for today panel)
   const currentHijri = useMemo(() => {
-    return gregorianToHijri(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    const now = new Date();
+    return gregorianToHijri(now.getFullYear(), now.getMonth() + 1, now.getDate());
   }, []);
 
   // Current hijri month/year from data (for month-jump chips)
@@ -214,17 +211,17 @@ export default function CalendarScreen({
           <PremiumCard style={styles.todayCard} padded>
             <View style={styles.todayRow}>
               <View style={styles.todayMain}>
-                <Text style={[styles.todayLabel, { color: tokens.muted }]}>{t('TODAY')}</Text>
+                <AppText variant="eyebrow" tone="faint" style={styles.todayLabel}>{t('TODAY')}</AppText>
                 {currentHijri ? (
-                  <Text style={[styles.todayHijriDate, { color: tokens.text }]}>
+                  <AppText variant="headerTitle" style={styles.todayHijriDate}>
                     {formatHijriDate(currentHijri.day, currentHijri.month, currentHijri.year)}
-                  </Text>
+                  </AppText>
                 ) : (
-                  <Text style={[styles.todayHijriDate, { color: tokens.text }]}>{t('Loading…')}</Text>
+                  <AppText variant="headerTitle" style={styles.todayHijriDate}>{t('Loading…')}</AppText>
                 )}
-                <Text style={[styles.todayGregorian, { color: tokens.text }]}>
+                <AppText variant="body" style={styles.todayGregorian}>
                   {t(GREG_MONTHS[today.getMonth()])} {today.getDate()}, {today.getFullYear()}
-                </Text>
+                </AppText>
                 {data && (() => {
                   const todayDay = data.days.find(
                     (d) => d.gregorianDay === today.getDate() && month === today.getMonth() + 1 && year === today.getFullYear()
@@ -234,9 +231,9 @@ export default function CalendarScreen({
                   const activeMonthLength = data.days.length > 0 ? data.days[data.days.length - 1].hijriDay : '29/30';
                   const dayNum = todayDay?.hijriDay ?? currentHijri?.day ?? '?';
                   return (
-                    <Text style={[styles.todayProgress, { color: tokens.muted }]}>
+                    <AppText variant="caption" tone="faint" style={styles.todayProgress}>
                       {t('Day')} {dayNum} {t('of')} {activeMonthLength} {t('in')} {activeMonthName}
-                    </Text>
+                    </AppText>
                   );
                 })()}
               </View>
@@ -248,16 +245,16 @@ export default function CalendarScreen({
               <View style={styles.nextEventRow}>
                 <Hairline style={{ marginVertical: 12, backgroundColor: tokens.cardBorder }} />
                 <View style={styles.nextEventContent}>
-                  <Text style={[styles.nextEventLabel, { color: tokens.muted }]}>{t('Next event')}</Text>
-                  <Text style={[styles.nextEventName, { color: tokens.text }]}>
+                  <AppText variant="eyebrow" tone="faint" style={styles.nextEventLabel}>{t('Next event')}</AppText>
+                  <AppText variant="sectionTitle" style={styles.nextEventName}>
                     {nextEvent.event.name} {nextEvent.event.arabic ? `(${nextEvent.event.arabic})` : ''}
-                  </Text>
-                  <Text style={[styles.nextEventCountdown, { color: tokens.goldText }]}>
+                  </AppText>
+                  <AppText variant="caption" highlight style={styles.nextEventCountdown}>
                     {nextEvent.daysUntil === 0 ? t('Today') : nextEvent.daysUntil === 1 ? t('Tomorrow') : `${t('in')} ${nextEvent.daysUntil} ${t('days')}`}
-                  </Text>
-                  <Text style={[styles.nextEventSignificance, { color: tokens.muted }]}>
+                  </AppText>
+                  <AppText variant="body" tone="faint" style={styles.nextEventSignificance}>
                     {nextEvent.event.significance}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
             )}
@@ -275,29 +272,29 @@ export default function CalendarScreen({
             ]}
           >
             <TouchableOpacity onPress={() => shift(-1)} accessibilityLabel={t('Previous month')} style={styles.navBtn}>
-              <Text style={[styles.navArrow, { color: tokens.goldText }]}>‹</Text>
+              <AppText variant="title" highlight style={styles.navArrow}>‹</AppText>
             </TouchableOpacity>
             <View style={styles.navTitle}>
-              <Text style={[styles.monthName, { color: tokens.text }]}>
+              <AppText variant="title" style={styles.monthName}>
                 {data ? data.hijriMonthName : t('Loading…')}
-              </Text>
-              <Text style={[styles.monthMeta, { color: tokens.muted }]}>
+              </AppText>
+              <AppText variant="caption" tone="faint" style={styles.monthMeta}>
                 {data ? `${data.hijriYear} AH · ${t(GREG_MONTHS[month - 1])} ${year}` : '...'}
-              </Text>
+              </AppText>
             </View>
             <TouchableOpacity onPress={() => shift(1)} accessibilityLabel={t('Next month')} style={styles.navBtn}>
-              <Text style={[styles.navArrow, { color: tokens.goldText }]}>›</Text>
+              <AppText variant="title" highlight style={styles.navArrow}>›</AppText>
             </TouchableOpacity>
           </View>
 
           {/* Today jump button */}
           <TouchableOpacity onPress={jumpToToday} style={styles.todayJumpBtn} accessibilityLabel={t('Jump to today')}>
-            <Text style={[styles.todayJumpText, { color: tokens.goldText }]}>• {t('Today')}</Text>
+            <AppText variant="link" style={styles.todayJumpText}>• {t('Today')}</AppText>
           </TouchableOpacity>
 
           {/* Month overview strip */}
           <View style={styles.monthStripContainer}>
-            <Text style={[styles.monthStripLabel, { color: tokens.muted }]}>{t('Hijri months')}</Text>
+            <AppText variant="eyebrow" tone="faint" style={styles.monthStripLabel}>{t('Hijri months')}</AppText>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -329,25 +326,22 @@ export default function CalendarScreen({
                         end={{ x: 1, y: 1 }}
                         style={styles.monthChipGradient}
                       >
-                        <Text
-                          style={[
-                            styles.monthChipText,
-                            { color: tokens.onGold },
-                          ]}
+                        <AppText
+                          variant="caption"
+                          tone="onGold"
+                          style={styles.monthChipText}
                         >
                           {HIJRI_CHIP_LABELS[i] || m.slice(0, 3)}
-                        </Text>
-                        <Text style={[styles.monthChipDot, { backgroundColor: tokens.onGold }]} />
+                        </AppText>
+                        <View style={[styles.monthChipDot, { backgroundColor: tokens.onGold }]} />
                       </LinearGradient>
                     ) : (
-                      <Text
-                        style={[
-                          styles.monthChipText,
-                          { color: tokens.text },
-                        ]}
+                      <AppText
+                        variant="caption"
+                        style={[styles.monthChipText, { paddingHorizontal: 10, paddingVertical: 4 }]}
                       >
                         {HIJRI_CHIP_LABELS[i] || m.slice(0, 3)}
-                      </Text>
+                      </AppText>
                     )}
                   </TouchableOpacity>
                 );
@@ -364,9 +358,9 @@ export default function CalendarScreen({
               {/* Weekday header */}
               <View style={styles.weekRow}>
                 {WEEKDAYS.map((d) => (
-                  <Text key={d} style={[styles.weekday, { color: tokens.muted }]}>
+                  <AppText key={d} variant="caption" tone="faint" style={styles.weekday}>
                     {t(d)}
-                  </Text>
+                  </AppText>
                 ))}
               </View>
               <Hairline style={{ marginBottom: 10, backgroundColor: tokens.cardBorder }} />
@@ -408,32 +402,30 @@ export default function CalendarScreen({
                           style={styles.cellEventIcon}
                         />
                       )}
-                      <Text
-                        style={[
-                          styles.gregDay,
-                          { color: todayCell ? tokens.onGold : isFriday ? tokens.goldText : tokens.text },
-                        ]}
+                      <AppText
+                        variant="numeral"
+                        tone={todayCell ? 'onGold' : undefined}
+                        highlight={!todayCell && isFriday}
+                        style={styles.gregDay}
                       >
                         {day.gregorianDay}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.hijriDay,
-                          {
-                            color: todayCell ? tokens.onGold : isFriday ? tokens.goldText : tokens.muted,
-                          },
-                        ]}
+                      </AppText>
+                      <AppText
+                        variant="caption"
+                        tone={todayCell ? 'onGold' : !isFriday ? 'faint' : undefined}
+                        highlight={!todayCell && isFriday}
+                        style={styles.hijriDay}
                       >
                         {day.hijriDay}
-                      </Text>
+                      </AppText>
                     </View>
                   );
                 })}
               </View>
 
-              <Text style={[styles.legend, { color: tokens.muted }]}>
+              <AppText variant="caption" tone="faint" style={styles.legend}>
                 {t('Hijri date shown under each day\nAmber = today · Orange = Friday · Amber dot + icon = Islamic event')}
-              </Text>
+              </AppText>
 
               {/* Events list */}
               <View style={styles.eventsSection}>
@@ -459,24 +451,24 @@ export default function CalendarScreen({
                       </View>
                       <View style={styles.eventInfo}>
                         <View style={styles.eventHeader}>
-                          <Text style={[styles.eventName, { color: tokens.text }]}>{event.name}</Text>
+                          <AppText variant="sectionTitle" style={styles.eventName}>{event.name}</AppText>
                           {event.inCurrentMonth && (
-                            <Text style={[styles.eventCurrentBadge, getPillShadow(mode), { color: tokens.goldText, backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder, borderWidth: 1 }]}>
+                            <AppText variant="eyebrow" highlight style={[styles.eventCurrentBadge, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder, borderWidth: 1 }]}>
                               {t('This month')}
-                            </Text>
+                            </AppText>
                           )}
                         </View>
-                        <Text style={[styles.eventArabic, { color: tokens.arabicName }]}>{event.arabic}</Text>
-                        <Text style={[styles.eventDate, { color: tokens.muted }]}>
+                        <AppText variant="body" style={[styles.eventArabic, { color: tokens.arabicName }]}>{event.arabic}</AppText>
+                        <AppText variant="caption" tone="faint" style={styles.eventDate}>
                           {event.hijriDay} {HIJRI_MONTH_NAMES[event.hijriMonth - 1]}
-                        </Text>
-                        <Text style={[styles.eventSignificance, { color: tokens.muted }]}>{event.significance}</Text>
+                        </AppText>
+                        <AppText variant="body" tone="faint" style={styles.eventSignificance}>{event.significance}</AppText>
                       </View>
                       <View style={styles.eventCountdown}>
-                        <Text style={[styles.countdownValue, { color: tokens.goldText }]}>
+                        <AppText variant="numeral" highlight style={styles.countdownValue}>
                           {event.daysUntil === 0 ? t('Today') : event.daysUntil === 1 ? t('Tomorrow') : `${event.daysUntil}d`}
-                        </Text>
-                        <Text style={[styles.countdownLabel, { color: tokens.muted }]}>{event.daysUntil === 0 ? '' : t('away')}</Text>
+                        </AppText>
+                        <AppText variant="caption" tone="faint" style={styles.countdownLabel}>{event.daysUntil === 0 ? '' : t('away')}</AppText>
                       </View>
                     </TouchableOpacity>
                   ))}
@@ -486,9 +478,9 @@ export default function CalendarScreen({
           )}
 
           {data?.source === 'local' && (
-            <Text accessibilityRole="alert" style={[styles.offlineNote, { color: tokens.muted }]}>
+            <AppText accessibilityRole="alert" variant="caption" tone="faint" style={styles.offlineNote}>
               {t('Offline, dates follow the tabular Umm al-Qura calendar and may differ by a day from a sighting.')}
-            </Text>
+            </AppText>
           )}
         </View>
       </DetailScreen.ScrollView>
@@ -527,7 +519,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  content: { paddingVertical: 12 },
+  content: {},
   contentWrap: {
     maxWidth: 680,
     width: '100%',
@@ -638,7 +630,7 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   monthChip: {
-    height: 28,
+    minHeight: 28,
     borderRadius: 999,
     borderWidth: 0.75,
     minWidth: 48,
@@ -647,9 +639,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   monthChipGradient: {
-    height: '100%',
+    minHeight: 28,
     width: '100%',
     paddingHorizontal: 10,
+    paddingVertical: 4,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',

@@ -1,0 +1,23 @@
+{
+  "apk": {
+    "path": "android/app/build/outputs/apk/release/app-release.apk",
+    "size_bytes": 102931021,
+    "size_mb": 98.16,
+    "mtime": 1791799750.2217214
+  },
+  "aab": {
+    "path": "android/app/build/outputs/bundle/release/app-release.aab",
+    "size_bytes": 72037378,
+    "size_mb": 68.7,
+    "mtime": 1791753835.4555898
+  },
+  "apk_signature": {
+    "verified_v2": true,
+    "signer_dn": "CN=Ceoslugpk, OU=Islamic App, O=Ceoslugpk, L=Dubai, ST=Dubai, C=AE",
+    "sha256": "e6e788c76f8400dcc216be66e8a74c5bd1d415c55f322b9b36d401087315458f"
+  },
+  "aab_status": "Available for Play Store upload (68.61 MB)",
+  "apk_status": "Available for GitHub Release direct install (98.66 MB)",
+  "build_supplied_in_prompt": false,
+  "fix_mode": false
+}

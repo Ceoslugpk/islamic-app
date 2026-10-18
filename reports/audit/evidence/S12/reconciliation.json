@@ -1,0 +1,906 @@
+{
+  "expectedCount": 224,
+  "capturedCount": 224,
+  "missingCount": 0,
+  "extraCount": 0,
+  "missingFiles": [],
+  "extraFiles": [],
+  "diskFilesSummary": [
+    {
+      "file": "location_setup_modal_dark_360x800.png",
+      "bytes": 49340
+    },
+    {
+      "file": "location_setup_modal_dark_393x852.png",
+      "bytes": 54434
+    },
+    {
+      "file": "location_setup_modal_light_360x800.png",
+      "bytes": 51268
+    },
+    {
+      "file": "location_setup_modal_light_393x852.png",
+      "bytes": 50367
+    },
+    {
+      "file": "onboarding_dark_360x800.png",
+      "bytes": 16529
+    },
+    {
+      "file": "onboarding_dark_393x852.png",
+      "bytes": 16971
+    },
+    {
+      "file": "onboarding_light_360x800.png",
+      "bytes": 16370
+    },
+    {
+      "file": "onboarding_light_393x852.png",
+      "bytes": 17220
+    },
+    {
+      "file": "route_home_dark_360x800.png",
+      "bytes": 31478
+    },
+    {
+      "file": "route_home_dark_393x852.png",
+      "bytes": 32604
+    },
+    {
+      "file": "route_home_light_360x800.png",
+      "bytes": 31478
+    },
+    {
+      "file": "route_home_light_393x852.png",
+      "bytes": 32604
+    },
+    {
+      "file": "route_library_dark_360x800.png",
+      "bytes": 135599
+    },
+    {
+      "file": "route_library_dark_393x852.png",
+      "bytes": 145028
+    },
+    {
+      "file": "route_library_downloads_dark_360x800.png",
+      "bytes": 75538
+    },
+    {
+      "file": "route_library_downloads_dark_393x852.png",
+      "bytes": 86381
+    },
+    {
+      "file": "route_library_downloads_light_360x800.png",
+      "bytes": 75177
+    },
+    {
+      "file": "route_library_downloads_light_393x852.png",
+      "bytes": 86745
+    },
+    {
+      "file": "route_library_duas_dark_360x800.png",
+      "bytes": 47469
+    },
+    {
+      "file": "route_library_duas_dark_393x852.png",
+      "bytes": 51927
+    },
+    {
+      "file": "route_library_duas_light_360x800.png",
+      "bytes": 47469
+    },
+    {
+      "file": "route_library_duas_light_393x852.png",
+      "bytes": 51927
+    },
+    {
+      "file": "route_library_hadith_dark_360x800.png",
+      "bytes": 98707
+    },
+    {
+      "file": "route_library_hadith_dark_393x852.png",
+      "bytes": 110380
+    },
+    {
+      "file": "route_library_hadith_light_360x800.png",
+      "bytes": 98710
+    },
+    {
+      "file": "route_library_hadith_light_393x852.png",
+      "bytes": 110380
+    },
+    {
+      "file": "route_library_hajj-journey_dark_360x800.png",
+      "bytes": 82704
+    },
+    {
+      "file": "route_library_hajj-journey_dark_393x852.png",
+      "bytes": 90524
+    },
+    {
+      "file": "route_library_hajj-journey_light_360x800.png",
+      "bytes": 82704
+    },
+    {
+      "file": "route_library_hajj-journey_light_393x852.png",
+      "bytes": 90524
+    },
+    {
+      "file": "route_library_light_360x800.png",
+      "bytes": 135599
+    },
+    {
+      "file": "route_library_light_393x852.png",
+      "bytes": 145028
+    },
+    {
+      "file": "route_library_names-prophet_dark_360x800.png",
+      "bytes": 60395
+    },
+    {
+      "file": "route_library_names-prophet_dark_393x852.png",
+      "bytes": 67855
+    },
+    {
+      "file": "route_library_names-prophet_light_360x800.png",
+      "bytes": 60395
+    },
+    {
+      "file": "route_library_names-prophet_light_393x852.png",
+      "bytes": 67855
+    },
+    {
+      "file": "route_library_names_dark_360x800.png",
+      "bytes": 64953
+    },
+    {
+      "file": "route_library_names_dark_393x852.png",
+      "bytes": 71511
+    },
+    {
+      "file": "route_library_names_light_360x800.png",
+      "bytes": 64953
+    },
+    {
+      "file": "route_library_names_light_393x852.png",
+      "bytes": 71511
+    },
+    {
+      "file": "route_library_prayer-guide_dark_360x800.png",
+      "bytes": 88116
+    },
+    {
+      "file": "route_library_prayer-guide_dark_393x852.png",
+      "bytes": 103574
+    },
+    {
+      "file": "route_library_prayer-guide_light_360x800.png",
+      "bytes": 88116
+    },
+    {
+      "file": "route_library_prayer-guide_light_393x852.png",
+      "bytes": 103574
+    },
+    {
+      "file": "route_library_ramadan-guide_dark_360x800.png",
+      "bytes": 91247
+    },
+    {
+      "file": "route_library_ramadan-guide_dark_393x852.png",
+      "bytes": 98690
+    },
+    {
+      "file": "route_library_ramadan-guide_light_360x800.png",
+      "bytes": 91247
+    },
+    {
+      "file": "route_library_ramadan-guide_light_393x852.png",
+      "bytes": 98690
+    },
+    {
+      "file": "route_library_shahada_dark_360x800.png",
+      "bytes": 84299
+    },
+    {
+      "file": "route_library_shahada_dark_393x852.png",
+      "bytes": 93226
+    },
+    {
+      "file": "route_library_shahada_light_360x800.png",
+      "bytes": 84299
+    },
+    {
+      "file": "route_library_shahada_light_393x852.png",
+      "bytes": 93226
+    },
+    {
+      "file": "route_library_summary_dark_360x800.png",
+      "bytes": 65368
+    },
+    {
+      "file": "route_library_summary_dark_393x852.png",
+      "bytes": 71032
+    },
+    {
+      "file": "route_library_summary_light_360x800.png",
+      "bytes": 65368
+    },
+    {
+      "file": "route_library_summary_light_393x852.png",
+      "bytes": 71032
+    },
+    {
+      "file": "route_library_tajweed_dark_360x800.png",
+      "bytes": 91442
+    },
+    {
+      "file": "route_library_tajweed_dark_393x852.png",
+      "bytes": 99635
+    },
+    {
+      "file": "route_library_tajweed_light_360x800.png",
+      "bytes": 91442
+    },
+    {
+      "file": "route_library_tajweed_light_393x852.png",
+      "bytes": 99635
+    },
+    {
+      "file": "route_library_tasbih_dark_360x800.png",
+      "bytes": 58954
+    },
+    {
+      "file": "route_library_tasbih_dark_393x852.png",
+      "bytes": 62110
+    },
+    {
+      "file": "route_library_tasbih_light_360x800.png",
+      "bytes": 58954
+    },
+    {
+      "file": "route_library_tasbih_light_393x852.png",
+      "bytes": 62110
+    },
+    {
+      "file": "route_library_umrah-guide_dark_360x800.png",
+      "bytes": 80080
+    },
+    {
+      "file": "route_library_umrah-guide_dark_393x852.png",
+      "bytes": 93168
+    },
+    {
+      "file": "route_library_umrah-guide_light_360x800.png",
+      "bytes": 80080
+    },
+    {
+      "file": "route_library_umrah-guide_light_393x852.png",
+      "bytes": 93168
+    },
+    {
+      "file": "route_library_vocab_dark_360x800.png",
+      "bytes": 65707
+    },
+    {
+      "file": "route_library_vocab_dark_393x852.png",
+      "bytes": 71080
+    },
+    {
+      "file": "route_library_vocab_light_360x800.png",
+      "bytes": 65707
+    },
+    {
+      "file": "route_library_vocab_light_393x852.png",
+      "bytes": 71080
+    },
+    {
+      "file": "route_library_women-guidance_dark_360x800.png",
+      "bytes": 18353
+    },
+    {
+      "file": "route_library_women-guidance_dark_393x852.png",
+      "bytes": 19342
+    },
+    {
+      "file": "route_library_women-guidance_light_360x800.png",
+      "bytes": 18353
+    },
+    {
+      "file": "route_library_women-guidance_light_393x852.png",
+      "bytes": 19342
+    },
+    {
+      "file": "route_library_women-purity_dark_360x800.png",
+      "bytes": 18353
+    },
+    {
+      "file": "route_library_women-purity_dark_393x852.png",
+      "bytes": 19342
+    },
+    {
+      "file": "route_library_women-purity_light_360x800.png",
+      "bytes": 18353
+    },
+    {
+      "file": "route_library_women-purity_light_393x852.png",
+      "bytes": 19342
+    },
+    {
+      "file": "route_quran_audio_dark_360x800.png",
+      "bytes": 27589
+    },
+    {
+      "file": "route_quran_audio_dark_393x852.png",
+      "bytes": 29416
+    },
+    {
+      "file": "route_quran_audio_light_360x800.png",
+      "bytes": 27589
+    },
+    {
+      "file": "route_quran_audio_light_393x852.png",
+      "bytes": 29416
+    },
+    {
+      "file": "route_quran_bookmarks_dark_360x800.png",
+      "bytes": 39785
+    },
+    {
+      "file": "route_quran_bookmarks_dark_393x852.png",
+      "bytes": 41530
+    },
+    {
+      "file": "route_quran_bookmarks_light_360x800.png",
+      "bytes": 39785
+    },
+    {
+      "file": "route_quran_bookmarks_light_393x852.png",
+      "bytes": 41530
+    },
+    {
+      "file": "route_quran_compare_dark_360x800.png",
+      "bytes": 63276
+    },
+    {
+      "file": "route_quran_compare_dark_393x852.png",
+      "bytes": 68352
+    },
+    {
+      "file": "route_quran_compare_light_360x800.png",
+      "bytes": 63276
+    },
+    {
+      "file": "route_quran_compare_light_393x852.png",
+      "bytes": 68352
+    },
+    {
+      "file": "route_quran_hifz-practice_dark_360x800.png",
+      "bytes": 52365
+    },
+    {
+      "file": "route_quran_hifz-practice_dark_393x852.png",
+      "bytes": 53785
+    },
+    {
+      "file": "route_quran_hifz-practice_light_360x800.png",
+      "bytes": 52365
+    },
+    {
+      "file": "route_quran_hifz-practice_light_393x852.png",
+      "bytes": 53785
+    },
+    {
+      "file": "route_quran_hifz_dark_360x800.png",
+      "bytes": 77515
+    },
+    {
+      "file": "route_quran_hifz_dark_393x852.png",
+      "bytes": 90613
+    },
+    {
+      "file": "route_quran_hifz_light_360x800.png",
+      "bytes": 77515
+    },
+    {
+      "file": "route_quran_hifz_light_393x852.png",
+      "bytes": 90613
+    },
+    {
+      "file": "route_quran_home_dark_360x800.png",
+      "bytes": 121344
+    },
+    {
+      "file": "route_quran_home_dark_393x852.png",
+      "bytes": 134502
+    },
+    {
+      "file": "route_quran_home_light_360x800.png",
+      "bytes": 121506
+    },
+    {
+      "file": "route_quran_home_light_393x852.png",
+      "bytes": 134501
+    },
+    {
+      "file": "route_quran_notes_dark_360x800.png",
+      "bytes": 58318
+    },
+    {
+      "file": "route_quran_notes_dark_393x852.png",
+      "bytes": 59426
+    },
+    {
+      "file": "route_quran_notes_light_360x800.png",
+      "bytes": 58318
+    },
+    {
+      "file": "route_quran_notes_light_393x852.png",
+      "bytes": 59426
+    },
+    {
+      "file": "route_quran_plans_dark_360x800.png",
+      "bytes": 87238
+    },
+    {
+      "file": "route_quran_plans_dark_393x852.png",
+      "bytes": 94894
+    },
+    {
+      "file": "route_quran_plans_light_360x800.png",
+      "bytes": 87238
+    },
+    {
+      "file": "route_quran_plans_light_393x852.png",
+      "bytes": 94894
+    },
+    {
+      "file": "route_quran_reader_dark_360x800.png",
+      "bytes": 20971
+    },
+    {
+      "file": "route_quran_reader_dark_393x852.png",
+      "bytes": 22277
+    },
+    {
+      "file": "route_quran_reader_light_360x800.png",
+      "bytes": 20968
+    },
+    {
+      "file": "route_quran_reader_light_393x852.png",
+      "bytes": 22258
+    },
+    {
+      "file": "route_quran_surah-list_dark_360x800.png",
+      "bytes": 61211
+    },
+    {
+      "file": "route_quran_surah-list_dark_393x852.png",
+      "bytes": 66626
+    },
+    {
+      "file": "route_quran_surah-list_light_360x800.png",
+      "bytes": 61211
+    },
+    {
+      "file": "route_quran_surah-list_light_393x852.png",
+      "bytes": 66626
+    },
+    {
+      "file": "route_quran_tafsir_dark_360x800.png",
+      "bytes": 64939
+    },
+    {
+      "file": "route_quran_tafsir_dark_393x852.png",
+      "bytes": 73595
+    },
+    {
+      "file": "route_quran_tafsir_light_360x800.png",
+      "bytes": 64939
+    },
+    {
+      "file": "route_quran_tafsir_light_393x852.png",
+      "bytes": 73595
+    },
+    {
+      "file": "route_quran_topics_dark_360x800.png",
+      "bytes": 94039
+    },
+    {
+      "file": "route_quran_topics_dark_393x852.png",
+      "bytes": 101158
+    },
+    {
+      "file": "route_quran_topics_light_360x800.png",
+      "bytes": 94039
+    },
+    {
+      "file": "route_quran_topics_light_393x852.png",
+      "bytes": 101158
+    },
+    {
+      "file": "route_tools_calendar_dark_360x800.png",
+      "bytes": 80203
+    },
+    {
+      "file": "route_tools_calendar_dark_393x852.png",
+      "bytes": 85203
+    },
+    {
+      "file": "route_tools_calendar_light_360x800.png",
+      "bytes": 80202
+    },
+    {
+      "file": "route_tools_calendar_light_393x852.png",
+      "bytes": 85203
+    },
+    {
+      "file": "route_tools_cities_dark_360x800.png",
+      "bytes": 90138
+    },
+    {
+      "file": "route_tools_cities_dark_393x852.png",
+      "bytes": 95823
+    },
+    {
+      "file": "route_tools_cities_light_360x800.png",
+      "bytes": 90138
+    },
+    {
+      "file": "route_tools_cities_light_393x852.png",
+      "bytes": 95823
+    },
+    {
+      "file": "route_tools_fasting_dark_360x800.png",
+      "bytes": 96856
+    },
+    {
+      "file": "route_tools_fasting_dark_393x852.png",
+      "bytes": 117070
+    },
+    {
+      "file": "route_tools_fasting_light_360x800.png",
+      "bytes": 96856
+    },
+    {
+      "file": "route_tools_fasting_light_393x852.png",
+      "bytes": 117070
+    },
+    {
+      "file": "route_tools_hajj-journey_dark_360x800.png",
+      "bytes": 82195
+    },
+    {
+      "file": "route_tools_hajj-journey_dark_393x852.png",
+      "bytes": 89737
+    },
+    {
+      "file": "route_tools_hajj-journey_light_360x800.png",
+      "bytes": 82195
+    },
+    {
+      "file": "route_tools_hajj-journey_light_393x852.png",
+      "bytes": 89737
+    },
+    {
+      "file": "route_tools_hajj-live_dark_360x800.png",
+      "bytes": 95490
+    },
+    {
+      "file": "route_tools_hajj-live_dark_393x852.png",
+      "bytes": 102862
+    },
+    {
+      "file": "route_tools_hajj-live_light_360x800.png",
+      "bytes": 95490
+    },
+    {
+      "file": "route_tools_hajj-live_light_393x852.png",
+      "bytes": 102862
+    },
+    {
+      "file": "route_tools_location_dark_360x800.png",
+      "bytes": 75504
+    },
+    {
+      "file": "route_tools_location_dark_393x852.png",
+      "bytes": 76790
+    },
+    {
+      "file": "route_tools_location_light_360x800.png",
+      "bytes": 75504
+    },
+    {
+      "file": "route_tools_location_light_393x852.png",
+      "bytes": 76790
+    },
+    {
+      "file": "route_tools_madinah-live_dark_360x800.png",
+      "bytes": 73131
+    },
+    {
+      "file": "route_tools_madinah-live_dark_393x852.png",
+      "bytes": 76443
+    },
+    {
+      "file": "route_tools_madinah-live_light_360x800.png",
+      "bytes": 92302
+    },
+    {
+      "file": "route_tools_madinah-live_light_393x852.png",
+      "bytes": 101946
+    },
+    {
+      "file": "route_tools_makkah-live_dark_360x800.png",
+      "bytes": 71408
+    },
+    {
+      "file": "route_tools_makkah-live_dark_393x852.png",
+      "bytes": 77663
+    },
+    {
+      "file": "route_tools_makkah-live_light_360x800.png",
+      "bytes": 71408
+    },
+    {
+      "file": "route_tools_makkah-live_light_393x852.png",
+      "bytes": 77663
+    },
+    {
+      "file": "route_tools_mosque_dark_360x800.png",
+      "bytes": 71086
+    },
+    {
+      "file": "route_tools_mosque_dark_393x852.png",
+      "bytes": 74711
+    },
+    {
+      "file": "route_tools_mosque_light_360x800.png",
+      "bytes": 71086
+    },
+    {
+      "file": "route_tools_mosque_light_393x852.png",
+      "bytes": 74711
+    },
+    {
+      "file": "route_tools_notifications_dark_360x800.png",
+      "bytes": 79565
+    },
+    {
+      "file": "route_tools_notifications_dark_393x852.png",
+      "bytes": 89952
+    },
+    {
+      "file": "route_tools_notifications_light_360x800.png",
+      "bytes": 79565
+    },
+    {
+      "file": "route_tools_notifications_light_393x852.png",
+      "bytes": 89952
+    },
+    {
+      "file": "route_tools_prayer-reminders_dark_360x800.png",
+      "bytes": 79565
+    },
+    {
+      "file": "route_tools_prayer-reminders_dark_393x852.png",
+      "bytes": 89952
+    },
+    {
+      "file": "route_tools_prayer-reminders_light_360x800.png",
+      "bytes": 79565
+    },
+    {
+      "file": "route_tools_prayer-reminders_light_393x852.png",
+      "bytes": 89952
+    },
+    {
+      "file": "route_tools_qibla_dark_360x800.png",
+      "bytes": 80906
+    },
+    {
+      "file": "route_tools_qibla_dark_393x852.png",
+      "bytes": 85501
+    },
+    {
+      "file": "route_tools_qibla_light_360x800.png",
+      "bytes": 80906
+    },
+    {
+      "file": "route_tools_qibla_light_393x852.png",
+      "bytes": 85501
+    },
+    {
+      "file": "route_tools_summary_dark_360x800.png",
+      "bytes": 64865
+    },
+    {
+      "file": "route_tools_summary_dark_393x852.png",
+      "bytes": 70308
+    },
+    {
+      "file": "route_tools_summary_light_360x800.png",
+      "bytes": 64865
+    },
+    {
+      "file": "route_tools_summary_light_393x852.png",
+      "bytes": 70308
+    },
+    {
+      "file": "route_tools_tasbih_dark_360x800.png",
+      "bytes": 58587
+    },
+    {
+      "file": "route_tools_tasbih_dark_393x852.png",
+      "bytes": 61465
+    },
+    {
+      "file": "route_tools_tasbih_light_360x800.png",
+      "bytes": 58587
+    },
+    {
+      "file": "route_tools_tasbih_light_393x852.png",
+      "bytes": 61465
+    },
+    {
+      "file": "route_tools_tracker_dark_360x800.png",
+      "bytes": 64186
+    },
+    {
+      "file": "route_tools_tracker_dark_393x852.png",
+      "bytes": 65586
+    },
+    {
+      "file": "route_tools_tracker_light_360x800.png",
+      "bytes": 64186
+    },
+    {
+      "file": "route_tools_tracker_light_393x852.png",
+      "bytes": 65586
+    },
+    {
+      "file": "route_tools_umrah-guide_dark_360x800.png",
+      "bytes": 79580
+    },
+    {
+      "file": "route_tools_umrah-guide_dark_393x852.png",
+      "bytes": 92516
+    },
+    {
+      "file": "route_tools_umrah-guide_light_360x800.png",
+      "bytes": 79580
+    },
+    {
+      "file": "route_tools_umrah-guide_light_393x852.png",
+      "bytes": 92516
+    },
+    {
+      "file": "route_tools_umrah-resources_dark_360x800.png",
+      "bytes": 85799
+    },
+    {
+      "file": "route_tools_umrah-resources_dark_393x852.png",
+      "bytes": 94222
+    },
+    {
+      "file": "route_tools_umrah-resources_light_360x800.png",
+      "bytes": 85799
+    },
+    {
+      "file": "route_tools_umrah-resources_light_393x852.png",
+      "bytes": 94222
+    },
+    {
+      "file": "route_tools_women-cycle_dark_360x800.png",
+      "bytes": 76406
+    },
+    {
+      "file": "route_tools_women-cycle_dark_393x852.png",
+      "bytes": 83310
+    },
+    {
+      "file": "route_tools_women-cycle_light_360x800.png",
+      "bytes": 76406
+    },
+    {
+      "file": "route_tools_women-cycle_light_393x852.png",
+      "bytes": 83310
+    },
+    {
+      "file": "route_tools_women-guidance_dark_360x800.png",
+      "bytes": 17727
+    },
+    {
+      "file": "route_tools_women-guidance_dark_393x852.png",
+      "bytes": 18725
+    },
+    {
+      "file": "route_tools_women-guidance_light_360x800.png",
+      "bytes": 17727
+    },
+    {
+      "file": "route_tools_women-guidance_light_393x852.png",
+      "bytes": 18725
+    },
+    {
+      "file": "route_tools_women-purity_dark_360x800.png",
+      "bytes": 17727
+    },
+    {
+      "file": "route_tools_women-purity_dark_393x852.png",
+      "bytes": 18725
+    },
+    {
+      "file": "route_tools_women-purity_light_360x800.png",
+      "bytes": 17727
+    },
+    {
+      "file": "route_tools_women-purity_light_393x852.png",
+      "bytes": 18725
+    },
+    {
+      "file": "route_tools_women-qada_dark_360x800.png",
+      "bytes": 64793
+    },
+    {
+      "file": "route_tools_women-qada_dark_393x852.png",
+      "bytes": 72415
+    },
+    {
+      "file": "route_tools_women-qada_light_360x800.png",
+      "bytes": 64793
+    },
+    {
+      "file": "route_tools_women-qada_light_393x852.png",
+      "bytes": 72415
+    },
+    {
+      "file": "route_tools_zakat_dark_360x800.png",
+      "bytes": 81218
+    },
+    {
+      "file": "route_tools_zakat_dark_393x852.png",
+      "bytes": 87999
+    },
+    {
+      "file": "route_tools_zakat_light_360x800.png",
+      "bytes": 81218
+    },
+    {
+      "file": "route_tools_zakat_light_393x852.png",
+      "bytes": 87999
+    },
+    {
+      "file": "sheet_language_picker_dark_360x800.png",
+      "bytes": 70029
+    },
+    {
+      "file": "sheet_language_picker_dark_393x852.png",
+      "bytes": 76852
+    },
+    {
+      "file": "sheet_language_picker_light_360x800.png",
+      "bytes": 70029
+    },
+    {
+      "file": "sheet_language_picker_light_393x852.png",
+      "bytes": 76852
+    },
+    {
+      "file": "sheet_settings_modal_dark_360x800.png",
+      "bytes": 69960
+    },
+    {
+      "file": "sheet_settings_modal_dark_393x852.png",
+      "bytes": 76825
+    },
+    {
+      "file": "sheet_settings_modal_light_360x800.png",
+      "bytes": 70006
+    },
+    {
+      "file": "sheet_settings_modal_light_393x852.png",
+      "bytes": 76586
+    }
+  ]
+}

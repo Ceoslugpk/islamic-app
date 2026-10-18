@@ -2,21 +2,23 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import {
   AppState,
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   Animated,
   Easing,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useTheme, getCardShadow } from '../lib/theme';
 import { useHaptics } from '../lib/haptics';
 import { getContinueReadingPosition, addReadingPositionListener, ReadingPosition } from '../lib/continuing';
 import { getLocalizedSurahName } from '../lib/surahNamesLocalized';
 import { SURAHS_114, SurahSummary } from '../lib/surahs114';
-import { Card } from './Card';
-import { ArabicText } from './ArabicText';
+import { GeometricPattern } from './GeometricPattern';
+import { LinearGradient } from 'expo-linear-gradient';
+import { HOME_THEME_TOKENS } from '../lib/constants';
 import { isRTL, t } from '../lib/i18n';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
@@ -32,8 +34,11 @@ export function ContinueReadingCard({
   onOpenQuranTab,
   style,
 }: ContinueReadingCardProps) {
-  const { colors } = useTheme();
+  const { mode } = useTheme();
+  const homeTokens = HOME_THEME_TOKENS[mode];
   const { haptic } = useHaptics();
+  const { width } = useWindowDimensions();
+  const isCompact = width <= 360;
   const [position, setPosition] = useState<ReadingPosition | null>(null);
   const scaleAnim = useMemo(() => new Animated.Value(1), []);
 
@@ -132,19 +137,58 @@ export function ContinueReadingCard({
   );
 
   const isResuming = !!position && position.surah > 0;
-  const totalAyahs = surahMeta?.numberOfAyahs || 1;
+  const totalAyahs = surahMeta?.numberOfAyahs || (surahNum === 1 ? 7 : 286);
   const progressRatio = isResuming
-    ? Math.min(1, Math.max(0.02, ayahNum / totalAyahs))
+    ? Math.min(1, Math.max(0.04, ayahNum / totalAyahs))
     : 0;
   const progressPercent = Math.round(progressRatio * 100);
 
   const eyebrowText = isResuming ? t('CONTINUE READING') : t('START READING');
   const surahTitle = surahMeta ? getLocalizedSurahName(surahMeta.number, surahMeta.englishName) : (isResuming ? `Surah ${surahNum}` : 'Al-Fatihah');
-  const ayahSubtext = isResuming ? `${t('Ayah')} ${surahNum}:${ayahNum}` : `${t('Ayah')} 1:1 · ${t('Begin recitation')}`;
+  const ayahSubtext = isResuming
+    ? `${t('Surah')} ${surahNum} · ${t('Ayah')} ${ayahNum} ${t('of')} ${totalAyahs}`
+    : `${t('The Opening')} · ${t('Ayah')} 1`;
+
+  const cardGradient = mode === 'ink'
+    ? [homeTokens.cardTop, homeTokens.cardBottom] as const
+    : [homeTokens.cardTop, homeTokens.cardBottom] as const;
 
   return (
-    <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>
-      <Card style={styles.card} padded={false}>
+    <Animated.View
+      style={[
+        {
+          transform: [{ scale: scaleAnim }],
+          borderRadius: 14,
+          backgroundColor: homeTokens.cardTop,
+          ...getCardShadow(mode),
+        },
+        style,
+      ]}
+    >
+      <View
+        testID="continue-reading-card"
+        style={[
+          styles.card,
+          {
+            borderColor: homeTokens.cardBorder,
+            backgroundColor: homeTokens.cardTop,
+          },
+        ]}
+      >
+        <LinearGradient
+          colors={[...cardGradient]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <GeometricPattern
+          variant="tessellation"
+          tileSize={36}
+          color={mode === 'ink' ? '#EECA80' : '#A67E34'}
+          opacity={mode === 'ink' ? 0.05 : 0.035}
+          style={StyleSheet.absoluteFill}
+        />
+
         <TouchableOpacity
           activeOpacity={0.88}
           onPress={handlePress}
@@ -153,152 +197,188 @@ export function ContinueReadingCard({
           style={styles.touchArea}
           accessibilityRole="button"
           accessibilityLabel={`${eyebrowText}, ${surahTitle}, ${ayahSubtext}`}
+          focusable={true}
+          {...(Platform.OS === 'web'
+            ? ({
+                tabIndex: 0,
+                onKeyDown: (e: any) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault?.();
+                    handlePress();
+                  }
+                },
+              } as any)
+            : {})}
         >
-          {/* Top Row: Eyebrow + Arabic name */}
-          <View style={styles.topRow}>
-            <View style={styles.eyebrowWrap}>
-              <Text style={[styles.eyebrow, { color: colors.accent, textAlign: isRTL() ? 'right' : 'left' }]}>
-                {eyebrowText}
-              </Text>
-            </View>
-            <ArabicText size={20} style={[styles.arabicName, { color: colors.textSecondary }]}>
-              {surahMeta?.name || 'الفَاتِحة'}
-            </ArabicText>
-          </View>
-
-          {/* Main Title Row: Surah Name + Arrow Chevron */}
-          <View style={styles.titleRow}>
-            <View style={styles.titleCol}>
-              <Text
-                style={[
-                  styles.surahName,
-                  {
-                    color: colors.textPrimary,
-                    textAlign: isRTL() ? 'right' : 'left',
-                    fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
-                  },
-                ]}
-                numberOfLines={1}
-              >
-                {surahTitle}
-              </Text>
-              <Text style={[styles.ayahLabel, { color: colors.textMuted, textAlign: isRTL() ? 'right' : 'left' }]}>
-                {ayahSubtext}
-                {isResuming && (
-                  <Text style={{ color: colors.textSecondary }}>
-                    {' '}· {progressPercent}%
-                  </Text>
-                )}
-              </Text>
-            </View>
-
+          <View style={styles.contentRow}>
+            {/* Left: Circular Book Badge */}
             <View
               style={[
-                styles.arrowCircle,
+                styles.bookBadge,
                 {
-                  backgroundColor: colors.iconCircleBg || colors.accentDim,
-                  borderColor: colors.iconCircleBg ? 'transparent' : colors.accent,
+                  backgroundColor: homeTokens.ringFill,
+                  borderColor: homeTokens.ringBorder,
                 },
               ]}
             >
-              <Ionicons name={isRTL() ? 'arrow-back' : 'arrow-forward'} size={16} color={colors.iconCircleFg || colors.accent} />
+              <Ionicons name="book-outline" size={18} color={homeTokens.accent} />
+            </View>
+
+            {/* Middle: Eyebrow, Surah Title, Ayah position */}
+            <View style={styles.textCol}>
+              <AppText
+                variant="eyebrow"
+                style={[
+                  styles.eyebrow,
+                  { textAlign: isRTL() ? 'right' : 'left' },
+                ]}
+                maxFontSizeMultiplier={1.2}
+              >
+                {eyebrowText}
+              </AppText>
+              <AppText
+                variant="headerTitle"
+                style={[
+                  styles.surahName,
+                  {
+                    textAlign: isRTL() ? 'right' : 'left',
+                    fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                    fontSize: isCompact ? 22 : 25,
+                  },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                maxFontSizeMultiplier={1.2}
+              >
+                {surahTitle}
+              </AppText>
+              <AppText
+                variant="caption"
+                style={[
+                  styles.ayahLabel,
+                  {
+                    textAlign: isRTL() ? 'right' : 'left',
+                  },
+                ]}
+                numberOfLines={2}
+                maxFontSizeMultiplier={1.2}
+              >
+                {ayahSubtext}
+              </AppText>
+            </View>
+
+            {/* Right: Circular Gold Arrow Button */}
+            <View style={styles.actionBtnWrap}>
+              <LinearGradient
+                colors={HOME_THEME_TOKENS.goldGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.actionCircleBtn}
+              >
+                <Ionicons
+                  name={isRTL() ? 'arrow-back' : 'arrow-forward'}
+                  size={18}
+                  color="#092C25"
+                />
+              </LinearGradient>
             </View>
           </View>
+        </TouchableOpacity>
 
-          {/* Thin Progress Bar */}
+        {/* Bottom Progress Bar */}
+        <View
+          style={[styles.progressTrack, { backgroundColor: homeTokens.trackColor }]}
+          accessibilityRole="progressbar"
+          accessibilityValue={{ min: 0, max: 100, now: progressPercent }}
+          accessibilityLabel={`Reading progress ${progressPercent} percent`}
+        >
           <View
             style={[
-              styles.progressTrack,
-              { backgroundColor: colors.borderSubtle },
+              styles.progressFill,
+              {
+                backgroundColor: homeTokens.gold,
+                width: `${progressPercent}%`,
+              },
             ]}
-            accessibilityRole="progressbar"
-            accessibilityValue={{ min: 0, max: 100, now: progressPercent }}
-            accessibilityLabel={`Reading progress ${progressPercent} percent`}
-          >
-            <View
-              style={[
-                styles.progressFill,
-                {
-                  backgroundColor: colors.accent,
-                  width: `${progressPercent}%`,
-                },
-              ]}
-            />
-          </View>
-        </TouchableOpacity>
-      </Card>
+          />
+        </View>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 20,
+    minHeight: 80,
+    borderRadius: 14,
+    borderWidth: 1,
     overflow: 'hidden',
+    position: 'relative',
   },
   touchArea: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
-  topRow: {
+  contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
+    gap: 13,
   },
-  eyebrowWrap: {
-    flexDirection: 'row',
+  bookBadge: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  textCol: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: 'center',
   },
   eyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 1.6,
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 10,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
-  },
-  arabicName: {
-    lineHeight: 24,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-    gap: 12,
-  },
-  titleCol: {
-    flex: 1,
+    marginBottom: 2,
+    paddingVertical: 2,
   },
   surahName: {
-    fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 26,
-    lineHeight: 30,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
+    lineHeight: 28,
+    paddingVertical: 2,
   },
   ayahLabel: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 11.5,
+    lineHeight: 15,
     marginTop: 2,
+    paddingVertical: 2,
   },
-  arrowCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: 1,
+  actionBtnWrap: {
+    flexShrink: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionCircleBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
   },
   progressTrack: {
-    height: 4,
+    height: 2.5,
     width: '100%',
-    borderRadius: 2,
     overflow: 'hidden',
-    flexDirection: 'row',
+    borderBottomLeftRadius: 13,
+    borderBottomRightRadius: 13,
   },
   progressFill: {
     height: '100%',
-    borderRadius: 2,
   },
 });

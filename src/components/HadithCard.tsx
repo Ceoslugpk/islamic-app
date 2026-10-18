@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { useTheme } from '../lib/theme';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { AppText } from './ui/AppText';
 import { t } from '../lib/i18n';
 import { Card } from './Card';
 import { ArabicText } from './ArabicText';
@@ -17,12 +17,10 @@ interface HadithCardProps {
 }
 
 export function HadithCard({ hadith, onRefresh, loading }: HadithCardProps) {
-  const { colors } = useTheme();
-
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <Text style={[styles.eyebrow, { color: colors.accent }]}>{t('Hadith of the Day')}</Text>
+        <AppText variant="eyebrow" style={styles.eyebrow}>{t('Hadith of the Day')}</AppText>
         {onRefresh && (
           <TouchableOpacity
             onPress={onRefresh}
@@ -33,16 +31,13 @@ export function HadithCard({ hadith, onRefresh, loading }: HadithCardProps) {
             accessibilityState={{ disabled: !!loading }}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text
-              style={[
-                styles.refreshText,
-                // textMuted fails contrast on bgSurface (3.15:1) — use
-                // textSecondary for the disabled state instead.
-                { color: loading ? colors.textSecondary : colors.accent },
-              ]}
+            <AppText
+              variant="eyebrow"
+              tone={loading ? 'faint' : undefined}
+              style={styles.refreshText}
             >
               {loading ? t('Loading...') : t('Another')}
-            </Text>
+            </AppText>
           </TouchableOpacity>
         )}
       </View>
@@ -54,10 +49,10 @@ export function HadithCard({ hadith, onRefresh, loading }: HadithCardProps) {
       </ArabicText>
 
       <View style={styles.translationWrap}>
-        <Text style={[styles.translation, { color: colors.textSecondary }]}>{hadith.translation}</Text>
+        <AppText variant="body" style={styles.translation}>{hadith.translation}</AppText>
       </View>
 
-      <Text style={[styles.source, { color: colors.textSecondary }]}>{hadith.source}</Text>
+      <AppText variant="caption" tone="faint" style={styles.source}>{hadith.source}</AppText>
     </Card>
   );
 }

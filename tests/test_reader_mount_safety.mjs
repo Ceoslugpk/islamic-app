@@ -105,6 +105,7 @@ function getGlobalAyahIndex(surah, ayah) {
   return idx + safeAyah;
 }
 
+// Legacy approximate-page model test (classified as legacy/model-only; not for production reader acceptance)
 function getApproxPage(surah, ayah) {
   const globalIdx = getGlobalAyahIndex(surah, ayah);
   return Math.max(1, Math.min(604, Math.round((globalIdx / 6236) * 604) || 1));

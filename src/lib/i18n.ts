@@ -1,4 +1,4 @@
-import i18n from 'i18next';
+import i18n, { use as i18nextUse, changeLanguage, t as i18nT } from 'i18next';
 import { initReactI18next, useTranslation } from 'react-i18next';
 import * as Localization from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -77,7 +77,7 @@ export function getBootLanguage(): AppLanguage {
 
 const initialLanguage: AppLanguage = getBootLanguage();
 
-i18n.use(initReactI18next).init({
+i18nextUse(initReactI18next).init({
   resources: {
     en: { translation: en },
     ur: { translation: ur },
@@ -156,7 +156,7 @@ export function prepareNativeLayoutDirection(lang: AppLanguage): void {
 export function setAppLanguage(lang: AppLanguage): void {
   persistedLanguage = lang;
   languageResolved = true;
-  i18n.changeLanguage(lang);
+  changeLanguage(lang);
   const isRtl = isRtlLanguage(lang);
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
@@ -187,7 +187,7 @@ export function isRTL(): boolean {
  * Supports standard i18next `{{var}}` placeholders as well as single-brace `{var}` / `{ن}` tokens.
  */
 export const t = (key: string, options?: any): string => {
-  let res = String(i18n.t(key, options as any));
+  let res = String(i18nT(key, options as any));
   if (options && typeof options === 'object') {
     for (const [k, v] of Object.entries(options)) {
       if (k !== 'defaultValue' && k !== 'lng' && v !== undefined && v !== null) {

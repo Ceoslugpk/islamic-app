@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
-  Text,
   TouchableOpacity,
   StyleSheet,
   Platform,
@@ -15,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../lib/theme';
 import { HOME_THEME_TOKENS, getPillShadow, getFloatingCardShadow } from '../../lib/homeThemeTokens';
 import { isRTL, t } from '../../lib/i18n';
+import { AppText } from '../ui/AppText';
 import {
   NAV_HEIGHT,
   NAV_SIDE_MARGIN,
@@ -43,7 +43,7 @@ const TABS: readonly TabItemConfig[] = [
   { key: 'tools', label: 'Tools', iconActive: 'construct', iconInactive: 'construct-outline' },
 ] as const;
 
-export function FloatingNav({ active, onChange }: FloatingNavProps) {
+export const FloatingNav = React.memo(function FloatingNav({ active, onChange }: FloatingNavProps) {
   const { mode } = useTheme();
   const tokens = HOME_THEME_TOKENS[mode];
   const insets = useSafeAreaInsets();
@@ -74,8 +74,13 @@ export function FloatingNav({ active, onChange }: FloatingNavProps) {
   const reduceMotion = useRef(false);
 
   useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && window.matchMedia) {
+      reduceMotion.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    }
     AccessibilityInfo.isReduceMotionEnabled().then((v) => {
-      reduceMotion.current = v;
+      if (v) {
+        reduceMotion.current = true;
+      }
     });
   }, []);
 
@@ -103,6 +108,8 @@ export function FloatingNav({ active, onChange }: FloatingNavProps) {
         },
       ]}
       testID="floating-nav-container"
+      role="navigation"
+      aria-label={t('Main Navigation')}
     >
       <LinearGradient
         colors={[tokens.cardTop, tokens.cardBottom]}
@@ -116,12 +123,15 @@ export function FloatingNav({ active, onChange }: FloatingNavProps) {
         ]}
         testID="floating-nav-surface"
       >
-        {/* Four equal full-height columns */}
+        {/* Four equal full-height columns inside tablist */}
         <View
           style={[
             styles.columnsRow,
             { flexDirection: rtl ? 'row-reverse' : 'row' },
           ]}
+          accessibilityRole="tablist"
+          role="tablist"
+          aria-label={t('Main Navigation Tabs')}
         >
           {TABS.map((tab) => {
             const isActive = tab.key === active;
@@ -133,10 +143,24 @@ export function FloatingNav({ active, onChange }: FloatingNavProps) {
                 onPress={() => onChange(tab.key)}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 accessibilityRole="tab"
+                role="tab"
                 accessibilityState={{ selected: isActive }}
+                aria-selected={isActive}
                 accessibilityLabel={t(tab.label)}
                 activeOpacity={0.85}
                 testID={`floating-nav-tab-${tab.key}`}
+                focusable={true}
+                {...(Platform.OS === 'web'
+                  ? ({
+                      tabIndex: 0,
+                      onKeyDown: (e: any) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault?.();
+                          onChange(tab.key);
+                        }
+                      },
+                    } as any)
+                  : {})}
               >
                 {isActive ? (
                   <Animated.View
@@ -169,12 +193,13 @@ export function FloatingNav({ active, onChange }: FloatingNavProps) {
                         size={iconSize}
                         color={tokens.onGold}
                       />
-                      <Text
+                      <AppText
+                        variant="caption"
+                        tone="onGold"
                         testID="floating-nav-active-label"
                         style={[
                           styles.activeLabel,
                           {
-                            color: tokens.onGold,
                             fontSize: labelFontSize,
                             fontFamily: rtl ? 'Amiri_700Bold' : 'Poppins_500Medium',
                             ...(Platform.OS === 'web' ? { whiteSpace: 'nowrap' as any } : {}),
@@ -185,7 +210,7 @@ export function FloatingNav({ active, onChange }: FloatingNavProps) {
                         minimumFontScale={0.9}
                       >
                         {t(tab.label)}
-                      </Text>
+                      </AppText>
                     </LinearGradient>
                   </Animated.View>
                 ) : (
@@ -202,7 +227,7 @@ export function FloatingNav({ active, onChange }: FloatingNavProps) {
       </LinearGradient>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   dockContainer: {

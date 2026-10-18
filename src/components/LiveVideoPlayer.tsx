@@ -3,16 +3,17 @@ import {
   View,
   StyleSheet,
   Platform,
-  Text,
   TouchableOpacity,
   Linking,
   useWindowDimensions,
   ActivityIndicator,
 } from 'react-native';
+import { AppText } from './ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { useTheme } from '../lib/theme';
+import { VideoView, useVideoPlayer } from 'expo-video';
+import { useThemeTokens } from '../theme/tokens';
+import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { Card } from './Card';
 import { LiveStreamId, setActiveLiveStream } from '../lib/liveStream';
 import { t } from '../lib/i18n';
@@ -42,12 +43,97 @@ export function LiveVideoPlayer({
   title: string;
   subtitle?: string;
 }) {
-  const { colors } = useTheme();
+  const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const [webViewFailed, setWebViewFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  const [webIframeFailed, setWebIframeFailed] = useState(false);
+  const [prevEmbedUrl, setPrevEmbedUrl] = useState(embedUrl);
+  if (prevEmbedUrl !== embedUrl) {
+    setPrevEmbedUrl(embedUrl);
+    setWebIframeFailed(false);
+  }
+
+  const iframeRef = React.useRef<HTMLIFrameElement | null>(null);
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        // 1. Source validation: message MUST come from the active YouTube iframe's contentWindow
+        if (!iframeRef.current || !iframeRef.current.contentWindow) return;
+        if (event.source !== iframeRef.current.contentWindow) return;
+
+        // 2. Origin validation: message origin must match YouTube embed origins or embedUrl origin
+        let expectedOrigin = '';
+        if (embedUrl) {
+          try {
+            expectedOrigin = new URL(embedUrl, window.location.origin).origin;
+          } catch {
+            // ignore
+          }
+        }
+        const isAllowedOrigin =
+          (expectedOrigin !== '' && event.origin === expectedOrigin) ||
+          event.origin === 'https://www.youtube.com' ||
+          event.origin === 'https://www.youtube-nocookie.com' ||
+          event.origin === 'https://youtube.com';
+
+        if (!isAllowedOrigin) return;
+
+        // 3. Payload validation
+        let data = event.data;
+        if (typeof data === 'string') {
+          if (data.startsWith('{') && data.endsWith('}')) {
+            data = JSON.parse(data);
+          } else {
+            return;
+          }
+        }
+        if (!data || typeof data !== 'object') return;
+
+        // 4. Guard against false failure from normal unstarted state (-1) or normal state transitions
+        if (data.event === 'onStateChange') {
+          return;
+        }
+        if (data.info && typeof data.info === 'object' && 'playerState' in data.info) {
+          return;
+        }
+
+        // 5. Real YouTube production error signals:
+        // YouTube IFrame Player API error codes:
+        // 2: Invalid parameter (e.g. malformed video ID)
+        // 5: HTML5 player error
+        // 100: Video not found / removed / private
+        // 101: Embedded playback not allowed by owner
+        // 150: Same as 101 (embedded playback disallowed)
+        const validErrorCodes = [2, 5, 100, 101, 150];
+        if (data.event === 'onError') {
+          const rawCode = data.info ?? data.data ?? data.errorCode;
+          const code = Number(rawCode);
+          if (validErrorCodes.includes(code)) {
+            setWebIframeFailed(true);
+          }
+        } else if (data.event === 'infoDelivery' && data.info && typeof data.info === 'object') {
+          const rawCode = (data.info as any).errorCode ?? (data.info as any).error;
+          const code = Number(rawCode);
+          if (validErrorCodes.includes(code)) {
+            setWebIframeFailed(true);
+          }
+        }
+      } catch {
+        // ignore malformed messages
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [embedUrl, reloadKey]);
 
   // Register active stream for mini-player tracking
   useEffect(() => {
@@ -80,12 +166,13 @@ export function LiveVideoPlayer({
     const safeUrl = embedUrl.includes('?')
       ? `${embedUrl}&playsinline=1&enablejsapi=1`
       : `${embedUrl}?playsinline=1&enablejsapi=1`;
+    const bgColor = tokens.cardBottom;
     return `<!DOCTYPE html>
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; }
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: ${bgColor}; overflow: hidden; }
     iframe { width: 100%; height: 100%; border: 0; }
   </style>
 </head>
@@ -98,48 +185,73 @@ export function LiveVideoPlayer({
   ></iframe>
 </body>
 </html>`;
-  }, [embedUrl]);
+  }, [embedUrl, tokens.cardBottom]);
 
   // 1. Native HLS available (.m3u8) → native VideoView
   if (hlsUrl && Platform.OS !== 'web') {
     return (
       <View
-        style={[styles.playerContainer, { backgroundColor: '#000', borderColor: colors.borderSubtle }]}
+        style={[
+          styles.playerContainer,
+          getCardShadow(mode),
+          { backgroundColor: tokens.cardBottom, borderColor: tokens.cardBorder },
+        ]}
       >
         <VideoView player={player} style={styles.videoView} contentFit="cover" nativeControls />
       </View>
     );
   }
 
-  // 2. Web → YouTube iframe embed
+  // 2. Web → YouTube iframe embed with failure detection
   if (Platform.OS === 'web' && embedUrl) {
-    return (
-      <View
-        style={[styles.playerContainer, { backgroundColor: '#000000', borderColor: colors.borderSubtle }]}
-      >
-        {React.createElement('iframe', {
-          src: embedUrl,
-          title,
-          style: { width: '100%', height: '100%', border: 0 },
-          allow:
-            'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
-          allowFullScreen: true,
-        })}
-      </View>
-    );
+    if (webIframeFailed) {
+      // fall through to fallback card below
+    } else {
+      const safeEmbedUrl = embedUrl.includes('enablejsapi=1')
+        ? embedUrl
+        : embedUrl.includes('?')
+        ? `${embedUrl}&enablejsapi=1`
+        : `${embedUrl}?enablejsapi=1`;
+
+      return (
+        <View
+          style={[
+            styles.playerContainer,
+            getCardShadow(mode),
+            { backgroundColor: tokens.cardBottom, borderColor: tokens.cardBorder },
+          ]}
+        >
+          {React.createElement('iframe', {
+            ref: iframeRef,
+            key: `web-iframe-${reloadKey}`,
+            src: safeEmbedUrl,
+            title,
+            onError: () => setWebIframeFailed(true),
+            style: { width: '100%', height: '100%', border: 0 },
+            allow:
+              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share',
+            allowFullScreen: true,
+          })}
+        </View>
+      );
+    }
   }
 
   // 3. Native YouTube via WebView (in-app playback)
-  if (embedUrl && !webViewFailed) {
+  if (Platform.OS !== 'web' && embedUrl && !webViewFailed) {
     return (
       <View style={styles.wrapper}>
         <View
           key={`webview-${reloadKey}`}
-          style={[styles.playerContainer, { backgroundColor: '#000', borderColor: colors.borderSubtle }]}
+          style={[
+            styles.playerContainer,
+            getCardShadow(mode),
+            { backgroundColor: tokens.cardBottom, borderColor: tokens.cardBorder },
+          ]}
         >
           <WebView
             source={{ html: webViewHtml, baseUrl: 'https://www.youtube-nocookie.com' }}
-            style={styles.webView}
+            style={[styles.webView, { backgroundColor: tokens.cardBottom }]}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}
             javaScriptEnabled={true}
@@ -149,8 +261,8 @@ export function LiveVideoPlayer({
             onHttpError={() => setWebViewFailed(true)}
           />
           {loading && (
-            <View style={styles.loaderOverlay}>
-              <ActivityIndicator color={colors.accent} size="small" />
+            <View style={[styles.loaderOverlay, { backgroundColor: tokens.overlay }]}>
+              <ActivityIndicator color={tokens.goldText} size="small" />
             </View>
           )}
         </View>
@@ -158,7 +270,11 @@ export function LiveVideoPlayer({
         {/* Quick controls underneath native player */}
         <View style={styles.quickControls}>
           <TouchableOpacity
-            style={[styles.quickBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
+            style={[
+              styles.quickBtn,
+              getPillShadow(mode),
+              { borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop },
+            ]}
             onPress={() => {
               setLoading(true);
               setReloadKey((k) => k + 1);
@@ -166,56 +282,106 @@ export function LiveVideoPlayer({
             accessibilityRole="button"
             accessibilityLabel={t('Reload live stream')}
           >
-            <Ionicons name="refresh" size={14} color={colors.accent} />
-            <Text style={[styles.quickBtnText, { color: colors.textSecondary }]}>{t('Reload')}</Text>
+            <Ionicons name="refresh" size={14} color={tokens.goldText} />
+            <AppText variant="rowTitle" style={styles.quickBtnText}>{t('Reload')}</AppText>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.quickBtn, { borderColor: colors.borderSubtle, backgroundColor: colors.bgSurface }]}
+            style={[
+              styles.quickBtn,
+              getPillShadow(mode),
+              { borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop },
+            ]}
             onPress={openYouTube}
             accessibilityRole="button"
             accessibilityLabel={t('Open in YouTube app')}
           >
-            <Ionicons name="open-outline" size={14} color={colors.accent} />
-            <Text style={[styles.quickBtnText, { color: colors.textSecondary }]}>{t('YouTube App')}</Text>
+            <Ionicons name="open-outline" size={14} color={tokens.goldText} />
+            <AppText variant="rowTitle" style={styles.quickBtnText}>{t('YouTube App')}</AppText>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
 
-  // 4. Fallback card (when WebView is unavailable or failed)
+  // 4. Fallback card (when WebView is unavailable or failed, or web iframe failed)
   return (
     <Card style={{ marginBottom: 18, padding: 18 }}>
       <View style={styles.nativeCardHeader}>
-        <View style={[styles.tvIconWrap, { backgroundColor: colors.accent + '20' }]}>
-          <Ionicons name="tv-outline" size={24} color={colors.accent} />
+        <View
+          style={[
+            styles.tvIconWrap,
+            { backgroundColor: mode === 'ink' ? tokens.accentDim : tokens.sageDim },
+          ]}
+        >
+          <Ionicons
+            name="tv-outline"
+            size={24}
+            color={mode === 'ink' ? tokens.goldText : tokens.accent}
+          />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.nativeTitle, { color: colors.textPrimary }]}>{title}</Text>
+          <AppText variant="sectionTitle" style={styles.nativeTitle}>{title}</AppText>
           {subtitle ? (
-            <Text style={[styles.nativeSub, { color: colors.textMuted }]}>{subtitle}</Text>
+            <AppText variant="subtitle" style={styles.nativeSub}>{subtitle}</AppText>
           ) : null}
         </View>
       </View>
 
-      <Text style={[styles.nativeBody, { color: colors.textSecondary }]}>
-        Launch the official uninterrupted live stream in the YouTube app or your browser.
-      </Text>
+      <AppText variant="subtitle" style={styles.nativeBody}>
+        {webIframeFailed && (
+          <AppText variant="subtitle" style={{ marginBottom: 8, fontSize: 13, fontWeight: '600' }}>
+            {t('Remote stream unavailable')}
+            {'\n'}
+          </AppText>
+        )}
+        {t('Launch the official uninterrupted live stream in the YouTube app or your browser.')}
+      </AppText>
 
       <View style={styles.nativeActions}>
         <TouchableOpacity
-          style={[styles.primaryActionBtn, { backgroundColor: colors.accent }]}
+          style={[
+            styles.primaryActionBtn,
+            getPillShadow(mode),
+            { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, borderWidth: 1 },
+          ]}
           onPress={openYouTube}
           accessibilityRole="button"
           accessibilityLabel={`Watch ${title} on YouTube`}
         >
-          <Ionicons name="play" size={16} color={colors.onAccent} />
-          <Text style={[styles.primaryActionText, { color: colors.onAccent }, isCompact && { fontSize: 12.5 }]}>
+          <Ionicons name="play" size={16} color={tokens.goldText} />
+          <AppText
+            variant="rowTitle"
+            style={[
+              styles.primaryActionText,
+              isCompact && { fontSize: 12.5 },
+            ]}
+          >
             {t('Watch Live on YouTube')}
-          </Text>
+          </AppText>
         </TouchableOpacity>
       </View>
+
+      {/* Web iframe reload button - shown when web iframe failed */}
+      {embedUrl && Platform.OS === 'web' && webIframeFailed && (
+        <View style={styles.nativeActions}>
+          <TouchableOpacity
+            style={[
+              styles.primaryActionBtn,
+              getPillShadow(mode),
+              { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, borderWidth: 1 },
+            ]}
+            onPress={() => {
+              setWebIframeFailed(false);
+              setReloadKey((k) => k + 1);
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`Reload ${title}`}>
+            <Ionicons name="refresh" size={14} color={tokens.goldText} />
+            <AppText variant="rowTitle" style={styles.primaryActionText}>{t('Reload')}</AppText>
+          </TouchableOpacity>
+        </View>
+      )}
     </Card>
   );
 }
@@ -239,7 +405,6 @@ const styles = StyleSheet.create({
   webView: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#000000',
   },
   loaderOverlay: {
     position: 'absolute',
@@ -247,7 +412,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -310,6 +474,5 @@ const styles = StyleSheet.create({
   primaryActionText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
-    color: '#FFFFFF',
   },
 });

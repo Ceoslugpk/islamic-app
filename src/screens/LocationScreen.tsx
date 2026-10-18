@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
   useWindowDimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeTokens } from '../theme/tokens';
 import { useSettings, LocationMode } from '../lib/settings';
@@ -16,18 +12,21 @@ import { useLocation } from '../lib/useLocation';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, PrimaryButton, InputField, ScreenTabs, Chip, OutlineButton } from '../components/ui';
+import { AppText } from '../components/ui/AppText';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import { latitudeInvalid, longitudeInvalid, locationSaved } from '../lib/strings';
 import { getLocalizedCityName, getLocalizedCountryName } from '../lib/cities';
-import { isRTL, t } from '../lib/i18n';
+import { t } from '../lib/i18n';
 
 export default function LocationScreen({
   onBack,
   onOpenCities,
+  onOpenLocationSetup,
   backLabel = 'Tools',
 }: {
   onBack?: () => void;
   onOpenCities?: () => void;
+  onOpenLocationSetup?: () => void;
   backLabel?: string;
 }) {
   const { tokens } = useThemeTokens();
@@ -122,6 +121,7 @@ export default function LocationScreen({
       />
       <DetailScreen
         style={styles.detailScreen}
+        keyboardAvoiding
         header={
           <SubHeader
             eyebrow={t('Preferences')}
@@ -134,14 +134,10 @@ export default function LocationScreen({
           />
         }
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
+        <DetailScreen.ScrollView
+          contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
+          keyboardShouldPersistTaps="handled"
         >
-          <DetailScreen.ScrollView
-            contentContainerStyle={[styles.content, { paddingHorizontal: paddingH }]}
-            keyboardShouldPersistTaps="handled"
-          >
           <View style={styles.contentWrap}>
             {/* Mode selection tabs */}
             <ScreenTabs
@@ -160,28 +156,28 @@ export default function LocationScreen({
                 <Chip
                   label={isAuto ? t('GPS Auto') : t('Manual')}
                   selected={isAuto}
-                  style={{ height: 26, paddingHorizontal: 8 }}
+                  style={{ minHeight: 26, paddingHorizontal: 8 }}
                 />
                 {isAuto && locStatus === 'denied' && (
-                  <Text style={[styles.statusWarn, { color: tokens.danger }]}>{t('Permission denied')}</Text>
+                  <AppText variant="caption" tone="danger" style={styles.statusWarn}>{t('Permission denied')}</AppText>
                 )}
                 {isAuto && locStatus === 'unavailable' && (
-                  <Text style={[styles.statusWarn, { color: tokens.danger }]}>{t('GPS unavailable')}</Text>
+                  <AppText variant="caption" tone="danger" style={styles.statusWarn}>{t('GPS unavailable')}</AppText>
                 )}
               </View>
 
-              <Text style={[styles.activeCity, { color: tokens.text }]}>
+              <AppText variant="headerTitle" style={styles.activeCity}>
                 {activeLabel}
-              </Text>
+              </AppText>
 
-              <Text style={[styles.activeCoords, { color: tokens.muted }]}>
+              <AppText variant="caption" tone="faint" style={styles.activeCoords}>
                 {activeLat.toFixed(4)}°, {activeLng.toFixed(4)}°
-              </Text>
+              </AppText>
             </PremiumCard>
 
             {/* Quick city selection chips */}
             <View style={{ marginBottom: 12 }}>
-              <Text style={[styles.groupLabel, { color: tokens.muted }]}>{t('Quick City Select')}</Text>
+              <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>{t('Quick City Select')}</AppText>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                 {[
                   { name: 'Makkah', lat: 21.4225, lng: 39.8262, country: 'Saudi Arabia' },
@@ -220,7 +216,7 @@ export default function LocationScreen({
             </View>
 
             {/* Location Mode Selector */}
-            <Text style={[styles.groupLabel, { color: tokens.muted }]}>{t('Location detection')}</Text>
+            <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>{t('Location detection')}</AppText>
             <PremiumCard padded={false} style={styles.group}>
               <TouchableOpacity
                 style={styles.row}
@@ -229,12 +225,12 @@ export default function LocationScreen({
                 accessibilityState={{ checked: isAuto }}
               >
                 <View style={styles.rowFlex}>
-                  <Text style={[styles.rowTitle, { color: tokens.text }]}>{t('Auto-detect (GPS)')}</Text>
-                  <Text style={[styles.rowDesc, { color: tokens.muted }]}>
+                  <AppText variant="rowTitle" style={styles.rowTitle}>{t('Auto-detect (GPS)')}</AppText>
+                  <AppText variant="caption" tone="faint" style={styles.rowDesc}>
                     {isAuto
                       ? t('Prayer times follow your device location')
                       : t('Off — using your chosen city')}
-                  </Text>
+                  </AppText>
                 </View>
                 <View
                   style={[
@@ -282,8 +278,19 @@ export default function LocationScreen({
               />
             )}
 
+            {/* Reopen location setup dialog */}
+            {onOpenLocationSetup && (
+              <OutlineButton
+                title={t('Location for prayer times')}
+                icon="navigate-circle-outline"
+                onPress={onOpenLocationSetup}
+                accessibilityLabel={t('Location for prayer times')}
+                style={styles.cityShortcut}
+              />
+            )}
+
             {/* Manual Coordinates Override */}
-            <Text style={[styles.groupLabel, { color: tokens.muted }]}>{t('Manual coordinates')}</Text>
+            <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>{t('Manual coordinates')}</AppText>
             <PremiumCard style={styles.formCard} padded>
               <InputField
                 label={t('City / place name')}
@@ -314,11 +321,11 @@ export default function LocationScreen({
               </View>
 
               {errorMessage && (
-                <Text style={[styles.errorText, { color: tokens.danger }]}>{t(errorMessage)}</Text>
+                <AppText variant="body" tone="danger" style={styles.errorText}>{t(errorMessage)}</AppText>
               )}
 
               {saveMessage && (
-                <Text style={[styles.successText, { color: tokens.success }]}>{t(saveMessage)}</Text>
+                <AppText variant="body" style={[styles.successText, { color: tokens.success }]}>{t(saveMessage)}</AppText>
               )}
 
               <PrimaryButton
@@ -331,7 +338,6 @@ export default function LocationScreen({
             </PremiumCard>
           </View>
         </DetailScreen.ScrollView>
-      </KeyboardAvoidingView>
     </DetailScreen>
     </View>
   );
@@ -345,7 +351,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'transparent',
   },
-  content: { padding: 20, paddingTop: 10 },
+  content: {},
   contentWrap: {
     maxWidth: 680,
     width: '100%',
@@ -358,6 +364,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     marginTop: 20,
     marginBottom: 8,
+    paddingVertical: 2,
   },
   group: {
     marginBottom: 4,
@@ -369,7 +376,7 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  rowFlex: { flex: 1 },
+  rowFlex: { flex: 1, minWidth: 0 },
   rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
   rowDesc: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
   toggle: {
@@ -393,6 +400,7 @@ const styles = StyleSheet.create({
   modeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
+    minHeight: 22,
     borderRadius: 12,
     borderWidth: 1,
   },
@@ -400,20 +408,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
     fontSize: 10,
     letterSpacing: 1,
+    paddingVertical: 2,
   },
   statusWarn: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 11,
+    paddingVertical: 2,
   },
   activeCity: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 26,
-    lineHeight: 30,
   },
   activeCoords: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 4,
+    paddingVertical: 2,
   },
   cityShortcut: {
     marginTop: 14,
@@ -428,10 +438,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    flex: 1,
+    minWidth: 0,
   },
   shortcutText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
+    flexShrink: 1,
   },
   shortcutArrow: {
     fontFamily: 'Manrope_600SemiBold',
@@ -448,10 +461,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     marginBottom: 10,
+    paddingVertical: 2,
   },
   successText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     marginBottom: 10,
+    paddingVertical: 2,
   },
 });

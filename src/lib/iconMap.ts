@@ -3,7 +3,6 @@
  * Enforces consistent Ionicons glyphs, sizing per role, and RTL directional flipping.
  */
 
-import { I18nManager } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { isRTL } from './i18n';
 

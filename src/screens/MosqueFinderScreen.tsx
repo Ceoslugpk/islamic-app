@@ -1,26 +1,29 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
-  TextInput,
   TouchableOpacity,
-  FlatList,
   ScrollView,
-  ActivityIndicator,
   RefreshControl,
   Linking,
-  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '../components/ui/AppText';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { Location as Loc } from '../lib/prayerTimes';
 import { distanceKm } from '../lib/qibla';
-import { ScreenHeader } from '../components/ScreenHeader';
-import { Card } from '../components/Card';
+import { SubHeader } from '../components/layout/SubHeader';
+import { DetailScreen } from '../components/layout/DetailScreen';
+import {
+  PremiumCard,
+  PrimaryButton,
+  OutlineButton,
+  SearchField,
+  Chip,
+} from '../components/ui';
 import { Hairline } from '../components/Hairline';
 import { LocationPermissionNote } from '../components/LocationPermissionNote';
 import { MosqueCardSkeleton } from '../components/Skeleton';
@@ -53,7 +56,6 @@ export default function MosqueFinderScreen({
     location: hookGpsLocation,
     status: locStatus,
     loading: locLoading,
-    request: requestLocation,
     refresh: refreshLocation,
   } = useLocation(false);
   const { width } = useWindowDimensions();
@@ -106,12 +108,20 @@ export default function MosqueFinderScreen({
 
   // Set initial GPS timestamp when hook gives location
   useEffect(() => {
+    let cancelled = false;
     if (hookGpsLocation && !gpsTimestamp) {
-      const now = new Date();
-      const h = now.getHours().toString().padStart(2, '0');
-      const m = now.getMinutes().toString().padStart(2, '0');
-      setGpsTimestamp(`${h}:${m}`);
+      Promise.resolve().then(() => {
+        if (!cancelled) {
+          const now = new Date();
+          const h = now.getHours().toString().padStart(2, '0');
+          const m = now.getMinutes().toString().padStart(2, '0');
+          setGpsTimestamp(`${h}:${m}`);
+        }
+      });
     }
+    return () => {
+      cancelled = true;
+    };
   }, [hookGpsLocation, gpsTimestamp]);
 
   // Active search center: area center if searching area, otherwise user's location
@@ -256,13 +266,21 @@ export default function MosqueFinderScreen({
 
   // Trigger search whenever search center or radius changes (unless area not found)
   useEffect(() => {
+    let cancelled = false;
     if (!areaNotFound) {
-      fetchMosquesForCenter(effectiveCenter.latitude, effectiveCenter.longitude, radiusKm).catch(
-        () => {
-          // Non-fatal: fetchMosquesForCenter sets its own error state on failure.
+      Promise.resolve().then(() => {
+        if (!cancelled) {
+          fetchMosquesForCenter(effectiveCenter.latitude, effectiveCenter.longitude, radiusKm).catch(
+            () => {
+              // Non-fatal: fetchMosquesForCenter sets its own error state on failure.
+            }
+          );
         }
-      );
+      });
     }
+    return () => {
+      cancelled = true;
+    };
   }, [fetchMosquesForCenter, effectiveCenter.latitude, effectiveCenter.longitude, radiusKm, areaNotFound]);
 
   // Explicit USE MY LOCATION handler
@@ -416,87 +434,57 @@ export default function MosqueFinderScreen({
   const paddingH = isCompact ? 16 : 20;
 
   return (
-    <View style={[styles.screen, { backgroundColor: colors.bgBase }]}>
-      <ScreenHeader
-        eyebrow={t('Tools')}
-        title={t('Mosque Finder')}
-        onBack={onBack}
-        backLabel={t('Tools')}
-      />
-      <View style={{ maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH, paddingTop: 4 }}>
+    <DetailScreen
+      style={{ backgroundColor: colors.bgBase }}
+      header={
+        <SubHeader
+          eyebrow={t('Tools')}
+          title={t('Mosque Finder')}
+          subtitle={t('Find nearby places of worship')}
+          onBack={onBack}
+          backLabel={t('Tools')}
+          borderBottom
+          showFade
+        />
+      }
+    >
+      <View style={{ maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH }}>
         <View style={styles.headerWrap}>
           {/* Area Search Input Bar */}
-          <View
-            style={[
-              styles.searchWrap,
-              {
-                backgroundColor: colors.bgSurface,
-                borderColor: colors.borderSubtle,
-              },
-            ]}
-          >
-            <Ionicons
-              name="search"
-              size={17}
-              color={colors.textMuted}
-              style={styles.searchIcon}
-            />
-            <TextInput
-              style={[styles.searchInput, { color: colors.textPrimary }]}
-              placeholder={t("Search area or city, e.g. 'Dubai Marina' or 'Lahore'...")}
-              placeholderTextColor={colors.textMuted}
-              value={areaInput}
-              onChangeText={setAreaInput}
-              autoCorrect={false}
-              returnKeyType="search"
-              onSubmitEditing={() => handleSearchArea(areaInput)}
-            />
-            {areaInput.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setAreaInput('')}
-                style={styles.clearBtn}
-                accessibilityRole="button"
-                accessibilityLabel={t('Clear search input')}
-              >
-                <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              style={[
-                styles.searchSubmitBtn,
-                { backgroundColor: colors.forestGreen || colors.accent },
-                (!areaInput.trim() || searchingArea) && styles.searchSubmitBtnDisabled,
-              ]}
-              onPress={() => handleSearchArea(areaInput)}
+          <View style={styles.searchRow}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <SearchField
+                value={areaInput}
+                onChangeText={setAreaInput}
+                placeholder={t("Search area or city, e.g. 'Dubai Marina' or 'Lahore'...")}
+                returnKeyType="search"
+                onSubmitEditing={() => handleSearchArea(areaInput)}
+                onClear={() => setAreaInput('')}
+              />
+            </View>
+            <PrimaryButton
+              title={searchingArea ? '' : t('Find')}
+              icon={searchingArea ? undefined : 'search'}
+              loading={searchingArea}
               disabled={searchingArea || !areaInput.trim()}
-              accessibilityRole="button"
+              onPress={() => handleSearchArea(areaInput)}
               accessibilityLabel={t('Search area')}
-            >
-              {searchingArea ? (
-                <ActivityIndicator size="small" color={colors.onAccent} />
-              ) : (
-                <>
-                  <Ionicons name="search" size={14} color={colors.onAccent} style={{ marginRight: 4 }} />
-                  <Text style={[styles.searchSubmitText, { color: colors.onAccent }]}>
-                    {t('Find')}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+              style={{ minHeight: 44, paddingHorizontal: 16 }}
+            />
           </View>
 
           {/* Recent Area Searches */}
           {areaHistory.length > 0 && !areaSearchCenter && (
             <View style={styles.recentWrap}>
               <View style={styles.recentHeader}>
-                <Text style={[styles.recentLabel, { color: colors.textMuted }]}>{t('Recent searches')}</Text>
+                <AppText variant="eyebrow" tone="faint" style={styles.recentLabel}>{t('Recent searches')}</AppText>
                 <TouchableOpacity
                   onPress={clearAreaHistory}
                   hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   accessibilityRole="button"
                   accessibilityLabel={t('Clear area search history')}
                 >
-                  <Text style={[styles.recentClearText, { color: colors.textMuted }]}>{t('Clear')}</Text>
+                  <AppText variant="caption" tone="faint" style={styles.recentClearText}>{t('Clear')}</AppText>
                 </TouchableOpacity>
               </View>
               <ScrollView
@@ -505,27 +493,15 @@ export default function MosqueFinderScreen({
                 contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
               >
                 {areaHistory.map((item) => (
-                  <View
-                    key={item}
-                    style={[
-                      styles.recentChip,
-                      { backgroundColor: colors.bgSurface, borderColor: colors.borderSubtle },
-                    ]}
-                  >
-                    <TouchableOpacity
+                  <View key={item} style={styles.recentChipWrap}>
+                    <Chip
+                      label={item}
+                      icon="time-outline"
                       onPress={() => {
                         setAreaInput(item);
                         handleSearchArea(item);
                       }}
-                      style={styles.recentChipBtn}
-                      accessibilityRole="button"
-                      accessibilityLabel={`${t('Search for mosques near')} ${item}`}
-                    >
-                      <Ionicons name="time-outline" size={13} color={colors.accent} />
-                      <Text style={[styles.recentChipText, { color: colors.textPrimary }]} numberOfLines={1}>
-                        {item}
-                      </Text>
-                    </TouchableOpacity>
+                    />
                     <TouchableOpacity
                       onPress={() => removeAreaQuery(item)}
                       style={styles.recentChipRemove}
@@ -543,7 +519,8 @@ export default function MosqueFinderScreen({
         </View>
       </View>
 
-      <FlatList
+      <DetailScreen.FlatList
+        style={{ flex: 1 }}
         key={isWide ? 'mosques-grid' : 'mosques-list'}
         numColumns={isWide ? 2 : 1}
         data={mosques}
@@ -565,9 +542,7 @@ export default function MosqueFinderScreen({
                 effectiveCenter.longitude,
                 radiusKm,
                 true
-              ).catch(() => {
-                // Non-fatal: fetchMosquesForCenter sets its own error state.
-              });
+              ).catch(() => {});
             }}
             tintColor={colors.accent}
             colors={[colors.accent]}
@@ -576,13 +551,13 @@ export default function MosqueFinderScreen({
         ListHeaderComponent={
           <View style={styles.headerWrap}>
             {/* Location & Radius Control Card */}
-            <Card style={styles.controlCard} padded>
+            <PremiumCard style={styles.controlCard} padded>
               <View style={styles.locationHeaderRow}>
                 <View
                   style={[
                     styles.locationIconBox,
                     {
-                      backgroundColor: colors.iconCircleBg || '#E0EAE5',
+                      backgroundColor: colors.iconCircleBg,
                       borderColor: 'transparent',
                     },
                   ]}
@@ -595,56 +570,46 @@ export default function MosqueFinderScreen({
                 </View>
 
                 <View style={styles.locationInfo}>
-                  <Text style={[styles.locationLabel, { color: colors.textMuted }]}>
+                  <AppText variant="eyebrow" tone="faint" style={styles.locationLabel}>
                     {t('SEARCH CENTER')} · {centerTypeBadge}
-                  </Text>
-                  <Text
-                    style={[styles.locationValue, { color: colors.textPrimary }]}
-                    numberOfLines={1}
+                  </AppText>
+                  <AppText
+                    variant="title"
+                    style={styles.locationValue}
+                    numberOfLines={2}
                   >
                     {effectiveCenter.label ||
                       `${effectiveCenter.latitude.toFixed(2)}°, ${effectiveCenter.longitude.toFixed(2)}°`}
-                  </Text>
+                  </AppText>
 
                   {isUsingGps && (
                     <View style={styles.gpsConfidenceRow}>
                       <View style={[styles.gpsDot, { backgroundColor: colors.accent }]} />
-                      <Text
-                        style={[styles.gpsConfidenceText, { color: colors.textMuted }]}
-                        numberOfLines={1}
+                      <AppText
+                        variant="caption"
+                        tone="faint"
+                        style={styles.gpsConfidenceText}
+                        numberOfLines={2}
                       >
                         {t('Using GPS location')} ({effectiveCenter.latitude.toFixed(2)}°,{' '}
                         {effectiveCenter.longitude.toFixed(2)}°) ·{' '}
                         {gpsTimestamp ? `${t('last updated')} ${gpsTimestamp}` : t('active')}
-                      </Text>
+                      </AppText>
                     </View>
                   )}
                 </View>
               </View>
 
               {/* Prominent USE MY LOCATION Button */}
-              <TouchableOpacity
-                style={[
-                  styles.useLocationBtn,
-                  {
-                    backgroundColor: colors.accentDim,
-                    borderColor: colors.borderSubtle,
-                  },
-                ]}
-                onPress={handleUseMyLocation}
+              <OutlineButton
+                title={isLocating ? t('Acquiring GPS...') : t('USE MY LOCATION')}
+                icon={isLocating ? undefined : 'locate'}
+                loading={isLocating}
                 disabled={isLocating}
-                accessibilityRole="button"
+                onPress={handleUseMyLocation}
                 accessibilityLabel={t('Use my GPS location')}
-              >
-                {isLocating ? (
-                  <ActivityIndicator size="small" color={colors.accent} />
-                ) : (
-                  <Ionicons name="locate" size={15} color={colors.accent} />
-                )}
-                <Text style={[styles.useLocationBtnText, { color: colors.accent }]}>
-                  {isLocating ? t('Acquiring GPS...') : t('USE MY LOCATION')}
-                </Text>
-              </TouchableOpacity>
+                style={{ marginTop: 10, width: '100%' }}
+              />
 
               {/* Location Permission / Status Notice */}
               {!areaSearchCenter && (locStatus === 'denied' || locStatus === 'unavailable') && (
@@ -672,15 +637,17 @@ export default function MosqueFinderScreen({
                   <View style={styles.areaBannerLeft}>
                     <Ionicons name="location" size={16} color={colors.accent} />
                     <View style={styles.areaBannerTextWrap}>
-                      <Text style={[styles.areaBannerTitle, { color: colors.accent }]}>
-                        {t('Showing mosques near')} '{areaSearchCenter.query}'
-                      </Text>
-                      <Text
-                        style={[styles.areaBannerSubtitle, { color: colors.textSecondary }]}
-                        numberOfLines={1}
+                      <AppText variant="caption" highlight style={styles.areaBannerTitle}>
+                        {t('Showing mosques near')} &apos;{areaSearchCenter.query}&apos;
+                      </AppText>
+                      <AppText
+                        variant="caption"
+                        tone="faint"
+                        style={styles.areaBannerSubtitle}
+                        numberOfLines={2}
                       >
                         {areaSearchCenter.label}
-                      </Text>
+                      </AppText>
                     </View>
                   </View>
                   <TouchableOpacity
@@ -696,9 +663,9 @@ export default function MosqueFinderScreen({
                     accessibilityLabel={t('Return to my location')}
                   >
                     <Ionicons name="close" size={14} color={colors.accent} />
-                    <Text style={[styles.areaBannerCloseText, { color: colors.accent }]}>
+                    <AppText variant="caption" highlight style={styles.areaBannerCloseText}>
                       {t('My Location')}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 </View>
               )}
@@ -706,145 +673,120 @@ export default function MosqueFinderScreen({
               <Hairline style={styles.controlDivider} />
 
               <View style={styles.radiusRow}>
-                <Text style={[styles.radiusLabel, { color: colors.textSecondary }]}>
+                <AppText variant="caption" tone="faint" style={styles.radiusLabel}>
                   {t('Search Radius:')}
-                </Text>
+                </AppText>
                 <View style={styles.radiusPills}>
                   {RADIUS_OPTIONS.map((r) => {
                     const isSelected = radiusKm === r;
                     return (
-                      <TouchableOpacity
+                      <Chip
                         key={r}
-                        style={[
-                          styles.radiusPill,
-                          {
-                            backgroundColor: isSelected ? (colors.forestGreen || colors.accent) : colors.bgSurface,
-                            borderColor: isSelected ? (colors.forestGreen || colors.accent) : colors.borderSubtle,
-                          },
-                        ]}
+                        label={`${r} km`}
+                        selected={isSelected}
                         onPress={() => setRadiusKm(r)}
-                        accessibilityRole="button"
                         accessibilityLabel={`${r} ${t('kilometers radius')}`}
-                      >
-                        <Text
-                          style={[
-                            styles.radiusPillText,
-                            {
-                              color: isSelected ? colors.onAccent : colors.textPrimary,
-                            },
-                          ]}
-                        >
-                          {r} km
-                        </Text>
-                      </TouchableOpacity>
+                      />
                     );
                   })}
                 </View>
               </View>
-            </Card>
+            </PremiumCard>
 
             {/* Results status banner */}
             {!loading && !error && !areaNotFound && (
               <View style={styles.resultsBanner}>
-                <Text style={[styles.resultsCount, { color: colors.textMuted }]}>
+                <AppText variant="caption" tone="faint" style={styles.resultsCount}>
                   {mosques.length === 0
                     ? `${t('No mosques found within')} ${radiusKm} km`
                     : `${t('Found')} ${mosques.length} ${t('mosques within')} ${radiusKm} km`}
-                </Text>
+                </AppText>
               </View>
             )}
           </View>
         }
         renderItem={({ item, index }) => (
           <View style={[styles.itemWrap, isWide && styles.itemCell]}>
-            {index > 0 && !isWide && <Hairline style={styles.itemHairline} />}
-            <Card style={styles.mosqueCard} padded>
+            <PremiumCard style={styles.mosqueCard} padded>
               <View style={styles.cardHeader}>
                 <View style={styles.cardTitleWrap}>
-                  <Text
-                    style={[styles.mosqueName, { color: colors.textPrimary }]}
+                  <AppText
+                    variant="rowTitle"
+                    style={styles.mosqueName}
                     numberOfLines={2}
                   >
                     {item.name}
-                  </Text>
+                  </AppText>
                 </View>
                 <View
                   style={[
                     styles.distanceBadge,
                     {
-                      backgroundColor: colors.sagePill || '#DBE7E1',
+                      backgroundColor: colors.sagePill,
                       borderColor: 'transparent',
                     },
                   ]}
                 >
                   <Ionicons name="location-outline" size={13} color={colors.forestDark || colors.forestGreen || colors.accent} />
-                  <Text style={[styles.distanceText, { color: colors.forestDark || colors.forestGreen || colors.accent }]}>
+                  <AppText variant="caption" highlight style={styles.distanceText}>
                     {formatDistance(item.distanceKm)}
-                  </Text>
+                  </AppText>
                 </View>
               </View>
 
-              <Text
-                style={[styles.mosqueAddress, { color: colors.textMuted }]}
-                numberOfLines={2}
+              <AppText
+                variant="caption"
+                tone="faint"
+                style={styles.mosqueAddress}
+                numberOfLines={3}
               >
                 {item.address}
-              </Text>
+              </AppText>
 
-              <TouchableOpacity
-                style={[
-                  styles.mapButton,
-                  { borderColor: colors.borderSubtle, backgroundColor: colors.bgBase },
-                ]}
+              <OutlineButton
+                title={t('Open in Maps')}
+                icon="map-outline"
                 onPress={() => openInMaps(item)}
-                accessibilityRole="button"
                 accessibilityLabel={`${t('Open in Maps')} - ${item.name}`}
-              >
-                <Ionicons name="map-outline" size={14} color={colors.accent} />
-                <Text style={[styles.mapButtonText, { color: colors.textPrimary }]}>
-                  {t('Open in Maps')}
-                </Text>
-                <Ionicons name="open-outline" size={12} color={colors.textMuted} />
-              </TouchableOpacity>
-            </Card>
+                style={styles.mapButton}
+              />
+            </PremiumCard>
           </View>
         )}
         ListEmptyComponent={
           loading ? (
-            <View style={styles.content}>
+            <View style={[styles.content, { gap: 12 }]}>
               {[1, 2, 3, 4, 5].map((i) => (
-                <MosqueCardSkeleton key={i} compact={isCompact} />
+                <PremiumCard key={i} style={styles.mosqueCard} padded>
+                  <MosqueCardSkeleton compact={isCompact} />
+                </PremiumCard>
               ))}
             </View>
           ) : areaNotFound ? (
-            <Card style={styles.emptyCard} padded>
+            <PremiumCard style={styles.emptyCard} padded>
               <Ionicons name="search-outline" size={36} color={colors.accent} />
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              <AppText variant="title" style={styles.emptyTitle}>
                 {t('Area Not Found')}
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                {t('No geographic location found for')} "{searchedQuery}". {t('Try another city, district, or landmark name (e.g. "Dubai Marina", "Lahore", or "Istanbul").')}
-              </Text>
-              <TouchableOpacity
-                style={[styles.retryButton, { backgroundColor: colors.forestGreen || colors.accent }]}
+              </AppText>
+              <AppText variant="body" tone="faint" style={styles.emptySubtitle}>
+                {t('No geographic location found for')} &quot;{searchedQuery}&quot;. {t('Try another city, district, or landmark name (e.g. "Dubai Marina", "Lahore", or "Istanbul").')}
+              </AppText>
+              <PrimaryButton
+                title={t('Return to My Location')}
                 onPress={handleClearAreaSearch}
-                accessibilityRole="button"
                 accessibilityLabel={t('Return to my location')}
-              >
-                <Text style={[styles.retryText, { color: colors.onAccent }]}>
-                  {t('Return to My Location')}
-                </Text>
-              </TouchableOpacity>
-            </Card>
+                style={{ marginTop: 14 }}
+              />
+            </PremiumCard>
           ) : error ? (
-            <Card style={styles.errorCard} padded>
+            <PremiumCard style={styles.errorCard} padded>
               <Ionicons name="alert-circle-outline" size={32} color={colors.accent} />
-              <Text style={[styles.errorTitle, { color: colors.textPrimary }]}>
+              <AppText variant="title" style={styles.errorTitle}>
                 {t('Unable to load mosques')}
-              </Text>
-              <Text style={[styles.errorSubtitle, { color: colors.textMuted }]}>{error}</Text>
-              <TouchableOpacity
-                style={[styles.retryButton, { backgroundColor: colors.forestGreen || colors.accent }]}
+              </AppText>
+              <AppText variant="body" tone="faint" style={styles.errorSubtitle}>{error}</AppText>
+              <PrimaryButton
+                title={t('Retry Search')}
                 onPress={() =>
                   fetchMosquesForCenter(
                     effectiveCenter.latitude,
@@ -852,50 +794,42 @@ export default function MosqueFinderScreen({
                     radiusKm
                   )
                 }
-                accessibilityRole="button"
                 accessibilityLabel={t('Retry search')}
-              >
-                <Text style={[styles.retryText, { color: colors.onAccent }]}>
-                  {t('Retry Search')}
-                </Text>
-              </TouchableOpacity>
-            </Card>
+                style={{ marginTop: 14 }}
+              />
+            </PremiumCard>
           ) : (
-            <Card style={styles.emptyCard} padded>
+            <PremiumCard style={styles.emptyCard} padded>
               <Ionicons name="compass-outline" size={36} color={colors.textMuted} />
-              <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
+              <AppText variant="title" style={styles.emptyTitle}>
                 {t('No Mosques Found')}
-              </Text>
-              <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
+              </AppText>
+              <AppText variant="body" tone="faint" style={styles.emptySubtitle}>
                 {t('No places of worship found within')} {radiusKm} km {t('of')}{' '}
                 {effectiveCenter.label || t('this location')}. {t('Try expanding the search radius above or searching another area.')}
-              </Text>
+              </AppText>
               {areaSearchCenter && (
-                <TouchableOpacity
-                  style={[styles.retryButton, { backgroundColor: colors.forestGreen || colors.accent }]}
+                <PrimaryButton
+                  title={t('Return to My Location')}
                   onPress={handleClearAreaSearch}
-                  accessibilityRole="button"
                   accessibilityLabel={t('Return to my location')}
-                >
-                  <Text style={[styles.retryText, { color: colors.onAccent }]}>
-                    {t('Return to My Location')}
-                  </Text>
-                </TouchableOpacity>
+                  style={{ marginTop: 14 }}
+                />
               )}
-            </Card>
+            </PremiumCard>
           )
         }
         ListFooterComponent={
           mosques.length > 0 ? (
             <View style={styles.footerNote}>
-              <Text style={[styles.footerText, { color: colors.textMuted }]}>
+              <AppText variant="caption" tone="faint" style={styles.footerText}>
                 {t('Place of worship data provided by OpenStreetMap contributors. Keyless Nominatim search.')}
-              </Text>
+              </AppText>
             </View>
           ) : null
         }
       />
-    </View>
+    </DetailScreen>
   );
 }
 
@@ -905,8 +839,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    paddingTop: 6,
-    paddingBottom: 40,
   },
   listGrid: {
     gap: 12,
@@ -919,20 +851,27 @@ const styles = StyleSheet.create({
   headerWrap: {
     marginBottom: 6,
   },
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 0,
+    marginBottom: 10,
+  },
+  recentChipWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderRadius: 22,
     paddingHorizontal: 6,
-    height: 48,
+    minHeight: 48,
     marginTop: 4,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
   },
   searchIcon: {
     marginLeft: 6,
@@ -942,7 +881,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Manrope_500Medium',
     fontSize: 14,
-    height: '100%',
+    minHeight: 40,
+    minWidth: 0,
   },
   clearBtn: {
     padding: 6,
@@ -955,6 +895,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 64,
+    minHeight: 36,
   },
   searchSubmitBtnDisabled: {
     opacity: 0.5,
@@ -963,6 +904,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
     letterSpacing: 0.2,
+    paddingVertical: 2,
   },
   recentWrap: {
     marginBottom: 8,
@@ -977,10 +919,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     letterSpacing: 0.2,
+    paddingVertical: 2,
   },
   recentClearText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
+    paddingVertical: 2,
   },
   recentChipsScroll: {
     flexDirection: 'row',
@@ -995,7 +939,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingLeft: 8,
     paddingRight: 4,
-    height: 28,
+    minHeight: 28,
+    paddingVertical: 2,
   },
   recentChipBtn: {
     flexDirection: 'row',
@@ -1007,6 +952,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     maxWidth: 140,
+    paddingVertical: 2,
   },
   recentChipRemove: {
     padding: 4,
@@ -1016,7 +962,6 @@ const styles = StyleSheet.create({
   },
   controlCard: {
     marginBottom: 8,
-    borderRadius: 20,
   },
   locationHeaderRow: {
     flexDirection: 'row',
@@ -1031,14 +976,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 2,
+    flexShrink: 0,
   },
   locationInfo: {
     flex: 1,
+    minWidth: 0,
   },
   locationLabel: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 1.2,
+    paddingVertical: 2,
   },
   locationValue: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1067,6 +1015,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 7,
     paddingHorizontal: 12,
+    minHeight: 36,
     borderRadius: 14,
     borderWidth: 1,
     marginTop: 8,
@@ -1075,6 +1024,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11.5,
     letterSpacing: 0.5,
+    paddingVertical: 2,
   },
   statusNotice: {
     flexDirection: 'row',
@@ -1087,10 +1037,12 @@ const styles = StyleSheet.create({
   },
   statusNoticeTextWrap: {
     flex: 1,
+    minWidth: 0,
   },
   statusNoticeTitle: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    paddingVertical: 2,
   },
   statusNoticeDesc: {
     fontFamily: 'Manrope_400Regular',
@@ -1104,6 +1056,7 @@ const styles = StyleSheet.create({
   statusNoticeLinkText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
   areaBanner: {
     flexDirection: 'row',
@@ -1120,13 +1073,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flex: 1,
+    minWidth: 0,
   },
   areaBannerTextWrap: {
     flex: 1,
+    minWidth: 0,
   },
   areaBannerTitle: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    paddingVertical: 2,
   },
   areaBannerSubtitle: {
     fontFamily: 'Manrope_400Regular',
@@ -1139,12 +1095,15 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 5,
     paddingHorizontal: 8,
+    minHeight: 28,
     borderRadius: 12,
     borderWidth: 1,
+    flexShrink: 0,
   },
   areaBannerCloseText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
   controlDivider: {
     marginVertical: 8,
@@ -1163,8 +1122,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   radiusPill: {
-    height: 28,
+    minHeight: 28,
     paddingHorizontal: 10,
+    paddingVertical: 2,
     borderRadius: 999,
     borderWidth: 1,
     alignItems: 'center',
@@ -1173,6 +1133,7 @@ const styles = StyleSheet.create({
   radiusPillText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11.5,
+    paddingVertical: 2,
   },
   resultsBanner: {
     marginVertical: 4,
@@ -1189,9 +1150,7 @@ const styles = StyleSheet.create({
     marginVertical: 4,
     opacity: 0.5,
   },
-  mosqueCard: {
-    borderRadius: 20,
-  },
+  mosqueCard: {},
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1200,11 +1159,11 @@ const styles = StyleSheet.create({
   },
   cardTitleWrap: {
     flex: 1,
+    minWidth: 0,
   },
   mosqueName: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
-    lineHeight: 20,
   },
   distanceBadge: {
     flexDirection: 'row',
@@ -1212,17 +1171,19 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    minHeight: 24,
     borderRadius: 14,
     borderWidth: 1,
+    flexShrink: 0,
   },
   distanceText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
+    paddingVertical: 2,
   },
   mosqueAddress: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
-    lineHeight: 17,
     marginTop: 6,
     marginBottom: 12,
   },
@@ -1233,12 +1194,14 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
+    minHeight: 36,
     borderRadius: 14,
     borderWidth: 1,
   },
   mapButtonText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    paddingVertical: 2,
   },
   centerBox: {
     paddingVertical: 40,
@@ -1253,7 +1216,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 24,
     gap: 10,
-    borderRadius: 12,
   },
   errorTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1279,7 +1241,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 28,
     gap: 10,
-    borderRadius: 12,
   },
   emptyTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1289,7 +1250,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     textAlign: 'center',
-    lineHeight: 18,
     paddingHorizontal: 20,
   },
   footerNote: {

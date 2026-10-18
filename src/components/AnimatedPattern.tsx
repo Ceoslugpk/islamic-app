@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -112,7 +112,6 @@ function StarLayer({
   // ponytail: static — no Animated.loop. Perpetual native-driver rotation loops
   // in every card starve the Fabric renderer commit while scrolling (SDK 57).
   const starSize = size * 0.45;
-  const rotate = reverse ? '-360deg' : '360deg';
 
   return (
     <View
@@ -562,7 +561,7 @@ export function IslamicPullToRefreshIndicator({
   style?: ViewStyle;
 }) {
   const { colors } = useTheme();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [fadeAnim] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.timing(fadeAnim, {

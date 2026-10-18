@@ -1,0 +1,78 @@
+{
+  "byteEqualityPass": true,
+  "pinSanitizationPass": true,
+  "threeRuns": [
+    {
+      "run": 1,
+      "initialBytes": 708,
+      "reExportedBytes": 708,
+      "byteEqual": true,
+      "pinStripped": true
+    },
+    {
+      "run": 2,
+      "initialBytes": 708,
+      "reExportedBytes": 708,
+      "byteEqual": true,
+      "pinStripped": true
+    },
+    {
+      "run": 3,
+      "initialBytes": 708,
+      "reExportedBytes": 708,
+      "byteEqual": true,
+      "pinStripped": true
+    }
+  ],
+  "rejectionTests": [
+    {
+      "name": "null payload",
+      "rejected": true,
+      "matchesExpected": true,
+      "actualErr": "Backup file is not a valid backup."
+    },
+    {
+      "name": "wrong app identifier",
+      "rejected": true,
+      "matchesExpected": true,
+      "actualErr": "This file was not created by Islamic."
+    },
+    {
+      "name": "future format version",
+      "rejected": true,
+      "matchesExpected": true,
+      "actualErr": "Unsupported backup version (99). Update the app and try again."
+    },
+    {
+      "name": "missing tables field",
+      "rejected": true,
+      "matchesExpected": true,
+      "actualErr": "Backup file is missing table data."
+    },
+    {
+      "name": "table is not array",
+      "rejected": true,
+      "matchesExpected": true,
+      "actualErr": "Invalid table data for \"salah\": expected array of rows."
+    },
+    {
+      "name": "unauthorized storage key",
+      "rejected": true,
+      "matchesExpected": true,
+      "actualErr": "Unauthorized storage key \"malicious-key\" in backup."
+    },
+    {
+      "name": "excluded storage key (reciters cache)",
+      "rejected": true,
+      "matchesExpected": true,
+      "actualErr": "Unauthorized storage key \"quran_audio_arabic_reciters_cache\" in backup."
+    },
+    {
+      "name": "corrupted non-json islamic-settings",
+      "rejected": true,
+      "matchesExpected": true,
+      "actualErr": "Backup contains invalid or unparseable islamic-settings JSON."
+    }
+  ],
+  "allRejectionsPassed": true
+}

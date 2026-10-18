@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TAFSIR_SOURCES, DEFAULT_TAFSIR_SOURCE_ID, getTafsirSourceById } from './tafsirSources';
 
@@ -40,14 +40,11 @@ export function subscribeTafsirSource(listener: (sourceId: string) => void): () 
 }
 
 export function useTafsirSource() {
-  const [sourceId, setSourceIdState] = useState<string>(getTafsirSourceId());
-
-  useEffect(() => {
-    setSourceIdState(getTafsirSourceId());
-    return subscribeTafsirSource((nextSourceId) => {
-      setSourceIdState(nextSourceId);
-    });
-  }, []);
+  const sourceId = useSyncExternalStore(
+    subscribeTafsirSource,
+    getTafsirSourceId,
+    getTafsirSourceId
+  );
 
   const source = useMemo(() => {
     return getTafsirSourceById(sourceId) || getTafsirSourceById(DEFAULT_TAFSIR_SOURCE_ID)!;

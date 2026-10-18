@@ -2,17 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, fontRoles } from '../theme/tokens';
 import { t } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, Chip } from '../components/ui';
-import { fontRoles } from '../theme/tokens';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -57,30 +56,30 @@ export default function PrayerGuideScreen({
     };
   }, [allItems]);
 
-  const renderItem = (item: PrayerGuideItem) => {
+  const renderItem = (item: PrayerGuideItem, isLast = false) => {
     const update = updates[item.id];
     const arabic = update?.arabic ?? item.arabic;
     const translation = update?.translation ?? item.translation;
     const grades = update?.grades ?? item.grades;
     return (
-      <PremiumCard key={item.id} style={styles.itemCard} padded>
-        <Text style={[styles.itemTitle, { color: tokens.textPrimary }]}>{t(item.title)}</Text>
+      <PremiumCard key={item.id} style={[styles.itemCard, isLast && { marginBottom: 0 }]} padded>
+        <AppText variant="rowTitle" style={styles.itemTitle}>{t(item.title)}</AppText>
         {arabic ? (
           <ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
             {arabic}
           </ArabicText>
         ) : null}
         {item.transliteration ? (
-          <Text style={[styles.itemTranslit, { color: tokens.textSecondary }]}>
+          <AppText variant="caption" tone="faint" style={styles.itemTranslit}>
             {item.transliteration}
-          </Text>
+          </AppText>
         ) : null}
-        <Text style={[styles.itemTranslation, { color: tokens.textSecondary }]}>
+        <AppText variant="body" style={styles.itemTranslation}>
           {t(translation)}
-        </Text>
+        </AppText>
         <View style={styles.refRow}>
           <Ionicons name="book-outline" size={12} color={tokens.textMuted} />
-          <Text style={[styles.itemRef, { color: tokens.textMuted }]}>{item.reference}</Text>
+          <AppText variant="caption" tone="faint" style={styles.itemRef}>{item.reference}</AppText>
           {grades ? (
             <View
               style={[
@@ -88,7 +87,7 @@ export default function PrayerGuideScreen({
                 { backgroundColor: tokens.sagePill, borderColor: 'transparent' },
               ]}
             >
-              <Text style={[styles.gradePillText, { color: tokens.goldText }]}>{grades}</Text>
+              <AppText variant="eyebrow" highlight style={styles.gradePillText}>{grades}</AppText>
             </View>
           ) : null}
         </View>
@@ -134,47 +133,53 @@ export default function PrayerGuideScreen({
           ))}
         </ScrollView>
 
-        {PRAYER_GUIDE_SECTIONS.map((section, si) => (
-          <View key={section.id} style={styles.sectionWrap}>
-            <View style={styles.sectionHeadRow}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: tokens.iconCircleBg, borderColor: 'transparent' },
-                ]}
-              >
-                <Ionicons
-                  name={
-                    (SECTION_ICONS[section.id] ?? 'book-outline') as keyof typeof Ionicons.glyphMap
-                  }
-                  size={17}
-                  color={tokens.iconCircleFg}
-                />
+        {PRAYER_GUIDE_SECTIONS.map((section, si) => {
+          const isLastSection = si === PRAYER_GUIDE_SECTIONS.length - 1;
+          return (
+            <View key={section.id} style={[styles.sectionWrap, isLastSection && { marginBottom: 0 }]}>
+              <View style={styles.sectionHeadRow}>
+                <View
+                  style={[
+                    styles.sectionIcon,
+                    { backgroundColor: tokens.iconCircleBg, borderColor: 'transparent' },
+                  ]}
+                >
+                  <Ionicons
+                    name={
+                      (SECTION_ICONS[section.id] ?? 'book-outline') as keyof typeof Ionicons.glyphMap
+                    }
+                    size={17}
+                    color={tokens.iconCircleFg}
+                  />
+                </View>
+                <View style={styles.sectionTitleCol}>
+                  <AppText variant="sectionTitle" style={styles.sectionTitle}>
+                    {t(section.title)}
+                  </AppText>
+                  {section.arabicTitle ? (
+                    <ArabicText align="left" size={13} style={{ color: tokens.text }}>
+                      {section.arabicTitle}
+                    </ArabicText>
+                  ) : null}
+                </View>
               </View>
-              <View style={styles.sectionTitleCol}>
-                <Text style={[styles.sectionTitle, { color: tokens.textPrimary }]}>
-                  {t(section.title)}
-                </Text>
-                {section.arabicTitle ? (
-                  <ArabicText align="left" size={13} style={{ color: tokens.text }}>
-                    {section.arabicTitle}
-                  </ArabicText>
-                ) : null}
-              </View>
+              {section.items.map((item, ii) => {
+                const isLastItem = isLastSection && ii === section.items.length - 1;
+                return renderItem(item, isLastItem);
+              })}
+              {!isLastSection ? (
+                <Hairline style={styles.sectionDivider} />
+              ) : null}
             </View>
-            {section.items.map(renderItem)}
-            {si < PRAYER_GUIDE_SECTIONS.length - 1 ? (
-              <Hairline style={styles.sectionDivider} />
-            ) : null}
-          </View>
-        ))}
+          );
+        })}
       </DetailScreen.ScrollView>
     </DetailScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 12 },
+  content: {},
   chipsScroll: {
     flexDirection: 'row',
     gap: 8,
@@ -190,8 +195,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  sectionTitleCol: { flex: 1 },
+  sectionTitleCol: { flex: 1, minWidth: 0 },
   sectionTitle: {
     fontFamily: fontRoles.title,
     fontSize: 18,
@@ -208,17 +214,15 @@ const styles = StyleSheet.create({
   itemArabic: {
     fontFamily: fontRoles.arabic,
     fontSize: 18,
-    lineHeight: 28,
     marginBottom: 6,
   },
   itemTranslit: {
     fontFamily: fontRoles.ui,
     fontSize: 12,
     fontStyle: 'italic',
-    lineHeight: 18,
     marginBottom: 4,
   },
-  itemTranslation: { fontFamily: fontRoles.ui, fontSize: 13.5, lineHeight: 20 },
+  itemTranslation: { fontFamily: fontRoles.ui, fontSize: 13.5 },
   refRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -226,12 +230,13 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 10,
   },
-  itemRef: { fontFamily: fontRoles.ui, fontSize: 11, maxWidth: '70%' },
+  itemRef: { fontFamily: fontRoles.ui, fontSize: 11, flexShrink: 1, minWidth: 0 },
   gradePill: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
     borderWidth: 1,
+    flexShrink: 0,
   },
   gradePillText: { fontFamily: fontRoles.uiBold, fontSize: 9.5, letterSpacing: 0.3 },
 });

@@ -1,16 +1,15 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
-import { useThemeTokens } from '../theme/tokens';
+import { AppText } from '../components/ui/AppText';
+import { useThemeTokens, fontRoles } from '../theme/tokens';
 import { t } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
-import { fontRoles } from '../theme/tokens';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { SHAHADA_SECTIONS, SHAHADA_VERSE } from '../lib/shahada';
@@ -60,26 +59,26 @@ export default function ShahadaScreen({
           <ArabicText style={[styles.heroArabic, { color: tokens.text }]}>
             {SHAHADA_VERSE.arabic}
           </ArabicText>
-          <Text style={[styles.heroTranslation, { color: tokens.muted }]}>
+          <AppText variant="body" tone="faint" style={styles.heroTranslation}>
             {t(SHAHADA_VERSE.translation)}
-          </Text>
-          <Text style={[styles.source, { color: tokens.muted }]}>{t(SHAHADA_VERSE.source)}</Text>
+          </AppText>
+          <AppText variant="caption" tone="faint" style={styles.source}>{t(SHAHADA_VERSE.source)}</AppText>
         </PremiumCard>
 
         {/* The declaration */}
         <PremiumCard style={styles.declarationCard} padded>
-          <Text style={[styles.cardTitle, { color: tokens.goldText }]}>
+          <AppText variant="title" highlight style={styles.cardTitle}>
             أَشْهَدُ أَنْ لَا إِلَٰهَ إِلَّا ٱللَّٰهُ
-          </Text>
+          </AppText>
           <ArabicText style={[styles.declarationArabic, { color: tokens.text }]}>
             وَأَشْهَدُ أَنَّ مُحَمَّدًا رَسُولُ ٱللَّٰهِ
           </ArabicText>
-          <Text style={[styles.declarationTranslation, { color: tokens.text }]}>
+          <AppText variant="body" style={styles.declarationTranslation}>
             {t('"I bear witness that there is no god but Allah, and I bear witness that Muhammad is the Messenger of Allah."')}
-          </Text>
-          <Text style={[styles.source, { color: tokens.muted }]}>
+          </AppText>
+          <AppText variant="caption" tone="faint" style={styles.source}>
             {t('The declaration of faith — the first pillar of Islam')}
-          </Text>
+          </AppText>
         </PremiumCard>
 
         {/* Sections */}
@@ -87,18 +86,18 @@ export default function ShahadaScreen({
           <View key={s.id}>
             {i > 0 && <Hairline style={styles.itemDivider} />}
             <PremiumCard style={styles.itemCard} padded>
-              <Text style={[styles.itemTitle, { color: tokens.goldText }]}>{t(s.title)}</Text>
+              <AppText variant="sectionTitle" highlight style={styles.itemTitle}>{t(s.title)}</AppText>
               {s.arabic ? (
                 <ArabicText style={[styles.itemArabic, { color: tokens.text }]}>
                   {s.arabic}
                 </ArabicText>
               ) : null}
-              <Text style={[styles.itemTranslation, { color: tokens.text }]}>
+              <AppText variant="body" style={styles.itemTranslation}>
                 {t(s.translation)}
-              </Text>
-              <Text style={[styles.source, { color: tokens.muted }]}>{t(s.source)}</Text>
+              </AppText>
+              <AppText variant="caption" tone="faint" style={styles.source}>{t(s.source)}</AppText>
               {s.note ? (
-                <Text style={[styles.note, { color: tokens.muted }]}>{t(s.note)}</Text>
+                <AppText variant="caption" tone="faint" style={styles.note}>{t(s.note)}</AppText>
               ) : null}
             </PremiumCard>
           </View>
@@ -106,9 +105,9 @@ export default function ShahadaScreen({
 
         {/* Closing note */}
         <View style={styles.closingWrap}>
-          <Text style={[styles.closing, { color: tokens.muted }]}>
+          <AppText variant="body" tone="faint" style={styles.closing}>
             {t("Every source above is drawn from the Qur'an and authentic hadith (Sahih al-Bukhari, Sahih Muslim). The classical conditions summary is an educational overview — for detailed study, consult a qualified scholar.")}
-          </Text>
+          </AppText>
         </View>
       </DetailScreen.ScrollView>
     </DetailScreen>
@@ -117,7 +116,6 @@ export default function ShahadaScreen({
 
 const styles = StyleSheet.create({
   content: {
-    paddingTop: 14,
   },
   heroCard: {
     marginBottom: 14,

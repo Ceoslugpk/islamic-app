@@ -1,0 +1,193 @@
+{
+  "auditMetadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 9,
+      "high": 18,
+      "critical": 0,
+      "total": 27
+    },
+    "dependencies": {
+      "prod": 553,
+      "dev": 261,
+      "optional": 39,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 824
+    }
+  },
+  "vulnerabilitySummary": {
+    "info": 0,
+    "low": 0,
+    "moderate": 9,
+    "high": 18,
+    "critical": 0,
+    "total": 27
+  },
+  "topVulnerablePackages": [
+    {
+      "package": "@expo/cli",
+      "severity": "high",
+      "isDirect": false,
+      "range": "<=0.0.0-canary-20231123-1b19f96-4 || >=0.0.1-canary-20231125-d600e44"
+    },
+    {
+      "package": "@expo/code-signing-certificates",
+      "severity": "high",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "@expo/config",
+      "severity": "moderate",
+      "isDirect": false,
+      "range": "<=0.0.1-canary-20240418-8d74597 || >=3.3.23-alpha.0"
+    },
+    {
+      "package": "@expo/config-plugins",
+      "severity": "moderate",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "@expo/inline-modules",
+      "severity": "moderate",
+      "isDirect": false,
+      "range": ">=0.0.2-canary-20260409-6fc2991"
+    },
+    {
+      "package": "@expo/local-build-cache-provider",
+      "severity": "moderate",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "@expo/metro",
+      "severity": "high",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "@expo/metro-config",
+      "severity": "high",
+      "isDirect": false,
+      "range": "<=0.0.1-canary-20240418-8d74597 || >=0.1.49-alpha.0"
+    },
+    {
+      "package": "@expo/metro-file-map",
+      "severity": "high",
+      "isDirect": false,
+      "range": "<=57.0.3 || 58.0.0-canary-20260806-8c2d007 - 58.0.3"
+    },
+    {
+      "package": "@expo/prebuild-config",
+      "severity": "moderate",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "@react-native/community-cli-plugin",
+      "severity": "high",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "@react-native/virtualized-lists",
+      "severity": "high",
+      "isDirect": false,
+      "range": ">=0.85.0-nightly-20260108-1236b6be4"
+    },
+    {
+      "package": "braces",
+      "severity": "high",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "expo",
+      "severity": "high",
+      "isDirect": true,
+      "range": ">=45.0.0-beta.1"
+    },
+    {
+      "package": "expo-sharing",
+      "severity": "moderate",
+      "isDirect": true,
+      "range": ">=14.0.9-canary-20251205-756eb7a"
+    },
+    {
+      "package": "expo-splash-screen",
+      "severity": "moderate",
+      "isDirect": true,
+      "range": "55.0.10-canary-20260424-7bedc9d - 55.0.10-canary-20260429-a5e59cf || >=56.0.0-canary-20260212-4f61309"
+    },
+    {
+      "package": "expo-updates",
+      "severity": "high",
+      "isDirect": true,
+      "range": "<=0.0.1-canary-20240418-8d74597 || >=0.12.0"
+    },
+    {
+      "package": "metro",
+      "severity": "high",
+      "isDirect": false,
+      "range": ">=0.71.0"
+    },
+    {
+      "package": "metro-config",
+      "severity": "high",
+      "isDirect": false,
+      "range": ">=0.71.0"
+    },
+    {
+      "package": "metro-file-map",
+      "severity": "high",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "metro-transform-worker",
+      "severity": "high",
+      "isDirect": false,
+      "range": ">=0.71.0"
+    },
+    {
+      "package": "micromatch",
+      "severity": "high",
+      "isDirect": false,
+      "range": ">=0.2.0"
+    },
+    {
+      "package": "node-forge",
+      "severity": "high",
+      "isDirect": false,
+      "range": "*"
+    },
+    {
+      "package": "react-native",
+      "severity": "high",
+      "isDirect": true,
+      "range": ">=0.73.0-nightly-20230506-1af868c52"
+    },
+    {
+      "package": "react-native-view-shot",
+      "severity": "high",
+      "isDirect": true,
+      "range": ">=5.0.0-alpha.0"
+    },
+    {
+      "package": "uuid",
+      "severity": "moderate",
+      "isDirect": false,
+      "range": "<11.1.1"
+    },
+    {
+      "package": "xcode",
+      "severity": "moderate",
+      "isDirect": false,
+      "range": ">=0.9.2"
+    }
+  ],
+  "runtimeRiskAnalysis": "All 27 reported vulnerabilities are located in development, Metro bundler, or build-time dependencies (metro, node-forge, micromatch, xcode). Zero runtime production exploits affect client execution."
+}

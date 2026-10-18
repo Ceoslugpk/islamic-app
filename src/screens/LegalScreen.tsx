@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../lib/theme';
 import { useThemeTokens } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
@@ -38,7 +37,7 @@ function Badge({ label }: BadgeProps) {
       label={t(label)}
       selected={false}
       style={{
-        height: 26,
+        minHeight: 26,
         paddingHorizontal: 8,
         backgroundColor: tokens.ringFill,
         borderColor: tokens.ringBorder,
@@ -63,9 +62,9 @@ function LegalSection({ title, badge, children }: LegalSectionProps) {
       borderColor={tokens.cardBorder}
     >
       <View style={styles.sectionHeaderRow}>
-        <Text style={[styles.sectionTitle, { color: tokens.text }]}>
+        <AppText variant="sectionTitle" style={styles.sectionTitle}>
           {t(title)}
-        </Text>
+        </AppText>
         {badge ? <Badge label={badge} /> : null}
       </View>
       <View style={styles.sectionBody}>{children}</View>
@@ -79,20 +78,19 @@ interface BulletItemProps {
 }
 
 function BulletItem({ title, text }: BulletItemProps) {
-  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   return (
     <View style={styles.bulletRow}>
-      <Text style={[styles.bulletDot, { color: tokens.accent }]}>•</Text>
+      <AppText variant="body" highlight style={styles.bulletDot}>•</AppText>
       <View style={styles.bulletContent}>
         {title ? (
-          <Text style={[styles.bulletTitle, { color: tokens.text }]}>
+          <AppText variant="rowTitle" style={styles.bulletTitle}>
             {t(title)}
-          </Text>
+          </AppText>
         ) : null}
-        <Text style={[styles.bulletText, { color: tokens.muted }]}>
+        <AppText variant="subtitle" style={styles.bulletText}>
           {t(text)}
-        </Text>
+        </AppText>
       </View>
     </View>
   );
@@ -105,15 +103,14 @@ interface LibItemProps {
 }
 
 function LibItem({ name, license, desc }: LibItemProps) {
-  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   return (
     <View style={styles.libItem}>
       <View style={styles.libHeader}>
-        <Text style={[styles.libName, { color: tokens.text }]}>{name}</Text>
+        <AppText variant="rowTitle" style={styles.libName}>{name}</AppText>
         <Badge label={license} />
       </View>
-      <Text style={[styles.libDesc, { color: tokens.muted }]}>{t(desc)}</Text>
+      <AppText variant="subtitle" style={styles.libDesc}>{t(desc)}</AppText>
     </View>
   );
 }
@@ -125,21 +122,19 @@ interface ServiceItemProps {
 }
 
 function ServiceItem({ name, role, desc }: ServiceItemProps) {
-  const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   return (
     <View style={styles.serviceItem}>
       <View style={styles.serviceHeader}>
-        <Text style={[styles.serviceName, { color: tokens.text }]}>{name}</Text>
+        <AppText variant="rowTitle" style={styles.serviceName}>{name}</AppText>
         <Badge label={role} />
       </View>
-      <Text style={[styles.serviceDesc, { color: tokens.muted }]}>{t(desc)}</Text>
+      <AppText variant="subtitle" style={styles.serviceDesc}>{t(desc)}</AppText>
     </View>
   );
 }
 
 export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
-  const { colors } = useTheme();
   const { tokens } = useThemeTokens();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
@@ -204,8 +199,10 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
       style={{ backgroundColor: tokens.bgTop }}
       includeTopInset
       header={
-        <View>
+        <View testID="subheader" style={{ backgroundColor: tokens.bgTop }}>
+          <View style={StyleSheet.absoluteFill} pointerEvents="none" testID="sub-header" />
           <SubHeader
+            testID="sub-header-bar"
             title={t(meta.title)}
             subtitle={t(meta.subtitle)}
             eyebrow={t("About & Legal")}
@@ -230,7 +227,6 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
           styles.scrollContent,
           {
             paddingHorizontal: paddingH,
-            paddingTop: 12,
           },
         ]}
       >
@@ -238,15 +234,15 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
           {activeScreen === 'privacy' && (
             <>
               <LegalSection title="Our Commitment to Privacy" badge="Zero Data Sale">
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("This application is built entirely as Sadaqah Jariyah (continuous charity) for the Muslim Ummah. We believe your spiritual practices, daily prayers, notes, and reflections are sacred and private to you alone. We do not sell, rent, monetize, or distribute any user data under any circumstances.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title="No Accounts & No Profiles" badge="Account-Free">
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("The app requires no account creation, sign-in, email address, or phone number. We do not create user profiles, fingerprint your device, or track your identity across sessions or devices.")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title="No authentication servers"
                   text={t("You can use every core feature immediately without ever signing in or providing personal credentials.")}
@@ -258,9 +254,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("On-Device Local Storage")} badge={t("Stored on Device")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("Your data stays exclusively on your phone in local storage (embedded SQLite database and secure key-value storage):")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title={t("Quran Reader")}
                   text={t("Bookmarks, last read ayah position, reading plans, and verse reflection notes.")}
@@ -276,9 +272,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("Device Permissions")} badge={t("Optional & Revocable")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("The app requests only the minimum permissions necessary to function:")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title={t("Location (GPS)")}
                   text={t("Used strictly on-device to calculate local prayer times and determine the Qibla direction. Your coordinates are never sent to our servers or linked to your identity. You can revoke this permission anytime and choose a manual city instead.")}
@@ -290,9 +286,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("Network Requests to Public APIs")} badge={t("Minimal Queries")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("When network requests are required, they contact free, public APIs with only the bare minimum parameters needed to fulfill the request:")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title={t("Prayer Times")}
                   text={t("Approximate latitude, longitude, and calculation method parameters are sent to Islamic.app to fetch the monthly prayer schedule.")}
@@ -308,15 +304,15 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("Zero Analytics & Telemetry")} badge={t("No Analytics")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("The application has no analytics SDKs, crash trackers, or telemetry scripts. We do not collect usage statistics, screen view counts, or interaction events.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title={t("Women's Worship Data")} badge={t("On-Device & Private")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("The optional Women's Worship feature may store the following records locally on your device: menstrual/period start and end dates, post-natal (nifas) start and end dates, user-entered private notes associated with those records, purity-day information, and missed-fasting records where the recorded reason relates to menstruation or post-natal status.")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title={t("Stored locally only")}
                   text={t("These records are kept exclusively in the app's on-device SQLite database. They are never transmitted to our servers, Islamic.app, AlAdhan, Nominatim, Quran providers, or any analytics, advertising, or crash-reporting service.")}
@@ -348,15 +344,15 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
           {activeScreen === 'terms' && (
             <>
               <LegalSection title={t("Free Service as Sadaqah Jariyah")} badge={t("Free & Open")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("This application is provided completely free of charge as Sadaqah Jariyah (continuous charity) for the benefit of the global Muslim community. There are no in-app purchases, paid subscriptions, or paywalled content.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title={t("Religious & Educational Purpose")} badge={t("Educational")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("All content provided—including the Holy Quran text, translations, tafsir, hadiths, prayer time schedules, and worship guides—is intended for personal devotional and educational purposes. While we strive for absolute accuracy according to verified Islamic scholarship, this software is provided as a supportive companion and does not replace qualified human guidance.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title={t("Religious Scholarly Disclaimer")} badge={t("Important")}>
@@ -371,21 +367,21 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("Respectful Use & Adab")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("Users agree to treat the Holy Quran, sacred names of Allah, hadiths, and devotional materials with respect and adab. Users must not attempt to abuse, distort, or maliciously disrupt the public APIs that power the application.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title={t("Disclaimer of Warranties & Liability")} badge={t("As-Is")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("The application is provided on an \"as is\" and \"as available\" basis without warranties of any kind, whether express or implied. The developers and contributors make every reasonable effort to prevent errors, but assume no liability for calculation inaccuracies, compass magnetic interference, or third-party server downtime.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title={t("Changes to Terms")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("These terms may be updated occasionally as new features are added. Continued use of the application following an update constitutes acceptance of the revised terms.")}
-                </Text>
+                </AppText>
               </LegalSection>
             </>
           )}
@@ -393,9 +389,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
 {activeScreen === 'data' && (
             <>
               <LegalSection title={t("What Data is Stored Locally")} badge={t("Stored on Phone")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("All your personal interactions and records remain stored strictly within your device's isolated application container. The app uses an embedded SQLite database (expo-sqlite) plus AsyncStorage for preferences:")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title={t("Holy Quran")}
                   text={t("Reading bookmarks (bookmarks table), last-read ayah (quran_cache: 'last-read'), verse notes (notes table), and personal reading plan progress (plan_entries table).")}
@@ -427,9 +423,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("Device Permissions Used")} badge={t("Optional & Revocable")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("The app requests only the minimum permissions necessary. Each is optional and can be revoked in system settings:")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title={t("Location (Precise & Approximate)")}
                   text={t("Used strictly on-device to calculate local prayer times and determine the Qibla direction. Your coordinates are never sent to our servers or linked to your identity. You can revoke this permission anytime and choose a manual city instead.")}
@@ -445,9 +441,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("What Leaves Your Device (Network Endpoints)")} badge={t("Strictly Minimal")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("No personal profile data ever leaves your phone. Network traffic is restricted exclusively to the following public endpoints:")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title={t("Prayer Times & Hadith API")}
                   text={t("api.islamic.app — receives approximate latitude, longitude, calculation method ID, and madhab to return prayer schedules and authentic hadith collections (Bukhari, Muslim, etc.).")}
@@ -475,9 +471,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("How to Clear or Erase Your Data")} badge={t("User Controlled")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("You have complete authority over your data at all times:")}
-                </Text>
+                </AppText>
                 <BulletItem
                   title={t("Delete Women's Data")}
                   text={t("Settings → Women's Worship → 'Delete women's data' — instantly erases all cycle, purity, nifas, and related qada records from SQLite.")}
@@ -501,9 +497,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("Independent & No Cloud Lock-In")} badge={t("Zero Lock-In")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("Because the application has no cloud accounts or remote user databases, your data is entirely decentralized. You are never subject to account suspensions, remote data leaks, or unexpected cloud sync discrepancies.")}
-                </Text>
+                </AppText>
               </LegalSection>
             </>
           )}
@@ -511,9 +507,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
           {activeScreen === 'licenses' && (
             <>
               <LegalSection title={t("Open Source Foundation")} badge={t("Open Source")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("This application is proudly built on open-source foundations. We stand on the shoulders of generous engineers and communities who make mobile software accessible to all.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title={t("Core Runtime & Framework")}>
@@ -625,9 +621,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("Architecture Note")} badge={t("TanStack-Free")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("The app is architected with a strict zero-dependency philosophy for data state. Networking, caching, and state synchronization use lightweight React hooks and direct SQLite queries without heavy state management bloat.")}
-                </Text>
+                </AppText>
               </LegalSection>
             </>
           )}
@@ -635,9 +631,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
           {activeScreen === 'services' && (
             <>
               <LegalSection title={t("Free Public APIs & Open Data")} badge={t("Public APIs")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("The application integrates with established, free public APIs and open data initiatives across the Muslim world. None of these providers receive personal identities or user profiles.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title={t("Services Directory")}>
@@ -685,9 +681,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <LegalSection title={t("Terms of External Providers")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("Each external service operates under its respective terms of service and open data attribution licenses. We are profoundly grateful to every provider for their selfless contribution to Islamic technology. May Allah reward them all abundantly.")}
-                </Text>
+                </AppText>
               </LegalSection>
             </>
           )}
@@ -695,9 +691,9 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
           {activeScreen === 'contact' && (
             <>
               <LegalSection title={t("Community Support & Feedback")} badge={t("Open Source")}>
-                <Text style={[styles.paragraph, { color: colors.textSecondary }]}>
+                <AppText variant="body" style={styles.paragraph}>
                   {t("This application is developed as a community project for the Ummah. If you spot a bug, find an error in prayer timings, notice a typo in translations, or wish to propose a new feature, we welcome your feedback.")}
-                </Text>
+                </AppText>
               </LegalSection>
 
               <LegalSection title={t("Tips for Helpful Issue Reports")}>
@@ -716,15 +712,15 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
               </LegalSection>
 
               <View style={styles.footerSignoff}>
-                <Text style={[styles.signoffHeart, { color: colors.textMuted }]}>
+                <AppText variant="caption" style={styles.signoffHeart}>
                   {t("Made for Ummah ❤️")}
-                </Text>
-                <Text style={[styles.signoffArabic, { color: colors.textSecondary }]}>
+                </AppText>
+                <AppText variant="body" style={styles.signoffArabic}>
                   جَزَاكُمُ ٱللَّٰهُ خَيْرًا
-                </Text>
-                <Text style={[styles.signoffSub, { color: colors.textMuted }]}>
+                </AppText>
+                <AppText variant="caption" style={styles.signoffSub}>
                   {t("May Allah reward you with goodness")}
-                </Text>
+                </AppText>
               </View>
             </>
           )}
@@ -786,17 +782,16 @@ const styles = StyleSheet.create({
   },
   bulletContent: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
   },
   bulletTitle: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 13.5,
-    lineHeight: 19,
   },
   bulletText: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 19,
   },
   badge: {
     paddingHorizontal: 8,
@@ -809,6 +804,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 0.2,
+    paddingVertical: 2,
   },
   libItem: {
     paddingVertical: 8,
@@ -824,11 +820,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     flex: 1,
+    minWidth: 0,
   },
   libDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12.5,
-    lineHeight: 18,
   },
   serviceItem: {
     paddingVertical: 8,
@@ -844,11 +840,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     flex: 1,
+    minWidth: 0,
   },
   serviceDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12.5,
-    lineHeight: 18,
   },
   actionCard: {
     padding: 18,
@@ -869,6 +865,7 @@ const styles = StyleSheet.create({
   },
   actionInfo: {
     flex: 1,
+    minWidth: 0,
   },
   actionTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -882,14 +879,14 @@ const styles = StyleSheet.create({
   actionDesc: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 13,
-    lineHeight: 19,
   },
   primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    height: 44,
+    minHeight: 44,
+    paddingVertical: 8,
     borderRadius: 16,
     marginTop: 4,
   },
@@ -897,13 +894,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     letterSpacing: 0.2,
+    paddingVertical: 2,
   },
   secondaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    height: 44,
+    minHeight: 44,
+    paddingVertical: 8,
     borderRadius: 16,
     borderWidth: 1,
   },
@@ -911,6 +910,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     letterSpacing: 0.2,
+    paddingVertical: 2,
   },
   footerSignoff: {
     alignItems: 'center',

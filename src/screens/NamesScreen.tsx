@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
-  Text,
   View,
   ScrollView,
   TextInput,
@@ -14,11 +13,12 @@ import {
   Image,
   Share,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, getBrandLogoSource } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
@@ -257,22 +257,24 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                 backgroundColor: tokens.ringFill,
                 borderColor: tokens.ringBorder,
                 borderWidth: 1,
-                width: isCompact ? 30 : 32,
-                height: isCompact ? 30 : 32,
+                minWidth: isCompact ? 30 : 32,
+                minHeight: isCompact ? 30 : 32,
+                paddingHorizontal: 2,
               },
             ]}
           >
-            <Text
+            <AppText
+              variant="numeral"
+              highlight
               style={[
                 styles.numberText,
                 {
-                  color: tokens.gold,
                   fontSize: isCompact ? 13 : 14,
                 },
               ]}
             >
               {item.number}
-            </Text>
+            </AppText>
           </View>
 
           <View style={styles.arabicWrap}>
@@ -289,51 +291,49 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
 
         {/* Name Details */}
         <View style={styles.cardContent}>
-          <Text
+          <AppText
+            variant="sectionTitle"
             style={[
               styles.translit,
               {
-                color: tokens.text,
                 fontSize: isCompact ? 15 : 16,
               },
             ]}
             numberOfLines={1}
           >
             {item.transliteration}
-          </Text>
+          </AppText>
 
           {item.name ? (
-            <Text style={[styles.localName, { color: tokens.accent }]} numberOfLines={1}>
+            <AppText variant="caption" highlight style={styles.localName} numberOfLines={2}>
               {item.name}
-            </Text>
+            </AppText>
           ) : null}
 
-          <Text
+          <AppText
+            variant="body"
             style={[
               styles.meaning,
               {
-                color: tokens.muted,
                 fontSize: isCompact ? 12.5 : 13.5,
               },
             ]}
-            numberOfLines={3}
           >
             {item.meaning}
-          </Text>
+          </AppText>
 
           {item.note ? (
-            <Text
+            <AppText
+              variant="subtitle"
               style={[
                 styles.note,
                 {
-                  color: tokens.muted,
                   fontSize: isCompact ? 12 : 13,
                 },
               ]}
-              numberOfLines={2}
             >
               {item.note}
-            </Text>
+            </AppText>
           ) : null}
         </View>
 
@@ -350,18 +350,19 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
               ]}
             >
               <Ionicons name="book-outline" size={11} color={tokens.gold} />
-              <Text
+              <AppText
+                variant="caption"
+                highlight
                 style={[
                   styles.verse,
                   {
-                    color: tokens.gold,
                     fontSize: isCompact ? 10 : 10.5,
                   },
                 ]}
                 numberOfLines={1}
               >
                 {verseLabel}
-              </Text>
+              </AppText>
             </View>
           ) : (
             <View />
@@ -422,7 +423,8 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                       {
                         backgroundColor: selected ? tokens.gold : tokens.cardTop,
                         borderColor: selected ? tokens.gold : tokens.cardBorder,
-                        height: isCompact ? 32 : 34,
+                        minHeight: isCompact ? 32 : 34,
+                        paddingVertical: 4,
                         paddingHorizontal: isCompact ? 14 : 16,
                       },
                     ]}
@@ -433,17 +435,18 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                     pressRetentionOffset={{ top: 20, bottom: 20, left: 20, right: 20 }}
                     delayPressIn={0}
                   >
-                    <Text
+                    <AppText
+                      variant="caption"
+                      tone={selected ? 'onGold' : undefined}
                       style={[
                         styles.chipText,
                         {
-                          color: selected ? tokens.onGold : tokens.muted,
                           fontSize: isCompact ? 11.5 : 12,
                         },
                       ]}
                     >
                       {lang.label}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 );
               })}
@@ -490,7 +493,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             {
               backgroundColor: tokens.cardTop,
               borderColor: tokens.cardBorder,
-              height: isCompact ? 38 : 42,
+              minHeight: isCompact ? 38 : 42,
               borderRadius: isCompact ? 16 : 18,
             },
           ]}
@@ -501,6 +504,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             onChangeText={setSearchQuery}
             placeholder={t('Search by name, meaning, or number...')}
             placeholderTextColor={tokens.muted}
+            accessibilityLabel={t('Search by name, meaning, or number...')}
             style={[styles.searchInput, { color: tokens.text, fontSize: isCompact ? 12.5 : 13 }]}
             autoCapitalize="none"
             autoCorrect={false}
@@ -524,14 +528,14 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
         {searchHistory.length > 0 && !searchQuery && (
           <View style={styles.recentSearchesWrap}>
             <View style={styles.recentSearchesHeader}>
-              <Text style={[styles.recentLabel, { color: tokens.muted }]}>{t('Recent searches')}</Text>
+              <AppText variant="caption" style={styles.recentLabel}>{t('Recent searches')}</AppText>
               <TouchableOpacity
                 onPress={clearSearchHistory}
                 hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                 accessibilityRole="button"
                 accessibilityLabel={t('Clear names search history')}
               >
-                <Text style={[styles.clearAllText, { color: tokens.muted }]}>{t('Clear')}</Text>
+                <AppText variant="caption" style={styles.clearAllText}>{t('Clear')}</AppText>
               </TouchableOpacity>
             </View>
             <ScrollView
@@ -557,9 +561,9 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
                     accessibilityLabel={`${t('Search for')} ${item}`}
                   >
                     <Ionicons name="time-outline" size={13} color={tokens.accent} />
-                    <Text style={[styles.recentChipText, { color: tokens.text }]} numberOfLines={1}>
+                    <AppText variant="caption" style={styles.recentChipText} numberOfLines={1}>
                       {item}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => removeSearchHistoryQuery(item)}
@@ -577,14 +581,14 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
         )}
 
         {loadState === 'offline' ? (
-          <Text style={[styles.offlineNote, { color: tokens.muted }]}>
+          <AppText variant="caption" style={styles.offlineNote}>
             {t('Offline — showing the bundled list.')}
-          </Text>
+          </AppText>
         ) : null}
 
         {/* Count */}
         <View style={styles.countRow}>
-          <Text style={[styles.countText, { color: tokens.muted }]}>{countLabel}</Text>
+          <AppText variant="eyebrow" style={styles.countText}>{countLabel}</AppText>
         </View>
 
         {isLoading && (
@@ -632,53 +636,47 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             collapsable={false}
             style={[styles.shareCard, { backgroundColor: tokens.bgSurface, borderColor: tokens.borderSubtle }]}
           >
-            <Text style={[styles.shareCardEyebrow, { color: tokens.goldText }]}>
+            <AppText variant="eyebrow" highlight style={styles.shareCardEyebrow}>
               {isProphet ? 'أسماء النبي ﷺ · Names of the Prophet' : 'أسماء الله الحسنى · The 99 Names of Allah'}
-            </Text>
-            <Text style={[styles.shareCardArabic, { color: tokens.textPrimary }]}>
+            </AppText>
+            <AppText variant="body" style={styles.shareCardArabic}>
               {shareNameItem.arabic}
-            </Text>
+            </AppText>
             <View style={[styles.shareCardRule, { backgroundColor: tokens.goldBorder }]} />
-            <Text style={[styles.shareCardTranslit, { color: tokens.textPrimary }]}>
+            <AppText variant="sectionTitle" style={styles.shareCardTranslit}>
               #{shareNameItem.number} · {shareNameItem.transliteration}
               {shareNameItem.name ? ` (${shareNameItem.name})` : ''}
-            </Text>
-            <Text style={[styles.shareCardTrans, { color: tokens.textSecondary }]}>
+            </AppText>
+            <AppText variant="body" style={styles.shareCardTrans}>
               {shareNameItem.meaning}
-            </Text>
+            </AppText>
             {shareNameItem.note ? (
-              <Text style={[styles.shareCardNote, { color: tokens.textMuted }]}>
+              <AppText variant="subtitle" style={styles.shareCardNote}>
                 {shareNameItem.note}
-              </Text>
+              </AppText>
             ) : null}
             {formatVerses(shareNameItem.verses) ? (
-              <Text style={[styles.shareCardRef, { color: tokens.textMuted }]}>
+              <AppText variant="caption" style={styles.shareCardRef}>
                 {formatVerses(shareNameItem.verses)}
-              </Text>
+              </AppText>
             ) : null}
 
             {/* App Brand Footer: Logo + ISLAMIC wordmark */}
             <View style={[styles.shareCardBrandFooter, { borderTopColor: tokens.cardBorder }]} collapsable={false}>
               <View collapsable={false} style={styles.shareCardLogoWrap}>
                 <Image
-                  source={
-                    mode === 'paper'
-                      ? require('../../assets/logo-master-black.png')
-                      : require('../../assets/logo-master-ivory.png')
-                  }
+                  source={getBrandLogoSource(mode)}
                   style={styles.shareCardLogo}
                   resizeMode="contain"
                   fadeDuration={0}
                 />
               </View>
-              <Text
-                style={[
-                  styles.shareCardBrandWordmark,
-                  { color: tokens.textPrimary },
-                ]}
+              <AppText
+                variant="eyebrow"
+                style={styles.shareCardBrandWordmark}
               >
                 {isRTL() ? 'اسلامک' : 'ISLAMIC'}
-              </Text>
+              </AppText>
             </View>
           </View>
         </View>
@@ -720,7 +718,6 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontFamily: 'Manrope_600SemiBold',
-    includeFontPadding: false,
   },
   chipSpinner: {
     marginLeft: 2,
@@ -806,10 +803,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   numberText: {
     fontFamily: 'Manrope_700Bold',
-    lineHeight: 16,
   },
   arabicWrap: {
     flex: 1,
@@ -832,11 +829,9 @@ const styles = StyleSheet.create({
   },
   meaning: {
     fontFamily: 'Manrope_400Regular',
-    lineHeight: 18,
   },
   note: {
     fontFamily: 'InstrumentSerif_400Regular',
-    lineHeight: 18,
     marginTop: 2,
   },
   cardFooter: {
@@ -844,9 +839,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
   cardShareBtn: {
     padding: 4,
+    flexShrink: 0,
   },
   verseTag: {
     flexDirection: 'row',
@@ -856,10 +853,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 7,
     paddingVertical: 3,
+    flexShrink: 1,
+    minWidth: 0,
+    marginRight: 8,
   },
   verse: {
     fontFamily: 'Manrope_500Medium',
     letterSpacing: 0.2,
+    flexShrink: 1,
   },
   recentSearchesWrap: {
     marginBottom: 10,
@@ -892,7 +893,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingLeft: 8,
     paddingRight: 4,
-    height: 28,
+    minHeight: 28,
+    paddingVertical: 2,
   },
   recentChipBtn: {
     flexDirection: 'row',
@@ -935,7 +937,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 44,
     textAlign: 'center',
-    includeFontPadding: false,
     marginBottom: 12,
   },
   shareCardRule: {

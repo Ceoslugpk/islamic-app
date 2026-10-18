@@ -1,0 +1,61 @@
+root agent idle; waiting up to 30m0s for 1 background task(s)
+I have launched the Playwright runtime audit against `http://15.235.203.134:9998` to test Service Worker registration, CacheStorage, offline page reloads, context persistence, and offline navigation across 3 independent runs. I will proceed as soon as execution completes.
+An audit of phase **S8 (Offline Capability, Persistence, Storage Compatibility, Backup/Restore, Clear-Data & Personal Data Security)** has been performed in read-only mode against repo `/home/ubuntu/apps/islamic_app` and target `http://15.235.203.134:9998`.
+
+No source code, tests, package dependencies, proof, or git state were modified. Audit artifacts have been written to [`reports/audit/S8.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S8.json) and evidence under [`reports/audit/evidence/S8/`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S8/).
+
+---
+
+### Executive Summary
+
+| Total Checks | PASS | FAIL | BLOCKED | FLAKY | SKIPPED |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| **36** | **29** | **5** | **2** | **0** | **0** |
+
+---
+
+### Key Findings by Area
+
+#### 1. Offline Content & Messaging
+- **Quran**: All 114 Surah metadata records are bundled in code ([`surahs114.ts`](file:///home/ubuntu/apps/islamic_app/src/lib/surahs114.ts)) with zero network dependency. Cached surahs and scripts load offline. When uncached and offline, the reader renders a friendly offline error state (`"Failed to fetch"` with `"Retry"`) rather than crashing. Background preloading systematically caches Arabic and translations.
+- **Guides**: Prayer ([`prayerGuide.ts`](file:///home/ubuntu/apps/islamic_app/src/lib/prayerGuide.ts)), Ramadan ([`ramadanGuide.ts`](file:///home/ubuntu/apps/islamic_app/src/lib/ramadanGuide.ts)), Umrah ([`UmrahGuideScreen.tsx`](file:///home/ubuntu/apps/islamic_app/src/screens/UmrahGuideScreen.tsx)), Hajj ([`HajjJourneyScreen.tsx`](file:///home/ubuntu/apps/islamic_app/src/screens/HajjJourneyScreen.tsx)), and Women’s Fiqh ([`WomenGuidanceScreen.tsx`](file:///home/ubuntu/apps/islamic_app/src/screens/WomenGuidanceScreen.tsx)) are 100% bundled locally in TypeScript and load completely offline.
+- **99 Names of Allah**: Bundled locally in [`names99.ts`](file:///home/ubuntu/apps/islamic_app/src/lib/names99.ts). Displays the full 99 names offline along with the notice: `"Offline — showing the bundled list."`.
+- **Hadith**: Canonical collection metadata falls back to bundled [`FALLBACK_COLLECTIONS`](file:///home/ubuntu/apps/islamic_app/src/lib/hadithApi.ts) offline. Uncached books display an offline empty state with icon `cloud-offline-outline`.
+- **Online-only Messaging**: Active offline banners (`"Offline · using saved data"`) and explicit offline cards (`"Can't load prayer times right now. Connect to the internet to get today's prayer schedule."`) appear when network connectivity is lost. Live streaming cards badge `"OFFLINE"`.
+
+#### 2. Service Worker, Cache & Web Reloadability
+- **Service Worker (`FAIL`)**: No Service Worker is registered on the web deployment (`navigator.serviceWorker` has 0 registrations, context is non-secure HTTP, and `/service-worker.js` returns 404).
+- **CacheStorage & Headers (`FAIL`)**: `window.caches` has 0 keys; Python SimpleHTTP test server provides no `Cache-Control` header.
+- **Offline Reload (`FAIL`)**: A cold boot or hard reload while offline fails with `net::ERR_INTERNET_DISCONNECTED` because static web assets are not cached by a service worker.
+
+#### 3. Reload & Context Persistence
+- **Onboarding & Settings (`PASS`)**: Onboarding state (`onboardingDone`) and user preferences (`islamic-settings`) persist across reloads and browser sessions in `localStorage`. Verified across 3 independent browser runs.
+
+#### 4. Storage Key Compatibility against HEAD
+- **Compatibility (`PASS`)**: Verified 100% backward-compatibility against HEAD across [`src/lib/backup.ts`](file:///home/ubuntu/apps/islamic_app/src/lib/backup.ts), [`src/lib/settings.tsx`](file:///home/ubuntu/apps/islamic_app/src/lib/settings.tsx), and [`src/lib/webStorage.ts`](file:///home/ubuntu/apps/islamic_app/src/lib/webStorage.ts). No storage keys were removed or renamed.
+
+#### 5. Backup & Restore Byte Equality
+- **Byte Equality (`PASS`)**: Verified across 3 consecutive rounds of export → serialize → restore → re-export → serialize (708 bytes initial === 708 bytes re-exported).
+- **Security Sanitization (`PASS`)**: `womenPinHash` and `womenLockEnabled` are stripped on both export and import.
+- **Validation Hardening (`PASS`)**: All 8 corruption/malicious payload tests passed (rejecting invalid version, missing tables, invalid column names, excess rows, and unauthorized storage keys).
+
+#### 6. Clear-Data & Personal-Data Storage
+- **Granular Deletions (`PASS`)**: [`clearWomenData()`](file:///home/ubuntu/apps/islamic_app/src/lib/db.ts#L854-L865) (wipes cycle entries, postnatal records, and menstruation missed fasts), [`clearCycleHistory()`](file:///home/ubuntu/apps/islamic_app/src/lib/db.ts#L867-L870), and [`clearAllDownloads()`](file:///home/ubuntu/apps/islamic_app/src/lib/surahDownloads.ts#L333-L363) function correctly on both web and native.
+- **Global Reset (`FAIL`)**: No single-click "Factory reset / Delete all user data" button exists in Settings or Backup/Restore UI.
+- **Data Privacy (`PASS`)**: Personal data (women's health, prayer logs, fasting, zakat calculations, Quran notes) is stored strictly on-device with zero remote sync or analytics leakage.
+- **Encryption at Rest (`FAIL`)**: Native SQLite (`salah.db`) and AsyncStorage use plaintext storage without SQLCipher.
+
+#### 7. Runtime Blockers (`BLOCKED`)
+- **Location Setup Modal**: Re-triggers and overlays screens during route navigation, blocking automated click interaction.
+- **External API CORS**: `https://api.islamic.app` lacks CORS headers for the preview origin `http://15.235.203.134:9998`, blocking live web client API requests.
+
+---
+
+### Evidence Artifacts
+- Full Audit JSON: [`reports/audit/S8.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/S8.json)
+- Runtime Evidence: [`reports/audit/evidence/S8/runtime_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S8/runtime_audit.json)
+- Backup Byte Equality: [`reports/audit/evidence/S8/backup_restore_equality.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S8/backup_restore_equality.json)
+- Clear Data Audit: [`reports/audit/evidence/S8/clear_data_audit.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S8/clear_data_audit.json)
+- Personal Data Storage: [`reports/audit/evidence/S8/personal_data_storage.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S8/personal_data_storage.json)
+- Storage Key Diff: [`reports/audit/evidence/S8/storage_keys_compatibility.json`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S8/storage_keys_compatibility.json)
+- Visual Proof: [`reports/audit/evidence/S8/offline_quran_home.png`](file:///home/ubuntu/apps/islamic_app/reports/audit/evidence/S8/offline_quran_home.png)

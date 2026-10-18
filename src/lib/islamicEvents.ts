@@ -211,5 +211,6 @@ function getHijriMonthLength(year: number, month: number): number {
 
 /** Format a hijri date as "20 Rabi' al-Thani 1448 AH" */
 export function formatHijriDate(day: number, month: number, year: number): string {
-  return `${day} ${HIJRI_MONTH_NAMES[month - 1]} ${year} AH`;
+  const safeMonth = Math.max(1, Math.min(12, month || 1));
+  return `${day} ${HIJRI_MONTH_NAMES[safeMonth - 1]} ${year} AH`;
 }

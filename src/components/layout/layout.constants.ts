@@ -9,6 +9,14 @@ export const NAV_HEIGHT = 54.5;
 export const NAV_SIDE_MARGIN = 14;
 export const NAV_RADIUS = 27;
 
+export const CONTENT_GAP = 24;
+
+/** Authoritative shared geometry contract (CONTENT_GAP = 24dp, bottom clearance = 32dp) */
+export const SPACING_CONTRACT = {
+  CONTENT_GAP: 24,
+  BOTTOM_CLEARANCE: 32,
+} as const;
+
 export const SUBHEADER_HEIGHT = 54;
 export const SHEET_HEADER_HEIGHT = 54;
 export const DRAG_PILL_WIDTH = 36;

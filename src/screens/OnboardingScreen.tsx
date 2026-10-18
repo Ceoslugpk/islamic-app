@@ -1,30 +1,31 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
-  ScrollView,
   TouchableOpacity,
+  ScrollView,
   Animated,
   Easing,
   Platform,
   AccessibilityInfo,
   useWindowDimensions,
-  DevSettings,
   Alert,
+  I18nManager,
 } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
+import { AppText } from '../components/ui/AppText';
+import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Updates from 'expo-updates';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../lib/theme';
+import { useTheme, getCardShadow, getPillShadow } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { ThemeColors, ThemeMode } from '../lib/constants';
+import { getTokens } from '../theme/tokens';
 import { AnimatedBrandBadge, OnboardingThemeToggle } from '../components/AnimatedBrandIcons';
 import {
   AppLanguage,
   resolveDeviceAppLanguage,
-  setAppLanguage,
   prepareNativeLayoutDirection,
   isRtlLanguage,
   t,
@@ -34,17 +35,19 @@ import {
   QURAN_LANGUAGE_EDITIONS,
   getLanguageFlag,
   getEditionForLanguage,
-  getLocalizedTranslatorName,
 } from '../lib/quranLanguages';
-import { getLocalizedLanguageName } from '../lib/surahNamesLocalized';
 import {
   NON_ARABIC_AUDIO_EDITIONS,
   LANGUAGE_AUDIO_EDITIONS,
   DEFAULT_AUDIO_TRANSLATION_EDITION_ID,
   setAudioTranslationEdition,
   getAudioTranslationLangName,
+  getAudioTranslationBootstrapError,
 } from '../lib/quranAudio';
-import { setQuranTranslationLanguage } from '../lib/quranLanguageState';
+import {
+  setQuranTranslationLanguage,
+  getQuranLanguageBootstrapError,
+} from '../lib/quranLanguageState';
 import { setOnboardingDone } from '../lib/onboardingState';
 import {
   ONBOARDING_DEMO_LOCALES,
@@ -67,10 +70,140 @@ const APP_LANGUAGES_LIST: { code: AppLanguage; name: string; nativeName: string;
   { code: 'si', name: 'Sinhala', nativeName: 'සිංහල', flag: '🇱🇰' },
 ];
 
+let appReloader = () => Updates.reloadAsync();
+
+export function _setAppReloaderForTesting(custom: (() => Promise<void>) | null) {
+  appReloader = custom || (() => Updates.reloadAsync());
+}
+
+export function _resetAppReloaderForTesting() {
+  appReloader = () => Updates.reloadAsync();
+}
+
+export interface OnboardingTransactionDeps {
+  getQuranLanguageBootstrapError: () => Error | null;
+  getAudioTranslationBootstrapError: () => Error | null;
+  setLanguage: (lang: AppLanguage) => Promise<void> | void;
+  setQuranTranslationLanguage: (lang: string) => Promise<void>;
+  setAudioTranslationEdition: (id: string) => Promise<void>;
+  setOnboardingDone: (done: boolean) => Promise<void>;
+  prepareNativeLayoutDirection: (lang: AppLanguage) => void;
+  appReloader: () => Promise<void>;
+  isRtlLanguage: (lang: string) => boolean;
+  isRTL: boolean;
+  platform: typeof Platform.OS;
+  scheduleReload: (action: () => void, delayMs: number) => any;
+  showAlert: (title: string, message: string) => void;
+}
+
+export interface OnboardingTransactionParams {
+  selectedAppLang: AppLanguage;
+  selectedQuranLang: string;
+  selectedAudioId: string;
+  currentSettingsLanguage: string;
+  onComplete: () => void;
+  setIsSubmitting?: (submitting: boolean) => void;
+  deps?: Partial<OnboardingTransactionDeps>;
+}
+
+export async function executeOnboardingSubmitTransaction(params: OnboardingTransactionParams): Promise<void> {
+  const {
+    selectedAppLang,
+    selectedQuranLang,
+    selectedAudioId,
+    currentSettingsLanguage,
+    onComplete,
+    setIsSubmitting,
+    deps = {},
+  } = params;
+
+  const getQuranBootErr = deps.getQuranLanguageBootstrapError || getQuranLanguageBootstrapError;
+  const getAudioBootErr = deps.getAudioTranslationBootstrapError || getAudioTranslationBootstrapError;
+  const setLanguage = deps.setLanguage;
+  if (!setLanguage) {
+    throw new Error('setLanguage dependency is required for onboarding transaction');
+  }
+  const setQuranTranslationLanguageFn = deps.setQuranTranslationLanguage || setQuranTranslationLanguage;
+  const setAudioTranslationEditionFn = deps.setAudioTranslationEdition || setAudioTranslationEdition;
+  const setOnboardingDoneFn = deps.setOnboardingDone || setOnboardingDone;
+  const prepareNativeLayoutDirectionFn = deps.prepareNativeLayoutDirection || prepareNativeLayoutDirection;
+  const checkIsRtl = deps.isRtlLanguage || isRtlLanguage;
+  const currentIsRTL = deps.isRTL !== undefined ? deps.isRTL : I18nManager.isRTL;
+  const currentPlatform = deps.platform || Platform.OS;
+  const reloadApp = deps.appReloader || appReloader;
+  const scheduleReload = deps.scheduleReload || ((action: () => void, delayMs: number) => setTimeout(action, delayMs));
+  const showAlert = deps.showAlert || ((title: string, msg: string) => Alert.alert(title, msg));
+
+  try {
+    // 0. Ensure storage bootstrap succeeded; storage unavailability read errors abort the transaction
+    const quranBootErr = getQuranBootErr(); // getQuranLanguageBootstrapError()
+    if (quranBootErr) {
+      throw new Error(`Storage unavailable: Quran translation language read failed: ${quranBootErr.message}`);
+    }
+    const audioBootErr = getAudioBootErr(); // getAudioTranslationBootstrapError()
+    if (audioBootErr) {
+      throw new Error(`Storage unavailable: Quran audio translation read failed: ${audioBootErr.message}`);
+    }
+
+    // 1. Persist app language through production settings writer with queue & readback verification.
+    // If this throws/fails: zero reload/RTL change occurs, rollback only the failed field,
+    // and subsequent writes are aborted.
+    await Promise.resolve(setLanguage(selectedAppLang));
+
+    // 2. Persist selected Quran translation language (honoring explicit choice or default linking)
+    await setQuranTranslationLanguageFn(selectedQuranLang); // setQuranTranslationLanguage(selectedQuranLang)
+
+    // 3. Persist selected Audio translation edition (honoring explicit choice or default linking)
+    await setAudioTranslationEditionFn(selectedAudioId); // setAudioTranslationEdition(selectedAudioId)
+
+    // 4. Persist onboardingDone once all durable writes succeed
+    await setOnboardingDoneFn(true); // setOnboardingDone(true)
+
+    // 5. Layout direction & reload handling immediately after successful durable writes
+    // CONTRACT:
+    // - Native Direction Change (e.g. LTR -> RTL or RTL -> LTR):
+    //   React Native native view hierarchy requires an app reload (Updates.reloadAsync) for
+    //   I18nManager layout changes to take physical effect across native views.
+    //   Calls prepareNativeLayoutDirection(selectedAppLang) and schedules exactly ONE native reload
+    //   via appReloader() (zero fallback reload invocations; DevSettings.reload fallback removed).
+    //   onComplete() is not called so the app reloads directly into the home screen with onboarding done.
+    // - Native Same Direction (e.g. LTR -> LTR such as en -> hi/ml/si, or RTL -> RTL):
+    //   Native view hierarchy direction is already correct. No reload is needed.
+    //   Transitions cleanly to the main app by calling onComplete() directly.
+    // - Web:
+    //   prepareNativeLayoutDirection immediately sets document.documentElement.dir synchronously.
+    //   Transitions cleanly to the main app by calling onComplete() directly without a reload.
+    // - Failure:
+    //   Zero prepareNativeLayoutDirection, zero reload, zero onComplete().
+    const isSwitchingRTL =
+      checkIsRtl(selectedAppLang) !== currentIsRTL ||
+      checkIsRtl(selectedAppLang) !== checkIsRtl(currentSettingsLanguage);
+
+    if (currentPlatform !== 'web' && isSwitchingRTL) {
+      prepareNativeLayoutDirectionFn(selectedAppLang); // prepareNativeLayoutDirection(selectedAppLang)
+      scheduleReload(() => {
+        reloadApp().catch(() => {}); // appReloader().catch
+      }, 300);
+    } else {
+      if (currentPlatform === 'web') {
+        prepareNativeLayoutDirectionFn(selectedAppLang); // prepareNativeLayoutDirection(selectedAppLang)
+      }
+      onComplete();
+    }
+  } catch (err) {
+    if (setIsSubmitting) {
+      setIsSubmitting(false);
+    }
+    showAlert(t('Error'), t('Failed to save settings. Please try again.'));
+    throw err;
+  }
+}
+
 export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
   const { colors, mode } = useTheme();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
+  const isCompact = width <= 360 || height <= 640;
   const { setLanguage, settings, setThemeMode } = useSettings();
 
   // 1. Initial defaults from device locale
@@ -100,17 +233,64 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const [selectedAppLang, setSelectedAppLang] = useState<AppLanguage>(defaultAppLang);
   const [selectedQuranLang, setSelectedQuranLang] = useState<string>(defaultQuranLang);
   const [selectedAudioId, setSelectedAudioId] = useState<string>(defaultAudioEditionId);
+  const [isQuranExplicit, setIsQuranExplicit] = useState(false);
+  const [isAudioExplicit, setIsAudioExplicit] = useState(false);
+
+  // Selection handlers preserving explicit vs default linking
+  const handleSelectAppLang = useCallback((item: LanguageItem) => {
+    const nextLang = item.code as AppLanguage;
+    setSelectedAppLang(nextLang);
+    if (!isQuranExplicit) {
+      const matchQuran = QURAN_LANGUAGE_EDITIONS.find((e) => e.languageCode === nextLang);
+      setSelectedQuranLang(matchQuran ? nextLang : 'en');
+    }
+    if (!isAudioExplicit) {
+      const matchAudio = LANGUAGE_AUDIO_EDITIONS[nextLang];
+      setSelectedAudioId(matchAudio ? matchAudio.identifier : DEFAULT_AUDIO_TRANSLATION_EDITION_ID);
+    }
+  }, [isQuranExplicit, isAudioExplicit]);
+
+  const handleSelectQuranLang = useCallback((item: LanguageItem) => {
+    setIsQuranExplicit(true);
+    setSelectedQuranLang(item.code);
+  }, []);
+
+  const handleSelectAudioEdition = useCallback((item: LanguageItem) => {
+    setIsAudioExplicit(true);
+    setSelectedAudioId(item.id);
+  }, []);
 
   // Modals
   const [modalType, setModalType] = useState<'app' | 'quran' | 'audio' | null>(null);
 
-  // Submitting state
+  // Submitting state and reload timer refs
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
+  const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Cleanup pending reload timer on unmount
+  useEffect(() => {
+    return () => {
+      if (reloadTimerRef.current) {
+        clearTimeout(reloadTimerRef.current);
+        reloadTimerRef.current = null;
+      }
+    };
+  }, []);
 
   // Demo auto-cycling state
-  const [isDemoActive, setIsDemoActive] = useState(true);
+  const [isDemoActive, setIsDemoActive] = useState(() => {
+    if (
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+    ) {
+      return false;
+    }
+    return true;
+  });
   const [demoIndex, setDemoIndex] = useState(0);
-  const demoFadeAnim = useRef(new Animated.Value(1)).current;
+  const [demoFadeAnim] = useState(() => new Animated.Value(1));
   const cycleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Stop demo on any user touch
@@ -128,6 +308,15 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   // Demo auto-cycle effect
   useEffect(() => {
     let mounted = true;
+    const prefersReducedWeb =
+      Platform.OS === 'web' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+
+    if (prefersReducedWeb) {
+      return;
+    }
+
     AccessibilityInfo.isReduceMotionEnabled().then((reduceMotion) => {
       if (!mounted) return;
       if (reduceMotion) {
@@ -194,7 +383,9 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   // Row display values
   const card1Title = isDemoActive ? demoStrings.nativeName : activeAppLangObj.nativeName;
-  const card1Sub = isDemoRtl ? 'القوائم والأزرار' : 'Menus & buttons';
+  const card1Sub = isDemoActive
+    ? (isDemoRtl ? 'القوائم والأزرار' : 'Menus & buttons')
+    : currentStrings.appLanguageDesc;
 
   const card2Title = isDemoActive
     ? (demoStrings.quranTranslationValue.split('·')[0]?.trim() || demoStrings.quranTranslationValue)
@@ -206,7 +397,9 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     : activeQuranEdition.name;
 
   const card3Title = isDemoActive ? demoStrings.quranAudioValue : (getAudioTranslationLangName(activeAudioEdition.language) || 'English');
-  const card3Sub = isDemoRtl ? 'أكثر من 10 لغات متاحة' : '10+ languages available';
+  const card3Sub = isDemoActive
+    ? (isDemoRtl ? 'أكثر من 10 لغات متاحة' : '10+ languages available')
+    : currentStrings.quranAudioDesc;
 
   // Items for Modals
   const appModalItems: LanguageItem[] = useMemo(
@@ -247,37 +440,37 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
 
   // Handle "Get Started"
   const handleGetStarted = async () => {
-    if (isSubmitting) return;
-    stopDemo();
+    if (isSubmittingRef.current || isSubmitting) return;
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
+    stopDemo();
 
     try {
-      // 1. Persist Quran translation language
-      await setQuranTranslationLanguage(selectedQuranLang);
-
-      // 2. Persist Audio translation edition
-      await setAudioTranslationEdition(selectedAudioId);
-
-      // 3. Persist onboardingDone
-      await setOnboardingDone(true);
-
-      // 4. Persist app language through settings writer
-      const isSwitchingRTL = isRtlLanguage(selectedAppLang) !== isRtlLanguage(settings.language);
-      await Promise.resolve(setLanguage(selectedAppLang));
-
-      // 5. Replace route / notify parent
-      onComplete();
-
-      // If RTL layout direction changes on native, trigger reload
-      if (Platform.OS !== 'web' && isSwitchingRTL) {
-        prepareNativeLayoutDirection(selectedAppLang);
-        setTimeout(() => {
-          Updates.reloadAsync().catch(() => DevSettings.reload());
-        }, 300);
-      }
-    } catch (err) {
-      setIsSubmitting(false);
-      Alert.alert(t('Error'), t('Failed to save settings. Please try again.'));
+      await executeOnboardingSubmitTransaction({
+        selectedAppLang,
+        selectedQuranLang,
+        selectedAudioId,
+        currentSettingsLanguage: settings.language,
+        onComplete,
+        setIsSubmitting: (submitting) => {
+          isSubmittingRef.current = submitting;
+          setIsSubmitting(submitting);
+        },
+        deps: {
+          setLanguage,
+          scheduleReload: (action, delayMs) => {
+            if (reloadTimerRef.current) {
+              clearTimeout(reloadTimerRef.current);
+            }
+            reloadTimerRef.current = setTimeout(() => {
+              reloadTimerRef.current = null;
+              action();
+            }, delayMs);
+          },
+        },
+      });
+    } catch {
+      // Error state reset and alert alert handled inside executeOnboardingSubmitTransaction
     }
   };
 
@@ -285,7 +478,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const [isThemeTransitioning, setIsThemeTransitioning] = useState(false);
   const [prevMode, setPrevMode] = useState<ThemeMode | null>(null);
   const [prevColors, setPrevColors] = useState<ThemeColors | null>(null);
-  const themeCrossfadeAnim = useRef(new Animated.Value(0)).current;
+  const [themeCrossfadeAnim] = useState(() => new Animated.Value(0));
 
   // Cleanup theme transition on unmount
   useEffect(() => {
@@ -334,319 +527,436 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
     activeColors: ThemeColors,
     activeMode: ThemeMode,
     interactive: boolean
-  ) => (
-    <View
-      pointerEvents={interactive ? 'auto' : 'none'}
-      style={[styles.root, { backgroundColor: activeColors.bgBase }]}
-    >
-      {/* Decorative Architectural Arch in background matching reference */}
+  ) => {
+    const tokens = getTokens(activeMode);
+
+    return (
       <View
-        pointerEvents="none"
-        style={[
-          styles.decorativeArchWrap,
-          isDemoRtl ? styles.decorativeArchWrapRTL : styles.decorativeArchWrapLTR,
-        ]}
+        pointerEvents={interactive ? 'auto' : 'none'}
+        style={[styles.root, { backgroundColor: tokens.bgTop }]}
       >
-        <Svg width={220} height={340} viewBox="0 0 220 340" fill="none">
-          <Path
-            d="M 220 0 L 80 0 C 80 0 0 30 0 140 L 0 340 L 220 340 Z"
-            fill={activeMode === 'paper' ? '#E7EBE4' : '#192420'}
-            opacity={activeMode === 'paper' ? 0.6 : 0.4}
-          />
-          <Path
-            d="M 220 0 L 130 0 C 130 0 60 25 60 120 L 60 340 L 220 340 Z"
-            fill={activeMode === 'paper' ? '#EFF3ED' : '#202E29'}
-            opacity={activeMode === 'paper' ? 0.7 : 0.4}
-          />
-        </Svg>
-      </View>
+        {/* Full screen gradient matching Home */}
+        <LinearGradient
+          colors={[tokens.bgTop, tokens.bgBottom]}
+          style={StyleSheet.absoluteFill}
+        />
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top + 20,
-            paddingBottom: insets.bottom + 104,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-        onTouchStart={interactive ? stopDemo : undefined}
-      >
-        {/* Header: Logo squircle with Islamic arch mark + ISLAMIC wordmark + Theme Toggle */}
-        <View style={[styles.headerRow, isDemoRtl && styles.rowReverse]}>
-          <View style={[styles.brandWrap, isDemoRtl && styles.rowReverse]}>
-            <AnimatedBrandBadge
-              size={34}
-              color={activeColors.forestGreen || '#105A4B'}
-              archColor="#FFFFFF"
-              paused={!interactive}
-            />
-            <Text style={[styles.headerWordmark, { color: activeColors.textPrimary }]}>
-              {isDemoRtl ? 'اسلامک' : 'I S L A M I C'}
-            </Text>
-          </View>
-
-          {interactive ? (
-            <OnboardingThemeToggle
-              onToggle={handleToggleTheme}
-              isDark={activeMode === 'ink'}
-            />
-          ) : (
-            <View style={styles.themeTogglePlaceholder} />
-          )}
-        </View>
-
-        {/* Hero Eyebrow, Title, Subtitle wrapped in Animated crossfade */}
-        <Animated.View
+        {/* Decorative Architectural Arch in background */}
+        <View
+          pointerEvents="none"
           style={[
-            styles.heroWrap,
-            interactive && { opacity: demoFadeAnim },
-            isDemoRtl && { alignItems: 'flex-end' },
+            styles.decorativeArchWrap,
+            isDemoRtl ? styles.decorativeArchWrapRTL : styles.decorativeArchWrapLTR,
           ]}
         >
-          <Text
-            style={[
-              styles.eyebrow,
-              { color: activeColors.forestGreen || '#105A4B' },
-              isDemoRtl && { textAlign: 'right', fontFamily: 'Amiri_700Bold' },
-            ]}
-          >
-            {isDemoRtl ? currentStrings.welcome : 'Assalam o Alaikum'}
-          </Text>
-          <Text
-            style={[
-              styles.headline,
-              { color: activeColors.textPrimary },
-              isDemoRtl && { textAlign: 'right', fontFamily: 'Amiri_700Bold', fontSize: 32, lineHeight: 40 },
-            ]}
-          >
-            {isDemoRtl ? (
-              `${currentStrings.titleLine1} ${currentStrings.titleLine2}`
-            ) : (
-              'Set up your\nlanguages'
-            )}
-          </Text>
-          <Text
-            style={[
-              styles.subtitle,
-              { color: activeColors.textSecondary },
-              isDemoRtl && { textAlign: 'right', fontFamily: 'Amiri_400Regular' },
-            ]}
-          >
-            {isDemoRtl ? currentStrings.subtitle : 'Choose how you read and listen.'}
-          </Text>
-        </Animated.View>
+          <Svg width={240} height={360} viewBox="0 0 240 360" fill="none">
+            <Path
+              d="M 240 0 L 90 0 C 90 0 0 35 0 150 L 0 360 L 240 360 Z"
+              fill={tokens.bgBottom}
+              opacity={activeMode === 'paper' ? 0.35 : 0.25}
+            />
+            <Path
+              d="M 240 0 L 145 0 C 145 0 65 30 65 130 L 65 360 L 240 360 Z"
+              fill={tokens.bgTop}
+              opacity={activeMode === 'paper' ? 0.45 : 0.3}
+            />
+          </Svg>
+        </View>
 
-        {/* The Reference White Panel: ONE rounded card with 3 interactive rows */}
-        <View
-          style={[
-            styles.settingsPanel,
+        <ScrollView
+          contentContainerStyle={[
+            styles.scrollContent,
             {
-              backgroundColor: activeColors.cardElevated || activeColors.bgSurface,
-              borderColor: activeColors.borderSubtle,
+              paddingTop: insets.top + (isCompact ? 10 : 16),
+              paddingBottom: insets.bottom + 120,
             },
           ]}
+          showsVerticalScrollIndicator={false}
+          onTouchStart={interactive ? stopDemo : undefined}
         >
-          {/* Row 1: App Language */}
-          <TouchableOpacity
-            style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
-            onPress={
-              interactive
-                ? () => {
-                    stopDemo();
-                    setModalType('app');
-                  }
-                : undefined
-            }
-            accessibilityRole="button"
-            accessibilityLabel={`${currentStrings.appLanguageLabel}: ${card1Title}`}
-            activeOpacity={0.7}
-            disabled={!interactive}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: activeColors.iconCircleBg || '#E0EAE5' }]}>
-              <Ionicons name="globe-outline" size={20} color={activeColors.forestGreen || activeColors.accent} />
-            </View>
-
-            <View style={[styles.rowTextCol, isDemoRtl && { alignItems: 'flex-end' }]}>
-              <Text style={[styles.rowOverline, { color: activeColors.textMuted }]}>
-                {currentStrings.appLanguageLabel}
-              </Text>
-              <Animated.View
-                style={[
-                  styles.valueInlineRow,
-                  interactive && { opacity: demoFadeAnim },
-                  isDemoRtl && styles.rowReverse,
-                ]}
-              >
-                <Text style={[styles.rowValueBold, { color: activeColors.textPrimary }]}>
-                  {card1Title}
-                </Text>
-                <Text style={[styles.rowValueMuted, { color: activeColors.textMuted }]}>
-                  {` · ${card1Sub}`}
-                </Text>
-              </Animated.View>
-            </View>
-
-            <View style={[styles.chevronCircle, { backgroundColor: activeColors.iconCircleBg || '#E0EAE5' }]}>
-              <Ionicons name="chevron-down" size={15} color={activeColors.forestGreen || activeColors.accent} />
-            </View>
-          </TouchableOpacity>
-
-          {/* Thin Divider */}
-          <View style={[styles.panelDivider, { backgroundColor: activeColors.borderSubtle }]} />
-
-          {/* Row 2: Quran Translation */}
-          <TouchableOpacity
-            style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
-            onPress={
-              interactive
-                ? () => {
-                    stopDemo();
-                    setModalType('quran');
-                  }
-                : undefined
-            }
-            accessibilityRole="button"
-            accessibilityLabel={`${currentStrings.quranTranslationLabel}: ${card2Title} - ${card2Sub}`}
-            activeOpacity={0.7}
-            disabled={!interactive}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: activeColors.iconCircleBg || '#E0EAE5' }]}>
-              <Ionicons name="book-outline" size={20} color={activeColors.forestGreen || activeColors.accent} />
-            </View>
-
-            <View style={[styles.rowTextCol, isDemoRtl && { alignItems: 'flex-end' }]}>
-              <Text style={[styles.rowOverline, { color: activeColors.textMuted }]}>
-                {currentStrings.quranTranslationLabel}
-              </Text>
-              <Animated.View
-                style={[
-                  styles.valueInlineRow,
-                  interactive && { opacity: demoFadeAnim },
-                  isDemoRtl && styles.rowReverse,
-                ]}
-              >
-                <Text style={[styles.rowValueBold, { color: activeColors.textPrimary }]}>
-                  {card2Title}
-                </Text>
-                <Text style={[styles.rowValueMuted, { color: activeColors.textMuted }]} numberOfLines={1}>
-                  {` · ${card2Sub}`}
-                </Text>
-              </Animated.View>
-            </View>
-
-            <View style={[styles.chevronCircle, { backgroundColor: activeColors.iconCircleBg || '#E0EAE5' }]}>
-              <Ionicons name="chevron-down" size={15} color={activeColors.forestGreen || activeColors.accent} />
-            </View>
-          </TouchableOpacity>
-
-          {/* Thin Divider */}
-          <View style={[styles.panelDivider, { backgroundColor: activeColors.borderSubtle }]} />
-
-          {/* Row 3: Quran Audio */}
-          <TouchableOpacity
-            style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
-            onPress={
-              interactive
-                ? () => {
-                    stopDemo();
-                    setModalType('audio');
-                  }
-                : undefined
-            }
-            accessibilityRole="button"
-            accessibilityLabel={`${currentStrings.quranAudioLabel}: ${card3Title}`}
-            activeOpacity={0.7}
-            disabled={!interactive}
-          >
-            <View style={[styles.iconCircle, { backgroundColor: activeColors.iconCircleBg || '#E0EAE5' }]}>
-              <Ionicons name="headset-outline" size={20} color={activeColors.forestGreen || activeColors.accent} />
-            </View>
-
-            <View style={[styles.rowTextCol, isDemoRtl && { alignItems: 'flex-end' }]}>
-              <Text style={[styles.rowOverline, { color: activeColors.textMuted }]}>
-                {currentStrings.quranAudioLabel}
-              </Text>
-              <Animated.View
-                style={[
-                  styles.valueInlineRow,
-                  interactive && { opacity: demoFadeAnim },
-                  isDemoRtl && styles.rowReverse,
-                ]}
-              >
-                <Text style={[styles.rowValueBold, { color: activeColors.textPrimary }]}>
-                  {card3Title}
-                </Text>
-                <Text style={[styles.rowValueMuted, { color: activeColors.textMuted }]} numberOfLines={1}>
-                  {` · ${card3Sub}`}
-                </Text>
-              </Animated.View>
-            </View>
-
-            <View style={[styles.chevronCircle, { backgroundColor: activeColors.iconCircleBg || '#E0EAE5' }]}>
-              <Ionicons name="chevron-down" size={15} color={activeColors.forestGreen || activeColors.accent} />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Capability Pill */}
-        <View
-          style={[
-            styles.capabilityPill,
-            {
-              backgroundColor: activeColors.sagePill || '#DBE7E1',
-            },
-          ]}
-        >
-          <Text style={[styles.capabilityPillText, { color: activeColors.forestDark || '#105A4B' }]}>
-            {isDemoRtl
-              ? 'أكثر من 40 لغة ترجمة · أكثر من 10 لغات صوتية'
-              : '40+ translation languages · 10+ audio languages'}
-          </Text>
-        </View>
-      </ScrollView>
-
-      {/* Pinned Bottom CTA Container */}
-      <View
-        style={[
-          styles.bottomContainer,
-          {
-            backgroundColor: activeColors.bgBase,
-            paddingBottom: Math.max(insets.bottom, 18),
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={[
-            styles.getStartedButton,
-            { backgroundColor: activeColors.forestGreen || '#105A4B' },
-          ]}
-          onPress={interactive ? handleGetStarted : undefined}
-          disabled={!interactive || isSubmitting}
-          activeOpacity={0.88}
-          accessibilityRole="button"
-          accessibilityLabel={currentStrings.getStarted}
-        >
-          <View style={[styles.btnContentRow, isDemoRtl && styles.rowReverse]}>
-            <Text style={[styles.getStartedBtnText, { color: activeColors.onAccent || '#FFFFFF' }]}>
-              {currentStrings.getStarted}
-            </Text>
-            <View style={[styles.btnArrowCircle, { backgroundColor: activeColors.onAccent || '#FFFFFF' }]}>
-              <Ionicons
-                name={isDemoRtl ? 'arrow-back' : 'arrow-forward'}
-                size={18}
-                color={activeColors.forestGreen || '#105A4B'}
+          {/* Header: Logo squircle with Islamic arch mark + ISLAMIC wordmark + Theme Toggle */}
+          <View style={[styles.headerRow, isCompact && styles.headerRowCompact, isDemoRtl && styles.rowReverse]}>
+            <View style={[styles.brandWrap, isDemoRtl && styles.rowReverse]}>
+              <AnimatedBrandBadge
+                size={36}
+                color={tokens.brandGreen || '#105A4B'}
+                archColor={activeMode === 'ink' ? tokens.gold : tokens.cardTop}
+                paused={!interactive}
+                mode={activeMode}
               />
+              <AppText
+                variant="caption"
+                style={[
+                  styles.headerWordmark,
+                  isDemoRtl && { fontFamily: 'Amiri_700Bold', fontSize: 16, letterSpacing: 1 },
+                ]}
+              >
+                {isDemoRtl ? 'اسلامک' : 'I S L A M I C'}
+              </AppText>
             </View>
-          </View>
-        </TouchableOpacity>
 
-        <Text style={[styles.footerHelperText, { color: activeColors.textMuted }]}>
-          {currentStrings.footerNote}
-        </Text>
+            {interactive ? (
+              <OnboardingThemeToggle
+                onToggle={handleToggleTheme}
+                isDark={activeMode === 'ink'}
+              />
+            ) : (
+              <View style={styles.themeTogglePlaceholder} />
+            )}
+          </View>
+
+          {/* Hero Eyebrow, Title, Subtitle wrapped in Animated crossfade */}
+          <Animated.View
+            style={[
+              styles.heroWrap,
+              isCompact && styles.heroWrapCompact,
+              interactive && { opacity: demoFadeAnim },
+              isDemoRtl && { alignItems: 'flex-end' },
+            ]}
+          >
+            {/* Small uppercase letter-spaced eyebrow line matching Home date header */}
+            <AppText
+              variant="eyebrow"
+              highlight
+              style={[
+                styles.eyebrow,
+                isDemoRtl && { textAlign: 'right', fontFamily: 'Amiri_700Bold', fontSize: 14 },
+              ]}
+            >
+              {isDemoRtl ? currentStrings.welcome : 'ASSALAM O ALAIKUM'}
+            </AppText>
+
+            {/* Editorial Serif headline matching Home greeting */}
+            <AppText
+              variant="screenTitle"
+              style={[
+                styles.headline,
+                isCompact && styles.headlineCompact,
+                isDemoRtl && {
+                  textAlign: 'right',
+                  fontFamily: 'Amiri_700Bold',
+                  fontSize: isCompact ? 28 : 34,
+                  lineHeight: isCompact ? 36 : 44,
+                },
+              ]}
+            >
+              {isDemoRtl ? (
+                `${currentStrings.titleLine1} ${currentStrings.titleLine2}`
+              ) : (
+                'Set up your\nlanguages'
+              )}
+            </AppText>
+
+            <AppText
+              variant="subtitle"
+              tone="faint"
+              style={[
+                styles.subtitle,
+                isCompact && styles.subtitleCompact,
+                isDemoRtl && { textAlign: 'right', fontFamily: 'Amiri_400Regular', fontSize: isCompact ? 13 : 15 },
+              ]}
+            >
+              {isDemoRtl ? currentStrings.subtitle : 'Choose how you read and listen.'}
+            </AppText>
+          </Animated.View>
+
+          {/* Settings Panel: Home-compatible card with vertical gradient & gold/olive border */}
+          <View
+            style={[
+              styles.settingsPanel,
+              {
+                borderColor: tokens.cardBorder,
+                backgroundColor: tokens.cardTop,
+                ...getCardShadow(activeMode),
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={[tokens.cardTop, tokens.cardBottom]}
+              style={StyleSheet.absoluteFill}
+            />
+
+            {/* Row 1: App Language */}
+            <TouchableOpacity
+              testID="onboarding-row-app-lang"
+              style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
+              onPress={
+                interactive
+                  ? () => {
+                      stopDemo();
+                      setModalType('app');
+                    }
+                  : undefined
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`${currentStrings.appLanguageLabel}: ${card1Title}`}
+              activeOpacity={0.7}
+              disabled={!interactive}
+            >
+              <View
+                style={[
+                  styles.iconCircle,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="globe-outline" size={20} color={tokens.accent} />
+              </View>
+
+              <View style={[styles.rowTextCol, isDemoRtl && { alignItems: 'flex-end' }]}>
+                <AppText variant="eyebrow" highlight style={styles.rowOverline}>
+                  {currentStrings.appLanguageLabel}
+                </AppText>
+                <Animated.View
+                  style={[
+                    styles.valueInlineRow,
+                    interactive && { opacity: demoFadeAnim },
+                    isDemoRtl && styles.rowReverse,
+                  ]}
+                >
+                  <AppText variant="rowTitle" style={styles.rowValueBold} numberOfLines={1}>
+                    {card1Title}
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={styles.rowValueMuted} numberOfLines={2}>
+                    {` · ${card1Sub}`}
+                  </AppText>
+                </Animated.View>
+              </View>
+
+              <View
+                style={[
+                  styles.chevronCircle,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="chevron-down" size={15} color={tokens.accent} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Thin Divider */}
+            <View style={[styles.panelDivider, { backgroundColor: tokens.cardBorder }]} />
+
+            {/* Row 2: Quran Translation */}
+            <TouchableOpacity
+              testID="onboarding-row-quran-trans"
+              style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
+              onPress={
+                interactive
+                  ? () => {
+                      stopDemo();
+                      setModalType('quran');
+                    }
+                  : undefined
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`${currentStrings.quranTranslationLabel}: ${card2Title} - ${card2Sub}`}
+              activeOpacity={0.7}
+              disabled={!interactive}
+            >
+              <View
+                style={[
+                  styles.iconCircle,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="book-outline" size={20} color={tokens.accent} />
+              </View>
+
+              <View style={[styles.rowTextCol, isDemoRtl && { alignItems: 'flex-end' }]}>
+                <AppText variant="eyebrow" highlight style={styles.rowOverline}>
+                  {currentStrings.quranTranslationLabel}
+                </AppText>
+                <Animated.View
+                  style={[
+                    styles.valueInlineRow,
+                    interactive && { opacity: demoFadeAnim },
+                    isDemoRtl && styles.rowReverse,
+                  ]}
+                >
+                  <AppText variant="rowTitle" style={styles.rowValueBold} numberOfLines={1}>
+                    {card2Title}
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={styles.rowValueMuted} numberOfLines={2}>
+                    {` · ${card2Sub}`}
+                  </AppText>
+                </Animated.View>
+              </View>
+
+              <View
+                style={[
+                  styles.chevronCircle,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="chevron-down" size={15} color={tokens.accent} />
+              </View>
+            </TouchableOpacity>
+
+            {/* Thin Divider */}
+            <View style={[styles.panelDivider, { backgroundColor: tokens.cardBorder }]} />
+
+            {/* Row 3: Quran Audio */}
+            <TouchableOpacity
+              testID="onboarding-row-audio-trans"
+              style={[styles.panelRow, isDemoRtl && styles.rowReverse]}
+              onPress={
+                interactive
+                  ? () => {
+                      stopDemo();
+                      setModalType('audio');
+                    }
+                  : undefined
+              }
+              accessibilityRole="button"
+              accessibilityLabel={`${currentStrings.quranAudioLabel}: ${card3Title}`}
+              activeOpacity={0.7}
+              disabled={!interactive}
+            >
+              <View
+                style={[
+                  styles.iconCircle,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="headset-outline" size={20} color={tokens.accent} />
+              </View>
+
+              <View style={[styles.rowTextCol, isDemoRtl && { alignItems: 'flex-end' }]}>
+                <AppText variant="eyebrow" highlight style={styles.rowOverline}>
+                  {currentStrings.quranAudioLabel}
+                </AppText>
+                <Animated.View
+                  style={[
+                    styles.valueInlineRow,
+                    interactive && { opacity: demoFadeAnim },
+                    isDemoRtl && styles.rowReverse,
+                  ]}
+                >
+                  <AppText variant="rowTitle" style={styles.rowValueBold} numberOfLines={1}>
+                    {card3Title}
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={styles.rowValueMuted} numberOfLines={2}>
+                    {` · ${card3Sub}`}
+                  </AppText>
+                </Animated.View>
+              </View>
+
+              <View
+                style={[
+                  styles.chevronCircle,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.ringBorder,
+                  },
+                ]}
+              >
+                <Ionicons name="chevron-down" size={15} color={tokens.accent} />
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Capability Pill */}
+          <View
+            style={[
+              styles.capabilityPill,
+              isCompact && styles.capabilityPillCompact,
+              {
+                backgroundColor: tokens.ringFill,
+                borderColor: tokens.cardBorder,
+                ...getPillShadow(activeMode),
+              },
+            ]}
+          >
+            <AppText
+              variant="caption"
+              highlight
+              style={[
+                styles.capabilityPillText,
+                isCompact && styles.capabilityPillTextCompact,
+              ]}
+            >
+              {selectedAppLang === 'ur'
+                ? '40+ ترجمے کی زبانیں · 10+ آڈیو زبانیں'
+                : (isDemoRtl
+                  ? 'أكثر من 40 لغة ترجمة · أكثر من 10 لغات صوتية'
+                  : '40+ translation languages · 10+ audio languages')}
+            </AppText>
+          </View>
+        </ScrollView>
+
+        {/* Pinned Bottom CTA Container */}
+        <View
+          style={[
+            styles.bottomContainer,
+            {
+              backgroundColor: tokens.bgBottom,
+              borderTopColor: tokens.cardBorder,
+              paddingTop: isCompact ? 8 : 12,
+              paddingBottom: Math.max(insets.bottom, isCompact ? 10 : 18),
+            },
+          ]}
+        >
+          <TouchableOpacity
+            testID="onboarding-get-started"
+            style={[
+              styles.getStartedButton,
+              isCompact && styles.getStartedButtonCompact,
+              getCardShadow(activeMode),
+            ]}
+            onPress={interactive ? handleGetStarted : undefined}
+            disabled={!interactive || isSubmitting}
+            activeOpacity={0.88}
+            accessibilityRole="button"
+            accessibilityLabel={currentStrings.getStarted}
+          >
+            <LinearGradient
+              colors={tokens.goldGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={[styles.btnContentRow, isDemoRtl && styles.rowReverse]}>
+              <AppText variant="title" tone="onGold" style={styles.getStartedBtnText}>
+                {currentStrings.getStarted}
+              </AppText>
+              <View style={[styles.btnArrowCircle, { backgroundColor: tokens.onGold }]}>
+                <Ionicons
+                  name={isDemoRtl ? 'arrow-back' : 'arrow-forward'}
+                  size={18}
+                  color={tokens.gold}
+                />
+              </View>
+            </View>
+          </TouchableOpacity>
+
+          <AppText
+            variant="caption"
+            tone="faint"
+            style={[
+              styles.footerHelperText,
+              isCompact && styles.footerHelperTextCompact,
+            ]}
+          >
+            {currentStrings.footerNote}
+          </AppText>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -678,7 +988,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         eyebrow="APP LANGUAGE"
         items={appModalItems}
         selectedId={selectedAppLang}
-        onSelect={(item) => setSelectedAppLang(item.code as AppLanguage)}
+        onSelect={handleSelectAppLang}
         searchPlaceholder="Search language..."
       />
 
@@ -690,7 +1000,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         eyebrow="TRANSLATION"
         items={quranModalItems}
         selectedId={selectedQuranLang}
-        onSelect={(item) => setSelectedQuranLang(item.code)}
+        onSelect={handleSelectQuranLang}
         searchPlaceholder="Search language or translator..."
       />
 
@@ -702,7 +1012,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
         eyebrow="AUDIO TRANSLATION"
         items={audioModalItems}
         selectedId={selectedAudioId}
-        onSelect={(item) => setSelectedAudioId(item.id)}
+        onSelect={handleSelectAudioEdition}
         searchPlaceholder="Search audio translation..."
       />
     </View>
@@ -730,8 +1040,8 @@ const styles = StyleSheet.create({
     transform: [{ scaleX: -1 }],
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    maxWidth: 580,
+    paddingHorizontal: 20,
+    maxWidth: 600,
     width: '100%',
     alignSelf: 'center',
     zIndex: 1,
@@ -740,7 +1050,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 28,
+    backgroundColor: 'transparent',
+    marginBottom: 24,
   },
   brandWrap: {
     flexDirection: 'row',
@@ -754,55 +1065,43 @@ const styles = StyleSheet.create({
   rowReverse: {
     flexDirection: 'row-reverse',
   },
-  logoBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
   headerWordmark: {
     fontFamily: 'SourceSans3_500Medium',
-    fontSize: 13,
-    letterSpacing: 4,
+    fontSize: 13.5,
+    letterSpacing: 3.5,
     fontWeight: '600',
+    paddingVertical: 2,
   },
   heroWrap: {
-    marginBottom: 24,
+    marginBottom: 22,
   },
   eyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
-    letterSpacing: 0.3,
-    marginBottom: 8,
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 11.5,
+    letterSpacing: 2.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+    paddingVertical: 2,
   },
   headline: {
     fontFamily: 'InstrumentSerif_400Regular',
-    fontSize: 42,
-    lineHeight: 46,
+    fontSize: 40,
+    lineHeight: 44,
     letterSpacing: -0.5,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 14.5,
-    lineHeight: 21,
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 14,
+    lineHeight: 20,
   },
   settingsPanel: {
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.04,
-    shadowRadius: 18,
-    elevation: 3,
+    overflow: 'hidden',
+    position: 'relative',
   },
   panelRow: {
     flexDirection: 'row',
@@ -815,36 +1114,38 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rowTextCol: {
     flex: 1,
     minWidth: 0,
+    flexShrink: 1,
     justifyContent: 'center',
-    overflow: 'hidden',
   },
   rowOverline: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 9.5,
-    letterSpacing: 1.2,
+    fontSize: 10,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
-    marginBottom: 3,
+    marginBottom: 2,
+    paddingVertical: 2,
   },
   valueInlineRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'nowrap',
+    flexWrap: 'wrap',
     flexShrink: 1,
     minWidth: 0,
-    overflow: 'hidden',
   },
   rowValueBold: {
     fontFamily: 'Manrope_700Bold',
     fontSize: 15,
+    flexShrink: 1,
   },
   rowValueMuted: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: 'Manrope_500Medium',
     fontSize: 13,
     flexShrink: 1,
   },
@@ -852,74 +1153,120 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   panelDivider: {
     height: 1,
     width: '100%',
-    opacity: 0.6,
+    opacity: 0.5,
   },
   capabilityPill: {
     alignSelf: 'center',
     borderRadius: 20,
+    borderWidth: 1,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    marginTop: 20,
+    marginTop: 18,
+    minHeight: 36,
   },
   capabilityPillText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
-    letterSpacing: 0.2,
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 11.5,
+    letterSpacing: 0.4,
+    paddingVertical: 2,
   },
   bottomContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 12,
     alignItems: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
     zIndex: 2,
   },
   getStartedButton: {
     width: '100%',
-    maxWidth: 580,
-    height: 56,
-    borderRadius: 28,
+    maxWidth: 600,
+    minHeight: 54, /* height: 54 */
+    borderRadius: 27,
+    overflow: 'hidden',
+    position: 'relative',
     paddingStart: 24,
-    paddingEnd: 12,
+    paddingEnd: 10,
+    paddingVertical: 8,
     justifyContent: 'center',
-    shadowColor: '#105A4B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   btnContentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
+    flexShrink: 1,
+    minWidth: 0,
   },
   getStartedBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 16,
-    color: '#FFFFFF',
-    letterSpacing: 0.3,
+    fontSize: 15.5,
+    letterSpacing: 0.4,
+    flexShrink: 1,
+    minWidth: 0,
+    paddingVertical: 2,
   },
   btnArrowCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   footerHelperText: {
-    fontFamily: 'Manrope_400Regular',
+    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     textAlign: 'center',
+    marginTop: 8,
+    paddingVertical: 2,
+  },
+  headerRowCompact: {
+    marginBottom: 12,
+  },
+  heroWrapCompact: {
+    marginBottom: 10,
+  },
+  headlineCompact: {
+    fontSize: 28,
+    lineHeight: 32,
+    marginBottom: 4,
+  },
+  subtitleCompact: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  capabilityPillCompact: {
     marginTop: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    minHeight: 30,
+  },
+  capabilityPillTextCompact: {
+    fontSize: 10.5,
+    letterSpacing: 0.2,
+    textAlign: 'center',
+    paddingVertical: 2,
+  },
+  getStartedButtonCompact: {
+    minHeight: 48,
+    borderRadius: 24,
+    paddingVertical: 6,
+  },
+  footerHelperTextCompact: {
+    marginTop: 4,
+    fontSize: 11,
+    paddingVertical: 2,
   },
 });

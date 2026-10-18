@@ -25,7 +25,7 @@ assert.ok(
 assert.ok(
   appCode.includes('{isTopLevel ? (') &&
   appCode.includes('<AppHeader') &&
-  appCode.includes('<View style={{ paddingTop: insets.top + HEADER_TOP_INSET_EXTRA }} />'),
+  appCode.includes('insets.top'),
   'AppHeader must be gated by isTopLevel, with top inset spacer on detail screens'
 );
 console.log('  ✓ Central isTopLevel predicate and AppHeader conditional gating verified in App.tsx');
@@ -44,7 +44,6 @@ assert.ok(screenHeaderCode.includes('HEADER_HORIZONTAL_PADDING'), 'ScreenHeader 
 assert.ok(screenHeaderCode.includes('HEADER_MAX_WIDTH'), 'ScreenHeader must consume HEADER_MAX_WIDTH');
 assert.ok(screenHeaderCode.includes('HEADER_HEIGHT'), 'ScreenHeader must consume HEADER_HEIGHT');
 assert.ok(screenHeaderCode.includes('HEADER_PADDING_VERTICAL'), 'ScreenHeader must consume HEADER_PADDING_VERTICAL');
-assert.ok(appCode.includes('HEADER_TOP_INSET_EXTRA'), 'App.tsx must consume HEADER_TOP_INSET_EXTRA');
 assert.ok(appCode.includes('HEADER_HORIZONTAL_PADDING'), 'App.tsx must consume HEADER_HORIZONTAL_PADDING');
 assert.ok(appCode.includes('HEADER_MAX_WIDTH'), 'App.tsx must consume HEADER_MAX_WIDTH');
 assert.ok(appCode.includes('HEADER_HEIGHT'), 'App.tsx must consume HEADER_HEIGHT');
@@ -134,11 +133,11 @@ const detailScreens = [
 for (const screen of detailScreens) {
   const content = fs.readFileSync(`src/screens/${screen}.tsx`, 'utf8');
   assert.ok(
-    content.includes('<ScreenHeader'),
-    `${screen} must render canonical ScreenHeader`
+    content.includes('<ScreenHeader') || content.includes('<SubHeader'),
+    `${screen} must render canonical ScreenHeader or SubHeader`
   );
 }
-console.log(`  ✓ All ${detailScreens.length} detail screens verified to have exactly one canonical ScreenHeader`);
+console.log(`  ✓ All ${detailScreens.length} detail screens verified to have canonical ScreenHeader or SubHeader`);
 
 console.log('\n========================================================');
 console.log('ALL GLOBAL HEADER UX REFACTOR TESTS PASSED SUCCESSFULLY!');

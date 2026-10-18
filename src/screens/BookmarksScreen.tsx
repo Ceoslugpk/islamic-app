@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   useWindowDimensions,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens } from '../theme/tokens';
 import { t } from '../lib/i18n';
@@ -28,7 +28,7 @@ function BookmarksScreen({
   backLabel = 'Quran',
   onOpenVerse,
 }: BookmarksScreenProps) {
-  const { tokens, mode } = useThemeTokens();
+  const { tokens } = useThemeTokens();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 14 : 20;
@@ -78,9 +78,9 @@ function BookmarksScreen({
       >
         <View style={styles.itemHeader}>
           <View style={[styles.badge, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
-            <Text style={[styles.badgeText, { color: tokens.goldText }]}>
+            <AppText variant="caption" highlight style={styles.badgeText}>
               {item.surahName ? `${item.surahName} · ` : ''}{t('Surah')} {item.surah}:{item.ayah}
-            </Text>
+            </AppText>
           </View>
           <TouchableOpacity
             style={styles.deleteBtn}
@@ -101,15 +101,15 @@ function BookmarksScreen({
         </ArabicText>
 
         {item.translation ? (
-          <Text style={[styles.translation, { color: tokens.muted }]}>
+          <AppText variant="body" style={styles.translation}>
             {item.translation}
-          </Text>
+          </AppText>
         ) : null}
 
         <View style={styles.itemFooter}>
-          <Text style={[styles.readHint, { color: tokens.goldText }]}>
+          <AppText variant="link" style={styles.readHint}>
             {t('Tap to open in Reader →')}
-          </Text>
+          </AppText>
         </View>
       </PremiumCard>
     );

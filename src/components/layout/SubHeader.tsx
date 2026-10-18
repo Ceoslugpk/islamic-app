@@ -1,19 +1,17 @@
 import React from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   ViewStyle,
   StyleProp,
   useWindowDimensions,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
+import { HOME_THEME_TOKENS } from '../../lib/homeThemeTokens';
 import { getBackIcon } from '../../lib/iconMap';
-import { touchTargetTokens } from '../../lib/buttonTokens';
 import { isRTL, t } from '../../lib/i18n';
 import {
   HEADER_HORIZONTAL_PADDING,
@@ -22,8 +20,9 @@ import {
   HEADER_SEPARATOR,
 } from '../../lib/headerTokens';
 import { HEADER_FADE, SUBHEADER_HEIGHT } from './layout.constants';
-import { fontRoles, useThemeTokens } from '../../theme/tokens';
+import { fontRoles } from '../../theme/tokens';
 import { HeaderRingButton } from './HeaderRingButton';
+import { AppText } from '../ui/AppText';
 
 export interface SubHeaderProps {
   /** Main screen title in Lora (display font) or Noto Naskh Arabic (RTL) at 24sp */
@@ -71,29 +70,32 @@ export function SubHeader({
   borderBottom = HEADER_SEPARATOR,
   showFade = true,
   includeTopInset = false,
-  testID = 'sub-header',
+  testID,
 }: SubHeaderProps) {
   const { colors, mode } = useTheme();
-  const { tokens } = useThemeTokens();
+  const tokens = HOME_THEME_TOKENS[mode];
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const rtl = isRTL();
 
+  const childPrefix = testID && testID !== 'subheader' && testID !== 'sub-header' ? testID : 'sub-header';
   const backIconName = getBackIcon('chevron');
   const safeTopPadding = includeTopInset ? insets.top : 0;
 
   const fadeColors: [string, string] =
     mode === 'ink'
-      ? ['rgba(8, 36, 31, 0.4)', 'rgba(8, 36, 31, 0)']
-      : ['rgba(234, 226, 210, 0.45)', 'rgba(247, 244, 235, 0)'];
+      ? ['rgba(18, 18, 28, 0.85)', 'rgba(18, 18, 28, 0)']
+      : ['rgba(248, 244, 234, 0.9)', 'rgba(248, 244, 234, 0)'];
 
   return (
     <View
-      testID={testID}
+      testID="subheader"
+      {...(testID && testID !== 'subheader' && testID !== 'sub-header' ? { testID } : {})}
       style={[
         styles.container,
         {
+          backgroundColor: tokens.bgTop,
           paddingTop: safeTopPadding + HEADER_PADDING_VERTICAL,
           paddingHorizontal: HEADER_HORIZONTAL_PADDING,
           borderBottomColor: colors.borderSubtle,
@@ -103,6 +105,7 @@ export function SubHeader({
       ]}
     >
       <View
+        testID="sub-header"
         style={[
           styles.innerRow,
           { flexDirection: rtl ? 'row-reverse' : 'row' },
@@ -111,7 +114,7 @@ export function SubHeader({
         {/* Left: 32dp ring back button at 16dp radius with 44x44 touch target */}
         {onBack ? (
           <TouchableOpacity
-            testID={`${testID}-back-btn`}
+            testID={`${childPrefix}-back-btn`}
             style={[
               styles.backButtonTouch,
               { flexDirection: rtl ? 'row-reverse' : 'row' },
@@ -123,26 +126,26 @@ export function SubHeader({
             activeOpacity={0.7}
           >
             <HeaderRingButton
-              testID={`${testID}-back-ring`}
+              testID={`${childPrefix}-back-ring`}
               iconName={backIconName}
               iconSize={16}
               iconColor={colors.accent}
               asView
             />
             {backLabel && !isCompact ? (
-              <Text
-                testID={`${testID}-back-label`}
+              <AppText
+                variant="link"
+                testID={`${childPrefix}-back-label`}
                 style={[
                   styles.backLabelText,
                   {
-                    color: colors.accent,
                     fontFamily: rtl ? fontRoles.arabicNotoBold : fontRoles.eyebrow,
                   },
                 ]}
                 numberOfLines={1}
               >
                 {t(backLabel)}
-              </Text>
+              </AppText>
             ) : null}
           </TouchableOpacity>
         ) : (
@@ -152,12 +155,12 @@ export function SubHeader({
         {/* Center: Eyebrow, Title (24sp Lora), and 2-line Subtitle (11sp/15px Poppins) */}
         <View style={styles.titleColumn}>
           {eyebrow ? (
-            <Text
-              testID={`${testID}-eyebrow`}
+            <AppText
+              variant="eyebrow"
+              testID={`${childPrefix}-eyebrow`}
               style={[
                 styles.eyebrow,
                 {
-                  color: tokens.goldText,
                   fontFamily: rtl ? fontRoles.arabicNotoBold : fontRoles.eyebrow,
                   fontSize: 11,
                   letterSpacing: 1.8,
@@ -168,14 +171,14 @@ export function SubHeader({
               maxFontSizeMultiplier={1.3}
             >
               {t(eyebrow)}
-            </Text>
+            </AppText>
           ) : null}
-          <Text
-            testID={`${testID}-title`}
+          <AppText
+            variant="headerTitle"
+            testID={`${childPrefix}-title`}
             style={[
               styles.title,
               {
-                color: tokens.text,
                 fontFamily: rtl ? fontRoles.titleRtl : fontRoles.title,
                 fontSize: 24,
                 lineHeight: 28,
@@ -188,17 +191,16 @@ export function SubHeader({
             maxFontSizeMultiplier={1.4}
           >
             {t(title)}
-          </Text>
+          </AppText>
           {subtitle ? (
-            <Text
-              testID={`${testID}-subtitle`}
+            <AppText
+              variant="subtitle"
+              testID={`${childPrefix}-subtitle`}
               style={[
                 styles.subtitle,
                 {
-                  color: tokens.muted,
                   fontFamily: rtl ? fontRoles.arabicNoto : fontRoles.subtitle,
                   fontSize: 11,
-                  lineHeight: 15,
                   textAlign: rtl ? 'right' : 'left',
                 },
               ]}
@@ -207,7 +209,7 @@ export function SubHeader({
               maxFontSizeMultiplier={1.4}
             >
               {t(subtitle)}
-            </Text>
+            </AppText>
           ) : null}
         </View>
 
@@ -242,6 +244,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingBottom: HEADER_PADDING_VERTICAL,
     position: 'relative',
+    zIndex: 10,
+    elevation: 4,
   },
   innerRow: {
     alignItems: 'center',
@@ -285,12 +289,11 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   subtitle: {
-    lineHeight: 15,
     marginTop: 2,
   },
   rightActionWrap: {
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: 'flex-end',
     justifyContent: 'center',
   },

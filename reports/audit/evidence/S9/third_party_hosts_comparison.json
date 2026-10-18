@@ -1,0 +1,126 @@
+{
+  "totalObservedHosts": 3,
+  "declaredAllowListCount": 16,
+  "declaredAllowList": [
+    {
+      "name": "Islamic.app API",
+      "host": "api.islamic.app",
+      "purpose": "Prayer Times & Hadith collections",
+      "declaredIn": "LegalScreen.tsx:448-450, 640-644"
+    },
+    {
+      "name": "AlAdhan & Umm al-Qura",
+      "host": "api.aladhan.com",
+      "purpose": "Astronomical Hijri calendar conversion and prayer schedule verification",
+      "declaredIn": "LegalScreen.tsx:460-462, 646-650"
+    },
+    {
+      "name": "AlQuran Cloud",
+      "host": "api.alquran.cloud",
+      "purpose": "Verified Uthmani script Quran text, surah/ayah metadata, translations",
+      "declaredIn": "LegalScreen.tsx:451-454, 652-656"
+    },
+    {
+      "name": "AlQuran Cloud CDN",
+      "host": "cdn.alquran.cloud",
+      "purpose": "Quran text editions and assets",
+      "declaredIn": "LegalScreen.tsx:453, 652-656"
+    },
+    {
+      "name": "islamic.network CDN",
+      "host": "cdn.islamic.network",
+      "purpose": "High-quality verse-by-verse audio recitations",
+      "declaredIn": "LegalScreen.tsx:456-458, 658-662"
+    },
+    {
+      "name": "EveryAyah CDN",
+      "host": "everyayah.com",
+      "purpose": "Quran verse audio recitations",
+      "declaredIn": "LegalScreen.tsx:456-458, 658-662"
+    },
+    {
+      "name": "OpenStreetMap Nominatim",
+      "host": "nominatim.openstreetmap.org",
+      "purpose": "City geocoding search",
+      "declaredIn": "LegalScreen.tsx:464-466, 664-668"
+    },
+    {
+      "name": "Overpass API (Mosque Finder)",
+      "host": "overpass-api.de",
+      "purpose": "Nearby mosque discovery",
+      "declaredIn": "LegalScreen.tsx:466, 664-668"
+    },
+    {
+      "name": "Overpass Kumi Systems",
+      "host": "overpass.kumi.systems",
+      "purpose": "Fallback mosque discovery mirror",
+      "declaredIn": "LegalScreen.tsx:466, 664-668"
+    },
+    {
+      "name": "Overpass Private Coffee",
+      "host": "overpass.private.coffee",
+      "purpose": "Fallback mosque discovery mirror",
+      "declaredIn": "LegalScreen.tsx:466, 664-668"
+    },
+    {
+      "name": "EsmaulHusna.org",
+      "host": "esmaulhusna.org",
+      "purpose": "99 Beautiful Names commentary and benefits",
+      "declaredIn": "LegalScreen.tsx:468-470, 670-674"
+    },
+    {
+      "name": "Google Fonts",
+      "host": "fonts.googleapis.com",
+      "purpose": "Typography stylesheets",
+      "declaredIn": "LegalScreen.tsx:676-680"
+    },
+    {
+      "name": "Google Fonts Static",
+      "host": "fonts.gstatic.com",
+      "purpose": "Typography font assets",
+      "declaredIn": "LegalScreen.tsx:676-680"
+    },
+    {
+      "name": "YouTube (Makkah/Madinah Live)",
+      "host": "www.youtube.com",
+      "purpose": "24/7 Live Stream broadcast player",
+      "declaredIn": "MakkahLiveScreen.tsx, MadinahLiveScreen.tsx, LiveVideoPlayer.tsx"
+    },
+    {
+      "name": "YouTube No-Cookie",
+      "host": "www.youtube-nocookie.com",
+      "purpose": "Privacy-enhanced 24/7 Live Stream iframe embed",
+      "declaredIn": "LiveVideoPlayer.tsx:27"
+    },
+    {
+      "name": "Local Web Preview Host",
+      "host": "15.235.203.134",
+      "purpose": "Application bundle and asset delivery server",
+      "declaredIn": "Infrastructure test server"
+    }
+  ],
+  "hostComparison": [
+    {
+      "host": "15.235.203.134",
+      "requestCount": 20,
+      "isDeclaredInLegalScreen": true,
+      "isTrackerOrAd": false,
+      "status": "MATCH_ALLOW_LIST"
+    },
+    {
+      "host": "api.islamic.app",
+      "requestCount": 93,
+      "isDeclaredInLegalScreen": true,
+      "isTrackerOrAd": false,
+      "status": "MATCH_ALLOW_LIST"
+    },
+    {
+      "host": "api.alquran.cloud",
+      "requestCount": 38,
+      "isDeclaredInLegalScreen": true,
+      "isTrackerOrAd": false,
+      "status": "MATCH_ALLOW_LIST"
+    }
+  ],
+  "allObservedHostsAllowed": true
+}

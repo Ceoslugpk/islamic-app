@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
-  Text,
   View,
   TouchableOpacity,
   TouchableWithoutFeedback,
@@ -11,6 +10,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { AppText } from '../components/ui/AppText';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -23,6 +23,7 @@ import { Hairline } from '../components/Hairline';
 import { Card } from '../components/Card';
 import { EmptyState } from '../components/EmptyState';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   SUPPORTED_CURRENCIES,
   getCurrencyConfig,
@@ -48,6 +49,7 @@ function ZakatScreen({
   const { t } = useTranslation();
   const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const maxW = Math.min(width, 680);
   const { saveUndoState } = useUndoToast();
 
@@ -248,14 +250,13 @@ function ZakatScreen({
                   accessibilityState={{ selected: isSelected }}
                 >
                   {isSelected && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 16 }]} />}
-                  <Text
-                    style={[
-                      styles.tabBtnText,
-                      { color: isSelected ? tokens.onGold : tokens.muted },
-                    ]}
+                  <AppText
+                    variant="rowTitle"
+                    tone={isSelected ? 'onGold' : 'faint'}
+                    style={styles.tabBtnText}
                   >
                     {labels[tab]}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               );
             })}
@@ -267,25 +268,25 @@ function ZakatScreen({
               {/* Currency Selector Bar */}
               <Card style={[styles.currencyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
                 <View style={styles.currencyRow}>
-                  <View>
-                    <Text style={[styles.controlLabel, { color: tokens.muted }]}>
+                  <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+                    <AppText variant="eyebrow" tone="faint" style={styles.controlLabel}>
                       {t('Active Currency')}
-                    </Text>
-                    <Text style={[styles.currencyName, { color: tokens.text }]}>
+                    </AppText>
+                    <AppText variant="rowTitle" style={styles.currencyName}>
                       {currencyConfig.code} — {currencyConfig.name} ({currencyConfig.symbol})
-                    </Text>
+                    </AppText>
                   </View>
 
                   <TouchableOpacity
-                    style={[styles.currencyChangeBtn, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.goldBorder }]}
+                    style={[styles.currencyChangeBtn, getPillShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.goldBorder, flexShrink: 0 }]}
                     onPress={() => setShowCurrencyModal(true)}
                     accessibilityRole="button"
                     accessibilityLabel={t('Change currency')}
                   >
                     <Ionicons name="swap-horizontal" size={14} color={tokens.goldText} />
-                    <Text style={[styles.currencyChangeText, { color: tokens.goldText }]}>
+                    <AppText variant="link" style={styles.currencyChangeText}>
                       {t('Change')}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 </View>
               </Card>
@@ -293,12 +294,12 @@ function ZakatScreen({
               {/* Nisab Standard Selector */}
               <Card style={[styles.nisabCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
                 <View style={styles.nisabHeader}>
-                  <Text style={[styles.controlLabel, { color: tokens.muted }]}>
+                  <AppText variant="eyebrow" tone="faint" style={[styles.controlLabel, { flex: 1, minWidth: 0 }]}>
                     {t('Nisab Standard')}
-                  </Text>
-                  <Text style={[styles.nisabThresholdValue, { color: tokens.goldText }]}>
+                  </AppText>
+                  <AppText variant="numeral" highlight style={[styles.nisabThresholdValue, { flexShrink: 0 }]}>
                     {t('Threshold:')} {currencyConfig.symbol} {formatCurrencyAmount(evaluation.nisabThreshold, selectedCurrencyCode)}
-                  </Text>
+                  </AppText>
                 </View>
 
                 <View style={styles.nisabToggleRow}>
@@ -314,22 +315,20 @@ function ZakatScreen({
                     onPress={() => setNisabStandard('gold')}
                   >
                     {nisabStandard === 'gold' && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />}
-                    <Text
-                      style={[
-                        styles.nisabOptionTitle,
-                        { color: nisabStandard === 'gold' ? tokens.onGold : tokens.text },
-                      ]}
+                    <AppText
+                      variant="rowTitle"
+                      tone={nisabStandard === 'gold' ? 'onGold' : undefined}
+                      style={styles.nisabOptionTitle}
                     >
                       {t('Gold (85g)')}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.nisabOptionSub,
-                        { color: nisabStandard === 'gold' ? tokens.onGold : tokens.muted },
-                      ]}
+                    </AppText>
+                    <AppText
+                      variant="caption"
+                      tone={nisabStandard === 'gold' ? 'onGold' : 'faint'}
+                      style={styles.nisabOptionSub}
                     >
                       {t('Recommended standard')}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -344,47 +343,47 @@ function ZakatScreen({
                     onPress={() => setNisabStandard('silver')}
                   >
                     {nisabStandard === 'silver' && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />}
-                    <Text
-                      style={[
-                        styles.nisabOptionTitle,
-                        { color: nisabStandard === 'silver' ? tokens.onGold : tokens.text },
-                      ]}
+                    <AppText
+                      variant="rowTitle"
+                      tone={nisabStandard === 'silver' ? 'onGold' : undefined}
+                      style={styles.nisabOptionTitle}
                     >
                       {t('Silver (595g)')}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.nisabOptionSub,
-                        { color: nisabStandard === 'silver' ? tokens.onGold : tokens.muted },
-                      ]}
+                    </AppText>
+                    <AppText
+                      variant="caption"
+                      tone={nisabStandard === 'silver' ? 'onGold' : 'faint'}
+                      style={styles.nisabOptionSub}
                     >
                       {t('Lower threshold')}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 </View>
 
                 {/* Price per gram inputs */}
                 <View style={styles.ratesEditRow}>
                   <View style={styles.rateField}>
-                    <Text style={[styles.rateFieldLabel, { color: tokens.muted }]}>
+                    <AppText variant="caption" tone="faint" style={styles.rateFieldLabel}>
                       {t('Gold / g')} ({currencyConfig.symbol})
-                    </Text>
+                    </AppText>
                     <TextInput
                       style={[styles.rateInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
                       value={goldPriceInput}
                       onChangeText={setGoldPriceInput}
                       keyboardType="numeric"
+                      accessibilityLabel={`${t('Gold / g')} (${currencyConfig.symbol})`}
                     />
                   </View>
                   <View style={styles.rateField}>
-                    <Text style={[styles.rateFieldLabel, { color: tokens.muted }]}>
+                    <AppText variant="caption" tone="faint" style={styles.rateFieldLabel}>
                       {t('Silver / g')} ({currencyConfig.symbol})
-                    </Text>
+                    </AppText>
                     <TextInput
                       style={[styles.rateInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
                       value={silverPriceInput}
                       onChangeText={setSilverPriceInput}
                       keyboardType="numeric"
+                      accessibilityLabel={`${t('Silver / g')} (${currencyConfig.symbol})`}
                     />
                   </View>
                 </View>
@@ -402,13 +401,13 @@ function ZakatScreen({
                 ]}
               >
                 <View style={styles.resultsTopRow}>
-                  <View>
-                    <Text style={[styles.resultsEyebrow, { color: tokens.muted }]}>
+                  <View style={{ flex: 1, minWidth: 0, marginRight: 8 }}>
+                    <AppText variant="eyebrow" tone="faint" style={styles.resultsEyebrow}>
                       {t('Zakat Due (2.5%)')}
-                    </Text>
-                    <Text style={[styles.resultsTotalDue, { color: tokens.goldText }]}>
+                    </AppText>
+                    <AppText variant="numeral" highlight style={styles.resultsTotalDue}>
                       {currencyConfig.symbol} {formatCurrencyAmount(evaluation.zakatDue, selectedCurrencyCode)}
-                    </Text>
+                    </AppText>
                   </View>
 
                   <View
@@ -418,6 +417,7 @@ function ZakatScreen({
                       {
                         backgroundColor: evaluation.isEligibleForZakat ? tokens.ringFill : tokens.cardTop,
                         borderColor: evaluation.isEligibleForZakat ? tokens.goldBorder : tokens.cardBorder,
+                        flexShrink: 0,
                       },
                     ]}
                   >
@@ -426,14 +426,14 @@ function ZakatScreen({
                       size={14}
                       color={evaluation.isEligibleForZakat ? tokens.goldText : tokens.muted}
                     />
-                    <Text
-                      style={[
-                        styles.statusBadgeText,
-                        { color: evaluation.isEligibleForZakat ? tokens.goldText : tokens.muted },
-                      ]}
+                    <AppText
+                      variant="caption"
+                      highlight={evaluation.isEligibleForZakat}
+                      tone={evaluation.isEligibleForZakat ? undefined : 'faint'}
+                      style={styles.statusBadgeText}
                     >
                       {evaluation.isEligibleForZakat ? t('Nisab Met') : t('Below Nisab')}
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
 
@@ -441,40 +441,40 @@ function ZakatScreen({
 
                 <View style={styles.summaryStatsRow}>
                   <View style={styles.summaryCol}>
-                    <Text style={[styles.summaryLabel, { color: tokens.muted }]}>{t('Gross Assets')}</Text>
-                    <Text style={[styles.summaryVal, { color: tokens.text }]}>
+                    <AppText variant="caption" tone="faint" style={styles.summaryLabel}>{t('Gross Assets')}</AppText>
+                    <AppText variant="numeral" style={styles.summaryVal}>
                       {currencyConfig.symbol} {formatCurrencyAmount(evaluation.totalGrossAssets, selectedCurrencyCode)}
-                    </Text>
+                    </AppText>
                   </View>
                   <View style={styles.summaryCol}>
-                    <Text style={[styles.summaryLabel, { color: tokens.muted }]}>{t('Liabilities')}</Text>
-                    <Text style={[styles.summaryVal, { color: tokens.muted }]}>
+                    <AppText variant="caption" tone="faint" style={styles.summaryLabel}>{t('Liabilities')}</AppText>
+                    <AppText variant="numeral" tone="faint" style={styles.summaryVal}>
                       - {currencyConfig.symbol} {formatCurrencyAmount(evaluation.totalLiabilities, selectedCurrencyCode)}
-                    </Text>
+                    </AppText>
                   </View>
                   <View style={styles.summaryCol}>
-                    <Text style={[styles.summaryLabel, { color: tokens.muted }]}>{t('Net Wealth')}</Text>
-                    <Text style={[styles.summaryVal, { color: tokens.text }]}>
+                    <AppText variant="caption" tone="faint" style={styles.summaryLabel}>{t('Net Wealth')}</AppText>
+                    <AppText variant="numeral" style={styles.summaryVal}>
                       {currencyConfig.symbol} {formatCurrencyAmount(evaluation.netZakatableWealth, selectedCurrencyCode)}
-                    </Text>
+                    </AppText>
                   </View>
                 </View>
 
                 {/* Multi-currency equivalent conversion strip */}
                 {evaluation.zakatDue > 0 && evaluation.convertedDue.length > 0 && (
                   <View style={[styles.conversionBox, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder }]}>
-                    <Text style={[styles.conversionTitle, { color: tokens.muted }]}>
+                    <AppText variant="eyebrow" tone="faint" style={styles.conversionTitle}>
                       {t('Equivalent in Major Currencies:')}
-                    </Text>
+                    </AppText>
                     <View style={styles.conversionRow}>
                       {evaluation.convertedDue.map((conv) => (
                         <View key={conv.code} style={styles.convChip}>
-                          <Text style={[styles.convChipCode, { color: tokens.text }]}>
+                          <AppText variant="caption" style={styles.convChipCode}>
                             {conv.code}:
-                          </Text>
-                          <Text style={[styles.convChipVal, { color: tokens.goldText }]}>
+                          </AppText>
+                          <AppText variant="caption" highlight style={styles.convChipVal}>
                             {conv.symbol} {formatCurrencyAmount(conv.amount, conv.code)}
-                          </Text>
+                          </AppText>
                         </View>
                       ))}
                     </View>
@@ -502,14 +502,14 @@ function ZakatScreen({
                       size={15}
                       color={justSaved ? tokens.onGold : tokens.goldText}
                     />
-                    <Text
-                      style={[
-                        styles.saveCalcBtnText,
-                        { color: justSaved ? tokens.onGold : tokens.goldText },
-                      ]}
+                    <AppText
+                      variant="rowTitle"
+                      tone={justSaved ? 'onGold' : undefined}
+                      highlight={!justSaved}
+                      style={styles.saveCalcBtnText}
                     >
                       {justSaved ? t('Saved ✓') : t('Save Calculation')}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -518,30 +518,30 @@ function ZakatScreen({
                     accessibilityRole="button"
                   >
                     <Ionicons name="refresh-outline" size={15} color={tokens.muted} />
-                    <Text style={[styles.resetBtnText, { color: tokens.muted }]}>
+                    <AppText variant="rowTitle" tone="faint" style={styles.resetBtnText}>
                       {t('Clear')}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 </View>
               </Card>
 
               {/* Asset Inputs Form */}
-              <Text style={[styles.sectionHeading, { color: tokens.muted }]}>
+              <AppText variant="eyebrow" tone="faint" style={styles.sectionHeading}>
                 {t('Assets & Liabilities')}
-              </Text>
+              </AppText>
 
               {/* 1. Cash */}
               <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="cash-outline" size={17} color={tokens.goldText} />
-                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                    <AppText variant="rowTitle" style={styles.inputCardTitle}>
                       {t('Cash & Bank Balances')}
-                    </Text>
+                    </AppText>
                   </View>
-                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.inputCardSub}>
                     {t('In hand, savings, checking accounts')}
-                  </Text>
+                  </AppText>
                 </View>
                 <TextInput
                   style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
@@ -550,6 +550,7 @@ function ZakatScreen({
                   keyboardType="numeric"
                   placeholder={`0 ${currencyConfig.symbol}`}
                   placeholderTextColor={tokens.muted}
+                  accessibilityLabel={t('Cash & Bank Balances')}
                 />
               </Card>
 
@@ -558,15 +559,15 @@ function ZakatScreen({
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="sparkles-outline" size={17} color={tokens.goldText} />
-                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                    <AppText variant="rowTitle" style={styles.inputCardTitle}>
                       {t('Gold (Grams)')}
-                    </Text>
+                    </AppText>
                   </View>
-                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.inputCardSub}>
                     {evaluation.goldValue > 0
                       ? `${t('Value:')} ${currencyConfig.symbol} ${formatCurrencyAmount(evaluation.goldValue, selectedCurrencyCode)}`
                       : t('Jewelry (beyond customary use), coins, bars')}
-                  </Text>
+                  </AppText>
                 </View>
                 <TextInput
                   style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
@@ -575,6 +576,7 @@ function ZakatScreen({
                   keyboardType="numeric"
                   placeholder={t('0 grams')}
                   placeholderTextColor={tokens.muted}
+                  accessibilityLabel={t('Gold (Grams)')}
                 />
               </Card>
 
@@ -583,15 +585,15 @@ function ZakatScreen({
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="disc-outline" size={17} color={tokens.goldText} />
-                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                    <AppText variant="rowTitle" style={styles.inputCardTitle}>
                       {t('Silver (Grams)')}
-                    </Text>
+                    </AppText>
                   </View>
-                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.inputCardSub}>
                     {evaluation.silverValue > 0
                       ? `${t('Value:')} ${currencyConfig.symbol} ${formatCurrencyAmount(evaluation.silverValue, selectedCurrencyCode)}`
                       : t('Coins, utensils, decorative bullion')}
-                  </Text>
+                  </AppText>
                 </View>
                 <TextInput
                   style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
@@ -600,6 +602,7 @@ function ZakatScreen({
                   keyboardType="numeric"
                   placeholder={t('0 grams')}
                   placeholderTextColor={tokens.muted}
+                  accessibilityLabel={t('Silver (Grams)')}
                 />
               </Card>
 
@@ -608,13 +611,13 @@ function ZakatScreen({
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="trending-up-outline" size={17} color={tokens.goldText} />
-                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                    <AppText variant="rowTitle" style={styles.inputCardTitle}>
                       {t('Investments, Stocks & Crypto')}
-                    </Text>
+                    </AppText>
                   </View>
-                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.inputCardSub}>
                     {t('Shares, mutual funds, merchandise for sale')}
-                  </Text>
+                  </AppText>
                 </View>
                 <TextInput
                   style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
@@ -623,6 +626,7 @@ function ZakatScreen({
                   keyboardType="numeric"
                   placeholder={`0 ${currencyConfig.symbol}`}
                   placeholderTextColor={tokens.muted}
+                  accessibilityLabel={t('Investments, Stocks & Crypto')}
                 />
               </Card>
 
@@ -631,13 +635,13 @@ function ZakatScreen({
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="wallet-outline" size={17} color={tokens.goldText} />
-                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                    <AppText variant="rowTitle" style={styles.inputCardTitle}>
                       {t('Other Assets & Receivables')}
-                    </Text>
+                    </AppText>
                   </View>
-                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.inputCardSub}>
                     {t('Money owed to you expected soon, business cash')}
-                  </Text>
+                  </AppText>
                 </View>
                 <TextInput
                   style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
@@ -646,6 +650,7 @@ function ZakatScreen({
                   keyboardType="numeric"
                   placeholder={`0 ${currencyConfig.symbol}`}
                   placeholderTextColor={tokens.muted}
+                  accessibilityLabel={t('Other Assets & Receivables')}
                 />
               </Card>
 
@@ -654,13 +659,13 @@ function ZakatScreen({
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="remove-circle-outline" size={17} color={tokens.danger} />
-                    <Text style={[styles.inputCardTitle, { color: tokens.text }]}>
+                    <AppText variant="rowTitle" style={styles.inputCardTitle}>
                       {t('Deductible Liabilities & Debts')}
-                    </Text>
+                    </AppText>
                   </View>
-                  <Text style={[styles.inputCardSub, { color: tokens.muted }]}>
+                  <AppText variant="caption" tone="faint" style={styles.inputCardSub}>
                     {t('Immediate bills, unpaid rent, short-term debt due now')}
-                  </Text>
+                  </AppText>
                 </View>
                 <TextInput
                   style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
@@ -669,6 +674,7 @@ function ZakatScreen({
                   keyboardType="numeric"
                   placeholder={`0 ${currencyConfig.symbol}`}
                   placeholderTextColor={tokens.muted}
+                  accessibilityLabel={t('Deductible Liabilities & Debts')}
                 />
               </Card>
             </View>
@@ -677,9 +683,9 @@ function ZakatScreen({
           {/* ─── TAB 2: HISTORY ─────────────────────────────────────── */}
           {activeTab === 'history' && (
             <View style={styles.tabContent}>
-              <Text style={[styles.sectionHeading, { color: tokens.muted }]}>
+              <AppText variant="eyebrow" tone="faint" style={styles.sectionHeading}>
                 {t('Past Saved Calculations')}
-              </Text>
+              </AppText>
 
               {history.length === 0 ? (
                 <EmptyState
@@ -697,12 +703,12 @@ function ZakatScreen({
                       <Card key={item.id} style={[styles.historyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
                         <View style={styles.historyHeader}>
                           <View>
-                            <Text style={[styles.historyDate, { color: tokens.muted }]}>
+                            <AppText variant="caption" tone="faint" style={styles.historyDate}>
                               {item.date} • {item.nisabStandard === 'gold' ? t('Gold Nisab') : t('Silver Nisab')}
-                            </Text>
-                            <Text style={[styles.historyDueAmount, { color: tokens.goldText }]}>
+                            </AppText>
+                            <AppText variant="numeral" highlight style={styles.historyDueAmount}>
                               {t('Zakat:')} {itemCfg.symbol} {formatCurrencyAmount(item.zakatDue, item.currency)}
-                            </Text>
+                            </AppText>
                           </View>
                           <TouchableOpacity
                             style={[styles.deleteHistoryBtn, justDeleted === item.id && { opacity: 0.45 }]}
@@ -720,9 +726,9 @@ function ZakatScreen({
                         <Hairline style={{ marginVertical: 8 }} />
 
                         <View style={[styles.historyBreakdownRow, { backgroundColor: tokens.ringFill, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 }]}>
-                          <Text style={[styles.historyBreakdownText, { color: tokens.text }]}>
+                          <AppText variant="body" style={styles.historyBreakdownText}>
                             {t('Total Net Wealth:')} {itemCfg.symbol} {formatCurrencyAmount(item.totalWealth, item.currency)}
-                          </Text>
+                          </AppText>
                         </View>
                       </Card>
                     );
@@ -734,18 +740,18 @@ function ZakatScreen({
                         <Ionicons name="calendar-outline" size={16} color={tokens.goldText} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.hawlTitle, { color: tokens.text }]}>
+                        <AppText variant="rowTitle" style={styles.hawlTitle}>
                           {t('Annual Hawl Tracking')}
-                        </Text>
-                        <Text style={[styles.hawlSub, { color: tokens.muted }]}>
+                        </AppText>
+                        <AppText variant="caption" tone="faint" style={styles.hawlSub}>
                           {t('Zakat is due once per lunar year on wealth maintained above Nisab')}
-                        </Text>
+                        </AppText>
                       </View>
                     </View>
                     <Hairline style={{ marginVertical: 10 }} />
-                    <Text style={[styles.hawlBody, { color: tokens.text }]}>
+                    <AppText variant="body" style={styles.hawlBody}>
                       {t('Set a fixed annual calculation date (such as Ramadan or Muharram). Comparing your saved calculations year-over-year ensures timely discharge and helps verify whether your Hawl has completed.')}
-                    </Text>
+                    </AppText>
                   </Card>
                 </>
               )}
@@ -756,33 +762,33 @@ function ZakatScreen({
           {activeTab === 'guide' && (
             <View style={styles.tabContent}>
               <Card style={[styles.guideCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
-                <Text style={[styles.guideHeading, { color: tokens.text }]}>
+                <AppText variant="sectionTitle" style={styles.guideHeading}>
                   {t('What is Nisab?')}
-                </Text>
-                <Text style={[styles.guideBody, { color: tokens.text }]}>
+                </AppText>
+                <AppText variant="body" style={styles.guideBody}>
                   {t('Nisab is the minimum threshold of net wealth a Muslim must possess for one full lunar year (Hawl) before Zakat becomes obligatory.')}
-                </Text>
+                </AppText>
 
                 <Hairline style={{ marginVertical: 12 }} />
 
-                <Text style={[styles.guideSubheading, { color: tokens.text }]}>
+                <AppText variant="rowTitle" style={styles.guideSubheading}>
                   {t('Gold vs Silver Standard:')}
-                </Text>
-                <Text style={[styles.guideBody, { color: tokens.text }]}>
-                  • <Text style={{ fontFamily: 'Manrope_600SemiBold', color: tokens.text }}>{t('Gold Standard (85g):')}</Text> {t('Widely recommended by modern contemporary scholars for cash, business wealth, and equities, as the price of gold has maintained historical purchasing power.')}
-                </Text>
-                <Text style={[styles.guideBody, { color: tokens.text, marginTop: 8 }]}>
-                  • <Text style={{ fontFamily: 'Manrope_600SemiBold', color: tokens.text }}>{t('Silver Standard (595g):')}</Text> {t('Classical Hanafi standard, resulting in a significantly lower threshold that allows more Muslims to support the needy.')}
-                </Text>
+                </AppText>
+                <AppText variant="body" style={styles.guideBody}>
+                  • <AppText variant="body" style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Gold Standard (85g):')}</AppText> {t('Widely recommended by modern contemporary scholars for cash, business wealth, and equities, as the price of gold has maintained historical purchasing power.')}
+                </AppText>
+                <AppText variant="body" style={[styles.guideBody, { marginTop: 8 }]}>
+                  • <AppText variant="body" style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('Silver Standard (595g):')}</AppText> {t('Classical Hanafi standard, resulting in a significantly lower threshold that allows more Muslims to support the needy.')}
+                </AppText>
 
                 <Hairline style={{ marginVertical: 12 }} />
 
-                <Text style={[styles.guideSubheading, { color: tokens.text }]}>
+                <AppText variant="rowTitle" style={styles.guideSubheading}>
                   {t('Zakat Rate:')}
-                </Text>
-                <Text style={[styles.guideBody, { color: tokens.text }]}>
-                  {t('The universal rate is')} <Text style={{ fontFamily: 'Manrope_600SemiBold', color: tokens.goldText }}>{t('2.5% (1/40th)')}</Text> {t('of your eligible net wealth exceeding Nisab.')}
-                </Text>
+                </AppText>
+                <AppText variant="body" style={styles.guideBody}>
+                  {t('The universal rate is')} <AppText variant="body" highlight style={{ fontFamily: 'Manrope_600SemiBold' }}>{t('2.5% (1/40th)')}</AppText> {t('of your eligible net wealth exceeding Nisab.')}
+                </AppText>
               </Card>
             </View>
           )}
@@ -793,6 +799,7 @@ function ZakatScreen({
             animationType="fade"
             transparent
             onRequestClose={() => setShowCurrencyModal(false)}
+            statusBarTranslucent
           >
             <View style={[styles.modalOverlay, { backgroundColor: tokens.overlay }]}>
               <TouchableWithoutFeedback onPress={() => setShowCurrencyModal(false)}>
@@ -805,14 +812,15 @@ function ZakatScreen({
                   {
                     backgroundColor: tokens.cardTop,
                     borderColor: tokens.cardBorder,
+                    paddingBottom: Math.max(insets.bottom, 16) + 16,
                   },
                 ]}
               >
                 <View style={[styles.dragPill, { backgroundColor: tokens.cardBorder }]} />
                 <View style={styles.modalHeader}>
-                  <Text style={[styles.modalTitle, { color: tokens.text }]}>
+                  <AppText variant="sectionTitle" style={styles.modalTitle}>
                     {t('Select Currency')}
-                  </Text>
+                  </AppText>
                   <TouchableOpacity
                     onPress={() => setShowCurrencyModal(false)}
                     style={styles.modalCloseBtn}
@@ -847,22 +855,20 @@ function ZakatScreen({
                         }}
                       >
                         <View>
-                          <Text
-                            style={[
-                              styles.currencyItemCode,
-                              { color: isChosen ? tokens.onGold : tokens.text },
-                            ]}
+                          <AppText
+                            variant="rowTitle"
+                            tone={isChosen ? 'onGold' : undefined}
+                            style={styles.currencyItemCode}
                           >
                             {c.code} ({c.symbol})
-                          </Text>
-                          <Text
-                            style={[
-                              styles.currencyItemName,
-                              { color: isChosen ? tokens.onGold : tokens.muted },
-                            ]}
+                          </AppText>
+                          <AppText
+                            variant="caption"
+                            tone={isChosen ? 'onGold' : 'faint'}
+                            style={styles.currencyItemName}
                           >
                             {c.name}
-                          </Text>
+                          </AppText>
                         </View>
                         {isChosen && <Ionicons name="checkmark" size={18} color={tokens.onGold} />}
                       </TouchableOpacity>
@@ -884,13 +890,10 @@ const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
   },
-  scroll: {
-    paddingVertical: 8,
-  },
+  scroll: {},
   container: {
     width: '100%',
     alignSelf: 'center',
-    paddingTop: 8,
   },
   /* Tabs */
   tabBar: {

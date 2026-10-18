@@ -1,10 +1,9 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
   PanResponder,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
 } from 'react-native';
@@ -14,6 +13,7 @@ import { iconSizes } from '../lib/iconMap';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
 import { t } from '../lib/i18n';
+import { AppText } from './ui/AppText';
 
 interface NowPlayingHeroCardProps {
   playback: CurrentPlayback | null;
@@ -52,8 +52,8 @@ export function NowPlayingHeroCard({
 }: NowPlayingHeroCardProps) {
   const { colors } = useTheme();
   const [touchX, setTouchX] = useState<number | null>(null);
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const progressWidth = useRef(0);
+  const [progressAnim] = useState(() => new Animated.Value(0));
+  const [progressWidth, setProgressWidth] = useState(0);
 
   const durationSec = status.durationMillis > 0 ? status.durationMillis / 1000 : 0;
   const positionSec = status.positionMillis > 0 ? status.positionMillis / 1000 : 0;
@@ -61,53 +61,51 @@ export function NowPlayingHeroCard({
 
   const handleTrackPress = useCallback(
     (e: any) => {
-      const width = progressWidth.current;
-      if (width <= 0 || status.durationMillis <= 0) return;
+      if (progressWidth <= 0 || status.durationMillis <= 0) return;
       const x = e.nativeEvent.locationX;
-      const ratio = Math.max(0, Math.min(1, x / width));
+      const ratio = Math.max(0, Math.min(1, x / progressWidth));
       const targetMillis = Math.round(ratio * status.durationMillis);
       onSeek(targetMillis);
     },
-    [status.durationMillis, onSeek]
+    [progressWidth, status.durationMillis, onSeek]
   );
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (e: any) => {
-        const width = progressWidth.current;
-        if (width <= 0 || status.durationMillis <= 0) return;
-        const x = e.nativeEvent.locationX;
-        setTouchX(x);
-      },
-      onPanResponderMove: (e: any) => {
-        if (touchX === null) return;
-        const width = progressWidth.current;
-        if (width <= 0 || status.durationMillis <= 0) return;
-        const x = e.nativeEvent.locationX;
-        const ratio = Math.max(0, Math.min(1, x / width));
-        progressAnim.setValue(ratio);
-        setTouchX(x);
-      },
-      onPanResponderRelease: (e: any) => {
-        if (touchX === null) return;
-        const width = progressWidth.current;
-        if (width <= 0 || status.durationMillis <= 0) {
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (e: any) => {
+          if (progressWidth <= 0 || status.durationMillis <= 0) return;
+          const x = e.nativeEvent.locationX;
+          setTouchX(x);
+        },
+        onPanResponderMove: (e: any) => {
+          if (touchX === null) return;
+          if (progressWidth <= 0 || status.durationMillis <= 0) return;
+          const x = e.nativeEvent.locationX;
+          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          progressAnim.setValue(ratio);
+          setTouchX(x);
+        },
+        onPanResponderRelease: (e: any) => {
+          if (touchX === null) return;
+          if (progressWidth <= 0 || status.durationMillis <= 0) {
+            setTouchX(null);
+            return;
+          }
+          const x = e.nativeEvent.locationX;
+          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          const positionMillis = Math.round(ratio * status.durationMillis);
+          onSeek(positionMillis);
           setTouchX(null);
-          return;
-        }
-        const x = e.nativeEvent.locationX;
-        const ratio = Math.max(0, Math.min(1, x / width));
-        const positionMillis = Math.round(ratio * status.durationMillis);
-        onSeek(positionMillis);
-        setTouchX(null);
-      },
-      onPanResponderTerminate: () => {
-        setTouchX(null);
-      },
-    })
-  ).current;
+        },
+        onPanResponderTerminate: () => {
+          setTouchX(null);
+        },
+      }),
+    [progressWidth, touchX, status.durationMillis, onSeek, progressAnim]
+  );
 
   // Idle Card if nothing is currently loaded
   if (!playback) {
@@ -124,16 +122,16 @@ export function NowPlayingHeroCard({
         <View style={styles.idleHeaderRow}>
           <View style={[styles.statusBadge, { backgroundColor: colors.accentDim }]}>
             <Ionicons name="headset-outline" size={13} color={colors.accent} />
-            <Text style={[styles.statusBadgeText, { color: colors.accent }]}>{t('AUDIO CENTER')}</Text>
+            <AppText variant="eyebrow" style={styles.statusBadgeText}>{t('AUDIO CENTER')}</AppText>
           </View>
         </View>
 
-        <Text style={[styles.idleTitle, { color: colors.textPrimary }]}>
+        <AppText variant="title" style={styles.idleTitle}>
           Ready to Recite
-        </Text>
-        <Text style={[styles.idleSub, { color: colors.textMuted }]}>
+        </AppText>
+        <AppText variant="subtitle" tone="faint" style={styles.idleSub}>
           Select any reciter, curated playlist, or surah to begin listening.
-        </Text>
+        </AppText>
 
         {onResumeRecent && recentTitle && (
           <TouchableOpacity
@@ -143,9 +141,9 @@ export function NowPlayingHeroCard({
             accessibilityLabel={`Resume last played ${recentTitle}`}
           >
             <Ionicons name="play" size={14} color={colors.accent} />
-            <Text style={[styles.resumeBtnText, { color: colors.accent }]} numberOfLines={1}>
+            <AppText variant="link" style={styles.resumeBtnText} numberOfLines={2}>
               Resume: {recentTitle}
-            </Text>
+            </AppText>
           </TouchableOpacity>
         )}
       </View>
@@ -167,7 +165,7 @@ export function NowPlayingHeroCard({
     >
       {/* Top Meta Bar */}
       <View style={styles.topMetaRow}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1, minWidth: 0 }}>
           <View
             style={[
               styles.statusBadge,
@@ -181,7 +179,7 @@ export function NowPlayingHeroCard({
             ]}
           >
             {status.isBuffering ? (
-              <ActivityIndicator size={10} color={colors.accent} style={{ marginRight: 4 }} />
+              <ActivityIndicator size={10} color={colors.accent} style={{ marginEnd: 4 }} />
             ) : (
               <View
                 style={[
@@ -192,16 +190,13 @@ export function NowPlayingHeroCard({
                 ]}
               />
             )}
-            <Text
-              style={[
-                styles.statusBadgeText,
-                {
-                  color: status.isPlaying || status.isBuffering ? colors.accent : colors.textMuted,
-                },
-              ]}
+            <AppText
+              variant="eyebrow"
+              tone={status.isPlaying || status.isBuffering ? undefined : 'faint'}
+              style={styles.statusBadgeText}
             >
               {status.isBuffering ? 'BUFFERING...' : status.isPlaying ? 'NOW PLAYING' : 'PAUSED'}
-            </Text>
+            </AppText>
           </View>
 
           {playback.segmentType && (
@@ -221,18 +216,15 @@ export function NowPlayingHeroCard({
                 size={11}
                 color={playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary}
               />
-              <Text
-                style={[
-                  styles.segmentBadgeText,
-                  {
-                    color: playback.segmentType === 'arabic' ? colors.accent : colors.textSecondary,
-                  },
-                ]}
+              <AppText
+                variant="caption"
+                highlight={playback.segmentType === 'arabic'}
+                style={styles.segmentBadgeText}
               >
                 {playback.segmentType === 'arabic'
                   ? 'ARABIC'
                   : `TRANSLATION${playback.translationLang ? ` (${playback.translationLang.toUpperCase()})` : ''}`}
-              </Text>
+              </AppText>
             </View>
           )}
         </View>
@@ -241,9 +233,9 @@ export function NowPlayingHeroCard({
           {queueLabel && (
             <View style={[styles.queueChip, { backgroundColor: colors.bgBase, borderColor: colors.borderSubtle }]}>
               <Ionicons name="list" size={11} color={colors.textSecondary} />
-              <Text style={[styles.queueChipText, { color: colors.textSecondary }]}>
+              <AppText variant="caption" style={styles.queueChipText}>
                 {queueLabel}
-              </Text>
+              </AppText>
             </View>
           )}
 
@@ -260,12 +252,12 @@ export function NowPlayingHeroCard({
 
       {/* Reciter & Track Info */}
       <View style={styles.trackInfo}>
-        <Text style={[styles.reciterName, { color: colors.textPrimary }]} numberOfLines={1}>
+        <AppText variant="title" style={styles.reciterName} numberOfLines={2}>
           {playback.reciterName}
-        </Text>
-        <Text style={[styles.trackTitle, { color: colors.accent }]} numberOfLines={1}>
+        </AppText>
+        <AppText variant="subtitle" highlight style={styles.trackTitle} numberOfLines={2}>
           {playback.title}
-        </Text>
+        </AppText>
       </View>
 
       {/* Progress Bar & Seek */}
@@ -276,7 +268,7 @@ export function NowPlayingHeroCard({
           {...panResponder.panHandlers}
           style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}
           onLayout={(e) => {
-            progressWidth.current = e.nativeEvent.layout.width;
+            setProgressWidth(e.nativeEvent.layout.width);
           }}
           accessibilityRole="adjustable"
           accessibilityLabel={t('Audio timeline seeker')}
@@ -294,12 +286,12 @@ export function NowPlayingHeroCard({
 
         {/* Time stamps */}
         <View style={styles.timeRow}>
-          <Text style={[styles.timeText, { color: colors.textMuted }]}>
+          <AppText variant="caption" tone="faint" style={styles.timeText}>
             {formatDuration(positionSec)}
-          </Text>
-          <Text style={[styles.timeText, { color: colors.textMuted }]}>
+          </AppText>
+          <AppText variant="caption" tone="faint" style={styles.timeText}>
             {durationSec > 0 ? formatDuration(durationSec) : '--:--'}
-          </Text>
+          </AppText>
         </View>
       </View>
 
@@ -324,7 +316,9 @@ export function NowPlayingHeroCard({
             color={repeatMode !== 'none' ? colors.accent : colors.textMuted}
           />
           {repeatMode === 'one' && (
-            <Text style={[styles.repeatBadgeText, { color: colors.accent }]}>1</Text>
+            <AppText variant="caption" highlight style={styles.repeatBadgeText}>
+              1
+            </AppText>
           )}
         </TouchableOpacity>
 
@@ -433,6 +427,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 0.6,
+    paddingVertical: 2,
   },
   segmentBadge: {
     flexDirection: 'row',
@@ -447,11 +442,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
     fontSize: 9,
     letterSpacing: 0.5,
+    paddingVertical: 2,
   },
   topMetaRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 0,
   },
   queueChip: {
     flexDirection: 'row',
@@ -465,6 +462,7 @@ const styles = StyleSheet.create({
   queueChipText: {
     fontFamily: 'Manrope_500Medium',
     fontSize: 10,
+    paddingVertical: 2,
   },
   dismissBtn: {
     width: 24,
@@ -473,20 +471,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   trackInfo: {
     marginBottom: 12,
+    minWidth: 0,
   },
   reciterName: {
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 22,
     lineHeight: 26,
+    paddingVertical: 2,
+    minWidth: 0,
   },
   trackTitle: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     marginTop: 2,
     letterSpacing: 0.2,
+    paddingVertical: 2,
+    minWidth: 0,
   },
   progressContainer: {
     marginBottom: 12,
@@ -561,6 +565,7 @@ const styles = StyleSheet.create({
     fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 22,
     marginBottom: 4,
+    paddingVertical: 2,
   },
   idleSub: {
     fontFamily: 'Manrope_400Regular',
@@ -578,9 +583,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignSelf: 'flex-start',
     marginTop: 4,
+    maxWidth: '100%',
   },
   resumeBtnText: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
+    flexShrink: 1,
+    minWidth: 0,
+    paddingVertical: 2,
   },
 });

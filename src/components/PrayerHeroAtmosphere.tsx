@@ -9,7 +9,6 @@ import {
   AccessibilityInfo,
 } from 'react-native';
 import { useTheme } from '../lib/theme';
-import { AnimatedPattern } from './AnimatedPattern';
 
 export type PrayerSegment = 'Fajr' | 'Sunrise' | 'Dhuhr' | 'Asr' | 'Maghrib' | 'Isha';
 
@@ -58,26 +57,32 @@ export function PrayerHeroAtmosphere({
   // Time-of-day wash crossfade state
   const [displayedSegment, setDisplayedSegment] = useState<PrayerSegment>(segment);
   const [prevSegment, setPrevSegment] = useState<PrayerSegment>(segment);
-  const crossfadeAnim = useRef(new Animated.Value(1)).current;
+  const [crossfadeAnim] = useState(() => new Animated.Value(1));
+  const isInitialMount = useRef(true);
+
+  if (segment !== displayedSegment) {
+    setPrevSegment(displayedSegment);
+    setDisplayedSegment(segment);
+  }
 
   useEffect(() => {
     checkReducedMotion(setReducedMotion);
   }, []);
 
   useEffect(() => {
-    if (segment !== displayedSegment) {
-      setPrevSegment(displayedSegment);
-      setDisplayedSegment(segment);
-      // Calm 300ms crossfade; skip animation entirely under reduce-motion.
-      crossfadeAnim.setValue(0);
-      Animated.timing(crossfadeAnim, {
-        toValue: 1,
-        duration: reducedMotion ? 0 : 300,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: USE_NATIVE_DRIVER,
-      }).start();
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
-  }, [segment, displayedSegment, crossfadeAnim, reducedMotion]);
+    // Calm 300ms crossfade; skip animation entirely under reduce-motion.
+    crossfadeAnim.setValue(0);
+    Animated.timing(crossfadeAnim, {
+      toValue: 1,
+      duration: reducedMotion ? 0 : 300,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: USE_NATIVE_DRIVER,
+    }).start();
+  }, [displayedSegment, crossfadeAnim, reducedMotion]);
 
   const prevConfig = PRAYER_ATMOSPHERE_CONFIG[prevSegment];
   const currConfig = PRAYER_ATMOSPHERE_CONFIG[displayedSegment];
