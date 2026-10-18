@@ -121,6 +121,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { AppHeader } from './src/components/layout/AppHeader';
 import { FloatingNav } from './src/components/layout/FloatingNav';
 import { TabScreen } from './src/components/layout/TabScreen';
+import { PersistentTabPane } from './src/components/layout/PersistentTabPane';
 import { useLayoutAudit } from './src/components/layout/LayoutAudit';
 import { routeToTab } from './src/navigation/routeToTab';
 import { NAV_BOTTOM, NAV_HEIGHT } from './src/components/layout/layout.constants';
@@ -962,7 +963,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         {!isOnline && <OfflineBanner />}
         <View style={styles.screenWrap}>
           {/* Home Tab */}
-          <View style={[styles.tabPane, tab === 'home' ? styles.paneVisible : styles.paneHidden]}>
+          <PersistentTabPane active={tab === 'home'}>
             <TabScreen header={sharedTabHeader}>
               <HomeScreen
                 isActive={tab === 'home'}
@@ -976,10 +977,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 onOpenCities={openHomeCities}
               />
             </TabScreen>
-          </View>
+          </PersistentTabPane>
 
           {/* Quran Tab */}
-          <View style={[styles.tabPane, tab === 'quran' ? styles.paneVisible : styles.paneHidden]}>
+          <PersistentTabPane active={tab === 'quran'}>
             <View style={[styles.tabPane, quran.screen === 'home' ? styles.paneVisible : styles.paneHidden]}>
               <TabScreen header={sharedTabHeader}>
                 <QuranHomeScreen
@@ -1111,10 +1112,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 }}
               />
             )}
-          </View>
+          </PersistentTabPane>
 
           {/* Library Tab */}
-          <View style={[styles.tabPane, tab === 'library' ? styles.paneVisible : styles.paneHidden]}>
+          <PersistentTabPane active={tab === 'library'}>
             <View style={[styles.tabPane, library.screen === 'hub' ? styles.paneVisible : styles.paneHidden]}>
               <TabScreen header={sharedTabHeader}>
                 <LibraryScreen
@@ -1204,10 +1205,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
                 )}
               </WomenLockGate>
             )}
-          </View>
+          </PersistentTabPane>
 
           {/* Tools Tab */}
-          <View style={[styles.tabPane, tab === 'tools' ? styles.paneVisible : styles.paneHidden]}>
+          <PersistentTabPane active={tab === 'tools'}>
             <View style={[styles.tabPane, tools.screen === 'hub' ? styles.paneVisible : styles.paneHidden]}>
               <TabScreen header={sharedTabHeader}>
                 <ToolsScreen
@@ -1343,7 +1344,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
             {tools.screen === 'hajj-live' && (
               <HajjLiveScreen onBack={() => setTools({ screen: 'hub' })} />
             )}
-          </View>
+          </PersistentTabPane>
         </View>
       {Boolean(activeLiveStream && !(tab === 'tools' && tools.screen === `${activeLiveStream.id}-live`)) && activeLiveStream && (
         <View

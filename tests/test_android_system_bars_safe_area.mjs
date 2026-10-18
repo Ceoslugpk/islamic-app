@@ -40,9 +40,9 @@ assert.ok(
 console.log('  ✓ Transparent status bar & navigation bar verified in styles.xml');
 
 const appGradle = fs.readFileSync('android/app/build.gradle', 'utf8');
-assert.ok(appGradle.includes('versionCode 93'), 'build.gradle must have versionCode 93');
-assert.ok(appGradle.includes('versionName "1.1.74"'), 'build.gradle must have versionName "1.1.74"');
-console.log('  ✓ Android release version bumped to versionCode 93, versionName 1.1.74');
+assert.ok(appGradle.includes('versionCode 94'), 'build.gradle must have versionCode 94');
+assert.ok(appGradle.includes('versionName "1.1.75"'), 'build.gradle must have versionName "1.1.75"');
+console.log('  ✓ Android release version bumped to versionCode 94, versionName 1.1.75');
 
 // ---------------------------------------------------------------------------
 // 2. DetailScreen Authoritative Inset Ownership
