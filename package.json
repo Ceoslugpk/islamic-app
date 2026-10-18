@@ -1,6 +1,6 @@
 {
   "name": "scaffold",
-  "version": "1.1.72",
+  "version": "1.1.73",
   "main": "index.ts",
   "dependencies": {
     "@expo-google-fonts/amiri": "^0.4.1",

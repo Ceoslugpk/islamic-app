@@ -579,14 +579,10 @@ const HomeScreen = React.memo(function HomeScreen({
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const y = e.nativeEvent.contentOffset.y;
-      if (y > 180 && !isScrolled) {
-        setIsScrolled(true);
-      } else if (y <= 180 && isScrolled) {
-        setIsScrolled(false);
-      }
+      const nextIsScrolled = e.nativeEvent.contentOffset.y > 180;
+      setIsScrolled((current) => (current === nextIsScrolled ? current : nextIsScrolled));
     },
-    [isScrolled]
+    []
   );
 
   // 1. Greeting header (large Today + Good morning) fades & shifts up (0-240px)
@@ -844,14 +840,13 @@ const HomeScreen = React.memo(function HomeScreen({
         ref={scrollRef as any}
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        scrollEventThrottle={16}
+        // Keep native-driven visual interpolation at display refresh rate while
+        // limiting JS scroll notifications to the pinned-bar threshold check.
+        scrollEventThrottle={64}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           {
-            // ponytail: JS driver for the scroll event — native-driven
-            // Animated.event on a Fabric ScrollView can fail to commit content
-            // below the initial viewport (blank cards, container visible).
-            useNativeDriver: false,
+            useNativeDriver: true,
             listener: handleScroll,
           }
         )}
