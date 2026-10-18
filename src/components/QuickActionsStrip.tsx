@@ -156,19 +156,19 @@ export const QuickActionsStrip = React.memo(function QuickActionsStrip({
     {
       icon: 'compass-outline',
       label: 'Qibla',
-      subtitle: 'Direction',
+      subtitle: 'Direction of Prayer',
       onPress: onOpenQibla,
     },
     {
       icon: 'repeat-outline',
       label: 'Tasbih',
-      subtitle: 'Dhikr counter',
+      subtitle: 'Digital dhikr counter',
       onPress: onOpenTasbih,
     },
     {
       icon: 'hand-left-outline',
       label: 'Duas',
-      subtitle: 'Adhkar',
+      subtitle: 'Authentic Adhkar',
       onPress: onOpenDuas,
     },
   ];

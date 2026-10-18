@@ -235,6 +235,7 @@ export const DailyContentRail = React.memo(function DailyContentRail({
                 ])}
                 padded={false}
               >
+                <View style={[styles.todayAccent, { backgroundColor: homeTokens.gold }]} />
                 <GeometricPattern
                   variant="tessellation"
                   tileSize={40}
@@ -578,14 +579,14 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   cardSlideWrap: {
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: 'visible',
   },
   card: {
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     overflow: 'hidden',
-    minHeight: 194,
+    minHeight: 226,
     flex: 1,
     position: 'relative',
     justifyContent: 'space-between',
@@ -593,10 +594,13 @@ const styles = StyleSheet.create({
   cardContent: {
     position: 'relative',
     padding: 18,
-    minHeight: 194,
+    minHeight: 223,
     justifyContent: 'space-between',
     zIndex: 1,
     flex: 1,
+  },
+  todayAccent: {
+    height: 3,
   },
   cardHeader: {
     flexDirection: 'row',

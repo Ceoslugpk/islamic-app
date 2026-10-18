@@ -164,7 +164,7 @@ assert.ok(
   'DailyContentRail divine names must limit transliteration lines to avoid vertical inflation'
 );
 assert.ok(
-  dailyContentRailCode.includes('minHeight: 194') && dailyContentRailCode.includes('flex: 1'),
+  dailyContentRailCode.includes('minHeight: 223') && dailyContentRailCode.includes('flex: 1'),
   'DailyContentRail cards must keep uniform flex: 1 sizing with enough height for Arabic line boxes'
 );
 

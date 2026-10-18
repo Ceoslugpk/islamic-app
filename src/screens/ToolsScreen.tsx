@@ -297,25 +297,25 @@ const ToolsScreen = React.memo(function ToolsScreen({
     {
       key: 'fasting',
       title: 'Fasting',
-      subtitle: 'Ramadan, voluntary & missed',
+      subtitle: 'Tracker · Ramadan · voluntary & missed fasts',
       icon: 'moon',
     },
     {
       key: 'women-qada',
       title: 'Qada Fasts',
-      subtitle: 'Makeup scorecard',
+      subtitle: 'Missed fasts tracker & makeup scorecard',
       icon: 'calendar',
     },
     {
       key: 'zakat',
       title: 'Zakat',
-      subtitle: 'Gold, silver, cash, investments',
+      subtitle: 'Calculator · gold/silver, cash, investments',
       icon: 'calculator',
     },
     {
       key: 'qibla',
       title: 'Qibla',
-      subtitle: 'Direction to the Kaaba',
+      subtitle: 'Direction to Kaaba',
       icon: 'compass',
     },
     {
@@ -327,7 +327,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
     {
       key: 'summary',
       title: 'Weekly Summary',
-      subtitle: 'Reading, salah & Hifz stats',
+      subtitle: 'Your past 7 days of reading, salah & Hifz',
       icon: 'stats-chart',
     },
   ];
@@ -349,25 +349,25 @@ const ToolsScreen = React.memo(function ToolsScreen({
     {
       key: 'location',
       title: 'Location',
-      subtitle: 'GPS auto vs manual coordinates',
+      subtitle: 'GPS auto vs manual coordinates · choose a city',
       icon: 'navigate',
     },
     {
       key: 'calendar',
       title: 'Hijri Calendar',
-      subtitle: 'Islamic dates & month grid',
+      subtitle: 'Islamic dates · month grid',
       icon: 'calendar',
     },
     {
       key: 'prayer-reminders',
       title: 'Prayer Reminders',
-      subtitle: 'Adhan alerts & toggles',
+      subtitle: 'Per-prayer alerts & audio',
       icon: 'notifications',
     },
     {
       key: 'umrah-resources',
       title: 'Umrah Resources',
-      subtitle: 'Packing checklist',
+      subtitle: 'Packing Checklist',
       icon: 'list',
     },
   ];
@@ -382,19 +382,19 @@ const ToolsScreen = React.memo(function ToolsScreen({
     {
       key: 'makkah-live',
       title: 'Makkah Live TV',
-      subtitle: 'Masjid al-Haram · 24/7 stream',
+      subtitle: 'Masjid al-Haram · 24/7 official live broadcast',
       isLive: true,
     },
     {
       key: 'madinah-live',
       title: 'Madinah Live',
-      subtitle: 'Masjid an-Nabawi · 24/7 stream',
+      subtitle: 'Masjid an-Nabawi · 24/7 official Sunnah TV stream',
       isLive: true,
     },
     {
       key: 'hajj-live',
       title: 'Hajj Live',
-      subtitle: 'Holy sites · Arafah, Mina',
+      subtitle: 'Holy sites broadcast · Arafah, Mina & Muzdalifah',
       isLive: isHajjLive,
     },
   ];
@@ -418,7 +418,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
               ]}
               maxFontSizeMultiplier={1.2}
             >
-              TOOLS
+              {t('Tools').toLocaleUpperCase()}
             </AppText>
             <AppText
               variant="screenTitle"
@@ -477,7 +477,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                   style={[styles.heroTodayText, { fontFamily: fontPoppinsMedium }]}
                   allowFontScaling={false}
                 >
-                  TODAY
+                  {t('Today').toLocaleUpperCase()}
                 </AppText>
               </View>
 
@@ -957,7 +957,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                             ]}
                             allowFontScaling={false}
                           >
-                            LIVE
+                            {t('LIVE').toLocaleUpperCase()}
                           </AppText>
                         </>
                       ) : (
@@ -980,7 +980,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                             ]}
                             allowFontScaling={false}
                           >
-                            OFFLINE
+                            {t('OFFLINE').toLocaleUpperCase()}
                           </AppText>
                         </>
                       )}

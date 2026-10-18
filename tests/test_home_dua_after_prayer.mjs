@@ -163,6 +163,22 @@ for (const vp of testViewports) {
 console.log('  ✓ Responsive viewport math and index calculations verified from 320dp to 768dp');
 
 // ---------------------------------------------------------------------------
+// Home RTL hero and TODAY carousel visual contract
+// ---------------------------------------------------------------------------
+const homeScreenSrc = fs.readFileSync('src/screens/HomeScreen.tsx', 'utf8');
+const dailyRailSrc = fs.readFileSync('src/components/DailyContentRail.tsx', 'utf8');
+const quickActionsSrc = fs.readFileSync('src/components/QuickActionsStrip.tsx', 'utf8');
+assert.ok(homeScreenSrc.includes('styles.heroTopRowRtl'), 'RTL prayer hero must use its stacked layout');
+assert.ok(homeScreenSrc.includes("writingDirection: 'ltr'"), 'Prayer time digits must retain LTR order in RTL');
+assert.ok(homeScreenSrc.includes('styles.heroTimeWrapRtl'), 'RTL prayer time must align to the card edge without clipping');
+assert.ok(dailyRailSrc.includes('styles.todayAccent'), 'TODAY inspiration cards must use the Dua card accent treatment');
+assert.ok(dailyRailSrc.includes('minHeight: 226'), 'TODAY card height must accommodate translated content responsively');
+assert.ok(quickActionsSrc.includes("subtitle: 'Direction of Prayer'"), 'Qibla shortcut must use a registered localized label');
+assert.ok(quickActionsSrc.includes("subtitle: 'Digital dhikr counter'"), 'Tasbih shortcut must use a registered localized label');
+assert.ok(quickActionsSrc.includes("subtitle: 'Authentic Adhkar'"), 'Dua shortcut must use a registered localized label');
+console.log('  ✓ RTL prayer timer and TODAY card styling contracts verified');
+
+// ---------------------------------------------------------------------------
 // 6. RTL Offset Normalization & Snap Alignment
 // ---------------------------------------------------------------------------
 console.log('\n--- 6. RTL Offset Normalization & Snap Alignment ---');

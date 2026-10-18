@@ -1017,8 +1017,8 @@ const HomeScreen = React.memo(function HomeScreen({
             <GeometricPattern variant="tessellation" tileSize={44} color={HOME_THEME_TOKENS.hero.ivory} opacity={mode === 'paper' ? 0.09 : 0.05} />
             <View style={styles.heroInnerContent}>
               {/* Top Row: Left details (Next Prayer, Name, Big Time) + Right (Arabic name) */}
-              <View style={styles.heroTopRow}>
-                <View style={styles.heroLeftCol}>
+              <View style={[styles.heroTopRow, isRTL() && styles.heroTopRowRtl]}>
+                <View style={[styles.heroLeftCol, isRTL() && styles.heroLeftColRtl]}>
                   {/* Eyebrow: Diamond + NEXT PRAYER */}
                   <Animated.View
                     style={{
@@ -1067,18 +1067,20 @@ const HomeScreen = React.memo(function HomeScreen({
                       ],
                     }}
                   >
-                    <View style={styles.heroTimeWrap}>
+                    <View style={[styles.heroTimeWrap, isRTL() && styles.heroTimeWrapRtl]}>
                       <AppText
                         variant="numeral"
                         style={[
                           styles.heroTimeBig,
                           {
                             fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
-                            fontSize: isCompact ? 38 : 44,
-                            lineHeight: isCompact ? 42 : 48,
+                            fontSize: isRTL() ? (isCompact ? 34 : 38) : (isCompact ? 38 : 44),
+                            lineHeight: isRTL() ? (isCompact ? 40 : 44) : (isCompact ? 42 : 48),
                             color: homeTokens.gold,
+                            writingDirection: 'ltr',
                           },
                         ]}
+                        numberOfLines={1}
                       >
                         {heroTimeStr}
                       </AppText>
@@ -1100,7 +1102,8 @@ const HomeScreen = React.memo(function HomeScreen({
                 >
                   <ArabicText
                     size={isCompact ? 34 : 40}
-                    style={[styles.heroArabicDisplay, { color: homeTokens.gold }]}
+                    style={[styles.heroArabicDisplay, { color: homeTokens.gold, maxWidth: isCompact ? 150 : 180 }]}
+                    numberOfLines={1}
                   >
                     {nextArabicName}
                   </ArabicText>
@@ -1647,7 +1650,7 @@ const HomeScreen = React.memo(function HomeScreen({
                       accessibilityState={{ expanded: isExpanded }}
                       aria-expanded={isExpanded}
                       testID={'home-after-prayer-dua-' + (idx + 1)}
-                      accessibilityLabel={[t('Dua'), idx + 1, t('of'), allAfterPrayerDuas.length + '.', isExpanded ? t('Less') : t('More')].join(' ')}
+                      accessibilityLabel={[t('Duas'), idx + 1, t('of'), allAfterPrayerDuas.length + '.', isExpanded ? t('Less') : t('More')].join(' ')}
                     >
                       <View style={styles.duaAfterPrayerHeader}>
                         <View style={styles.duaBadgeRow}>
@@ -1656,7 +1659,7 @@ const HomeScreen = React.memo(function HomeScreen({
                               {String(idx + 1).padStart(2, '0')}
                             </AppText>
                           </View>
-                          <AppText variant="rowTitle" style={styles.duaCardTitle}>{t('Dua')}</AppText>
+                          <AppText variant="rowTitle" style={styles.duaCardTitle}>{t('Duas')}</AppText>
                         </View>
                         {isForPrayer && (
                           <View style={[styles.duaForPrayerTag, { backgroundColor: homeTokens.ringFill, borderColor: homeTokens.ringBorder }]}>
@@ -1797,10 +1800,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 12,
+  },
+  heroTopRowRtl: {
+    // Stack in RTL so the long prayer time always gets the full card width.
+    flexDirection: 'column',
+    alignItems: 'stretch',
   },
   heroLeftCol: {
     flex: 1,
+    minWidth: 0,
     gap: 2,
+  },
+  heroLeftColRtl: {
+    flex: 0,
+    width: '100%',
+    alignItems: 'flex-end',
   },
   heroNextPrayerBadge: {
     flexDirection: 'row',
@@ -1824,8 +1839,14 @@ const styles = StyleSheet.create({
   },
   heroTimeWrap: {
     flexDirection: 'row',
+    direction: 'ltr',
+    alignSelf: 'flex-start',
+    flexShrink: 0,
     alignItems: 'baseline',
     gap: 6,
+  },
+  heroTimeWrapRtl: {
+    alignSelf: 'flex-end',
   },
   heroTimeBig: {
     // dynamically styled with font and size

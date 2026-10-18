@@ -527,7 +527,7 @@ function WomenCycleScreen({
               onChangeText={setNewEndDate}
               placeholder="YYYY-MM-DD"
               placeholderTextColor={tokens.muted}
-              accessibilityLabel={t('End Date (YYYY-MM-DD)')}
+              accessibilityLabel={t('End Date (Optional)')}
               keyboardType="numbers-and-punctuation"
             />
 

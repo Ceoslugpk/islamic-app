@@ -189,25 +189,25 @@ const LibraryScreen = React.memo(function LibraryScreen({
     {
       key: 'prayer-guide' as LibraryItemKey,
       title: 'Prayer Guide (Fiqh)',
-      subtitle: 'Wudu, Salah, Janazah & more',
+      subtitle: 'Wudu, Salah, Janazah, Eid, Istikhara, Taraweeh',
       icon: 'book-outline' as const,
     },
     {
       key: 'ramadan-guide' as LibraryItemKey,
       title: 'Ramadan & Eid Guide',
-      subtitle: 'Fasting, Laylatul Qadr, Zakat al-Fitr',
+      subtitle: 'Fasting, Laylatul Qadr, Zakat al-Fitr, Eid Salah',
       icon: 'moon-outline' as const,
     },
     {
       key: 'umrah-guide' as LibraryItemKey,
       title: 'Umrah Guide',
-      subtitle: "Step-by-step: Ihram, Tawaf, Sa'i",
+      subtitle: "Step-by-step rituals · Ihram, Tawaf, Sa'i & Halq",
       icon: 'walk-outline' as const,
     },
     {
       key: 'hajj-journey' as LibraryItemKey,
       title: 'Hajj Journey',
-      subtitle: 'Day-by-day timeline',
+      subtitle: 'Day-by-day timeline · Tarwiyah, Arafah to Tashreeq',
       icon: 'map-outline' as const,
     },
     ...(settings.womenWorshipEnabled
@@ -215,13 +215,13 @@ const LibraryScreen = React.memo(function LibraryScreen({
           {
             key: 'women-purity' as LibraryItemKey,
             title: 'Purity & Ghusl',
-            subtitle: 'Ghusl steps, signs of tuhr & nifas',
+            subtitle: 'Step-by-step ghusl guide, signs of tuhr, and postpartum (nifas) tracker.',
             icon: 'water-outline' as const,
           },
           {
             key: 'women-guidance' as LibraryItemKey,
             title: 'Worship Guidance',
-            subtitle: 'Exemptions, istihadha & fiqh references',
+            subtitle: 'Exemptions, istihadha rulings & fiqh references',
             icon: 'heart-outline' as const,
           },
         ]
@@ -229,13 +229,13 @@ const LibraryScreen = React.memo(function LibraryScreen({
     {
       key: 'vocab' as LibraryItemKey,
       title: 'Quran Vocabulary',
-      subtitle: 'Flashcards of frequent words',
+      subtitle: 'Flashcards of the most frequent Quranic words',
       icon: 'language-outline' as const,
     },
     {
       key: 'tajweed' as LibraryItemKey,
       title: 'Tajweed Colors',
-      subtitle: 'Color-coded reading rules',
+      subtitle: 'Color-coded reading rules for the most-recited surahs',
       icon: 'color-palette-outline' as const,
     },
   ];
@@ -326,7 +326,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
                     style={[styles.heroLabelText, { fontFamily: fontPoppinsMedium }]}
                     allowFontScaling={false}
                   >
-                    KNOWLEDGE
+                    {t('Knowledge').toLocaleUpperCase()}
                   </AppText>
                 </View>
 
@@ -343,7 +343,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
                   numberOfLines={1}
                   maxFontSizeMultiplier={1.2}
                 >
-                  Hadith Library
+                  {t('Hadith Library')}
                 </AppText>
 
                 {/* Big Count: 15+ full books */}

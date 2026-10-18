@@ -109,7 +109,7 @@ export const FloatingNav = React.memo(function FloatingNav({ active, onChange }:
       ]}
       testID="floating-nav-container"
       role="navigation"
-      aria-label={t('Main Navigation')}
+      aria-label={t('NAVIGATION')}
     >
       <LinearGradient
         colors={[tokens.cardTop, tokens.cardBottom]}
@@ -132,7 +132,7 @@ export const FloatingNav = React.memo(function FloatingNav({ active, onChange }:
           ]}
           accessibilityRole="tablist"
           role="tablist"
-          aria-label={t('Main Navigation Tabs')}
+          aria-label={t('NAVIGATION')}
         >
           {TABS.map((tab) => {
             const isActive = tab.key === active;
