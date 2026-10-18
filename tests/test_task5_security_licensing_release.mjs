@@ -25,25 +25,25 @@ const appJson = JSON.parse(appJsonRaw).expo;
 
 assert.equal(appJson.name, 'Islamic - Your Daily Companion', 'app.json name matches');
 assert.equal(appJson.slug, 'islamic', 'app.json slug matches');
-assert.equal(appJson.version, '1.1.80', 'app.json version matches 1.1.80');
+assert.equal(appJson.version, '1.1.81', 'app.json version matches 1.1.81');
 assert.equal(appJson.orientation, 'portrait', 'app.json orientation is portrait');
 assert.equal(appJson.android.package, 'com.qashi.islamic', 'Rule 3: package ID preserved in app.json');
-assert.equal(appJson.android.versionCode, 99, 'android.versionCode 99 declared in app.json');
+assert.equal(appJson.android.versionCode, 100, 'android.versionCode 100 declared in app.json');
 assert.equal(appJson.android.allowBackup, false, 'app.json android.allowBackup is false');
 
 // Verify android/app/build.gradle
 const buildGradle = fs.readFileSync('android/app/build.gradle', 'utf8');
 assert.ok(buildGradle.includes("applicationId 'com.qashi.islamic'"), 'build.gradle applicationId matches com.qashi.islamic');
 assert.ok(buildGradle.includes("namespace 'com.qashi.islamic'"), 'build.gradle namespace matches com.qashi.islamic');
-assert.ok(buildGradle.includes('versionCode 99'), 'build.gradle versionCode is 99');
-assert.ok(buildGradle.includes('versionName "1.1.80"'), 'build.gradle versionName is 1.1.80');
+assert.ok(buildGradle.includes('versionCode 100'), 'build.gradle versionCode is 100');
+assert.ok(buildGradle.includes('versionName "1.1.81"'), 'build.gradle versionName is 1.1.81');
 assert.ok(buildGradle.includes('targetSdkVersion rootProject.ext.targetSdkVersion') || buildGradle.includes('targetSdk'), 'build.gradle defines targetSdkVersion');
 
 // Verify package.json version matches
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-assert.equal(packageJson.version, '1.1.80', 'package.json version matches 1.1.80');
+assert.equal(packageJson.version, '1.1.81', 'package.json version matches 1.1.81');
 
-console.log('  ✓ app.json, package.json, and android/app/build.gradle versioning and package ID aligned (com.qashi.islamic, v1.1.80, code 99)');
+console.log('  ✓ app.json, package.json, and android/app/build.gradle versioning and package ID aligned (com.qashi.islamic, v1.1.81, code 100)');
 
 /* -------------------------------------------------------------------------- */
 /* 2. Release Signing & Manifest Security Boundaries                          */
