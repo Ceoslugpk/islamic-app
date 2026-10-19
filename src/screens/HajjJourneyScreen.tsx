@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -302,6 +302,8 @@ export default function HajjJourneyScreen({
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
   const [selectedDayId, setSelectedDayId] = useState<string>('day-8');
+  const scrollRef = useRef<ScrollView | null>(null);
+  const dayOffsets = useRef<Record<string, number>>({});
 
   return (
     <DetailScreen
@@ -319,6 +321,7 @@ export default function HajjJourneyScreen({
       }
     >
       <DetailScreen.ScrollView
+        ref={scrollRef}
         style={{ flex: 1, backgroundColor: 'transparent' }}
         contentContainerStyle={[
           styles.content,
@@ -338,7 +341,13 @@ export default function HajjJourneyScreen({
                 key={d.id}
                 label={`${t(d.dayNumber)} · ${t(d.hijriDate)}`}
                 selected={isActive}
-                onPress={() => setSelectedDayId(d.id)}
+                onPress={() => {
+                  setSelectedDayId(d.id);
+                  const offset = dayOffsets.current[d.id];
+                  if (offset !== undefined) {
+                    scrollRef.current?.scrollTo({ y: Math.max(0, offset - 12), animated: true });
+                  }
+                }}
                 style={styles.dayChip}
               />
             );
@@ -371,8 +380,11 @@ export default function HajjJourneyScreen({
           const isSelected = day.id === selectedDayId;
           const isLastDay = di === HAJJ_DAYS.length - 1;
           return (
-            <PremiumCard
+            <View
               key={day.id}
+              onLayout={(event) => { dayOffsets.current[day.id] = event.nativeEvent.layout.y; }}
+            >
+            <PremiumCard
               style={[
                 styles.dayCard,
                 isSelected && {
@@ -534,6 +546,7 @@ export default function HajjJourneyScreen({
                 ))}
               </View>
             </PremiumCard>
+            </View>
           );
         })}
 

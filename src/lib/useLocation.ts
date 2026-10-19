@@ -32,6 +32,16 @@ function notifyListeners() {
   });
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
 export function getCachedLocation(): Loc | null {
   return cachedLocation;
 }
@@ -133,10 +143,7 @@ export async function refreshLocationSilently(): Promise<Loc | null> {
       const posPromise = Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.Balanced,
       }).catch(() => null);
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Location request timed out')), 5000)
-      );
-      pos = await Promise.race([posPromise, timeoutPromise]);
+      pos = await withTimeout(posPromise, 5000, 'Location request timed out');
     }
     if (!pos) return null;
 
@@ -166,10 +173,7 @@ export async function refreshLocationSilently(): Promise<Loc | null> {
 export async function reverseGeocode(lat: number, lng: number): Promise<string> {
   try {
     const geoPromise = Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Geocode timed out')), 3500)
-    );
-    const geo = await Promise.race([geoPromise, timeoutPromise]);
+    const geo = await withTimeout(geoPromise, 3500, 'Geocode timed out');
     if (geo && geo.length > 0) {
       const g = geo[0];
       const city = g.city || g.subregion || g.district;
@@ -320,18 +324,15 @@ export function useLocation(askOnMount = false): UseLocationResult {
           isGranted = true;
         }
 
-        const posPromise = Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        }).catch(() => null);
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Location request timed out')), 8000)
-        );
         // Robust: try last-known first (fast, works indoors), then current.
         const lastKnown = await Location.getLastKnownPositionAsync().catch(() => null);
         let pos = lastKnown;
         if (!pos || Date.now() - pos.timestamp > 3600000) {
+          const posPromise = Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          }).catch(() => null);
           try {
-            pos = await Promise.race([posPromise, timeoutPromise]);
+            pos = await withTimeout(posPromise, 8000, 'Location request timed out');
           } catch {
             if (lastKnown) {
               pos = lastKnown;

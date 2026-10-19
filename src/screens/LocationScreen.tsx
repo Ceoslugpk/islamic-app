@@ -299,8 +299,8 @@ export default function LocationScreen({
                 placeholder={t('e.g. Cairo, Egypt')}
               />
 
-              <View style={styles.coordsRow}>
-                <View style={{ flex: 1 }}>
+              <View style={[styles.coordsRow, isCompact && styles.coordsRowCompact]}>
+                <View style={[styles.coordsField, isCompact && styles.coordsFieldCompact]}>
                   <InputField
                     label={t('Latitude (−90 to 90)')}
                     value={latInput}
@@ -309,7 +309,7 @@ export default function LocationScreen({
                     placeholder="25.2048"
                   />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={[styles.coordsField, isCompact && styles.coordsFieldCompact]}>
                   <InputField
                     label={t('Longitude (−180 to 180)')}
                     value={lngInput}
@@ -456,6 +456,18 @@ const styles = StyleSheet.create({
   coordsRow: {
     flexDirection: 'row',
     gap: 12,
+  },
+  coordsRowCompact: {
+    flexDirection: 'column',
+    gap: 4,
+  },
+  coordsField: {
+    flex: 1,
+    minWidth: 0,
+  },
+  coordsFieldCompact: {
+    flex: 0,
+    width: '100%',
   },
   errorText: {
     fontFamily: 'Manrope_500Medium',

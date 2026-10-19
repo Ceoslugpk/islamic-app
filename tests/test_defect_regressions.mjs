@@ -177,6 +177,19 @@ assert.ok(tasbihCode.includes('hi:'), 'TasbihScreen must provide Hindi dhikr tra
 assert.ok(tasbihCode.includes('ml:'), 'TasbihScreen must provide Malayalam dhikr translations');
 assert.ok(tasbihCode.includes('si:'), 'TasbihScreen must provide Sinhala dhikr translations');
 
+// The primary counter must remain legible and responsive on native RTL devices.
+assert.ok(tasbihCode.includes('testID="tasbih-counter-button"'), 'Tasbih counter must expose a stable interaction target');
+assert.ok(tasbihCode.includes('includeFontPadding: false'), 'Large counter numerals must not inherit oversized Android font padding');
+assert.ok(tasbihCode.includes('lineHeight: 74'), 'Counter numeral must use a bounded line height instead of the locale-wide RTL multiplier');
+assert.ok(tasbihCode.includes('height: counterDiameter'), 'Counter dial must have an explicit responsive height');
+assert.ok(tasbihCode.indexOf('/* Today Summary */') > tasbihCode.indexOf('testID="tasbih-counter-button"'), 'Today summary must follow the main counter so the dial is visible higher on screen');
+assert.ok(tasbihCode.includes('countsRef.current') && tasbihCode.includes('todayTotalRef.current'), 'Rapid taps must increment from the latest count without stale render closures');
+assert.ok(tasbihCode.includes('void saveTasbihCountAsync(selectedDhikr.id, nextCount)'), 'Counter updates must persist asynchronously after updating screen state');
+assert.ok(tasbihCode.includes('void saveTasbihDayTotalAsync(todayKey, 1)'), 'Daily totals must persist asynchronously after updating screen state');
+
+const nativeDbCode = fs.readFileSync('src/lib/db.native.ts', 'utf8');
+assert.ok((nativeDbCode.match(/await getDb\(\)\.runAsync\(/g) || []).length >= 2, 'Native Tasbih persistence must use async SQLite writes for count and daily total');
+
 console.log('  ✓ Task 2 Tasbih assertions passed.');
 
 // ---------------------------------------------------------------------------

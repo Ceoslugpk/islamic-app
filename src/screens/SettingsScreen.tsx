@@ -25,8 +25,6 @@ import { reloadAppAsync } from 'expo';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../lib/theme';
 import { useThemeTokens, getTokens, cardTokens, getBrandLogoSource } from '../theme/tokens';
-import { ACCENT_KEYS, accentThemes, getLocalizedAccentName } from '../lib/accents';
-import type { AccentKey } from '../lib/accents';
 import { getForwardIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
 import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage } from '../lib/i18n';
@@ -660,7 +658,7 @@ export default function SettingsScreen({
   onPrepareReload,
 }: SettingsScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors, mode, setAccent, accentKey } = useTheme();
+  const { colors, mode } = useTheme();
   const { tokens } = useThemeTokens();
   const settingsFontsLoaded = true;
   const { height: screenHeight } = useWindowDimensions();
@@ -1284,7 +1282,7 @@ export default function SettingsScreen({
           ) : null}
         </Section>
 
-        {/* Appearance — theme, accent, haptics */}
+        {/* Appearance — theme and haptics */}
         <Section
           label={t("Appearance")}
           collapsible
@@ -1307,36 +1305,6 @@ export default function SettingsScreen({
               />
             }
           />
-          <Hairline />
-          <Row title={t("Accent color")} desc={t("Highlight colour for toggles, links and selected states")} accessibilityRole="text" />
-          <View
-            accessibilityRole="radiogroup"
-            style={[styles.accentGrid, { paddingHorizontal: layout.cardPad, paddingVertical: 5.65, gap: layout.isCompact ? 8 : 12 }]}
-          >
-            {ACCENT_KEYS.map((key: AccentKey) => {
-              const accent = accentThemes[key];
-              const isSelected = accentKey === key;
-              const accentColor = mode === 'ink' ? accent.darkAccent : accent.lightAccent;
-              const accentLabel = getLocalizedAccentName(key, settings.language);
-              return (
-                <Pressable
-                  key={key}
-                  style={({ pressed }) => [styles.accentSwatch, pressed && styles.buttonPressed]}
-                  onPress={() => { setAccent(key); haptic('selection'); }}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: isSelected, checked: isSelected }}
-                  {...(Platform.OS === 'web' ? { 'aria-checked': isSelected as any } : {})}
-                  accessibilityLabel={`${accentLabel} accent color${isSelected ? ', selected' : ''}`}
-                  hitSlop={{ top: 4, bottom: 4 }}
-                >
-                  <View style={[styles.accentCircle, { backgroundColor: accentColor }, isSelected && { borderColor: tokens.goldBorder, borderWidth: 2 }]}>
-                    {isSelected && <Ionicons name="checkmark" size={18} color={colors.onAccent} />}
-                  </View>
-                  <AppText variant="caption" style={[styles.accentLabel, isSelected ? { color: colors.textPrimary } : null]}>{accentLabel}</AppText>
-                </Pressable>
-              );
-            })}
-          </View>
           <Hairline />
           <Row
             title={t("Haptics")}
@@ -2750,31 +2718,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: 'center',
     paddingVertical: 2,
-  },
-  accentGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-  },
-  accentSwatch: {
-    alignItems: 'center',
-    width: 64,
-    paddingVertical: 4,
-  },
-  accentCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 0,
-    borderColor: 'transparent',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  accentLabel: {
-    fontFamily: 'Manrope_500Medium',
-    fontSize: 10,
-    marginTop: 4,
-    textAlign: 'center',
   },
   pillWrap: {
     flexDirection: 'row',

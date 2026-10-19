@@ -5,6 +5,7 @@ import {
   TextProps,
   TextStyle,
   Platform,
+  PixelRatio,
 } from 'react-native';
 import { useTheme } from '../../lib/theme';
 import { fontRoles } from '../../theme/tokens';
@@ -203,6 +204,22 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
 
   const defaultMaxMultiplier = variant === 'numeral' ? 1.2 : 1.3;
   const resolvedMaxMultiplier = maxFontSizeMultiplier ?? defaultMaxMultiplier;
+  const flattenedStyle = StyleSheet.flatten(style);
+  const isTallScript = script === 'arabic' || script === 'urdu';
+  const fontScale = Math.min(
+    Math.max(PixelRatio.getFontScale() || 1, 1),
+    resolvedMaxMultiplier,
+  );
+  const effectiveFontSize = typeof flattenedStyle?.fontSize === 'number'
+    ? flattenedStyle.fontSize
+    : typographyStyle.fontSize ?? VARIANT_CONFIGS[variant].fontSize;
+  const requestedLineHeight = flattenedStyle?.lineHeight ?? typographyStyle.lineHeight;
+  const safeLineHeight = isTallScript
+    ? Math.max(
+        requestedLineHeight ?? 0,
+        calculateScriptLineHeight(effectiveFontSize, script, VARIANT_CONFIGS[variant].category),
+      ) * fontScale
+    : undefined;
 
   const isLetterSpacedEyebrow = variant === 'eyebrow';
   const needsSafeVerticalPadding = rest.numberOfLines === 1 || isLetterSpacedEyebrow;
@@ -229,6 +246,7 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
         glyphPaddingStyle,
         { color: resolvedColor },
         style,
+        safeLineHeight === undefined ? undefined : { lineHeight: safeLineHeight },
       ]}
       maxFontSizeMultiplier={resolvedMaxMultiplier}
       {...rest}

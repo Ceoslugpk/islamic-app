@@ -280,6 +280,7 @@ export default function DuasScreen({
                     onPress={() => setSelectedCategory(cat)}
                     accessibilityRole="button"
                     accessibilityState={{ selected: isSelected }}
+                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                   >
                     {isSelected ? (
                       <LinearGradient
@@ -323,6 +324,7 @@ export default function DuasScreen({
             ]}
             onPress={handleRandomDua}
             disabled={filteredDuas.length === 0}
+            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
             accessibilityRole="button"
             accessibilityLabel={t('Show a random dua from the current filter')}
           >
@@ -354,7 +356,6 @@ export default function DuasScreen({
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
-          autoFocus
           onSubmitEditing={submitSearch}
         />
         {searchQuery.length > 0 && (
@@ -557,7 +558,7 @@ const styles = StyleSheet.create({
     marginStart: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    minHeight: 28,
+    minHeight: 36,
     borderRadius: 14,
     borderWidth: 0.75,
     alignItems: 'center',
@@ -569,7 +570,7 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
   },
   categoryChip: {
-    minHeight: 28,
+    minHeight: 36,
     borderRadius: 999,
     borderWidth: 0.75,
     alignItems: 'center',
@@ -577,7 +578,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   categoryChipGradient: {
-    minHeight: 28,
+    minHeight: 36,
     width: '100%',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -585,7 +586,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   categoryChipUnselected: {
-    minHeight: 28,
+    minHeight: 36,
     width: '100%',
     paddingHorizontal: 10,
     paddingVertical: 4,

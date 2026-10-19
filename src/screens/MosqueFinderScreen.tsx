@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -14,7 +14,7 @@ import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { Location as Loc } from '../lib/prayerTimes';
-import { distanceKm } from '../lib/qibla';
+import { fetchNearbyMosques, type MosqueItem } from '../lib/mosqueFinderApi';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import {
@@ -31,15 +31,6 @@ import { loadMosqueCache, saveMosqueCache } from '../lib/db';
 import { useSearchHistory } from '../lib/searchHistory';
 import { t } from '../lib/i18n';
 import { hScrollRTLStyle } from '../lib/rtl';
-
-export interface MosqueItem {
-  id: string;
-  name: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  distanceKm: number;
-}
 
 const RADIUS_OPTIONS = [5, 10, 20]; // in km
 
@@ -91,6 +82,10 @@ export default function MosqueFinderScreen({
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const mosqueRequestIdRef = useRef(0);
+  const activeMosqueRequestRef = useRef<AbortController | null>(null);
+  const areaSearchIdRef = useRef(0);
+  const activeAreaSearchRef = useRef<AbortController | null>(null);
 
   // Determine user's local location (GPS or manual fallback)
   const myLocation = useMemo<Loc>(() => {
@@ -138,131 +133,57 @@ export default function MosqueFinderScreen({
 
   const fetchMosquesForCenter = useCallback(
     async (lat: number, lon: number, radius: number, isManualRefresh = false) => {
+      activeMosqueRequestRef.current?.abort();
+      const controller = new AbortController();
+      activeMosqueRequestRef.current = controller;
+      const requestId = ++mosqueRequestIdRef.current;
+
       if (isManualRefresh) {
         setRefreshing(true);
       } else {
         setLoading(true);
+        setMosques([]);
       }
       setError(null);
 
       // Try cache first (unless manual refresh)
       if (!isManualRefresh) {
         const cached = loadMosqueCache(lat, lon, radius);
-        if (cached && cached.length > 0) {
+        if (cached && cached.length > 0 && requestId === mosqueRequestIdRef.current) {
           setMosques(cached);
           setLoading(false);
           setRefreshing(false);
+          activeMosqueRequestRef.current = null;
           return;
         }
       }
 
       try {
-        // Overpass API — query real mosques (amenity=place_of_worship + religion=muslim)
-        // in the bounding box. Much more reliable than Nominatim's free-text q=mosque.
-        const dLat = radius / 111;
-        const cosLat = Math.cos((lat * Math.PI) / 180);
-        const dLon = radius / (111 * (Math.abs(cosLat) > 0.05 ? Math.abs(cosLat) : 1));
-
-        const south = lat - dLat, north = lat + dLat;
-        const west = lon - dLon, east = lon + dLon;
-
-        const overpassQuery = `[out:json][timeout:20];(node["amenity"="place_of_worship"]["religion"="muslim"](${south.toFixed(5)},${west.toFixed(5)},${north.toFixed(5)},${east.toFixed(5)});way["amenity"="place_of_worship"]["religion"="muslim"](${south.toFixed(5)},${west.toFixed(5)},${north.toFixed(5)},${east.toFixed(5)}););out center 30;`;
-
-        // Overpass mirrors — try in order; the main server is frequently overloaded.
-        const OVERPASS_ENDPOINTS = [
-          'https://overpass-api.de/api/interpreter',
-          'https://overpass.kumi.systems/api/interpreter',
-          'https://overpass.private.coffee/api/interpreter',
-        ];
-
-        let data: any = null;
-        let lastErr: Error | null = null;
-        for (const endpoint of OVERPASS_ENDPOINTS) {
-          // ponytail: bounded timeout — a hanging Overpass fetch would leave the
-          // screen stuck in loading forever (same class as the earlier global-stall).
-          // Manual AbortController + setTimeout: AbortSignal.timeout is not
-          // reliably available in Expo Go's Hermes ("undefined is not a function").
-          const url = `${endpoint}?data=${encodeURIComponent(overpassQuery)}`;
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 12000);
-          try {
-            const res = await fetch(url, {
-              headers: { 'User-Agent': 'IslamicAppMobile/1.0' },
-              signal: controller.signal,
-            });
-            if (!res.ok) throw new Error(`Server returned status ${res.status}`);
-            const json = await res.json();
-            if (json && Array.isArray(json.elements)) {
-              data = json;
-              break;
-            }
-            throw new Error('Invalid response structure');
-          } catch (err: any) {
-            lastErr = err;
-            // try next mirror
-          } finally {
-            clearTimeout(timer);
-          }
-        }
-
-        if (!data) {
-          throw lastErr || new Error('All Overpass mirrors failed');
-        }
-
-        const items: MosqueItem[] = [];
-        const seen = new Set<string>();
-
-        for (const el of data.elements) {
-          // Nodes have lat/lon; ways/relations have center.lat/center.lon
-          const mLat = el.lat ?? el.center?.lat;
-          const mLon = el.lon ?? el.center?.lon;
-          if (typeof mLat !== 'number' || typeof mLon !== 'number' || isNaN(mLat) || isNaN(mLon)) continue;
-
-          const tags = el.tags || {};
-
-          // Unique key by coordinates
-          const coordKey = `${mLat.toFixed(4)},${mLon.toFixed(4)}`;
-          if (seen.has(coordKey)) continue;
-          seen.add(coordKey);
-
-          const name = tags.name || 'Mosque';
-
-          // Build a readable address from available tags
-          const parts = [
-            tags['addr:street'],
-            tags['addr:district'] || tags['addr:suburb'] || tags['addr:quarter'],
-            tags['addr:city'] || tags['addr:town'] || tags['addr:village'],
-            tags['addr:state'] || tags['addr:country'],
-          ].filter(Boolean);
-          const address = parts.length > 0 ? parts.join(', ') : (tags['addr:full'] || '');
-
-          const dist = distanceKm(lat, lon, mLat, mLon);
-
-          items.push({
-            id: String(el.id ?? coordKey),
-            name,
-            address,
-            latitude: mLat,
-            longitude: mLon,
-            distanceKm: dist,
-          });
-        }
-
-        // Sort ascending by distance from current search center
-        items.sort((a, b) => a.distanceKm - b.distanceKm);
-
+        const items = await fetchNearbyMosques(lat, lon, radius, { signal: controller.signal });
+        if (requestId !== mosqueRequestIdRef.current || controller.signal.aborted) return;
         setMosques(items);
-        // Cache the results
         saveMosqueCache(lat, lon, radius, items);
-      } catch (err: any) {
-        setError(err.message || 'Failed to fetch mosques. Please check your network connection.');
+      } catch (err) {
+        if (requestId === mosqueRequestIdRef.current && !controller.signal.aborted) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch mosques. Please check your network connection.');
+        }
       } finally {
-        setLoading(false);
-        setRefreshing(false);
+        if (requestId === mosqueRequestIdRef.current) {
+          setLoading(false);
+          setRefreshing(false);
+          activeMosqueRequestRef.current = null;
+        }
       }
     },
     []
   );
+
+  useEffect(() => () => {
+    mosqueRequestIdRef.current += 1;
+    areaSearchIdRef.current += 1;
+    activeMosqueRequestRef.current?.abort();
+    activeAreaSearchRef.current?.abort();
+  }, []);
 
   // Trigger search whenever search center or radius changes (unless area not found)
   useEffect(() => {
@@ -326,10 +247,16 @@ export default function MosqueFinderScreen({
     const q = queryText.trim();
     if (!q) return;
 
+    activeAreaSearchRef.current?.abort();
+    const controller = new AbortController();
+    activeAreaSearchRef.current = controller;
+    const requestId = ++areaSearchIdRef.current;
+    let waitingForMosqueSearch = false;
+    let timedOut = false;
+
     setSearchingArea(true);
     setLoading(true);
     setError(null);
-    setAreaNotFound(false);
     setSearchedQuery(q);
     setMosques([]);
 
@@ -338,8 +265,10 @@ export default function MosqueFinderScreen({
         q
       )}&format=json&limit=1`;
 
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 8000);
+      const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, 8000);
       let res: Response;
       try {
         res = await fetch(url, {
@@ -358,6 +287,7 @@ export default function MosqueFinderScreen({
       }
 
       const data = await res.json();
+      if (requestId !== areaSearchIdRef.current || controller.signal.aborted) return;
       if (!Array.isArray(data) || data.length === 0) {
         setAreaNotFound(true);
         setAreaSearchCenter(null);
@@ -388,17 +318,27 @@ export default function MosqueFinderScreen({
       };
 
       addAreaQuery(q);
+      setAreaNotFound(false);
       setAreaSearchCenter(newCenter);
-      await fetchMosquesForCenter(lat, lon, radiusKm);
-    } catch (err: any) {
-      setError(err.message || 'Failed to search area. Please try again.');
+      waitingForMosqueSearch = true;
+    } catch (err) {
+      if (requestId === areaSearchIdRef.current && (!controller.signal.aborted || timedOut)) {
+        setError(timedOut ? 'Failed to search area. Please try again.' : err instanceof Error ? err.message : 'Failed to search area. Please try again.');
+      }
     } finally {
-      setSearchingArea(false);
-      setLoading(false);
+      if (requestId === areaSearchIdRef.current) {
+        setSearchingArea(false);
+        if (!waitingForMosqueSearch) setLoading(false);
+        activeAreaSearchRef.current = null;
+      }
     }
   };
 
   const handleClearAreaSearch = () => {
+    areaSearchIdRef.current += 1;
+    activeAreaSearchRef.current?.abort();
+    activeAreaSearchRef.current = null;
+    setSearchingArea(false);
     setAreaSearchCenter(null);
     setAreaInput('');
     setAreaNotFound(false);
@@ -410,9 +350,8 @@ export default function MosqueFinderScreen({
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
       query
     )}`;
-    Linking.openURL(mapsUrl).catch(() => {
-      // Fallback
-    });
+    const fallbackUrl = `https://www.openstreetmap.org/?mlat=${mosque.latitude}&mlon=${mosque.longitude}#map=17/${mosque.latitude}/${mosque.longitude}`;
+    Linking.openURL(mapsUrl).catch(() => Linking.openURL(fallbackUrl).catch(() => {}));
   };
 
   const formatDistance = (km: number): string => {
@@ -429,7 +368,7 @@ export default function MosqueFinderScreen({
     ? t('GPS AUTO')
     : `${t('MANUAL')} (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`;
 
-  const isCompact = width < 380;
+  const isCompact = width < 440;
   const isWide = width >= 600;
   const paddingH = isCompact ? 16 : 20;
 
@@ -451,12 +390,12 @@ export default function MosqueFinderScreen({
       <View style={{ maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH }}>
         <View style={styles.headerWrap}>
           {/* Area Search Input Bar */}
-          <View style={styles.searchRow}>
-            <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={[styles.searchRow, isCompact && styles.searchRowCompact]}>
+            <View style={[styles.searchFieldWrap, isCompact && styles.searchFieldWrapCompact]}>
               <SearchField
                 value={areaInput}
                 onChangeText={setAreaInput}
-                placeholder={t("Search area or city, e.g. 'Dubai Marina' or 'Lahore'...")}
+                placeholder={isCompact ? t('Search city or area...') : t("Search area or city, e.g. 'Dubai Marina' or 'Lahore'...")}
                 returnKeyType="search"
                 onSubmitEditing={() => handleSearchArea(areaInput)}
                 onClear={() => setAreaInput('')}
@@ -469,7 +408,7 @@ export default function MosqueFinderScreen({
               disabled={searchingArea || !areaInput.trim()}
               onPress={() => handleSearchArea(areaInput)}
               accessibilityLabel={t('Search area')}
-              style={{ minHeight: 44, paddingHorizontal: 16 }}
+              style={[styles.searchButton, isCompact && styles.searchButtonCompact]}
             />
           </View>
 
@@ -857,6 +796,25 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 0,
     marginBottom: 10,
+  },
+  searchRowCompact: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  searchFieldWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  searchFieldWrapCompact: {
+    flex: 0,
+    width: '100%',
+  },
+  searchButton: {
+    minHeight: 44,
+    paddingHorizontal: 16,
+  },
+  searchButtonCompact: {
+    width: '100%',
   },
   recentChipWrap: {
     flexDirection: 'row',

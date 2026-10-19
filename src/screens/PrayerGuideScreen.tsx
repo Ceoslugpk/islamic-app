@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -38,6 +38,8 @@ export default function PrayerGuideScreen({
 
   const [selectedSectionId, setSelectedSectionId] = useState<string>(PRAYER_GUIDE_SECTIONS[0]?.id || '');
   const [updates, setUpdates] = useState<Record<string, GuideUpdate>>({});
+  const scrollRef = useRef<ScrollView | null>(null);
+  const sectionOffsets = useRef<Record<string, number>>({});
 
   const allItems = useMemo(
     () => PRAYER_GUIDE_SECTIONS.flatMap((s) => s.items),
@@ -111,6 +113,7 @@ export default function PrayerGuideScreen({
       }
     >
       <DetailScreen.ScrollView
+        ref={scrollRef}
         style={{ flex: 1, backgroundColor: 'transparent' }}
         contentContainerStyle={[
           styles.content,
@@ -128,7 +131,13 @@ export default function PrayerGuideScreen({
               key={sec.id}
               label={t(sec.title.replace('Purification: ', ''))}
               selected={selectedSectionId === sec.id}
-              onPress={() => setSelectedSectionId(sec.id)}
+              onPress={() => {
+                setSelectedSectionId(sec.id);
+                const offset = sectionOffsets.current[sec.id];
+                if (offset !== undefined) {
+                  scrollRef.current?.scrollTo({ y: Math.max(0, offset - 12), animated: true });
+                }
+              }}
             />
           ))}
         </ScrollView>
@@ -136,7 +145,11 @@ export default function PrayerGuideScreen({
         {PRAYER_GUIDE_SECTIONS.map((section, si) => {
           const isLastSection = si === PRAYER_GUIDE_SECTIONS.length - 1;
           return (
-            <View key={section.id} style={[styles.sectionWrap, isLastSection && { marginBottom: 0 }]}>
+            <View
+              key={section.id}
+              onLayout={(event) => { sectionOffsets.current[section.id] = event.nativeEvent.layout.y; }}
+              style={[styles.sectionWrap, isLastSection && { marginBottom: 0 }]}
+            >
               <View style={styles.sectionHeadRow}>
                 <View
                   style={[

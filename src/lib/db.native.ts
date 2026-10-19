@@ -535,7 +535,7 @@ export function getCachedQuranKeys(): Set<string> {
 }
 
 interface MosqueCacheItem {
-  mosques: import('../screens/MosqueFinderScreen').MosqueItem[];
+  mosques: import('./mosqueFinderApi').MosqueItem[];
   centerLat: number;
   centerLon: number;
   radiusKm: number;
@@ -547,7 +547,7 @@ export function saveMosqueCache(
   centerLat: number,
   centerLon: number,
   radiusKm: number,
-  mosques: import('../screens/MosqueFinderScreen').MosqueItem[]
+  mosques: import('./mosqueFinderApi').MosqueItem[]
 ): void {
   const key = `mosque:${centerLat.toFixed(2)}:${centerLon.toFixed(2)}:${radiusKm}`;
   saveQuranCache(key, { mosques, centerLat, centerLon, radiusKm, cachedAt: Date.now() });
@@ -558,7 +558,7 @@ export function loadMosqueCache(
   centerLon: number,
   radiusKm: number,
   maxAgeMs = 24 * 60 * 60 * 1000
-): import('../screens/MosqueFinderScreen').MosqueItem[] | null {
+): import('./mosqueFinderApi').MosqueItem[] | null {
   const key = `mosque:${centerLat.toFixed(2)}:${centerLon.toFixed(2)}:${radiusKm}`;
   const parsed = loadQuranCache<MosqueCacheItem>(key);
   if (!parsed || !Array.isArray(parsed.mosques)) return null;
@@ -747,6 +747,17 @@ export function saveTasbihCount(dhikrId: string, count: number): void {
   } catch { /* non-fatal */ }
 }
 
+export async function saveTasbihCountAsync(dhikrId: string, count: number): Promise<void> {
+  try {
+    await getDb().runAsync(
+      `INSERT INTO tasbih_entries (id, count, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET count = excluded.count, updated_at = excluded.updated_at`,
+      dhikrId, count, Date.now()
+    );
+  } catch { /* non-fatal */ }
+}
+
 export function loadTasbihCounts(): Record<string, number> {
   const out: Record<string, number> = {};
   try {
@@ -759,6 +770,17 @@ export function loadTasbihCounts(): Record<string, number> {
 export function saveTasbihDayTotal(date: string, delta: number): void {
   try {
     getDb().runSync(
+      `INSERT INTO tasbih_daily (date, total, updated_at)
+       VALUES (?, ?, ?)
+       ON CONFLICT(date) DO UPDATE SET total = total + excluded.total, updated_at = excluded.updated_at`,
+      date, delta, Date.now()
+    );
+  } catch { /* non-fatal */ }
+}
+
+export async function saveTasbihDayTotalAsync(date: string, delta: number): Promise<void> {
+  try {
+    await getDb().runAsync(
       `INSERT INTO tasbih_daily (date, total, updated_at)
        VALUES (?, ?, ?)
        ON CONFLICT(date) DO UPDATE SET total = total + excluded.total, updated_at = excluded.updated_at`,

@@ -433,7 +433,7 @@ export default function CalendarScreen({
                 <SectionHeader eyebrow={t('Islamic Events')} title={t('This Year')} subtitle={`${ISLAMIC_EVENTS.length} ${t('major dates · by Hijri month')}`} compact={isCompact} />
                 <View style={styles.eventsList}>
                   {allEventsWithCountdown.map((event) => (
-                    <TouchableOpacity
+                    <View
                       key={`${event.hijriMonth}-${event.hijriDay}`}
                       style={[
                         styles.eventRow,
@@ -443,8 +443,6 @@ export default function CalendarScreen({
                           backgroundColor: event.inCurrentMonth ? tokens.ringFill : tokens.cardTop,
                         },
                       ]}
-                      onPress={() => {}}
-                      accessibilityLabel={`${event.name}, ${event.daysUntil} ${t('days')} ${t('away')}`}
                     >
                       <View style={[styles.eventIconWrapper, { backgroundColor: event.inCurrentMonth ? tokens.ringFill : tokens.ringFill }]}>
                         <Ionicons name={getEventIcon(event)} size={20} color={event.inCurrentMonth ? tokens.accent : tokens.muted} />
@@ -470,7 +468,7 @@ export default function CalendarScreen({
                         </AppText>
                         <AppText variant="caption" tone="faint" style={styles.countdownLabel}>{event.daysUntil === 0 ? '' : t('away')}</AppText>
                       </View>
-                    </TouchableOpacity>
+                    </View>
                   ))}
                 </View>
               </View>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -206,6 +206,8 @@ export default function UmrahGuideScreen({
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
   const [activeStepId, setActiveStepId] = useState<string>('ihram');
+  const scrollRef = useRef<ScrollView | null>(null);
+  const stepOffsets = useRef<Record<string, number>>({});
 
   return (
     <DetailScreen
@@ -223,6 +225,7 @@ export default function UmrahGuideScreen({
       }
     >
       <DetailScreen.ScrollView
+        ref={scrollRef}
         style={{ flex: 1, backgroundColor: 'transparent' }}
         contentContainerStyle={[
           styles.content,
@@ -247,7 +250,13 @@ export default function UmrahGuideScreen({
                 key={s.id}
                 label={`0${s.stepNumber} · ${t(s.title)}`}
                 selected={isActive}
-                onPress={() => setActiveStepId(s.id)}
+                onPress={() => {
+                  setActiveStepId(s.id);
+                  const offset = stepOffsets.current[s.id];
+                  if (offset !== undefined) {
+                    scrollRef.current?.scrollTo({ y: Math.max(0, offset - 12), animated: true });
+                  }
+                }}
                 accessibilityLabel={`Step ${s.stepNumber}: ${t(s.title)}`}
               />
             );
@@ -278,8 +287,11 @@ export default function UmrahGuideScreen({
           const isHighlighted = step.id === activeStepId;
           const isLastStep = si === UMRAH_STEPS.length - 1;
           return (
-            <PremiumCard
+            <View
               key={step.id}
+              onLayout={(event) => { stepOffsets.current[step.id] = event.nativeEvent.layout.y; }}
+            >
+            <PremiumCard
               style={[
                 styles.stepCard,
                 isHighlighted && {
@@ -422,14 +434,15 @@ export default function UmrahGuideScreen({
                 </View>
               )}
             </PremiumCard>
+            </View>
           );
         })}
 
         {/* Duas screen redirect affordance */}
         {onOpenDuas && (
           <PremiumCard style={styles.duaRedirectCard} padded>
-            <View style={styles.duaRedirectRow}>
-              <View style={styles.duaRedirectTextCol}>
+            <View style={[styles.duaRedirectRow, isCompact && styles.duaRedirectRowCompact]}>
+              <View style={[styles.duaRedirectTextCol, isCompact && styles.duaRedirectTextColCompact]}>
                 <AppText variant="sectionTitle" style={styles.duaBannerTitle}>
                   {t('Hajj & Umrah Duas Library')}
                 </AppText>
@@ -441,6 +454,7 @@ export default function UmrahGuideScreen({
                 title={t('Open Duas')}
                 onPress={onOpenDuas}
                 accessibilityLabel={t('Open Hajj and Umrah Duas')}
+                style={isCompact ? styles.duaRedirectButtonCompact : undefined}
               />
             </View>
           </PremiumCard>
@@ -638,6 +652,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
+  },
+  duaRedirectRowCompact: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+  },
+  duaRedirectTextColCompact: {
+    flex: 0,
+    width: '100%',
+  },
+  duaRedirectButtonCompact: {
+    alignSelf: 'stretch',
   },
   duaRedirectTextCol: {
     flex: 1,

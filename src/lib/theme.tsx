@@ -9,7 +9,6 @@ import {
   ACTIVE_PRAYER_CARD_SHADOW,
   PILL_SHADOW,
 } from './homeThemeTokens';
-import { AccentKey, DEFAULT_ACCENT } from './accents';
 import { useSettings } from './settings';
 import { textTokens, SemanticTextTokens } from '../theme/tokens';
 
@@ -19,8 +18,6 @@ interface ThemeContextValue {
   colors: ThemeColors;
   tokens: SemanticTextTokens;
   textTokens: SemanticTextTokens;
-  accentKey: AccentKey;
-  setAccent: (key: AccentKey) => void;
   toggle: () => void;
 }
 
@@ -54,19 +51,16 @@ function getAccentColors(mode: ThemeMode) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const { settings, setThemeMode, setAccentKey } = useSettings();
+  const { settings, setThemeMode } = useSettings();
 
   // Resolve the effective ink/paper mode from the three-way setting
   const mode = resolveMode(settings.themeMode, systemScheme);
-  const accentKey = settings.accentKey ?? DEFAULT_ACCENT;
 
   // Toggle the visible mode directly. Cycling through "system" could leave
   // the screen looking unchanged when the device already uses the same scheme.
   const toggle = useCallback(() => {
     setThemeMode(nextThemeMode(mode));
   }, [mode, setThemeMode]);
-
-  const setAccent = setAccentKey;
 
   const colors: ThemeColors = useMemo(
     () => ({ ...palette[mode], ...getAccentColors(mode) }),
@@ -90,11 +84,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       colors,
       tokens: semanticTokens,
       textTokens: semanticTokens,
-      accentKey,
-      setAccent,
       toggle,
     }),
-    [mode, scheme, colors, semanticTokens, accentKey, setAccent, toggle],
+    [mode, scheme, colors, semanticTokens, toggle],
   );
 
   return (

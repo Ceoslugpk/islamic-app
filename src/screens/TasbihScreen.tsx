@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   View,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   useWindowDimensions,
 } from 'react-native';
@@ -17,7 +18,7 @@ import { Card } from '../components/Card';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Hairline } from '../components/Hairline';
 import { ArabicText } from '../components/ArabicText';
-import { saveTasbihCount, loadTasbihCounts, saveTasbihDayTotal, loadTasbihDayTotal } from '../lib/db';
+import { saveTasbihCountAsync, loadTasbihCounts, saveTasbihDayTotalAsync, loadTasbihDayTotal } from '../lib/db';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import { getCurrentLanguage, t } from '../lib/i18n';
 import { hScrollRTLStyle } from '../lib/rtl';
@@ -120,6 +121,8 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
   const todayKey = new Date().toISOString().slice(0, 10);
   const [counts, setCounts] = useState<Record<string, number>>(() => loadTasbihCounts());
   const [todayTotal, setTodayTotal] = useState<number>(() => loadTasbihDayTotal(new Date().toISOString().slice(0, 10)));
+  const countsRef = useRef(counts);
+  const todayTotalRef = useRef(todayTotal);
   const { saveUndoState } = useUndoToast();
 
   const currentCount = counts[selectedDhikr.id] || 0;
@@ -127,44 +130,41 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
   const handleTap = useCallback(() => {
     haptic('light');
 
-    const nextCount = currentCount + 1;
-    setCounts((prev) => ({
-      ...prev,
-      [selectedDhikr.id]: nextCount,
-    }));
-    saveTasbihCount(selectedDhikr.id, nextCount);
+    const nextCount = (countsRef.current[selectedDhikr.id] || 0) + 1;
+    const nextCounts = { ...countsRef.current, [selectedDhikr.id]: nextCount };
+    countsRef.current = nextCounts;
+    setCounts(nextCounts);
+    void saveTasbihCountAsync(selectedDhikr.id, nextCount);
 
-    // Increment daily total
-    const nextDaily = todayTotal + 1;
+    const nextDaily = todayTotalRef.current + 1;
+    todayTotalRef.current = nextDaily;
     setTodayTotal(nextDaily);
-    saveTasbihDayTotal(todayKey, 1);
+    void saveTasbihDayTotalAsync(todayKey, 1);
 
     // Give an extra success impact if target reached
     if (nextCount > 0 && nextCount % target === 0) {
       haptic('success');
     }
-  }, [currentCount, selectedDhikr.id, target, haptic, todayTotal, todayKey]);
+  }, [selectedDhikr.id, target, haptic, todayKey]);
 
   const handleReset = useCallback(() => {
     haptic('warning');
-    const prevCount = counts[selectedDhikr.id] || 0;
-    setCounts((prev) => ({
-      ...prev,
-      [selectedDhikr.id]: 0,
-    }));
-    saveTasbihCount(selectedDhikr.id, 0);
+    const prevCount = countsRef.current[selectedDhikr.id] || 0;
+    const nextCounts = { ...countsRef.current, [selectedDhikr.id]: 0 };
+    countsRef.current = nextCounts;
+    setCounts(nextCounts);
+    void saveTasbihCountAsync(selectedDhikr.id, 0);
     saveUndoState({
       id: `tasbih:${selectedDhikr.id}`,
       action: t('Reset Count'),
       revert: () => {
-        setCounts((prev) => ({
-          ...prev,
-          [selectedDhikr.id]: prevCount,
-        }));
-        saveTasbihCount(selectedDhikr.id, prevCount);
+        const revertedCounts = { ...countsRef.current, [selectedDhikr.id]: prevCount };
+        countsRef.current = revertedCounts;
+        setCounts(revertedCounts);
+        void saveTasbihCountAsync(selectedDhikr.id, prevCount);
       },
     });
-  }, [selectedDhikr.id, haptic, counts, saveUndoState]);
+  }, [selectedDhikr.id, haptic, saveUndoState]);
 
   const rounds = Math.floor(currentCount / target);
   const progressInRound = currentCount % target;
@@ -173,6 +173,7 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
+  const counterDiameter = Math.max(184, Math.min(232, width - paddingH * 2 - 24));
 
   return (
     <DetailScreen
@@ -280,16 +281,6 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
             </View>
           </Card>
 
-          {/* Today Summary */}
-          <Card
-            style={styles.summaryCard}
-            padded
-          >
-            <AppText variant="eyebrow" tone="faint" style={styles.summaryLabel}>{t('Today')}</AppText>
-            <AppText variant="numeral" highlight style={styles.summaryValue}>{todayTotal}</AppText>
-            <AppText variant="caption" tone="faint" style={styles.summaryUnit}>{t('counts')}</AppText>
-          </Card>
-
           {/* Current Dhikr Phrase Card */}
           <Card
             style={styles.phraseCard}
@@ -308,44 +299,63 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
 
           {/* Big Circular Tap Counter Zone */}
           <View style={styles.counterWrap}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleTap}
+            <View
               style={[
-                styles.counterCircle,
+                styles.counterShadow,
                 getCardShadow(mode),
-                {
-                  borderColor: tokens.gold,
-                },
+                { width: counterDiameter, height: counterDiameter, borderRadius: counterDiameter / 2 },
               ]}
-              accessibilityRole="button"
-              accessibilityLabel={`Dhikr counter: ${currentCount}. Tap to increment.`}
             >
-              <LinearGradient
-                colors={mode === 'ink' ? tokens.heroGradient : tokens.goldGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                style={styles.counterCircleGradient}
+              <Pressable
+                onPress={handleTap}
+                hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+                style={({ pressed }) => [
+                  styles.counterCircle,
+                  {
+                    width: counterDiameter,
+                    height: counterDiameter,
+                    borderRadius: counterDiameter / 2,
+                    borderColor: tokens.gold,
+                    transform: [{ scale: pressed ? 0.97 : 1 }],
+                  },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`Dhikr counter: ${currentCount}. Tap to increment.`}
+                testID="tasbih-counter-button"
               >
-                <AppText
-                  variant="numeral"
-                  style={[styles.counterNumber, { color: mode === 'ink' ? tokens.text : tokens.onGold }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.7}
+                <LinearGradient
+                  colors={mode === 'ink' ? tokens.heroGradient : tokens.goldGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 0, y: 1 }}
+                  style={[styles.counterCircleGradient, { borderRadius: counterDiameter / 2 }]}
                 >
-                  {currentCount}
-                </AppText>
-                <AppText
-                  variant="eyebrow"
-                  style={[styles.tapLabel, { color: mode === 'ink' ? tokens.gold : tokens.onGold }]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                >
-                  {t('TAP TO COUNT')}
-                </AppText>
-              </LinearGradient>
-            </TouchableOpacity>
+                  <View style={styles.counterContent}>
+                    <AppText
+                      variant="numeral"
+                      style={[
+                        styles.counterNumber,
+                        { color: mode === 'ink' ? tokens.text : tokens.onGold },
+                      ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.65}
+                      maxFontSizeMultiplier={1.2}
+                    >
+                      {currentCount}
+                    </AppText>
+                    <AppText
+                      variant="eyebrow"
+                      style={[styles.tapLabel, { color: mode === 'ink' ? tokens.gold : tokens.onGold }]}
+                      numberOfLines={2}
+                      adjustsFontSizeToFit
+                      maxFontSizeMultiplier={1.2}
+                    >
+                      {t('TAP TO COUNT')}
+                    </AppText>
+                  </View>
+                </LinearGradient>
+              </Pressable>
+            </View>
           </View>
 
           {/* Progress Indicator */}
@@ -393,6 +403,16 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
               </AppText>
             </TouchableOpacity>
           </View>
+
+          {/* Today Summary */}
+          <Card
+            style={styles.summaryCard}
+            padded
+          >
+            <AppText variant="eyebrow" tone="faint" style={styles.summaryLabel}>{t('Today')}</AppText>
+            <AppText variant="numeral" highlight style={styles.summaryValue}>{todayTotal}</AppText>
+            <AppText variant="caption" tone="faint" style={styles.summaryUnit}>{t('counts')}</AppText>
+          </Card>
 
           <Hairline style={{ marginTop: 24, marginBottom: 16 }} />
 
@@ -530,13 +550,12 @@ const styles = StyleSheet.create({
   counterWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 14,
+    marginVertical: 8,
+  },
+  counterShadow: {
+    borderRadius: 999,
   },
   counterCircle: {
-    width: 220,
-    minHeight: 220,
-    aspectRatio: 1,
-    borderRadius: 110,
     borderWidth: 3,
     alignItems: 'center',
     justifyContent: 'center',
@@ -545,25 +564,31 @@ const styles = StyleSheet.create({
   counterCircleGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 110,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+  },
+  counterContent: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   counterNumber: {
-    fontSize: 58,
+    width: '100%',
+    fontSize: 62,
+    lineHeight: 74,
     fontFamily: 'Manrope_700Bold',
-    paddingBottom: 4,
-    paddingHorizontal: 8,
+    includeFontPadding: false,
+    paddingBottom: 0,
+    paddingHorizontal: 4,
     textAlign: 'center',
   },
   tapLabel: {
     fontSize: 11,
     fontFamily: 'Manrope_700Bold',
-    letterSpacing: 1.5,
-    marginTop: 4,
-    paddingVertical: 2,
+    letterSpacing: 1.1,
+    marginTop: 8,
     textAlign: 'center',
   },
   progressWrap: {

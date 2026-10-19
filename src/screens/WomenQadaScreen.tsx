@@ -329,6 +329,7 @@ function WomenQadaScreen({
             <PremiumCard
               key={fast.id}
               padded={false}
+              borderColor={fast.madeUp ? tokens.success : tokens.cardBorder}
               style={[styles.fastCard, { marginBottom: 10 }]}
               contentStyle={styles.fastCardContent}
             >
@@ -343,6 +344,7 @@ function WomenQadaScreen({
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: fast.madeUp }}
                   accessibilityLabel={`Mark fast from ${fast.date} as ${fast.madeUp ? 'unmade' : 'made up'}`}
+                  hitSlop={touchTargetTokens.hitSlop10}
                 >
                   {fast.madeUp && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
                 </TouchableOpacity>
@@ -371,6 +373,7 @@ function WomenQadaScreen({
                   accessibilityRole="button"
                   accessibilityLabel={`Delete missed fast for ${fast.date}`}
                   hitSlop={touchTargetTokens.hitSlop10}
+                  style={styles.deleteQadaButton}
                 >
                   <Ionicons name="trash-outline" size={16} color={tokens.muted} />
                 </TouchableOpacity>
@@ -561,8 +564,16 @@ const styles = StyleSheet.create({
   },
   qadaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
+  },
+  deleteQadaButton: {
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -8,
+    marginEnd: -8,
   },
   checkbox: {
     width: 22,

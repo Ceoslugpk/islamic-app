@@ -53,15 +53,17 @@ export function ArabicText({
   // Clamp the system font multiplier: Quran Arabic must stay legible inside
   // its fixed line boxes even at large accessibility font settings.
   const resolvedMaxMultiplier = maxFontSizeMultiplier ?? DEFAULT_MAX_ARABIC_FONT_SCALE;
+  const flattenedStyle = StyleSheet.flatten(style);
+  const effectiveSize = typeof flattenedStyle?.fontSize === 'number' ? flattenedStyle.fontSize : size;
   const fontScale = Math.min(
     Math.max(PixelRatio.getFontScale() || 1, 1),
     resolvedMaxMultiplier,
   );
-  // Arabic needs generous line-height (~1.8x minimum) or diacritics/ascenders clip.
-  // Callers may override via the `lineHeight` prop or a `style` lineHeight —
-  // both win because `style` sits last in the array. The base lineHeight
-  // scales with the font multiplier so glyphs keep fitting at larger sizes.
-  const resolvedLineHeight = (lineHeight ?? Math.round(size * 1.8)) * fontScale;
+  // Keep caller styling while enforcing enough room for Arabic marks and ascenders.
+  // Several legacy screens set a smaller static line height, which clips Naskh glyphs.
+  const requestedLineHeight = Math.max(lineHeight ?? 0, flattenedStyle?.lineHeight ?? 0);
+  const minimumLineHeight = Math.ceil(effectiveSize * 1.8);
+  const resolvedLineHeight = Math.max(requestedLineHeight ?? 0, minimumLineHeight) * fontScale;
   return (
     <Text
       style={[
@@ -74,6 +76,7 @@ export function ArabicText({
           lineHeight: resolvedLineHeight,
         },
         style,
+        { lineHeight: resolvedLineHeight },
       ]}
       numberOfLines={numberOfLines}
       allowFontScaling

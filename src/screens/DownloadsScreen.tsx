@@ -485,7 +485,7 @@ function DownloadsScreen({
                     onPress={() => onOpenSurah?.(item.surah)}
                     activeOpacity={0.7}
                   >
-                    <View style={styles.nameRow}>
+                    <View style={[styles.nameRow, isCompact && styles.nameColumn]}>
                       <AppText
                         variant="rowTitle"
                         style={[
@@ -730,6 +730,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 8,
+    flexWrap: 'wrap',
+    minWidth: 0,
+  },
+  nameColumn: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 0,
   },
   englishName: {
     fontFamily: 'Manrope_600SemiBold',

@@ -480,6 +480,10 @@ export function saveTasbihCount(dhikrId: string, count: number): void {
   webKV.set(`tasbih:${dhikrId}`, JSON.stringify({ count, updated_at: Date.now() }));
 }
 
+export async function saveTasbihCountAsync(dhikrId: string, count: number): Promise<void> {
+  saveTasbihCount(dhikrId, count);
+}
+
 export function loadTasbihCounts(): Record<string, number> {
   const out: Record<string, number> = {};
   const rows = webKV.getAll('tasbih:');
@@ -508,6 +512,10 @@ export function saveTasbihDayTotal(date: string, delta: number): void {
   }
   const next = Math.max(0, current + delta);
   webKV.set(key, JSON.stringify({ total: next, updated_at: Date.now() }));
+}
+
+export async function saveTasbihDayTotalAsync(date: string, delta: number): Promise<void> {
+  saveTasbihDayTotal(date, delta);
 }
 
 export function loadTasbihDayTotal(date: string): number {
@@ -1012,7 +1020,7 @@ export function getAllVerseHighlights(): VerseHighlight[] {
 }
 
 export interface MosqueCacheItem {
-  mosques: import('../screens/MosqueFinderScreen').MosqueItem[];
+  mosques: import('./mosqueFinderApi').MosqueItem[];
   centerLat: number;
   centerLon: number;
   radiusKm: number;
@@ -1023,7 +1031,7 @@ export function saveMosqueCache(
   centerLat: number,
   centerLon: number,
   radiusKm: number,
-  mosques: import('../screens/MosqueFinderScreen').MosqueItem[]
+  mosques: import('./mosqueFinderApi').MosqueItem[]
 ): void {
   const key = `mosque:${centerLat.toFixed(2)}:${centerLon.toFixed(2)}:${radiusKm}`;
   webKV.set(key, JSON.stringify({ mosques, centerLat, centerLon, radiusKm, cachedAt: Date.now() }));
@@ -1034,7 +1042,7 @@ export function loadMosqueCache(
   centerLon: number,
   radiusKm: number,
   maxAgeMs = 24 * 60 * 60 * 1000
-): import('../screens/MosqueFinderScreen').MosqueItem[] | null {
+): import('./mosqueFinderApi').MosqueItem[] | null {
   const key = `mosque:${centerLat.toFixed(2)}:${centerLon.toFixed(2)}:${radiusKm}`;
   const raw = webKV.get(key);
   if (!raw) return null;
