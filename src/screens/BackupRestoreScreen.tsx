@@ -313,12 +313,12 @@ export function BackupRestoreScreen({ onBack }: Props) {
             {t('Included in Backup')}
           </AppText>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-            <Chip label={t('Prayer History')} selected={false} />
-            <Chip label={t('Quran Bookmarks')} selected={false} />
-            <Chip label={t('Notes & Reflections')} selected={false} />
-            <Chip label={t('Fasting Logs')} selected={false} />
-            <Chip label={t('Hifz Progress')} selected={false} />
-            <Chip label={t('App Settings')} selected={false} />
+            <Chip label={t('Prayer History')} selected={false} interactive={false} />
+            <Chip label={t('Quran Bookmarks')} selected={false} interactive={false} />
+            <Chip label={t('Notes & Reflections')} selected={false} interactive={false} />
+            <Chip label={t('Fasting Logs')} selected={false} interactive={false} />
+            <Chip label={t('Hifz Progress')} selected={false} interactive={false} />
+            <Chip label={t('App Settings')} selected={false} interactive={false} />
           </View>
         </PremiumCard>
 

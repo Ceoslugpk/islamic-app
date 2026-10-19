@@ -427,7 +427,7 @@ function DownloadsScreen({
                     title={t('Browse Surahs')}
                     onPress={() => onOpenSurah(1)}
                     accessibilityLabel={t('Browse Quran Surahs')}
-                    style={{ alignSelf: 'center', minWidth: 160, marginTop: 14 }}
+                    style={{ alignSelf: 'center', minWidth: 160, maxWidth: '100%', marginTop: 14 }}
                   />
                 )}
               </View>

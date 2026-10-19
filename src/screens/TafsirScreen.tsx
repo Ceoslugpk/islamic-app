@@ -178,7 +178,7 @@ export default function TafsirScreen({
               accessibilityLabel={`${t('Ayah')} ${item.ayahNumber} · ${t('Reader')}`}
             >
               <AppText variant="link" style={styles.readerLinkText}>
-                {t('Reader')} →
+                {isRTL() ? `← ${t('Reader')}` : `${t('Reader')} →`}
               </AppText>
             </TouchableOpacity>
           )}

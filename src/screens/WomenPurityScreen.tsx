@@ -368,6 +368,7 @@ function WomenPurityScreen({
                   accessibilityRole="button"
                   accessibilityLabel={`${t('Delete')} ${item.startDate}`}
                   hitSlop={touchTargetTokens.hitSlop10}
+                  style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Ionicons name="trash-outline" size={15} color={tokens.muted} />
                 </TouchableOpacity>
@@ -582,6 +583,7 @@ const styles = StyleSheet.create({
   },
   activeNifasBox: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 10,
     padding: 12,
@@ -630,8 +632,10 @@ const styles = StyleSheet.create({
   },
   labelRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 6,
     marginTop: 2,
   },
   quickPillsRow: {
@@ -747,11 +751,14 @@ const styles = StyleSheet.create({
   },
   historyHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    gap: 8,
   },
   filterPills: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
     marginBottom: 10,
   },

@@ -648,7 +648,9 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   monthChipGradient: {
-    minHeight: 28,
+    flex: 1,
+    alignSelf: 'stretch',
+    minHeight: 44,
     width: '100%',
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -664,10 +666,10 @@ const styles = StyleSheet.create({
   },
   monthChipDot: {
     position: 'absolute',
-    bottom: 2,
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    bottom: 4,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
 
   // Grid

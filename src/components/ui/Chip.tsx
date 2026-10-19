@@ -24,6 +24,8 @@ export interface ChipProps {
   testID?: string;
   disabled?: boolean;
   accessibilityLabel?: string;
+  interactive?: boolean;
+  numberOfLines?: number;
 }
 
 export function Chip({
@@ -37,13 +39,15 @@ export function Chip({
   testID,
   disabled = false,
   accessibilityLabel,
+  interactive,
+  numberOfLines,
 }: ChipProps) {
   const { mode } = useTheme();
   const tokens = themeTokens[mode];
 
   const actualTestId = testID || (selected ? 'chip-selected' : 'chip');
-
   const textColor = selected ? tokens.onGold : tokens.heading;
+  const isInteractive = interactive !== undefined ? interactive : typeof onPress === 'function';
 
   const innerContent = (
     <>
@@ -66,7 +70,7 @@ export function Chip({
           },
           textStyle,
         ]}
-        numberOfLines={1}
+        numberOfLines={numberOfLines === 0 ? undefined : (numberOfLines ?? 1)}
       >
         {label}
       </AppText>
@@ -91,6 +95,109 @@ export function Chip({
     </>
   );
 
+  let contentPadding: ViewStyle | undefined;
+  let outerStyle: ViewStyle | undefined;
+  let effectiveMinHeight: ViewStyle['minHeight'] = styles.chip.minHeight;
+  let effectiveHeight: ViewStyle['height'] = undefined;
+  let radius: ViewStyle['borderRadius'] = styles.chip.borderRadius;
+
+  if (style) {
+    const flattened = StyleSheet.flatten(style);
+    if (flattened) {
+      const {
+        padding,
+        paddingHorizontal,
+        paddingVertical,
+        paddingStart,
+        paddingEnd,
+        paddingTop,
+        paddingBottom,
+        paddingLeft,
+        paddingRight,
+        minHeight,
+        height,
+        borderRadius,
+        ...rest
+      } = flattened;
+
+      outerStyle = rest;
+      if (minHeight !== undefined) {
+        effectiveMinHeight = isInteractive
+          ? (typeof minHeight === 'number' ? Math.max(44, minHeight) : minHeight)
+          : minHeight;
+      }
+      if (height !== undefined) {
+        effectiveHeight = isInteractive
+          ? (typeof height === 'number' ? Math.max(44, height) : height)
+          : height;
+      }
+      if (borderRadius !== undefined) {
+        radius = borderRadius;
+      }
+
+      const pad: ViewStyle = {};
+      if (padding !== undefined) pad.padding = padding;
+      if (paddingHorizontal !== undefined) pad.paddingHorizontal = paddingHorizontal;
+      if (paddingVertical !== undefined) pad.paddingVertical = paddingVertical;
+      if (paddingStart !== undefined) pad.paddingStart = paddingStart;
+      if (paddingEnd !== undefined) pad.paddingEnd = paddingEnd;
+      if (paddingTop !== undefined) pad.paddingTop = paddingTop;
+      if (paddingBottom !== undefined) pad.paddingBottom = paddingBottom;
+      if (paddingLeft !== undefined) pad.paddingLeft = paddingLeft;
+      if (paddingRight !== undefined) pad.paddingRight = paddingRight;
+      if (Object.keys(pad).length > 0) contentPadding = pad;
+    }
+  }
+
+  const outerContainerStyle: StyleProp<ViewStyle> = [
+    styles.chip,
+    {
+      minHeight: effectiveMinHeight,
+      ...(effectiveHeight !== undefined ? { height: effectiveHeight } : null),
+      borderRadius: radius,
+      borderColor: selected ? tokens.goldBorder : tokens.cardBorder,
+      backgroundColor: selected ? undefined : tokens.cardTop,
+    },
+    !selected && styles.unselectedChip,
+    !selected && contentPadding,
+    disabled && styles.disabled,
+    outerStyle,
+  ];
+
+  const gradientStyle: StyleProp<ViewStyle> = [
+    styles.gradientFill,
+    {
+      minHeight: effectiveMinHeight,
+      ...(effectiveHeight !== undefined ? { height: effectiveHeight } : null),
+      borderRadius: radius,
+      alignSelf: 'stretch',
+    },
+    contentPadding,
+  ];
+
+  if (!isInteractive) {
+    return (
+      <View
+        testID={actualTestId}
+        accessibilityLabel={accessibilityLabel}
+        style={outerContainerStyle}
+      >
+        {selected ? (
+          <LinearGradient
+            colors={tokens.goldGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={gradientStyle}
+          >
+            {innerContent}
+          </LinearGradient>
+        ) : (
+          innerContent
+        )}
+      </View>
+    );
+  }
+
   return (
     <TouchableOpacity
       testID={actualTestId}
@@ -99,25 +206,16 @@ export function Chip({
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected, disabled }}
       hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-      style={[
-        styles.chip,
-        {
-          borderColor: selected ? tokens.goldBorder : tokens.cardBorder,
-          backgroundColor: selected ? undefined : tokens.cardTop,
-        },
-        !selected && styles.unselectedChip,
-        disabled && styles.disabled,
-        style,
-      ]}
+      style={outerContainerStyle}
     >
       {selected ? (
         <LinearGradient
           colors={tokens.goldGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
-          style={styles.gradientFill}
+          style={gradientStyle}
         >
           {innerContent}
         </LinearGradient>
@@ -152,6 +250,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     width: '100%',
+    alignSelf: 'stretch',
   },
   label: {
     flexShrink: 1,

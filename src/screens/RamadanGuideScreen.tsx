@@ -8,6 +8,7 @@ import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
+import { isRTL } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
@@ -248,7 +249,7 @@ export default function RamadanGuideScreen({
                     {t(section.title)}
                   </AppText>
                   {section.arabicTitle ? (
-                    <ArabicText align="left" size={14} style={{ color: tokens.textSecondary, marginTop: 2 }}>
+                    <ArabicText align={isRTL() ? 'right' : 'left'} size={14} style={{ color: tokens.textSecondary, marginTop: 2 }}>
                       {section.arabicTitle}
                     </ArabicText>
                   ) : null}

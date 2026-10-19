@@ -332,6 +332,7 @@ export default function HajjJourneyScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
           contentContainerStyle={[styles.chipsScroll, hScrollRTLStyle()]}
         >
           {HAJJ_DAYS.map((d) => {
@@ -591,7 +592,6 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   dayChip: {
-    marginEnd: 6,
     minHeight: 44,
   },
   pillarsCard: {
@@ -651,7 +651,6 @@ const styles = StyleSheet.create({
   dayArabicTitle: {
     fontFamily: fontRoles.arabic,
     fontSize: 18,
-    textAlign: 'left',
     marginTop: 4,
     marginBottom: 8,
   },

@@ -241,6 +241,7 @@ export default function UmrahGuideScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
           contentContainerStyle={[styles.pillsContainer, hScrollRTLStyle()]}
         >
           {UMRAH_STEPS.map((s) => {
@@ -548,7 +549,6 @@ const styles = StyleSheet.create({
   arabicTitle: {
     fontFamily: fontRoles.arabic,
     fontSize: 18,
-    textAlign: 'left',
   },
   stepDescription: {
     fontSize: 14,

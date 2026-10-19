@@ -8,7 +8,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens } from '../theme/tokens';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { getBookmarks, removeBookmark, addBookmark, VerseRef } from '../lib/study';
@@ -32,6 +32,7 @@ function BookmarksScreen({
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 14 : 20;
+  const isRtl = isRTL();
   const [bookmarks, setBookmarks] = useState<VerseRef[]>(() => getBookmarks());
   const [justRemoved, setJustRemoved] = useState<string | null>(null);
   const removedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,9 +107,13 @@ function BookmarksScreen({
           </AppText>
         ) : null}
 
-        <View style={styles.itemFooter}>
+        <View style={[styles.itemFooter, { alignItems: isRtl ? 'flex-start' : 'flex-end' }]}>
           <AppText variant="link" style={styles.readHint}>
-            {t('Tap to open in Reader →')}
+            {(() => {
+              const raw = t('Tap to open in Reader →');
+              const base = raw.replace(/\s*[→←]\s*$/, '').trim();
+              return isRtl ? `${base} ←` : `${base} →`;
+            })()}
           </AppText>
         </View>
       </PremiumCard>
@@ -202,8 +207,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   deleteBtn: {
-    padding: 4,
+    padding: 8,
     minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   arabic: {
     textAlign: 'right',

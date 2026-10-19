@@ -8,7 +8,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, Chip } from '../components/ui';
@@ -132,6 +132,7 @@ export default function PrayerGuideScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
           contentContainerStyle={[styles.chipsScroll, hScrollRTLStyle()]}
         >
           {PRAYER_GUIDE_SECTIONS.map((sec) => (
@@ -178,7 +179,7 @@ export default function PrayerGuideScreen({
                     {t(section.title)}
                   </AppText>
                   {section.arabicTitle ? (
-                    <ArabicText align="left" size={14} style={{ color: tokens.textSecondary, marginTop: 2 }}>
+                    <ArabicText align={isRTL() ? 'right' : 'left'} size={14} style={{ color: tokens.textSecondary, marginTop: 2 }}>
                       {section.arabicTitle}
                     </ArabicText>
                   ) : null}

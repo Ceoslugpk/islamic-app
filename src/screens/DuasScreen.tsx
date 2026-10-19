@@ -258,6 +258,7 @@ export default function DuasScreen({
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={{ flexGrow: 0 }}
               contentContainerStyle={[styles.categoryScroll, hScrollRTLStyle()]}
             >
               {DUA_CATEGORIES.map((cat) => {
@@ -390,6 +391,7 @@ export default function DuasScreen({
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0 }}
             contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
           >
             {searchHistory.map((item) => (

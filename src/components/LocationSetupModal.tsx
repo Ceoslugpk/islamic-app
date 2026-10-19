@@ -234,6 +234,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
+    minHeight: 44,
     borderRadius: 12,
     gap: 8,
   },
@@ -247,6 +248,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 13,
+    minHeight: 44,
     borderRadius: 12,
     borderWidth: 1,
     gap: 8,
@@ -260,6 +262,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
+    minHeight: 44,
   },
   tertiaryBtnText: {
     fontFamily: 'Manrope_600SemiBold',

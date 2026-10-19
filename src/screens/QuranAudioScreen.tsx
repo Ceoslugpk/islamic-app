@@ -523,6 +523,7 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0 }}
             contentContainerStyle={[styles.tabScroll, hScrollRTLStyle()]}
           >
             {tabsConfig.map((tItem) => {

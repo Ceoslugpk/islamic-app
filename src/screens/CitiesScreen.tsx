@@ -15,7 +15,7 @@ import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { SearchField, PremiumCard } from '../components/ui';
 import { AppText } from '../components/ui/AppText';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 export default function CitiesScreen({
   onBack,
@@ -27,6 +27,7 @@ export default function CitiesScreen({
   const { tokens } = useThemeTokens();
   const { settings, setManualLocation, setLocationMode } = useSettings();
   const language = settings.language;
+  const isRtl = isRTL();
   const [query, setQuery] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [successCity, setSuccessCity] = useState<{ name: string; country: string } | null>(null);
@@ -148,7 +149,7 @@ export default function CitiesScreen({
               </View>
             </View>
 
-            <View style={styles.rowRight}>
+            <View style={[styles.rowRight, { alignItems: isRtl ? 'flex-start' : 'flex-end' }]}>
               <AppText variant="caption" tone="faint" style={styles.coordsText}>
                 {item.latitude.toFixed(2)}°, {item.longitude.toFixed(2)}°
               </AppText>
@@ -336,7 +337,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   rowRight: {
-    alignItems: 'flex-end',
     gap: 4,
     flexShrink: 0,
     marginStart: 8,

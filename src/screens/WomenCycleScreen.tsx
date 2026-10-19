@@ -615,6 +615,7 @@ function WomenCycleScreen({
                     accessibilityRole="button"
                     accessibilityLabel={`${t('Delete')} ${item.startDate}`}
                     hitSlop={touchTargetTokens.hitSlop10}
+                    style={{ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Ionicons name="trash-outline" size={16} color={tokens.muted} />
                   </TouchableOpacity>
@@ -711,6 +712,7 @@ const styles = StyleSheet.create({
   },
   heroBtnRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginTop: 4,
   },
@@ -819,12 +821,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   dayChip: {
-    width: 44,
-    height: 48,
+    minWidth: 44,
+    minHeight: 48,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 4,
     paddingVertical: 2,
   },
   dayChipNum: {
@@ -868,8 +871,10 @@ const styles = StyleSheet.create({
   },
   labelRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 6,
     marginTop: 2,
   },
   inputLabel: {
@@ -901,6 +906,7 @@ const styles = StyleSheet.create({
   },
   formBtnRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: 8,
     marginTop: 6,

@@ -1473,20 +1473,9 @@ const styles = StyleSheet.create({
   },
   segRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     padding: 14,
-  },
-  seg: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-    borderWidth: 1,
-    minWidth: 0,
-  },
-  segLabel: {
-    fontSize: 13,
   },
   reciterHeaderRow: {
     flexDirection: 'row',
@@ -1595,6 +1584,7 @@ const styles = StyleSheet.create({
   },
   goalTypeRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginTop: 10,
   },

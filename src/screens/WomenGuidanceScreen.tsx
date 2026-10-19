@@ -90,7 +90,7 @@ export default function WomenGuidanceScreen({
 
           return (
             <PremiumCard key={item.id} style={{ marginBottom: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 6, marginBottom: 6 }}>
                 <AppText variant="rowTitle" style={styles.worshipTopic}>{item.topic}</AppText>
                 <View style={[styles.worshipBadge, { borderColor: statusConfig.color }]}>
                   <Ionicons name={statusConfig.icon as any} size={12} color={statusConfig.color} />
@@ -118,7 +118,7 @@ export default function WomenGuidanceScreen({
 
         {BLEEDING_TYPES.map((b) => (
           <PremiumCard key={b.name} style={{ marginBottom: 10 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 6, marginBottom: 6 }}>
               <AppText variant="rowTitle" style={styles.bleedingName}>{b.name}</AppText>
               <ArabicText size={18}>{b.arabic}</ArabicText>
             </View>
@@ -144,7 +144,7 @@ export default function WomenGuidanceScreen({
 
         {WOMENS_FIQH_RESOURCES.map((res) => (
           <PremiumCard key={res.id} style={{ marginBottom: 10 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
               <AppText variant="rowTitle" style={styles.resourceTitle}>{res.title}</AppText>
               <View style={[styles.catBadge, { borderColor: tokens.cardBorder }]}>
                 <AppText variant="caption" highlight style={styles.catBadgeText}>{res.category}</AppText>

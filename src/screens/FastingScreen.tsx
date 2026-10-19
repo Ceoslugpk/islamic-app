@@ -625,7 +625,7 @@ function FastingScreen({
                 padded
               >
                 <View style={styles.qadaSectionHeader}>
-                  <View style={{ width: '100%', minWidth: 0 }}>
+                  <View style={{ flex: 1, minWidth: 140 }}>
                     <AppText variant="eyebrow" highlight style={styles.qadaSectionEyebrow}>
                       {t('Obligatory Makeup')}
                     </AppText>
@@ -1386,6 +1386,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
   },
   qadaSectionEyebrow: {

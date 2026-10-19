@@ -1101,6 +1101,7 @@ const styles = StyleSheet.create({
   },
   resultsActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginTop: 14,
   },

@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../lib/theme';
 import { fontRoles } from '../../theme/tokens';
-import { getCurrentLanguage } from '../../lib/i18n';
+import { getCurrentLanguage, isRtlLanguage } from '../../lib/i18n';
 import {
   TypographyScript,
   detectScriptFromContent,
@@ -173,6 +173,9 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
   const currentLang = getCurrentLanguage();
   const textContent = extractString(children);
   const script = detectScriptFromContent(textContent, currentLang);
+  const isRtlLocale = typeof isRtlLanguage === 'function'
+    ? isRtlLanguage(currentLang)
+    : (currentLang === 'ur' || currentLang === 'ar' || currentLang === 'ps');
 
   let resolvedColor: string;
   if (tone === 'danger') {
@@ -238,6 +241,17 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
         minimumLineHeight,
       )
     : undefined;
+
+  const defaultTextAlign = (isRtlLocale || isTallScript) ? 'right' : 'left';
+  const defaultWritingDirection = variant === 'numeral'
+    ? 'ltr'
+    : (isTallScript ? 'rtl' : (isRtlLocale ? (script === 'latin' ? 'ltr' : 'rtl') : 'ltr'));
+
+  const alignmentStyle: TextStyle = {
+    textAlign: flattenedStyle?.textAlign ?? defaultTextAlign,
+    writingDirection: flattenedStyle?.writingDirection ?? defaultWritingDirection,
+  };
+
   const scriptStyle: TextStyle | undefined = isTallScript ? {
     fontFamily: /^(Amiri|NotoNaskhArabic|NotoNastaliqUrdu)_/.test(flattenedStyle?.fontFamily ?? '')
       ? flattenedStyle?.fontFamily
@@ -275,6 +289,7 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
         androidFontPadding,
         glyphPaddingStyle,
         { color: resolvedColor },
+        alignmentStyle,
         style,
         scriptStyle,
         safeLineHeight === undefined ? undefined : { lineHeight: safeLineHeight },

@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
     borderWidth: cardTokens.borderWidth,
     borderRadius: 22,
     paddingHorizontal: 14,
-    minHeight: 42,
+    minHeight: 44,
     marginBottom: 8,
   },
   searchIcon: {
@@ -461,6 +461,7 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginBottom: 14,
   },
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
     borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 0,
+    minWidth: 68,
   },
   filterTabText: {
     fontFamily: 'Manrope_600SemiBold',

@@ -462,6 +462,7 @@ const styles = StyleSheet.create({
   planCardFooter: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 12,
   },
   percentText: {
@@ -493,6 +494,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     overflow: 'hidden',
+    minWidth: 80,
   },
   progressBarFill: {
     height: '100%',

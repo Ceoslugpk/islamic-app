@@ -36,6 +36,7 @@ function Badge({ label }: BadgeProps) {
     <Chip
       label={t(label)}
       selected={false}
+      interactive={false}
       style={{
         minHeight: 26,
         paddingHorizontal: 8,

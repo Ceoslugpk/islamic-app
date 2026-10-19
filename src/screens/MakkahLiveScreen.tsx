@@ -220,6 +220,7 @@ const styles = StyleSheet.create({
   content: {},
   statusBar: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
@@ -263,6 +264,7 @@ const styles = StyleSheet.create({
   },
   webControls: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginTop: 6,
     marginBottom: 16,

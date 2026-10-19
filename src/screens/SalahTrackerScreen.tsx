@@ -10,7 +10,7 @@ import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeTokens } from '../theme/tokens';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
@@ -269,7 +269,7 @@ export default function SalahTrackerScreen({
                         </View>
                       </View>
 
-                      <AppText variant="rowTitle" style={styles.prayerTime}>
+                      <AppText variant="rowTitle" style={[styles.prayerTime, { textAlign: isRTL() ? 'left' : 'right' }]}>
                         {formatted}
                       </AppText>
                     </TouchableOpacity>

@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, View, Platform } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { parseTajweedAny, TajweedRule, TAJWEED_RULES, TajweedSpan } from '../lib/tajweed';
+import { AppText } from './ui/AppText';
 
 /**
  * Renders islamic.app tajweed HTML with rule colors.
@@ -29,7 +30,7 @@ export function TajweedText({
       ? text.replace(/<span class=end>[^<]*<\/span>/g, '').replace(/<end[^>]*\/?>/g, '').trim()
       : text;
   const spans: TajweedSpan[] = parseTajweedAny(cleanText);
-  const minimumLineHeight = Math.ceil(size * 1.8);
+  const minimumLineHeight = Math.ceil(size * 1.8); // Math.round(size * 1.8)
   const resolvedLineHeight = Math.max(lineHeight ?? 0, minimumLineHeight);
   const resolvedFamily = fontFamily ?? 'Amiri_400Regular';
 
@@ -97,8 +98,8 @@ export function TajweedLegend({ compact = false }: { compact?: boolean }) {
         <View key={rule} style={[styles.legendRow, compact && styles.legendRowCompact]}>
           <View style={[styles.legendDot, { backgroundColor: info.color }]} />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.legendLabel, { color: colors.textPrimary }]}>{info.label}</Text>
-            {!compact && <Text style={[styles.legendHint, { color: colors.textMuted }]}>{info.hint}</Text>}
+            <AppText variant="rowTitle" style={[styles.legendLabel, { color: colors.textPrimary }]}>{info.label}</AppText>
+            {!compact && <AppText variant="caption" style={[styles.legendHint, { color: colors.textMuted }]}>{info.hint}</AppText>}
           </View>
         </View>
       ))}

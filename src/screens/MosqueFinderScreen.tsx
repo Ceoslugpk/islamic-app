@@ -1058,12 +1058,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   radiusLabel: {
     fontSize: 12.5,
   },
   radiusPills: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
   },
   radiusPill: {

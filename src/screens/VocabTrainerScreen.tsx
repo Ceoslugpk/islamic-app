@@ -276,7 +276,7 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
           </PremiumCard>
 
           {/* Tier filter */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterRow, hScrollRTLStyle()]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={[styles.filterRow, hScrollRTLStyle()]}>
             {[
               { id: null, label: t('All') },
               { id: 'daily' as const, label: t("Today's Set") },
@@ -563,6 +563,7 @@ const styles = StyleSheet.create({
   },
   dailyFooter: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginTop: 12,
     justifyContent: 'center',

@@ -588,6 +588,7 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0 }}
             contentContainerStyle={[styles.tabsScroll, hScrollRTLStyle()]}
           >
             {(
@@ -994,6 +995,7 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
+                  style={{ flexGrow: 0 }}
                   contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
                 >
                   {collectionHistory.map((item) => (
@@ -1202,6 +1204,7 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
+                  style={{ flexGrow: 0 }}
                   contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
                 >
                   {bookHistory.map((item) => (

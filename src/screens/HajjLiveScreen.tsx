@@ -108,6 +108,9 @@ export default function HajjLiveScreen({
           <Chip
             label={isHajjSeason ? t('HAJJ SEASON ACTIVE · 8–13 DHU AL-HIJJAH') : `${t('Today')}: ${currentHijriString}`}
             selected={isHajjSeason}
+            interactive={false}
+            numberOfLines={0}
+            style={styles.seasonChip}
           />
         </View>
 
@@ -218,11 +221,24 @@ export default function HajjLiveScreen({
           },
         ].map((site) => (
           <PremiumCard key={site.title} style={{ marginBottom: 12 }} contentStyle={{ padding: 16 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <AppText variant="rowTitle" style={[styles.siteName, { flex: 1, marginEnd: 8 }]}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+              <AppText variant="rowTitle" style={[styles.siteName, { flex: 1, minWidth: 140, marginEnd: 8 }]}>
                 {site.title}
               </AppText>
-              <Chip label={site.badge} selected={false} style={{ height: 26, paddingHorizontal: 8 }} />
+              <View
+                style={[
+                  styles.siteBadge,
+                  {
+                    backgroundColor: tokens.ringFill,
+                    borderColor: tokens.cardBorder,
+                  },
+                ]}
+                accessibilityRole="text"
+              >
+                <AppText variant="caption" tone="faint" style={styles.siteBadgeText}>
+                  {site.badge}
+                </AppText>
+              </View>
             </View>
             <AppText variant="subtitle" style={styles.siteDesc}>
               {site.desc}
@@ -254,7 +270,12 @@ const styles = StyleSheet.create({
   content: {},
   seasonBanner: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     marginBottom: 8,
+  },
+  seasonChip: {
+    maxWidth: '100%',
+    paddingVertical: 6,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -325,13 +346,14 @@ const styles = StyleSheet.create({
   },
   webControls: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
     marginVertical: 12,
   },
   controlBtn: {
     flex: 1,
     minHeight: 44,
-    minWidth: 0,
+    minWidth: 120,
   },
   cardLead: {
     fontFamily: 'Manrope_600SemiBold',
@@ -355,6 +377,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12.5,
     lineHeight: 18,
+  },
+  siteBadge: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    minHeight: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  siteBadgeText: {
+    fontFamily: 'Manrope_600SemiBold',
+    fontSize: 11,
   },
   sermonArabic: {
     fontSize: 17,

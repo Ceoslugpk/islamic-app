@@ -550,6 +550,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
+              style={{ flexGrow: 0 }}
               contentContainerStyle={[styles.recentChipsScroll, hScrollRTLStyle()]}
             >
               {searchHistory.map((item) => (
@@ -855,9 +856,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   cardShareBtn: {
-    padding: 4,
+    padding: 8,
     flexShrink: 0,
     minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   verseTag: {
     flexDirection: 'row',

@@ -499,6 +499,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
   },
   summaryCard: {
+    marginTop: 16,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 12,

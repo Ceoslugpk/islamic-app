@@ -8,6 +8,7 @@ import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
 import { Hairline } from '../components/Hairline';
+import { isRTL } from '../lib/i18n';
 import { buildWeeklySummary, WeeklySummary } from '../lib/weeklySummary';
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
   const { t } = useTranslation();
   const { tokens } = useThemeTokens();
+  const isRtl = isRTL();
   const [summary, setSummary] = useState<WeeklySummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -139,7 +141,7 @@ export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
                   <AppText variant="numeral" style={styles.cardStatValue}>{summary.totalAyahsRead}</AppText>
                   <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('ayahs read this week')}</AppText>
                 </View>
-                <View style={[styles.rowRight, { flexShrink: 0 }]}>
+                <View style={[styles.rowRight, { flexShrink: 0, alignItems: isRtl ? 'flex-start' : 'flex-end' }]}>
                   <AppText variant="numeral" style={styles.cardStatValue}>{summary.daysRead}</AppText>
                   <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('days active')}</AppText>
                 </View>
@@ -167,7 +169,7 @@ export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
                   <AppText variant="numeral" style={styles.cardStatValue}>{summary.salahDays}</AppText>
                   <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('days with salah logged')}</AppText>
                 </View>
-                <View style={[styles.rowRight, { flexShrink: 0 }]}>
+                <View style={[styles.rowRight, { flexShrink: 0, alignItems: isRtl ? 'flex-start' : 'flex-end' }]}>
                   <AppText variant="numeral" style={styles.cardStatValue}>{summary.salahStreak}</AppText>
                   <AppText variant="caption" tone="faint" style={styles.cardStatLabel}>{t('day streak')}</AppText>
                 </View>
@@ -322,9 +324,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  rowRight: {
-    alignItems: 'flex-end',
-  },
+  rowRight: {},
   iconWrap: {
     width: 38,
     height: 38,

@@ -2659,8 +2659,7 @@ const styles = StyleSheet.create({
   },
   missionTabScroll: {
     marginTop: 7.8,
-    height: 20.4,
-    minHeight: 20.4,
+    minHeight: 44,
     flexGrow: 0,
     overflow: 'visible',
   },
@@ -2668,7 +2667,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4.4,
-    minHeight: 20.4,
+    minHeight: 44,
   },
   missionTab: {
     minHeight: 44,

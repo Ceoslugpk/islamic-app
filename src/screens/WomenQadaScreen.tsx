@@ -480,13 +480,14 @@ const styles = StyleSheet.create({
   },
   qadaStatsRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginBottom: 4,
   },
   qadaStatBox: {
     flex: 1,
     borderRadius: cardTokens.borderRadius,
-    minWidth: 0,
+    minWidth: 90,
   },
   qadaStatBoxContent: {
     padding: 14,
@@ -524,8 +525,10 @@ const styles = StyleSheet.create({
   },
   labelRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 6,
     marginTop: 2,
   },
   inputLabel: {
@@ -556,6 +559,7 @@ const styles = StyleSheet.create({
   },
   formBtnRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: 8,
     marginTop: 6,

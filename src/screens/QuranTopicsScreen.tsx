@@ -15,7 +15,7 @@ import { PremiumCard } from '../components/ui';
 import { ArabicText } from '../components/ArabicText';
 import { Hairline } from '../components/Hairline';
 import { QURAN_TOPICS, QuranTopic, TopicVerse } from '../lib/quranTopics';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 
 interface QuranTopicsScreenProps {
   onBack?: () => void;
@@ -108,7 +108,7 @@ export default function QuranTopicsScreen({
               <AppText variant="sectionTitle" style={styles.topicTitle} numberOfLines={2}>
                 {t(item.title)}
               </AppText>
-              <ArabicText size={16} style={[styles.topicArabicTitle, { color: tokens.arabicName }]}>
+              <ArabicText size={16} align={isRTL() ? 'right' : 'left'} style={[styles.topicArabicTitle, { color: tokens.arabicName }]}>
                 {item.arabicTitle}
               </ArabicText>
             </View>
@@ -234,7 +234,6 @@ const styles = StyleSheet.create({
   },
   topicArabicTitle: {
     marginTop: 2,
-    textAlign: 'left',
   },
   topicActionWrap: {
     flexDirection: 'row',

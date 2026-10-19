@@ -160,6 +160,7 @@ export default function LocationScreen({
                 <Chip
                   label={isAuto ? t('GPS Auto') : t('Manual')}
                   selected={isAuto}
+                  interactive={false}
                   style={{ minHeight: 26, paddingHorizontal: 8 }}
                 />
                 {isAuto && locStatus === 'denied' && (
@@ -404,6 +405,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 8,
   },
   modeBadge: {
@@ -424,7 +427,6 @@ const styles = StyleSheet.create({
   },
   activeCity: {
     fontSize: 26,
-    lineHeight: 32,
   },
   activeCoords: {
     fontSize: 12,

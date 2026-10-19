@@ -23,8 +23,10 @@ function matchesLanguageTag(code: string, language: string): boolean {
 
 export function isRtlLanguage(lang: AppLanguage | string | null | undefined): boolean {
   if (!lang) return false;
-  const normalized = lang.toLowerCase();
-  return ['ur', 'ar', 'ps'].some((language) => matchesLanguageTag(normalized, language));
+  const normalized = lang.toLowerCase().trim();
+  return ['ur', 'ar', 'ps'].some((language) => matchesLanguageTag(normalized, language)) ||
+    ['ckb', 'fa', 'ug', 'he', 'sd', 'dv'].some((language) => matchesLanguageTag(normalized, language)) ||
+    normalized === 'ku-arab';
 }
 
 export function isAppLanguage(value: unknown): value is AppLanguage {

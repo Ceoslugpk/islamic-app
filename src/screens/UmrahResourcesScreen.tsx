@@ -206,6 +206,7 @@ export default function UmrahResourcesScreen({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
           contentContainerStyle={[styles.tabScroll, hScrollRTLStyle()]}
         >
           {[
