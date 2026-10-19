@@ -232,7 +232,7 @@ const AyahCardRowComponent = ({
             : isNoteComposerActive
             ? accentColor
             : 'transparent',
-          borderLeftWidth: isNoteComposerActive ? 3 : 1,
+          borderStartWidth: isNoteComposerActive ? 3 : 1,
         },
       ]}
       onLayout={handleCardLayout}

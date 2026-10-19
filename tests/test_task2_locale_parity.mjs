@@ -156,7 +156,25 @@ for (const language of newAppLanguages) {
 }
 assert(i18nSource.includes("['ur', 'ar', 'ps'].some"), 'Pashto, Urdu and Arabic share RTL direction handling');
 assert(i18nSource.includes('document.documentElement.lang = getCurrentLanguage()'), 'Web document language follows the selected LTR or RTL app language');
-console.log('  ✓ Bengali, Malay, Tamil, Indonesian and Pashto are fully registered with localized UI labels');
+// 8. Directional arrow contracts: RTL drill-downs point leftwards (←), LTR Hajj steps point rightwards (→)
+const psLocale = JSON.parse(fs.readFileSync(path.join(LOCALES_DIR, 'ps.json'), 'utf8'));
+assert(ur['Open full Qada ledger →'].endsWith('←'), 'Urdu Open full Qada ledger points leftward (←)');
+assert(ur['Browse Books →'].endsWith('←'), 'Urdu Browse Books points leftward (←)');
+assert(ur['Read full hadith →'].endsWith('←'), 'Urdu Read full hadith points leftward (←)');
+assert(ur['Tap for full text & actions →'].endsWith('←'), 'Urdu Tap for full text points leftward (←)');
+assert(ur['View hadiths →'].endsWith('←'), 'Urdu View hadiths points leftward (←)');
+assert(psLocale['Open full Qada ledger →'].endsWith('←'), 'Pashto Open full Qada ledger points leftward (←)');
+assert(psLocale['Browse Books →'].endsWith('←'), 'Pashto Browse Books points leftward (←)');
+assert(psLocale['Read full hadith →'].endsWith('←'), 'Pashto Read full hadith points leftward (←)');
+assert(psLocale['Tap for full text & actions →'].endsWith('←'), 'Pashto Tap for full text points leftward (←)');
+assert(psLocale['View hadiths →'].endsWith('←'), 'Pashto View hadiths points leftward (←)');
+
+assert(hi['Makkah Residence → Tent City of Mina'].includes('→'), 'Hindi Hajj itinerary points rightward (→)');
+assert(!hi['Makkah Residence → Tent City of Mina'].includes('←'), 'Hindi Hajj itinerary does not contain backwards arrow (←)');
+
+const hifzSrc = fs.readFileSync(path.join(ROOT, 'src/screens/HifzPracticeScreen.tsx'), 'utf8');
+assert(hifzSrc.includes('name={revealed ? getForwardIcon() :'), 'HifzPracticeScreen uses directional getForwardIcon when revealed');
+console.log('  ✓ Directional arrow contracts verified across Urdu, Pashto, Hindi, and Hifz controls');
 
 console.log('\n--------------------------------------------------------');
 if (failures > 0) {

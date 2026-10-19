@@ -41,7 +41,10 @@ export function detectScriptFromContent(
   if (currentLanguage === 'ur' || currentLanguage?.startsWith('ur-') || currentLanguage?.startsWith('ur_')) {
     return 'urdu';
   }
-  if (currentLanguage === 'ar' || currentLanguage?.startsWith('ar-') || currentLanguage?.startsWith('ar_')) {
+  if (
+    currentLanguage === 'ar' || currentLanguage?.startsWith('ar-') || currentLanguage?.startsWith('ar_') ||
+    currentLanguage === 'ps' || currentLanguage?.startsWith('ps-') || currentLanguage?.startsWith('ps_')
+  ) {
     return 'arabic';
   }
   if (currentLanguage === 'hi' || currentLanguage?.startsWith('hi-') || currentLanguage?.startsWith('hi_')) {

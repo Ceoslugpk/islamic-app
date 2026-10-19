@@ -12,7 +12,8 @@ import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
 import { formatDuration } from '../lib/formatDuration';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
+import { calculateTimelineRatio } from '../lib/rtl';
 import { AppText } from './ui/AppText';
 
 interface NowPlayingHeroCardProps {
@@ -62,8 +63,7 @@ export function NowPlayingHeroCard({
   const handleTrackPress = useCallback(
     (e: any) => {
       if (progressWidth <= 0 || status.durationMillis <= 0) return;
-      const x = e.nativeEvent.locationX;
-      const ratio = Math.max(0, Math.min(1, x / progressWidth));
+      const ratio = calculateTimelineRatio(e.nativeEvent.locationX, progressWidth, isRTL());
       const targetMillis = Math.round(ratio * status.durationMillis);
       onSeek(targetMillis);
     },
@@ -84,7 +84,7 @@ export function NowPlayingHeroCard({
           if (touchX === null) return;
           if (progressWidth <= 0 || status.durationMillis <= 0) return;
           const x = e.nativeEvent.locationX;
-          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          const ratio = calculateTimelineRatio(x, progressWidth, isRTL());
           progressAnim.setValue(ratio);
           setTouchX(x);
         },
@@ -95,7 +95,7 @@ export function NowPlayingHeroCard({
             return;
           }
           const x = e.nativeEvent.locationX;
-          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          const ratio = calculateTimelineRatio(x, progressWidth, isRTL());
           const positionMillis = Math.round(ratio * status.durationMillis);
           onSeek(positionMillis);
           setTouchX(null);
@@ -504,6 +504,7 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 3,
+    alignSelf: 'flex-start',
   },
   timeRow: {
     flexDirection: 'row',

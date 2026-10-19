@@ -84,6 +84,7 @@ assert.equal(detectScriptFromContent('اسلامک', 'ur'), 'urdu', 'Urdu conten
 assert.equal(detectScriptFromContent('नमस्ते', 'hi'), 'hindi', 'Devanagari content must resolve to hindi script');
 assert.equal(detectScriptFromContent(null, 'ur'), 'urdu', 'Empty content with urdu lang must resolve to urdu');
 assert.equal(detectScriptFromContent(null, 'ar'), 'arabic', 'Empty content with arabic lang must resolve to arabic');
+assert.equal(detectScriptFromContent(null, 'ps'), 'arabic', 'Empty content with Pashto lang must resolve to arabic');
 assert.equal(detectScriptFromContent(null, 'hi'), 'hindi', 'Empty content with hindi lang must resolve to hindi');
 
 // Canonical typography tokens check
@@ -143,6 +144,14 @@ assert.ok(
   appTextSource.includes("variant === 'numeral'") &&
   appTextSource.includes('paddingBottom: 2'),
   'AppText must assign paddingBottom: 2 for numerals'
+);
+assert.ok(
+  appTextSource.includes("textAlign: flattenedStyle?.textAlign ?? 'right'"),
+  "AppText must preserve caller explicit textAlign and default to 'right' for Arabic/Urdu"
+);
+assert.ok(
+  !appTextSource.includes("textAlign: flattenedStyle?.textAlign === 'center' ? 'center' : 'right'"),
+  'AppText must not forcefully override caller explicit textAlign'
 );
 console.log('  ✓ AppText script-aware lineHeight, includeFontPadding, maxMultiplier, and glyph padding verified');
 

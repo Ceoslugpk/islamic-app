@@ -108,6 +108,25 @@ const animPattern = fs.readFileSync(path.join(ROOT, 'src/components/AnimatedPatt
 assert(animPattern.includes('borderLeftWidth') && animPattern.includes('borderRightWidth'),
   'AnimatedPattern.tsx preserves borderLeftWidth/borderRightWidth for geometric pattern triangles');
 
+// 4. Logical leading-edge accent borders in cards (NotesScreen, WomenCycleScreen, AyahCardRow)
+const notesSrc = fs.readFileSync(path.join(ROOT, 'src/screens/NotesScreen.tsx'), 'utf8');
+assert(notesSrc.includes('borderStartColor: tokens.goldBorder') && notesSrc.includes('borderStartWidth: 3'),
+  'NotesScreen.tsx uses logical borderStartColor and borderStartWidth for note accent stripe');
+assert(!notesSrc.includes('borderLeftWidth: 3'),
+  'NotesScreen.tsx must not use physical borderLeftWidth for note accent stripe');
+
+const cycleSrc = fs.readFileSync(path.join(ROOT, 'src/screens/WomenCycleScreen.tsx'), 'utf8');
+assert(cycleSrc.includes('borderStartWidth: 4'),
+  'WomenCycleScreen.tsx uses logical borderStartWidth: 4 for active hero card stripe');
+assert(!cycleSrc.includes('borderLeftWidth: 4'),
+  'WomenCycleScreen.tsx must not use physical borderLeftWidth: 4 for active hero card stripe');
+
+const ayahRowSrc = fs.readFileSync(path.join(ROOT, 'src/components/AyahCardRow.tsx'), 'utf8');
+assert(ayahRowSrc.includes('borderStartWidth: isNoteComposerActive ? 3 : 1'),
+  'AyahCardRow.tsx uses logical borderStartWidth for active note composer border stripe');
+assert(!ayahRowSrc.includes('borderLeftWidth: isNoteComposerActive ? 3 : 1'),
+  'AyahCardRow.tsx must not use physical borderLeftWidth for active note composer border stripe');
+
 console.log('\n--------------------------------------------------------');
 if (failures > 0) {
   console.error(`FAILED: ${failures} assertions failed.`);

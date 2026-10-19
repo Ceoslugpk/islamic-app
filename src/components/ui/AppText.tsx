@@ -225,8 +225,8 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
     fontStyle: 'normal',
     letterSpacing: 0,
     textTransform: 'none',
-    writingDirection: 'rtl',
-    textAlign: flattenedStyle?.textAlign === 'center' ? 'center' : 'right',
+    writingDirection: flattenedStyle?.writingDirection ?? 'rtl',
+    textAlign: flattenedStyle?.textAlign ?? 'right',
   } : /^(Amiri|NotoNaskhArabic|NotoNastaliqUrdu)_/.test(flattenedStyle?.fontFamily ?? '')
     ? { fontFamily: typographyStyle.fontFamily, writingDirection: 'ltr' }
     : undefined;

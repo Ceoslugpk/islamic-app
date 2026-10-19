@@ -247,7 +247,7 @@ export function HifzPracticeScreen({ surahNumber, onBack }: Props) {
                     {revealed ? t('Next Ayah') : t('Peek')}
                   </AppText>
                   <Ionicons
-                    name={revealed ? 'chevron-forward' : 'eye-outline'}
+                    name={revealed ? getForwardIcon() : 'eye-outline'}
                     size={18}
                     color={tokens.onGold}
                   />

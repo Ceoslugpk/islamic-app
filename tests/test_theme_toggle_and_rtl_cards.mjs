@@ -23,8 +23,10 @@ assert.ok(header.includes('accessibilityState={{ selected: mode === \'ink\' }}')
 assert.ok(read('src/components/layout/layout.constants.ts').includes('HEADER_ROW_HEIGHT = 48'), 'Header row must grow with the larger action buttons');
 
 const home = read('src/screens/HomeScreen.tsx');
-assert.ok(home.includes("alignSelf: isRTL() ? 'flex-end' : 'flex-start'"), 'Home prayer progress fill must grow from the RTL start edge');
-assert.ok(home.includes("right: isRTL() ? `${Math.round(progress * 100)}%` : undefined"), 'Home prayer progress knob must follow the RTL start edge');
+assert.ok(home.includes("alignSelf: 'flex-start'"), 'Home prayer progress fill must anchor to the logical start edge');
+assert.ok(home.includes("start: `${Math.round(progress * 100)}%`"), 'Home prayer progress knob must follow the logical start edge');
+assert.ok(home.includes('marginStart: -4.5'), 'Home prayer progress knob must center with negative marginStart');
+assert.ok(!home.includes("alignSelf: isRTL() ? 'flex-end' : 'flex-start'"), 'Home prayer progress must not invert Yoga start alignment');
 
 const library = read('src/screens/LibraryScreen.tsx');
 assert.ok(library.includes('paddingEnd: heroTextPadding'), 'Library hero text must reserve the decorative book area at logical end');

@@ -14,7 +14,8 @@ import { useTheme } from '../lib/theme';
 import { iconSizes } from '../lib/iconMap';
 import { CurrentPlayback, PlaybackStatus } from '../lib/quranAudio';
 import { formatProgress } from '../lib/formatDuration';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
+import { calculateTimelineRatio } from '../lib/rtl';
 import { AppText } from './ui/AppText';
 
 interface AudioMiniPlayerProps {
@@ -155,8 +156,7 @@ export function AudioMiniPlayer({
   const handleProgressPress = useCallback(
     (e: any) => {
       if (progressWidth <= 0 || status.durationMillis <= 0) return;
-      const x = e.nativeEvent.locationX;
-      const ratio = Math.max(0, Math.min(1, x / progressWidth));
+      const ratio = calculateTimelineRatio(e.nativeEvent.locationX, progressWidth, isRTL());
       const positionMillis = Math.round(ratio * status.durationMillis);
       onSeek(positionMillis);
     },
@@ -177,7 +177,7 @@ export function AudioMiniPlayer({
           if (touchX === null) return;
           if (progressWidth <= 0 || status.durationMillis <= 0) return;
           const x = e.nativeEvent.locationX;
-          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          const ratio = calculateTimelineRatio(x, progressWidth, isRTL());
           progressAnim.setValue(ratio);
           setTouchX(x);
         },
@@ -188,7 +188,7 @@ export function AudioMiniPlayer({
             return;
           }
           const x = e.nativeEvent.locationX;
-          const ratio = Math.max(0, Math.min(1, x / progressWidth));
+          const ratio = calculateTimelineRatio(x, progressWidth, isRTL());
           const positionMillis = Math.round(ratio * status.durationMillis);
           onSeek(positionMillis);
           progressAnim.setValue(status.positionMillis / Math.max(1, status.durationMillis));
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     position: 'absolute',
-    left: 0,
+    start: 0,
     top: 0,
     bottom: 0,
   },

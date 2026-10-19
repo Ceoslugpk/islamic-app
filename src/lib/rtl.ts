@@ -18,6 +18,8 @@ export function hScrollRTLStyle(): StyleProp<ViewStyle> | null {
 
 export const isRTL = I18nManager.isRTL;
 
+export { calculateTimelineRatio } from './timelineRatio';
+
 /**
  * Arabic / Perso-Arabic / Sorani script Unicode ranges.
  * Covers Arabic, Arabic Supplement, Arabic Extended-A, and Arabic Presentation Forms.

@@ -2884,7 +2884,7 @@ export default function QuranReaderScreen({
           </AppText>
           {currentPageData?.ayahs?.length ? (
             <AppText variant="caption" style={styles.mushafPageBadgeSub}>
-              {`Juz ${currentPageData.juz ?? currentPageData.ayahs.find((a) => typeof a.juz === 'number')?.juz ?? '—'} • Hizb ${Math.ceil((currentPageData.hizbQuarter ?? currentPageData.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter ?? 0) / 4)}`}
+              {`${t('Juz')} ${currentPageData.juz ?? currentPageData.ayahs.find((a) => typeof a.juz === 'number')?.juz ?? '—'} • ${t('Hizb')} ${Math.ceil((currentPageData.hizbQuarter ?? currentPageData.ayahs.find((a) => typeof a.hizbQuarter === 'number')?.hizbQuarter ?? 0) / 4)}`}
             </AppText>
           ) : null}
         </View>
@@ -3762,13 +3762,13 @@ export default function QuranReaderScreen({
                 {/* Header strip: Juz, Hizb, Surahs, Page number */}
                 <View style={[styles.mushafPageHeaderStrip, { borderBottomColor: tokens.cardBorder }]}>
                   <AppText variant="caption" style={styles.mushafPageHeaderLeft}>
-                    {`Juz ${mushafPageJuz ?? '—'} • Hizb ${Math.ceil((mushafPageHizbQuarter ?? 0) / 4)}`}
+                    {`${t('Juz')} ${mushafPageJuz ?? '—'} • ${t('Hizb')} ${Math.ceil((mushafPageHizbQuarter ?? 0) / 4)}`}
                   </AppText>
                   <AppText variant="rowTitle" style={styles.mushafPageHeaderCenter}>
                     {mushafPageSurahNames}
                   </AppText>
                   <AppText variant="caption" style={styles.mushafPageHeaderRight}>
-                    {`Page ${displayedMushafPage}`}
+                    {`${t('Page')} ${displayedMushafPage}`}
                   </AppText>
                 </View>
 
@@ -4383,7 +4383,7 @@ export default function QuranReaderScreen({
               chip={
                 selectedJuz ? (
                   <View style={[styles.toolsMenuJuzChip, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
-                    <AppText variant="caption" highlight style={styles.toolsMenuJuzText}>{`Juz ${selectedJuz}`}</AppText>
+                    <AppText variant="caption" highlight style={styles.toolsMenuJuzText}>{`${t('Juz')} ${selectedJuz}`}</AppText>
                   </View>
                 ) : undefined
               }

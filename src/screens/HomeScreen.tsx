@@ -1148,7 +1148,7 @@ const HomeScreen = React.memo(function HomeScreen({
                       {
                         backgroundColor: homeTokens.gold,
                         width: `${Math.round(progress * 100)}%`,
-                        alignSelf: isRTL() ? 'flex-end' : 'flex-start',
+                        alignSelf: 'flex-start',
                       },
                     ]}
                   />
@@ -1157,10 +1157,7 @@ const HomeScreen = React.memo(function HomeScreen({
                       styles.heroProgressKnob,
                       {
                         backgroundColor: homeTokens.gold,
-                        left: isRTL() ? undefined : `${Math.round(progress * 100)}%`,
-                        right: isRTL() ? `${Math.round(progress * 100)}%` : undefined,
-                        marginStart: isRTL() ? undefined : -4.5,
-                        marginEnd: isRTL() ? -4.5 : undefined,
+                        start: `${Math.round(progress * 100)}%`,
                       },
                     ]}
                   />
@@ -1893,6 +1890,7 @@ const styles = StyleSheet.create({
     height: 9,
     borderRadius: 4.5,
     top: -3,
+    marginStart: -4.5,
   },
   heroProgressLabelsRow: {
     flexDirection: 'row',

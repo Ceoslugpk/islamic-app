@@ -229,7 +229,7 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={styles.juzScrollView}
-                contentContainerStyle={styles.juzScroll}
+                contentContainerStyle={[styles.juzScroll, hScrollRTLStyle()]}
               >
                 {JUZ_LIST.slice(0, 10).map((j) => (
                   <Skeleton key={j} width={40} height={40} borderRadius={20} />

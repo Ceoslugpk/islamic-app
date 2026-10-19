@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   heroCardActive: {
-    borderLeftWidth: 4,
+    borderStartWidth: 4,
   },
   heroCardEmpty: {
     paddingBottom: 20,

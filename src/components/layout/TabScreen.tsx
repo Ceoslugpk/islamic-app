@@ -123,8 +123,10 @@ export const TabScrollView = forwardRef<ScrollView, ScrollViewProps>(
 
     const flat = StyleSheet.flatten(contentContainerStyle);
     const padH = flat?.paddingHorizontal;
-    const padL = flat?.paddingLeft ?? padH;
-    const padR = flat?.paddingRight ?? padH;
+    const padStart = flat?.paddingStart;
+    const padEnd = flat?.paddingEnd;
+    const padL = flat?.paddingLeft;
+    const padR = flat?.paddingRight;
 
     const headerMargin = useMemo(() => {
       const s: ViewStyle = {
@@ -133,11 +135,19 @@ export const TabScrollView = forwardRef<ScrollView, ScrollViewProps>(
       if (typeof padH === 'number' && padH > 0) {
         s.marginHorizontal = -padH;
       } else {
-        if (typeof padL === 'number' && padL > 0) s.marginLeft = -padL;
-        if (typeof padR === 'number' && padR > 0) s.marginRight = -padR;
+        if (typeof padStart === 'number' && padStart > 0) {
+          s.marginStart = -padStart;
+        } else if (typeof padL === 'number' && padL > 0) {
+          s.marginLeft = -padL;
+        }
+        if (typeof padEnd === 'number' && padEnd > 0) {
+          s.marginEnd = -padEnd;
+        } else if (typeof padR === 'number' && padR > 0) {
+          s.marginRight = -padR;
+        }
       }
       return s;
-    }, [padH, padL, padR]);
+    }, [padH, padStart, padEnd, padL, padR]);
 
     const injectedRefreshControl = useMemo(() => {
       if (!refreshControl || !React.isValidElement(refreshControl)) return refreshControl;
@@ -193,8 +203,10 @@ export const TabAnimatedScrollView = forwardRef<any, ScrollViewProps>(
 
     const flat = StyleSheet.flatten(contentContainerStyle);
     const padH = flat?.paddingHorizontal;
-    const padL = flat?.paddingLeft ?? padH;
-    const padR = flat?.paddingRight ?? padH;
+    const padStart = flat?.paddingStart;
+    const padEnd = flat?.paddingEnd;
+    const padL = flat?.paddingLeft;
+    const padR = flat?.paddingRight;
 
     const headerMargin = useMemo(() => {
       const s: ViewStyle = {
@@ -203,11 +215,19 @@ export const TabAnimatedScrollView = forwardRef<any, ScrollViewProps>(
       if (typeof padH === 'number' && padH > 0) {
         s.marginHorizontal = -padH;
       } else {
-        if (typeof padL === 'number' && padL > 0) s.marginLeft = -padL;
-        if (typeof padR === 'number' && padR > 0) s.marginRight = -padR;
+        if (typeof padStart === 'number' && padStart > 0) {
+          s.marginStart = -padStart;
+        } else if (typeof padL === 'number' && padL > 0) {
+          s.marginLeft = -padL;
+        }
+        if (typeof padEnd === 'number' && padEnd > 0) {
+          s.marginEnd = -padEnd;
+        } else if (typeof padR === 'number' && padR > 0) {
+          s.marginRight = -padR;
+        }
       }
       return s;
-    }, [padH, padL, padR]);
+    }, [padH, padStart, padEnd, padL, padR]);
 
     const injectedRefreshControl = useMemo(() => {
       if (!refreshControl || !React.isValidElement(refreshControl)) return refreshControl;
@@ -265,8 +285,10 @@ export function TabFlatList<T>(
 
   const flat = StyleSheet.flatten(contentContainerStyle);
   const padH = flat?.paddingHorizontal;
-  const padL = flat?.paddingLeft ?? padH;
-  const padR = flat?.paddingRight ?? padH;
+  const padStart = flat?.paddingStart;
+  const padEnd = flat?.paddingEnd;
+  const padL = flat?.paddingLeft;
+  const padR = flat?.paddingRight;
 
   const headerMargin = useMemo(() => {
     const s: ViewStyle = {
@@ -275,11 +297,19 @@ export function TabFlatList<T>(
     if (typeof padH === 'number' && padH > 0) {
       s.marginHorizontal = -padH;
     } else {
-      if (typeof padL === 'number' && padL > 0) s.marginLeft = -padL;
-      if (typeof padR === 'number' && padR > 0) s.marginRight = -padR;
+      if (typeof padStart === 'number' && padStart > 0) {
+        s.marginStart = -padStart;
+      } else if (typeof padL === 'number' && padL > 0) {
+        s.marginLeft = -padL;
+      }
+      if (typeof padEnd === 'number' && padEnd > 0) {
+        s.marginEnd = -padEnd;
+      } else if (typeof padR === 'number' && padR > 0) {
+        s.marginRight = -padR;
+      }
     }
     return s;
-  }, [padH, padL, padR]);
+  }, [padH, padStart, padEnd, padL, padR]);
 
   const combinedHeader = useMemo(() => {
     if (!header && !ListHeaderComponent) return null;

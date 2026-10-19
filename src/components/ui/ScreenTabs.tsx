@@ -10,6 +10,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, fontRoles } from '../../theme/tokens';
+import { hScrollRTLStyle } from '../../lib/rtl';
 import { AppText } from './AppText';
 
 export interface TabItem {
@@ -134,7 +135,7 @@ export function ScreenTabs({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollWrap}
+        contentContainerStyle={[styles.scrollWrap, hScrollRTLStyle()]}
       >
         {containerContent}
       </ScrollView>

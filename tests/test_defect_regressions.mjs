@@ -420,6 +420,93 @@ assert.ok(
 );
 console.log('  ✓ QuranReaderScreen readerBottomClearance and scroll owner geometry contract verified');
 
+// ---------------------------------------------------------------------------
+// 6. AUDIO TIMELINE SEEK DIRECTION & PROGRESS FILL (RTL/LTR)
+// ---------------------------------------------------------------------------
+console.log('\n--- 6. Audio Timeline Seek Direction & Progress Fill (RTL/LTR) ---');
+
+const { calculateTimelineRatio } = await import('../src/lib/timelineRatio.ts');
+
+// 6a. Production calculateTimelineRatio LTR contract
+assert.equal(calculateTimelineRatio(0, 200, false), 0, 'LTR: x=0 must be start (ratio 0)');
+assert.equal(calculateTimelineRatio(50, 200, false), 0.25, 'LTR: x=50/200 must be 0.25');
+assert.equal(calculateTimelineRatio(100, 200, false), 0.5, 'LTR: x=100/200 must be 0.5');
+assert.equal(calculateTimelineRatio(200, 200, false), 1, 'LTR: x=200 must be end (ratio 1)');
+assert.equal(calculateTimelineRatio(-10, 200, false), 0, 'LTR: negative x must clamp to 0');
+assert.equal(calculateTimelineRatio(300, 200, false), 1, 'LTR: overflow x must clamp to 1');
+
+// 6b. Production calculateTimelineRatio RTL contract
+assert.equal(calculateTimelineRatio(200, 200, true), 0, 'RTL: right edge (x=200) must be start (ratio 0)');
+assert.equal(calculateTimelineRatio(150, 200, true), 0.25, 'RTL: x=150/200 must be 0.25');
+assert.equal(calculateTimelineRatio(100, 200, true), 0.5, 'RTL: center must be 0.5');
+assert.equal(calculateTimelineRatio(0, 200, true), 1, 'RTL: left edge (x=0) must be end (ratio 1)');
+assert.equal(calculateTimelineRatio(300, 200, true), 0, 'RTL: right overflow must clamp to 0');
+assert.equal(calculateTimelineRatio(-10, 200, true), 1, 'RTL: left overflow must clamp to 1');
+
+// 6c. All three audio components must use calculateTimelineRatio and logical start fill
+const audioModalCode = fs.readFileSync('src/components/AudioPlayerModal.tsx', 'utf8');
+const audioMiniCode = fs.readFileSync('src/components/AudioMiniPlayer.tsx', 'utf8');
+const nowPlayingCode = fs.readFileSync('src/components/NowPlayingHeroCard.tsx', 'utf8');
+
+assert.ok(audioModalCode.includes('calculateTimelineRatio('), 'AudioPlayerModal must use calculateTimelineRatio');
+assert.ok(audioMiniCode.includes('calculateTimelineRatio('), 'AudioMiniPlayer must use calculateTimelineRatio');
+assert.ok(nowPlayingCode.includes('calculateTimelineRatio('), 'NowPlayingHeroCard must use calculateTimelineRatio');
+
+assert.ok(audioModalCode.includes('start: 0'), 'AudioPlayerModal progressFill must anchor to start: 0');
+assert.ok(audioMiniCode.includes('start: 0'), 'AudioMiniPlayer progressFill must anchor to start: 0');
+assert.ok(!audioModalCode.includes('left: 0,\n    borderRadius: 3'), 'AudioPlayerModal must not use physical left: 0 in progressFill');
+assert.ok(!audioMiniCode.includes('left: 0,\n    top: 0,\n    bottom: 0'), 'AudioMiniPlayer must not use physical left: 0 in progressFill');
+assert.ok(nowPlayingCode.includes("alignSelf: 'flex-start'"), 'NowPlayingHeroCard progressFill must anchor with alignSelf flex-start');
+
+console.log('  ✓ Audio timeline seek direction and progress fill verified in LTR & RTL');
+
+// ---------------------------------------------------------------------------
+// 7. HORIZONTAL SCROLLVIEW RTL BEHAVIOR
+// ---------------------------------------------------------------------------
+console.log('--- 7. Horizontal ScrollView RTL: ScreenTabs & QuranScreen ---');
+
+const screenTabsCode = fs.readFileSync('src/components/ui/ScreenTabs.tsx', 'utf8');
+const quranScreenCode = fs.readFileSync('src/screens/QuranScreen.tsx', 'utf8');
+
+assert.ok(
+  screenTabsCode.includes('contentContainerStyle={[styles.scrollWrap, hScrollRTLStyle()]}'),
+  'ScreenTabs must apply hScrollRTLStyle to scrollWrap for RTL start alignment'
+);
+assert.ok(
+  quranScreenCode.includes('contentContainerStyle={[styles.juzScroll, hScrollRTLStyle()]}'),
+  'QuranScreen skeleton juz scroll must apply hScrollRTLStyle'
+);
+assert.ok(
+  quranScreenCode.includes('styles.juzScroll') &&
+  quranScreenCode.includes('hScrollRTLStyle()') &&
+  /styles\.juzScroll[\s\S]*?hScrollRTLStyle\(\)/.test(quranScreenCode),
+  'QuranScreen live juz scroll must apply hScrollRTLStyle'
+);
+
+console.log('  ✓ Horizontal scroll RTL behavior verified for ScreenTabs and QuranScreen');
+
+// ---------------------------------------------------------------------------
+// 8. QURAN / MUSHAF METADATA LOCALIZATION
+// ---------------------------------------------------------------------------
+console.log('--- 8. Quran / Mushaf Metadata Localization ---');
+
+const quranReaderCode = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
+
+assert.ok(
+  quranReaderCode.includes("${t('Juz')} ${mushafPageJuz ?? '—'} • ${t('Hizb')} ${Math.ceil((mushafPageHizbQuarter ?? 0) / 4)}"),
+  'Mushaf header strip must localize Juz and Hizb via t()'
+);
+assert.ok(
+  quranReaderCode.includes("${t('Page')} ${displayedMushafPage}"),
+  'Mushaf header strip must localize Page label via t()'
+);
+assert.ok(
+  quranReaderCode.includes("${t('Juz')} ${currentPageData.juz"),
+  'Mushaf footer badge subtitle must localize Juz and Hizb via t()'
+);
+
+console.log('  ✓ Mushaf page header strip and footer badge metadata localization verified');
+
 console.log('\n========================================================');
 console.log('ALL DEFECT REGRESSION TESTS PASSED!');
 console.log('========================================================\n');

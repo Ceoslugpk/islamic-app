@@ -102,3 +102,16 @@ for (const tileSize of [24, 30, 32, 36, 37.5, 40, 44, 48]) {
 }
 assert.equal(renderToStaticMarkup(React.createElement(GeometricPattern)).includes('<svg'), false);
 console.log('✓ Single-path patterns preserve all 160 squares and 142 connectors at eight tile sizes');
+
+// TabScreen negative-margin compensation supports logical paddingStart/paddingEnd,
+// physical paddingLeft/paddingRight, and paddingHorizontal across all wrappers.
+const tabScreenSrc = fs.readFileSync('src/components/layout/TabScreen.tsx', 'utf8');
+const occurrences = (tabScreenSrc.match(/padStart = flat\?\.paddingStart/g) || []).length;
+assert.equal(occurrences, 3, 'TabScrollView, TabAnimatedScrollView, and TabFlatList must all support paddingStart');
+const endOccurrences = (tabScreenSrc.match(/padEnd = flat\?\.paddingEnd/g) || []).length;
+assert.equal(endOccurrences, 3, 'TabScrollView, TabAnimatedScrollView, and TabFlatList must all support paddingEnd');
+const marginStartOccurrences = (tabScreenSrc.match(/s\.marginStart = -padStart/g) || []).length;
+assert.equal(marginStartOccurrences, 3, 'All Tab wrappers must compensate with marginStart: -padStart');
+const marginEndOccurrences = (tabScreenSrc.match(/s\.marginEnd = -padEnd/g) || []).length;
+assert.equal(marginEndOccurrences, 3, 'All Tab wrappers must compensate with marginEnd: -padEnd');
+console.log('✓ TabScreen negative-margin compensation supports logical, physical, and horizontal padding across all wrappers');
