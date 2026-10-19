@@ -19,7 +19,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeTokens, getBrandLogoSource } from '../theme/tokens';
+import { useThemeTokens, getBrandLogoSource, fontRoles } from '../theme/tokens';
 import { getPillShadow } from '../lib/homeThemeTokens';
 import { isRTL, t } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
@@ -953,7 +953,16 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
                 placeholder={t('Search collections...')}
                 placeholderTextColor={tokens.muted}
                 accessibilityLabel={t('Search collections...')}
-                style={[styles.searchInput, { color: tokens.text }]}
+                style={[
+                  styles.searchInput,
+                  {
+                    color: tokens.text,
+                    fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_400Regular',
+                    textAlign: isRTL() ? 'right' : 'left',
+                    writingDirection: isRTL() ? 'rtl' : 'ltr',
+                    fontSize: isRTL() ? 15 : 14,
+                  },
+                ]}
                 clearButtonMode="while-editing"
                 returnKeyType="search"
                 onSubmitEditing={() => {
@@ -1152,7 +1161,16 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
                 placeholder={t('Search books by title or number...')}
                 placeholderTextColor={tokens.muted}
                 accessibilityLabel={t('Search books by title or number...')}
-                style={[styles.searchInput, { color: tokens.text }]}
+                style={[
+                  styles.searchInput,
+                  {
+                    color: tokens.text,
+                    fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_400Regular',
+                    textAlign: isRTL() ? 'right' : 'left',
+                    writingDirection: isRTL() ? 'rtl' : 'ltr',
+                    fontSize: isRTL() ? 15 : 14,
+                  },
+                ]}
                 clearButtonMode="while-editing"
                 returnKeyType="search"
                 onSubmitEditing={() => {
@@ -1234,9 +1252,9 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
             {booksError && (
               <EmptyState
                 icon="cloud-offline-outline"
-                title="Couldn't load books"
+                title={t("Couldn't load books")}
                 subtitle={booksError}
-                actionLabel="Retry"
+                actionLabel={t("Retry")}
                 onAction={() => openCollection(view.collection)}
               />
             )}
@@ -1294,9 +1312,9 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
                               {bookFilter.trim().length > 0 && filteredBooks.length === 0 && (
               <EmptyState
                 icon="search-outline"
-                title="No matches"
+                title={t("No matches")}
                 subtitle={`No books match "${bookFilter}"`}
-                actionLabel="Clear search"
+                actionLabel={t("Clear search")}
                 onAction={() => setBookFilter('')}
               />
             )}
@@ -1341,9 +1359,9 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
                 {hadithsError && (
                   <EmptyState
                     icon="cloud-offline-outline"
-                    title="Couldn't load hadiths"
+                    title={t("Couldn't load hadiths")}
                     subtitle={hadithsError}
-                    actionLabel="Retry"
+                    actionLabel={t("Retry")}
                     onAction={() => openBook(view.collection, view.book)}
                   />
                 )}
@@ -1719,7 +1737,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.75,
     borderRadius: 22,
     paddingHorizontal: 14,
-    minHeight: 42,
+    minHeight: 44,
     marginBottom: 10,
     gap: 8,
   },

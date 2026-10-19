@@ -8,7 +8,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens, fontRoles } from '../theme/tokens';
+import { useThemeTokens, fontRoles, cardTokens } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, Chip, PrimaryButton } from '../components/ui';
@@ -266,6 +266,7 @@ export default function UmrahGuideScreen({
         {/* Overview Card */}
         <PremiumCard
           style={styles.overviewCard}
+          borderRadius={cardTokens.borderRadius}
           padded
         >
           <View style={styles.overviewHeader}>
@@ -299,6 +300,7 @@ export default function UmrahGuideScreen({
                 },
                 !onOpenDuas && isLastStep && { marginBottom: 0 },
               ]}
+              borderRadius={cardTokens.borderRadius}
               padded
               contentStyle={styles.readingContent}
             >
@@ -441,7 +443,11 @@ export default function UmrahGuideScreen({
 
         {/* Duas screen redirect affordance */}
         {onOpenDuas && (
-          <PremiumCard style={styles.duaRedirectCard} padded>
+          <PremiumCard
+            style={styles.duaRedirectCard}
+            borderRadius={cardTokens.borderRadius}
+            padded
+          >
             <View style={[styles.duaRedirectRow, isCompact && styles.duaRedirectRowCompact]}>
               <View style={[styles.duaRedirectTextCol, isCompact && styles.duaRedirectTextColCompact]}>
                 <AppText variant="sectionTitle" style={styles.duaBannerTitle}>
@@ -492,18 +498,16 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   badgeText: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 11,
     letterSpacing: 0.5,
   },
   overviewTitle: {
-    fontFamily: fontRoles.title,
     fontSize: 20,
     marginBottom: 6,
   },
   overviewDesc: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
+    lineHeight: 20,
   },
   stepCard: {
     marginBottom: 16,
@@ -514,16 +518,15 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   stepNumCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   stepNumText: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
   },
   stepTitleCol: {
@@ -531,12 +534,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   stageName: {
-    fontFamily: fontRoles.eyebrow,
     fontSize: 10,
     letterSpacing: 1.2,
   },
   stepTitle: {
-    fontFamily: fontRoles.title,
     fontSize: 22,
     marginTop: 2,
   },
@@ -550,28 +551,26 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
   stepDescription: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
+    lineHeight: 20,
     marginTop: 4,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
     borderWidth: 1,
     marginTop: 10,
     maxWidth: '100%',
   },
   locationText: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     flexShrink: 1,
   },
   subSectionTitle: {
-    fontFamily: fontRoles.eyebrow,
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
@@ -586,8 +585,8 @@ const styles = StyleSheet.create({
   actionText: {
     flex: 1,
     minWidth: 0,
-    fontFamily: fontRoles.ui,
     fontSize: 14,
+    lineHeight: 20,
   },
   duasBlock: {
     marginTop: 8,
@@ -599,7 +598,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   duaTitle: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
     marginBottom: 4,
   },
@@ -609,23 +607,21 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   duaTranslit: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     fontStyle: 'italic',
     marginBottom: 4,
   },
   duaTrans: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
+    lineHeight: 20,
     marginBottom: 4,
   },
   duaRef: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
   },
   warningBlock: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     marginTop: 10,
   },
@@ -637,13 +633,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   warningTitle: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
     flexShrink: 1,
   },
   warningText: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
+    lineHeight: 20,
     marginBottom: 4,
   },
   duaRedirectCard: {
@@ -674,11 +669,9 @@ const styles = StyleSheet.create({
     paddingEnd: 8,
   },
   duaBannerTitle: {
-    fontFamily: fontRoles.title,
     fontSize: 15,
   },
   duaBannerSub: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     marginTop: 2,
   },

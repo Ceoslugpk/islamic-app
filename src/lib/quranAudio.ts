@@ -322,94 +322,102 @@ export function getAudioTranslationEdition(): Reciter {
   return VERIFIED_NON_ARABIC_EDITIONS[0];
 }
 
+let audioTranslationTail: Promise<void> = Promise.resolve();
+
 export async function setAudioTranslationEdition(identifierOrLangCode: string): Promise<void> {
-  let targetId = identifierOrLangCode;
-  const matchById = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.identifier === identifierOrLangCode);
-  if (matchById) {
-    targetId = matchById.identifier;
-  } else if (LANGUAGE_AUDIO_EDITIONS[identifierOrLangCode]) {
-    targetId = LANGUAGE_AUDIO_EDITIONS[identifierOrLangCode].identifier;
-  } else {
-    const matchByLang = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.language === identifierOrLangCode);
-    if (matchByLang) {
-      targetId = matchByLang.identifier;
-    }
-  }
-
-  // Read previous persisted state for both keys to enable disk restoration on failure
-  let prevPersistedEdition: string | null = null;
-  let prevPersistedLang: string | null = null;
-  try {
-    prevPersistedEdition = await audioStorageBackend.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-    prevPersistedLang = await audioStorageBackend.getItem(AUDIO_TRANSLATION_LANG_KEY);
-  } catch (readErr: any) {
-    const error = readErr instanceof Error ? readErr : new Error(String(readErr));
-    throw new Error(`Failed to read prior audio translation storage state: ${error.message}`);
-  }
-
-  const prevId = currentAudioTranslationEditionId;
-  currentAudioTranslationEditionId = targetId;
-  const ed = getAudioTranslationEdition();
-  audioTranslationListeners.forEach((fn) => fn(ed));
-
-  try {
-    // 1. Persist edition and language keys
-    await audioStorageBackend.setItem(AUDIO_TRANSLATION_EDITION_KEY, targetId);
-    await audioStorageBackend.setItem(AUDIO_TRANSLATION_LANG_KEY, ed.language);
-
-    // 2. Verify read-back for both keys
-    const readbackId = await audioStorageBackend.getItem(AUDIO_TRANSLATION_EDITION_KEY);
-    if (readbackId !== targetId) {
-      throw new Error(`Audio translation edition read-back failed: expected "${targetId}", got "${readbackId}"`);
+  const runTransaction = async () => {
+    let targetId = identifierOrLangCode;
+    const matchById = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.identifier === identifierOrLangCode);
+    if (matchById) {
+      targetId = matchById.identifier;
+    } else if (LANGUAGE_AUDIO_EDITIONS[identifierOrLangCode]) {
+      targetId = LANGUAGE_AUDIO_EDITIONS[identifierOrLangCode].identifier;
+    } else {
+      const matchByLang = VERIFIED_NON_ARABIC_EDITIONS.find((e) => e.language === identifierOrLangCode);
+      if (matchByLang) {
+        targetId = matchByLang.identifier;
+      }
     }
 
-    const readbackLang = await audioStorageBackend.getItem(AUDIO_TRANSLATION_LANG_KEY);
-    if (readbackLang !== ed.language) {
-      throw new Error(`Audio translation language read-back failed: expected "${ed.language}", got "${readbackLang}"`);
+    // Read previous persisted state for both keys to enable disk restoration on failure
+    let prevPersistedEdition: string | null = null;
+    let prevPersistedLang: string | null = null;
+    try {
+      prevPersistedEdition = await audioStorageBackend.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+      prevPersistedLang = await audioStorageBackend.getItem(AUDIO_TRANSLATION_LANG_KEY);
+    } catch (readErr: any) {
+      const error = readErr instanceof Error ? readErr : new Error(String(readErr));
+      throw new Error(`Failed to read prior audio translation storage state: ${error.message}`);
     }
-  } catch (err) {
-    // Best-effort transactional restoration across BOTH keys on disk
-    const rollbackErrors: Error[] = [];
+
+    const prevId = currentAudioTranslationEditionId;
+    currentAudioTranslationEditionId = targetId;
+    const ed = getAudioTranslationEdition();
+    audioTranslationListeners.forEach((fn) => fn(ed));
 
     try {
-      if (prevPersistedEdition !== null) {
-        await audioStorageBackend.setItem(AUDIO_TRANSLATION_EDITION_KEY, prevPersistedEdition);
-      } else {
-        await audioStorageBackend.removeItem(AUDIO_TRANSLATION_EDITION_KEY);
+      // 1. Persist edition and language keys
+      await audioStorageBackend.setItem(AUDIO_TRANSLATION_EDITION_KEY, targetId);
+      await audioStorageBackend.setItem(AUDIO_TRANSLATION_LANG_KEY, ed.language);
+
+      // 2. Verify read-back for both keys
+      const readbackId = await audioStorageBackend.getItem(AUDIO_TRANSLATION_EDITION_KEY);
+      if (readbackId !== targetId) {
+        throw new Error(`Audio translation edition read-back failed: expected "${targetId}", got "${readbackId}"`);
       }
-    } catch (rbErr: any) {
-      rollbackErrors.push(rbErr instanceof Error ? rbErr : new Error(String(rbErr)));
-    }
 
-    try {
-      if (prevPersistedLang !== null) {
-        await audioStorageBackend.setItem(AUDIO_TRANSLATION_LANG_KEY, prevPersistedLang);
-      } else {
-        await audioStorageBackend.removeItem(AUDIO_TRANSLATION_LANG_KEY);
+      const readbackLang = await audioStorageBackend.getItem(AUDIO_TRANSLATION_LANG_KEY);
+      if (readbackLang !== ed.language) {
+        throw new Error(`Audio translation language read-back failed: expected "${ed.language}", got "${readbackLang}"`);
       }
-    } catch (rbErr: any) {
-      rollbackErrors.push(rbErr instanceof Error ? rbErr : new Error(String(rbErr)));
+    } catch (err) {
+      // Best-effort transactional restoration across BOTH keys on disk
+      const rollbackErrors: Error[] = [];
+
+      try {
+        if (prevPersistedEdition !== null) {
+          await audioStorageBackend.setItem(AUDIO_TRANSLATION_EDITION_KEY, prevPersistedEdition);
+        } else {
+          await audioStorageBackend.removeItem(AUDIO_TRANSLATION_EDITION_KEY);
+        }
+      } catch (rbErr: any) {
+        rollbackErrors.push(rbErr instanceof Error ? rbErr : new Error(String(rbErr)));
+      }
+
+      try {
+        if (prevPersistedLang !== null) {
+          await audioStorageBackend.setItem(AUDIO_TRANSLATION_LANG_KEY, prevPersistedLang);
+        } else {
+          await audioStorageBackend.removeItem(AUDIO_TRANSLATION_LANG_KEY);
+        }
+      } catch (rbErr: any) {
+        rollbackErrors.push(rbErr instanceof Error ? rbErr : new Error(String(rbErr)));
+      }
+
+      // Always restore in-memory state and notify listeners of previous edition
+      currentAudioTranslationEditionId = prevId;
+      const prevEd = getAudioTranslationEdition();
+      audioTranslationListeners.forEach((fn) => fn(prevEd));
+
+      if (rollbackErrors.length > 0) {
+        const details = rollbackErrors.map((e) => e.message).join('; ');
+        const structuredError = new Error(
+          `Audio translation persistence failed: ${err instanceof Error ? err.message : String(err)}. ` +
+          `Rollback incomplete (${rollbackErrors.length} key(s) failed to restore): ${details}`
+        );
+        (structuredError as any).originalError = err;
+        (structuredError as any).rollbackErrors = rollbackErrors;
+        (structuredError as any).rollbackIncomplete = true;
+        throw structuredError;
+      }
+
+      throw err;
     }
+  };
 
-    // Always restore in-memory state and notify listeners of previous edition
-    currentAudioTranslationEditionId = prevId;
-    const prevEd = getAudioTranslationEdition();
-    audioTranslationListeners.forEach((fn) => fn(prevEd));
-
-    if (rollbackErrors.length > 0) {
-      const details = rollbackErrors.map((e) => e.message).join('; ');
-      const structuredError = new Error(
-        `Audio translation persistence failed: ${err instanceof Error ? err.message : String(err)}. ` +
-        `Rollback incomplete (${rollbackErrors.length} key(s) failed to restore): ${details}`
-      );
-      (structuredError as any).originalError = err;
-      (structuredError as any).rollbackErrors = rollbackErrors;
-      (structuredError as any).rollbackIncomplete = true;
-      throw structuredError;
-    }
-
-    throw err;
-  }
+  const task = audioTranslationTail.then(runTransaction, runTransaction);
+  audioTranslationTail = task.then(() => undefined, () => undefined);
+  return task;
 }
 
 export const setAudioTranslationLanguage = setAudioTranslationEdition;

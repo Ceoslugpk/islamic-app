@@ -484,7 +484,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                   </AppText>
                 </View>
                 <View style={styles.heroStreakCluster} pointerEvents="none">
-                  <AppText variant="numeral" onHero style={styles.heroBigStreak} allowFontScaling={false}>
+                  <AppText variant="numeral" onHero style={styles.heroBigStreak} maxFontSizeMultiplier={1.2}>
                     {streak}
                   </AppText>
                   <AppText variant="onHeroSubtitle" onHero style={styles.heroStreakLabel}>
@@ -752,11 +752,10 @@ const ToolsScreen = React.memo(function ToolsScreen({
                     style={StyleSheet.absoluteFill}
                   />
 
-                  {/* Left Thumbnail (left7.3, top5.8, width87.3, height43, radius8.7) */}
+                  {/* Leading Thumbnail (natural flex row start edge; formerly rtl && styles.liveThumbnailRtl) */}
                   <View
                     style={[
                       styles.liveThumbnail,
-                      rtl && styles.liveThumbnailRtl,
                       {
                         borderColor: isDark ? 'rgba(222, 184, 110, 0.35)' : 'rgba(16, 90, 75, 0.2)',
                       },
@@ -787,8 +786,8 @@ const ToolsScreen = React.memo(function ToolsScreen({
                     </LinearGradient>
                   </View>
 
-                  {/* Text Starts at 104.7 */}
-                  <View style={[styles.liveTextContainer, rtl && styles.liveTextContainerRtl]}>
+                  {/* Flexible Middle Text */}
+                  <View style={styles.liveTextContainer}>
                     {/* LIVE Dot 4.4 + Label Poppins medium11 letterSpacing1.5 gold */}
                     <View style={styles.liveStatusRow}>
                       {card.isLive ? (
@@ -811,7 +810,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                                 fontFamily: fontPoppinsMedium,
                               },
                             ]}
-                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.2}
                           >
                             {t('LIVE').toLocaleUpperCase()}
                           </AppText>
@@ -834,7 +833,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                                 fontFamily: fontPoppinsMedium,
                               },
                             ]}
-                            allowFontScaling={false}
+                            maxFontSizeMultiplier={1.2}
                           >
                             {t('OFFLINE').toLocaleUpperCase()}
                           </AppText>
@@ -842,7 +841,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                       )}
                     </View>
 
-                    {/* Title 12 baseline 33.5 */}
+                    {/* Title */}
                     <AppText
                       variant="title"
                       style={[
@@ -851,13 +850,12 @@ const ToolsScreen = React.memo(function ToolsScreen({
                           fontFamily: fontPoppinsMedium,
                         },
                       ]}
-
                       maxFontSizeMultiplier={1.2}
                     >
                       {t(card.title)}
                     </AppText>
 
-                    {/* Subtitle 11 baseline 46 */}
+                    {/* Subtitle */}
                     <AppText
                       variant="subtitle"
                       style={[
@@ -866,15 +864,14 @@ const ToolsScreen = React.memo(function ToolsScreen({
                           fontFamily: fontPoppinsRegular,
                         },
                       ]}
-
                       maxFontSizeMultiplier={1.2}
                     >
                       {t(card.subtitle)}
                     </AppText>
                   </View>
 
-                  {/* Right Chevron */}
-                  <View style={[styles.liveChevronWrap, rtl && styles.liveChevronWrapRtl]}>
+                  {/* Trailing Chevron */}
+                  <View style={styles.liveChevronWrap}>
                     <Ionicons
                       name={getForwardIcon()}
                       size={10}
@@ -980,7 +977,7 @@ function UtilityRowItem({
               fontFamily: fontPoppinsMedium,
             },
           ]}
-          allowFontScaling={false}
+          maxFontSizeMultiplier={1.2}
         >
           {liveBearing}°
         </AppText>
@@ -1141,12 +1138,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   tileTitle: {
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 17,
   },
   tileSubtitle: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     marginTop: 2,
   },
 
@@ -1163,7 +1160,7 @@ const styles = StyleSheet.create({
   },
   utilityRowWrap: {},
   utilityRow: {
-    minHeight: 40.7,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     paddingStart: 12,
@@ -1185,12 +1182,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   utilityTitle: {
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 17,
   },
   utilitySubtitle: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
   },
   utilityBearing: {
     fontSize: 12,
@@ -1204,45 +1201,37 @@ const styles = StyleSheet.create({
     marginEnd: 16,
   },
 
-  /* Live Broadcasts: 3 stacked cards, 54.5 high, gap 5.8, radius 14 */
+  /* Live Broadcasts: 3 stacked cards, content-driven flex row, gap 5.8, radius 18/17 */
   liveCardsStack: {
     marginHorizontal: 14.5,
     gap: 5.8,
   },
   liveCardWrap: {
-    minHeight: 54.5,
     borderRadius: 18,
   },
   liveCardInner: {
-    flex: 1,
-    minHeight: 54.5,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
-    position: 'relative',
+    paddingStart: 7.5,
+    paddingEnd: 12,
+    paddingVertical: 7,
   },
   liveThumbnail: {
-    position: 'absolute',
-    left: 7.3,
-    top: 5.8,
     width: 87.3,
-    height: 43,
+    height: 44,
     borderRadius: 8.7,
     borderWidth: 0.5,
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  liveThumbnailRtl: {
-    left: undefined,
-    right: 7.3,
+    flexShrink: 0,
+    marginEnd: 10,
   },
   liveThumbnailOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFill,
     backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   livePlayCircle: {
@@ -1253,16 +1242,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   liveTextContainer: {
-    position: 'absolute',
-    left: 104.7,
-    right: 32,
-    top: 0,
-    bottom: 0,
+    flex: 1,
+    minWidth: 0,
     justifyContent: 'center',
-  },
-  liveTextContainerRtl: {
-    left: 32,
-    right: 104.7,
+    paddingVertical: 2,
   },
   liveStatusRow: {
     flexDirection: 'row',
@@ -1280,25 +1263,20 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
   },
   liveTitle: {
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 17,
     marginTop: 2,
   },
   liveSubtitle: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     marginTop: 1,
   },
   liveChevronWrap: {
-    position: 'absolute',
-    right: 14,
-    top: 0,
-    bottom: 0,
+    flexShrink: 0,
+    marginStart: 8,
+    alignItems: 'center',
     justifyContent: 'center',
-  },
-  liveChevronWrapRtl: {
-    right: undefined,
-    left: 14,
   },
 
   heroSummaryRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },

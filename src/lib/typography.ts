@@ -5,7 +5,15 @@
 
 import type { TextStyle } from 'react-native';
 
-export type TypographyScript = 'latin' | 'arabic' | 'urdu' | 'hindi';
+export type TypographyScript =
+  | 'latin'
+  | 'arabic'
+  | 'urdu'
+  | 'hindi'
+  | 'bengali'
+  | 'malayalam'
+  | 'sinhala'
+  | 'tamil';
 
 export const MIN_SCRIPT_MULTIPLIERS = {
   latin: {
@@ -16,10 +24,18 @@ export const MIN_SCRIPT_MULTIPLIERS = {
   arabic: 1.8,
   urdu: 2.2,
   hindi: 1.6,
+  bengali: 1.6,
+  malayalam: 1.6,
+  sinhala: 1.6,
+  tamil: 1.6,
 } as const;
 
 export const ARABIC_SCRIPT_REGEX = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 export const DEVANAGARI_SCRIPT_REGEX = /[\u0900-\u097F]/;
+export const BENGALI_SCRIPT_REGEX = /[\u0980-\u09FF]/;
+export const TAMIL_SCRIPT_REGEX = /[\u0B80-\u0BFF]/;
+export const MALAYALAM_SCRIPT_REGEX = /[\u0D00-\u0D7F]/;
+export const SINHALA_SCRIPT_REGEX = /[\u0D80-\u0DFF]/;
 const ASCII_ONLY_REGEX = /^[\x00-\x7F]*$/;
 
 export function detectScriptFromContent(
@@ -27,13 +43,27 @@ export function detectScriptFromContent(
   currentLanguage?: string | null,
 ): TypographyScript {
   const isAscii = content ? ASCII_ONLY_REGEX.test(content) : false;
-  if (!isAscii && content && ARABIC_SCRIPT_REGEX.test(content)) {
-    return currentLanguage === 'ur' || currentLanguage?.startsWith('ur-') || currentLanguage?.startsWith('ur_')
-      ? 'urdu'
-      : 'arabic';
-  }
-  if (!isAscii && content && DEVANAGARI_SCRIPT_REGEX.test(content)) {
-    return 'hindi';
+  if (!isAscii && content) {
+    if (ARABIC_SCRIPT_REGEX.test(content)) {
+      return currentLanguage === 'ur' || currentLanguage?.startsWith('ur-') || currentLanguage?.startsWith('ur_')
+        ? 'urdu'
+        : 'arabic';
+    }
+    if (DEVANAGARI_SCRIPT_REGEX.test(content)) {
+      return 'hindi';
+    }
+    if (BENGALI_SCRIPT_REGEX.test(content)) {
+      return 'bengali';
+    }
+    if (MALAYALAM_SCRIPT_REGEX.test(content)) {
+      return 'malayalam';
+    }
+    if (SINHALA_SCRIPT_REGEX.test(content)) {
+      return 'sinhala';
+    }
+    if (TAMIL_SCRIPT_REGEX.test(content)) {
+      return 'tamil';
+    }
   }
   // Times, counts, Latin transliteration and API translations retain their own
   // typography even when the surrounding interface uses an RTL language.
@@ -49,6 +79,18 @@ export function detectScriptFromContent(
   }
   if (currentLanguage === 'hi' || currentLanguage?.startsWith('hi-') || currentLanguage?.startsWith('hi_')) {
     return 'hindi';
+  }
+  if (currentLanguage === 'bn' || currentLanguage?.startsWith('bn-') || currentLanguage?.startsWith('bn_')) {
+    return 'bengali';
+  }
+  if (currentLanguage === 'ml' || currentLanguage?.startsWith('ml-') || currentLanguage?.startsWith('ml_')) {
+    return 'malayalam';
+  }
+  if (currentLanguage === 'si' || currentLanguage?.startsWith('si-') || currentLanguage?.startsWith('si_')) {
+    return 'sinhala';
+  }
+  if (currentLanguage === 'ta' || currentLanguage?.startsWith('ta-') || currentLanguage?.startsWith('ta_')) {
+    return 'tamil';
   }
   return 'latin';
 }
@@ -66,6 +108,18 @@ export function calculateScriptLineHeight(
   }
   if (script === 'hindi') {
     return Math.ceil(fontSize * MIN_SCRIPT_MULTIPLIERS.hindi);
+  }
+  if (script === 'bengali') {
+    return Math.ceil(fontSize * MIN_SCRIPT_MULTIPLIERS.bengali);
+  }
+  if (script === 'malayalam') {
+    return Math.ceil(fontSize * MIN_SCRIPT_MULTIPLIERS.malayalam);
+  }
+  if (script === 'sinhala') {
+    return Math.ceil(fontSize * MIN_SCRIPT_MULTIPLIERS.sinhala);
+  }
+  if (script === 'tamil') {
+    return Math.ceil(fontSize * MIN_SCRIPT_MULTIPLIERS.tamil);
   }
   // Latin
   const mult = MIN_SCRIPT_MULTIPLIERS.latin[category];

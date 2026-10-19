@@ -4,6 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { enqueueSettingsUpdate } from './settings';
 
 export const KDF_ROUNDS = 100000;
 export const KDF_PREFIX = 'kdf_v2_';
@@ -167,17 +168,13 @@ export async function recordFailedPinAttempt(): Promise<{ locked: boolean; remai
   return { locked, remainingSeconds, attempts: nextAttempts };
 }
 
-/** Directly update womenPinHash in stored islamic-settings on upgrade */
+/** Update womenPinHash in stored islamic-settings on upgrade via serialized settings queue */
 export async function persistUpgradedPinHash(newHash: string): Promise<void> {
   try {
-    const raw = await AsyncStorage.getItem('islamic-settings');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') {
-        parsed.womenPinHash = newHash;
-        await AsyncStorage.setItem('islamic-settings', JSON.stringify(parsed));
-      }
-    }
+    await enqueueSettingsUpdate((prev) => ({
+      ...prev,
+      womenPinHash: newHash,
+    }));
   } catch {
     // non-fatal
   }

@@ -118,7 +118,7 @@ export function LocationPermissionNote({
             onPress={onDismiss}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             accessibilityRole="button"
-            accessibilityLabel="Dismiss location note"
+            accessibilityLabel={t('Dismiss')}
             style={styles.dismissBtn}
           >
             <Ionicons name="close" size={18} color={colors.textMuted} />

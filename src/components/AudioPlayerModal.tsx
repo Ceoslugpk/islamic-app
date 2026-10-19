@@ -1277,7 +1277,7 @@ const styles = StyleSheet.create({
   repeatBadgeText: {
     position: 'absolute',
     top: 5,
-    right: 7,
+    end: 7,
     fontFamily: 'Manrope_700Bold',
     fontSize: 9,
   },

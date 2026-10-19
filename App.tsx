@@ -246,8 +246,9 @@ function Root({ splashDone }: { splashDone: boolean }) {
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
       if (nextState.match(/inactive|background/)) {
-        if (settings.womenLockEnabled || (settings.womenWorshipEnabled && settings.womenPinHash)) {
-          setWomenUnlocked(false);
+        setWomenUnlocked(false);
+        setPendingWomenScreen(null);
+        if (settings.womenLockEnabled || (settings.womenWorshipEnabled && settings.womenPinHash) || !settings.womenWorshipEnabled) {
           setTools((prev) => {
             if (prev.screen.startsWith('women-')) {
               return { screen: 'hub' };
@@ -266,9 +267,21 @@ function Root({ splashDone }: { splashDone: boolean }) {
     return () => sub.remove();
   }, [settings.womenLockEnabled, settings.womenWorshipEnabled, settings.womenPinHash]);
 
+  // When feature is disabled: immediately exit sensitive screens and clear unlock state
+  useEffect(() => {
+    if (!settings.womenWorshipEnabled) {
+      setWomenUnlocked(false);
+      setPendingWomenScreen(null);
+      setWomenPinModalOpen(false);
+      setTools((prev) => (prev.screen.startsWith('women-') ? { screen: 'hub' } : prev));
+      setLibrary((prev) => (prev.screen.startsWith('women-') ? { screen: 'hub' } : prev));
+    }
+  }, [settings.womenWorshipEnabled]);
+
   const handleOpenWomenFromSettings = useCallback(
     (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => {
       setSettingsOpen(false);
+      if (!settings.womenWorshipEnabled) return;
       setTab('tools');
       const isLocked =
         Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
@@ -608,9 +621,12 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const routeDeepLinkUrl = useCallback((url: string) => {
     const target = parseDeepLink(url);
     if (target && navSettersRef.current) {
+      if (target.type.startsWith('women-') && !settings.womenWorshipEnabled) {
+        return;
+      }
       handleDeepLink(target, navSettersRef.current).catch(() => {});
     }
-  }, []);
+  }, [settings.womenWorshipEnabled]);
 
   // Flush queued cold-start deep links once splash completes (no race with init)
   useEffect(() => {
@@ -793,6 +809,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
   const openToolsItem = useCallback((key: ToolsItemKey) => {
     if (key.startsWith('women-')) {
+      if (!settings.womenWorshipEnabled) return;
       const isLocked =
         Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
         Boolean(settings.womenPinHash) &&
@@ -832,6 +849,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
   const openLibraryItem = useCallback((key: LibraryItemKey) => {
     if (key.startsWith('women-')) {
+      if (!settings.womenWorshipEnabled) return;
       const isLocked =
         Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
         Boolean(settings.womenPinHash) &&
@@ -1275,7 +1293,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
             )}
 
             {/* Women's Worship Views */}
-            {(settings.womenWorshipEnabled || tools.screen === 'women-cycle' || tools.screen === 'women-qada') && (tools.screen === 'women-cycle' || tools.screen === 'women-purity' || tools.screen === 'women-guidance' || tools.screen === 'women-qada') && (
+            {settings.womenWorshipEnabled && (tools.screen === 'women-cycle' || tools.screen === 'women-purity' || tools.screen === 'women-guidance' || tools.screen === 'women-qada') && (
               <WomenLockGate>
                 {tools.screen === 'women-cycle' && (
                   <WomenCycleScreen

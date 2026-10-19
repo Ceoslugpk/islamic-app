@@ -153,8 +153,11 @@ export function WomenPinModal({
       if (res.valid) {
         await resetPinLockoutState();
         if (res.needsUpgrade && res.upgradedHash) {
-          if (onSetPin) onSetPin(res.upgradedHash);
-          await persistUpgradedPinHash(res.upgradedHash);
+          if (onSetPin) {
+            onSetPin(res.upgradedHash);
+          } else {
+            await persistUpgradedPinHash(res.upgradedHash);
+          }
         }
         onSuccess();
       } else {
@@ -173,8 +176,11 @@ export function WomenPinModal({
       if (res.valid) {
         await resetPinLockoutState();
         if (res.needsUpgrade && res.upgradedHash) {
-          if (onSetPin) onSetPin(res.upgradedHash);
-          await persistUpgradedPinHash(res.upgradedHash);
+          if (onSetPin) {
+            onSetPin(res.upgradedHash);
+          } else {
+            await persistUpgradedPinHash(res.upgradedHash);
+          }
         }
         setPin('');
         setStep('enter_new');
@@ -197,8 +203,11 @@ export function WomenPinModal({
       if (entered === firstPin) {
         const newHash = hashPin(entered);
         await resetPinLockoutState();
-        if (onSetPin) onSetPin(newHash);
-        await persistUpgradedPinHash(newHash);
+        if (onSetPin) {
+          onSetPin(newHash);
+        } else {
+          await persistUpgradedPinHash(newHash);
+        }
         onSuccess();
       } else {
         triggerHaptic('error');

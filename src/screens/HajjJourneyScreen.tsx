@@ -8,7 +8,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens, fontRoles } from '../theme/tokens';
+import { useThemeTokens, fontRoles, cardTokens } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, PrimaryButton, Chip } from '../components/ui';
@@ -357,6 +357,7 @@ export default function HajjJourneyScreen({
         {/* Hajj Pillars Summary Card */}
         <PremiumCard
           style={styles.pillarsCard}
+          borderRadius={cardTokens.borderRadius}
           padded
         >
           <View style={styles.pillarsHeaderRow}>
@@ -392,6 +393,7 @@ export default function HajjJourneyScreen({
                 },
                 !onOpenDuas && isLastDay && { marginBottom: 0 },
               ]}
+              borderRadius={cardTokens.borderRadius}
               padded
               contentStyle={styles.readingContent}
             >
@@ -553,7 +555,11 @@ export default function HajjJourneyScreen({
 
         {/* Library link card */}
         {onOpenDuas && (
-          <PremiumCard style={{ marginBottom: 0 }} contentStyle={{ padding: 16 }}>
+          <PremiumCard
+            style={{ marginBottom: 0 }}
+            borderRadius={cardTokens.borderRadius}
+            contentStyle={{ padding: 16 }}
+          >
             <View style={styles.footerRow}>
               <View style={{ minWidth: 0, gap: 4 }}>
                 <AppText variant="sectionTitle" style={styles.footerCardTitle}>
@@ -605,25 +611,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   badgeText: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 10,
     letterSpacing: 0.8,
   },
   pillarsLead: {
-    fontFamily: fontRoles.eyebrow,
     fontSize: 10,
     letterSpacing: 1.2,
     marginBottom: 4,
   },
   pillarsTitle: {
-    fontFamily: fontRoles.title,
     fontSize: 20,
     marginBottom: 6,
   },
   pillarsBody: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
   },
   dayCard: {
     marginBottom: 18,
@@ -639,12 +641,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dayTagText: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 10,
     letterSpacing: 0.8,
   },
   dayTitle: {
-    fontFamily: fontRoles.title,
     fontSize: 22,
     marginTop: 4,
   },
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 7,
     borderRadius: 10,
     borderWidth: 1,
@@ -668,16 +668,13 @@ const styles = StyleSheet.create({
   footerRow: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
   locationBannerText: {
     flexShrink: 1,
-    fontFamily: fontRoles.ui,
     fontSize: 12,
   },
   daySummary: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
-    lineHeight: 19,
+    lineHeight: 20,
   },
   sectionSubtitle: {
-    fontFamily: fontRoles.eyebrow,
     fontSize: 11,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
@@ -698,35 +695,31 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   ritualName: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
     flex: 1,
     minWidth: 0,
   },
   obligationBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
     borderWidth: 1,
     marginStart: 8,
   },
   obligationText: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 12,
   },
   ritualDesc: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
-    lineHeight: 17,
+    lineHeight: 20,
   },
   duaBox: {
-    padding: 12,
-    borderRadius: 12,
+    padding: 14,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 10,
   },
   duaBoxTitle: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
     marginBottom: 4,
   },
@@ -737,20 +730,17 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   duaBoxTranslit: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     fontStyle: 'italic',
     lineHeight: 18,
     marginBottom: 4,
   },
   duaBoxTrans: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 20,
     marginBottom: 4,
   },
   duaBoxRef: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
   },
   tipsBox: {
@@ -760,23 +750,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   tipsBoxTitle: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
   },
   tipsBoxText: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
-    lineHeight: 17,
+    lineHeight: 20,
     marginTop: 3,
   },
   footerCardTitle: {
-    fontFamily: fontRoles.title,
     fontSize: 15,
   },
   footerCardSub: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     marginTop: 2,
-    lineHeight: 17,
+    lineHeight: 18,
   },
 });

@@ -14,7 +14,7 @@ import { AppLanguage, setAppLanguage, getBootLanguage, isAppLanguage } from './i
 import { setActiveAdhanReciterId } from './audio';
 import { setCachedLocation } from './useLocation';
 import { TAFSIR_SOURCES } from './tafsirSources';
-import { createSerializedSettingsWriter, StoredValueVerifier } from './settingsWriteQueue';
+import { createSerializedSettingsWriter, StoredValueVerifier, StringStorage } from './settingsWriteQueue';
 
 export type { AppLanguage };
 
@@ -539,13 +539,22 @@ export async function persistLanguageChange(
   } = AsyncStorage
 ): Promise<AppSettings> {
   const nextSettings = computeNextLanguageSettings(currentSettings, nextLang);
-  await storage.setItem(STORAGE_KEY, JSON.stringify(nextSettings));
-  if (storage.getItem) {
-    const raw = await storage.getItem(STORAGE_KEY);
+  const verify: StoredValueVerifier<AppSettings> = (raw) => {
     const parsed = raw ? JSON.parse(raw) : null;
     if (!parsed || parsed.language !== nextLang) {
       throw new Error(`Persisted language verification mismatch: expected "${nextLang}", got "${parsed?.language}"`);
     }
+  };
+
+  if (storage === AsyncStorage) {
+    await defaultSharedSettingsWriter(nextSettings, verify);
+  } else {
+    const stringStorage: StringStorage = {
+      setItem: (key: string, value: string) => storage.setItem(key, value),
+      getItem: storage.getItem ? (key: string) => storage.getItem!(key) : async () => null,
+    };
+    const writer = createSerializedSettingsWriter<AppSettings>(stringStorage, STORAGE_KEY, () => {});
+    await writer(nextSettings, storage.getItem ? verify : undefined);
   }
   return nextSettings;
 }
@@ -557,6 +566,59 @@ export async function persistLanguageChange(
  * `null` means "storage not read yet" and falls back to the default (enabled).
  */
 let preloadRequestedMem: boolean | null = null;
+
+const defaultSharedSettingsWriter = createSerializedSettingsWriter<AppSettings>(
+  AsyncStorage,
+  STORAGE_KEY,
+  () => {},
+);
+
+type SettingsUpdater = (update: (current: AppSettings) => AppSettings) => AppSettings;
+let activeSettingsUpdater: SettingsUpdater | null = null;
+
+let standaloneQueue: Promise<unknown> = Promise.resolve();
+
+/**
+ * Routes standalone settings updates through the production settings provider/queue
+ * without losing newer fields or racing concurrent writes.
+ * Serializes the complete read -> compute -> write/read-back operation for standalone callers.
+ */
+export async function enqueueSettingsUpdate(
+  updater: (current: AppSettings) => AppSettings,
+  storage: StringStorage = AsyncStorage,
+): Promise<AppSettings> {
+  if (activeSettingsUpdater && storage === AsyncStorage) {
+    return activeSettingsUpdater(updater);
+  }
+
+  const op = async (): Promise<AppSettings> => {
+    if (activeSettingsUpdater && storage === AsyncStorage) {
+      return activeSettingsUpdater(updater);
+    }
+    let latestRaw: string | null = null;
+    try {
+      latestRaw = await storage.getItem(STORAGE_KEY);
+    } catch {}
+    const parsed = latestRaw ? JSON.parse(latestRaw) : {};
+    const current = sanitizeSettings(parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {});
+    const nextClean = sanitizeSettings(updater(current));
+    const writer = storage === AsyncStorage
+      ? defaultSharedSettingsWriter
+      : createSerializedSettingsWriter<AppSettings>(storage, STORAGE_KEY, () => {});
+    const persisted = await writer(nextClean, (raw) => {
+      const stored = raw ? JSON.parse(raw) : null;
+      if (!stored || typeof stored !== 'object') {
+        throw new Error('Storage readback failed: invalid settings object');
+      }
+    });
+    preloadRequestedMem = persisted.quranPreloadRequested;
+    return persisted;
+  };
+
+  const task = standaloneQueue.then(op, op);
+  standaloneQueue = task.then(() => undefined, () => undefined);
+  return task;
+}
 
 /** Synchronous read for background callers. Defaults to enabled before storage loads. */
 export function getQuranPreloadRequested(): boolean {
@@ -591,13 +653,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const settingsRef = useRef<AppSettings>(settings);
   const lastPersistedRef = useRef<AppSettings>(settings);
   const locationMutatedDuringHydrationRef = useRef(false);
-  const [writeSettings] = useState(() =>
-    createSerializedSettingsWriter<AppSettings>(
-      AsyncStorage,
-      STORAGE_KEY,
-      () => {},
-    )
-  );
+  const languageSwitchGenerationRef = useRef(0);
+  const writeSettings = defaultSharedSettingsWriter;
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -743,6 +800,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     return clean;
   }, [enqueueWrite]);
 
+  useEffect(() => {
+    activeSettingsUpdater = (fn) => updateSettings(fn);
+    return () => {
+      activeSettingsUpdater = null;
+    };
+  }, [updateSettings]);
+
   const setThemeMode = useCallback(
     (themeMode: ThemeMode) => updateSettings((prev) => ({ ...prev, themeMode })),
     [updateSettings],
@@ -825,6 +889,8 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      const generation = ++languageSwitchGenerationRef.current;
+
       // Snapshot settings and compute sanitized clean state once.
       const currentSnapshot = settingsRef.current;
       const nextClean = computeNextLanguageSettings(currentSnapshot, nextLang);
@@ -848,18 +914,24 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       } catch (err) {
         // On failure: preserve any newer unrelated fields while restoring the previous language,
         // and ensure a queued newer selection cannot silently leave disk on the failed target language.
-        const currentLang = settingsRef.current.language;
-        if (currentLang === nextLang) {
-          const restored = sanitizeSettings({ ...settingsRef.current, language: prevLang });
-          settingsRef.current = restored;
-          preloadRequestedMem = restored.quranPreloadRequested;
-          setSettings((prev) => (prev.language === nextLang ? sanitizeSettings({ ...prev, language: prevLang }) : prev));
-          setAppLanguage(prevLang);
-          enqueueWrite(restored).catch(() => {});
-        } else if (currentLang === prevLang) {
-          setAppLanguage(prevLang);
+        if (generation === languageSwitchGenerationRef.current) {
+          const currentLang = settingsRef.current.language;
+          if (currentLang === nextLang) {
+            const restored = sanitizeSettings({ ...settingsRef.current, language: prevLang });
+            settingsRef.current = restored;
+            preloadRequestedMem = restored.quranPreloadRequested;
+            setSettings((prev) => (prev.language === nextLang ? sanitizeSettings({ ...prev, language: prevLang }) : prev));
+            setAppLanguage(prevLang);
+            enqueueWrite(restored).catch(() => {});
+          } else if (currentLang === prevLang) {
+            setAppLanguage(prevLang);
+          }
         }
         throw err;
+      }
+
+      if (generation !== languageSwitchGenerationRef.current) {
+        return;
       }
 
       // Readback succeeded: enqueueWrite already maintains lastPersistedRef and optimistic state
@@ -1001,13 +1073,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         } catch {}
       }
 
-      if (nextTafsir && settingsRef.current.tafsirSourceId !== nextTafsir) {
+      if (nextTafsir && generation === languageSwitchGenerationRef.current && settingsRef.current.tafsirSourceId !== nextTafsir) {
         // Ensure subsequent tafsir update preserves nextLang and cannot overwrite it with old language
-        updateSettings((prev) => ({
+        updateSettings((prev) => (prev.language === nextLang ? {
           ...prev,
-          language: nextLang,
           tafsirSourceId: nextTafsir,
-        }));
+        } : prev));
       }
     },
   };

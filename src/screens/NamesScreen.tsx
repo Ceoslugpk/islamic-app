@@ -18,7 +18,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeTokens, getBrandLogoSource } from '../theme/tokens';
+import { useThemeTokens, getBrandLogoSource, fontRoles } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
@@ -493,8 +493,8 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             {
               backgroundColor: tokens.cardTop,
               borderColor: tokens.cardBorder,
-              minHeight: isCompact ? 38 : 42,
-              borderRadius: isCompact ? 16 : 18,
+              minHeight: 44,
+              borderRadius: 22,
             },
           ]}
         >
@@ -505,7 +505,16 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
             placeholder={t('Search by name, meaning, or number...')}
             placeholderTextColor={tokens.muted}
             accessibilityLabel={t('Search by name, meaning, or number...')}
-            style={[styles.searchInput, { color: tokens.text, fontSize: isCompact ? 12.5 : 13 }]}
+            style={[
+              styles.searchInput,
+              {
+                color: tokens.text,
+                fontSize: isCompact ? (isRTL() ? 13.5 : 12.5) : (isRTL() ? 14.5 : 13.5),
+                fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_400Regular',
+                textAlign: isRTL() ? 'right' : 'left',
+                writingDirection: isRTL() ? 'rtl' : 'ltr',
+              },
+            ]}
             autoCapitalize="none"
             autoCorrect={false}
             clearButtonMode="while-editing"

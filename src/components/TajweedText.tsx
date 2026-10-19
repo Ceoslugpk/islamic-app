@@ -29,7 +29,8 @@ export function TajweedText({
       ? text.replace(/<span class=end>[^<]*<\/span>/g, '').replace(/<end[^>]*\/?>/g, '').trim()
       : text;
   const spans: TajweedSpan[] = parseTajweedAny(cleanText);
-  const resolvedLineHeight = lineHeight ?? Math.round(size * 1.8);
+  const minimumLineHeight = Math.ceil(size * 1.8);
+  const resolvedLineHeight = Math.max(lineHeight ?? 0, minimumLineHeight);
   const resolvedFamily = fontFamily ?? 'Amiri_400Regular';
 
   return (

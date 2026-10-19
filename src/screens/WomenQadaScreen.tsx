@@ -15,8 +15,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { getPillShadow } from '../lib/homeThemeTokens';
+import { isRTL } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
@@ -198,15 +199,15 @@ function WomenQadaScreen({
 
         {/* Stats Bar */}
         <View style={styles.qadaStatsRow}>
-          <PremiumCard padded={false} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
+          <PremiumCard padded={false} borderRadius={cardTokens.borderRadius} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
             <AppText variant="numeral" highlight style={styles.qadaStatNum}>{qadaStats.total}</AppText>
             <AppText variant="caption" tone="faint" style={styles.qadaStatLbl}>{t('Logged Fasts')}</AppText>
           </PremiumCard>
-          <PremiumCard padded={false} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
+          <PremiumCard padded={false} borderRadius={cardTokens.borderRadius} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
             <AppText variant="numeral" style={[styles.qadaStatNum, { color: mode === 'paper' ? tokens.accent : tokens.success }]}>{qadaStats.completed}</AppText>
             <AppText variant="caption" tone="faint" style={styles.qadaStatLbl}>{t('Made Up (Qada)')}</AppText>
           </PremiumCard>
-          <PremiumCard padded={false} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
+          <PremiumCard padded={false} borderRadius={cardTokens.borderRadius} style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent}>
             <AppText variant="numeral" tone={qadaStats.pending > 0 ? 'danger' : undefined} style={styles.qadaStatNum}>
               {qadaStats.pending}
             </AppText>
@@ -232,7 +233,7 @@ function WomenQadaScreen({
 
         {/* Add Form */}
         {showAddQada && (
-          <PremiumCard padded={false} style={styles.formCard} contentStyle={styles.formCardContent}>
+          <PremiumCard padded={false} borderRadius={cardTokens.borderRadius} style={styles.formCard} contentStyle={styles.formCardContent}>
             <AppText variant="sectionTitle" style={styles.formTitle}>
               {t('Log Missed Fast Day')}
             </AppText>
@@ -254,7 +255,15 @@ function WomenQadaScreen({
               </View>
             </View>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.ringFill,
+                  textAlign: isRTL() ? 'right' : 'left',
+                },
+              ]}
               value={qadaDate}
               onChangeText={setQadaDate}
               placeholder={t('YYYY-MM-DD')}
@@ -264,7 +273,15 @@ function WomenQadaScreen({
             />
             <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('Reason')}</AppText>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.ringFill,
+                  textAlign: isRTL() ? 'right' : 'left',
+                },
+              ]}
               value={qadaReason}
               onChangeText={setQadaReason}
               placeholder={t('Reason')}
@@ -273,7 +290,15 @@ function WomenQadaScreen({
             />
             <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('Notes (Optional)')}</AppText>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.ringFill,
+                  textAlign: isRTL() ? 'right' : 'left',
+                },
+              ]}
               value={qadaNote}
               onChangeText={setQadaNote}
               placeholder={t('e.g. Ramadan Day 4')}
@@ -287,7 +312,7 @@ function WomenQadaScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t('Cancel')}
               >
-                <AppText variant="caption" tone="faint" style={{ fontFamily: 'Manrope_600SemiBold' }}>
+                <AppText variant="caption" tone="faint">
                   {t('Cancel')}
                 </AppText>
               </TouchableOpacity>
@@ -298,7 +323,7 @@ function WomenQadaScreen({
                 accessibilityLabel={t('Save Missed Fast')}
               >
                 <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />
-                <AppText variant="caption" tone="onGold" style={{ fontFamily: 'Manrope_700Bold' }}>
+                <AppText variant="caption" tone="onGold">
                   {t('Save Fast')}
                 </AppText>
               </TouchableOpacity>
@@ -315,7 +340,7 @@ function WomenQadaScreen({
         </AppText>
 
         {womenMissedFasts.length === 0 ? (
-          <PremiumCard padded={false} style={styles.emptyCard} contentStyle={styles.emptyCardContent}>
+          <PremiumCard padded={false} borderRadius={cardTokens.borderRadius} style={styles.emptyCard} contentStyle={styles.emptyCardContent}>
             <EmptyState
               icon="moon-outline"
               title={t('No missed fasts recorded')}
@@ -329,6 +354,7 @@ function WomenQadaScreen({
             <PremiumCard
               key={fast.id}
               padded={false}
+              borderRadius={cardTokens.borderRadius}
               borderColor={fast.madeUp ? tokens.success : tokens.cardBorder}
               style={[styles.fastCard, { marginBottom: 10 }]}
               contentStyle={styles.fastCardContent}
@@ -372,7 +398,7 @@ function WomenQadaScreen({
                   onPress={() => handleDeleteQada(fast)}
                   accessibilityRole="button"
                   accessibilityLabel={`Delete missed fast for ${fast.date}`}
-                  hitSlop={touchTargetTokens.hitSlop10}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={styles.deleteQadaButton}
                 >
                   <Ionicons name="trash-outline" size={16} color={tokens.muted} />
@@ -397,13 +423,13 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   fastCard: {
-    borderRadius: 16,
+    borderRadius: cardTokens.borderRadius,
   },
   fastCardContent: {
-    padding: 14,
+    padding: 16,
   },
   emptyCard: {
-    borderRadius: 20,
+    borderRadius: cardTokens.borderRadius,
     marginTop: 8,
   },
   emptyCardContent: {
@@ -420,7 +446,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   backText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   privacyBadge: {
@@ -428,13 +453,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    paddingVertical: 8,
+    borderRadius: 10,
     borderWidth: 1,
     marginBottom: 10,
   },
   privacyText: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     flex: 1,
     minWidth: 0,
@@ -444,13 +468,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 8,
+    paddingVertical: 8,
+    borderRadius: 10,
     borderWidth: 1,
     marginBottom: 12,
   },
   explicitText: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     flex: 1,
     minWidth: 0,
@@ -462,19 +485,17 @@ const styles = StyleSheet.create({
   },
   qadaStatBox: {
     flex: 1,
-    borderRadius: 16,
+    borderRadius: cardTokens.borderRadius,
     minWidth: 0,
   },
   qadaStatBoxContent: {
-    padding: 12,
+    padding: 14,
     alignItems: 'center',
   },
   qadaStatNum: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 20,
   },
   qadaStatLbl: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 2,
   },
@@ -487,11 +508,10 @@ const styles = StyleSheet.create({
     borderRadius: buttonTokens.md.borderRadius,
   },
   primaryBtnText: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 14,
   },
   formCard: {
-    borderRadius: 20,
+    borderRadius: cardTokens.borderRadius,
     marginBottom: 14,
   },
   formCardContent: {
@@ -499,8 +519,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   formTitle: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 14.5,
+    fontSize: 15,
     marginBottom: 4,
   },
   labelRow: {
@@ -510,7 +529,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   inputLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
   quickPillsRow: {
@@ -518,14 +536,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   quickPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
     borderWidth: 1,
     minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   quickPillText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
   textInput: {
@@ -533,7 +552,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    fontFamily: 'Manrope_400Regular',
     fontSize: 13,
   },
   formBtnRow: {
@@ -558,11 +576,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sectionTitle: {
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 14.5,
+    fontSize: 15,
   },
   sectionDesc: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginBottom: 8,
     lineHeight: 16,
@@ -573,7 +589,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   deleteQadaButton: {
-    minWidth: 40,
+    minWidth: 44,
     minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
@@ -583,22 +599,19 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 5,
+    borderRadius: 6,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
   qadaDate: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 14,
   },
   qadaReason: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     marginTop: 2,
   },
   qadaMadeUpNote: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     marginTop: 2,
   },

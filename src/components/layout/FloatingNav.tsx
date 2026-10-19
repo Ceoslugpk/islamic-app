@@ -203,7 +203,7 @@ export const FloatingNav = React.memo(function FloatingNav({ active, onChange }:
                           styles.activeLabel,
                           {
                             fontSize: labelFontSize,
-                            fontFamily: rtl ? 'Amiri_700Bold' : 'Poppins_500Medium',
+                            fontFamily: rtl ? 'NotoNaskhArabic_700Bold' : 'Poppins_500Medium',
                             ...(Platform.OS === 'web' ? { whiteSpace: 'nowrap' as any } : {}),
                           },
                         ]}

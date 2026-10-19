@@ -13,7 +13,8 @@ import {
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens } from '../theme/tokens';
+import { fontRoles, useThemeTokens } from '../theme/tokens';
+import { isRTL } from '../lib/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { TAB_PAD_BOTTOM } from '../components/layout/layout.constants';
@@ -349,7 +350,13 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
             <TextInput
               style={[
                 styles.searchInput,
-                { color: tokens.textPrimary, fontSize: isCompact ? 13 : 14 },
+                {
+                  color: tokens.textPrimary,
+                  fontSize: isCompact ? (isRTL() ? 14 : 13) : (isRTL() ? 15 : 14),
+                  fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_400Regular',
+                  textAlign: isRTL() ? 'right' : 'left',
+                  writingDirection: isRTL() ? 'rtl' : 'ltr',
+                },
               ]}
               placeholder={t('Search by name or meaning...')}
               placeholderTextColor={tokens.textMuted}
@@ -698,7 +705,7 @@ const styles = StyleSheet.create({
   },
   langBarLabel: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 9,
+    fontSize: 11,
     letterSpacing: 1,
     marginBottom: 1,
   },
@@ -756,7 +763,7 @@ const styles = StyleSheet.create({
   },
   juzLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10,
+    fontSize: 11.5,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
     marginBottom: 4,

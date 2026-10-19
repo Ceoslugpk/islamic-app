@@ -383,6 +383,9 @@ assert.ok(
   await setLanguage('ar');
   assert.strictEqual(settingsRef.current.language, 'ar');
   assert.strictEqual(JSON.parse(storageData['islamic-settings']).language, 'ar');
+
+  // 6. Real production-path delayed-storage concurrency test importing enqueueSettingsUpdate
+  await import('./test_enqueue_settings_concurrency.mjs');
 }
 
 console.log('  ✓ Task 4 Settings queue assertions passed.');

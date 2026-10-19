@@ -11,7 +11,7 @@ import { AppText } from '../components/ui/AppText';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
@@ -408,14 +408,12 @@ function FastingScreen({
               </View>
 
               {/* Clear TODAY Card */}
-              <View style={[styles.todayCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
-                <LinearGradient
-                  colors={tokens.cardGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={StyleSheet.absoluteFill}
-                  pointerEvents="none"
-                />
+              <PremiumCard
+                style={styles.todayCard}
+                contentStyle={{ gap: 14 }}
+                borderRadius={cardTokens.borderRadius}
+                padded
+              >
                 <View style={styles.todayCardHeader}>
                   <View style={{ width: '100%', minWidth: 0 }}>
                     <AppText variant="eyebrow" highlight style={styles.todayCardEyebrow}>
@@ -564,17 +562,15 @@ function FastingScreen({
                     )}
                   </TouchableOpacity>
                 </View>
-              </View>
+              </PremiumCard>
 
               {/* Suhoor & Iftar Times Card */}
-              <View style={[styles.heroCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
-                <LinearGradient
-                  colors={tokens.cardGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 0, y: 1 }}
-                  style={StyleSheet.absoluteFill}
-                  pointerEvents="none"
-                />
+              <PremiumCard
+                style={styles.heroCard}
+                contentStyle={{ gap: 14 }}
+                borderRadius={cardTokens.borderRadius}
+                padded
+              >
                 <View style={styles.heroHeader}>
                   <View style={{ width: '100%', minWidth: 0 }}>
                     <AppText variant="eyebrow" highlight style={styles.heroEyebrow}>
@@ -619,17 +615,15 @@ function FastingScreen({
                     <AppText variant="caption" style={styles.timeBoxSub}>{t('Maghrib Dusk')}</AppText>
                   </View>
                 </View>
-              </View>
+              </PremiumCard>
 
               {/* Missed Fasts (Qada) Section */}
-              <View style={[styles.qadaOverviewCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
-                <LinearGradient
-                  colors={tokens.cardGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFill}
-                  pointerEvents="none"
-                />
+              <PremiumCard
+                style={styles.qadaOverviewCard}
+                contentStyle={{ gap: 14 }}
+                borderRadius={cardTokens.borderRadius}
+                padded
+              >
                 <View style={styles.qadaSectionHeader}>
                   <View style={{ width: '100%', minWidth: 0 }}>
                     <AppText variant="eyebrow" highlight style={styles.qadaSectionEyebrow}>
@@ -737,7 +731,7 @@ function FastingScreen({
                     </TouchableOpacity>
                   </View>
                 )}
-              </View>
+              </PremiumCard>
             </View>
           )}
 
@@ -749,14 +743,13 @@ function FastingScreen({
               </AppText>
 
               {voluntaryRecommendations.map((rec) => (
-                <View key={rec.id} style={[styles.recCard, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
-                  <LinearGradient
-                    colors={tokens.cardGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={StyleSheet.absoluteFill}
-                    pointerEvents="none"
-                  />
+                <PremiumCard
+                  key={rec.id}
+                  style={styles.recCard}
+                  contentStyle={{ gap: 10 }}
+                  borderRadius={cardTokens.borderRadius}
+                  padded
+                >
                   <View style={styles.recCardHeader}>
                     <View style={styles.recTitleWrap}>
                       <AppText variant="sectionTitle" style={styles.recName}>
@@ -823,7 +816,7 @@ function FastingScreen({
                       </AppText>
                     </TouchableOpacity>
                   )}
-                </View>
+                </PremiumCard>
               ))}
             </View>
           )}
@@ -833,7 +826,12 @@ function FastingScreen({
             <View style={styles.tabContent}>
               {/* Scorecard */}
               <View style={styles.qadaScorecard}>
-                <PremiumCard style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent} padded>
+                <PremiumCard
+                  style={styles.qadaStatBox}
+                  contentStyle={styles.qadaStatBoxContent}
+                  borderRadius={cardTokens.borderRadius}
+                  padded
+                >
                   <AppText variant="numeral" highlight style={styles.qadaStatNumber}>
                     {qadaPendingCount}
                   </AppText>
@@ -841,7 +839,12 @@ function FastingScreen({
                     {t('Fasts to Make Up')}
                   </AppText>
                 </PremiumCard>
-                <PremiumCard style={styles.qadaStatBox} contentStyle={styles.qadaStatBoxContent} padded>
+                <PremiumCard
+                  style={styles.qadaStatBox}
+                  contentStyle={styles.qadaStatBoxContent}
+                  borderRadius={cardTokens.borderRadius}
+                  padded
+                >
                   <AppText variant="numeral" style={styles.qadaStatNumber}>
                     {qadaMadeUpCount}
                   </AppText>
@@ -868,14 +871,12 @@ function FastingScreen({
                   </AppText>
                 </TouchableOpacity>
               ) : (
-                <View style={[styles.addMissedForm, getCardShadow(mode), { borderColor: tokens.cardBorder, borderWidth: 0.75, borderRadius: 14, overflow: 'hidden' }]}>
-                  <LinearGradient
-                    colors={tokens.cardGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={StyleSheet.absoluteFill}
-                    pointerEvents="none"
-                  />
+                <PremiumCard
+                  style={styles.addMissedForm}
+                  contentStyle={{ gap: 10 }}
+                  borderRadius={cardTokens.borderRadius}
+                  padded
+                >
                   <AppText variant="sectionTitle" style={styles.formTitle}>
                     {t('Log a Missed Fast')}
                   </AppText>
@@ -954,7 +955,7 @@ function FastingScreen({
                       </LinearGradient>
                     </TouchableOpacity>
                   </View>
-                </View>
+                </PremiumCard>
               )}
 
               {/* List of Missed Fasts */}
@@ -963,7 +964,7 @@ function FastingScreen({
               </AppText>
 
               {visibleMissedList.length === 0 ? (
-                <PremiumCard style={styles.emptyCard} padded>
+                <PremiumCard style={styles.emptyCard} borderRadius={cardTokens.borderRadius} padded>
                   <View style={styles.emptyWrap}>
                     <View style={[styles.emptyIconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
                       <Ionicons name="checkmark-done-circle-outline" size={28} color={tokens.accent} />
@@ -978,7 +979,7 @@ function FastingScreen({
                 </PremiumCard>
               ) : (
                 visibleMissedList.map((item) => (
-                  <PremiumCard key={item.id} style={styles.missedItemCard} contentStyle={styles.missedItemCardContent} padded>
+                  <PremiumCard key={item.id} style={styles.missedItemCard} contentStyle={styles.missedItemCardContent} borderRadius={cardTokens.borderRadius} padded>
                     <View style={styles.missedItemLeft}>
                       <TouchableOpacity
                         style={[
@@ -1048,7 +1049,7 @@ function FastingScreen({
           {activeTab === 'history' && (
             <View style={styles.tabContent}>
               {/* Streak & Aggregate Scorecard */}
-              <PremiumCard style={styles.statsCard} contentStyle={styles.statsCardContent} padded>
+              <PremiumCard style={styles.statsCard} contentStyle={styles.statsCardContent} borderRadius={cardTokens.borderRadius} padded>
                 <View style={styles.historyStatsRow}>
                   <View style={styles.statCol}>
                     <AppText variant="numeral" highlight style={styles.statBig}>{streak}</AppText>
@@ -1070,7 +1071,7 @@ function FastingScreen({
               </AppText>
 
               {history.length === 0 ? (
-                <PremiumCard style={styles.emptyCard} padded>
+                <PremiumCard style={styles.emptyCard} borderRadius={cardTokens.borderRadius} padded>
                   <View style={styles.emptyWrap}>
                     <View style={[styles.emptyIconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder }]}>
                       <Ionicons name="calendar-outline" size={28} color={tokens.accent} />
@@ -1111,7 +1112,7 @@ function FastingScreen({
                   const badge = typeBadgeColors[entry.type] || typeBadgeColors.voluntary;
 
                   return (
-                    <PremiumCard key={entry.date} style={styles.historyRow} contentStyle={styles.historyRowContent} padded>
+                    <PremiumCard key={entry.date} style={styles.historyRow} contentStyle={styles.historyRowContent} borderRadius={cardTokens.borderRadius} padded>
                       <View style={styles.historyLeft}>
                         <Ionicons
                           name={entry.fasting ? 'checkmark-circle' : 'close-circle'}
@@ -1201,7 +1202,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   tabBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   tabContent: {
@@ -1210,8 +1210,7 @@ const styles = StyleSheet.create({
 
   /* Hero Card */
   heroCard: {
-    padding: 18,
-    gap: 14,
+    marginBottom: 14,
   },
   heroHeader: {
     flexDirection: 'column',
@@ -1220,13 +1219,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   heroEyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
   heroTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 22,
     marginTop: 2,
   },
@@ -1243,7 +1240,6 @@ const styles = StyleSheet.create({
   },
   phasePillText: {
     flexShrink: 1,
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
   timesRow: {
@@ -1264,18 +1260,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   timeBoxLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   timeBoxValue: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 18,
     marginTop: 4,
   },
   timeBoxSub: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 2,
   },
@@ -1297,12 +1290,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   statNumber: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
     lineHeight: 28,
   },
   statText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1312,8 +1303,7 @@ const styles = StyleSheet.create({
 
   /* Today Card */
   todayCard: {
-    padding: 18,
-    gap: 14,
+    marginBottom: 14,
   },
   todayCardHeader: {
     flexDirection: 'row',
@@ -1322,13 +1312,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   todayCardEyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
   todayCardTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
     marginTop: 2,
   },
@@ -1342,14 +1330,12 @@ const styles = StyleSheet.create({
     borderWidth: 0.75,
   },
   statusBadgeText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
   todayStatusBox: {
     gap: 12,
   },
   todayStatusMessage: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     lineHeight: 18,
   },
@@ -1364,14 +1350,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   primaryCtaBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   fastTypeContainer: {
     marginTop: 6,
   },
   typeSelectLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     marginBottom: 8,
   },
@@ -1391,14 +1375,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   typeBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
 
   /* Qada Overview Card (Today tab) */
   qadaOverviewCard: {
-    padding: 18,
-    gap: 14,
+    marginBottom: 14,
   },
   qadaSectionHeader: {
     flexDirection: 'row',
@@ -1407,13 +1389,11 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   qadaSectionEyebrow: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
   qadaSectionTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 22,
     marginTop: 2,
   },
@@ -1432,7 +1412,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   stepperBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   qadaQuickList: {
@@ -1456,21 +1435,18 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   viewAllLedgerText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
 
   /* Voluntary Fasts */
   sectionHeading: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: 4,
   },
   recCard: {
-    padding: 16,
-    gap: 10,
+    marginBottom: 12,
   },
   recCardHeader: {
     flexDirection: 'row',
@@ -1484,7 +1460,6 @@ const styles = StyleSheet.create({
     paddingEnd: 8,
   },
   recName: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
   },
   recArabic: {
@@ -1499,11 +1474,9 @@ const styles = StyleSheet.create({
     borderWidth: 0.75,
   },
   statusPillText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
   recDesc: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     lineHeight: 18,
   },
@@ -1517,7 +1490,6 @@ const styles = StyleSheet.create({
   },
   virtueText: {
     flex: 1,
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     lineHeight: 16,
     fontStyle: 'italic',
@@ -1535,7 +1507,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   fastTodayActionText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
 
@@ -1549,11 +1520,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   qadaStatNumber: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 24,
   },
   qadaStatText: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 2,
   },
@@ -1568,20 +1537,16 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   addMissedBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13.5,
   },
   addMissedForm: {
-    padding: 16,
-    gap: 10,
+    marginBottom: 12,
   },
   formTitle: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
     marginBottom: 4,
   },
   inputLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   textInput: {
@@ -1589,7 +1554,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    fontFamily: 'Manrope_400Regular',
     fontSize: 13,
   },
   reasonPillsRow: {
@@ -1605,7 +1569,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   reasonPillText: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
   },
   formActions: {
@@ -1646,11 +1609,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   missedDate: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   missedReason: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     marginTop: 2,
   },
@@ -1658,6 +1619,9 @@ const styles = StyleSheet.create({
     padding: 6,
     flexShrink: 0,
     minHeight: 44,
+    minWidth: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   /* History */
@@ -1673,11 +1637,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   statBig: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 24,
   },
   statLabel: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 3,
   },
@@ -1694,11 +1656,9 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   historyDate: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   historyNote: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 2,
   },
@@ -1710,7 +1670,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   typeBadgeText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
   emptyCard: {
@@ -1732,13 +1691,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyTitle: {
-    fontFamily: 'Lora_500Medium',
     fontSize: 18,
     textAlign: 'center',
     marginBottom: 6,
   },
   emptySubtitle: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 18,
@@ -1753,7 +1710,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   emptyActionText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
 

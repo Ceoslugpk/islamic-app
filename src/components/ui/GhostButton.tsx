@@ -75,7 +75,7 @@ export function GhostButton({
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 36,
+    minHeight: buttonTokens.minHeight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: buttonTokens.borderRadius,

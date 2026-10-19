@@ -1269,6 +1269,7 @@ const HomeScreen = React.memo(function HomeScreen({
                     styles.prayerTileName,
                     {
                       fontFamily: isNext ? 'Manrope_700Bold' : 'Manrope_600SemiBold',
+                      fontSize: isRTL() ? 13 : 11.5,
                     },
                   ]}
                   numberOfLines={1}

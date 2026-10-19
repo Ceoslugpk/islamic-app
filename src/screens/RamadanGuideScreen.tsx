@@ -7,7 +7,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens, fontRoles } from '../theme/tokens';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
@@ -94,12 +94,20 @@ export default function RamadanGuideScreen({
     const translation = update?.translation ?? item.translation;
     const grades = update?.grades ?? item.grades;
     return (
-      <PremiumCard key={item.id} style={[styles.itemCard, isLast && { marginBottom: 0 }]} contentStyle={styles.readingContent} padded>
+      <PremiumCard
+        key={item.id}
+        borderRadius={cardTokens.borderRadius}
+        style={[styles.itemCard, isLast && { marginBottom: 0 }]}
+        contentStyle={styles.readingContent}
+        padded
+      >
         <AppText variant="rowTitle" style={styles.itemTitle}>{t(item.title)}</AppText>
         {arabic ? (
-          <View style={[styles.passagePanel, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}><ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
-            {arabic}
-          </ArabicText></View>
+          <View style={[styles.passagePanel, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}>
+            <ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
+              {arabic}
+            </ArabicText>
+          </View>
         ) : null}
         {item.transliteration ? (
           <AppText variant="subtitle" tone="faint" style={styles.itemTranslit}>
@@ -110,8 +118,8 @@ export default function RamadanGuideScreen({
           {t(translation)}
         </AppText>
         <View style={[styles.refRow, { borderTopColor: tokens.cardBorder }]}>
-          <Ionicons name="book-outline" size={12} color={tokens.textMuted} />
-          <AppText variant="caption" style={styles.itemRef}>
+          <Ionicons name="book-outline" size={14} color={tokens.textMuted} />
+          <AppText variant="caption" tone="faint" style={styles.itemRef}>
             {item.reference}
           </AppText>
           {grades ? (
@@ -167,7 +175,11 @@ export default function RamadanGuideScreen({
         ]}
       >
         {banner && bannerTitle ? (
-          <PremiumCard style={styles.bannerCard} padded>
+          <PremiumCard
+            borderRadius={cardTokens.borderRadius}
+            style={styles.bannerCard}
+            padded
+          >
             <View style={styles.bannerRow}>
               <View
                 style={[
@@ -183,7 +195,7 @@ export default function RamadanGuideScreen({
                         ? 'sparkles'
                         : 'calendar-outline'
                   }
-                  size={17}
+                  size={18}
                   color={tokens.iconCircleFg}
                 />
               </View>
@@ -227,7 +239,7 @@ export default function RamadanGuideScreen({
                     name={
                       (SECTION_ICONS[section.id] ?? 'book-outline') as keyof typeof Ionicons.glyphMap
                     }
-                    size={16}
+                    size={18}
                     color={tokens.iconCircleFg}
                   />
                 </View>
@@ -236,7 +248,7 @@ export default function RamadanGuideScreen({
                     {t(section.title)}
                   </AppText>
                   {section.arabicTitle ? (
-                    <ArabicText align="left" size={13} style={{ color: tokens.text }}>
+                    <ArabicText align="left" size={14} style={{ color: tokens.textSecondary, marginTop: 2 }}>
                       {section.arabicTitle}
                     </ArabicText>
                   ) : null}
@@ -259,14 +271,20 @@ export default function RamadanGuideScreen({
 
 const styles = StyleSheet.create({
   readingContent: { padding: 20 },
-  passagePanel: { paddingHorizontal: 14, paddingVertical: 12, marginVertical: 12, borderWidth: 1, borderRadius: 14 },
+  passagePanel: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginVertical: 12,
+    borderWidth: 1,
+    borderRadius: 14,
+  },
   content: {},
   bannerCard: { marginBottom: 16 },
   bannerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   bannerIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -274,20 +292,20 @@ const styles = StyleSheet.create({
   },
   bannerTextCol: { flex: 1, minWidth: 0 },
   bannerTitle: {
-    fontFamily: fontRoles.title,
-    fontSize: 16,
+    fontSize: 18,
+    letterSpacing: 0.1,
   },
   bannerMeta: {
-    fontFamily: fontRoles.ui,
-    fontSize: 12,
+    fontSize: 12.5,
+    lineHeight: 18,
     marginTop: 2,
   },
   sectionWrap: { marginBottom: 18 },
-  sectionHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
+  sectionHeadRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
   sectionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -295,55 +313,52 @@ const styles = StyleSheet.create({
   },
   sectionTitleCol: { flex: 1, minWidth: 0 },
   sectionTitle: {
-    fontFamily: fontRoles.title,
-    fontSize: 16,
+    fontSize: 18,
+    letterSpacing: 0.1,
   },
-  sectionDivider: { marginTop: 14 },
-  itemCard: { marginBottom: 10 },
+  sectionDivider: { marginTop: 16, marginBottom: 6 },
+  itemCard: { marginBottom: 12 },
   itemTitle: {
-    fontFamily: fontRoles.uiBold,
-    fontSize: 14,
-    letterSpacing: 0.2,
+    fontSize: 16,
+    letterSpacing: 0.1,
     marginBottom: 6,
   },
   itemArabic: {
-    fontFamily: fontRoles.arabic,
     fontSize: 18,
     marginBottom: 6,
   },
   itemTranslit: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     fontStyle: 'italic',
     marginBottom: 4,
   },
   itemTranslation: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
+    lineHeight: 22,
   },
   refRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   itemRef: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     flexShrink: 1,
     minWidth: 0,
   },
   gradePill: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     paddingVertical: 3,
-    borderRadius: 999,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 0,
     flexShrink: 0,
   },
   gradePillText: {
-    fontFamily: fontRoles.uiBold,
-    fontSize: 9.5,
-    letterSpacing: 0.3,
+    fontSize: 10,
+    letterSpacing: 0.4,
   },
 });

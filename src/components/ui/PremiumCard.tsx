@@ -28,7 +28,7 @@ export interface PremiumCardProps {
 
 /**
  * PremiumCard: Floating card with two-layer theme-aware outer shadow,
- * thin gold border, 13–14.5dp border radius, and clipped inner gradient surface.
+ * thin gold border, 18dp border radius (cardTokens.borderRadius), and clipped inner gradient surface.
  */
 export function PremiumCard({
   children,

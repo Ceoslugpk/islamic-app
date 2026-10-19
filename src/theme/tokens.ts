@@ -42,6 +42,7 @@ export const fontRoles = {
   arabicBold: 'Amiri_700Bold',
   arabicNoto: 'NotoNaskhArabic_400Regular',
   arabicNotoBold: 'NotoNaskhArabic_700Bold',
+  urduNastaliq: 'NotoNastaliqUrdu_400Regular',
 } as const;
 
 /**

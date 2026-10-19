@@ -6,7 +6,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { useSettings, LocationMode } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { SubHeader } from '../components/layout/SubHeader';
@@ -151,7 +151,11 @@ export default function LocationScreen({
             />
 
             {/* Current Active Location Card */}
-            <PremiumCard style={[styles.activeCard, { marginBottom: 12 }]} padded>
+            <PremiumCard
+              style={[styles.activeCard, { marginBottom: 12 }]}
+              borderRadius={cardTokens.borderRadius}
+              padded
+            >
               <View style={styles.badgeRow}>
                 <Chip
                   label={isAuto ? t('GPS Auto') : t('Manual')}
@@ -217,12 +221,13 @@ export default function LocationScreen({
 
             {/* Location Mode Selector */}
             <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>{t('Location detection')}</AppText>
-            <PremiumCard padded={false} style={styles.group}>
+            <PremiumCard padded={false} borderRadius={cardTokens.borderRadius} style={styles.group}>
               <TouchableOpacity
                 style={styles.row}
                 onPress={() => handleModeChange(isAuto ? 'manual' : 'auto')}
                 accessibilityRole="switch"
                 accessibilityState={{ checked: isAuto }}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
               >
                 <View style={styles.rowFlex}>
                   <AppText variant="rowTitle" style={styles.rowTitle}>{t('Auto-detect (GPS)')}</AppText>
@@ -291,7 +296,7 @@ export default function LocationScreen({
 
             {/* Manual Coordinates Override */}
             <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>{t('Manual coordinates')}</AppText>
-            <PremiumCard style={styles.formCard} padded>
+            <PremiumCard style={styles.formCard} borderRadius={cardTokens.borderRadius} padded>
               <InputField
                 label={t('City / place name')}
                 value={labelInput}
@@ -360,7 +365,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   groupLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
@@ -369,6 +373,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   group: {
+    borderRadius: cardTokens.borderRadius,
     marginBottom: 4,
   },
   row: {
@@ -380,8 +385,8 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   rowFlex: { flex: 1, minWidth: 0 },
-  rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
-  rowDesc: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
+  rowTitle: { fontSize: 14 },
+  rowDesc: { fontSize: 12, marginTop: 2 },
   toggle: {
     width: 48,
     height: 28,
@@ -392,6 +397,7 @@ const styles = StyleSheet.create({
   },
   toggleKnob: { width: 22, height: 22, borderRadius: 11 },
   activeCard: {
+    borderRadius: cardTokens.borderRadius,
     marginBottom: 4,
   },
   badgeRow: {
@@ -408,22 +414,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   modeBadgeText: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 10,
     letterSpacing: 1,
     paddingVertical: 2,
   },
   statusWarn: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     paddingVertical: 2,
   },
   activeCity: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 26,
+    lineHeight: 32,
   },
   activeCoords: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 4,
     paddingVertical: 2,
@@ -446,15 +449,14 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   shortcutText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     flexShrink: 1,
   },
   shortcutArrow: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 20,
   },
   formCard: {
+    borderRadius: cardTokens.borderRadius,
     marginTop: 4,
   },
   coordsRow: {
@@ -474,13 +476,11 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   errorText: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 14,
     marginBottom: 10,
     paddingVertical: 2,
   },
   successText: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 14,
     marginBottom: 10,
     paddingVertical: 2,

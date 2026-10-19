@@ -145,3 +145,91 @@ export async function fetchNearbyMosques(
 
   throw lastError ?? new Error('All Overpass servers failed');
 }
+
+export interface GeocodedAreaResult {
+  latitude: number;
+  longitude: number;
+  label: string;
+  rawDisplayName: string;
+}
+
+export async function geocodeAreaNominatim(
+  query: string,
+  options: {
+    signal?: AbortSignal;
+    timeoutMs?: number;
+    fetcher?: Fetcher;
+  } = {},
+): Promise<GeocodedAreaResult | null> {
+  const q = query.trim();
+  if (!q) return null;
+  if (options.signal?.aborted) {
+    throw new Error('Area search cancelled');
+  }
+
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1`;
+  const fetcher = options.fetcher ?? fetch;
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  options.signal?.addEventListener('abort', abortFromCaller, { once: true });
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, options.timeoutMs ?? 8000);
+
+  try {
+    const res = await fetcher(url, {
+      headers: {
+        'User-Agent': 'IslamicAppMobile/1.0 (https://islamic.app)',
+        Accept: 'application/json',
+      },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      throw new Error(`Area lookup failed (${res.status})`);
+    }
+
+    const data = (await res.json()) as any;
+    if (options.signal?.aborted) return null;
+    if (!Array.isArray(data) || data.length === 0) {
+      return null;
+    }
+
+    const first = data[0];
+    if (!first || typeof first !== 'object') {
+      return null;
+    }
+
+    const lat = parseFloat(first.lat);
+    const lon = parseFloat(first.lon);
+    if (
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lon) ||
+      lat < -90 ||
+      lat > 90 ||
+      lon < -180 ||
+      lon > 180
+    ) {
+      return null;
+    }
+
+    const rawLabel = first.display_name || q;
+    const labelParts = String(rawLabel).split(',').map((s: string) => s.trim()).filter(Boolean);
+    const shortLabel = labelParts.slice(0, 3).join(', ') || rawLabel;
+
+    return {
+      latitude: lat,
+      longitude: lon,
+      label: shortLabel,
+      rawDisplayName: rawLabel,
+    };
+  } catch (error) {
+    if (options.signal?.aborted) throw new Error('Area search cancelled');
+    if (timedOut) throw new Error('Area search timed out');
+    throw error instanceof Error ? error : new Error(String(error));
+  } finally {
+    clearTimeout(timer);
+    options.signal?.removeEventListener('abort', abortFromCaller);
+  }
+}

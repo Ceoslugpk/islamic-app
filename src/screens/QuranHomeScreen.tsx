@@ -16,7 +16,7 @@ import Svg, { Polygon } from 'react-native-svg';
 import { TabFlatList } from '../components/layout/TabScreen';
 import { AppText } from '../components/ui/AppText';
 import { getCardShadow, getHeroCardShadow, getPillShadow } from '../lib/theme';
-import { useThemeTokens } from '../theme/tokens';
+import { fontRoles, useThemeTokens } from '../theme/tokens';
 import { hScrollRTLStyle } from '../lib/rtl';
 import { fetchSurahList, fetchSurahListForLanguage, getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { SURAHS_114 } from '../lib/surahs114';
@@ -613,7 +613,13 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
             key="quran-search-input"
             style={[
               styles.searchInput,
-              { color: tokens.text, fontSize: isCompact ? 12.5 : 13.5 },
+              {
+                color: tokens.text,
+                fontSize: isCompact ? (isRTL() ? 13.5 : 12.5) : (isRTL() ? 14.5 : 13.5),
+                fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_500Medium',
+                textAlign: isRTL() ? 'right' : 'left',
+                writingDirection: isRTL() ? 'rtl' : 'ltr',
+              },
             ]}
             placeholder={
               verseRef
@@ -1702,8 +1708,8 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 37,
-    borderRadius: 18.5,
+    minHeight: 44,
+    borderRadius: 22,
     borderWidth: 1,
     paddingHorizontal: 12,
     gap: 8,
@@ -1724,13 +1730,16 @@ const styles = StyleSheet.create({
   },
   searchFilterBtn: {
     paddingHorizontal: 9,
-    paddingVertical: 3.5,
+    paddingVertical: 4,
     borderRadius: 10,
     borderWidth: 1,
+    minHeight: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchFilterBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 11.5,
   },
   verseRefHint: {
     flexDirection: 'row',
@@ -1826,11 +1835,11 @@ const styles = StyleSheet.create({
   },
   offlineTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 11.5,
+    fontSize: 13,
   },
   offlineSubtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 9.5,
+    fontSize: 11.5,
     marginTop: 1,
   },
   offlineTrack: {
@@ -1845,16 +1854,16 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
   },
   offlineBtn: {
-    minHeight: 25,
+    minHeight: 30,
     paddingHorizontal: 10,
-    borderRadius: 12.5,
+    borderRadius: 15,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   offlineBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 11.5,
   },
   offlineDoneBadge: {
     flexDirection: 'row',
@@ -1864,7 +1873,7 @@ const styles = StyleSheet.create({
   },
   offlineDoneText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 11.5,
   },
 
   /* 2b. Paired Row: Translation Switch & Recently Read Selector */
@@ -1875,11 +1884,11 @@ const styles = StyleSheet.create({
   pairedCard: {
     flex: 1,
     minWidth: 0,
-    minHeight: 60,
+    minHeight: 64,
     borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: 10,
-    paddingVertical: 6.5,
+    paddingVertical: 7,
     justifyContent: 'space-between',
   },
   pairedCardHeader: {
@@ -1895,23 +1904,23 @@ const styles = StyleSheet.create({
   },
   pairedCardLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 12,
   },
   pairedCardBody: {
     justifyContent: 'center',
   },
   pairedCardTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 12.5,
+    fontSize: 13.5,
   },
   pairedCardSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 9.5,
+    fontSize: 11.5,
     marginTop: 1,
   },
   pairedEmptyText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
     fontStyle: 'italic',
   },
   recentMainTouchable: {
@@ -1919,7 +1928,7 @@ const styles = StyleSheet.create({
   },
   recentResumeBadge: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 9.5,
+    fontSize: 11,
   },
   recentSurahMainRow: {
     flexDirection: 'row',
@@ -1935,13 +1944,15 @@ const styles = StyleSheet.create({
   },
   recentMiniChip: {
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 3,
+    minHeight: 24,
     borderRadius: 6,
     borderWidth: 1,
+    justifyContent: 'center',
   },
   recentMiniChipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 9,
+    fontSize: 10.5,
   },
   recentEmptyWrap: {
     width: '100%',
@@ -1984,7 +1995,7 @@ const styles = StyleSheet.create({
   },
   heroBadgeText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 9,
+    fontSize: 10,
     letterSpacing: 1.4,
     textTransform: 'uppercase',
     color: HOME_THEME_TOKENS.paper.gold,
@@ -2010,7 +2021,7 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 10,
+    fontSize: 11.5,
     marginTop: 1,
     marginBottom: 6,
   },
@@ -2021,13 +2032,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingVertical: 3.5,
+    paddingVertical: 4,
     paddingHorizontal: 11,
     borderRadius: 12,
+    minHeight: 30,
   },
   heroResumeBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 11,
+    fontSize: 12,
     color: HOME_THEME_TOKENS.paper.onGold,
     letterSpacing: 0.2,
   },
@@ -2070,12 +2082,12 @@ const styles = StyleSheet.create({
   },
   tileTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 12,
+    fontSize: 13,
     flexShrink: 1,
   },
   tileSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 9.5,
+    fontSize: 11.5,
     marginTop: 1,
     flexShrink: 1,
   },
@@ -2091,8 +2103,8 @@ const styles = StyleSheet.create({
     paddingEnd: 4,
   },
   chipBtn: {
-    minHeight: 28,
-    borderRadius: 14,
+    minHeight: 32,
+    borderRadius: 16,
     borderWidth: 1,
     paddingHorizontal: 10,
     flexDirection: 'row',
@@ -2101,19 +2113,19 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 11.5,
   },
   chipBadge: {
-    minWidth: 14,
-    minHeight: 14,
-    borderRadius: 7,
+    minWidth: 16,
+    minHeight: 16,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 2.5,
+    paddingHorizontal: 3,
   },
   chipBadgeText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 8.5,
+    fontSize: 10,
   },
 
   /* 6. Surahs Section Header */
@@ -2173,7 +2185,7 @@ const styles = StyleSheet.create({
   },
   metaSubtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 9.5,
+    fontSize: 11.5,
     marginTop: 1,
   },
   arabicName: {

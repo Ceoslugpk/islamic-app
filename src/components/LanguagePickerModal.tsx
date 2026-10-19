@@ -103,9 +103,9 @@ export function LanguagePickerModal({
                   {eyebrow} ({items.length})
                 </AppText>
               )}
-              <AppText variant="headerTitle" style={styles.title}>{title}</AppText>
+              <AppText variant="headerTitle" style={styles.title}>{t(title)}</AppText>
               {subtitle && (
-                <AppText variant="subtitle" style={styles.subtitle}>{subtitle}</AppText>
+                <AppText variant="subtitle" style={styles.subtitle}>{t(subtitle)}</AppText>
               )}
             </View>
             <TouchableOpacity

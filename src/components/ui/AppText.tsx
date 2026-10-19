@@ -75,30 +75,49 @@ function extractString(node: React.ReactNode): string {
 }
 
 function getFontFamily(variant: AppTextVariant, script: TypographyScript): string {
-  const isRtlScript = script === 'arabic' || script === 'urdu';
+  if (script === 'urdu') {
+    return fontRoles.urduNastaliq;
+  }
+  const isArabicScript = script === 'arabic';
   switch (variant) {
     case 'screenTitle':
     case 'headerTitle':
     case 'onHeroTitle':
     case 'title':
     case 'sectionTitle':
-      return isRtlScript ? fontRoles.titleRtl : fontRoles.title;
+      return isArabicScript ? fontRoles.titleRtl : fontRoles.title;
     case 'numeral':
-      return isRtlScript ? fontRoles.titleRtl : fontRoles.title;
+      return isArabicScript ? fontRoles.titleRtl : fontRoles.title;
     case 'eyebrow':
-      return isRtlScript ? fontRoles.arabic : fontRoles.eyebrow;
+      return isArabicScript ? fontRoles.arabic : fontRoles.eyebrow;
     case 'rowTitle':
     case 'link':
-      return isRtlScript ? fontRoles.arabicNotoBold : fontRoles.uiMedium;
+      return isArabicScript ? fontRoles.arabicNotoBold : fontRoles.uiMedium;
     case 'subtitle':
     case 'onHeroSubtitle':
-      return isRtlScript ? fontRoles.arabicNoto : fontRoles.subtitle;
+      return isArabicScript ? fontRoles.arabicNoto : fontRoles.subtitle;
     case 'caption':
     case 'body':
     default:
-      return isRtlScript ? fontRoles.arabicNoto : fontRoles.ui;
+      return isArabicScript ? fontRoles.arabicNoto : fontRoles.ui;
   }
 }
+
+const URDU_VARIANT_CONFIGS: Partial<Record<AppTextVariant, { fontSize: number }>> = {
+  screenTitle: { fontSize: 28 },
+  headerTitle: { fontSize: 26 },
+  onHeroTitle: { fontSize: 26 },
+  title: { fontSize: 20 },
+  sectionTitle: { fontSize: 21 },
+  numeral: { fontSize: 20 },
+  rowTitle: { fontSize: 14 },
+  body: { fontSize: 17 },
+  link: { fontSize: 14 },
+  subtitle: { fontSize: 14 },
+  caption: { fontSize: 13.5 },
+  onHeroSubtitle: { fontSize: 14 },
+  eyebrow: { fontSize: 13 },
+};
 
 export function getTypographyStyle(
   variant: AppTextVariant,
@@ -112,13 +131,16 @@ export function getTypographyStyle(
       : scriptOrRtl;
 
   const cfg = VARIANT_CONFIGS[variant] || VARIANT_CONFIGS.body;
-  const lineHeight = calculateScriptLineHeight(cfg.fontSize, script, cfg.category);
+  const resolvedFontSize = script === 'urdu' && URDU_VARIANT_CONFIGS[variant]?.fontSize
+    ? URDU_VARIANT_CONFIGS[variant]!.fontSize
+    : cfg.fontSize;
+  const lineHeight = calculateScriptLineHeight(resolvedFontSize, script, cfg.category);
   const fontFamily = getFontFamily(variant, script);
   const isRtlScript = script === 'arabic' || script === 'urdu';
 
   const style: TextStyle = {
     fontFamily,
-    fontSize: cfg.fontSize,
+    fontSize: resolvedFontSize,
     lineHeight,
   };
 
@@ -156,9 +178,7 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
   if (tone === 'danger') {
     resolvedColor = tokens.danger;
   } else if (tone === 'faint') {
-    resolvedColor = variant === 'body' || variant === 'subtitle' || variant === 'rowTitle'
-      ? tokens.subtle
-      : tokens.faint;
+    resolvedColor = tokens.subtle;
   } else if (tone === 'onGold') {
     resolvedColor = tokens.onGold;
   } else if (onHero) {

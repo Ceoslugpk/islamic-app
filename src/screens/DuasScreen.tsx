@@ -16,7 +16,7 @@ import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeTokens, getBrandLogoSource } from '../theme/tokens';
+import { useThemeTokens, getBrandLogoSource, cardTokens, fontRoles } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { t, isRTL } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
@@ -154,7 +154,7 @@ export default function DuasScreen({
       <PremiumCard
         key={item.id}
         padded={false}
-        borderRadius={14}
+        borderRadius={cardTokens.borderRadius}
         style={[
           styles.duaCard,
           isHighlighted && {
@@ -191,7 +191,7 @@ export default function DuasScreen({
 
         {/* Arabic Text */}
         <View style={styles.arabicWrap}>
-          <ArabicText size={26} align="right" style={[styles.arabic, { color: tokens.text }]}>
+          <ArabicText size={26} align="right" style={[styles.arabic, { color: tokens.textPrimary }]}>
             {item.arabic}
           </ArabicText>
         </View>
@@ -199,7 +199,7 @@ export default function DuasScreen({
         <Hairline style={{ marginVertical: 12, backgroundColor: tokens.cardBorder }} />
 
         {/* Transliteration */}
-        <AppText variant="subtitle" style={styles.translit}>
+        <AppText variant="subtitle" tone="faint" style={styles.translit}>
           {item.transliteration}
         </AppText>
 
@@ -220,7 +220,7 @@ export default function DuasScreen({
             style={styles.shareBtn}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Ionicons name="share-outline" size={16} color={tokens.muted} />
+            <Ionicons name="share-outline" size={17} color={tokens.textMuted} />
           </TouchableOpacity>
         </View>
       </PremiumCard>
@@ -345,14 +345,22 @@ export default function DuasScreen({
           },
         ]}
       >
-        <Ionicons name="search" size={16} color={tokens.muted} style={styles.searchIcon} />
+        <Ionicons name="search" size={17} color={tokens.muted} style={styles.searchIcon} />
         <TextInput
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder={isCompact ? t('Search duas...') : t('Search duas by title, transliteration, or meaning...')}
           placeholderTextColor={tokens.muted}
-          accessibilityLabel={t('Search duas...')}
-          style={[styles.searchInput, { color: tokens.text }]}
+          style={[
+            styles.searchInput,
+            {
+              color: tokens.text,
+              fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_400Regular',
+              textAlign: isRTL() ? 'right' : 'left',
+              writingDirection: isRTL() ? 'rtl' : 'ltr',
+              fontSize: isRTL() ? 15 : 14,
+            },
+          ]}
           autoCapitalize="none"
           autoCorrect={false}
           returnKeyType="search"
@@ -360,7 +368,7 @@ export default function DuasScreen({
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="close-circle" size={16} color={tokens.muted} />
+            <Ionicons name="close-circle" size={17} color={tokens.muted} />
           </TouchableOpacity>
         )}
       </View>
@@ -560,71 +568,72 @@ const styles = StyleSheet.create({
   },
   randomBtn: {
     marginStart: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     minHeight: 44,
     borderRadius: 14,
-    borderWidth: 0.75,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
   randomBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   categoryChip: {
     minHeight: 44,
     borderRadius: 999,
-    borderWidth: 0.75,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   categoryChipGradient: {
-    minHeight: 36,
+    minHeight: 44,
     width: '100%',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryChipUnselected: {
-    minHeight: 36,
+    minHeight: 44,
     width: '100%',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   categoryChipText: {
-    fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 12.5,
+    letterSpacing: 0.1,
   },
   listContent: {},
   searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 0.75,
+    borderWidth: 1,
     borderRadius: 22,
     paddingHorizontal: 14,
-    minHeight: 42,
-    marginBottom: 10,
+    minHeight: 44,
+    marginBottom: 12,
   },
   searchIcon: {
-    marginEnd: 6,
+    marginEnd: 8,
   },
   searchInput: {
     flex: 1,
-    fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     paddingVertical: 0,
     minWidth: 0,
     ...(Platform.OS === 'web' ? { outlineStyle: 'none', outlineWidth: 0 } as any : {}),
   },
   clearBtn: {
-    padding: 4,
+    padding: 6,
+    minWidth: 44,
     minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   recentWrap: {
     marginBottom: 10,
@@ -636,12 +645,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   recentLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     letterSpacing: 0.2,
   },
   clearAllText: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
   },
   recentChipsScroll: {
@@ -653,11 +660,11 @@ const styles = StyleSheet.create({
   recentChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 10,
     borderWidth: 1,
-    paddingStart: 8,
+    paddingStart: 10,
     paddingEnd: 4,
-    minHeight: 28,
+    minHeight: 32,
     paddingVertical: 2,
   },
   recentChipBtn: {
@@ -668,65 +675,60 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   recentChipText: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     maxWidth: 140,
   },
   recentChipRemove: {
-    padding: 4,
+    padding: 6,
     marginStart: 2,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 44,
+    minWidth: 28,
   },
   duaCard: {
-    borderRadius: 20,
-    overflow: 'hidden',
+    borderRadius: cardTokens.borderRadius,
   },
   duaCardContent: {
-    padding: 18,
+    padding: 20,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 14,
+    marginBottom: 12,
     gap: 8,
   },
   duaTitle: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 20,
     flex: 1,
     minWidth: 0,
   },
   categoryBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1,
     flexShrink: 0,
   },
   categoryBadgeText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
   },
   arabicWrap: {
-    paddingVertical: 6,
+    paddingVertical: 8,
   },
   arabic: {
     lineHeight: 42,
   },
   translit: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 13,
     lineHeight: 20,
     fontStyle: 'italic',
     marginBottom: 8,
   },
   translation: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 12,
@@ -739,12 +741,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   shareBtn: {
-    padding: 4,
+    padding: 6,
     flexShrink: 0,
+    minWidth: 44,
     minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   refText: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     flex: 1,
     minWidth: 0,

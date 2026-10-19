@@ -68,6 +68,9 @@ export function SearchField({
           {
             color: colors.textPrimary,
             textAlign: rtl ? 'right' : 'left',
+            fontFamily: rtl ? fontRoles.arabicNoto : fontRoles.ui,
+            writingDirection: rtl ? 'rtl' : 'ltr',
+            fontSize: rtl ? 15 : 14,
           },
           inputStyle,
         ]}
@@ -85,7 +88,7 @@ export function SearchField({
           onPress={handleClear}
           accessibilityRole="button"
           accessibilityLabel={t('Clear search')}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           style={styles.clearBtn}
         >
           <Ionicons name="close-circle" size={16} color={colors.textMuted} />

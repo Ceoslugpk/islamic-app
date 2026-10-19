@@ -73,6 +73,7 @@ const roles = {
   arabic: 'Amiri_400Regular', arabicNoto: 'NotoNaskhArabic_400Regular',
   arabicNotoBold: 'NotoNaskhArabic_700Bold', ui: 'Manrope_400Regular',
   uiMedium: 'Manrope_500Medium', subtitle: 'Manrope_400Regular', eyebrow: 'Manrope_600SemiBold',
+  urduNastaliq: 'NotoNastaliqUrdu_400Regular',
 };
 const { AppText } = load('src/components/ui/AppText.tsx', {
   react: React, 'react-native': native,
@@ -95,12 +96,30 @@ for (language of ['ur', 'ar', 'en']) {
 }
 language = 'ur';
 const urdu = renderText({ children: 'نماز ٹریکر', variant: 'title', style: { fontFamily: roles.title, fontSize: 24, lineHeight: 20, letterSpacing: 2 } });
-assert.equal(urdu.style.fontFamily, roles.titleRtl, 'Translated text must override a Latin screen font');
-assert.equal(urdu.style.lineHeight, 53);
+assert.equal(urdu.style.fontFamily, roles.urduNastaliq, 'Translated text must override a Latin screen font and resolve to Urdu Nastaliq');
+assert.equal(urdu.style.lineHeight, 53, 'Urdu text line-height must be 2.2x font size');
 assert.equal(urdu.style.writingDirection, 'rtl');
 assert.equal(urdu.style.textAlign, 'right');
 assert.equal(urdu.style.letterSpacing, 0);
 assert.equal(urdu.style.includeFontPadding, true);
+
+// Verify Arabic text resolves to Naskh (NotoNaskhArabic_700Bold) with 1.8x line-height
+language = 'ar';
+const arabic = renderText({ children: 'الفاتحة', variant: 'title', style: { fontFamily: roles.title, fontSize: 24, lineHeight: 20, letterSpacing: 2 } });
+assert.equal(arabic.style.fontFamily, roles.titleRtl, 'Arabic text must resolve to Naskh (NotoNaskhArabic_700Bold)');
+assert.equal(arabic.style.lineHeight, 44, 'Arabic text line-height must be 1.8x font size');
+assert.equal(arabic.style.writingDirection, 'rtl');
+assert.equal(arabic.style.textAlign, 'right');
+
+// Verify Quran Arabic with explicit Amiri/Naskh font override is preserved and not changed to Urdu Nastaliq
+language = 'ur';
+const quranArabic = renderText({
+  children: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
+  variant: 'title',
+  style: { fontFamily: roles.arabic, fontSize: 24, lineHeight: 20 },
+});
+assert.equal(quranArabic.style.fontFamily, roles.arabic, 'Quran Arabic text with Amiri font override must remain Amiri and not be changed to Urdu Nastaliq');
+
 assert.equal(renderText({ children: 'نماز', style: { textAlign: 'center' } }).style.textAlign, 'center');
 assert.equal(renderText({ children: 'Read', style: { fontSize: 16, lineHeight: 12 } }).style.lineHeight, 24, 'Custom body sizes must also avoid clipping');
 console.log('✓ Production text rendering preserves Latin metrics, RTL fonts/alignment, centered controls, and minimum line boxes.');

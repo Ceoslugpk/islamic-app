@@ -233,18 +233,18 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
         <View style={[styles.contentWrap, { maxWidth: maxW }]}>
           {activeScreen === 'privacy' && (
             <>
-              <LegalSection title="Our Commitment to Privacy" badge="Zero Data Sale">
+              <LegalSection title={t("Our Commitment to Privacy")} badge={t("Zero Data Sale")}>
                 <AppText variant="body" style={styles.paragraph}>
                   {t("This application is built entirely as Sadaqah Jariyah (continuous charity) for the Muslim Ummah. We believe your spiritual practices, daily prayers, notes, and reflections are sacred and private to you alone. We do not sell, rent, monetize, or distribute any user data under any circumstances.")}
                 </AppText>
               </LegalSection>
 
-              <LegalSection title="No Accounts & No Profiles" badge="Account-Free">
+              <LegalSection title={t("No Accounts & No Profiles")} badge={t("Account-Free")}>
                 <AppText variant="body" style={styles.paragraph}>
                   {t("The app requires no account creation, sign-in, email address, or phone number. We do not create user profiles, fingerprint your device, or track your identity across sessions or devices.")}
                 </AppText>
                 <BulletItem
-                  title="No authentication servers"
+                  title={t("No authentication servers")}
                   text={t("You can use every core feature immediately without ever signing in or providing personal credentials.")}
                 />
                 <BulletItem

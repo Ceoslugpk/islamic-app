@@ -12,11 +12,11 @@ import {
 } from 'react-native';
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeTokens, cardTokens } from '../theme/tokens';
+import { useThemeTokens, cardTokens, fontRoles } from '../theme/tokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCardShadow } from '../lib/homeThemeTokens';
 import { TAB_PAD_BOTTOM } from '../components/layout/layout.constants';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { getLocalizedSurahName, normalizeSearchText } from '../lib/surahNamesLocalized';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
@@ -377,6 +377,10 @@ export default function TafsirScreen({
                     color: tokens.text,
                     backgroundColor: tokens.inset,
                     borderColor: tokens.cardBorder,
+                    fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_400Regular',
+                    textAlign: isRTL() ? 'right' : 'left',
+                    writingDirection: isRTL() ? 'rtl' : 'ltr',
+                    fontSize: isRTL() ? 15 : 14,
                   },
                 ]}
               />

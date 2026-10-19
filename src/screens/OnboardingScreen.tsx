@@ -994,37 +994,37 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
       <LanguagePickerModal
         visible={modalType === 'app'}
         onClose={() => setModalType(null)}
-        title="App Language"
-        subtitle="Choose your preferred UI language"
-        eyebrow="APP LANGUAGE"
+        title={t("App Language")}
+        subtitle={t("Choose your preferred UI language")}
+        eyebrow={t("APP LANGUAGE")}
         items={appModalItems}
         selectedId={selectedAppLang}
         onSelect={handleSelectAppLang}
-        searchPlaceholder="Search language..."
+        searchPlaceholder={t("Search language...")}
       />
 
       <LanguagePickerModal
         visible={modalType === 'quran'}
         onClose={() => setModalType(null)}
-        title="Quran Translation"
-        subtitle="Choose translation edition & language"
-        eyebrow="TRANSLATION"
+        title={t("Quran Translation")}
+        subtitle={t("Choose translation edition & language")}
+        eyebrow={t("TRANSLATION")}
         items={quranModalItems}
         selectedId={selectedQuranLang}
         onSelect={handleSelectQuranLang}
-        searchPlaceholder="Search language or translator..."
+        searchPlaceholder={t("Search language or translator...")}
       />
 
       <LanguagePickerModal
         visible={modalType === 'audio'}
         onClose={() => setModalType(null)}
-        title="Quran Audio"
-        subtitle="Choose translation recitation language"
-        eyebrow="AUDIO TRANSLATION"
+        title={t("Quran Audio")}
+        subtitle={t("Choose translation recitation language")}
+        eyebrow={t("AUDIO TRANSLATION")}
         items={audioModalItems}
         selectedId={selectedAudioId}
         onSelect={handleSelectAudioEdition}
-        searchPlaceholder="Search audio translation..."
+        searchPlaceholder={t("Search audio translation...")}
       />
     </View>
   );

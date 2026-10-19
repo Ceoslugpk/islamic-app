@@ -10,7 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { useSettings, PrayerNameKey, QuranGoalType } from '../lib/settings';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
@@ -489,7 +489,7 @@ export default function PrayerRemindersScreen({
 
           {/* Master Reminder Card */}
           <AppText variant="eyebrow" tone="faint" style={[styles.groupLabel, styles.firstGroupLabel]}>{t('Prayer reminders')}</AppText>
-          <PremiumCard style={styles.groupCard} padded={false}>
+          <PremiumCard style={styles.groupCard} borderRadius={cardTokens.borderRadius} padded={false}>
             <View style={styles.row}>
               <View style={styles.rowFlex}>
                 <AppText variant="rowTitle" style={styles.rowTitle}>{t('Prayer reminders')}</AppText>
@@ -655,7 +655,7 @@ export default function PrayerRemindersScreen({
         <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Per-prayer alerts & audio')}
         </AppText>
-        <PremiumCard style={styles.groupCard} padded={false}>
+        <PremiumCard style={styles.groupCard} borderRadius={cardTokens.borderRadius} padded={false}>
           {PRAYER_LIST.map((p, idx) => {
             const config = prayerConfigs[p.key] || { enabled: true, adhan: true, vibration: true };
             const time = timingsData?.timings ? (timingsData.timings as any)[p.key] : null;
@@ -779,7 +779,7 @@ export default function PrayerRemindersScreen({
         <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Pre-prayer advance notice')} — {reminderOffsetMinutes === 0 ? t('off') : `${reminderOffsetMinutes} ${t('min before')}`}
         </AppText>
-        <PremiumCard style={styles.groupCard} padded={false}>
+        <PremiumCard style={styles.groupCard} borderRadius={cardTokens.borderRadius} padded={false}>
           <AppText variant="caption" tone="faint" style={styles.groupDesc}>
             {t('Send an early heads-up before each prayer so you can prepare wudu. Choose "Off" for alerts only at prayer time.')}
           </AppText>
@@ -804,7 +804,7 @@ export default function PrayerRemindersScreen({
         <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Adhan reciter')}
         </AppText>
-        <PremiumCard style={styles.groupCard} padded={false}>
+        <PremiumCard style={styles.groupCard} borderRadius={cardTokens.borderRadius} padded={false}>
           <TouchableOpacity
             style={styles.row}
             onPress={() => setAdhanModalOpen(true)}
@@ -890,7 +890,7 @@ export default function PrayerRemindersScreen({
         <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Test notifications')}
         </AppText>
-        <PremiumCard style={styles.groupCard} padded={false}>
+        <PremiumCard style={styles.groupCard} borderRadius={cardTokens.borderRadius} padded={false}>
           <AppText variant="caption" tone="faint" style={styles.groupDesc}>
             {t('Send a test alert to try sounds, vibration, and notification buttons (Mark Prayed, Stop Adhan, Snooze 10m).')}
           </AppText>
@@ -941,7 +941,7 @@ export default function PrayerRemindersScreen({
         <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Daily Quran reminder & reading goal')}
         </AppText>
-        <PremiumCard style={styles.groupCard} padded={false}>
+        <PremiumCard style={styles.groupCard} borderRadius={cardTokens.borderRadius} padded={false}>
           {/* Quran Reminder Master Toggle */}
           <View style={styles.row}>
             <View style={styles.rowFlex}>
@@ -1157,7 +1157,7 @@ export default function PrayerRemindersScreen({
         </PremiumCard>
 
         {/* Android Reliability Info Card */}
-        <PremiumCard style={styles.groupCard} padded>
+        <PremiumCard style={styles.groupCard} borderRadius={cardTokens.borderRadius} padded>
           <AppText variant="sectionTitle" style={styles.infoTitle}>
             {t('How your reminders work')}
           </AppText>
@@ -1200,7 +1200,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   groupLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 11,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
@@ -1213,7 +1212,6 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   groupDesc: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     paddingHorizontal: 16,
     paddingTop: 12,
@@ -1237,11 +1235,9 @@ const styles = StyleSheet.create({
   },
   rowFlex: { flex: 1, minWidth: 0 },
   rowTitle: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
   },
   rowDesc: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 13,
     marginTop: 2,
   },
@@ -1268,7 +1264,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   errorText: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 14,
     flex: 1,
     minWidth: 0,
@@ -1284,7 +1279,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   errorActionText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   bannerBox: {
@@ -1298,7 +1292,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   bannerText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     flex: 1,
     minWidth: 0,
@@ -1311,7 +1304,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   healthLoadingText: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
   },
   healthRow: {
@@ -1326,7 +1318,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   healthLabel: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
@@ -1343,7 +1334,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   healthValue: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   rescheduleRow: {
@@ -1363,7 +1353,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   rescheduleBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   snoozeBtn: {
@@ -1377,7 +1366,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   snoozeBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   playingBanner: {
@@ -1399,11 +1387,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   playingTitle: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 14,
+    fontWeight: '700',
   },
   playingReciter: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
   },
   stopAdhanBtn: {
@@ -1416,7 +1403,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   stopAdhanText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   prayerRow: {
@@ -1437,12 +1423,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   prayerName: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 15,
+    fontWeight: '700',
   },
   prayerArabic: {
-    fontFamily: 'Amiri_700Bold',
     fontSize: 15,
+    fontWeight: '700',
   },
   timeBadge: {
     paddingHorizontal: 7,
@@ -1452,7 +1438,6 @@ const styles = StyleSheet.create({
     minHeight: 20,
   },
   timeBadgeText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     paddingVertical: 2,
   },
@@ -1474,7 +1459,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   miniPillText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
   testIconBtn: {
@@ -1502,7 +1486,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   segLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   reciterHeaderRow: {
@@ -1517,13 +1500,11 @@ const styles = StyleSheet.create({
     minHeight: 18,
   },
   reciterBadgeText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     textTransform: 'uppercase',
     paddingVertical: 2,
   },
   reciterArabic: {
-    fontFamily: 'Amiri_700Bold',
     fontSize: 14,
     marginTop: 2,
     paddingVertical: 2,
@@ -1534,7 +1515,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   changeText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   actionRow: {
@@ -1555,7 +1535,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   reciterActionBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   stopIconBtn: {
@@ -1569,7 +1548,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   stopIconBtnText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   testGrid: {
@@ -1584,23 +1562,19 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   testCardTitle: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     marginTop: 2,
   },
   testCardDesc: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
   },
   sectionInner: {
     padding: 14,
   },
   innerTitle: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
   },
   innerDesc: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 2,
   },
@@ -1617,7 +1591,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   timePillText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   goalTypeRow: {
@@ -1635,7 +1608,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   goalTypePillText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
   },
   stepperWrap: {
@@ -1655,8 +1627,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepperVal: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 14,
+    fontWeight: '700',
   },
   goalProgressCard: {
     padding: 12,
@@ -1673,15 +1645,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   goalProgressLabel: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     paddingVertical: 2,
   },
   goalProgressValue: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 15,
+    fontWeight: '700',
     marginTop: 2,
     paddingVertical: 2,
   },
@@ -1693,7 +1664,6 @@ const styles = StyleSheet.create({
     minHeight: 24,
   },
   goalStatusText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     paddingVertical: 2,
   },
@@ -1727,7 +1697,6 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   markGoalText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     paddingVertical: 2,
   },
@@ -1738,10 +1707,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 14,
-    minHeight: 36,
+    minHeight: 44,
   },
   readNowText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     paddingVertical: 2,
   },
@@ -1750,12 +1718,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   infoTitle: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 15,
+    fontWeight: '700',
     marginBottom: 8,
   },
   infoText: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     lineHeight: 20,
   },

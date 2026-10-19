@@ -19,7 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppText } from '../components/ui/AppText';
 import { useTheme } from '../lib/theme';
-import { useThemeTokens } from '../theme/tokens';
+import { fontRoles, useThemeTokens } from '../theme/tokens';
 import { useHaptics } from '../lib/haptics';
 import { iconSizes } from '../lib/iconMap';
 import { getCardShadow, getFloatingCardShadow, getPillShadow } from '../lib/homeThemeTokens';
@@ -30,7 +30,7 @@ import { AudioPlayerModal } from '../components/AudioPlayerModal';
 import { EmptyState } from '../components/EmptyState';
 import { SkeletonCard } from '../components/Skeleton';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import {
   addPlaybackStatusListener,
   addQueueListener,
@@ -614,7 +614,16 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                 accessibilityLabel={t('Search by reciter name or style...')}
                 value={reciterSearch}
                 onChangeText={setReciterSearch}
-                style={[styles.searchInput, { color: colors.textPrimary }]}
+                style={[
+                  styles.searchInput,
+                  {
+                    color: colors.textPrimary,
+                    fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_400Regular',
+                    textAlign: isRTL() ? 'right' : 'left',
+                    writingDirection: isRTL() ? 'rtl' : 'ltr',
+                    fontSize: isRTL() ? 14 : 13,
+                  },
+                ]}
               />
               {reciterSearch.length > 0 && (
                 <TouchableOpacity onPress={() => setReciterSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -1326,6 +1335,10 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
                             color: colors.textPrimary,
                             backgroundColor: colors.bgBase,
                             borderColor: colors.borderSubtle,
+                            fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_400Regular',
+                            textAlign: isRTL() ? 'right' : 'left',
+                            writingDirection: isRTL() ? 'rtl' : 'ltr',
+                            fontSize: isRTL() ? 15 : 14,
                           },
                         ]}
                       />
@@ -1915,7 +1928,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 6,
     paddingHorizontal: 14,
-    minHeight: 42,
+    minHeight: 44,
     borderRadius: 22,
     borderWidth: 1,
   },

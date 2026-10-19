@@ -324,7 +324,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
                     variant="eyebrow"
                     onHero
                     style={[styles.heroLabelText, { fontFamily: fontPoppinsMedium }]}
-                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1.2}
                   >
                     {t('Knowledge').toLocaleUpperCase()}
                   </AppText>
@@ -351,7 +351,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
                   <AppText
                     variant="numeral"
                     onHero
-                    allowFontScaling={false}
+                    maxFontSizeMultiplier={1.2}
                     style={[
                       styles.heroBigNumber,
                       {
@@ -410,9 +410,8 @@ const LibraryScreen = React.memo(function LibraryScreen({
                         fontFamily: fontPoppinsMedium,
                       },
                     ]}
-                    allowFontScaling={false}
                   >
-                    {t('Browse')} →
+                    {t('Browse')} {rtl ? '←' : '→'}
                   </AppText>
                 </LinearGradient>
               </View>
@@ -1178,16 +1177,16 @@ const styles = StyleSheet.create({
   },
   browseBtn: {
     minWidth: 104,
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: 12,
-    paddingVertical: 3,
-    borderRadius: 20,
+    paddingVertical: 4,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   browseBtnText: {
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 17,
   },
 
   /* Decorative Books */
@@ -1233,16 +1232,16 @@ const styles = StyleSheet.create({
 
   /* Section Labels */
   sectionLabel: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: 22.5,
     marginStart: 26,
   },
   guidesSectionLabel: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     letterSpacing: 2,
     textTransform: 'uppercase',
     marginTop: 29,
@@ -1258,12 +1257,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   knowledgeTileWrap: {
-    minHeight: 83.5,
+    minHeight: 88,
     borderRadius: 18,
   },
   knowledgeTileInner: {
     flex: 1,
-    minHeight: 83.5,
+    minHeight: 88,
     borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
@@ -1284,12 +1283,12 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   tileTitle: {
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 18,
   },
   tileSubtitle: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     marginTop: 1,
   },
 
@@ -1297,17 +1296,17 @@ const styles = StyleSheet.create({
   downloadsCardWrap: {
     marginHorizontal: 14.5,
     marginTop: 7.3,
-    minHeight: 43.6,
+    minHeight: 48,
     borderRadius: 18,
   },
   downloadsCardInner: {
     flex: 1,
-    minHeight: 43.6,
+    minHeight: 48,
     borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
     paddingHorizontal: 11,
-    paddingVertical: 4,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -1325,12 +1324,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   downloadsTitle: {
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 18,
   },
   downloadsSubtitle: {
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     marginTop: 1,
   },
 
@@ -1349,9 +1348,9 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   guideRow: {
-    minHeight: 40.7,
+    minHeight: 44,
     paddingHorizontal: 11,
-    paddingVertical: 4,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -1369,12 +1368,12 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   guideTitle: {
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 13,
+    lineHeight: 18,
   },
   guideSubtitle: {
-    fontSize: 11,
-    lineHeight: 13,
+    fontSize: 12,
+    lineHeight: 16,
     marginTop: 1,
   },
   guideSeparator: {

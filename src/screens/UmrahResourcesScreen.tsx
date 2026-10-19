@@ -9,7 +9,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useThemeTokens, fontRoles } from '../theme/tokens';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, Chip, PrimaryButton } from '../components/ui';
@@ -227,7 +227,7 @@ export default function UmrahResourcesScreen({
 
         {/* Duas Quick Jump Card */}
         {onOpenDuas && (
-          <PremiumCard style={styles.quickDuaCard} padded>
+          <PremiumCard style={styles.quickDuaCard} borderRadius={cardTokens.borderRadius} padded>
             <View style={styles.quickDuaRow}>
               <View style={{ flex: 1, minWidth: 180, paddingEnd: 12 }}>
                 <AppText variant="eyebrow" highlight style={styles.cardLead}>{t('SUPPLICATIONS READY')}</AppText>
@@ -265,7 +265,7 @@ export default function UmrahResourcesScreen({
             {['Ihram & Clothing', 'Toiletries & Hygiene', 'Health & Essentials', 'Travel & Utilities'].map((cat) => {
               const items = PACKING_ITEMS.filter((i) => i.category === cat);
               return (
-                <PremiumCard key={cat} style={styles.catCard} padded>
+                <PremiumCard key={cat} style={styles.catCard} borderRadius={cardTokens.borderRadius} padded>
                   <AppText variant="eyebrow" highlight style={styles.catHeader}>
                     {t(cat).toUpperCase()}
                   </AppText>
@@ -326,7 +326,7 @@ export default function UmrahResourcesScreen({
             </AppText>
 
             {FIRST_TIMER_TIPS.map((tip, idx) => (
-              <PremiumCard key={idx} style={styles.tipCard} padded>
+              <PremiumCard key={idx} style={styles.tipCard} borderRadius={cardTokens.borderRadius} padded>
                 <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
                   <View
                     style={[
@@ -360,7 +360,7 @@ export default function UmrahResourcesScreen({
               {t('Adab (spiritual courtesy) transforms physical travel into an accepted, beloved act of devotion.')}
             </AppText>
 
-            <PremiumCard style={styles.etiquetteCard} padded>
+            <PremiumCard style={styles.etiquetteCard} borderRadius={cardTokens.borderRadius} padded>
               <AppText variant="sectionTitle" style={styles.etiquetteTitle}>
                 {t('Inner State & Spiritual Presence')}
               </AppText>
@@ -369,7 +369,7 @@ export default function UmrahResourcesScreen({
               </AppText>
             </PremiumCard>
 
-            <PremiumCard style={styles.etiquetteCard} padded>
+            <PremiumCard style={styles.etiquetteCard} borderRadius={cardTokens.borderRadius} padded>
               <AppText variant="sectionTitle" style={styles.etiquetteTitle}>
                 {t('Patience with Fellow Pilgrims')}
               </AppText>
@@ -378,7 +378,7 @@ export default function UmrahResourcesScreen({
               </AppText>
             </PremiumCard>
 
-            <PremiumCard style={styles.etiquetteCard} padded>
+            <PremiumCard style={styles.etiquetteCard} borderRadius={cardTokens.borderRadius} padded>
               <AppText variant="sectionTitle" style={styles.etiquetteTitle}>
                 {t('Protecting the Tranquility of the Sanctuary')}
               </AppText>
@@ -387,7 +387,7 @@ export default function UmrahResourcesScreen({
               </AppText>
             </PremiumCard>
 
-            <PremiumCard style={styles.etiquetteCard} padded>
+            <PremiumCard style={styles.etiquetteCard} borderRadius={cardTokens.borderRadius} padded>
               <AppText variant="sectionTitle" style={styles.etiquetteTitle}>
                 {t('Cleanliness and Civic Care')}
               </AppText>
@@ -409,7 +409,7 @@ export default function UmrahResourcesScreen({
             </AppText>
 
             {COMMON_MISTAKES.map((item, idx) => (
-              <PremiumCard key={idx} style={styles.mistakeCard} padded>
+              <PremiumCard key={idx} style={styles.mistakeCard} borderRadius={cardTokens.borderRadius} padded>
                 <View style={styles.mistakeHeader}>
                   <Ionicons name="alert-circle-outline" size={16} color={tokens.danger} />
                   <AppText variant="eyebrow" tone="danger" style={styles.mistakeTopic}>
@@ -445,7 +445,7 @@ export default function UmrahResourcesScreen({
             </AppText>
 
             {RECOMMENDED_BOOKS.map((book, idx) => (
-              <PremiumCard key={idx} style={styles.bookCard} padded>
+              <PremiumCard key={idx} style={styles.bookCard} borderRadius={cardTokens.borderRadius} padded>
                 <AppText variant="eyebrow" highlight style={styles.bookFocus}>
                   {t(book.focus).toUpperCase()}
                 </AppText>
@@ -484,15 +484,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sectionHeading: {
-    fontFamily: fontRoles.title,
     fontSize: 16,
   },
   progressBadge: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 12,
   },
   sectionDesc: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
     lineHeight: 19,
     marginBottom: 14,
@@ -501,7 +498,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   catHeader: {
-    fontFamily: fontRoles.eyebrow,
     fontSize: 11,
     letterSpacing: 1.2,
     marginBottom: 10,
@@ -523,11 +519,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkItemTitle: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
   },
   checkItemNote: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     marginTop: 2,
     lineHeight: 16,
@@ -543,17 +537,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   cardLead: {
-    fontFamily: fontRoles.eyebrow,
     fontSize: 10,
     letterSpacing: 1,
   },
   cardTitleSm: {
-    fontFamily: fontRoles.title,
     fontSize: 15,
     marginTop: 2,
   },
   cardDescSm: {
-    fontFamily: fontRoles.ui,
     fontSize: 12,
     marginTop: 2,
     lineHeight: 16,
@@ -570,12 +561,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tipTitle: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
     marginBottom: 3,
   },
   tipDetail: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
     lineHeight: 18,
   },
@@ -583,12 +572,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   etiquetteTitle: {
-    fontFamily: fontRoles.title,
     fontSize: 15,
     marginBottom: 6,
   },
   etiquetteBody: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
     lineHeight: 19,
   },
@@ -602,13 +589,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   mistakeTopic: {
-    fontFamily: fontRoles.eyebrow,
     fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   mistakeText: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 14,
     lineHeight: 19,
   },
@@ -619,7 +604,6 @@ const styles = StyleSheet.create({
   },
   correctText: {
     flex: 1,
-    fontFamily: fontRoles.ui,
     fontSize: 14,
     lineHeight: 18,
     minWidth: 0,
@@ -628,23 +612,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   bookFocus: {
-    fontFamily: fontRoles.eyebrow,
     fontSize: 10,
     letterSpacing: 1.2,
     marginBottom: 3,
   },
   bookTitle: {
-    fontFamily: fontRoles.title,
     fontSize: 18,
     marginBottom: 2,
   },
   bookAuthor: {
-    fontFamily: fontRoles.uiBold,
     fontSize: 12.5,
     marginBottom: 6,
   },
   bookDesc: {
-    fontFamily: fontRoles.ui,
     fontSize: 14,
     lineHeight: 18,
   },

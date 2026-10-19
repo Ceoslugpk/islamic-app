@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   badgeDot: {
     position: 'absolute',
     top: 4,
-    right: 4,
+    end: 4,
     width: 6,
     height: 6,
     borderRadius: 3,

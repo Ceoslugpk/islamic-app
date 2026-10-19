@@ -11,7 +11,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useThemeTokens } from '../theme/tokens';
+import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { fetchHijriMonth, HijriMonthData, gregorianToHijri, HIJRI_MONTHS } from '../lib/hijri';
 import { ISLAMIC_EVENTS, IslamicEvent, getEventsForMonth, getNextEvent, formatHijriDate, HIJRI_MONTH_NAMES } from '../lib/islamicEvents';
@@ -208,7 +208,7 @@ export default function CalendarScreen({
       >
         <View style={styles.contentWrap}>
           {/* Today Panel */}
-          <PremiumCard style={styles.todayCard} padded>
+          <PremiumCard style={styles.todayCard} borderRadius={cardTokens.borderRadius} padded>
             <View style={styles.todayRow}>
               <View style={styles.todayMain}>
                 <AppText variant="eyebrow" tone="faint" style={styles.todayLabel}>{t('TODAY')}</AppText>
@@ -433,18 +433,18 @@ export default function CalendarScreen({
                 <SectionHeader eyebrow={t('Islamic Events')} title={t('This Year')} subtitle={`${ISLAMIC_EVENTS.length} ${t('major dates · by Hijri month')}`} compact={isCompact} />
                 <View style={styles.eventsList}>
                   {allEventsWithCountdown.map((event) => (
-                    <View
+                    <PremiumCard
                       key={`${event.hijriMonth}-${event.hijriDay}`}
-                      style={[
-                        styles.eventRow,
-                        getCardShadow(mode),
-                        {
-                          borderColor: event.inCurrentMonth ? tokens.goldBorder : tokens.cardBorder,
-                          backgroundColor: event.inCurrentMonth ? tokens.ringFill : tokens.cardTop,
-                        },
+                      borderRadius={cardTokens.borderRadius}
+                      borderColor={event.inCurrentMonth ? tokens.goldBorder : tokens.cardBorder}
+                      padded={false}
+                      style={styles.eventRowCard}
+                      contentStyle={[
+                        styles.eventRowContent,
+                        event.inCurrentMonth && { backgroundColor: tokens.ringFill },
                       ]}
                     >
-                      <View style={[styles.eventIconWrapper, { backgroundColor: event.inCurrentMonth ? tokens.ringFill : tokens.ringFill }]}>
+                      <View style={[styles.eventIconWrapper, { backgroundColor: tokens.ringFill }]}>
                         <Ionicons name={getEventIcon(event)} size={20} color={event.inCurrentMonth ? tokens.accent : tokens.muted} />
                       </View>
                       <View style={styles.eventInfo}>
@@ -468,7 +468,7 @@ export default function CalendarScreen({
                         </AppText>
                         <AppText variant="caption" tone="faint" style={styles.countdownLabel}>{event.daysUntil === 0 ? '' : t('away')}</AppText>
                       </View>
-                    </View>
+                    </PremiumCard>
                   ))}
                 </View>
               </View>
@@ -528,7 +528,10 @@ const styles = StyleSheet.create({
   center: { paddingVertical: 60, alignItems: 'center' },
 
   // Today Panel
-  todayCard: { marginBottom: 10 },
+  todayCard: {
+    borderRadius: cardTokens.borderRadius,
+    marginBottom: 12,
+  },
   todayRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -539,50 +542,42 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   todayLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   todayHijriDate: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 24,
     lineHeight: 30,
     marginBottom: 2,
   },
   todayGregorian: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     marginBottom: 6,
   },
   todayProgress: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
   },
   todayAccent: { padding: 8 },
   nextEventRow: { paddingTop: 4 },
   nextEventContent: {},
   nextEventLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     letterSpacing: 1,
     textTransform: 'uppercase',
     marginBottom: 4,
   },
   nextEventName: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 18,
     lineHeight: 24,
     marginBottom: 2,
   },
   nextEventCountdown: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 14,
     marginBottom: 4,
   },
   nextEventSignificance: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     lineHeight: 18,
   },
@@ -592,15 +587,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 0.75,
-    borderRadius: 14,
+    borderWidth: 1,
+    borderRadius: cardTokens.borderRadius,
     padding: 6,
     marginBottom: 6,
   },
   navBtn: {
     padding: 6,
-    minWidth: 38,
+    minWidth: 44,
     alignItems: 'center',
+    justifyContent: 'center',
     minHeight: 44,
   },
   navArrow: { fontSize: 24, lineHeight: 26 },
@@ -609,8 +605,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  monthName: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 20 },
-  monthMeta: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 1 },
+  monthName: { fontSize: 20 },
+  monthMeta: { fontSize: 12, marginTop: 1 },
 
   // Today jump button
   todayJumpBtn: {
@@ -619,9 +615,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 8,
     minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   todayJumpText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 13,
     letterSpacing: 0.5,
   },
@@ -629,7 +626,6 @@ const styles = StyleSheet.create({
   // Month strip
   monthStripContainer: { marginBottom: 10 },
   monthStripLabel: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 9.5,
     letterSpacing: 1.2,
     textTransform: 'uppercase',
@@ -645,7 +641,7 @@ const styles = StyleSheet.create({
   monthChip: {
     minHeight: 44,
     borderRadius: 999,
-    borderWidth: 0.75,
+    borderWidth: 1,
     minWidth: 48,
     alignItems: 'center',
     justifyContent: 'center',
@@ -664,7 +660,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   monthChipText: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
   },
   monthChipDot: {
@@ -680,7 +675,6 @@ const styles = StyleSheet.create({
   weekday: {
     flex: 1,
     textAlign: 'center',
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 12,
     textTransform: 'uppercase',
     paddingVertical: 8,
@@ -697,7 +691,7 @@ const styles = StyleSheet.create({
   },
   cellToday: {
     borderRadius: 8,
-    borderWidth: 0.75,
+    borderWidth: 1,
     overflow: 'hidden',
   },
   cellFriday: {
@@ -711,12 +705,11 @@ const styles = StyleSheet.create({
     top: 2,
     end: 2,
   },
-  gregDay: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
-  hijriDay: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
+  gregDay: { fontSize: 14 },
+  hijriDay: { fontSize: 12, marginTop: 2 },
 
   // Legend
   legend: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 16,
     textAlign: 'center',
@@ -726,12 +719,22 @@ const styles = StyleSheet.create({
   // Events list
   eventsSection: { marginTop: 8 },
   eventsList: { gap: 10 },
+  eventRowCard: {
+    borderRadius: cardTokens.borderRadius,
+    marginBottom: 0,
+  },
+  eventRowContent: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    padding: 14,
+    gap: 12,
+  },
   eventRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     padding: 14,
-    borderRadius: 14,
-    borderWidth: 0.75,
+    borderRadius: cardTokens.borderRadius,
+    borderWidth: 1,
     gap: 12,
   },
   eventRowCurrentMonth: {},
@@ -746,33 +749,28 @@ const styles = StyleSheet.create({
   eventInfo: { flex: 1, minWidth: 0 },
   eventHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
   eventName: {
-    fontFamily: 'InstrumentSerif_400Regular',
     fontSize: 16,
     lineHeight: 22,
     flex: 1,
     minWidth: 0,
   },
   eventCurrentBadge: {
-    fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 12,
   },
   eventArabic: {
-    fontFamily: 'Amiri_400Regular',
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 2,
     writingDirection: 'rtl',
   },
   eventDate: {
-    fontFamily: 'Manrope_500Medium',
     fontSize: 12,
     marginBottom: 2,
   },
   eventSignificance: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     lineHeight: 16,
   },
@@ -782,19 +780,16 @@ const styles = StyleSheet.create({
     paddingTop: 2,
   },
   countdownValue: {
-    fontFamily: 'Manrope_700Bold',
     fontSize: 16,
     lineHeight: 20,
   },
   countdownLabel: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
 
   offlineNote: {
-    fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     marginTop: 24,
     textAlign: 'center',

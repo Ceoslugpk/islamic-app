@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {
   buildOverpassMosqueQuery,
   fetchNearbyMosques,
+  geocodeAreaNominatim,
   normalizeMosqueElements,
 } from '../src/lib/mosqueFinderApi.ts';
 
@@ -70,4 +71,133 @@ await assert.rejects(
 );
 assert.equal(cancelledFetchCount, 0, 'a cancelled search must not issue a network request');
 
-console.log('✓ Mosque search validates coordinates, normalizes/ranks results, filters by radius, and recovers across API failures');
+// Geocoder bounds and payload validation
+const validGeocode = await geocodeAreaNominatim('London', {
+  fetcher: async (url, init) => {
+    assert.match(url, /nominatim\.openstreetmap\.org\/search\?q=London/);
+    assert.equal(init.headers['User-Agent'], 'IslamicAppMobile/1.0 (https://islamic.app)');
+    assert.equal(init.headers.Accept, 'application/json');
+    return {
+      ok: true,
+      status: 200,
+      json: async () => [{ lat: '51.5074', lon: '-0.1278', display_name: 'London, Greater London, England, United Kingdom' }],
+    };
+  },
+});
+assert.deepEqual(validGeocode, {
+  latitude: 51.5074,
+  longitude: -0.1278,
+  label: 'London, Greater London, England',
+  rawDisplayName: 'London, Greater London, England, United Kingdom',
+});
+
+// Boundary values: [-90, 90] and [-180, 180]
+const boundaryMin = await geocodeAreaNominatim('South Pole Edge', {
+  fetcher: async () => ({
+    ok: true,
+    status: 200,
+    json: async () => [{ lat: '-90', lon: '-180', display_name: 'South Pole Edge' }],
+  }),
+});
+assert.equal(boundaryMin?.latitude, -90);
+assert.equal(boundaryMin?.longitude, -180);
+
+const boundaryMax = await geocodeAreaNominatim('North Pole Edge', {
+  fetcher: async () => ({
+    ok: true,
+    status: 200,
+    json: async () => [{ lat: '90', lon: '180', display_name: 'North Pole Edge' }],
+  }),
+});
+assert.equal(boundaryMax?.latitude, 90);
+assert.equal(boundaryMax?.longitude, 180);
+
+// Out-of-bounds latitude (< -90 or > 90)
+const outLatHigh = await geocodeAreaNominatim('Out High Lat', {
+  fetcher: async () => ({
+    ok: true,
+    status: 200,
+    json: async () => [{ lat: '90.0001', lon: '0', display_name: 'Invalid' }],
+  }),
+});
+assert.equal(outLatHigh, null);
+
+const outLatLow = await geocodeAreaNominatim('Out Low Lat', {
+  fetcher: async () => ({
+    ok: true,
+    status: 200,
+    json: async () => [{ lat: '-90.0001', lon: '0', display_name: 'Invalid' }],
+  }),
+});
+assert.equal(outLatLow, null);
+
+// Out-of-bounds longitude (< -180 or > 180)
+const outLonHigh = await geocodeAreaNominatim('Out High Lon', {
+  fetcher: async () => ({
+    ok: true,
+    status: 200,
+    json: async () => [{ lat: '0', lon: '180.0001', display_name: 'Invalid' }],
+  }),
+});
+assert.equal(outLonHigh, null);
+
+const outLonLow = await geocodeAreaNominatim('Out Low Lon', {
+  fetcher: async () => ({
+    ok: true,
+    status: 200,
+    json: async () => [{ lat: '0', lon: '-180.0001', display_name: 'Invalid' }],
+  }),
+});
+assert.equal(outLonLow, null);
+
+// Non-finite payloads (Infinity, -Infinity, NaN, strings)
+for (const badCoord of ['Infinity', '-Infinity', 'NaN', 'undefined', 'not-a-number']) {
+  const badLat = await geocodeAreaNominatim('Bad Lat', {
+    fetcher: async () => ({
+      ok: true,
+      status: 200,
+      json: async () => [{ lat: badCoord, lon: '0', display_name: 'Invalid' }],
+    }),
+  });
+  assert.equal(badLat, null, `non-finite latitude "${badCoord}" must reject to null`);
+
+  const badLon = await geocodeAreaNominatim('Bad Lon', {
+    fetcher: async () => ({
+      ok: true,
+      status: 200,
+      json: async () => [{ lat: '0', lon: badCoord, display_name: 'Invalid' }],
+    }),
+  });
+  assert.equal(badLon, null, `non-finite longitude "${badCoord}" must reject to null`);
+}
+
+// Malformed array / empty array
+assert.equal(await geocodeAreaNominatim('Empty', {
+  fetcher: async () => ({ ok: true, status: 200, json: async () => [] }),
+}), null);
+assert.equal(await geocodeAreaNominatim('Null Item', {
+  fetcher: async () => ({ ok: true, status: 200, json: async () => [null] }),
+}), null);
+
+// Preserved cancellation and timeout
+const geocodeAbort = new AbortController();
+geocodeAbort.abort();
+await assert.rejects(
+  geocodeAreaNominatim('Cancelled', {
+    signal: geocodeAbort.signal,
+    fetcher: async () => ({ ok: true, status: 200, json: async () => [] }),
+  }),
+  /cancelled/i,
+);
+
+await assert.rejects(
+  geocodeAreaNominatim('Timeout', {
+    timeoutMs: 5,
+    fetcher: async (_url, init) => new Promise((_, reject) => {
+      init.signal.addEventListener('abort', () => reject(new Error('aborted')));
+    }),
+  }),
+  /timed out/i,
+);
+
+console.log('✓ Mosque search and Nominatim geocoder validate coordinates and bounds, normalize/rank results, and recover across API failures');
