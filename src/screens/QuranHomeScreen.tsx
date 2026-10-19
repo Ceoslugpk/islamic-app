@@ -820,7 +820,6 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                 <AppText
                   variant="caption"
                   style={styles.offlineSubtitle}
-                  numberOfLines={1}
                   maxFontSizeMultiplier={1.2}
                 >
                   {t('Instant opening with Arabic & translations cached')}
@@ -1797,7 +1796,7 @@ const styles = StyleSheet.create({
   /* 2. Offline Cache Card (spacious floating card) */
   offlineCard: {
     minHeight: 56,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1877,7 +1876,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     minHeight: 60,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: 10,
     paddingVertical: 6.5,
@@ -1951,7 +1950,7 @@ const styles = StyleSheet.create({
   /* 3. Hero Card: Start / Continue Reading */
   heroCard: {
     minHeight: 131,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 5,
@@ -1962,7 +1961,7 @@ const styles = StyleSheet.create({
     left: 3,
     right: 3,
     bottom: 3,
-    borderRadius: 15,
+    borderRadius: 19,
     borderWidth: 1,
     borderColor: HOME_THEME_TOKENS.hero.innerBorder,
     opacity: 0.5,
@@ -2050,7 +2049,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     minHeight: 78,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     paddingVertical: 7,
     paddingHorizontal: 10,
@@ -2137,7 +2136,7 @@ const styles = StyleSheet.create({
   surahRow: {
     minHeight: 44,
     marginBottom: 5,
-    borderRadius: 13,
+    borderRadius: 18,
     borderWidth: 1,
     paddingHorizontal: 11,
     paddingVertical: 4,

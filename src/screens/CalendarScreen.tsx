@@ -512,10 +512,12 @@ function getHijriMonthLength(year: number, month: number): number {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   content: {},
   contentWrap: {
@@ -532,7 +534,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  todayMain: { flex: 1 },
+  todayMain: {
+    flex: 1,
+    minWidth: 0,
+  },
   todayLabel: {
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 10,
@@ -578,7 +583,7 @@ const styles = StyleSheet.create({
   },
   nextEventSignificance: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 18,
   },
 
@@ -592,11 +597,20 @@ const styles = StyleSheet.create({
     padding: 6,
     marginBottom: 6,
   },
-  navBtn: { padding: 6, minWidth: 38, alignItems: 'center' },
+  navBtn: {
+    padding: 6,
+    minWidth: 38,
+    alignItems: 'center',
+    minHeight: 44,
+  },
   navArrow: { fontSize: 24, lineHeight: 26 },
-  navTitle: { alignItems: 'center', flex: 1 },
+  navTitle: {
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0,
+  },
   monthName: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 20 },
-  monthMeta: { fontFamily: 'Manrope_400Regular', fontSize: 11.5, marginTop: 1 },
+  monthMeta: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 1 },
 
   // Today jump button
   todayJumpBtn: {
@@ -604,10 +618,11 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     paddingHorizontal: 10,
     marginBottom: 8,
+    minHeight: 44,
   },
   todayJumpText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
     letterSpacing: 0.5,
   },
 
@@ -628,7 +643,7 @@ const styles = StyleSheet.create({
     paddingBottom: 2,
   },
   monthChip: {
-    minHeight: 28,
+    minHeight: 44,
     borderRadius: 999,
     borderWidth: 0.75,
     minWidth: 48,
@@ -666,9 +681,10 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     textTransform: 'uppercase',
     paddingVertical: 8,
+    minWidth: 0,
   },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   cell: {
@@ -696,12 +712,12 @@ const styles = StyleSheet.create({
     end: 2,
   },
   gregDay: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
-  hijriDay: { fontFamily: 'Manrope_400Regular', fontSize: 10, marginTop: 2 },
+  hijriDay: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
 
   // Legend
   legend: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 16,
     textAlign: 'center',
     lineHeight: 16,
@@ -734,6 +750,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     flex: 1,
+    minWidth: 0,
   },
   eventCurrentBadge: {
     fontFamily: 'Manrope_600SemiBold',
@@ -756,7 +773,7 @@ const styles = StyleSheet.create({
   },
   eventSignificance: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 14,
     lineHeight: 16,
   },
   eventCountdown: {
@@ -771,14 +788,14 @@ const styles = StyleSheet.create({
   },
   countdownLabel: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 10,
+    fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
 
   offlineNote: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 24,
     textAlign: 'center',
     lineHeight: 16,

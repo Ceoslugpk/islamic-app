@@ -180,12 +180,14 @@ export default function MadinahLiveScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 720,
     alignSelf: 'center',
+    minWidth: 0,
   },
   content: {},
   statusBar: {
@@ -212,13 +214,13 @@ const styles = StyleSheet.create({
   },
   liveText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10,
+    fontSize: 12,
     letterSpacing: 0.8,
     paddingVertical: 2,
   },
   channelTag: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11.5,
+    fontSize: 12,
     flexShrink: 1,
     minWidth: 0,
     paddingVertical: 2,
@@ -243,13 +245,13 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 7,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 14,
     borderWidth: 1,
   },
   controlBtnText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
+    fontSize: 14,
     paddingVertical: 2,
   },
   cardLead: {
@@ -269,12 +271,12 @@ const styles = StyleSheet.create({
   },
   hadithTranslation: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 4,
   },
   hadithRef: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   landmarkDesc: {

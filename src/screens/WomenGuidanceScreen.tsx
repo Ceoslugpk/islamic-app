@@ -156,7 +156,7 @@ export default function WomenGuidanceScreen({
         ))}
 
         {/* Scholar Consultation Disclaimer */}
-        <PremiumCard style={styles.disclaimerCard}>
+        <PremiumCard style={styles.disclaimerCard} contentStyle={styles.disclaimerCardContent}>
           <Ionicons name="medical-outline" size={20} color={tokens.goldText} />
           <AppText variant="caption" tone="faint" style={styles.disclaimerCardText}>
             {t('Rulings on bleeding duration and irregularities vary according to individual circumstances and classical legal schools (Madhhabs). If you encounter irregular bleeding exceeding 15 days, or medical complications, please consult both a qualified Islamic scholar and a physician.')}
@@ -170,6 +170,7 @@ export default function WomenGuidanceScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   content: {
     paddingTop: 10,
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   privacyText: {
-    fontSize: 11.5,
+    fontSize: 12,
     flex: 1,
     minWidth: 0,
   },
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   worshipTopic: {
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
     minWidth: 0,
     marginEnd: 8,
@@ -227,28 +228,28 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   worshipBadgeText: {
-    fontSize: 10,
+    fontSize: 12,
   },
   worshipRuling: {
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 4,
   },
   worshipDetails: {
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 4,
   },
   worshipEvidence: {
-    fontSize: 11,
+    fontSize: 12,
     fontStyle: 'italic',
   },
   bleedingName: {
-    fontSize: 13.5,
+    fontSize: 14,
     flex: 1,
     minWidth: 0,
     marginEnd: 8,
   },
   bleedingDef: {
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 6,
   },
   bleedingRow: {
@@ -257,15 +258,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   bleedingLabel: {
-    fontSize: 11.5,
+    fontSize: 12,
   },
   bleedingVal: {
-    fontSize: 11.5,
+    fontSize: 12,
     flex: 1,
     minWidth: 0,
   },
   resourceTitle: {
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
     minWidth: 0,
     marginEnd: 8,
@@ -278,24 +279,27 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   catBadgeText: {
-    fontSize: 10,
+    fontSize: 12,
   },
   resourceAuthor: {
-    fontSize: 11.5,
+    fontSize: 12,
     marginBottom: 3,
   },
   resourceDesc: {
-    fontSize: 12,
+    fontSize: 14,
   },
   disclaimerCard: {
-    flexDirection: 'row',
-    gap: 10,
-    padding: 14,
     marginTop: 12,
   },
   disclaimerCardText: {
-    fontSize: 11.5,
+    fontSize: 12,
     flex: 1,
     minWidth: 0,
+  },
+
+  disclaimerCardContent: {
+    flexDirection: 'row',
+    gap: 10,
+    padding: 14,
   },
 });

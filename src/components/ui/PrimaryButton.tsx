@@ -47,6 +47,9 @@ export function PrimaryButton({
 
   const gradientColors = tokens.goldGradient;
   const textColor = tokens.onGold;
+  const { padding, paddingHorizontal, paddingVertical, paddingStart, paddingEnd, paddingTop, paddingBottom, paddingLeft, paddingRight, ...outerStyle } = StyleSheet.flatten(style) ?? {};
+  const contentPadding = { padding, paddingHorizontal, paddingVertical, paddingStart, paddingEnd, paddingTop, paddingBottom, paddingLeft, paddingRight };
+  const radius = outerStyle.borderRadius ?? buttonTokens.borderRadius;
 
   return (
     <TouchableOpacity
@@ -62,14 +65,14 @@ export function PrimaryButton({
       style={[
         styles.buttonWrap,
         (disabled || loading) && styles.disabled,
-        style,
+        outerStyle,
       ]}
     >
       <LinearGradient
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={styles.gradient}
+        style={[styles.gradient, { borderRadius: radius }, Object.fromEntries(Object.entries(contentPadding).filter(([, value]) => value !== undefined))]}
       >
         {loading ? (
           <ActivityIndicator size="small" color={textColor} />
@@ -106,6 +109,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   gradient: {
+    width: '100%',
+    flexGrow: 1,
     minHeight: buttonTokens.minHeight,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -115,6 +120,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   text: {
+    flexShrink: 1,
+    minWidth: 0,
     fontFamily: fontRoles.uiSemiBold,
     fontSize: 14,
     letterSpacing: 0.2,

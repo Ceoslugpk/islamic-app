@@ -161,12 +161,14 @@ function BookmarksScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   listContent: {
     paddingTop: 8,
@@ -201,6 +203,7 @@ const styles = StyleSheet.create({
   },
   deleteBtn: {
     padding: 4,
+    minHeight: 44,
   },
   arabic: {
     textAlign: 'right',
@@ -210,7 +213,7 @@ const styles = StyleSheet.create({
   },
   translation: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 20,
     marginTop: 4,
   },
@@ -220,7 +223,7 @@ const styles = StyleSheet.create({
   },
   readHint: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
 });
 

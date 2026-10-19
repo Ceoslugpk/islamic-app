@@ -265,7 +265,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
               ]}
               maxFontSizeMultiplier={1.2}
             >
-              LIBRARY
+              {t('Library')}
             </AppText>
             <AppText
               variant="screenTitle"
@@ -295,7 +295,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
             testID="library-card-hadith-hero"
           >
             <View style={[styles.heroCard, { borderColor: HERO_OUTER_BORDER }]}>
-              <View style={[StyleSheet.absoluteFill, { borderRadius: 17, overflow: 'hidden' }]}>
+              <View style={[StyleSheet.absoluteFill, { borderRadius: 21, overflow: 'hidden' }]}>
                 <LinearGradient
                   colors={tokens.heroGradient}
                   start={{ x: 0, y: 0 }}
@@ -340,7 +340,7 @@ const LibraryScreen = React.memo(function LibraryScreen({
                       fontFamily: fontLoraMedium,
                     },
                   ]}
-                  numberOfLines={1}
+                  numberOfLines={2}
                   maxFontSizeMultiplier={1.2}
                 >
                   {t('Hadith Library')}
@@ -1108,11 +1108,11 @@ const styles = StyleSheet.create({
   heroCardWrap: {
     marginHorizontal: 14.5,
     marginTop: 19.5,
-    borderRadius: 18,
+    borderRadius: 22,
   },
   heroCard: {
     minHeight: 185.5,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
     position: 'relative',
     paddingStart: 16,
@@ -1125,7 +1125,7 @@ const styles = StyleSheet.create({
     left: 4.5,
     right: 4.5,
     bottom: 4.5,
-    borderRadius: 15,
+    borderRadius: 19,
     borderWidth: 1,
     borderColor: HERO_INNER_BORDER,
   },
@@ -1152,12 +1152,13 @@ const styles = StyleSheet.create({
   },
   heroCountRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'flex-end',
     marginTop: 2,
   },
   heroBigNumber: {
     fontSize: 54.5,
-    lineHeight: 56,
+    lineHeight: 68,
   },
   heroBooksLabel: {
     fontSize: 17,
@@ -1176,9 +1177,11 @@ const styles = StyleSheet.create({
     start: 16,
   },
   browseBtn: {
-    width: 93,
-    height: 27.6,
-    borderRadius: 13.8,
+    minWidth: 104,
+    minHeight: 40,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1256,12 +1259,12 @@ const styles = StyleSheet.create({
   },
   knowledgeTileWrap: {
     minHeight: 83.5,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   knowledgeTileInner: {
     flex: 1,
     minHeight: 83.5,
-    borderRadius: 13,
+    borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
     paddingHorizontal: 11,
@@ -1295,12 +1298,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 14.5,
     marginTop: 7.3,
     minHeight: 43.6,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   downloadsCardInner: {
     flex: 1,
     minHeight: 43.6,
-    borderRadius: 13,
+    borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
     paddingHorizontal: 11,
@@ -1335,10 +1338,10 @@ const styles = StyleSheet.create({
   guidesCardWrap: {
     marginHorizontal: 14.5,
     marginTop: 10,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   guidesCardInner: {
-    borderRadius: 13,
+    borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
   },

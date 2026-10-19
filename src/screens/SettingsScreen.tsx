@@ -143,7 +143,6 @@ const QURAN_FONT_OPTIONS: { key: QuranArabicFont; label: string; desc: string }[
   { key: 'notonaskh', label: 'Noto Naskh Arabic', desc: "Google's clean, highly legible Naskh" },
 ];
 
-
 const absoluteStartEndFill = { position: 'absolute' as const, top: 0, bottom: 0, start: 0, end: 0 };
 
 interface SettingsLayout {
@@ -2381,7 +2380,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 4,
     paddingHorizontal: 6,
-    minHeight: 28,
+    minHeight: 44,
   },
   sectionSummaryText: {
     fontFamily: 'Manrope_500Medium',
@@ -2392,7 +2391,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 39.3,
+    minHeight: 44,
     gap: 12,
   },
   expandPill: {
@@ -2405,7 +2404,7 @@ const styles = StyleSheet.create({
   },
   expandPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
   groupLabel: {
     fontFamily: 'Manrope_700Bold',
@@ -2481,7 +2480,7 @@ const styles = StyleSheet.create({
   },
   adjustBtn: {
     width: 44,
-    height: 28,
+    minHeight: 44,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
@@ -2489,13 +2488,14 @@ const styles = StyleSheet.create({
   },
   adjustBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 16,
   },
   adjustTrackArea: {
     flex: 1,
-    height: 28,
+    minHeight: 44,
     justifyContent: 'center',
+    minWidth: 0,
   },
   adjustTrack: {
     height: 6,
@@ -2527,6 +2527,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     marginEnd: 12,
+    minWidth: 0,
   },
   langTitleRow: {
     flexDirection: 'row',
@@ -2579,6 +2580,7 @@ const styles = StyleSheet.create({
   langErrorText: {
     fontFamily: 'Manrope_600SemiBold',
     flex: 1,
+    minWidth: 0,
   },
   segRow: {
     width: '100%',
@@ -2593,9 +2595,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 6,
-    minHeight: 40,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 0,
   },
   segLabel: { fontFamily: 'Manrope_600SemiBold', fontSize: 13, textAlign: 'center' },
   testBtn: { fontFamily: 'Manrope_700Bold', fontSize: 13 },
@@ -2610,7 +2613,7 @@ const styles = StyleSheet.create({
   },
   footerArabic: {
     fontFamily: 'NotoNaskhArabic_700Bold',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 22,
     textAlign: 'center',
   },
@@ -2668,7 +2671,7 @@ const styles = StyleSheet.create({
     minHeight: 20.4,
   },
   missionTab: {
-    minHeight: 20.4,
+    minHeight: 44,
     borderRadius: 10.2,
     borderWidth: 0.55,
     paddingHorizontal: 7.3,
@@ -2679,12 +2682,12 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   missionTabLabel: {
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
   },
   missionText: {
     fontFamily: 'Lora_500Medium',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
     marginTop: 15.4,
     alignSelf: 'stretch',
@@ -2715,7 +2718,7 @@ const styles = StyleSheet.create({
   },
   identityVersion: {
     marginTop: 1,
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     paddingVertical: 2,
   },
@@ -2755,12 +2758,13 @@ const styles = StyleSheet.create({
   },
   privacyNoteText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 17,
     flex: 1,
+    minWidth: 0,
   },
   privacyActionBtn: {
-    minHeight: 40,
+    minHeight: 44,
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 8,
@@ -2770,7 +2774,7 @@ const styles = StyleSheet.create({
   },
   privacyActionText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
   inlineConsent: {
     borderRadius: 12,
@@ -2813,9 +2817,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 0,
   },
   consentBtnPrimary: {
     borderWidth: 0,
+    minHeight: 44,
   },
   consentBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2846,7 +2852,7 @@ const styles = StyleSheet.create({
   },
   healthCompactText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 10,
+    fontSize: 12,
     lineHeight: 14,
     flex: 1,
     minWidth: 0,
@@ -2859,6 +2865,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     borderWidth: 1,
     borderRadius: 8,
+    minHeight: 44,
   },
   deviceOnlyNote: {
     flexDirection: 'row',
@@ -2871,17 +2878,17 @@ const styles = StyleSheet.create({
   },
   permissionBannerTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   permissionBannerSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     marginTop: 2,
     lineHeight: 16,
   },
   reciterBadgeArabic: {
     fontFamily: 'NotoNaskhArabic_700Bold',
-    fontSize: 13,
+    fontSize: 14,
   },
   playBtnContainer: {
     flexDirection: 'row',
@@ -2896,13 +2903,15 @@ const styles = StyleSheet.create({
   buttonPressed: {
     transform: [{ scale: 0.97 }],
     opacity: 0.9,
+    minHeight: 44,
   },
   controlDisabled: {
     opacity: 0.55,
+    minHeight: 44,
   },
   outlineButton: {
     width: 82,
-    height: 28,
+    minHeight: 44,
     borderRadius: 14,
     borderWidth: 1,
     flexDirection: 'row',
@@ -2913,7 +2922,7 @@ const styles = StyleSheet.create({
   },
   outlineButtonText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 13,
     lineHeight: 14,
     textAlign: 'center',
   },
@@ -2921,6 +2930,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'stretch',
+    minWidth: 0,
   },
   methodBackdrop: {
     position: 'absolute',
@@ -2929,6 +2939,7 @@ const styles = StyleSheet.create({
     start: 0,
     end: 0,
     backgroundColor: getTokens('ink').overlay, // rgba(0,0,0,0.65)
+    minHeight: 44,
   },
   methodSheet: {
     width: '100%',
@@ -2962,7 +2973,7 @@ const styles = StyleSheet.create({
   methodSheetSubtitle: {
     marginStart: 29,
     marginEnd: 29,
-    fontSize: 11,
+    fontSize: 12,
   },
   methodOptionsScroll: {
     marginTop: 12.3,
@@ -2997,11 +3008,11 @@ const styles = StyleSheet.create({
   },
   methodOptionName: {
     fontFamily: 'Poppins_500Medium',
-    fontSize: 12,
+    fontSize: 14,
   },
   methodOptionRegion: {
     fontFamily: 'Poppins_400Regular',
-    fontSize: 11,
+    fontSize: 12,
   },
   methodRadio: {
     width: 17.5,

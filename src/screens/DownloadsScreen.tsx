@@ -199,6 +199,7 @@ function DownloadsScreen({
     <View style={{ marginBottom: 12 }}>
       {/* Category Tabs */}
       <ScreenTabs
+        scrollable
         tabs={[
           { id: 'all', label: t('All Downloads') },
           { id: 'audio', label: t('Audio Surahs'), badge: downloadedSurahs.length },
@@ -345,7 +346,7 @@ function DownloadsScreen({
 
       {/* Storage Summary Card */}
       {activeTab !== 'text' && (
-      <PremiumCard style={styles.storageCard}>
+      <PremiumCard style={styles.storageCard} contentStyle={styles.storageCardContent}>
         <View style={styles.storageInfo}>
           <View style={styles.storageHeaderRow}>
             <Ionicons name="cloud-done-outline" size={16} color={tokens.accent} />
@@ -570,16 +571,19 @@ function DownloadsScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   surahCard: {
     marginBottom: 10,
@@ -606,15 +610,15 @@ const styles = StyleSheet.create({
   },
   textTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13,
+    fontSize: 14,
   },
   textSubtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   textActionBtn: {
-    minHeight: 34,
+    minHeight: 44,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 14,
@@ -630,13 +634,13 @@ const styles = StyleSheet.create({
   },
   textStatus: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     flex: 1,
     minWidth: 0,
   },
   textVerifyBtn: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 13,
     paddingVertical: 2,
   },
   textTrack: {
@@ -660,11 +664,12 @@ const styles = StyleSheet.create({
   },
   verifyNoteText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   repairBtn: {
-    minHeight: 30,
+    minHeight: 44,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -672,18 +677,15 @@ const styles = StyleSheet.create({
   },
   verifyOkText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 8,
   },
   storageCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 12,
-    gap: 12,
   },
   storageInfo: {
     flex: 1,
+    minWidth: 0,
   },
   storageHeaderRow: {
     flexDirection: 'row',
@@ -693,14 +695,14 @@ const styles = StyleSheet.create({
   },
   storageTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13,
+    fontSize: 14,
   },
   storageSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
   },
   clearAllBtn: {
-    minHeight: 34,
+    minHeight: 44,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 14,
@@ -724,6 +726,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     justifyContent: 'center',
+    minHeight: 44,
   },
   nameRow: {
     flexDirection: 'row',
@@ -757,18 +760,18 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   playBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    minHeight: 44,
+    borderRadius: 22,
     borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   removeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    minHeight: 44,
+    borderRadius: 22,
     borderWidth: 0.75,
     alignItems: 'center',
     justifyContent: 'center',
@@ -802,6 +805,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 20,
     maxWidth: 320,
+  },
+
+  storageCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
   },
 });
 

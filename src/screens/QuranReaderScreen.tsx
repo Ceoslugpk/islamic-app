@@ -2910,7 +2910,6 @@ export default function QuranReaderScreen({
     );
   };
 
-
   const cardsAyahs = useMemo(() => {
     const targetNum = safeSurahNumber;
     if (surah && Array.isArray(surah.ayahs) && surah.ayahs.length > 0 && surah.number === safeSurahNumber) {
@@ -4807,12 +4806,14 @@ function toArabicNumerals(num: number): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    minWidth: 0,
   },
   errorText: {
     fontFamily: 'Manrope_400Regular',
@@ -4824,6 +4825,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 6,
     borderWidth: 1,
+    minHeight: 44,
   },
   retryBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -4933,6 +4935,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
     alignItems: 'center',
+    minWidth: 0,
   },
   toolsMenuBackdrop: {
     position: 'absolute',
@@ -5001,7 +5004,7 @@ const styles = StyleSheet.create({
   },
   toolsMenuJuzText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 0.5,
   },
   toolsMenuProgressBarTrack: {
@@ -5104,8 +5107,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   toolsMenuFontBtn: {
-    width: 38,
-    height: 38,
+    width: 44,
+    minHeight: 44,
     borderRadius: 8,
     borderWidth: 1,
     alignItems: 'center',
@@ -5186,6 +5189,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,
+    minHeight: 44,
   },
   playSurahBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -5198,6 +5202,7 @@ const styles = StyleSheet.create({
     maxWidth: 150,
     paddingHorizontal: 8,
     paddingVertical: 4,
+    minHeight: 44,
   },
   reciterNameText: {
     fontFamily: 'Manrope_500Medium',
@@ -5268,7 +5273,7 @@ const styles = StyleSheet.create({
   },
   tafsirTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 14,
     letterSpacing: 0.5,
   },
   inlineTafsirText: {
@@ -5322,14 +5327,16 @@ const styles = StyleSheet.create({
   },
   mushafTranslationText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
+    minWidth: 0,
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'flex-end',
     alignItems: 'center',
+    minWidth: 0,
   },
   modalBackdrop: {
     position: 'absolute',
@@ -5366,6 +5373,7 @@ const styles = StyleSheet.create({
   },
   modalHeaderLeft: {
     flex: 1,
+    minWidth: 0,
   },
   modalEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
@@ -5402,6 +5410,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 14,
     paddingVertical: 0,
+    minWidth: 0,
   },
   reciterList: {
     paddingHorizontal: 20,
@@ -5454,7 +5463,7 @@ const styles = StyleSheet.create({
   },
   reciterLangBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 9,
+    fontSize: 12,
   },
   shareCardWrap: {
     position: 'absolute',
@@ -5536,7 +5545,11 @@ const styles = StyleSheet.create({
     width: '100%',
     marginBottom: 12,
   },
-  mushafTajweedAyahTouch: { width: '100%', paddingVertical: 2 },
+  mushafTajweedAyahTouch: {
+    width: '100%',
+    paddingVertical: 2,
+    minHeight: 44,
+  },
   mushafSurahSectionsWrap: { width: '100%' },
   mushafSurahGroup: { width: '100%', marginBottom: 8 },
   mushafTranslationMeta: { fontFamily: 'Manrope_600SemiBold', fontSize: 11, marginTop: 4 },
@@ -5544,31 +5557,64 @@ const styles = StyleSheet.create({
   surahBannerContainer: { width: '100%', alignItems: 'center', marginBottom: 12 },
   surahBannerFrame: { width: '100%', borderWidth: 1, borderRadius: 12, padding: 12, alignItems: 'center' },
   surahBannerArabicName: { fontFamily: 'Amiri_700Bold', fontSize: 24, textAlign: 'center' },
-  surahBannerMetaText: { fontFamily: 'Manrope_500Medium', fontSize: 11, marginTop: 4 },
+  surahBannerMetaText: { fontFamily: 'Manrope_500Medium', fontSize: 12, marginTop: 4 },
   bismillahContainer: { alignItems: 'center', paddingVertical: 10 },
   mushafInlineSelectedToolbar: { position: 'absolute', left: 4, right: 4, zIndex: 100, elevation: 12 },
   mushafSelectedToolbar: { borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 10 },
   mushafSelectedMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  mushafSelectedRef: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
+  mushafSelectedRef: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
   mushafSelectedActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
-  mushafSelectedActionBtn: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 8, padding: 0 },
+  mushafSelectedActionBtn: { width: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderRadius: 8, padding: 0 },
   mushafSelectedActionText: { display: 'none' },
   mushafAyahsContainer: { width: '100%' },
-  mushafAyahTouch: { width: '100%', paddingVertical: 4, paddingHorizontal: 6, marginVertical: 2 },
+  mushafAyahTouch: {
+    width: '100%',
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    marginVertical: 2,
+    minHeight: 44,
+  },
   mushafAyahText: { textAlign: 'right', writingDirection: 'rtl' },
   mushafPaginationFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
-  mushafPageNavBtn: { minWidth: 84, borderWidth: 1, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, alignItems: 'center' },
+  mushafPageNavBtn: {
+    minWidth: 84,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    minHeight: 44,
+  },
   mushafPageNavBtnText: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
-  mushafPageBadgeCenter: { flex: 1, alignItems: 'center' },
+  mushafPageBadgeCenter: {
+    flex: 1,
+    alignItems: 'center',
+    minWidth: 0,
+  },
   mushafPageBadgeText: { fontFamily: 'Manrope_700Bold', fontSize: 14 },
-  mushafPageBadgeSub: { fontFamily: 'Manrope_500Medium', fontSize: 10, marginTop: 2 },
+  mushafPageBadgeSub: { fontFamily: 'Manrope_500Medium', fontSize: 12, marginTop: 2 },
   mushafLoadingText: { fontFamily: 'Manrope_500Medium', fontSize: 13, textAlign: 'center', padding: 24 },
   mushafPageCard: { width: '100%', paddingBottom: 4 },
   mushafPageHeaderStrip: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, paddingVertical: 8, gap: 6 },
-  mushafPageHeaderLeft: { flex: 1, fontFamily: 'Manrope_500Medium', fontSize: 10 },
-  mushafPageHeaderCenter: { flex: 1.5, textAlign: 'center', fontFamily: 'Manrope_700Bold', fontSize: 11 },
-  mushafPageHeaderRight: { flex: 1, textAlign: 'right', fontFamily: 'Manrope_500Medium', fontSize: 10 },
-  navTitleColumn: { flex: 1, alignItems: 'center' },
+  mushafPageHeaderLeft: {
+    flex: 1,
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    minWidth: 0,
+  },
+  mushafPageHeaderCenter: { flex: 1.5, textAlign: 'center', fontFamily: 'Manrope_700Bold', fontSize: 14 },
+  mushafPageHeaderRight: {
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: 'Manrope_500Medium',
+    fontSize: 12,
+    minWidth: 0,
+  },
+  navTitleColumn: {
+    flex: 1,
+    alignItems: 'center',
+    minWidth: 0,
+  },
   navPageSubTitle: { fontFamily: 'Manrope_500Medium', fontSize: 10, marginTop: 2 },
   scriptNoticeCard: {
     flexDirection: 'row',
@@ -5585,6 +5631,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   noteModalSheet: {
     width: '100%',
@@ -5650,6 +5697,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   noteModalBtnCancelText: {
     fontFamily: 'Manrope_500Medium',

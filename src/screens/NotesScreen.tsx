@@ -114,7 +114,7 @@ function NotesScreen({
           {
             opacity: justDeleted === item.id ? 0.45 : 1,
           },
-        ]}
+        ]} contentStyle={styles.noteCardContent}
       >
         <View style={styles.cardHeader}>
           <TouchableOpacity
@@ -319,12 +319,14 @@ export default withUndoToast(NotesScreen);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   headerContainer: {
     paddingTop: 6,
@@ -381,11 +383,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 40,
+    minHeight: 44,
     flexShrink: 0,
   },
   saveBtnText: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontFamily: 'Manrope_700Bold',
     paddingVertical: 2,
   },
@@ -401,7 +403,6 @@ const styles = StyleSheet.create({
   },
   noteCard: {
     borderRadius: 20,
-    gap: 10,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -411,7 +412,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    minHeight: 24,
+    minHeight: 44,
     borderRadius: 999,
   },
   badgeText: {
@@ -422,6 +423,7 @@ const styles = StyleSheet.create({
   deleteBtn: {
     padding: 6,
     margin: -6,
+    minHeight: 44,
   },
   noteBody: {
     fontSize: 14,
@@ -466,16 +468,16 @@ const styles = StyleSheet.create({
   openVerseLink: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    minHeight: 24,
+    minHeight: 44,
     borderRadius: 8,
   },
   openVerseLinkText: {
-    fontSize: 11.5,
+    fontSize: 13,
     fontFamily: 'Manrope_600SemiBold',
     paddingVertical: 2,
   },
   noteDate: {
-    fontSize: 11.5,
+    fontSize: 12,
     fontFamily: 'Manrope_400Regular',
     paddingVertical: 2,
   },
@@ -507,7 +509,7 @@ const styles = StyleSheet.create({
   },
   studyTipQuote: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12.5,
+    fontSize: 14,
     fontStyle: 'italic',
     marginBottom: 8,
   },
@@ -517,6 +519,10 @@ const styles = StyleSheet.create({
   },
   studyTipHint: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
+  },
+
+  noteCardContent: {
+    gap: 10,
   },
 });

@@ -194,32 +194,24 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
 
         <View style={styles.midCol}>
           <View style={styles.nameRow}>
-            <AppText variant="rowTitle" style={styles.englishName} numberOfLines={1}>
+            <AppText variant="rowTitle" style={styles.englishName}>
               {item.englishName}
             </AppText>
-            <AppText variant="caption" tone="faint" style={styles.ayahCount}>
-              {item.numberOfAyahs} {t('ayahs')} · {t(item.revelationType)}
-            </AppText>
+            <ArabicText size={20} align="right" style={[styles.arabicName, { color: tokens.arabicName }]}>
+              {item.name}
+            </ArabicText>
           </View>
-          <View style={{ marginTop: 6, alignSelf: 'flex-start' }}>
-            {renderStatusBadge(status)}
-          </View>
-        </View>
-
-        <View style={styles.rightCol}>
-          <ArabicText size={20} align="right" style={[styles.arabicName, { color: tokens.arabicName }]} numberOfLines={1}>
-            {item.name}
-          </ArabicText>
+          <AppText variant="caption" tone="faint" style={styles.ayahCount}>
+            {item.numberOfAyahs} {t('ayahs')} · {t(item.revelationType)}
+          </AppText>
           <View style={styles.rowActions}>
+            {renderStatusBadge(status)}
             <TouchableOpacity
               onPress={() => setPracticeSurah(item.number)}
               style={[
                 styles.practiceBtn,
                 getPillShadow(mode),
-                {
-                  backgroundColor: tokens.ringFill,
-                  borderColor: tokens.goldBorder,
-                },
+                { backgroundColor: tokens.ringFill, borderColor: tokens.goldBorder },
               ]}
               accessibilityRole="button"
               accessibilityLabel={`${t('Practice')} ${item.englishName}`}
@@ -227,10 +219,10 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
               <Ionicons name="eye-outline" size={12} color={tokens.goldText} />
               <AppText variant="caption" highlight style={styles.practiceText}>{t('Practice')}</AppText>
             </TouchableOpacity>
-            <AppText variant="caption" tone="faint" style={styles.tapHint}>
-              {t('Tap to cycle')}
-            </AppText>
           </View>
+          <AppText variant="caption" tone="faint" style={styles.tapHint}>
+            {t('Tap to cycle')}
+          </AppText>
         </View>
       </TouchableOpacity>
     );
@@ -411,12 +403,14 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   summaryCard: {
     flexDirection: 'row',
@@ -429,6 +423,7 @@ const styles = StyleSheet.create({
   statCol: {
     flex: 1,
     alignItems: 'center',
+    minWidth: 0,
   },
   statValue: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -471,17 +466,18 @@ const styles = StyleSheet.create({
   },
   filterTab: {
     flex: 1,
-    minHeight: 34,
+    minHeight: 44,
     paddingVertical: 6,
     paddingHorizontal: 4,
     borderRadius: 14,
     borderWidth: cardTokens.borderWidth,
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 0,
   },
   filterTabText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   headerWrap: {
@@ -494,11 +490,12 @@ const styles = StyleSheet.create({
   },
   rowCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: 14,
     borderRadius: 18,
     borderWidth: cardTokens.borderWidth,
     gap: 12,
+    minHeight: 44,
   },
   numberBox: {
     minWidth: 36,
@@ -519,10 +516,15 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   nameRow: {
-    flexDirection: 'column',
-    gap: 2,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   englishName: {
+    flexShrink: 1,
+    minWidth: 100,
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
   },
@@ -546,23 +548,17 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     paddingVertical: 2,
   },
-  rightCol: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    minWidth: 70,
-    flexShrink: 1,
-  },
-  arabicName: {},
+  arabicName: { flexShrink: 1 },
   tapHint: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 10,
+    fontSize: 12,
     marginTop: 2,
     paddingVertical: 2,
   },
   rowActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: 4,
     rowGap: 4,
@@ -574,13 +570,13 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    minHeight: 28,
+    minHeight: 44,
     borderRadius: 14,
     borderWidth: cardTokens.borderWidth,
   },
   practiceText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
 });

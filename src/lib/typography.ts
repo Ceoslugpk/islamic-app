@@ -35,6 +35,9 @@ export function detectScriptFromContent(
   if (!isAscii && content && DEVANAGARI_SCRIPT_REGEX.test(content)) {
     return 'hindi';
   }
+  // Times, counts, Latin transliteration and API translations retain their own
+  // typography even when the surrounding interface uses an RTL language.
+  if (content?.trim()) return 'latin';
   if (currentLanguage === 'ur' || currentLanguage?.startsWith('ur-') || currentLanguage?.startsWith('ur_')) {
     return 'urdu';
   }

@@ -115,6 +115,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0,
     fontFamily: fontRoles.ui,
     fontSize: 14,
     height: '100%',

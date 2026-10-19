@@ -637,12 +637,14 @@ export default function TranslationCompareScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   header: {
     paddingHorizontal: 20,
@@ -687,6 +689,7 @@ const styles = StyleSheet.create({
   positionInfo: {
     alignItems: 'center',
     flex: 1,
+    minWidth: 0,
   },
   surahName: {
     fontFamily: 'Manrope_600SemiBold',
@@ -723,13 +726,13 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    minHeight: 34,
+    minHeight: 44,
     borderRadius: 8,
     borderWidth: cardTokens.borderWidth,
   },
   chooseBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 13,
   },
   pillScroll: {
     flexDirection: 'row',
@@ -739,7 +742,7 @@ const styles = StyleSheet.create({
   choicePill: {
     paddingHorizontal: 13,
     paddingVertical: 8,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 20,
     borderWidth: cardTokens.borderWidth,
     flexShrink: 0,
@@ -763,7 +766,7 @@ const styles = StyleSheet.create({
   },
   toggleThirdText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
   centerBox: {
     paddingVertical: 50,
@@ -780,6 +783,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 6,
     borderWidth: cardTokens.borderWidth,
+    minHeight: 44,
   },
   retryBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -825,17 +829,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     flex: 1,
+    minWidth: 0,
   },
   flagEmoji: {
     fontSize: 20,
   },
   transAuthor: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   editionCode: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 10.5,
+    fontSize: 12,
   },
   tag: {
     width: 24,
@@ -847,7 +852,7 @@ const styles = StyleSheet.create({
   },
   tagText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
   },
   transBody: {
     fontFamily: 'Manrope_400Regular',

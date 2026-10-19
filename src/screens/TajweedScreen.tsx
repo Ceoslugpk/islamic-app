@@ -306,12 +306,16 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+    minWidth: 0,
+  },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   headerWrap: {
     paddingBottom: 4,
@@ -319,7 +323,13 @@ const styles = StyleSheet.create({
   content: {},
   infoCard: { marginBottom: 12 },
   infoCardContent: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
-  infoText: { fontFamily: 'Manrope_400Regular', fontSize: 12.5, lineHeight: 18, flex: 1 },
+  infoText: {
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 14,
+    lineHeight: 18,
+    flex: 1,
+    minWidth: 0,
+  },
   searchBoxWrap: {
     marginBottom: 14,
   },
@@ -333,7 +343,13 @@ const styles = StyleSheet.create({
     height: 42,
     marginBottom: 14,
   },
-  searchInput: { flex: 1, fontFamily: 'Manrope_400Regular', fontSize: 13, paddingVertical: 0 },
+  searchInput: {
+    flex: 1,
+    fontFamily: 'Manrope_400Regular',
+    fontSize: 13,
+    paddingVertical: 0,
+    minWidth: 0,
+  },
   surahListWrap: {
     gap: 10,
   },
@@ -357,7 +373,7 @@ const styles = StyleSheet.create({
   numBox: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   numText: { fontFamily: 'Manrope_700Bold', fontSize: 13 },
   rowName: { fontFamily: 'InstrumentSerif_400Regular', fontSize: 18 },
-  rowCount: { fontFamily: 'Manrope_400Regular', fontSize: 11, marginTop: 1 },
+  rowCount: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 1 },
   legendToggle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -378,16 +394,16 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
     borderWidth: cardTokens.borderWidth,
-    minHeight: 32,
+    minHeight: 44,
   },
-  backChipText: { fontFamily: 'Manrope_500Medium', fontSize: 12 },
+  backChipText: { fontFamily: 'Manrope_500Medium', fontSize: 13 },
   center: { alignItems: 'center', paddingVertical: 40, gap: 12 },
   hint: { fontFamily: 'Manrope_400Regular', fontSize: 13 },
-  errorText: { fontFamily: 'Manrope_400Regular', fontSize: 13, lineHeight: 19, textAlign: 'center' },
-  retryBtn: { paddingHorizontal: 22, minHeight: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  errorText: { fontFamily: 'Manrope_400Regular', fontSize: 14, lineHeight: 19, textAlign: 'center' },
+  retryBtn: { paddingHorizontal: 22, minHeight: 44, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   retryText: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
   ayahListContainer: { gap: 12 },
-  listHint: { fontFamily: 'Manrope_500Medium', fontSize: 11, marginBottom: 8 },
+  listHint: { fontFamily: 'Manrope_500Medium', fontSize: 12, marginBottom: 8 },
   ayahBlockCard: {
     borderRadius: 16,
     borderWidth: cardTokens.borderWidth,

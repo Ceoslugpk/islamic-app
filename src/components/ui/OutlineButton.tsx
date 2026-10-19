@@ -107,6 +107,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   text: {
+    flexShrink: 1,
+    minWidth: 0,
     fontFamily: fontRoles.uiSemiBold,
     fontSize: 13.5,
     letterSpacing: 0.1,

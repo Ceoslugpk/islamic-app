@@ -346,10 +346,12 @@ export default function LocationScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   content: {},
   contentWrap: {
@@ -375,6 +377,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     gap: 12,
+    minHeight: 44,
   },
   rowFlex: { flex: 1, minWidth: 0 },
   rowTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 14 },
@@ -412,7 +415,7 @@ const styles = StyleSheet.create({
   },
   statusWarn: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   activeCity: {
@@ -427,6 +430,7 @@ const styles = StyleSheet.create({
   },
   cityShortcut: {
     marginTop: 14,
+    minHeight: 44,
   },
   shortcutContent: {
     flexDirection: 'row',
@@ -471,13 +475,13 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 10,
     paddingVertical: 2,
   },
   successText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 10,
     paddingVertical: 2,
   },

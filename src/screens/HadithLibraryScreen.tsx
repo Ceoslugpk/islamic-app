@@ -667,7 +667,7 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
               <View style={[styles.gap12, isWide && styles.gridWide]}>
                 {savedList.map((item) => (
                   <View key={item.id} style={isWide && styles.gridCell}>
-                  <Card padded style={styles.savedCard}>
+                  <Card padded style={styles.savedCard} contentStyle={styles.savedCardContent}>
                     <TouchableOpacity
                       onPress={() =>
                         openDetail(
@@ -841,11 +841,11 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
 
             {/* Scorecard Header */}
             <View style={styles.scoreRow}>
-              <Card padded style={styles.scoreCard}>
+              <Card padded style={styles.scoreCard} contentStyle={styles.scoreCardContent}>
                 <AppText variant="numeral" highlight style={styles.scoreNumber}>{totalRead}</AppText>
                 <AppText variant="eyebrow" tone="faint" style={styles.scoreLabel}>{t('Hadiths Read')}</AppText>
               </Card>
-              <Card padded style={styles.scoreCard}>
+              <Card padded style={styles.scoreCard} contentStyle={styles.scoreCardContent}>
                 <AppText variant="numeral" style={styles.scoreNumber}>
                   {Object.keys(readCounts).length}
                 </AppText>
@@ -1637,12 +1637,14 @@ export default function HadithLibraryScreen({ onBack, backLabel: customBackLabel
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     backgroundColor: 'transparent',
   },
   container: {
     flex: 1,
+    minWidth: 0,
   },
   card: {
     borderRadius: 14,
@@ -1701,7 +1703,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    minHeight: 28,
+    minHeight: 44,
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 999,
@@ -1709,7 +1711,7 @@ const styles = StyleSheet.create({
   },
   tabChipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   searchBox: {
     flexDirection: 'row',
@@ -1771,6 +1773,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingVertical: 4,
+    minHeight: 44,
   },
   recentChipText: {
     fontFamily: 'Manrope_500Medium',
@@ -1782,6 +1785,7 @@ const styles = StyleSheet.create({
     marginStart: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   loadingWrap: {
     flexDirection: 'row',
@@ -1818,6 +1822,7 @@ const styles = StyleSheet.create({
   },
   colTouch: {
     gap: 8,
+    minHeight: 44,
   },
   colTop: {
     flexDirection: 'row',
@@ -1834,6 +1839,7 @@ const styles = StyleSheet.create({
     // Arabic sibling is long.
     flex: 1,
     flexShrink: 1,
+    minWidth: 0,
   },
   colHadithCount: {
     fontFamily: 'Manrope_400Regular',
@@ -1860,7 +1866,7 @@ const styles = StyleSheet.create({
   },
   browseBooksText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
   arrow: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1869,6 +1875,7 @@ const styles = StyleSheet.create({
   },
   bookTouch: {
     gap: 6,
+    minHeight: 44,
   },
   bookHeaderRow: {
     flexDirection: 'row',
@@ -1885,7 +1892,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     letterSpacing: 0.3,
   },
   bookCountText: {
@@ -1912,7 +1919,7 @@ const styles = StyleSheet.create({
   },
   hadithRange: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   bookFooter: {
@@ -1920,7 +1927,7 @@ const styles = StyleSheet.create({
   },
   readHint: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
   hadithRowTop: {
     flexDirection: 'row',
@@ -1936,13 +1943,13 @@ const styles = StyleSheet.create({
   },
   gradeText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10,
+    fontSize: 12,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   chapterTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 6,
   },
   hadithArabicPreview: {
@@ -1952,13 +1959,13 @@ const styles = StyleSheet.create({
   },
   hadithEnPreview: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
     marginTop: 4,
   },
   cardTapHint: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 13,
   },
   loadMoreWrap: {
     paddingVertical: 16,
@@ -1969,10 +1976,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 0.75,
+    minHeight: 44,
   },
   loadMoreText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   chapterHeaderLabel: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1998,7 +2006,7 @@ const styles = StyleSheet.create({
   },
   gradeBannerText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   cardHeaderRow: {
     marginBottom: 10,
@@ -2031,6 +2039,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 0.75,
+    minHeight: 44,
+    minWidth: 0,
   },
   actionBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2048,10 +2058,9 @@ const styles = StyleSheet.create({
   },
   recordedBadge: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
   },
   savedCard: {
-    gap: 6,
   },
   metaRow: {
     flexDirection: 'row',
@@ -2061,7 +2070,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
   },
   savedArabic: {
     textAlign: 'right',
@@ -2070,7 +2079,7 @@ const styles = StyleSheet.create({
   },
   savedEnglish: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
   },
   cardActionRow: {
@@ -2081,6 +2090,7 @@ const styles = StyleSheet.create({
   },
   unsaveBtn: {
     padding: 6,
+    minHeight: 44,
   },
   scoreRow: {
     flexDirection: 'row',
@@ -2089,9 +2099,7 @@ const styles = StyleSheet.create({
   },
   scoreCard: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
+    minWidth: 0,
   },
   scoreNumber: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -2215,5 +2223,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 2,
     textTransform: 'uppercase',
+  },
+
+  scoreCardContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+  },
+
+  savedCardContent: {
+    gap: 6,
   },
 });

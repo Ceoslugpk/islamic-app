@@ -18,9 +18,9 @@ assert.ok(settings.includes('const setThemeMode = useCallback(') && settings.inc
 
 const header = read('src/components/layout/AppHeader.tsx');
 assert.ok(header.includes("mode === 'ink' ? 'sunny-outline' : 'moon-outline'"), 'Appearance icon must show the mode the button will switch to');
-assert.ok(header.includes('width: 38') && header.includes('height: 38'), 'App header action buttons must be more visible');
+assert.ok(header.includes('width: 44') && header.includes('height: 44'), 'App header action buttons must be more visible');
 assert.ok(header.includes('accessibilityState={{ selected: mode === \'ink\' }}'), 'Appearance control must expose its active state');
-assert.ok(read('src/components/layout/layout.constants.ts').includes('HEADER_ROW_HEIGHT = 40'), 'Header row must grow with the larger action buttons');
+assert.ok(read('src/components/layout/layout.constants.ts').includes('HEADER_ROW_HEIGHT = 48'), 'Header row must grow with the larger action buttons');
 
 const home = read('src/screens/HomeScreen.tsx');
 assert.ok(home.includes("alignSelf: isRTL() ? 'flex-end' : 'flex-start'"), 'Home prayer progress fill must grow from the RTL start edge');

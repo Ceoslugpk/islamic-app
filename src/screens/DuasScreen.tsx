@@ -531,16 +531,19 @@ export default function DuasScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   categoryScroll: {
     gap: 6,
@@ -553,12 +556,13 @@ const styles = StyleSheet.create({
   },
   chipsWrap: {
     flex: 1,
+    minWidth: 0,
   },
   randomBtn: {
     marginStart: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 14,
     borderWidth: 0.75,
     alignItems: 'center',
@@ -567,10 +571,10 @@ const styles = StyleSheet.create({
   },
   randomBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 13,
   },
   categoryChip: {
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 999,
     borderWidth: 0.75,
     alignItems: 'center',
@@ -595,7 +599,7 @@ const styles = StyleSheet.create({
   },
   categoryChipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   listContent: {},
   searchWrap: {
@@ -620,6 +624,7 @@ const styles = StyleSheet.create({
   },
   clearBtn: {
     padding: 4,
+    minHeight: 44,
   },
   recentWrap: {
     marginBottom: 10,
@@ -660,6 +665,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingVertical: 4,
+    minHeight: 44,
   },
   recentChipText: {
     fontFamily: 'Manrope_500Medium',
@@ -671,6 +677,7 @@ const styles = StyleSheet.create({
     marginStart: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   duaCard: {
     borderRadius: 20,
@@ -734,10 +741,11 @@ const styles = StyleSheet.create({
   shareBtn: {
     padding: 4,
     flexShrink: 0,
+    minHeight: 44,
   },
   refText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     flex: 1,
     minWidth: 0,
   },

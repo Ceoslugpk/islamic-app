@@ -702,7 +702,7 @@ export default function MosqueFinderScreen({
               ))}
             </View>
           ) : areaNotFound ? (
-            <PremiumCard style={styles.emptyCard} padded>
+            <PremiumCard style={styles.emptyCard} contentStyle={styles.emptyCardContent} padded>
               <Ionicons name="search-outline" size={36} color={colors.accent} />
               <AppText variant="title" style={styles.emptyTitle}>
                 {t('Area Not Found')}
@@ -718,7 +718,7 @@ export default function MosqueFinderScreen({
               />
             </PremiumCard>
           ) : error ? (
-            <PremiumCard style={styles.errorCard} padded>
+            <PremiumCard style={styles.errorCard} contentStyle={styles.errorCardContent} padded>
               <Ionicons name="alert-circle-outline" size={32} color={colors.accent} />
               <AppText variant="title" style={styles.errorTitle}>
                 {t('Unable to load mosques')}
@@ -738,7 +738,7 @@ export default function MosqueFinderScreen({
               />
             </PremiumCard>
           ) : (
-            <PremiumCard style={styles.emptyCard} padded>
+            <PremiumCard style={styles.emptyCard} contentStyle={styles.emptyCardContent} padded>
               <Ionicons name="compass-outline" size={36} color={colors.textMuted} />
               <AppText variant="title" style={styles.emptyTitle}>
                 {t('No Mosques Found')}
@@ -775,6 +775,7 @@ export default function MosqueFinderScreen({
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    minWidth: 0,
   },
   content: {
     paddingHorizontal: 20,
@@ -798,23 +799,25 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   searchRowCompact: {
-    flexDirection: 'column',
-    alignItems: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   searchFieldWrap: {
     flex: 1,
     minWidth: 0,
   },
   searchFieldWrapCompact: {
-    flex: 0,
-    width: '100%',
+    flex: 1,
+    minWidth: 0,
   },
   searchButton: {
     minHeight: 44,
     paddingHorizontal: 16,
   },
   searchButtonCompact: {
-    width: '100%',
+    minWidth: 84,
+    paddingHorizontal: 10,
+    minHeight: 44,
   },
   recentChipWrap: {
     flexDirection: 'row',
@@ -917,6 +920,7 @@ const styles = StyleSheet.create({
     marginStart: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   controlCard: {
     marginBottom: 8,
@@ -964,7 +968,7 @@ const styles = StyleSheet.create({
   },
   gpsConfidenceText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
   },
   useLocationBtn: {
     flexDirection: 'row',
@@ -1044,7 +1048,7 @@ const styles = StyleSheet.create({
   },
   areaBannerSubtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   areaBannerCloseBtn: {
@@ -1053,14 +1057,14 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 5,
     paddingHorizontal: 8,
-    minHeight: 28,
+    minHeight: 44,
     borderRadius: 12,
     borderWidth: 1,
     flexShrink: 0,
   },
   areaBannerCloseText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   controlDivider: {
@@ -1136,7 +1140,7 @@ const styles = StyleSheet.create({
   },
   distanceText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   mosqueAddress: {
@@ -1152,7 +1156,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    minHeight: 36,
+    minHeight: 44,
     borderRadius: 14,
     borderWidth: 1,
   },
@@ -1171,9 +1175,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   errorCard: {
-    alignItems: 'center',
-    paddingVertical: 24,
-    gap: 10,
   },
   errorTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1181,7 +1182,7 @@ const styles = StyleSheet.create({
   },
   errorSubtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
     paddingHorizontal: 20,
   },
@@ -1196,9 +1197,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   emptyCard: {
-    alignItems: 'center',
-    paddingVertical: 28,
-    gap: 10,
   },
   emptyTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1206,7 +1204,7 @@ const styles = StyleSheet.create({
   },
   emptySubtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     textAlign: 'center',
     paddingHorizontal: 20,
   },
@@ -1216,7 +1214,19 @@ const styles = StyleSheet.create({
   },
   footerText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
+  },
+
+  errorCardContent: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    gap: 10,
+  },
+
+  emptyCardContent: {
+    alignItems: 'center',
+    paddingVertical: 28,
+    gap: 10,
   },
 });

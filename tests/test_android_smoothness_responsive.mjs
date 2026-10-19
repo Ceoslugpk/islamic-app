@@ -89,10 +89,9 @@ assert.ok(
   toolsSrc.includes('fetchPrayerTimes(loc, settings.methodId)'),
   'ToolsScreen must guard fetchPrayerTimes with if (!isActive) return;'
 );
-assert.ok(
-  toolsSrc.includes('prayerPitch = Math.min(46.5, Math.max(34, (heroCardWidth - 130) / 4))'),
-  'ToolsScreen must compute responsive prayerPitch for prayer circles'
-);
+assert.match(toolsSrc, /heroPrayersRow:\s*\{[^}]*flexDirection: 'row'/, 'Prayers must have their own flowing row below the summary');
+assert.match(toolsSrc, /heroPrayerButton:\s*\{[^}]*flex: 1[^}]*minWidth: 0[^}]*minHeight: 52/, 'All five prayer buttons must share available width with accessible touch height');
+assert.ok(!toolsSrc.includes('prayerPitch'), 'Prayer circles must not depend on absolute offsets');
 
 // LibraryScreen invariants
 assert.ok(
@@ -306,68 +305,10 @@ for (const width of testWidths) {
   const contentMaxWidth = Math.min(width, 680);
   const horizontalMargin = 14.5;
   const heroCardWidth = Math.max(0, contentMaxWidth - 2 * horizontalMargin);
-  const streakClusterWidth = 56;
-  const streakMargin = 18;
-  const prayerDiameter = 24.7;
-
-  // ToolsScreen Prayer Circles layout formula:
-  const prayerPitch = Math.min(46.5, Math.max(34, (heroCardWidth - 130) / 4));
-  const prayerMarginStart = heroCardWidth < 340 ? 12 : 16.05;
-  const prayerLabelWidth = Math.min(44, prayerPitch + 2);
-
-  // Test LTR Layout
-  {
-    // Circle 4 (last circle) right edge:
-    const circle4Offset = prayerMarginStart + prayerPitch * 4;
-    const circle4RightEdge = circle4Offset + prayerDiameter;
-
-    // Label 4 right edge:
-    const text4Offset = circle4Offset + 12.35 - prayerLabelWidth / 2;
-    const text4RightEdge = text4Offset + prayerLabelWidth;
-
-    // Streak cluster left edge in LTR:
-    const streakClusterLeftEdge = heroCardWidth - streakMargin - streakClusterWidth;
-
-    // Clearance between prayer circles/label and streak cluster:
-    const circleClearance = streakClusterLeftEdge - circle4RightEdge;
-    const textClearance = streakClusterLeftEdge - text4RightEdge;
-
-    assert.ok(
-      circleClearance >= 10,
-      `[Width ${width} LTR] Circle 4 must not collide with streak cluster (clearance=${circleClearance.toFixed(1)}dp >= 10dp)`
-    );
-    assert.ok(
-      textClearance >= 3,
-      `[Width ${width} LTR] Prayer label 4 must not collide with streak cluster (clearance=${textClearance.toFixed(1)}dp >= 3dp)`
-    );
-  }
-
-  // Test RTL Layout
-  {
-    // In RTL, streak cluster is at left: 18 (leftEdge = 18, rightEdge = 18 + 56 = 74)
-    const streakClusterRtlRightEdge = streakMargin + streakClusterWidth;
-
-    // Circle 4 is measured from the right:
-    // Offset from right edge = prayerMarginStart + prayerPitch * 4
-    // Position from left edge = heroCardWidth - (prayerMarginStart + prayerPitch * 4 + prayerDiameter)
-    const circle4OffsetFromRight = prayerMarginStart + prayerPitch * 4;
-    const circle4LeftEdge = heroCardWidth - (circle4OffsetFromRight + prayerDiameter);
-
-    const text4OffsetFromRight = circle4OffsetFromRight + 12.35 - prayerLabelWidth / 2;
-    const text4LeftEdge = heroCardWidth - (text4OffsetFromRight + prayerLabelWidth);
-
-    const circleClearanceRtl = circle4LeftEdge - streakClusterRtlRightEdge;
-    const textClearanceRtl = text4LeftEdge - streakClusterRtlRightEdge;
-
-    assert.ok(
-      circleClearanceRtl >= 10,
-      `[Width ${width} RTL] Circle 4 must not collide with streak cluster (clearance=${circleClearanceRtl.toFixed(1)}dp >= 10dp)`
-    );
-    assert.ok(
-      textClearanceRtl >= 3,
-      `[Width ${width} RTL] Prayer label 4 must not collide with streak cluster (clearance=${textClearanceRtl.toFixed(1)}dp >= 3dp)`
-    );
-  }
+  // The summary/streak and prayer buttons occupy separate flex rows. Each
+  // button gets one fifth of the inner width instead of absolute x/y offsets.
+  const prayerButtonWidth = (heroCardWidth - 32 - 4 * 4) / 5;
+  assert.ok(prayerButtonWidth >= 44, `[Width ${width}] Prayer touch targets need at least 44dp`);
 
   // Test LibraryScreen Grid Tile Dimensions
   const gridGap = 7.3;
@@ -391,7 +332,7 @@ assert.ok(layoutConstantsSrc.includes('BOTTOM_CLEARANCE: 32'), 'SPACING_CONTRACT
 assert.ok(layoutConstantsSrc.includes('NAV_HEIGHT + safeBottom + 14 + 32'), 'TAB_PAD_BOTTOM must provide 32dp bottom clearance above nav');
 assert.ok(tabScreenSrc.includes('CONTENT_GAP'), 'TabScreen must enforce CONTENT_GAP');
 assert.ok(tabScreenSrc.includes('TAB_PAD_BOTTOM'), 'TabScreen must enforce TAB_PAD_BOTTOM clearance');
-assert.ok(toolsSrc.includes('minHeight: 160'), 'Tools heroCard minHeight: 160 preserved');
+assert.ok(toolsSrc.includes('minHeight: 220'), 'Tools hero must have space for separate summary, prayers and action rows');
 assert.ok(librarySrc.includes('contentMaxWidth = Math.min(width, 680)'), 'Library contentMaxWidth preserved');
 
 console.log('✓ Invariant architecture proofs passed');

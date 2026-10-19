@@ -237,7 +237,7 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
 
           {/* Target Selector & Round Meta */}
           <Card
-            style={styles.metaBar}
+            style={styles.metaBar} contentStyle={styles.metaBarContent}
             padded
           >
             <View style={styles.metaLeft}>
@@ -283,7 +283,7 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
 
           {/* Current Dhikr Phrase Card */}
           <Card
-            style={styles.phraseCard}
+            style={styles.phraseCard} contentStyle={styles.phraseCardContent}
             padded
           >
             <ArabicText size={32} align="center" style={styles.arabic}>
@@ -406,7 +406,7 @@ function TasbihScreen({ onBack, backLabel }: { onBack?: () => void; backLabel?: 
 
           {/* Today Summary */}
           <Card
-            style={styles.summaryCard}
+            style={styles.summaryCard} contentStyle={styles.summaryCardContent}
             padded
           >
             <AppText variant="eyebrow" tone="faint" style={styles.summaryLabel}>{t('Today')}</AppText>
@@ -430,6 +430,7 @@ export default withUndoToast(TasbihScreen);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   content: {},
   contentWrap: {
@@ -443,7 +444,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   dhikrChip: {
-    minHeight: 32,
+    minHeight: 44,
     paddingHorizontal: 14,
     paddingVertical: 4,
     borderRadius: 999,
@@ -456,14 +457,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   metaBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 12,
-    gap: 8,
   },
   metaLeft: {
     flex: 1,
@@ -482,7 +478,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   targetBtn: {
-    minHeight: 28,
+    minHeight: 44,
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 999,
@@ -503,15 +499,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_700Bold',
   },
   summaryCard: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
     borderRadius: 20,
     borderWidth: 1,
     marginBottom: 12,
-    gap: 6,
   },
   summaryLabel: {
     fontSize: 13,
@@ -526,12 +516,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope_400Regular',
   },
   phraseCard: {
-    padding: 24,
     borderRadius: 20,
     borderWidth: 1,
-    alignItems: 'center',
+
     marginBottom: 20,
-    gap: 8,
   },
   arabic: {
     marginBottom: 6,
@@ -542,7 +530,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   meaning: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontFamily: 'Manrope_400Regular',
     textAlign: 'center',
     fontStyle: 'italic',
@@ -560,6 +548,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+    minHeight: 44,
   },
   counterCircleGradient: {
     width: '100%',
@@ -623,7 +612,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   resetBtn: {
-    minHeight: 40,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -642,5 +631,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 16,
+  },
+
+  summaryCardContent: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    gap: 6,
+  },
+
+  phraseCardContent: {
+    padding: 24,
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  metaBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    gap: 8,
   },
 });

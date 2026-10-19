@@ -94,12 +94,12 @@ export default function RamadanGuideScreen({
     const translation = update?.translation ?? item.translation;
     const grades = update?.grades ?? item.grades;
     return (
-      <PremiumCard key={item.id} style={[styles.itemCard, isLast && { marginBottom: 0 }]} padded>
+      <PremiumCard key={item.id} style={[styles.itemCard, isLast && { marginBottom: 0 }]} contentStyle={styles.readingContent} padded>
         <AppText variant="rowTitle" style={styles.itemTitle}>{t(item.title)}</AppText>
         {arabic ? (
-          <ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
+          <View style={[styles.passagePanel, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}><ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
             {arabic}
-          </ArabicText>
+          </ArabicText></View>
         ) : null}
         {item.transliteration ? (
           <AppText variant="subtitle" tone="faint" style={styles.itemTranslit}>
@@ -109,9 +109,9 @@ export default function RamadanGuideScreen({
         <AppText variant="body" style={styles.itemTranslation}>
           {t(translation)}
         </AppText>
-        <View style={styles.refRow}>
+        <View style={[styles.refRow, { borderTopColor: tokens.cardBorder }]}>
           <Ionicons name="book-outline" size={12} color={tokens.textMuted} />
-          <AppText variant="caption" tone="faint" style={styles.itemRef}>
+          <AppText variant="caption" style={styles.itemRef}>
             {item.reference}
           </AppText>
           {grades ? (
@@ -258,6 +258,8 @@ export default function RamadanGuideScreen({
 }
 
 const styles = StyleSheet.create({
+  readingContent: { padding: 20 },
+  passagePanel: { paddingHorizontal: 14, paddingVertical: 12, marginVertical: 12, borderWidth: 1, borderRadius: 14 },
   content: {},
   bannerCard: { marginBottom: 16 },
   bannerRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -277,7 +279,7 @@ const styles = StyleSheet.create({
   },
   bannerMeta: {
     fontFamily: fontRoles.ui,
-    fontSize: 11.5,
+    fontSize: 12,
     marginTop: 2,
   },
   sectionWrap: { marginBottom: 18 },
@@ -311,13 +313,13 @@ const styles = StyleSheet.create({
   },
   itemTranslit: {
     fontFamily: fontRoles.ui,
-    fontSize: 11.5,
+    fontSize: 12,
     fontStyle: 'italic',
     marginBottom: 4,
   },
   itemTranslation: {
     fontFamily: fontRoles.ui,
-    fontSize: 13,
+    fontSize: 14,
   },
   refRow: {
     flexDirection: 'row',
@@ -328,7 +330,7 @@ const styles = StyleSheet.create({
   },
   itemRef: {
     fontFamily: fontRoles.ui,
-    fontSize: 10.5,
+    fontSize: 12,
     flexShrink: 1,
     minWidth: 0,
   },

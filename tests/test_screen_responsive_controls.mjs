@@ -36,6 +36,12 @@ const mosqueFinder = read('src/screens/MosqueFinderScreen.tsx');
 assert.ok(mosqueFinder.includes('fetchNearbyMosques'), 'Mosque Finder must use the tested API client');
 assert.ok(mosqueFinder.includes('mosqueRequestIdRef'), 'late API responses must not replace the current search results');
 assert.ok(mosqueFinder.includes('activeAreaSearchRef'), 'an area search must be cancellable when replaced');
+assert.match(mosqueFinder, /searchRowCompact:\s*\{[\s\S]*?flexDirection:\s*'row'/,
+  'compact Mosque Finder layout must keep the search field and submit button aligned in one row');
+assert.match(mosqueFinder, /searchFieldWrapCompact:\s*\{[\s\S]*?flex:\s*1,[\s\S]*?minWidth:\s*0/,
+  'compact Mosque Finder field must shrink beside the submit button instead of overflowing');
+assert.match(mosqueFinder, /searchButtonCompact:\s*\{[\s\S]*?minWidth:\s*84/,
+  'compact Mosque Finder submit button must preserve a usable touch width');
 assert.ok(!/onPress=\{\(\)\s*=>\s*\{\s*\}\s*\}/.test(read('src/screens/CalendarScreen.tsx')), 'calendar event cards must not expose an empty press action');
 
 function collectSourceFiles(directory) {

@@ -518,7 +518,6 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
     >
       <View style={styles.contentWrap}>
 
-
         {/* Sub-navigation Tabs */}
         <View style={[styles.tabBar, { borderBottomColor: tokens.cardBorder }]}>
           <ScrollView
@@ -1858,12 +1857,14 @@ function QuranAudioScreen({ onBack }: QuranAudioScreenProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   header: {
     paddingHorizontal: 20,
@@ -1886,6 +1887,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderBottomWidth: 2,
     flexShrink: 0,
+    minHeight: 44,
   },
   tabLabel: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1903,6 +1905,7 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     flex: 1,
+    minWidth: 0,
   },
   searchBar: {
     flexDirection: 'row',
@@ -1962,6 +1965,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     marginEnd: 6,
+    minHeight: 44,
   },
   radioArea: {
     width: 24,
@@ -2013,7 +2017,7 @@ const styles = StyleSheet.create({
   },
   reciterArabic: {
     fontFamily: 'Amiri_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 2,
     writingDirection: 'rtl',
   },
@@ -2025,7 +2029,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
     flexShrink: 0,
-    minHeight: 32,
+    minHeight: 44,
     justifyContent: 'center',
   },
   sampleBtnText: {
@@ -2125,7 +2129,7 @@ const styles = StyleSheet.create({
   },
   presetCountText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
   },
   presetActionButtons: {
     flexDirection: 'row',
@@ -2134,8 +2138,8 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   presetSaveBtn: {
-    width: 30,
-    height: 30,
+    width: 44,
+    minHeight: 44,
     borderRadius: 6,
     borderWidth: 1,
     alignItems: 'center',
@@ -2190,6 +2194,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     marginEnd: 8,
+    minHeight: 44,
   },
   playlistName: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2208,9 +2213,9 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   smallPlayBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    minHeight: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2218,9 +2223,11 @@ const styles = StyleSheet.create({
     padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   selectedPlaylistWrap: {
     flex: 1,
+    minWidth: 0,
   },
   playlistDetailHeader: {
     flexDirection: 'row',
@@ -2232,6 +2239,7 @@ const styles = StyleSheet.create({
   },
   backToPlaylistsBtn: {
     paddingVertical: 6,
+    minHeight: 44,
   },
   backToPlaylistsText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2288,6 +2296,7 @@ const styles = StyleSheet.create({
   clearBtn: {
     paddingVertical: 4,
     paddingHorizontal: 8,
+    minHeight: 44,
   },
   clearBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2315,6 +2324,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     marginEnd: 6,
+    minHeight: 44,
   },
   queueTitle: {
     fontSize: 14,
@@ -2332,15 +2342,15 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   queuePlayBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 44,
+    minHeight: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
   queueRemoveBtn: {
-    width: 24,
-    height: 24,
+    width: 44,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2359,6 +2369,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
+    minHeight: 44,
   },
   quickAddText: {
     fontFamily: 'Manrope_500Medium',
@@ -2402,7 +2413,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
     flexShrink: 0,
-    minHeight: 32,
+    minHeight: 44,
     justifyContent: 'center',
   },
   changeReciterText: {
@@ -2421,6 +2432,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 0,
   },
   repeatBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2449,6 +2462,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.65)',
     justifyContent: 'flex-end',
     alignItems: 'center',
+    minWidth: 0,
   },
   modalBackdropDim: {
     position: 'absolute',
@@ -2490,13 +2504,14 @@ const styles = StyleSheet.create({
   },
   modalCloseBtn: {
     padding: 4,
+    minHeight: 44,
   },
   modalBody: {
     padding: 18,
   },
   formLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 6,
   },
   modalInput: {
@@ -2520,6 +2535,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 5,
     gap: 8,
+    minHeight: 44,
   },
   surahPickNum: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2527,12 +2543,13 @@ const styles = StyleSheet.create({
   },
   surahPickName: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   surahPickTrans: {
     fontFamily: 'Manrope_400Regular',
     fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   modalActionButtons: {
     flexDirection: 'row',
@@ -2545,6 +2562,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 0,
   },
   modalCancelText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2556,6 +2575,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   modalSubmitText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2573,11 +2593,11 @@ const styles = StyleSheet.create({
   },
   reciterHeaderTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13,
+    fontSize: 14,
   },
   reciterHeaderSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
   },
   translationTabScroll: {
     paddingHorizontal: 16,
@@ -2635,6 +2655,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 8,
     alignSelf: 'flex-start',
+    minHeight: 44,
   },
   settingsBrowseBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -2651,6 +2672,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     borderWidth: 1,
+    minHeight: 44,
   },
   floatingMiniIconWrap: {
     width: 34,
@@ -2663,6 +2685,7 @@ const styles = StyleSheet.create({
   floatingMiniInfo: {
     flex: 1,
     marginEnd: 8,
+    minWidth: 0,
   },
   floatingMiniTitleRow: {
     flexDirection: 'row',
@@ -2672,7 +2695,7 @@ const styles = StyleSheet.create({
   },
   floatingMiniTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
     flexShrink: 1,
   },
   floatingMiniBadge: {
@@ -2688,7 +2711,7 @@ const styles = StyleSheet.create({
   },
   floatingMiniReciter: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
   },
   floatingMiniOpenBtn: {
     width: 24,
@@ -2700,4 +2723,3 @@ const styles = StyleSheet.create({
 });
 
 export default withUndoToast(QuranAudioScreen);
-

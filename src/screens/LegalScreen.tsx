@@ -733,9 +733,11 @@ export default function LegalScreen({ screen, onBack }: LegalScreenProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    minWidth: 0,
   },
   scrollView: {
     flex: 1,
+    minWidth: 0,
   },
   scrollContent: {
     paddingBottom: 40,
@@ -760,13 +762,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     letterSpacing: -0.1,
     flex: 1,
+    minWidth: 0,
   },
   sectionBody: {
     gap: 10,
   },
   paragraph: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13.5,
+    fontSize: 14,
     lineHeight: 21,
   },
   bulletRow: {
@@ -787,7 +790,7 @@ const styles = StyleSheet.create({
   },
   bulletTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13.5,
+    fontSize: 14,
   },
   bulletText: {
     fontFamily: 'Manrope_400Regular',

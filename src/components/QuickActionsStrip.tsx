@@ -67,7 +67,7 @@ function ActionButton({ icon, label, subtitle, onPress }: ActionItemProps) {
         styles.cardWrap,
         {
           transform: [{ scale: scaleAnim }],
-          borderRadius: 14,
+          borderRadius: 18,
           backgroundColor: homeTokens.cardTop,
           ...getCardShadow(mode),
         },
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     minHeight: 92,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     paddingVertical: 10,
     paddingHorizontal: 12,

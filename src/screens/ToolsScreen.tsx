@@ -448,7 +448,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
             testID="tools-card-salah-hero"
           >
             <View style={[styles.heroCard, { borderColor: HERO_OUTER_BORDER }]}>
-              <View style={[StyleSheet.absoluteFill, { borderRadius: 17, overflow: 'hidden' }]}>
+              <View style={[StyleSheet.absoluteFill, { borderRadius: 21, overflow: 'hidden' }]}>
                 <LinearGradient
                   colors={tokens.heroGradient}
                   start={{ x: 0, y: 0 }}
@@ -468,221 +468,77 @@ const ToolsScreen = React.memo(function ToolsScreen({
               {/* Inner Inset 4.5 Border */}
               <View style={styles.heroInnerBorder} pointerEvents="none" />
 
-              {/* Top Row: Diamond + TODAY */}
-              <View style={[styles.heroTodayRow, rtl && styles.heroTodayRowRtl]}>
-                <DiamondIcon size={6} color={tokens.gold} />
-                <AppText
-                  variant="eyebrow"
-                  onHero
-                  style={[styles.heroTodayText, { fontFamily: fontPoppinsMedium }]}
-                  allowFontScaling={false}
-                >
-                  {t('Today').toLocaleUpperCase()}
-                </AppText>
-              </View>
-
-              {/* Hero Title: Salah Tracker */}
-              <AppText
-                variant="onHeroTitle"
-                onHero
-                style={[
-                  styles.heroTitle,
-                  {
-                    fontFamily: fontLoraMedium,
-                  },
-                  rtl && styles.heroTitleRtl,
-                ]}
-                numberOfLines={1}
-                maxFontSizeMultiplier={1.2}
-              >
-                {t('Salah Tracker')}
-              </AppText>
-
-              {/* Hero Subtitle */}
-              <AppText
-                variant="onHeroSubtitle"
-                onHero
-                style={[
-                  styles.heroSubtitle,
-                  {
-                    fontFamily: fontPoppinsRegular,
-                  },
-                  rtl && styles.heroSubtitleRtl,
-                ]}
-                numberOfLines={2}
-                maxFontSizeMultiplier={1.2}
-              >
-                {t('Daily 5 prayers checklist & streaks')}
-              </AppText>
-
-              {/* Real Current Streak: Big Lora62 Numeral + "day streak" */}
-              <View
-                style={[
-                  styles.heroStreakCluster,
-                  rtl ? styles.heroStreakClusterRtl : styles.heroStreakClusterLtr,
-                ]}
-                pointerEvents="none"
-              >
-                <AppText
-                  variant="numeral"
-                  onHero
-                  style={[
-                    styles.heroBigStreak,
-                    {
-                      fontFamily: fontLoraMedium,
-                    },
-                  ]}
-                  allowFontScaling={false}
-                >
-                  {streak}
-                </AppText>
-                <AppText
-                  variant="onHeroSubtitle"
-                  onHero
-                  style={[
-                    styles.heroStreakLabel,
-                    {
-                      fontFamily: fontPoppinsRegular,
-                    },
-                  ]}
-                  allowFontScaling={false}
-                >
-                  {t('day streak')}
-                </AppText>
-              </View>
-
-              {/* Five Prayer Circles (Responsive Pitch) */}
-              {(() => {
-                const heroCardWidth = Math.max(0, contentMaxWidth - 2 * horizontalMargin);
-                const prayerPitch = Math.min(46.5, Math.max(34, (heroCardWidth - 130) / 4));
-                const prayerMarginStart = heroCardWidth < 340 ? 12 : 16.05;
-                const prayerLabelWidth = Math.min(44, prayerPitch + 2);
-
-                return (
-                  <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-                    {PRAYERS_LIST.map((prayer, i) => {
-                      const isDone = Boolean(completed[prayer.key]);
-                      const isNext = nextPrayer?.name === prayer.key;
-                      let isPassed = false;
-                      if (!isDone && !isNext && prayerTimings?.timings?.[prayer.key]) {
-                        const now = new Date();
-                        const nowMin = now.getHours() * 60 + now.getMinutes();
-                        const pMin = parseHm(prayerTimings.timings[prayer.key]);
-                        if (nowMin > pMin) isPassed = true;
-                      }
-
-                      const circleOffset = prayerMarginStart + prayerPitch * i;
-                      const circleLeft = rtl ? undefined : circleOffset;
-                      const circleRight = rtl ? circleOffset : undefined;
-                      const textOffset = circleOffset + 12.35 - prayerLabelWidth / 2;
-                      const textLeft = rtl ? undefined : textOffset;
-                      const textRight = rtl ? textOffset : undefined;
-
-                      return (
-                        <React.Fragment key={prayer.key}>
-                          <Pressable
-                            onPress={() => togglePrayer(prayer.key)}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            accessibilityRole="button"
-                            accessibilityLabel={`${t(prayer.label)}, ${isDone ? t('done') : t('not done')}`}
-                            style={[
-                              styles.prayerCircle,
-                              {
-                                left: circleLeft,
-                                right: circleRight,
-                                top: 78.65,
-                              },
-                              isDone && {
-                                backgroundColor: tokens.gold,
-                                borderColor: tokens.gold,
-                              },
-                              !isDone && isNext && {
-                                borderWidth: 1.5,
-                                borderColor: tokens.gold,
-                                backgroundColor: 'transparent',
-                              },
-                              !isDone && !isNext && isPassed && {
-                                borderWidth: 1,
-                                borderColor: 'rgba(238, 202, 128, 0.5)',
-                                backgroundColor: 'transparent',
-                              },
-                              !isDone && !isNext && !isPassed && {
-                                borderWidth: 1,
-                                borderColor: 'rgba(238, 202, 128, 0.25)',
-                                backgroundColor: 'transparent',
-                              },
-                            ]}
-                          >
-                            {isDone && (
-                              <Ionicons name="checkmark" size={13} color={tokens.onGold} />
-                            )}
-                            {!isDone && isNext && (
-                              <View
-                                style={{
-                                  width: 6.5,
-                                  height: 6.5,
-                                  borderRadius: 3.25,
-                                  backgroundColor: tokens.gold,
-                                }}
-                              />
-                            )}
-                          </Pressable>
-
-                          {/* Prayer Name Baseline 114 */}
-                          <AppText
-                            variant="caption"
-                            onHero
-                            style={[
-                              styles.prayerNameText,
-                              {
-                                width: prayerLabelWidth,
-                                left: textLeft,
-                                right: textRight,
-                                top: 104,
-                                fontFamily: fontPoppinsRegular,
-                                color: isNext ? tokens.gold : tokens.onHeroMuted,
-                              },
-                            ]}
-                            numberOfLines={1}
-                            allowFontScaling={false}
-                          >
-                            {t(prayer.label)}
-                          </AppText>
-                        </React.Fragment>
-                      );
-                    })}
+              <View style={styles.heroSummaryRow}>
+                <View style={styles.heroSummaryCopy}>
+                  <View style={styles.heroTodayRow}>
+                    <DiamondIcon size={6} color={tokens.gold} />
+                    <AppText variant="eyebrow" onHero style={styles.heroTodayText}>
+                      {t('Today')}
+                    </AppText>
                   </View>
-                );
-              })()}
+                  <AppText variant="onHeroTitle" onHero style={styles.heroTitle}>
+                    {t('Salah Tracker')}
+                  </AppText>
+                  <AppText variant="onHeroSubtitle" onHero style={styles.heroSubtitle}>
+                    {t('Daily 5 prayers checklist & streaks')}
+                  </AppText>
+                </View>
+                <View style={styles.heroStreakCluster} pointerEvents="none">
+                  <AppText variant="numeral" onHero style={styles.heroBigStreak} allowFontScaling={false}>
+                    {streak}
+                  </AppText>
+                  <AppText variant="onHeroSubtitle" onHero style={styles.heroStreakLabel}>
+                    {t('day streak')}
+                  </AppText>
+                </View>
+              </View>
 
-              {/* Open Button (left16, top123.5, width89.5, height24, radius12) */}
+              <View style={styles.heroPrayersRow}>
+                {PRAYERS_LIST.map((prayer) => {
+                  const isDone = Boolean(completed[prayer.key]);
+                  const isNext = nextPrayer?.name === prayer.key;
+                  let isPassed = false;
+                  if (!isDone && !isNext && prayerTimings?.timings?.[prayer.key]) {
+                    const now = new Date();
+                    const nowMin = now.getHours() * 60 + now.getMinutes();
+                    const pMin = parseHm(prayerTimings.timings[prayer.key]);
+                    if (nowMin > pMin) isPassed = true;
+                  }
+                  return (
+                    <Pressable
+                      key={prayer.key}
+                      onPress={() => togglePrayer(prayer.key)}
+                      hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t(prayer.label)}, ${isDone ? t('done') : t('not done')}`}
+                      accessibilityState={{ selected: isDone }}
+                      style={styles.heroPrayerButton}
+                    >
+                      <View style={[styles.prayerCircle, {
+                        backgroundColor: isDone ? tokens.gold : 'transparent',
+                        borderColor: isDone || isNext ? tokens.gold : isPassed ? tokens.onHeroMuted : tokens.cardBorder,
+                        borderWidth: isNext ? 1.5 : 1,
+                      }]}>
+                        {isDone && <Ionicons name="checkmark" size={14} color={tokens.onGold} />}
+                        {!isDone && isNext && <View style={[styles.nextPrayerDot, { backgroundColor: tokens.gold }]} />}
+                      </View>
+                      <AppText variant="caption" onHero style={[styles.prayerNameText, { color: isNext ? tokens.gold : tokens.onHeroMuted }]} numberOfLines={1}>
+                        {t(prayer.label)}
+                      </AppText>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
               <AccessiblePressable
                 onPress={() => onOpen('tracker')}
-                style={[
-                  styles.heroOpenBtnWrap,
-                  rtl && styles.heroOpenBtnWrapRtl,
-                ]}
+                style={styles.heroOpenBtnWrap}
                 scaleOnPress={0.96}
                 accessibilityRole="button"
                 accessibilityLabel={`${t('Open')} ${t('Salah Tracker')}`}
               >
-                <LinearGradient
-                  colors={GOLD_GRADIENT}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.heroOpenBtn}
-                >
-                  <AppText
-                    variant="body"
-                    tone="onGold"
-                    style={[
-                      styles.heroOpenBtnText,
-                      {
-                        fontFamily: fontPoppinsMedium,
-                      },
-                    ]}
-                    allowFontScaling={false}
-                  >
+                <LinearGradient colors={GOLD_GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.heroOpenBtn}>
+                  <AppText variant="body" tone="onGold" style={styles.heroOpenBtnText}>
                     {t('Open')} {rtl ? '←' : '→'}
                   </AppText>
                 </LinearGradient>
@@ -756,7 +612,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                           fontFamily: fontPoppinsMedium,
                         },
                       ]}
-                      numberOfLines={1}
+
                       adjustsFontSizeToFit
                       minimumFontScale={0.85}
                       maxFontSizeMultiplier={1.2}
@@ -771,7 +627,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                           fontFamily: fontPoppinsRegular,
                         },
                       ]}
-                      numberOfLines={2}
+
                       maxFontSizeMultiplier={1.2}
                     >
                       {t(item.subtitle)}
@@ -995,7 +851,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                           fontFamily: fontPoppinsMedium,
                         },
                       ]}
-                      numberOfLines={1}
+
                       maxFontSizeMultiplier={1.2}
                     >
                       {t(card.title)}
@@ -1010,7 +866,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                           fontFamily: fontPoppinsRegular,
                         },
                       ]}
-                      numberOfLines={2}
+
                       maxFontSizeMultiplier={1.2}
                     >
                       {t(card.subtitle)}
@@ -1094,7 +950,7 @@ function UtilityRowItem({
               fontFamily: fontPoppinsMedium,
             },
           ]}
-          numberOfLines={1}
+
           maxFontSizeMultiplier={1.2}
         >
           {t(item.title)}
@@ -1107,7 +963,7 @@ function UtilityRowItem({
               fontFamily: fontPoppinsRegular,
             },
           ]}
-          numberOfLines={2}
+
           maxFontSizeMultiplier={1.2}
         >
           {t(item.subtitle)}
@@ -1173,136 +1029,51 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /* Hero: Salah Tracker (margin14.5, height160, radius17.5) */
+  /* Flowing hero rows expand with translated text and system font size. */
   heroCardWrap: {
     marginHorizontal: 14.5,
     marginTop: 19.5,
-    borderRadius: 18,
+    borderRadius: 22,
   },
-  heroCard: {
-    minHeight: 160,
-    borderRadius: 18,
-    borderWidth: 1,
-    position: 'relative',
-  },
+  heroCard: { minHeight: 220, borderRadius: 22, borderWidth: 1, position: 'relative', padding: 16, gap: 12 },
   heroInnerBorder: {
     position: 'absolute',
     top: 4.5,
     left: 4.5,
     right: 4.5,
     bottom: 4.5,
-    borderRadius: 15,
+    borderRadius: 19,
     borderWidth: 1,
     borderColor: HERO_INNER_BORDER,
   },
-  heroTodayRow: {
-    position: 'absolute',
-    left: 16,
-    top: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  heroTodayRowRtl: {
-    left: undefined,
-    right: 16,
-  },
+  heroTodayRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+
   heroTodayText: {
     fontSize: 10,
     lineHeight: 12,
     letterSpacing: 2,
   },
-  heroTitle: {
-    position: 'absolute',
-    left: 16,
-    right: 85,
-    top: 30,
-    fontSize: 24,
-    lineHeight: 28,
-  },
-  heroTitleRtl: {
-    left: 85,
-    right: 16,
-  },
-  heroSubtitle: {
-    position: 'absolute',
-    left: 16,
-    right: 85,
-    top: 58,
-    fontSize: 12,
-    lineHeight: 15,
-  },
-  heroSubtitleRtl: {
-    left: 85,
-    right: 16,
-  },
+  heroTitle: { fontSize: 24, lineHeight: 32 },
 
-  /* Right Streak Cluster (no scaling) */
-  heroStreakCluster: {
-    position: 'absolute',
-    top: 14,
-    alignItems: 'center',
-    minWidth: 50,
-  },
-  heroStreakClusterLtr: {
-    right: 18,
-  },
-  heroStreakClusterRtl: {
-    left: 18,
-  },
-  heroBigStreak: {
-    fontSize: 62,
-    lineHeight: 62,
-    textAlign: 'center',
-  },
-  heroStreakLabel: {
-    fontSize: 11,
-    lineHeight: 14,
-    marginTop: -4,
-    textAlign: 'center',
-  },
+  heroSubtitle: { fontSize: 12, lineHeight: 18 },
 
-  /* Prayer Circles (24.7 diameter, centers y91, pitch 46.5) */
-  prayerCircle: {
-    position: 'absolute',
-    width: 24.7,
-    height: 24.7,
-    borderRadius: 12.35,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  prayerNameText: {
-    position: 'absolute',
-    width: 44,
-    fontSize: 10.5,
-    lineHeight: 13,
-    textAlign: 'center',
-  },
 
-  /* Open Button (left16, top123.5, width89.5, height24, radius12) */
-  heroOpenBtnWrap: {
-    position: 'absolute',
-    top: 123.5,
-    left: 16,
-    width: 89.5,
-    height: 24,
-    borderRadius: 12,
-  },
-  heroOpenBtnWrapRtl: {
-    left: undefined,
-    right: 16,
-  },
-  heroOpenBtn: {
-    width: 89.5,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroOpenBtnText: {
-    fontSize: 11,
-    lineHeight: 14,
-  },
+  /* Streak summary */
+  heroStreakCluster: { alignItems: 'center', minWidth: 58, maxWidth: 76 },
+
+
+  heroBigStreak: { fontSize: 52, lineHeight: 64, textAlign: 'center' },
+  heroStreakLabel: { fontSize: 11, textAlign: 'center' },
+
+  /* Prayer controls */
+  prayerCircle: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  prayerNameText: { fontSize: 11, textAlign: 'center' },
+
+  /* Tracker action */
+  heroOpenBtnWrap: { alignSelf: 'flex-start', minWidth: 110, borderRadius: 22, overflow: 'hidden' },
+
+  heroOpenBtn: { minHeight: 44, paddingHorizontal: 16, paddingVertical: 4, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  heroOpenBtnText: { fontSize: 12, textAlign: 'center' },
 
   /* Section Labels */
   sectionLabel: {
@@ -1342,12 +1113,12 @@ const styles = StyleSheet.create({
   },
   trackerTileWrap: {
     minHeight: 83.5,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   trackerTileInner: {
     flex: 1,
     minHeight: 83.5,
-    borderRadius: 13,
+    borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
     paddingHorizontal: 11,
@@ -1382,10 +1153,10 @@ const styles = StyleSheet.create({
   /* Utilities Card: margin 14.5, radius 14, 6 rows x 40.7 */
   utilitiesCardWrap: {
     marginHorizontal: 14.5,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   utilitiesCardInner: {
-    borderRadius: 13,
+    borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
     position: 'relative',
@@ -1440,12 +1211,12 @@ const styles = StyleSheet.create({
   },
   liveCardWrap: {
     minHeight: 54.5,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   liveCardInner: {
     flex: 1,
     minHeight: 54.5,
-    borderRadius: 13,
+    borderRadius: 17,
     borderWidth: 1,
     overflow: 'hidden',
     position: 'relative',
@@ -1529,6 +1300,12 @@ const styles = StyleSheet.create({
     right: undefined,
     left: 14,
   },
+
+  heroSummaryRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  heroSummaryCopy: { flex: 1, minWidth: 0, gap: 4 },
+  heroPrayersRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },
+  heroPrayerButton: { flex: 1, minWidth: 0, minHeight: 52, alignItems: 'center', gap: 4 },
+  nextPrayerDot: { width: 6, height: 6, borderRadius: 3 },
 });
 
 export default ToolsScreen;

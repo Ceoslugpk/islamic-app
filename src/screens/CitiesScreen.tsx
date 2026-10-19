@@ -259,10 +259,12 @@ export default function CitiesScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   searchArea: {
     paddingTop: 8,
@@ -375,7 +377,7 @@ const styles = StyleSheet.create({
   },
   successBannerText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
     minWidth: 0,
   },

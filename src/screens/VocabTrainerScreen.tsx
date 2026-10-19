@@ -435,12 +435,16 @@ export function VocabTrainerScreen({ onBack, backLabel }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+    minWidth: 0,
+  },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   headerWrap: {
   },
@@ -464,6 +468,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: cardTokens.borderWidth,
     marginEnd: 8,
+    minHeight: 44,
   },
   filterText: { fontFamily: 'Manrope_600SemiBold', fontSize: 12 },
   card: {
@@ -570,9 +575,10 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 44,
   },
   dailyActionBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
 });

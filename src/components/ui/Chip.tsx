@@ -130,7 +130,7 @@ export function Chip({
 
 const styles = StyleSheet.create({
   chip: {
-    minHeight: 32,
+    minHeight: 44,
     borderRadius: 999,
     borderWidth: 1,
     overflow: 'hidden',
@@ -144,6 +144,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   gradientFill: {
+    minHeight: 44,
     paddingHorizontal: 12,
     paddingVertical: 6,
     flexDirection: 'row',
@@ -151,9 +152,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
     width: '100%',
-    height: '100%',
   },
   label: {
+    flexShrink: 1,
     fontSize: 12.5,
     letterSpacing: 0.1,
   },

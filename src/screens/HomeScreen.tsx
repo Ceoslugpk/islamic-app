@@ -1073,7 +1073,7 @@ const HomeScreen = React.memo(function HomeScreen({
                         style={[
                           styles.heroTimeBig,
                           {
-                            fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
+                            fontFamily: 'InstrumentSerif_400Regular',
                             fontSize: isRTL() ? (isCompact ? 34 : 38) : (isCompact ? 38 : 44),
                             lineHeight: isRTL() ? (isCompact ? 40 : 44) : (isCompact ? 42 : 48),
                             color: homeTokens.gold,
@@ -1780,7 +1780,7 @@ const styles = StyleSheet.create({
   },
   prayerHeroCard: {
     minHeight: 224,
-    borderRadius: 18,
+    borderRadius: 22,
     borderWidth: 1,
     overflow: 'hidden',
     position: 'relative',
@@ -1788,7 +1788,7 @@ const styles = StyleSheet.create({
   heroInsetBorder: {
     margin: 1,
     borderWidth: 1,
-    borderRadius: 15,
+    borderRadius: 19,
   },
   heroInnerContent: {
     padding: 16,
@@ -1803,9 +1803,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   heroTopRowRtl: {
-    // Stack in RTL so the long prayer time always gets the full card width.
-    flexDirection: 'column',
-    alignItems: 'stretch',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   heroLeftCol: {
     flex: 1,
@@ -1813,9 +1812,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   heroLeftColRtl: {
-    flex: 0,
-    width: '100%',
-    alignItems: 'flex-end',
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'flex-start',
   },
   heroNextPrayerBadge: {
     flexDirection: 'row',
@@ -1846,7 +1845,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   heroTimeWrapRtl: {
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-start',
   },
   heroTimeBig: {
     // dynamically styled with font and size
@@ -1916,7 +1915,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     minHeight: 94,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
     alignItems: 'center',
@@ -1994,7 +1993,7 @@ const styles = StyleSheet.create({
   },
   streakCard: {
     minHeight: 78,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 14.5,
@@ -2065,7 +2064,7 @@ const styles = StyleSheet.create({
   },
   sunriseAuxCard: {
     minHeight: 52,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
     marginBottom: 14.5,
@@ -2178,7 +2177,7 @@ const styles = StyleSheet.create({
   },
   prayerListCard: {
     marginBottom: 20,
-    borderRadius: 14,
+    borderRadius: 18,
     overflow: 'hidden',
   },
   trackerSkeletonFooter: {
@@ -2273,7 +2272,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   duaCardSlide: {
-    borderRadius: 14,
+    borderRadius: 18,
     overflow: 'visible',
   },
   duaCardPressable: {
@@ -2284,7 +2283,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
     minHeight: 280,
-    borderRadius: 14,
+    borderRadius: 18,
   },
   duaAccent: { height: 3 },
   duaCardTitle: { fontSize: 15 },

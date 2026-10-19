@@ -164,7 +164,7 @@ export const ContinueReadingCard = React.memo(function ContinueReadingCard({
       style={[
         {
           transform: [{ scale: scaleAnim }],
-          borderRadius: 14,
+          borderRadius: 18,
           backgroundColor: homeTokens.cardTop,
           ...getCardShadow(mode),
         },
@@ -316,7 +316,7 @@ export const ContinueReadingCard = React.memo(function ContinueReadingCard({
 const styles = StyleSheet.create({
   card: {
     minHeight: 80,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
     position: 'relative',
@@ -381,8 +381,8 @@ const styles = StyleSheet.create({
     height: 2.5,
     width: '100%',
     overflow: 'hidden',
-    borderBottomLeftRadius: 13,
-    borderBottomRightRadius: 13,
+    borderBottomLeftRadius: 17,
+    borderBottomRightRadius: 17,
   },
   progressFill: {
     height: '100%',

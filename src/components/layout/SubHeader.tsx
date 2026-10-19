@@ -76,7 +76,7 @@ export function SubHeader({
   const tokens = HOME_THEME_TOKENS[mode];
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const isCompact = width < 380;
+  const isCompact = width < 440;
   const rtl = isRTL();
 
   const childPrefix = testID && testID !== 'subheader' && testID !== 'sub-header' ? testID : 'sub-header';
@@ -180,12 +180,12 @@ export function SubHeader({
               styles.title,
               {
                 fontFamily: rtl ? fontRoles.titleRtl : fontRoles.title,
-                fontSize: 24,
+                fontSize: isCompact ? 22 : 24,
                 lineHeight: 28,
                 textAlign: rtl ? 'right' : 'left',
               },
             ]}
-            numberOfLines={1}
+            numberOfLines={2}
             ellipsizeMode="tail"
             accessibilityRole="header"
             maxFontSizeMultiplier={1.4}
@@ -204,8 +204,6 @@ export function SubHeader({
                   textAlign: rtl ? 'right' : 'left',
                 },
               ]}
-              numberOfLines={2}
-              ellipsizeMode="tail"
               maxFontSizeMultiplier={1.4}
             >
               {t(subtitle)}
@@ -214,12 +212,8 @@ export function SubHeader({
         </View>
 
         {/* Right: Actions or spacer */}
-        <View style={styles.rightActionWrap}>
-          {rightAction ? (
-            rightAction
-          ) : onBack ? (
-            <View style={styles.rightSpacer} />
-          ) : null}
+        <View style={[styles.rightActionWrap, !rightAction && { minWidth: 0 }]}>
+          {rightAction ?? null}
         </View>
       </View>
 

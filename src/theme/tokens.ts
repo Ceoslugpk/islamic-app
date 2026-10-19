@@ -52,27 +52,27 @@ export const BRAND_GREEN = '#105A4B' as const;
 
 /**
  * Canonical card styling constants.
- * Radii: 14dp, 0.75dp border.
+ * Standard floating surfaces use an 18dp radius; compact list tiles use 16dp.
  */
 export const cardTokens = {
-  borderRadius: 14,
-  innerRadius: 13,
+  borderRadius: 18,
+  innerRadius: 17,
   borderWidth: 0.75,
   variants: {
     standard: {
-      borderRadius: 14,
-      innerRadius: 13,
+      borderRadius: 18,
+      innerRadius: 17,
       borderWidth: 1,
     },
     hero: {
-      borderRadius: 18,
-      innerRadius: 15,
-      innerBorderRadius: 15,
+      borderRadius: 22,
+      innerRadius: 19,
+      innerBorderRadius: 19,
       borderWidth: 1,
     },
     listTile: {
-      borderRadius: 13,
-      innerRadius: 12,
+      borderRadius: 16,
+      innerRadius: 15,
       borderWidth: 1,
     },
     search: {
@@ -187,7 +187,7 @@ export const themeTokens = {
     cardBottom: '#FAF6ED',
     inset: '#F0F6F2',
     border: '#E2CC9C',
-    cardBorder: '#E2CC9C',
+    cardBorder: '#DCE4DB',
     goldBorder: '#E2CC9C',
     text: '#14221E',
     muted: '#647068',
@@ -246,7 +246,7 @@ export const themeTokens = {
     cardBottom: '#201F28',
     inset: '#201F28',
     border: '#8C7747',
-    cardBorder: '#8C7747',
+    cardBorder: '#48484B',
     goldBorder: '#8C7747',
     text: '#F3EEDD',
     muted: '#A8A6AE',
@@ -295,7 +295,7 @@ export type ThemeTokens = (typeof themeTokens)[ThemeMode];
 
 export const buttonTokens = {
   minHeight: 44,
-  borderRadius: 14,
+  borderRadius: 22,
   touchTargetMin: 44,
   hitSlop: { top: 8, bottom: 8, left: 8, right: 8 },
 } as const;

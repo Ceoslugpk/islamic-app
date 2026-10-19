@@ -229,7 +229,7 @@ export default function UmrahResourcesScreen({
         {onOpenDuas && (
           <PremiumCard style={styles.quickDuaCard} padded>
             <View style={styles.quickDuaRow}>
-              <View style={{ flex: 1, paddingEnd: 12 }}>
+              <View style={{ flex: 1, minWidth: 180, paddingEnd: 12 }}>
                 <AppText variant="eyebrow" highlight style={styles.cardLead}>{t('SUPPLICATIONS READY')}</AppText>
                 <AppText variant="sectionTitle" style={styles.cardTitleSm}>
                   {t('Need Key Duas in Your Hand?')}
@@ -476,6 +476,8 @@ const styles = StyleSheet.create({
   },
   progressHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
     justifyContent: 'space-between',
     alignItems: 'baseline',
     marginBottom: 4,
@@ -491,7 +493,7 @@ const styles = StyleSheet.create({
   },
   sectionDesc: {
     fontFamily: fontRoles.ui,
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
     marginBottom: 14,
   },
@@ -509,8 +511,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingVertical: 6,
+    minHeight: 44,
   },
   checkBox: {
+    flexShrink: 0,
     width: 22,
     height: 22,
     borderRadius: 6,
@@ -520,11 +524,11 @@ const styles = StyleSheet.create({
   },
   checkItemTitle: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 13.5,
+    fontSize: 14,
   },
   checkItemNote: {
     fontFamily: fontRoles.ui,
-    fontSize: 11.5,
+    fontSize: 12,
     marginTop: 2,
     lineHeight: 16,
   },
@@ -533,6 +537,8 @@ const styles = StyleSheet.create({
   },
   quickDuaRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
@@ -570,7 +576,7 @@ const styles = StyleSheet.create({
   },
   tipDetail: {
     fontFamily: fontRoles.ui,
-    fontSize: 12.5,
+    fontSize: 14,
     lineHeight: 18,
   },
   etiquetteCard: {
@@ -583,7 +589,7 @@ const styles = StyleSheet.create({
   },
   etiquetteBody: {
     fontFamily: fontRoles.ui,
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
   },
   mistakeCard: {
@@ -603,7 +609,7 @@ const styles = StyleSheet.create({
   },
   mistakeText: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
   },
   correctHeader: {
@@ -614,8 +620,9 @@ const styles = StyleSheet.create({
   correctText: {
     flex: 1,
     fontFamily: fontRoles.ui,
-    fontSize: 12.5,
+    fontSize: 14,
     lineHeight: 18,
+    minWidth: 0,
   },
   bookCard: {
     marginBottom: 12,
@@ -638,7 +645,7 @@ const styles = StyleSheet.create({
   },
   bookDesc: {
     fontFamily: fontRoles.ui,
-    fontSize: 12.5,
+    fontSize: 14,
     lineHeight: 18,
   },
 });

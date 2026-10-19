@@ -13,7 +13,7 @@ import {
   RefreshControlProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TAB_PAD_BOTTOM, SUBHEADER_BOTTOM, SUBHEADER_HEIGHT, CONTENT_GAP, HEADER_FADE } from './layout.constants';
+import { TAB_PAD_BOTTOM, SUBHEADER_BOTTOM, SUBHEADER_HEIGHT, CONTENT_GAP, HEADER_FADE, SCREEN_CONTENT_MAX_WIDTH } from './layout.constants';
 
 export interface DetailScreenContextValue {
   padTop: number;
@@ -221,6 +221,7 @@ export const DetailScrollView = forwardRef<ScrollView, ScrollViewProps>(
         testID={resolvedTestID}
         {...rest}
         contentContainerStyle={[
+          styles.contentFrame,
           contentContainerStyle,
           { paddingTop: isDirectScroller ? padTop : 0, paddingBottom: padBottom },
         ]}
@@ -260,6 +261,7 @@ export function DetailFlatList<T>(
       testID={resolvedTestID}
       {...rest}
       contentContainerStyle={[
+        styles.contentFrame,
         contentContainerStyle,
         { paddingTop: isDirectScroller ? padTop : 0, paddingBottom: padBottom },
       ]}
@@ -272,6 +274,11 @@ DetailScreen.ScrollView = DetailScrollView;
 DetailScreen.FlatList = DetailFlatList;
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    width: '100%',
+    maxWidth: SCREEN_CONTENT_MAX_WIDTH,
+    alignSelf: 'center',
+  },
   container: {
     flex: 1,
     width: '100%',

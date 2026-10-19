@@ -690,12 +690,14 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 0,
     paddingBottom: 0,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   chipRowWrap: {
     position: 'relative',
@@ -715,6 +717,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    minHeight: 44,
   },
   chipText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -740,9 +743,9 @@ const styles = StyleSheet.create({
     width: 48,
   },
   scrollHint: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 44,
+    minHeight: 44,
+    borderRadius: 22,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -768,7 +771,7 @@ const styles = StyleSheet.create({
   },
   offlineNote: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
     marginBottom: 8,
   },
@@ -812,6 +815,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
     justifyContent: 'center',
+    minWidth: 0,
   },
   arabicName: {
     lineHeight: 34,
@@ -844,6 +848,7 @@ const styles = StyleSheet.create({
   cardShareBtn: {
     padding: 4,
     flexShrink: 0,
+    minHeight: 44,
   },
   verseTag: {
     flexDirection: 'row',
@@ -901,6 +906,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingVertical: 4,
+    minHeight: 44,
   },
   recentChipText: {
     fontFamily: 'Manrope_500Medium',
@@ -912,6 +918,7 @@ const styles = StyleSheet.create({
     marginStart: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
   },
   shareCardWrap: {
     position: 'absolute',
@@ -968,7 +975,7 @@ const styles = StyleSheet.create({
   },
   shareCardRef: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     letterSpacing: 0.3,
   },

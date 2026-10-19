@@ -393,6 +393,7 @@ export default function HajjJourneyScreen({
                 !onOpenDuas && isLastDay && { marginBottom: 0 },
               ]}
               padded
+              contentStyle={styles.readingContent}
             >
               {/* Header */}
               <View style={styles.dayTopRow}>
@@ -552,9 +553,9 @@ export default function HajjJourneyScreen({
 
         {/* Library link card */}
         {onOpenDuas && (
-          <PremiumCard style={{ marginBottom: 0, padding: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flex: 1, paddingEnd: 10 }}>
+          <PremiumCard style={{ marginBottom: 0 }} contentStyle={{ padding: 16 }}>
+            <View style={styles.footerRow}>
+              <View style={{ minWidth: 0, gap: 4 }}>
                 <AppText variant="sectionTitle" style={styles.footerCardTitle}>
                   {t('Full Supplications Repository')}
                 </AppText>
@@ -576,6 +577,7 @@ export default function HajjJourneyScreen({
 }
 
 const styles = StyleSheet.create({
+  readingContent: { padding: 20, gap: 4 },
   content: {},
   chipsScroll: {
     flexDirection: 'row',
@@ -584,6 +586,7 @@ const styles = StyleSheet.create({
   },
   dayChip: {
     marginEnd: 6,
+    minHeight: 44,
   },
   pillarsCard: {
     marginBottom: 18,
@@ -619,7 +622,7 @@ const styles = StyleSheet.create({
   },
   pillarsBody: {
     fontFamily: fontRoles.ui,
-    fontSize: 12.5,
+    fontSize: 14,
     lineHeight: 18,
   },
   dayCard: {
@@ -642,7 +645,7 @@ const styles = StyleSheet.create({
   },
   dayTitle: {
     fontFamily: fontRoles.title,
-    fontSize: 18,
+    fontSize: 22,
     marginTop: 4,
   },
   dayArabicTitle: {
@@ -662,13 +665,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 10,
   },
+  footerRow: { flexDirection: 'column', alignItems: 'stretch', gap: 12 },
   locationBannerText: {
+    flexShrink: 1,
     fontFamily: fontRoles.ui,
     fontSize: 12,
   },
   daySummary: {
     fontFamily: fontRoles.ui,
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
   },
   sectionSubtitle: {
@@ -679,21 +684,24 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   ritualCard: {
-    marginBottom: 8,
-    padding: 10,
-    borderRadius: 10,
+    marginBottom: 12,
+    padding: 14,
+    borderRadius: 14,
     borderWidth: 1,
   },
   ritualHeader: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 8,
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
   },
   ritualName: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
+    minWidth: 0,
   },
   obligationBadge: {
     paddingHorizontal: 7,
@@ -704,11 +712,11 @@ const styles = StyleSheet.create({
   },
   obligationText: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 10,
+    fontSize: 12,
   },
   ritualDesc: {
     fontFamily: fontRoles.ui,
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 17,
   },
   duaBox: {
@@ -719,7 +727,7 @@ const styles = StyleSheet.create({
   },
   duaBoxTitle: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 4,
   },
   duaBoxArabic: {
@@ -737,13 +745,13 @@ const styles = StyleSheet.create({
   },
   duaBoxTrans: {
     fontFamily: fontRoles.ui,
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 18,
     marginBottom: 4,
   },
   duaBoxRef: {
     fontFamily: fontRoles.ui,
-    fontSize: 10.5,
+    fontSize: 12,
   },
   tipsBox: {
     padding: 12,
@@ -753,11 +761,11 @@ const styles = StyleSheet.create({
   },
   tipsBoxTitle: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 12,
+    fontSize: 14,
   },
   tipsBoxText: {
     fontFamily: fontRoles.ui,
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 17,
     marginTop: 3,
   },

@@ -300,6 +300,7 @@ export default function UmrahGuideScreen({
                 !onOpenDuas && isLastStep && { marginBottom: 0 },
               ]}
               padded
+              contentStyle={styles.readingContent}
             >
               {/* Header */}
               <View style={styles.stepHeaderRow}>
@@ -465,6 +466,7 @@ export default function UmrahGuideScreen({
 }
 
 const styles = StyleSheet.create({
+  readingContent: { padding: 20, gap: 4 },
   content: {},
   pillsContainer: {
     flexDirection: 'row',
@@ -501,7 +503,7 @@ const styles = StyleSheet.create({
   },
   overviewDesc: {
     fontFamily: fontRoles.ui,
-    fontSize: 13,
+    fontSize: 14,
   },
   stepCard: {
     marginBottom: 16,
@@ -535,7 +537,7 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontFamily: fontRoles.title,
-    fontSize: 17,
+    fontSize: 22,
     marginTop: 2,
   },
   arabicTitleWrap: {
@@ -549,7 +551,7 @@ const styles = StyleSheet.create({
   },
   stepDescription: {
     fontFamily: fontRoles.ui,
-    fontSize: 13.5,
+    fontSize: 14,
     marginTop: 4,
   },
   locationRow: {
@@ -585,20 +587,20 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     fontFamily: fontRoles.ui,
-    fontSize: 13,
+    fontSize: 14,
   },
   duasBlock: {
     marginTop: 8,
   },
   duaCard: {
-    padding: 12,
-    borderRadius: 10,
+    padding: 14,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 10,
   },
   duaTitle: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 4,
   },
   duaArabic: {
@@ -614,12 +616,12 @@ const styles = StyleSheet.create({
   },
   duaTrans: {
     fontFamily: fontRoles.ui,
-    fontSize: 12,
+    fontSize: 14,
     marginBottom: 4,
   },
   duaRef: {
     fontFamily: fontRoles.ui,
-    fontSize: 10.5,
+    fontSize: 12,
   },
   warningBlock: {
     padding: 12,
@@ -636,12 +638,12 @@ const styles = StyleSheet.create({
   },
   warningTitle: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 12,
+    fontSize: 14,
     flexShrink: 1,
   },
   warningText: {
     fontFamily: fontRoles.ui,
-    fontSize: 12.5,
+    fontSize: 14,
     marginBottom: 4,
   },
   duaRedirectCard: {
@@ -663,6 +665,7 @@ const styles = StyleSheet.create({
   },
   duaRedirectButtonCompact: {
     alignSelf: 'stretch',
+    minHeight: 44,
   },
   duaRedirectTextCol: {
     flex: 1,

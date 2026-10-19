@@ -76,6 +76,9 @@ assert.ok(calculateScriptLineHeight(11, 'hindi') >= 18, 'Hindi 11sp must have li
 
 // Script detection logic
 assert.equal(detectScriptFromContent('Hello world', 'en'), 'latin');
+assert.equal(detectScriptFromContent('12:25', 'ur'), 'latin', 'Clock digits must keep compact Latin metrics in Urdu');
+assert.equal(detectScriptFromContent('15+', 'ar'), 'latin', 'Library counts must keep Latin metrics in Arabic');
+assert.equal(detectScriptFromContent('Subhan Allah', 'ur'), 'latin', 'Transliteration must not inherit Urdu line boxes');
 assert.equal(detectScriptFromContent('سُبْحَانَ اللَّهِ', 'en'), 'arabic', 'Arabic in English UI must resolve to arabic script');
 assert.equal(detectScriptFromContent('اسلامک', 'ur'), 'urdu', 'Urdu content must resolve to urdu script');
 assert.equal(detectScriptFromContent('नमस्ते', 'hi'), 'hindi', 'Devanagari content must resolve to hindi script');
@@ -153,7 +156,8 @@ const tajweedTextSource = fs.readFileSync(path.resolve('src/components/TajweedTe
 
 // ArabicText 1.8x line-height minimum
 assert.ok(
-  arabicTextSource.includes('Math.round(size * 1.8)'),
+  arabicTextSource.includes('Math.ceil(effectiveSize * 1.8)') &&
+  arabicTextSource.includes('Math.max(requestedLineHeight ?? 0, minimumLineHeight)'),
   'ArabicText must use at least 1.8x base line-height'
 );
 // ArabicText Android includeFontPadding: true

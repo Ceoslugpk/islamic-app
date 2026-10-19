@@ -247,12 +247,12 @@ console.log('  ✓ Full card touch expand/collapse and localized pagination veri
 // ---------------------------------------------------------------------------
 console.log('\n--- 8. Canonical Style Invariants ---');
 assert.ok(
-  homeSrc.includes('duaCardSlide: {\n    borderRadius: 14,') ||
-  homeSrc.includes('duaCardSlide: {\r\n    borderRadius: 14,'),
-  'duaCardSlide must preserve canonical borderRadius: 14'
+  homeSrc.includes('duaCardSlide: {\n    borderRadius: 18,') ||
+  homeSrc.includes('duaCardSlide: {\r\n    borderRadius: 18,'),
+  'duaCardSlide must preserve canonical borderRadius: 18'
 );
 assert.ok(
-  /duaAfterPrayerCard: \{[\s\S]*?minHeight: 280,[\s\S]*?borderRadius: 14,/.test(homeSrc) &&
+  /duaAfterPrayerCard: \{[\s\S]*?minHeight: 280,[\s\S]*?borderRadius: 18,/.test(homeSrc) &&
   /duaCardPressable: \{[\s\S]*?padding: 18,/.test(homeSrc),
   'Redesigned Dua card keeps 14dp corners and a flexible 280dp minimum, with 18dp padding inside the pressable'
 );

@@ -391,6 +391,7 @@ export default withUndoToast(WomenQadaScreen);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   content: {
     paddingTop: 10,
@@ -434,8 +435,9 @@ const styles = StyleSheet.create({
   },
   privacyText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11.5,
+    fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   explicitBadge: {
     flexDirection: 'row',
@@ -449,8 +451,9 @@ const styles = StyleSheet.create({
   },
   explicitText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   qadaStatsRow: {
     flexDirection: 'row',
@@ -460,6 +463,7 @@ const styles = StyleSheet.create({
   qadaStatBox: {
     flex: 1,
     borderRadius: 16,
+    minWidth: 0,
   },
   qadaStatBoxContent: {
     padding: 12,
@@ -471,7 +475,7 @@ const styles = StyleSheet.create({
   },
   qadaStatLbl: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 10.5,
+    fontSize: 12,
     marginTop: 2,
   },
   primaryBtn: {
@@ -484,7 +488,7 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13.5,
+    fontSize: 14,
   },
   formCard: {
     borderRadius: 20,
@@ -507,7 +511,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   quickPillsRow: {
     flexDirection: 'row',
@@ -518,10 +522,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
+    minHeight: 44,
   },
   quickPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 12,
   },
   textInput: {
     borderWidth: 1,
@@ -569,7 +574,7 @@ const styles = StyleSheet.create({
   },
   deleteQadaButton: {
     minWidth: 40,
-    minHeight: 40,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: -8,
@@ -585,16 +590,16 @@ const styles = StyleSheet.create({
   },
   qadaDate: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13.5,
+    fontSize: 14,
   },
   qadaReason: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     marginTop: 2,
   },
   qadaMadeUpNote: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
 });

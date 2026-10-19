@@ -510,7 +510,7 @@ export default function QiblaScreen({
         <View style={styles.contentWrap}>
           {/* Error / Compass Notice Banner */}
           {error && (
-            <Card style={[styles.errorCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} padded>
+            <Card style={[styles.errorCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.errorCardContent} padded>
               <View style={styles.errorHeader}>
                 <Ionicons name="warning-outline" size={20} color={tokens.accent} />
                 <AppText variant="rowTitle" style={styles.errorTitle}>
@@ -735,7 +735,7 @@ export default function QiblaScreen({
           )}
 
           {/* Compass Hero Card */}
-          <PremiumCard style={styles.compassHeroCard} padded>
+          <PremiumCard style={styles.compassHeroCard} contentStyle={styles.compassHeroCardContent} padded>
             {/* Compass Dial Area */}
             <View style={styles.compassWrapper}>
               {calibrating && heading === null && bearing === null ? (
@@ -857,10 +857,12 @@ const styles = StyleSheet.create({
   wrap: {
     flex: 1,
     overflow: 'hidden',
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   contentWrap: {
     maxWidth: 680,
@@ -912,10 +914,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
+    minHeight: 44,
   },
   recalibrateText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
   figure8Banner: {
     flexDirection: 'row',
@@ -932,6 +935,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     flex: 1,
+    minWidth: 0,
   },
   bannerCard: {
     marginBottom: 16,
@@ -951,7 +955,7 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 2,
   },
   bannerText: {
@@ -961,7 +965,6 @@ const styles = StyleSheet.create({
   },
   errorCard: {
     marginBottom: 20,
-    gap: 10,
   },
   errorHeader: {
     flexDirection: 'row',
@@ -974,7 +977,7 @@ const styles = StyleSheet.create({
   },
   errorDescription: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
   },
   grantBtn: {
@@ -992,9 +995,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   compassHeroCard: {
-    alignItems: 'center',
     marginBottom: 16,
-    paddingVertical: 14,
   },
   compassWrapper: {
     alignItems: 'center',
@@ -1113,7 +1114,7 @@ const styles = StyleSheet.create({
   },
   calibrationDescription: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
     marginTop: 2,
   },
@@ -1131,7 +1132,7 @@ const styles = StyleSheet.create({
   },
   calibrationStepText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'right',
   },
   interferenceBanner: {
@@ -1149,5 +1150,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     flex: 1,
+    minWidth: 0,
+  },
+
+  compassHeroCardContent: {
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+
+  errorCardContent: {
+    gap: 10,
   },
 });

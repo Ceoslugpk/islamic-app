@@ -223,7 +223,13 @@ export function WeeklySummaryScreen({ onBack, backLabel }: Props) {
 
 const styles = StyleSheet.create({
   content: {},
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30 },
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 30,
+    minWidth: 0,
+  },
   heroCard: {
     marginBottom: 16,
   },
@@ -260,7 +266,7 @@ const styles = StyleSheet.create({
   },
   dateRangeText: {
     fontFamily: fontRoles.ui,
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   heroTitle: {
@@ -270,7 +276,7 @@ const styles = StyleSheet.create({
   },
   heroDesc: {
     fontFamily: fontRoles.ui,
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 14,
   },
   statGrid: {
@@ -295,7 +301,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontFamily: fontRoles.ui,
-    fontSize: 10,
+    fontSize: 12,
     marginTop: 2,
     textAlign: 'center',
     paddingVertical: 2,
@@ -346,9 +352,10 @@ const styles = StyleSheet.create({
   },
   footnote: {
     fontFamily: fontRoles.ui,
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     flex: 1,
+    minWidth: 0,
   },
   errorText: {
     fontFamily: fontRoles.ui,

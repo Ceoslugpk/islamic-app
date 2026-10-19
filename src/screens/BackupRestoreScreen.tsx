@@ -324,7 +324,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
 
         {/* Session Activity or Empty State */}
         {lastInfo ? (
-          <PremiumCard style={styles.infoCard}>
+          <PremiumCard style={styles.infoCard} contentStyle={styles.infoCardContent}>
             <View style={styles.infoHeader}>
               <View style={[styles.infoBadge, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
                 <Ionicons
@@ -387,10 +387,12 @@ export function BackupRestoreScreen({ onBack }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   content: { padding: 20, paddingTop: 10 },
   contentWrap: {
@@ -407,7 +409,6 @@ const styles = StyleSheet.create({
   cardSub: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
   infoCard: {
     marginBottom: 16,
-    gap: 8,
   },
   infoHeader: {
     flexDirection: 'row',
@@ -427,17 +428,17 @@ const styles = StyleSheet.create({
   },
   infoBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   infoMeta: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   infoFileName: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   infoDetail: {
     fontFamily: 'Manrope_400Regular',
@@ -452,7 +453,7 @@ const styles = StyleSheet.create({
   },
   infoTimestamp: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   emptyCard: {
@@ -460,18 +461,22 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   emptySub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 2,
   },
   footnote: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     textAlign: 'center',
     marginTop: 4,
     paddingVertical: 2,
+  },
+
+  infoCardContent: {
+    gap: 8,
   },
 });

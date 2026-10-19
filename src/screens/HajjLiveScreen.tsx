@@ -113,7 +113,7 @@ export default function HajjLiveScreen({
 
         {/* Off-season Explanatory Notice Card */}
         {!isHajjSeason && (
-          <PremiumCard style={{ marginBottom: 14, padding: 16 }}>
+          <PremiumCard style={{ marginBottom: 14 }} contentStyle={{ padding: 16 }}>
             <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
               <Ionicons name="information-circle-outline" size={20} color={tokens.goldText} style={{ marginTop: 2 }} />
               <View style={{ flex: 1 }}>
@@ -166,7 +166,7 @@ export default function HajjLiveScreen({
             )}
           </>
         ) : (
-          <PremiumCard style={{ marginBottom: 18, padding: 18 }}>
+          <PremiumCard style={{ marginBottom: 18 }} contentStyle={{ padding: 18 }}>
             <View style={styles.offSeasonHeader}>
               <View style={[styles.tvIconWrap, { backgroundColor: tokens.cardTop }]}>
                 <Ionicons name="videocam-off-outline" size={22} color={tokens.goldText} />
@@ -217,7 +217,7 @@ export default function HajjLiveScreen({
             desc: t("An open plain between Mina and Arafah. Pilgrims arrive here after sunset on the 9th to pray Maghrib and Isha combined, rest under the stars, collect Jamarat pebbles, and make supplication at Al-Mash'ar al-Haram."),
           },
         ].map((site) => (
-          <PremiumCard key={site.title} style={{ marginBottom: 12, padding: 16 }}>
+          <PremiumCard key={site.title} style={{ marginBottom: 12 }} contentStyle={{ padding: 16 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <AppText variant="rowTitle" style={[styles.siteName, { flex: 1, marginEnd: 8 }]}>
                 {site.title}
@@ -231,7 +231,7 @@ export default function HajjLiveScreen({
         ))}
 
         {/* The Farewell Sermon Reflection */}
-        <PremiumCard style={{ marginBottom: 0, padding: 16 }}>
+        <PremiumCard style={{ marginBottom: 0 }} contentStyle={{ padding: 16 }}>
           <AppText variant="sectionTitle" style={[styles.cardTitle, { marginBottom: 6 }]}>
             {t("From the Farewell Sermon (Khutbat al-Wada')")}
           </AppText>
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   noticeBody: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12.5,
+    fontSize: 14,
     lineHeight: 18,
     marginBottom: 6,
   },
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   },
   noticeNote: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     lineHeight: 16,
   },
   offSeasonHeader: {
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   },
   offSeasonBody: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
   },
   webControls: {
@@ -330,6 +330,8 @@ const styles = StyleSheet.create({
   },
   controlBtn: {
     flex: 1,
+    minHeight: 44,
+    minWidth: 0,
   },
   cardLead: {
     fontFamily: 'Manrope_600SemiBold',
@@ -346,7 +348,7 @@ const styles = StyleSheet.create({
   },
   siteName: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13.5,
+    fontSize: 14,
     marginBottom: 3,
   },
   siteDesc: {
@@ -361,12 +363,12 @@ const styles = StyleSheet.create({
   },
   sermonTrans: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
     marginBottom: 4,
   },
   sermonRef: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
   },
 });

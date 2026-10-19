@@ -113,7 +113,7 @@ export function AppHeader({
           <HeaderRingButton
             variant="card"
             iconName={mode === 'ink' ? 'sunny-outline' : 'moon-outline'}
-            iconSize={17}
+            iconSize={19}
             iconColor={tokens.gold}
             onPress={toggle}
             accessibilityLabel={t('Appearance')}
@@ -126,7 +126,7 @@ export function AppHeader({
           <HeaderRingButton
             variant="card"
             iconName="settings-outline"
-            iconSize={17}
+            iconSize={19}
             iconColor={tokens.gold}
             onPress={onOpenSettings}
             accessibilityLabel={t('Open settings')}
@@ -162,18 +162,18 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   logoWrap: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     borderRadius: 6.5,
     overflow: 'hidden',
   },
   logoImg: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     borderRadius: 6.5,
   },
   wordmark: {
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   actions: {
@@ -181,9 +181,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   actionButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   circleBtn: {
     width: 32,

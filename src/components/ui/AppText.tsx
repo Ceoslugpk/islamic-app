@@ -5,7 +5,6 @@ import {
   TextProps,
   TextStyle,
   Platform,
-  PixelRatio,
 } from 'react-native';
 import { useTheme } from '../../lib/theme';
 import { fontRoles } from '../../theme/tokens';
@@ -55,12 +54,12 @@ const VARIANT_CONFIGS: Record<AppTextVariant, VariantConfig> = {
   title: { fontSize: 20, category: 'title' },
   sectionTitle: { fontSize: 17, category: 'title' },
   numeral: { fontSize: 20, category: 'numeral', letterSpacing: 0.2 },
-  rowTitle: { fontSize: 12, category: 'ui' },
-  body: { fontSize: 12, category: 'ui' },
-  link: { fontSize: 12, category: 'ui' },
-  subtitle: { fontSize: 11, category: 'ui' },
-  caption: { fontSize: 11, category: 'ui' },
-  onHeroSubtitle: { fontSize: 11, category: 'ui' },
+  rowTitle: { fontSize: 13, category: 'ui' },
+  body: { fontSize: 14, category: 'ui' },
+  link: { fontSize: 13, category: 'ui' },
+  subtitle: { fontSize: 12, category: 'ui' },
+  caption: { fontSize: 12, category: 'ui' },
+  onHeroSubtitle: { fontSize: 12, category: 'ui' },
   eyebrow: { fontSize: 11, category: 'ui', letterSpacing: 1.8, textTransform: 'uppercase' },
 };
 
@@ -157,7 +156,9 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
   if (tone === 'danger') {
     resolvedColor = tokens.danger;
   } else if (tone === 'faint') {
-    resolvedColor = tokens.faint;
+    resolvedColor = variant === 'body' || variant === 'subtitle' || variant === 'rowTitle'
+      ? tokens.subtle
+      : tokens.faint;
   } else if (tone === 'onGold') {
     resolvedColor = tokens.onGold;
   } else if (onHero) {
@@ -206,19 +207,28 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
   const resolvedMaxMultiplier = maxFontSizeMultiplier ?? defaultMaxMultiplier;
   const flattenedStyle = StyleSheet.flatten(style);
   const isTallScript = script === 'arabic' || script === 'urdu';
-  const fontScale = Math.min(
-    Math.max(PixelRatio.getFontScale() || 1, 1),
-    resolvedMaxMultiplier,
-  );
   const effectiveFontSize = typeof flattenedStyle?.fontSize === 'number'
     ? flattenedStyle.fontSize
     : typographyStyle.fontSize ?? VARIANT_CONFIGS[variant].fontSize;
   const requestedLineHeight = flattenedStyle?.lineHeight ?? typographyStyle.lineHeight;
-  const safeLineHeight = isTallScript
+  const minimumLineHeight = calculateScriptLineHeight(effectiveFontSize, script, VARIANT_CONFIGS[variant].category);
+  const safeLineHeight = isTallScript || (requestedLineHeight ?? 0) < minimumLineHeight
     ? Math.max(
         requestedLineHeight ?? 0,
-        calculateScriptLineHeight(effectiveFontSize, script, VARIANT_CONFIGS[variant].category),
-      ) * fontScale
+        minimumLineHeight,
+      )
+    : undefined;
+  const scriptStyle: TextStyle | undefined = isTallScript ? {
+    fontFamily: /^(Amiri|NotoNaskhArabic|NotoNastaliqUrdu)_/.test(flattenedStyle?.fontFamily ?? '')
+      ? flattenedStyle?.fontFamily
+      : typographyStyle.fontFamily,
+    fontStyle: 'normal',
+    letterSpacing: 0,
+    textTransform: 'none',
+    writingDirection: 'rtl',
+    textAlign: flattenedStyle?.textAlign === 'center' ? 'center' : 'right',
+  } : /^(Amiri|NotoNaskhArabic|NotoNastaliqUrdu)_/.test(flattenedStyle?.fontFamily ?? '')
+    ? { fontFamily: typographyStyle.fontFamily, writingDirection: 'ltr' }
     : undefined;
 
   const isLetterSpacedEyebrow = variant === 'eyebrow';
@@ -246,6 +256,7 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
         glyphPaddingStyle,
         { color: resolvedColor },
         style,
+        scriptStyle,
         safeLineHeight === undefined ? undefined : { lineHeight: safeLineHeight },
       ]}
       maxFontSizeMultiplier={resolvedMaxMultiplier}

@@ -266,7 +266,7 @@ function ZakatScreen({
           {activeTab === 'calculator' && (
             <View style={styles.tabContent}>
               {/* Currency Selector Bar */}
-              <Card style={[styles.currencyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.currencyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.currencyCardContent}>
                 <View style={styles.currencyRow}>
                   <View style={{ flex: 1, minWidth: 0, marginEnd: 8 }}>
                     <AppText variant="eyebrow" tone="faint" style={styles.controlLabel}>
@@ -292,7 +292,7 @@ function ZakatScreen({
               </Card>
 
               {/* Nisab Standard Selector */}
-              <Card style={[styles.nisabCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.nisabCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.nisabCardContent}>
                 <View style={styles.nisabHeader}>
                   <AppText variant="eyebrow" tone="faint" style={[styles.controlLabel, { flex: 1, minWidth: 0 }]}>
                     {t('Nisab Standard')}
@@ -398,7 +398,7 @@ function ZakatScreen({
                     backgroundColor: tokens.cardTop,
                     borderColor: evaluation.isEligibleForZakat ? tokens.goldBorder : tokens.cardBorder,
                   },
-                ]}
+                ]} contentStyle={styles.resultsCardContent}
               >
                 <View style={styles.resultsTopRow}>
                   <View style={{ flex: 1, minWidth: 0, marginEnd: 8 }}>
@@ -531,7 +531,7 @@ function ZakatScreen({
               </AppText>
 
               {/* 1. Cash */}
-              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.inputCardContent}>
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="cash-outline" size={17} color={tokens.goldText} />
@@ -555,7 +555,7 @@ function ZakatScreen({
               </Card>
 
               {/* 2. Gold */}
-              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.inputCardContent}>
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="sparkles-outline" size={17} color={tokens.goldText} />
@@ -581,7 +581,7 @@ function ZakatScreen({
               </Card>
 
               {/* 3. Silver */}
-              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.inputCardContent}>
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="disc-outline" size={17} color={tokens.goldText} />
@@ -607,7 +607,7 @@ function ZakatScreen({
               </Card>
 
               {/* 4. Investments */}
-              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.inputCardContent}>
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="trending-up-outline" size={17} color={tokens.goldText} />
@@ -631,7 +631,7 @@ function ZakatScreen({
               </Card>
 
               {/* 5. Other Assets */}
-              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.inputCardContent}>
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="wallet-outline" size={17} color={tokens.goldText} />
@@ -655,7 +655,7 @@ function ZakatScreen({
               </Card>
 
               {/* 6. Liabilities */}
-              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.inputCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.inputCardContent}>
                 <View style={styles.inputCardTop}>
                   <View style={styles.inputCardLabelWrap}>
                     <Ionicons name="remove-circle-outline" size={17} color={tokens.danger} />
@@ -700,7 +700,7 @@ function ZakatScreen({
                   {history.map((item) => {
                     const itemCfg = getCurrencyConfig(item.currency);
                     return (
-                      <Card key={item.id} style={[styles.historyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+                      <Card key={item.id} style={[styles.historyCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.historyCardContent}>
                         <View style={styles.historyHeader}>
                           <View>
                             <AppText variant="caption" tone="faint" style={styles.historyDate}>
@@ -734,7 +734,7 @@ function ZakatScreen({
                     );
                   })}
 
-                  <Card style={[styles.hawlGuideCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, marginTop: 12 }]}>
+                  <Card style={[styles.hawlGuideCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder, marginTop: 12 }]} contentStyle={styles.hawlGuideCardContent}>
                     <View style={styles.hawlHeader}>
                       <View style={[styles.hawlIconWrap, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, borderWidth: 1 }]}>
                         <Ionicons name="calendar-outline" size={16} color={tokens.goldText} />
@@ -761,7 +761,7 @@ function ZakatScreen({
           {/* ─── TAB 3: NISAB & FIQH GUIDE ──────────────────────────── */}
           {activeTab === 'guide' && (
             <View style={styles.tabContent}>
-              <Card style={[styles.guideCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]}>
+              <Card style={[styles.guideCard, getCardShadow(mode), { backgroundColor: tokens.cardTop, borderColor: tokens.cardBorder }]} contentStyle={styles.guideCardContent}>
                 <AppText variant="sectionTitle" style={styles.guideHeading}>
                   {t('What is Nisab?')}
                 </AppText>
@@ -889,6 +889,7 @@ export default withUndoToast(ZakatScreen);
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
+    minWidth: 0,
   },
   scroll: {},
   container: {
@@ -911,10 +912,12 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     alignItems: 'center',
     justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 0,
   },
   tabBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 14,
   },
   tabContent: {
     gap: 14,
@@ -922,7 +925,6 @@ const styles = StyleSheet.create({
 
   /* Currency Card */
   currencyCard: {
-    padding: 16,
     borderRadius: 20,
     borderWidth: 1,
   },
@@ -950,18 +952,17 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
+    minHeight: 44,
   },
   currencyChangeText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
 
   /* Nisab Card */
   nisabCard: {
-    padding: 16,
     borderRadius: 20,
     borderWidth: 1,
-    gap: 12,
   },
   nisabHeader: {
     flexDirection: 'row',
@@ -982,14 +983,16 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     alignItems: 'center',
+    minHeight: 44,
+    minWidth: 0,
   },
   nisabOptionTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   nisabOptionSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 10.5,
+    fontSize: 12,
     marginTop: 2,
   },
   ratesEditRow: {
@@ -999,10 +1002,11 @@ const styles = StyleSheet.create({
   },
   rateField: {
     flex: 1,
+    minWidth: 0,
   },
   rateFieldLabel: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginBottom: 4,
   },
   rateInput: {
@@ -1016,7 +1020,6 @@ const styles = StyleSheet.create({
 
   /* Results Card */
   resultsCard: {
-    padding: 18,
     borderRadius: 20,
     borderWidth: 1.5,
   },
@@ -1047,7 +1050,7 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   summaryStatsRow: {
     flexDirection: 'row',
@@ -1055,10 +1058,11 @@ const styles = StyleSheet.create({
   },
   summaryCol: {
     flex: 1,
+    minWidth: 0,
   },
   summaryLabel: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
   },
   summaryVal: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1089,11 +1093,11 @@ const styles = StyleSheet.create({
   },
   convChipCode: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   convChipVal: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   resultsActions: {
     flexDirection: 'row',
@@ -1109,10 +1113,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 44,
+    minWidth: 0,
   },
   saveCalcBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   resetBtn: {
     paddingHorizontal: 16,
@@ -1122,10 +1128,11 @@ const styles = StyleSheet.create({
     gap: 4,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 44,
   },
   resetBtnText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12.5,
+    fontSize: 14,
   },
 
   /* Inputs Form */
@@ -1137,10 +1144,8 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   inputCard: {
-    padding: 16,
     borderRadius: 20,
     borderWidth: 1,
-    gap: 10,
   },
   inputCardTop: {
     gap: 2,
@@ -1156,7 +1161,7 @@ const styles = StyleSheet.create({
   },
   inputCardSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   mainInput: {
     borderWidth: 1,
@@ -1169,7 +1174,6 @@ const styles = StyleSheet.create({
 
   /* History */
   historyCard: {
-    padding: 16,
     borderRadius: 20,
     borderWidth: 1,
   },
@@ -1180,7 +1184,7 @@ const styles = StyleSheet.create({
   },
   historyDate: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   historyDueAmount: {
     fontFamily: 'Manrope_700Bold',
@@ -1189,18 +1193,18 @@ const styles = StyleSheet.create({
   },
   deleteHistoryBtn: {
     padding: 6,
+    minHeight: 44,
   },
   historyBreakdownRow: {
     marginTop: 2,
   },
   historyBreakdownText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
   },
 
   /* Guide */
   guideCard: {
-    padding: 18,
     borderRadius: 20,
     borderWidth: 1,
   },
@@ -1211,12 +1215,12 @@ const styles = StyleSheet.create({
   },
   guideSubheading: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 4,
   },
   guideBody: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 19,
   },
 
@@ -1224,6 +1228,7 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
+    minWidth: 0,
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFill,
@@ -1254,6 +1259,7 @@ const styles = StyleSheet.create({
   },
   modalCloseBtn: {
     padding: 4,
+    minHeight: 44,
   },
   currencyItem: {
     flexDirection: 'row',
@@ -1264,6 +1270,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 8,
+    minHeight: 44,
   },
   currencyItemCode: {
     fontFamily: 'Manrope_700Bold',
@@ -1275,7 +1282,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   hawlGuideCard: {
-    padding: 16,
     borderRadius: 20,
     marginBottom: 16,
   },
@@ -1297,12 +1303,42 @@ const styles = StyleSheet.create({
   },
   hawlSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     marginTop: 2,
   },
   hawlBody: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12.5,
+    fontSize: 14,
     lineHeight: 18,
+  },
+
+  guideCardContent: {
+    padding: 18,
+  },
+
+  hawlGuideCardContent: {
+    padding: 16,
+  },
+
+  historyCardContent: {
+    padding: 16,
+  },
+
+  inputCardContent: {
+    padding: 16,
+    gap: 10,
+  },
+
+  resultsCardContent: {
+    padding: 18,
+  },
+
+  nisabCardContent: {
+    padding: 16,
+    gap: 12,
+  },
+
+  currencyCardContent: {
+    padding: 16,
   },
 });

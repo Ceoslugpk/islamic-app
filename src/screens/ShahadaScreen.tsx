@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   },
   source: {
     fontFamily: fontRoles.ui,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 16,
     marginTop: 10,
   },
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
   },
   closing: {
     fontFamily: fontRoles.ui,
-    fontSize: 12.5,
+    fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
   },

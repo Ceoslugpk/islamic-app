@@ -47,9 +47,15 @@ export function PremiumCard({
   const { mode } = useTheme();
   const currentTokens = themeTokens[mode];
   const shadowToken = cardTokens.shadow[mode];
-  const innerRadius = Math.max(0, borderRadius - 1);
+  const requestedRadius = StyleSheet.flatten(style)?.borderRadius;
+  const resolvedRadius = Math.max(
+    cardTokens.borderRadius,
+    borderRadius,
+    typeof requestedRadius === 'number' ? requestedRadius : 0,
+  );
+  const innerRadius = Math.max(0, resolvedRadius - 1);
 
-  const finalBorderColor = borderColor || currentTokens.goldBorder;
+  const finalBorderColor = borderColor || currentTokens.cardBorder;
   const colors = gradientColors || currentTokens.cardGradient;
 
   const cardContent = (
@@ -79,19 +85,19 @@ export function PremiumCard({
   const containerStyle: StyleProp<ViewStyle> = [
     styles.outerCard,
     {
-      borderRadius,
+      borderRadius: resolvedRadius,
       borderColor: finalBorderColor,
       backgroundColor: currentTokens.cardTop,
     },
     shadowToken as any,
     Platform.OS === 'web' && {
-      // Two-layer rich ambient + direct shadow for web
       boxShadow:
         mode === 'ink'
-          ? '0 6px 20px rgba(0,0,0,0.60), 0 2px 6px rgba(0,0,0,0.40)'
-          : '0 4px 14px rgba(40,35,24,0.12), 0 1px 3px rgba(40,35,24,0.06)',
+          ? '0 8px 22px rgba(0,0,0,0.34)'
+          : '0 8px 22px rgba(40,55,44,0.09)',
     },
     style,
+    { borderRadius: resolvedRadius },
   ];
 
   if (onPress) {

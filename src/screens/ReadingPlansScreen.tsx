@@ -397,6 +397,7 @@ export default function ReadingPlansScreen({ onBack }: { onBack?: () => void }) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   content: {
     paddingBottom: 40,
@@ -406,10 +407,11 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   introText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12.5,
+    fontSize: 14,
     marginBottom: 12,
   },
   planCards: {
@@ -430,6 +432,7 @@ const styles = StyleSheet.create({
   },
   planTitleCol: {
     flex: 1,
+    minWidth: 0,
   },
   planCardTitle: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -511,6 +514,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     gap: 14,
+    minHeight: 44,
   },
   checkCircle: {
     width: 24,
@@ -522,6 +526,7 @@ const styles = StyleSheet.create({
   },
   dayTextWrap: {
     flex: 1,
+    minWidth: 0,
   },
   dayLabel: {
     fontFamily: 'Manrope_600SemiBold',

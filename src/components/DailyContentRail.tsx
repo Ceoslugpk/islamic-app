@@ -579,11 +579,11 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   cardSlideWrap: {
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: 'visible',
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
     overflow: 'hidden',
     minHeight: 226,

@@ -64,12 +64,12 @@ export default function PrayerGuideScreen({
     const translation = update?.translation ?? item.translation;
     const grades = update?.grades ?? item.grades;
     return (
-      <PremiumCard key={item.id} style={[styles.itemCard, isLast && { marginBottom: 0 }]} padded>
+      <PremiumCard key={item.id} style={[styles.itemCard, isLast && { marginBottom: 0 }]} contentStyle={styles.readingContent} padded>
         <AppText variant="rowTitle" style={styles.itemTitle}>{t(item.title)}</AppText>
         {arabic ? (
-          <ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
+          <View style={[styles.passagePanel, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder }]}><ArabicText style={[styles.itemArabic, { color: tokens.textPrimary }]}>
             {arabic}
-          </ArabicText>
+          </ArabicText></View>
         ) : null}
         {item.transliteration ? (
           <AppText variant="caption" tone="faint" style={styles.itemTranslit}>
@@ -79,9 +79,9 @@ export default function PrayerGuideScreen({
         <AppText variant="body" style={styles.itemTranslation}>
           {t(translation)}
         </AppText>
-        <View style={styles.refRow}>
+        <View style={[styles.refRow, { borderTopColor: tokens.cardBorder }]}>
           <Ionicons name="book-outline" size={12} color={tokens.textMuted} />
-          <AppText variant="caption" tone="faint" style={styles.itemRef}>{item.reference}</AppText>
+          <AppText variant="caption" style={styles.itemRef}>{item.reference}</AppText>
           {grades ? (
             <View
               style={[
@@ -192,6 +192,8 @@ export default function PrayerGuideScreen({
 }
 
 const styles = StyleSheet.create({
+  readingContent: { padding: 20 },
+  passagePanel: { paddingHorizontal: 14, paddingVertical: 12, marginVertical: 12, borderWidth: 1, borderRadius: 14 },
   content: {},
   chipsScroll: {
     flexDirection: 'row',
@@ -217,10 +219,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   sectionDivider: { marginTop: 16, marginBottom: 6 },
-  itemCard: { marginBottom: 12 },
+  itemCard: { marginBottom: 16 },
   itemTitle: {
     fontFamily: fontRoles.uiBold,
-    fontSize: 14.5,
+    fontSize: 16,
     letterSpacing: 0.2,
     marginBottom: 6,
   },
@@ -235,7 +237,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     marginBottom: 4,
   },
-  itemTranslation: { fontFamily: fontRoles.ui, fontSize: 13.5 },
+  itemTranslation: { fontFamily: fontRoles.ui, fontSize: 14 },
   refRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -243,7 +245,7 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: 10,
   },
-  itemRef: { fontFamily: fontRoles.ui, fontSize: 11, flexShrink: 1, minWidth: 0 },
+  itemRef: { fontFamily: fontRoles.ui, fontSize: 12, flexShrink: 1, minWidth: 0 },
   gradePill: {
     paddingHorizontal: 8,
     paddingVertical: 3,

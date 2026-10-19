@@ -224,7 +224,7 @@ function WomenPurityScreen({
         </View>
 
         {/* Postpartum / Nifas Tracker Card */}
-        <PremiumCard style={styles.sectionCard}>
+        <PremiumCard style={styles.sectionCard} contentStyle={styles.sectionCardContent}>
           <View style={styles.cardHeaderRow}>
             <Ionicons name="heart-outline" size={16} color={tokens.goldText} />
             <AppText variant="sectionTitle" style={styles.cardTitle}>
@@ -378,7 +378,7 @@ function WomenPurityScreen({
         </PremiumCard>
 
         {/* Signs of Purity Card */}
-        <PremiumCard style={{ ...styles.infoCard, borderColor: tokens.goldBorder, backgroundColor: tokens.ringFill }}>
+        <PremiumCard style={{ ...styles.infoCard, borderColor: tokens.goldBorder, backgroundColor: tokens.ringFill }} contentStyle={styles.infoCardContent}>
           <Ionicons name="sparkles" size={18} color={tokens.goldText} />
           <View style={{ flex: 1 }}>
             <AppText variant="rowTitle" highlight style={styles.infoCardTitle}>
@@ -528,6 +528,7 @@ export default withUndoToast(WomenPurityScreen);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   content: {},
   backBtn: {
@@ -556,11 +557,11 @@ const styles = StyleSheet.create({
   },
   privacyText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11.5,
+    fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   sectionCard: {
-    padding: 16,
     marginBottom: 14,
   },
   cardHeaderRow: {
@@ -590,21 +591,22 @@ const styles = StyleSheet.create({
   },
   activeNifasTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13,
+    fontSize: 14,
   },
   activeNifasSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     marginTop: 2,
   },
   smallBtn: {
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 6,
+    minHeight: 44,
   },
   smallBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   secondaryBtn: {
     flexDirection: 'row',
@@ -617,7 +619,7 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   innerForm: {
     padding: 12,
@@ -641,14 +643,15 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
+    minHeight: 44,
   },
   quickPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 12,
   },
   inputLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   textInput: {
     borderWidth: 1,
@@ -669,11 +672,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 6,
     borderWidth: 1,
+    minHeight: 44,
   },
   submitBtn: {
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 6,
+    minHeight: 44,
   },
   nifasHistory: {
     marginTop: 10,
@@ -690,29 +695,26 @@ const styles = StyleSheet.create({
   },
   nifasHistoryText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
+    fontSize: 14,
   },
   nifasHistoryNotes: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   infoCard: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 14,
     marginBottom: 14,
     borderRadius: 10,
     borderWidth: 1,
   },
   infoCardTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13.5,
+    fontSize: 14,
     marginBottom: 4,
   },
   infoCardDesc: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 17,
   },
   sectionTitle: {
@@ -721,27 +723,27 @@ const styles = StyleSheet.create({
   },
   progressSubtitle: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     marginTop: 2,
   },
   resetText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
+    fontSize: 13,
   },
   reasonTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13.5,
+    fontSize: 14,
     marginBottom: 2,
   },
   reasonDesc: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 16,
     marginBottom: 4,
   },
   reasonRef: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
   },
   historyHeader: {
     flexDirection: 'row',
@@ -758,10 +760,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
+    minHeight: 44,
   },
   filterPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   stepCheckbox: {
     width: 20,
@@ -773,8 +776,9 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13.5,
+    fontSize: 14,
     flex: 1,
+    minWidth: 0,
   },
   stepBadge: {
     paddingHorizontal: 7,
@@ -784,17 +788,27 @@ const styles = StyleSheet.create({
   },
   stepBadgeText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10,
+    fontSize: 12,
   },
   stepTranslit: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
     fontStyle: 'italic',
     marginBottom: 4,
   },
   stepDesc: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 17,
+  },
+
+  infoCardContent: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 14,
+  },
+
+  sectionCardContent: {
+    padding: 16,
   },
 });

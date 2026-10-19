@@ -3,13 +3,14 @@
  * for unified tab chrome (AppHeader, FloatingNav, TabScreen).
  */
 
-export const HEADER_ROW_HEIGHT = 40;
+export const HEADER_ROW_HEIGHT = 48;
 export const HEADER_FADE = 10;
 export const NAV_HEIGHT = 54.5;
 export const NAV_SIDE_MARGIN = 14;
 export const NAV_RADIUS = 27;
 
 export const CONTENT_GAP = 24;
+export const SCREEN_CONTENT_MAX_WIDTH = 680;
 
 /** Authoritative shared geometry contract (CONTENT_GAP = 24dp, bottom clearance = 32dp) */
 export const SPACING_CONTRACT = {

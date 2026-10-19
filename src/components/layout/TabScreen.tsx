@@ -13,7 +13,7 @@ import {
   RefreshControlProps,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TAB_PAD_TOP, TAB_PAD_BOTTOM, HEADER_BOTTOM, CONTENT_GAP, HEADER_FADE } from './layout.constants';
+import { TAB_PAD_TOP, TAB_PAD_BOTTOM, HEADER_BOTTOM, CONTENT_GAP, HEADER_FADE, SCREEN_CONTENT_MAX_WIDTH } from './layout.constants';
 
 export interface TabScreenContextValue {
   padTop: number;
@@ -158,6 +158,7 @@ export const TabScrollView = forwardRef<ScrollView, ScrollViewProps>(
         testID={testID}
         {...rest}
         contentContainerStyle={[
+          styles.contentFrame,
           contentContainerStyle,
           { paddingTop: header ? 0 : padTop, paddingBottom: padBottom },
         ]}
@@ -227,6 +228,7 @@ export const TabAnimatedScrollView = forwardRef<any, ScrollViewProps>(
         testID={testID}
         {...rest}
         contentContainerStyle={[
+          styles.contentFrame,
           contentContainerStyle,
           { paddingTop: header ? 0 : padTop, paddingBottom: padBottom },
         ]}
@@ -326,6 +328,7 @@ export function TabFlatList<T>(
       ListHeaderComponent={combinedHeader}
       {...rest}
       contentContainerStyle={[
+        styles.contentFrame,
         contentContainerStyle,
         { paddingTop: header ? 0 : padTop, paddingBottom: padBottom },
       ]}
@@ -339,6 +342,11 @@ TabScreen.AnimatedScrollView = TabAnimatedScrollView;
 TabScreen.FlatList = TabFlatList;
 
 const styles = StyleSheet.create({
+  contentFrame: {
+    width: '100%',
+    maxWidth: SCREEN_CONTENT_MAX_WIDTH,
+    alignSelf: 'center',
+  },
   container: {
     flex: 1,
     width: '100%',

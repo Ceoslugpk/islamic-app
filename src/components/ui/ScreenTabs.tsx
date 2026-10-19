@@ -52,7 +52,7 @@ export function ScreenTabs({
               fontFamily: isSelected ? fontRoles.uiSemiBold : fontRoles.ui,
             },
           ]}
-          numberOfLines={1}
+          numberOfLines={scrollable ? 1 : 2}
         >
           {tab.label}
         </AppText>
@@ -90,6 +90,7 @@ export function ScreenTabs({
         hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
         style={[
           styles.tabItem,
+          scrollable && styles.tabScrollable,
           isSelected && styles.tabItemSelected,
         ]}
       >
@@ -98,7 +99,7 @@ export function ScreenTabs({
             colors={tokens.goldGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.tabGradient}
+            style={[styles.tabGradient, scrollable && styles.tabGradientScrollable]}
           >
             {innerContent}
           </LinearGradient>
@@ -149,18 +150,20 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 3,
     alignItems: 'center',
   },
   tabItem: {
+    minWidth: 0,
+    minHeight: 44,
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 13,
+    borderRadius: 17,
     gap: 6,
   },
   tabItemSelected: {
@@ -170,19 +173,29 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     elevation: 2,
   },
+  tabScrollable: {
+    flexBasis: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
+  },
   tabGradient: {
+    minHeight: 44,
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 13,
+    borderRadius: 17,
     gap: 6,
-    width: '100%',
-    height: '100%',
+  },
+  tabGradientScrollable: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 'auto',
   },
   tabText: {
+    flexShrink: 1,
     fontSize: 13,
     letterSpacing: 0.1,
     textAlign: 'center',

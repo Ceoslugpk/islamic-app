@@ -241,6 +241,7 @@ export function PrayerCountdown({
   if (variant === 'tiles') {
     return (
       <View
+        {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}
         style={styles.tilesContainer}
         accessibilityRole="text"
         accessibilityLiveRegion="polite"
@@ -282,6 +283,7 @@ export function PrayerCountdown({
 
   return (
     <View
+      {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}
       style={styles.container}
       accessibilityRole="text"
       accessibilityLiveRegion="polite"

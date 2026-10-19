@@ -11,7 +11,7 @@ export const HOME_THEME_TOKENS = {
     bgBottom: '#0C0C14',
     cardTop: '#2A2933',
     cardBottom: '#201F28',
-    cardBorder: '#8C7747',
+    cardBorder: '#48484B',
     text: '#F3EEDD',
     muted: '#A8A6AE',
     accent: '#E6BE6C',
@@ -27,7 +27,7 @@ export const HOME_THEME_TOKENS = {
     bgBottom: '#F0EBDE',
     cardTop: '#FEFCF7',
     cardBottom: '#FAF6ED',
-    cardBorder: '#E2CC9C',
+    cardBorder: '#DCE4DB',
     text: '#14221E',
     muted: '#647068',
     accent: '#105A4B',
@@ -66,23 +66,23 @@ export interface CardShadowTokens {
 export const CARD_SHADOW: Record<HomeMode, CardShadowTokens> = {
   paper:
     Platform.OS === 'web'
-      ? { boxShadow: '0 5px 14px rgba(40,35,24,0.14)' }
+      ? { boxShadow: '0 8px 22px rgba(40,55,44,0.09)' }
       : {
-          shadowColor: '#282318',
-          shadowOffset: { width: 0, height: 5 },
-          shadowOpacity: 0.14,
-          shadowRadius: 14,
-          elevation: 3,
+          shadowColor: '#28443A',
+          shadowOffset: { width: 0, height: 7 },
+          shadowOpacity: 0.10,
+          shadowRadius: 20,
+          elevation: 4,
         },
   ink:
     Platform.OS === 'web'
-      ? { boxShadow: '0 8px 20px rgba(0,0,0,0.65)' }
+      ? { boxShadow: '0 8px 22px rgba(0,0,0,0.34)' }
       : {
           shadowColor: '#000000',
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: 0.60,
-          shadowRadius: 12,
-          elevation: 5,
+          shadowOffset: { width: 0, height: 7 },
+          shadowOpacity: 0.34,
+          shadowRadius: 18,
+          elevation: 4,
         },
 };
 
@@ -99,13 +99,13 @@ export const FLOATING_CARD_SHADOW: Record<HomeMode, CardShadowTokens> = {
         },
   ink:
     Platform.OS === 'web'
-      ? { boxShadow: '0 10px 28px rgba(0,0,0,0.65)' }
+      ? { boxShadow: '0 10px 26px rgba(0,0,0,0.38)' }
       : {
           shadowColor: '#000000',
           shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.60,
-          shadowRadius: 24,
-          elevation: 3,
+          shadowOpacity: 0.36,
+          shadowRadius: 22,
+          elevation: 4,
         },
 };
 
@@ -122,13 +122,13 @@ export const HERO_CARD_SHADOW: Record<HomeMode, CardShadowTokens> = {
         },
   ink:
     Platform.OS === 'web'
-      ? { boxShadow: '0 10px 24px rgba(0,0,0,0.72)' }
+      ? { boxShadow: '0 10px 26px rgba(0,0,0,0.42)' }
       : {
           shadowColor: '#000000',
           shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.68,
+          shadowOpacity: 0.42,
           shadowRadius: 16,
-          elevation: 6,
+          elevation: 5,
         },
 };
 
@@ -145,13 +145,13 @@ export const ACTIVE_PRAYER_CARD_SHADOW: Record<HomeMode, CardShadowTokens> = {
         },
   ink:
     Platform.OS === 'web'
-      ? { boxShadow: '0 6px 16px rgba(0,0,0,0.65)' }
+      ? { boxShadow: '0 6px 16px rgba(0,0,0,0.36)' }
       : {
           shadowColor: '#000000',
           shadowOffset: { width: 0, height: 5 },
-          shadowOpacity: 0.60,
-          shadowRadius: 10,
-          elevation: 5,
+          shadowOpacity: 0.36,
+          shadowRadius: 12,
+          elevation: 4,
         },
 };
 

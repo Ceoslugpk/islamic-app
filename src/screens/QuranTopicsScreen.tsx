@@ -130,7 +130,7 @@ export default function QuranTopicsScreen({
         {isExpanded && (
           <View style={styles.expandedContent}>
             <Hairline style={styles.divider} />
-            <AppText variant="body" tone="faint" style={styles.topicDesc} numberOfLines={2}>
+            <AppText variant="body" tone="faint" style={styles.topicDesc}>
               {t(item.description)}
             </AppText>
             <View style={styles.versesList}>
@@ -174,12 +174,14 @@ export default function QuranTopicsScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   header: {
     paddingHorizontal: 20,
@@ -248,7 +250,7 @@ const styles = StyleSheet.create({
   },
   countPillText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
   },
   expandedContent: {
     paddingHorizontal: 16,
@@ -259,7 +261,7 @@ const styles = StyleSheet.create({
   },
   topicDesc: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     marginBottom: 14,
   },
   versesList: {
@@ -291,7 +293,7 @@ const styles = StyleSheet.create({
   },
   openLinkText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
     flexShrink: 0,
   },
   verseArabic: {
@@ -301,7 +303,7 @@ const styles = StyleSheet.create({
   },
   verseTranslation: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     fontStyle: 'italic',
   },
 });

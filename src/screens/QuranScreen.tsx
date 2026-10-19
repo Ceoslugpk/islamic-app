@@ -31,7 +31,6 @@ import { useConnectivity } from '../lib/useConnectivity';
 import { SurahSkeleton, Skeleton } from '../components/Skeleton';
 import { hScrollRTLStyle } from '../lib/rtl';
 
-
 interface QuranScreenProps {
   onOpenSurah: (n: number) => void;
   onBack?: () => void;
@@ -622,18 +621,23 @@ export default function QuranScreen({ onOpenSurah, onBack }: QuranScreenProps) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1 },
+  wrap: {
+    flex: 1,
+    minWidth: 0,
+  },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    minWidth: 0,
   },
   errorInner: {
     alignItems: 'center',
@@ -651,6 +655,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 44,
   },
   retryBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -682,13 +687,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     marginBottom: 8,
   },
   langBarLeft: {
     flex: 1,
     marginEnd: 10,
+    minWidth: 0,
   },
   langBarLabel: {
     fontFamily: 'Manrope_700Bold',
@@ -698,7 +704,7 @@ const styles = StyleSheet.create({
   },
   langBarTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
+    fontSize: 14,
   },
   langChangeBtn: {
     flexDirection: 'row',
@@ -707,19 +713,19 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    minHeight: 34,
+    minHeight: 44,
     borderRadius: 10,
     borderWidth: 1,
   },
   langChangeBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 13,
   },
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderRadius: 14,
+    borderRadius: 18,
     paddingHorizontal: 14,
     height: 46,
     marginBottom: 8,
@@ -736,7 +742,7 @@ const styles = StyleSheet.create({
   },
   clearSearchBtn: {
     minWidth: 32,
-    minHeight: 32,
+    minHeight: 44,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 4,
@@ -764,7 +770,7 @@ const styles = StyleSheet.create({
   },
   juzPill: {
     minWidth: 40,
-    height: 40,
+    minHeight: 44,
     borderRadius: 20,
     paddingHorizontal: 8,
     borderWidth: 1,
@@ -820,7 +826,7 @@ const styles = StyleSheet.create({
   arabicName: {
     textAlign: 'right',
   },
-  ayahCount: { fontFamily: 'Manrope_400Regular', fontSize: 11 },
+  ayahCount: { fontFamily: 'Manrope_400Regular', fontSize: 12 },
   emptyWrap: {
     paddingVertical: 48,
     alignItems: 'center',
@@ -849,7 +855,7 @@ const styles = StyleSheet.create({
   },
   revelationChip: {
     paddingHorizontal: 12,
-    height: 32,
+    minHeight: 44,
     borderRadius: 16,
     borderWidth: 1,
     alignItems: 'center',
@@ -857,7 +863,7 @@ const styles = StyleSheet.create({
   },
   revelationChipText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
   },
   revelationCounts: {
     marginTop: 6,

@@ -633,6 +633,7 @@ export default withUndoToast(WomenCycleScreen);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   content: {
     paddingTop: 10,
@@ -655,8 +656,9 @@ const styles = StyleSheet.create({
   },
   privacyText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11.5,
+    fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   heroCard: {
     padding: 18,
@@ -697,14 +699,14 @@ const styles = StyleSheet.create({
   },
   statusPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 12,
   },
   heroBody: {
     gap: 10,
   },
   heroDesc: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 18,
   },
   heroBtnRow: {
@@ -720,10 +722,12 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: 8,
+    minHeight: 44,
+    minWidth: 0,
   },
   primaryBtnText: {
     fontFamily: 'Manrope_700Bold',
-    fontSize: 13,
+    fontSize: 14,
   },
   secondaryBtn: {
     flexDirection: 'row',
@@ -746,10 +750,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
+    minHeight: 44,
   },
   guideLinkText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
+    fontSize: 14,
   },
   predictionBox: {
     flexDirection: 'row',
@@ -761,11 +766,11 @@ const styles = StyleSheet.create({
   },
   predictionTitle: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   predictionSub: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     marginTop: 2,
   },
   fertileBadge: {
@@ -779,12 +784,13 @@ const styles = StyleSheet.create({
   },
   fertileText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11.5,
+    fontSize: 12,
     flex: 1,
+    minWidth: 0,
   },
   disclaimerText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 10.5,
+    fontSize: 12,
     lineHeight: 14,
   },
   sectionCard: {
@@ -827,7 +833,7 @@ const styles = StyleSheet.create({
   },
   dayChipStatus: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 9,
+    fontSize: 12,
     marginTop: 2,
   },
   legendRow: {
@@ -848,7 +854,7 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
   },
   formCard: {
     padding: 16,
@@ -868,7 +874,7 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11.5,
+    fontSize: 12,
   },
   quickPillsRow: {
     flexDirection: 'row',
@@ -879,10 +885,11 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     borderWidth: 1,
+    minHeight: 44,
   },
   quickPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 10.5,
+    fontSize: 12,
   },
   textInput: {
     borderWidth: 1,
@@ -928,7 +935,7 @@ const styles = StyleSheet.create({
   },
   actionLink: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12.5,
+    fontSize: 13,
   },
   historyRow: {
     flexDirection: 'row',
@@ -937,11 +944,11 @@ const styles = StyleSheet.create({
   },
   historyDates: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   historyNotes: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11.5,
+    fontSize: 12,
     marginTop: 2,
   },
   liveBadge: {
@@ -962,8 +969,9 @@ const styles = StyleSheet.create({
   recordedReminderText: {
     flex: 1,
     fontFamily: 'Manrope_400Regular',
-    fontSize: 12,
+    fontSize: 14,
     lineHeight: 16,
+    minWidth: 0,
   },
   explicitRuleBox: {
     flexDirection: 'row',
@@ -978,7 +986,8 @@ const styles = StyleSheet.create({
   explicitRuleText: {
     flex: 1,
     fontFamily: 'Manrope_500Medium',
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 15,
+    minWidth: 0,
   },
 });

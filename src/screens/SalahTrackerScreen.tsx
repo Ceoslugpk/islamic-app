@@ -163,7 +163,7 @@ export default function SalahTrackerScreen({
         <View style={styles.contentWrap}>
           {/* Summary Scorecard */}
           <View style={styles.statsRow}>
-            <PremiumCard style={styles.statCard} padded>
+            <PremiumCard style={styles.statCard} contentStyle={styles.statCardContent} padded>
               <AppText variant="numeral" style={styles.statValue}>
                 {completedCount}<AppText variant="numeral" tone="faint" style={{ fontSize: 16 }}>/5</AppText>
               </AppText>
@@ -178,7 +178,7 @@ export default function SalahTrackerScreen({
               </View>
             </PremiumCard>
 
-            <PremiumCard style={styles.statCard} padded>
+            <PremiumCard style={styles.statCard} contentStyle={styles.statCardContent} padded>
               <View style={styles.streakWrap}>
                 <AppText variant="numeral" highlight style={styles.statValue}>{streak}</AppText>
                 <Ionicons name="flame" size={20} color={tokens.goldText} />
@@ -330,10 +330,12 @@ export default function SalahTrackerScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   content: { paddingVertical: 12 },
   contentWrap: {
@@ -349,8 +351,7 @@ const styles = StyleSheet.create({
   statCard: {
     flex: 1,
     minHeight: 96,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    minWidth: 0,
   },
   statValue: {
     fontFamily: 'InstrumentSerif_400Regular',
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
   },
   streakHint: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 6,
   },
   sectionTitle: {
@@ -435,7 +436,7 @@ const styles = StyleSheet.create({
   },
   prayerStatus: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   prayerTime: {
@@ -462,7 +463,7 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     fontFamily: 'Manrope_500Medium',
-    fontSize: 13,
+    fontSize: 14,
   },
   historyRight: {
     flexDirection: 'row',
@@ -478,5 +479,10 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
+  },
+
+  statCardContent: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
   },
 });

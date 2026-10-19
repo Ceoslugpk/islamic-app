@@ -78,11 +78,13 @@ Consistent 4px/8px modular scale:
 | Element Type | Border Radius | Border Width | Border Color | Background |
 | :--- | :--- | :--- | :--- | :--- |
 | **Panel / Settings Group** | `20–24px` | 1px | `colors.borderSubtle` | `colors.cardElevated` |
-| **Standard Card (`Card.tsx`)** | `18–20px` | 1px | `colors.borderSubtle` | `colors.cardElevated` |
+| **Standard Card (`Card.tsx`)** | `18px` | 1px | `themeTokens.cardBorder` (muted neutral) | `themeTokens.cardGradient` |
 | **Item / Row inside Panel** | `14–16px` | 1px or 0 | `colors.borderSubtle` | transparent or `colors.bgSurface` |
 | **Pill Badges** | `12–14px` | 0 | none | `colors.sagePill` |
 | **Icon Badges (`iconCircle`)** | `50%` (half width) | 0 | none | `colors.iconCircleBg` |
-| **Primary Buttons** | `24–28px` (pill) | 0 | none | `colors.forestGreen` |
+| **Primary Buttons** | `22px` (pill) | 0 | none | approved gold gradient |
+
+Card outlines are intentionally quieter than the gold accent: sage-neutral in paper mode and softened charcoal in ink mode. Gold remains for selected states, icons, and emphasis, so long lists do not become a field of bright gold borders. Shared cards use an 18dp minimum radius and the same restrained theme-aware elevation on Android, iOS, and web.
 
 ---
 

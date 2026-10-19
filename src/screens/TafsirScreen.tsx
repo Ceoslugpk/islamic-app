@@ -556,12 +556,14 @@ export default function TafsirScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   contentWrap: {
     flex: 1,
     width: '100%',
     maxWidth: 680,
     alignSelf: 'center',
+    minWidth: 0,
   },
   header: {
     paddingHorizontal: 20,
@@ -583,6 +585,7 @@ const styles = StyleSheet.create({
   selectorBtnMain: {
     flex: 1,
     marginEnd: 8,
+    minWidth: 0,
   },
   selectorEyebrow: {
     fontFamily: 'Manrope_600SemiBold',
@@ -649,7 +652,7 @@ const styles = StyleSheet.create({
   },
   readerLinkText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
   arabicVerse: {
     textAlign: 'right',
@@ -677,6 +680,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     alignItems: 'center',
+    minWidth: 0,
   },
   modalBackdrop: {
     position: 'absolute',
@@ -746,6 +750,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderBottomWidth: cardTokens.borderWidth,
     gap: 10,
+    minHeight: 44,
   },
   surahOptionLeft: {
     flexDirection: 'row',
@@ -753,6 +758,7 @@ const styles = StyleSheet.create({
     gap: 12,
     flex: 1,
     marginEnd: 8,
+    minWidth: 0,
   },
   surahOptionNum: {
     width: 34,
@@ -769,6 +775,7 @@ const styles = StyleSheet.create({
   },
   surahOptionTextCol: {
     flex: 1,
+    minWidth: 0,
   },
   surahOptionName: {
     fontFamily: 'Manrope_600SemiBold',

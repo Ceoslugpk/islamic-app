@@ -951,7 +951,10 @@ function Root({ splashDone }: { splashDone: boolean }) {
   }, [isTopLevel, handleOpenSettings]);
 
     return (
-      <View style={[styles.safe, { backgroundColor: homeTokens.bgTop }]}>
+      <View
+        {...(Platform.OS === 'web' ? { dir: isRTL() ? 'rtl' : 'ltr' } : {})}
+        style={[styles.safe, { backgroundColor: homeTokens.bgTop, direction: isRTL() ? 'rtl' : 'ltr' }]}
+      >
         <LinearGradient
           colors={[homeTokens.bgTop, homeTokens.bgBottom]}
           style={StyleSheet.absoluteFill}

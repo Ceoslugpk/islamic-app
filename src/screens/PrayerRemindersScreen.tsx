@@ -1186,10 +1186,12 @@ export default function PrayerRemindersScreen({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minWidth: 0,
   },
   detailScreen: {
     flex: 1,
     backgroundColor: 'transparent',
+    minWidth: 0,
   },
   content: {},
   contentWrap: {
@@ -1231,6 +1233,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 16,
     gap: 12,
+    minHeight: 44,
   },
   rowFlex: { flex: 1, minWidth: 0 },
   rowTitle: {
@@ -1266,8 +1269,9 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontFamily: 'Manrope_500Medium',
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
+    minWidth: 0,
   },
   errorAction: {
     flexDirection: 'row',
@@ -1277,10 +1281,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
+    minHeight: 44,
   },
   errorActionText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 13,
   },
   bannerBox: {
     flexDirection: 'row',
@@ -1294,8 +1299,9 @@ const styles = StyleSheet.create({
   },
   bannerText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
     flex: 1,
+    minWidth: 0,
   },
   healthLoading: {
     flexDirection: 'row',
@@ -1306,7 +1312,7 @@ const styles = StyleSheet.create({
   },
   healthLoadingText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
   },
   healthRow: {
     flexDirection: 'row',
@@ -1317,6 +1323,7 @@ const styles = StyleSheet.create({
   healthItem: {
     flex: 1,
     alignItems: 'center',
+    minWidth: 0,
   },
   healthLabel: {
     fontFamily: 'Manrope_500Medium',
@@ -1337,7 +1344,7 @@ const styles = StyleSheet.create({
   },
   healthValue: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   rescheduleRow: {
     flexDirection: 'row',
@@ -1353,6 +1360,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
+    minWidth: 0,
   },
   rescheduleBtnText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1405,11 +1413,11 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 8,
-    minHeight: 32,
+    minHeight: 44,
   },
   stopAdhanText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 14,
   },
   prayerRow: {
     flexDirection: 'row',
@@ -1463,10 +1471,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
+    minHeight: 44,
   },
   miniPillText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
   },
   testIconBtn: {
     flexDirection: 'row',
@@ -1476,6 +1485,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 6,
     borderWidth: 1,
+    minHeight: 44,
   },
   segRow: {
     flexDirection: 'row',
@@ -1489,6 +1499,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 8,
     borderWidth: 1,
+    minWidth: 0,
   },
   segLabel: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1540,10 +1551,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 44,
+    minWidth: 0,
   },
   reciterActionBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   stopIconBtn: {
     flexDirection: 'row',
@@ -1553,10 +1566,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 1,
+    minHeight: 44,
   },
   stopIconBtnText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 13,
+    fontSize: 14,
   },
   testGrid: {
     padding: 12,
@@ -1567,6 +1581,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     gap: 4,
+    minHeight: 44,
   },
   testCardTitle: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1617,6 +1632,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: 14,
     borderWidth: 1,
+    minWidth: 0,
   },
   goalTypePillText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1632,8 +1648,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   stepBtn: {
-    width: 36,
-    height: 36,
+    width: 44,
+    minHeight: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1678,7 +1694,7 @@ const styles = StyleSheet.create({
   },
   goalStatusText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 11,
+    fontSize: 12,
     paddingVertical: 2,
   },
   progressBarTrack: {
@@ -1707,7 +1723,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 14,
     borderWidth: 1,
-    minHeight: 36,
+    minHeight: 44,
+    minWidth: 0,
   },
   markGoalText: {
     fontFamily: 'Manrope_600SemiBold',
@@ -1725,7 +1742,7 @@ const styles = StyleSheet.create({
   },
   readNowText: {
     fontFamily: 'Manrope_600SemiBold',
-    fontSize: 12,
+    fontSize: 14,
     paddingVertical: 2,
   },
   infoCard: {
@@ -1739,7 +1756,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontFamily: 'Manrope_400Regular',
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 20,
   },
 });
