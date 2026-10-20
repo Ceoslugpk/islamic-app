@@ -80,6 +80,11 @@ import {
 } from '../lib/quranPreloader';
 
 import appConfig from '../../app.json';
+import {
+  isDiagnosticModeEnabled,
+  DIAGNOSTIC_BUILD_ID,
+  GatedDiagnosticModal,
+} from '../lib/diagnostic';
 
 const APP_VERSION = appConfig.expo.version;
 
@@ -295,6 +300,7 @@ interface RowProps {
   accessibilityRole?: AccessibilityRole;
   accessibilityLabel?: string;
   accessibilityState?: AccessibilityState;
+  testID?: string;
 }
 
 /** One settings row: comfortable touch target, title + optional description. */
@@ -312,6 +318,7 @@ function Row({
   accessibilityRole,
   accessibilityLabel,
   accessibilityState,
+  testID,
 }: RowProps) {
   const { mode } = useTheme();
   const homeTokens = getTokens(mode);
@@ -353,6 +360,7 @@ function Row({
     const isChecked = accessibilityState?.selected ?? accessibilityState?.checked ?? false;
     return (
       <Pressable
+        testID={testID}
         style={({ pressed }) => [rowStyle, pressed && { backgroundColor: `${homeTokens.gold}14` }]}
         onPress={onPress}
         accessibilityRole={accessibilityRole ?? 'button'}
@@ -373,6 +381,7 @@ function Row({
   const isChecked = accessibilityState?.selected ?? accessibilityState?.checked ?? false;
   return (
     <View
+      testID={testID}
       style={rowStyle}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel ?? [t(title), desc ? t(desc) : ''].filter(Boolean).join(', ')}
@@ -694,6 +703,7 @@ export default function SettingsScreen({
   const [health, setHealth] = useState<NotificationHealth | null>(null);
   const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
   const [showBackupRestore, setShowBackupRestore] = useState(false);
+  const [showRtlDiagnostics, setShowRtlDiagnostics] = useState(false);
   const [languageError, setLanguageError] = useState<string | null>(null);
   const [isSwitchingLanguage, setIsSwitchingLanguage] = useState(false);
   const [switchingTargetLang, setSwitchingTargetLang] = useState<AppLanguage | null>(null);
@@ -2083,10 +2093,31 @@ export default function SettingsScreen({
           />
 
           {/* About */}
+          {isDiagnosticModeEnabled() && (
+            <>
+              <Hairline />
+              <Row
+                testID="open-rtl-diagnostics-row"
+                title={`${t('Details')} · RTL`}
+                desc={`${t('App version')} · ${DIAGNOSTIC_BUILD_ID}`}
+                onPress={() => {
+                  setShowRtlDiagnostics(true);
+                  haptic('light');
+                }}
+                right={
+                  <Ionicons
+                    name={getForwardIcon('chevron')}
+                    size={iconSizes.inlineLg}
+                    color={colors.accent}
+                  />
+                }
+              />
+            </>
+          )}
         </Section>
 
         {/* App identity block: measured relative to the logo tile. */}
-        <View style={[styles.appIdentity, { marginTop: 25.5, height: 77.8 }]}>
+        <View style={[styles.appIdentity, { marginTop: 25.5, height: isDiagnosticModeEnabled() ? 'auto' : 77.8 }]}>
           <View style={[styles.aboutLogoTile, { backgroundColor: colors.bgRaised }]}>
             <Image
               source={getBrandLogoSource(mode)}
@@ -2108,6 +2139,19 @@ export default function SettingsScreen({
           >
             Version {APP_VERSION}
           </AppText>
+          {isDiagnosticModeEnabled() && (
+            <AppText
+              testID="diagnostic-build-id"
+              variant="caption"
+              style={[
+                styles.identityVersion,
+                { color: colors.accent, fontWeight: '700', marginTop: 2 },
+              ]}
+              numberOfLines={1}
+            >
+              Build: {DIAGNOSTIC_BUILD_ID}
+            </AppText>
+          )}
         </View>
 
         {/* Sadaqah Jariyah — one language visible at a time. */}
@@ -2326,6 +2370,13 @@ export default function SettingsScreen({
             </View>
           </View>
         </Modal>
+
+        {isDiagnosticModeEnabled() && (
+          <GatedDiagnosticModal
+            visible={showRtlDiagnostics}
+            onClose={() => setShowRtlDiagnostics(false)}
+          />
+        )}
 
       </View>
     </DetailScreen.ScrollView>

@@ -20,6 +20,7 @@ import { fontRoles, useThemeTokens } from '../theme/tokens';
 import { hScrollRTLStyle } from '../lib/rtl';
 import { fetchSurahList, fetchSurahListForLanguage, getBundledSurahs114, SurahMeta } from '../lib/quran';
 import { SURAHS_114 } from '../lib/surahs114';
+import { useDiagnosticTarget, isDiagnosticModeEnabled } from '../lib/diagnostic';
 import { ArabicText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { GeometricPattern } from '../components/GeometricPattern';
 import { isRTL, t } from '../lib/i18n';
@@ -133,6 +134,26 @@ const SurahRow = React.memo(function SurahRow({
     );
   }, [item.number, isMarked, readingPositionAyah, readingPositionPage, onOpenSurah]);
 
+  const isDiag = isDiagnosticModeEnabled();
+  const isSurah1 = item.number === 1;
+  const surah1TitleStyle = isSurah1 && isDiag
+    ? StyleSheet.flatten([
+        styles.englishName,
+        { fontSize: isCompact ? 12.5 : 13.5 },
+      ])
+    : undefined;
+
+  const diag = useDiagnosticTarget(
+    'quran-landing-surah-card',
+    isSurah1 && isDiag
+      ? {
+          actualStyle: surah1TitleStyle,
+          targetTestId: 'quran-landing-surah-card-text',
+          parentTestId: 'surah-row-1',
+        }
+      : undefined
+  );
+
   return (
     <TouchableOpacity
       style={[
@@ -147,6 +168,7 @@ const SurahRow = React.memo(function SurahRow({
       accessibilityLabel={`Open Surah ${item.number} ${item.englishName}`}
       testID={`surah-row-${item.number}`}
       onPress={handlePress}
+      onLayout={isSurah1 && isDiag ? diag.parentProps.onLayout : undefined}
       pressRetentionOffset={{ top: 10, bottom: 10, left: 20, right: 20 }}
       hitSlop={{ top: 2, bottom: 2, left: 0, right: 0 }}
       activeOpacity={0.7}
@@ -158,9 +180,14 @@ const SurahRow = React.memo(function SurahRow({
           fillColor={tokens.ringFill}
           textColor={tokens.text}
         />
-        <View style={styles.nameBlock}>
+        <View
+          style={styles.nameBlock}
+          testID={item.number === 1 && isDiag ? 'quran-landing-surah-card' : undefined}
+        >
           <AppText
             variant="rowTitle"
+            testID={isSurah1 && isDiag ? 'quran-landing-surah-card-text' : undefined}
+            onLayout={isSurah1 && isDiag ? diag.targetProps.onLayout : undefined}
             style={[
               styles.englishName,
               { fontSize: isCompact ? 12.5 : 13.5 },

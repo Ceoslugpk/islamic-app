@@ -35,6 +35,7 @@ import {
 import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
 import { useUndoToast, withUndoToast } from '../lib/undoToast';
 import { SURAHS_114 } from '../lib/surahs114';
+import { useDiagnosticTarget, isDiagnosticModeEnabled } from '../lib/diagnostic';
 import {
   useQuranPreload,
   verifyQuranPreloadCache,
@@ -57,6 +58,13 @@ function DownloadsScreen({
   backLabel = 'Library',
 }: DownloadsScreenProps) {
   const { tokens } = useThemeTokens();
+  const isDiag = isDiagnosticModeEnabled();
+  const emptyTitleStyle = isDiag ? StyleSheet.flatten(styles.emptyTitle) : undefined;
+  const diag = useDiagnosticTarget('downloads-empty-cta-card', isDiag ? {
+    actualStyle: emptyTitleStyle,
+    targetTestId: 'downloads-empty-cta-text',
+    parentTestId: 'downloads-empty-cta-card',
+  } : undefined);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width <= 360;
@@ -406,8 +414,16 @@ function DownloadsScreen({
           ListHeaderComponent={headerComponent}
           ItemSeparatorComponent={() => null}
           ListEmptyComponent={
-            <PremiumCard style={styles.emptyCard} padded>
-              <View style={styles.emptyWrap}>
+            <PremiumCard
+              testID={isDiag ? "downloads-empty-cta-card" : undefined}
+              style={styles.emptyCard}
+              padded
+              onLayout={isDiag ? diag.parentProps.onLayout : undefined}
+            >
+              <View
+                testID={isDiag ? "downloads-empty-cta-wrap" : undefined}
+                style={styles.emptyWrap}
+              >
                 <View
                   style={[
                     styles.emptyIconCircle,
@@ -416,7 +432,12 @@ function DownloadsScreen({
                 >
                   <Ionicons name="cloud-download-outline" size={iconSizes.emptyState} color={tokens.accent} />
                 </View>
-                <AppText variant="title" style={styles.emptyTitle}>
+                <AppText
+                  testID={isDiag ? "downloads-empty-cta-text" : undefined}
+                  onLayout={isDiag ? diag.targetProps.onLayout : undefined}
+                  variant="title"
+                  style={styles.emptyTitle}
+                >
                   {t('No Downloads Yet')}
                 </AppText>
                 <AppText variant="subtitle" style={styles.emptySubtitle}>
@@ -424,6 +445,7 @@ function DownloadsScreen({
                 </AppText>
                 {onOpenSurah && (
                   <PrimaryButton
+                    testID={isDiag ? "downloads-empty-cta-btn" : undefined}
                     title={t('Browse Surahs')}
                     onPress={() => onOpenSurah(1)}
                     accessibilityLabel={t('Browse Quran Surahs')}

@@ -6,6 +6,7 @@ import {
   StyleProp,
   Platform,
   TouchableOpacity,
+  LayoutChangeEvent,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
@@ -24,6 +25,7 @@ export interface PremiumCardProps {
   borderRadius?: number;
   accessibilityRole?: 'button' | 'link' | 'none' | 'text' | 'header' | 'switch' | 'image' | undefined;
   accessibilityLabel?: string;
+  onLayout?: (event: LayoutChangeEvent) => void;
 }
 
 /**
@@ -43,6 +45,7 @@ export function PremiumCard({
   borderRadius = cardTokens.borderRadius,
   accessibilityRole,
   accessibilityLabel,
+  onLayout,
 }: PremiumCardProps) {
   const { mode } = useTheme();
   const currentTokens = themeTokens[mode];
@@ -106,6 +109,7 @@ export function PremiumCard({
         testID={testID}
         activeOpacity={activeOpacity}
         onPress={onPress}
+        onLayout={onLayout}
         style={containerStyle}
         accessibilityRole={accessibilityRole || 'button'}
         accessibilityLabel={accessibilityLabel}
@@ -118,6 +122,7 @@ export function PremiumCard({
   return (
     <View
       testID={testID}
+      onLayout={onLayout}
       style={containerStyle}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}

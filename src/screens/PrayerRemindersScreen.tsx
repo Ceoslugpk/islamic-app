@@ -32,6 +32,7 @@ import {
   testAlertPermission,
 } from '../lib/strings';
 import { t } from '../lib/i18n';
+import { useDiagnosticTarget, isDiagnosticModeEnabled } from '../lib/diagnostic';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
 import {
   configureNotifications,
@@ -91,6 +92,17 @@ export default function PrayerRemindersScreen({
 }) {
   const { colors } = useTheme();
   const { tokens } = useThemeTokens();
+  const isDiag = isDiagnosticModeEnabled();
+  const diag = useDiagnosticTarget(
+    'prayer-reminders-selection-controls',
+    isDiag
+      ? {
+          actualStyle: styles.segRow,
+          targetTestId: 'prayer-reminders-selection-controls',
+          parentTestId: 'prayer-reminders-selection-card',
+        }
+      : undefined
+  );
   const {
     settings,
     setReminders,
@@ -779,16 +791,27 @@ export default function PrayerRemindersScreen({
         <AppText variant="eyebrow" tone="faint" style={styles.groupLabel}>
           {t('Pre-prayer advance notice')} — {reminderOffsetMinutes === 0 ? t('off') : `${reminderOffsetMinutes} ${t('min before')}`}
         </AppText>
-        <PremiumCard style={styles.groupCard} borderRadius={cardTokens.borderRadius} padded={false}>
+        <PremiumCard
+          testID={isDiag ? "prayer-reminders-selection-card" : undefined}
+          style={styles.groupCard}
+          borderRadius={cardTokens.borderRadius}
+          padded={false}
+          onLayout={isDiag ? diag.parentProps.onLayout : undefined}
+        >
           <AppText variant="caption" tone="faint" style={styles.groupDesc}>
             {t('Send an early heads-up before each prayer so you can prepare wudu. Choose "Off" for alerts only at prayer time.')}
           </AppText>
-          <View style={styles.segRow}>
+          <View
+            testID={isDiag ? "prayer-reminders-selection-controls" : undefined}
+            style={styles.segRow}
+            onLayout={isDiag ? diag.targetProps.onLayout : undefined}
+          >
             {REMINDER_OFFSETS.map((item) => {
               const isSelected = reminderOffsetMinutes === item.value;
               return (
                 <Chip
                   key={item.label}
+                  testID={isDiag ? `prayer-reminders-chip-${item.value}` : undefined}
                   label={t(item.label)}
                   selected={isSelected}
                   disabled={!remindersEnabled}
