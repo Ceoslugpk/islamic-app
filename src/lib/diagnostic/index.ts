@@ -41,6 +41,7 @@ import {
   resetDiagnosticProbes,
   getNextMonotonicProbeId,
   resetMonotonicCounters,
+  getNextProbeInstanceSeq,
   AutoProbeRecord,
   DiagnosticProbeReportItem,
 } from './diagnosticState';

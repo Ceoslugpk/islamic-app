@@ -3,6 +3,7 @@
  * Used by the diagnostic panel screen-visit checklist to classify visited vs unvisited screens.
  */
 export const KNOWN_SCREENS: readonly string[] = [
+  'QuranLanding',
   'Home',
   'QuranHome',
   'QuranReader',
@@ -50,4 +51,5 @@ export const KNOWN_SCREENS: readonly string[] = [
   'MadinahLive',
   'HajjLive',
   'Settings',
+  'AudioPlayerModal',
 ] as const;

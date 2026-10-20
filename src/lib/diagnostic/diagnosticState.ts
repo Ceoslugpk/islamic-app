@@ -420,6 +420,11 @@ export function getNextMonotonicProbeId(kind: string = 'probe'): string {
   return `auto-${kind}-${monotonicCounters[kind]}`;
 }
 
+export function getNextProbeInstanceSeq(): number {
+  monotonicCounters.__instance = (monotonicCounters.__instance || 0) + 1;
+  return monotonicCounters.__instance;
+}
+
 export function resetMonotonicCounters(): void {
   for (const k of Object.keys(monotonicCounters)) {
     delete monotonicCounters[k];
@@ -1265,8 +1270,14 @@ export function useAutoProbe(
       : ''
   );
 
+  // Default testIDs ('btn-primary', 'chip', 'card', 'search', ...) repeat across
+  // screens, so a bare id collides and silently collapses multiple probes into one
+  // record. Compose screen + kind + base id + instance sequence to guarantee
+  // uniqueness while keeping the id readable in the report.
+  const [instanceSeq] = useState(() => (isEnabled ? getNextProbeInstanceSeq() : 0));
+  const baseId = (id && id.trim().length > 0) ? id.trim() : monotonicFallback;
   const stableId = isEnabled
-    ? ((id && id.trim().length > 0) ? id : monotonicFallback)
+    ? `${screen || 'unknown'}::${effectiveKind}::${baseId}#${instanceSeq}`
     : '';
 
   useEffect(() => {
@@ -1356,7 +1367,11 @@ export function buildDiagnosticReport(): DiagnosticReport {
     nativeIsRTL: item.nativeIsRTL,
   }));
 
-  const rawProbes = getAutoProbes();
+  // Diagnostics must not measure themselves: the panel renders the same shared
+  // primitives, so excluding its own probe ids keeps the report about the app.
+  const rawProbes = getAutoProbes().filter(
+    (p) => !p.id.startsWith('diag-') && !p.id.includes('::Diagnostic') && p.screen !== 'Diagnostics'
+  );
   const probes: DiagnosticProbeReportItem[] = rawProbes.map((p) => ({
     id: p.id,
     kind: p.kind,

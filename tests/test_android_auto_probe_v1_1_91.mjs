@@ -391,3 +391,18 @@ console.log('  ✓ Modal UI elements, Screen Coverage, Probes card, and >=44dp t
 console.log('\n============================================================');
 console.log('ALL AUTOMATIC PRIMITIVE PROBE (v1.1.91) TESTS PASSED (11/11)');
 console.log('============================================================\n');
+// D1 regression guard: default testIDs repeat across screens, so the composed
+// probe id must include a globally unique instance sequence. Two probes sharing
+// a default id must never collapse into one record.
+{
+  const seqA = diagState.getNextProbeInstanceSeq();
+  const seqB = diagState.getNextProbeInstanceSeq();
+  assert.ok(seqB > seqA, 'probe instance sequence must be monotonically increasing');
+  assert.notEqual(seqA, seqB, 'probe instance sequence must never repeat');
+
+  const hookSrc = fs.readFileSync('src/lib/diagnostic/diagnosticState.ts', 'utf8');
+  const usesScreen = /\$\{screen \|\| 'unknown'\}::\$\{effectiveKind\}::\$\{baseId\}#\$\{instanceSeq\}/.test(hookSrc);
+  assert.ok(usesScreen, 'probe id must compose screen::kind::base#instance for global uniqueness');
+  assert.ok(!/const stableId = isEnabled\s*\n\s*\? \(\(id && id\.trim/.test(hookSrc), 'probe id must not fall back to the bare caller testID');
+  console.log('  \u2713 probe ids are globally unique (screen::kind::base#instance)');
+}
