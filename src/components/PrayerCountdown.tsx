@@ -126,6 +126,15 @@ function parseHmToMinutes(hm?: string): number {
   return (h || 0) * 60 + (m || 0);
 }
 
+export function getPrayerCountdownMilliseconds(targetTime: string | undefined, now: Date): number | null {
+  if (!targetTime) return null;
+
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  let targetMin = parseHmToMinutes(targetTime);
+  if (targetMin < nowMin) targetMin += 1440;
+  return Math.max(0, (targetMin - nowMin) * 60000 - now.getSeconds() * 1000 - now.getMilliseconds());
+}
+
 export interface PrayerCountdownProps {
   targetTime?: string; // "HH:MM" e.g. "18:42"
   color?: string;
@@ -190,12 +199,9 @@ export function PrayerCountdown({
     if (isActive === false) return;
 
     function compute() {
-      if (!targetTime) return;
       const now = new Date();
-      const nowMin = now.getHours() * 60 + now.getMinutes();
-      let targetMin = parseHmToMinutes(targetTime);
-      if (targetMin <= nowMin) targetMin += 1440;
-      const diffMs = (targetMin - nowMin) * 60000 - now.getSeconds() * 1000;
+      const diffMs = getPrayerCountdownMilliseconds(targetTime, now);
+      if (diffMs === null) return;
 
       if (diffMs <= 0) {
         setDigits({ h1: '0', h2: '0', m1: '0', m2: '0', s1: '0', s2: '0' });
@@ -244,7 +250,7 @@ export function PrayerCountdown({
         {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}
         style={styles.tilesContainer}
         accessibilityRole="text"
-        accessibilityLiveRegion="polite"
+        accessibilityLiveRegion="none"
         accessibilityLabel={`Countdown ${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}`}
       >
         {/* Hours */}
@@ -286,7 +292,7 @@ export function PrayerCountdown({
       {...(Platform.OS === 'web' ? { dir: 'ltr' } : {})}
       style={styles.container}
       accessibilityRole="text"
-      accessibilityLiveRegion="polite"
+      accessibilityLiveRegion="none"
       accessibilityLabel={`Countdown ${digits.h1}${digits.h2}:${digits.m1}${digits.m2}:${digits.s1}${digits.s2}`}
     >
       {/* Hours */}

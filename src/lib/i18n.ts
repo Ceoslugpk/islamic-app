@@ -3,6 +3,7 @@ import { initReactI18next, useTranslation } from 'react-i18next';
 import * as Localization from 'expo-localization';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { I18nManager, Platform } from 'react-native';
+import { loadQuranCache, saveQuranCache } from './db';
 import en from '../locales/en.json';
 import ur from '../locales/ur.json';
 import ar from '../locales/ar.json';
@@ -54,10 +55,36 @@ export function resolveDeviceAppLanguage(code: string | null | undefined): AppLa
 }
 
 // The persisted app language is the single source of truth for the UI language.
-// It is resolved BEFORE i18n initializes so the app never boots in a stale
-// language/direction combo (e.g. language=en while native layout is RTL).
+// The native boot path needs a synchronous copy because AsyncStorage is async.
+// The verified switch path updates this mirror before reload, and it is read
+// synchronously before i18n/native views initialize.
 const PERSISTED_LANGUAGE_KEY = 'islamic-settings'; // same key as settings.tsx
-let persistedLanguage: AppLanguage | null = null;
+const SYNC_LANGUAGE_CACHE_KEY = 'app-language';
+
+function readSynchronousLanguageMirror(): AppLanguage | null {
+  try {
+    const cached = loadQuranCache<unknown>(SYNC_LANGUAGE_CACHE_KEY);
+    if (isAppLanguage(cached)) return cached;
+    if (cached && typeof cached === 'object' && !Array.isArray(cached)) {
+      const language = (cached as { language?: unknown }).language;
+      return isAppLanguage(language) ? language : null;
+    }
+  } catch {
+    // A cache failure must not prevent the app from booting.
+  }
+  return null;
+}
+
+function writeSynchronousLanguageMirror(language: AppLanguage): void {
+  try {
+    saveQuranCache(SYNC_LANGUAGE_CACHE_KEY, { language });
+  } catch {
+    // AsyncStorage remains the durable source; the mirror is a boot accelerator.
+  }
+}
+
+const synchronousLanguageAtBoot = readSynchronousLanguageMirror();
+let persistedLanguage: AppLanguage | null = synchronousLanguageAtBoot;
 let languageResolved = false;
 
 export async function resolvePersistedLanguage(forceFresh = false): Promise<AppLanguage> {
@@ -68,6 +95,7 @@ export async function resolvePersistedLanguage(forceFresh = false): Promise<AppL
       const parsed = JSON.parse(raw);
       if (parsed && isAppLanguage(parsed.language)) {
         persistedLanguage = parsed.language;
+        writeSynchronousLanguageMirror(parsed.language);
       }
     }
   } catch {
@@ -148,30 +176,28 @@ export function __resetNativeDirectionAppliedForTest(): void {
   nativeDirectionApplied = false;
 }
 
-// Set the native layout direction ONCE at module load from the boot language.
-// forceRTL is only reliable when called before the UI mounts, and calling it
-// repeatedly (or after mount) is what leaves RTL stuck on Android.
-applyRTL(isRtlLanguage(initialLanguage));
+// On native, a first boot without a mirror must wait for App's async storage
+// gate before writing direction. App calls the same guarded applyRTL() after
+// resolvePersistedLanguage() and before mounting native child views. When a
+// mirror exists, this module can safely apply direction immediately.
+if (Platform.OS === 'web' || synchronousLanguageAtBoot) {
+  applyRTL(isRtlLanguage(initialLanguage));
+}
 
 /**
  * Switch preparation helper called AFTER persistent storage is verified and
  * IMMEDIATELY BEFORE the app reload.
  *
- * On native: layout direction changes only take effect on the NEXT native/JS reload.
- * Calling allowRTL(isRtl) and forceRTL(isRtl) writes the preference into
- * native storage (SharedPreferences / NSUserDefaults) before reloadAsync restarts the JS engine,
- * guaranteeing the next reload boots directly into the correct layout direction (RTL vs LTR).
- * On web: updates document element dir/lang immediately.
+ * On native: stage the language mirror for the NEXT process. Native direction
+ * writes are deliberately not performed here: this helper is called from a
+ * mounted screen, and forceRTL/allowRTL at that point can recreate Android's
+ * activity. The next process applies the staged value through applyRTL() before
+ * mounting its native view tree. On web, update document direction immediately.
  * Does NOT trigger reload itself.
  */
 export function prepareNativeLayoutDirection(lang: AppLanguage): void {
   const isRtl = isRtlLanguage(lang);
-  try {
-    I18nManager.allowRTL(isRtl);
-    I18nManager.forceRTL(isRtl);
-  } catch {
-    // Ignore native module errors in environments where not supported
-  }
+  writeSynchronousLanguageMirror(lang);
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
@@ -187,6 +213,7 @@ export function prepareNativeLayoutDirection(lang: AppLanguage): void {
 export function setAppLanguage(lang: AppLanguage): void {
   persistedLanguage = lang;
   languageResolved = true;
+  writeSynchronousLanguageMirror(lang);
   changeLanguage(lang);
   const isRtl = isRtlLanguage(lang);
   if (Platform.OS === 'web' && typeof document !== 'undefined') {

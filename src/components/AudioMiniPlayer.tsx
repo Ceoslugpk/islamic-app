@@ -217,6 +217,7 @@ export function AudioMiniPlayer({
       {/* Top interactive progress bar */}
       <View
         {...panResponder.panHandlers}
+        hitSlop={{ top: 21, bottom: 21, left: 0, right: 0 }}
         style={[styles.progressTrack, { backgroundColor: colors.borderSubtle }]}
         onLayout={(e) => {
           setProgressWidth(e.nativeEvent.layout.width);

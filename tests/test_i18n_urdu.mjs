@@ -48,11 +48,10 @@ console.log('  ✓ Auto-link behavior: translation, tafsir, and translation-audi
 const i18nCode = fs.readFileSync('src/lib/i18n.ts', 'utf8');
 
 assert.ok(i18nCode.includes('I18nManager.allowRTL(isRTL)'), 'boot reconciliation enables RTL only for RTL languages');
-assert.ok(i18nCode.includes('I18nManager.allowRTL(isRtl)') || i18nCode.includes('I18nManager.allowRTL(isUrdu)'), 'switch preparation enables RTL for RTL languages and disables it for English');
 assert.ok(i18nCode.includes('I18nManager.forceRTL(isRtl)') || i18nCode.includes('I18nManager.forceRTL(isRTL)'), 'I18nManager.forceRTL wired');
 assert.ok(i18nCode.includes("document.documentElement.dir = isRTL ? 'rtl' : 'ltr'") || i18nCode.includes("document.documentElement.dir = isRtl ? 'rtl' : 'ltr'"), 'Web RTL direction configured');
 
-console.log('  ✓ RTL configuration: native forceRTL and web dir=rtl verified');
+console.log('  ✓ RTL boot wiring and web direction source assertions retained');
 
 // 5. SettingsScreen UI verification
 const settingsScreenCode = fs.readFileSync('src/screens/SettingsScreen.tsx', 'utf8');
@@ -222,52 +221,65 @@ const i18nSource = fs.readFileSync('src/lib/i18n.ts', 'utf8');
 const compiledI18n = ts.transpileModule(i18nSource, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
 }).outputText;
-const runtimeI18n = {
-  language: 'en',
-  use() { return this; },
-  init(options) { this.options = options; this.language = options.lng; return this; },
-};
-const nativeDirection = {
-  isRTL: false,
-  allowRTL(value) { this.allowed = value; },
-  forceRTL(value) { this.isRTL = value; },
-};
-const documentElement = { dir: '', lang: '' };
-const asyncStorageMock = { getItem: async () => null };
-const i18nextMock = {
-  __esModule: true,
-  default: runtimeI18n,
-  use: () => runtimeI18n,
-  changeLanguage: (language) => { runtimeI18n.language = language; },
-  t: (key) => key,
-};
-const runtimeModule = { exports: {} };
-const runtimeRequire = (id) => {
-  if (id === 'i18next') return i18nextMock;
-  if (id === 'react-i18next') return { initReactI18next: {}, useTranslation: () => ({ t: (key) => key }) };
-  if (id === 'expo-localization') return { getLocales: () => [{ languageCode: 'en' }] };
-  if (id === '@react-native-async-storage/async-storage') return asyncStorageMock;
-  if (id === 'react-native') return { I18nManager: nativeDirection, Platform: { OS: 'web' } };
-  if (id.startsWith('../locales/')) {
-    const code = id.split('/').pop().replace('.json', '');
-    return JSON.parse(fs.readFileSync(`src/locales/${code}.json`, 'utf8'));
-  }
-  throw new Error(`Unexpected runtime import: ${id}`);
-};
-vm.runInNewContext(compiledI18n, {
-  module: runtimeModule,
-  exports: runtimeModule.exports,
-  require: runtimeRequire,
-  document: { documentElement },
-});
-const liveI18n = runtimeModule.exports;
+function loadLiveI18n(platformOS, bootLanguage = null) {
+  const runtimeI18n = {
+    language: 'en',
+    use() { return this; },
+    init(options) { this.options = options; this.language = options.lng; return this; },
+  };
+  const nativeDirection = {
+    isRTL: false,
+    calls: [],
+    allowRTL(value) { this.calls.push(['allowRTL', value]); },
+    forceRTL(value) { this.calls.push(['forceRTL', value]); this.isRTL = value; },
+  };
+  const documentElement = { dir: '', lang: '' };
+  const asyncStorageMock = { getItem: async () => null };
+  const i18nextMock = {
+    __esModule: true,
+    default: runtimeI18n,
+    use: () => runtimeI18n,
+    changeLanguage: (language) => { runtimeI18n.language = language; },
+    t: (key) => key,
+  };
+  const runtimeModule = { exports: {} };
+  const runtimeRequire = (id) => {
+    if (id === 'i18next') return i18nextMock;
+    if (id === 'react-i18next') return { initReactI18next: {}, useTranslation: () => ({ t: (key) => key }) };
+    if (id === 'expo-localization') return { getLocales: () => [{ languageCode: 'en' }] };
+    if (id === '@react-native-async-storage/async-storage') return asyncStorageMock;
+    if (id === 'react-native') return { I18nManager: nativeDirection, Platform: { OS: platformOS } };
+    if (id === './db') return {
+      loadQuranCache: () => bootLanguage ? { language: bootLanguage } : null,
+      saveQuranCache: () => {},
+    };
+    if (id.startsWith('../locales/')) {
+      const code = id.split('/').pop().replace('.json', '');
+      return JSON.parse(fs.readFileSync(`src/locales/${code}.json`, 'utf8'));
+    }
+    throw new Error(`Unexpected runtime import: ${id}`);
+  };
+  vm.runInNewContext(compiledI18n, {
+    module: runtimeModule,
+    exports: runtimeModule.exports,
+    require: runtimeRequire,
+    document: { documentElement },
+  });
+  return { i18n: runtimeModule.exports, runtimeI18n, nativeDirection, documentElement };
+}
+
+const webRuntime = loadLiveI18n('web');
+const liveI18n = webRuntime.i18n;
+const runtimeI18n = webRuntime.runtimeI18n;
+const nativeDirection = webRuntime.nativeDirection;
+const documentElement = webRuntime.documentElement;
 for (const language of allLangs) {
   assert.strictEqual(liveI18n.isAppLanguage(language), true, `${language} is accepted by the production app-language guard`);
   assert.strictEqual(runtimeI18n.options.resources[language].translation['Home'], JSON.parse(fs.readFileSync(`src/locales/${language}.json`, 'utf8'))['Home'], `${language} is active in the production i18next resource table`);
   const rtl = ['ur', 'ar', 'ps'].includes(language);
   assert.strictEqual(liveI18n.isRtlLanguage(language), rtl, `${language} has the production RTL/LTR classification`);
   liveI18n.prepareNativeLayoutDirection(language);
-  assert.strictEqual(nativeDirection.isRTL, rtl, `${language} prepares the correct native layout direction`);
+  assert.deepStrictEqual(nativeDirection.calls, [], `${language} switch preparation does not write native layout direction after mount`);
   assert.deepStrictEqual([documentElement.dir, documentElement.lang], [rtl ? 'rtl' : 'ltr', language], `${language} prepares the correct web direction and lang attribute`);
 }
 for (const [deviceCode, expected] of [['bn-BD', 'bn'], ['ms-MY', 'ms'], ['ta-IN', 'ta'], ['id-ID', 'id'], ['ps-AF', 'ps'], ['ps_PK', 'ps']]) {
@@ -281,13 +293,16 @@ liveI18n.setAppLanguage('bn');
 assert.deepStrictEqual([documentElement.dir, documentElement.lang], ['ltr', 'bn'], 'Web Bengali direction and document language are LTR/Bengali');
 liveI18n.setAppLanguage('ps');
 assert.deepStrictEqual([documentElement.dir, documentElement.lang], ['rtl', 'ps'], 'Web Pashto direction and document language are RTL/Pashto');
-liveI18n.prepareNativeLayoutDirection('ps');
-assert.strictEqual(nativeDirection.isRTL, true, 'Native Pashto layout enables RTL');
-liveI18n.prepareNativeLayoutDirection('ta');
-assert.strictEqual(nativeDirection.isRTL, false, 'Native Tamil layout disables RTL');
 liveI18n.setAppLanguage('ta');
 liveI18n.applyRTL(false);
 assert.deepStrictEqual([documentElement.dir, documentElement.lang], ['ltr', 'ta'], 'Boot direction reconciliation retains the selected LTR document language');
+
+const nativeRuntime = loadLiveI18n('android', 'ur');
+assert.deepStrictEqual(nativeRuntime.nativeDirection.calls, [['allowRTL', true], ['forceRTL', true]], 'Boot applies native direction exactly once from the synchronised language mirror');
+for (const language of ['ur', 'ar', 'en']) {
+  nativeRuntime.i18n.prepareNativeLayoutDirection(language);
+  assert.deepStrictEqual(nativeRuntime.nativeDirection.calls, [['allowRTL', true], ['forceRTL', true]], `${language} switch preparation does not write native layout direction after mount`);
+}
 console.log('  ✓ Production i18n runtime: all 11 resources, regional device tags, and LTR/RTL switching verified');
 
 // 7. Durable Light/Dark Theme Persistence

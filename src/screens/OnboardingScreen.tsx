@@ -28,6 +28,7 @@ import {
   resolveDeviceAppLanguage,
   prepareNativeLayoutDirection,
   isRtlLanguage,
+  useIsRTL,
   t,
 } from '../lib/i18n';
 import * as Localization from 'expo-localization';
@@ -105,10 +106,29 @@ export interface OnboardingTransactionParams {
   selectedAppLang: AppLanguage;
   selectedQuranLang: string;
   selectedAudioId: string;
-  currentSettingsLanguage: string;
+  currentSettingsLanguage: AppLanguage;
   onComplete: () => void;
   setIsSubmitting?: (submitting: boolean) => void;
   deps?: Partial<OnboardingTransactionDeps>;
+}
+
+const ONBOARDING_PERSISTENCE_TIMEOUT_MS = 10_000;
+const ONBOARDING_RELOAD_ROLLBACK_TIMEOUT_MS = 1_500;
+
+function withTimeout<T>(value: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out`)), timeoutMs);
+    value.then(
+      (result) => {
+        clearTimeout(timer);
+        resolve(result);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
 }
 
 export async function executeOnboardingSubmitTransaction(params: OnboardingTransactionParams): Promise<void> {
@@ -138,6 +158,7 @@ export async function executeOnboardingSubmitTransaction(params: OnboardingTrans
   const reloadApp = deps.appReloader || appReloader;
   const scheduleReload = deps.scheduleReload || ((action: () => void, delayMs: number) => setTimeout(action, delayMs));
   const showAlert = deps.showAlert || ((title: string, msg: string) => Alert.alert(title, msg));
+  let languageWriteStarted = false;
 
   try {
     // 0. Ensure storage bootstrap succeeded; storage unavailability read errors abort the transaction
@@ -153,16 +174,33 @@ export async function executeOnboardingSubmitTransaction(params: OnboardingTrans
     // 1. Persist app language through production settings writer with queue & readback verification.
     // If this throws/fails: zero reload/RTL change occurs, rollback only the failed field,
     // and subsequent writes are aborted.
-    await Promise.resolve(setLanguage(selectedAppLang));
+    languageWriteStarted = true;
+    await withTimeout(
+      Promise.resolve(setLanguage(selectedAppLang)),
+      ONBOARDING_PERSISTENCE_TIMEOUT_MS,
+      'Language persistence',
+    );
 
     // 2. Persist selected Quran translation language (honoring explicit choice or default linking)
-    await setQuranTranslationLanguageFn(selectedQuranLang); // setQuranTranslationLanguage(selectedQuranLang)
+    await withTimeout(
+      setQuranTranslationLanguageFn(selectedQuranLang),
+      ONBOARDING_PERSISTENCE_TIMEOUT_MS,
+      'Quran language persistence',
+    ); // setQuranTranslationLanguage(selectedQuranLang)
 
     // 3. Persist selected Audio translation edition (honoring explicit choice or default linking)
-    await setAudioTranslationEditionFn(selectedAudioId); // setAudioTranslationEdition(selectedAudioId)
+    await withTimeout(
+      setAudioTranslationEditionFn(selectedAudioId),
+      ONBOARDING_PERSISTENCE_TIMEOUT_MS,
+      'Quran audio persistence',
+    ); // setAudioTranslationEdition(selectedAudioId)
 
     // 4. Persist onboardingDone once all durable writes succeed
-    await setOnboardingDoneFn(true); // setOnboardingDone(true)
+    await withTimeout(
+      setOnboardingDoneFn(true),
+      ONBOARDING_PERSISTENCE_TIMEOUT_MS,
+      'Onboarding persistence',
+    ); // setOnboardingDone(true)
 
     // 5. Layout direction & reload handling immediately after successful durable writes
     // CONTRACT:
@@ -171,43 +209,75 @@ export async function executeOnboardingSubmitTransaction(params: OnboardingTrans
     //   I18nManager layout changes to take physical effect across native views.
     //   Calls prepareNativeLayoutDirection(selectedAppLang) and schedules exactly ONE native reload
     //   via Expo's core reloadAppAsync(), which works when expo-updates is disabled.
-    //   onComplete() stays untouched while the reload succeeds; a rejected reload
-    //   completes onboarding so the user is not stranded on the setup screen.
+    //   onComplete() stays untouched while the reload succeeds; a rejected or
+    //   non-restarting reload first rolls the language back to this old state.
     // - Native Same Direction (e.g. LTR -> LTR such as en -> hi/ml/si, or RTL -> RTL):
     //   Native view hierarchy direction is already correct. No reload is needed.
     //   Transitions cleanly to the main app by calling onComplete() directly.
     // - Web:
     //   prepareNativeLayoutDirection immediately sets document.documentElement.dir synchronously.
     //   Transitions cleanly to the main app by calling onComplete() directly without a reload.
-    // - Failure:
-    //   Zero prepareNativeLayoutDirection, zero reload, zero onComplete().
+    // - Persistence failure:
+    //   Roll back the language mirror when the first durable write completed
+    //   before a later onboarding write failed; never reload a partial setup.
     const isSwitchingRTL =
       checkIsRtl(selectedAppLang) !== currentIsRTL ||
       checkIsRtl(selectedAppLang) !== checkIsRtl(currentSettingsLanguage);
 
+    // Native preparation only stages the next boot mirror. It never writes
+    // I18nManager from this mounted screen; the next process applies the
+    // staged direction exactly once before mounting native children.
+    prepareNativeLayoutDirectionFn(selectedAppLang); // prepareNativeLayoutDirection(selectedAppLang)
+
     if (currentPlatform !== 'web' && isSwitchingRTL) {
-      prepareNativeLayoutDirectionFn(selectedAppLang); // prepareNativeLayoutDirection(selectedAppLang)
+      let rollbackStarted = false;
+      const rollbackAndComplete = async () => {
+        if (rollbackStarted) return;
+        rollbackStarted = true;
+        try {
+          // A reload that did not replace the JS/native process must not leave
+          // the selected language persisted against the old live direction.
+          await withTimeout(
+            Promise.resolve(setLanguage(currentSettingsLanguage)),
+            ONBOARDING_RELOAD_ROLLBACK_TIMEOUT_MS,
+            'Language rollback',
+          );
+          prepareNativeLayoutDirectionFn(currentSettingsLanguage);
+          onComplete();
+        } catch {
+          if (setIsSubmitting) setIsSubmitting(false);
+          showAlert(t('Error'), t('Failed to save settings. Please try again.'));
+        }
+      };
+
       scheduleReload(() => {
-        let completed = false;
-        const completeOnce = () => {
-          if (!completed) {
-            completed = true;
-            onComplete();
-          }
-        };
-        const failSafeTimer = setTimeout(completeOnce, 1500);
-        reloadApp().catch(() => {
-          clearTimeout(failSafeTimer);
-          completeOnce();
-        }); // appReloader().catch
+        const failSafeTimer = setTimeout(() => {
+          void rollbackAndComplete();
+        }, ONBOARDING_RELOAD_ROLLBACK_TIMEOUT_MS);
+        Promise.resolve()
+          .then(() => reloadApp())
+          .catch(() => {
+            clearTimeout(failSafeTimer);
+            void rollbackAndComplete();
+          }); // appReloader().catch
       }, 300);
     } else {
-      if (currentPlatform === 'web') {
-        prepareNativeLayoutDirectionFn(selectedAppLang); // prepareNativeLayoutDirection(selectedAppLang)
-      }
       onComplete();
     }
   } catch (err) {
+    if (languageWriteStarted) {
+      try {
+        await withTimeout(
+          Promise.resolve(setLanguage(currentSettingsLanguage)),
+          ONBOARDING_RELOAD_ROLLBACK_TIMEOUT_MS,
+          'Language rollback',
+        );
+        prepareNativeLayoutDirectionFn(currentSettingsLanguage);
+      } catch {
+        // The settings writer owns its own rollback; keep the CTA unlocked and
+        // surface the failure if that rollback also cannot settle.
+      }
+    }
     if (setIsSubmitting) {
       setIsSubmitting(false);
     }
@@ -222,6 +292,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
   const { width, height } = useWindowDimensions();
   const isCompact = width <= 360 || height <= 640;
   const { setLanguage, settings, setThemeMode } = useSettings();
+  const isRTL = useIsRTL();
 
   // 1. Initial defaults from device locale
   const deviceLocales = Localization.getLocales();
@@ -492,6 +563,7 @@ export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) 
               action();
             }, delayMs);
           },
+          isRTL,
         },
       });
     } catch {

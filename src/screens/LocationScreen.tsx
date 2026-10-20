@@ -41,8 +41,8 @@ export default function LocationScreen({
   const [latInput, setLatInput] = useState(String(settings.manualLocation.latitude));
   const [lngInput, setLngInput] = useState(String(settings.manualLocation.longitude));
   const [labelInput, setLabelInput] = useState(settings.manualLocation.label || '');
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<'latitude' | 'longitude' | null>(null);
 
   const isAuto = settings.locationMode === 'auto';
 
@@ -65,17 +65,17 @@ export default function LocationScreen({
 
   function handleSaveManual() {
     setErrorMessage(null);
-    setSaveMessage(null);
+    setSaveMessage(false);
 
     const lat = parseFloat(latInput.trim());
     const lng = parseFloat(lngInput.trim());
 
     if (isNaN(lat) || lat < -90 || lat > 90) {
-      setErrorMessage(latitudeInvalid);
+      setErrorMessage('latitude');
       return;
     }
     if (isNaN(lng) || lng < -180 || lng > 180) {
-      setErrorMessage(longitudeInvalid);
+      setErrorMessage('longitude');
       return;
     }
 
@@ -86,8 +86,8 @@ export default function LocationScreen({
       label,
     });
     setLocationMode('manual');
-    setSaveMessage(locationSaved);
-    setTimeout(() => setSaveMessage(null), 3500);
+    setSaveMessage(true);
+    setTimeout(() => setSaveMessage(false), 3500);
   }
 
   // Active display info
@@ -327,11 +327,13 @@ export default function LocationScreen({
               </View>
 
               {errorMessage && (
-                <AppText variant="body" tone="danger" style={styles.errorText}>{t(errorMessage)}</AppText>
+                <AppText variant="body" tone="danger" style={styles.errorText}>
+                  {errorMessage === 'latitude' ? latitudeInvalid() : longitudeInvalid()}
+                </AppText>
               )}
 
               {saveMessage && (
-                <AppText variant="body" style={[styles.successText, { color: tokens.success }]}>{t(saveMessage)}</AppText>
+                <AppText variant="body" style={[styles.successText, { color: tokens.success }]}>{locationSaved()}</AppText>
               )}
 
               <PrimaryButton

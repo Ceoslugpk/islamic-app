@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 const REACHABILITY_URL = 'https://api.islamic.app/v1/timings/today?latitude=25.2048&longitude=55.2708&method=16';
 const POLL_INTERVAL_OFFLINE = 15000;
@@ -8,11 +8,12 @@ const PROBE_TIMEOUT = 3000;
 
 // Module-level singleton state shared across all components and libraries
 let globalIsOnline = true;
-let globalIsChecking = false;
 let globalRefreshKey = 0;
 let globalInFlightProbe: Promise<boolean> | null = null;
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
 let probeAbortController: AbortController | null = null;
+let appStateSubscription: { remove: () => void } | null = null;
+let isAppActive = true;
 const listeners = new Set<() => void>();
 
 function notifyListeners() {
@@ -25,6 +26,22 @@ function notifyListeners() {
   });
 }
 
+function getSnapshot() {
+  return {
+    isOnline: globalIsOnline,
+    refreshKey: globalRefreshKey,
+  };
+}
+
+function notifyIfChanged(previous: ReturnType<typeof getSnapshot>) {
+  if (
+    previous.isOnline !== globalIsOnline
+    || previous.refreshKey !== globalRefreshKey
+  ) {
+    notifyListeners();
+  }
+}
+
 /** Synchronous connectivity check for data/background libraries (warmup, preloader, prayerTimes). */
 export function isAppOnline(): boolean {
   return globalIsOnline;
@@ -32,8 +49,17 @@ export function isAppOnline(): boolean {
 
 export function subscribeConnectivity(listener: () => void): () => void {
   listeners.add(listener);
+  if (listeners.size === 1) {
+    startAppStateObservation();
+    stopGlobalPoll();
+    if (isAppActive) checkConnectivity().catch(() => {});
+  }
   return () => {
     listeners.delete(listener);
+    if (listeners.size === 0) {
+      stopGlobalPoll();
+      stopAppStateObservation();
+    }
   };
 }
 
@@ -47,9 +73,6 @@ export async function checkConnectivity(): Promise<boolean> {
   }
   const controller = new AbortController();
   probeAbortController = controller;
-
-  globalIsChecking = true;
-  notifyListeners();
 
   const exec = async (): Promise<boolean> => {
     let timer: ReturnType<typeof setTimeout>;
@@ -70,6 +93,7 @@ export async function checkConnectivity(): Promise<boolean> {
         .catch(() => false);
 
       const online = await Promise.race([fetchPromise, timeoutPromise]);
+      const beforeResult = getSnapshot();
       const prevOnline = globalIsOnline;
       // Probe failure (timeout / HEAD not-ok) NEVER declares the app
       // offline — a cold-start probe can flake (network stack not warmed).
@@ -80,18 +104,16 @@ export async function checkConnectivity(): Promise<boolean> {
       if (online) {
         globalIsOnline = true;
       }
-      globalIsChecking = false;
 
       if (online && !prevOnline) {
         globalRefreshKey++;
       }
 
-      notifyListeners();
+      notifyIfChanged(beforeResult);
       scheduleNextGlobalPoll(online);
       return online;
     } finally {
       clearTimeout(timer!);
-      globalIsChecking = false;
       globalInFlightProbe = null;
     }
   };
@@ -101,25 +123,56 @@ export async function checkConnectivity(): Promise<boolean> {
 }
 
 function scheduleNextGlobalPoll(online: boolean) {
-  if (pollTimer) clearTimeout(pollTimer);
+  stopGlobalPoll();
+  if (listeners.size === 0 || !isAppActive) return;
   const interval = online ? POLL_INTERVAL_ONLINE : POLL_INTERVAL_OFFLINE;
   pollTimer = setTimeout(() => {
+    pollTimer = null;
+    if (listeners.size === 0 || !isAppActive) return;
     checkConnectivity().catch(() => {});
   }, interval);
+}
+
+function stopGlobalPoll() {
+  if (pollTimer !== null) clearTimeout(pollTimer);
+  pollTimer = null;
+}
+
+function startAppStateObservation() {
+  if (appStateSubscription || typeof AppState?.addEventListener !== 'function') return;
+  isAppActive = !AppState.currentState || AppState.currentState === 'active';
+  appStateSubscription = AppState.addEventListener('change', (nextState) => {
+    const nextIsActive = nextState === 'active';
+    if (nextIsActive === isAppActive) return;
+    isAppActive = nextIsActive;
+    if (!isAppActive) {
+      stopGlobalPoll();
+    } else if (listeners.size > 0) {
+      checkConnectivity().catch(() => {});
+    }
+  });
+}
+
+function stopAppStateObservation() {
+  appStateSubscription?.remove();
+  appStateSubscription = null;
+  isAppActive = true;
 }
 
 // Initial probe setup
 if (Platform.OS === 'web') {
   if (typeof window !== 'undefined') {
     window.addEventListener('online', () => {
+      const previous = getSnapshot();
       globalIsOnline = true;
-      globalRefreshKey++;
-      notifyListeners();
+      if (!previous.isOnline) globalRefreshKey++;
+      notifyIfChanged(previous);
       scheduleNextGlobalPoll(true);
     });
     window.addEventListener('offline', () => {
+      const previous = getSnapshot();
       globalIsOnline = false;
-      notifyListeners();
+      notifyIfChanged(previous);
       scheduleNextGlobalPoll(false);
     });
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
@@ -131,7 +184,7 @@ if (Platform.OS === 'web') {
 // Start initial probe immediately
 checkConnectivity().catch(() => {});
 
-export function useConnectivity(): { isOnline: boolean; isChecking: boolean; refreshKey: number } {
+export function useConnectivity(): { isOnline: boolean; refreshKey: number } {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -142,7 +195,6 @@ export function useConnectivity(): { isOnline: boolean; isChecking: boolean; ref
 
   return {
     isOnline: globalIsOnline,
-    isChecking: globalIsChecking,
     refreshKey: globalRefreshKey,
   };
 }

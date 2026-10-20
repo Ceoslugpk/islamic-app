@@ -98,6 +98,41 @@ import {
   getProbeMutationSeq,
   clearGlobalPendingTimers,
   getNextAncestorProbeIndex,
+  usePressProbe,
+  wrapControlPress,
+  recordControlState,
+  noteControlPress,
+  recordControlPress,
+  getControlRegistry,
+  evaluateStuckControls,
+  beginLanguageSwitch,
+  getLanguageSwitchAttempts,
+  evaluateConsistency,
+  recordConsistencyCheck,
+  getLastConsistencyVerdict,
+  buildDiagnosticAppState,
+  buildInteractiveControlCoverage,
+  groupActionableErrors,
+  recordRenderError,
+  installDiagnosticUnhandledRejectionInterceptor,
+  restoreDiagnosticUnhandledRejectionInterceptor,
+  isUnhandledRejectionInterceptorInstalled,
+  isErrorInterceptorInstalled,
+  installDiagnosticAppStateObserver,
+  isDiagnosticAppStateObserverInstalled,
+  STUCK_DISABLED_THRESHOLD_MS,
+  MAX_CONTROL_RECORDS,
+  DiagnosticControlPressOptions,
+  DiagnosticControlProbeResult,
+  DiagnosticControlRecord,
+  DiagnosticLanguageSwitchHandle,
+  DiagnosticLanguageSwitchAttempt,
+  DiagnosticConsistencyVerdict,
+  DiagnosticAppState,
+  DiagnosticAppStateDefect,
+  DiagnosticActionableErrorGroup,
+  DiagnosticControlCoverage,
+  DiagnosticErrorContext,
 } from './diagnosticState';
 import {
   DiagScreenProvider,
@@ -108,6 +143,7 @@ import {
   useDiagParent,
   getGlobalActiveScreen,
   setGlobalActiveScreen,
+  DiagErrorBoundary,
 } from './diagnosticScreenContext';
 import { KNOWN_SCREENS } from './diagnosticScreens';
 import {
@@ -135,6 +171,8 @@ export function GatedDiagnosticModal({ visible, onClose }: GatedDiagnosticModalP
   }
   return React.createElement(RtlDiagnosticModal, { visible, onClose });
 }
+
+export type { DiagErrorBoundaryProps, DiagErrorBoundaryState } from './diagnosticScreenContext';
 
 export {
   isDiagnosticModeEnabled,
@@ -238,9 +276,45 @@ export {
   useDiagParent,
   getGlobalActiveScreen,
   setGlobalActiveScreen,
+  DiagErrorBoundary,
   getProbeMutationSeq,
   clearGlobalPendingTimers,
   getNextAncestorProbeIndex,
+  usePressProbe,
+  wrapControlPress,
+  recordControlState,
+  noteControlPress,
+  recordControlPress,
+  getControlRegistry,
+  evaluateStuckControls,
+  beginLanguageSwitch,
+  getLanguageSwitchAttempts,
+  evaluateConsistency,
+  recordConsistencyCheck,
+  getLastConsistencyVerdict,
+  buildDiagnosticAppState,
+  buildInteractiveControlCoverage,
+  groupActionableErrors,
+  recordRenderError,
+  installDiagnosticUnhandledRejectionInterceptor,
+  restoreDiagnosticUnhandledRejectionInterceptor,
+  isUnhandledRejectionInterceptorInstalled,
+  isErrorInterceptorInstalled,
+  installDiagnosticAppStateObserver,
+  isDiagnosticAppStateObserverInstalled,
+  STUCK_DISABLED_THRESHOLD_MS,
+  MAX_CONTROL_RECORDS,
+  DiagnosticControlPressOptions,
+  DiagnosticControlProbeResult,
+  DiagnosticControlRecord,
+  DiagnosticLanguageSwitchHandle,
+  DiagnosticLanguageSwitchAttempt,
+  DiagnosticConsistencyVerdict,
+  DiagnosticAppState,
+  DiagnosticAppStateDefect,
+  DiagnosticActionableErrorGroup,
+  DiagnosticControlCoverage,
+  DiagnosticErrorContext,
   KNOWN_SCREENS,
   diagT,
   getDiagnosticShareTitle,
@@ -249,3 +323,12 @@ export {
   getLocalizedExportStatus,
   getLocalizedUnavailabilityReason,
 };
+
+/**
+ * Boot-time installation of the gated diagnostic observer (global error handler,
+ * unhandled promise rejections, network ledger, error-boundary recorder and the boot
+ * language/direction consistency verdict). Runs once, when the app imports this barrel.
+ * With the two-factor gate OFF this is a single boolean check: zero listeners, zero
+ * timers, zero probes, zero props changed anywhere in the tree.
+ */
+installDiagnosticAppStateObserver();

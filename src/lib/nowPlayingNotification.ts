@@ -31,7 +31,6 @@ const ACTION_STOP = 'stop';
 let isCategoryRegistered = false;
 let isChannelConfigured = false;
 let isHandlerConfigured = false;
-let responseListener: Notifications.EventSubscription | null = null;
 let currentNotificationId: string | null = null;
 
 let lastUpdateTimestamp = 0;
@@ -157,59 +156,47 @@ async function ensureChannelConfigured(): Promise<void> {
   }
 }
 
-function setupResponseHandler(): void {
-  if (responseListener) return;
-
-  responseListener = Notifications.addNotificationResponseReceivedListener((response) => {
-    const actionId = response.actionIdentifier;
-
-    switch (actionId) {
-      case 'default':
-      case Notifications.DEFAULT_ACTION_IDENTIFIER: {
-        const playback = getCurrentPlayback();
-        if (playback?.surah) {
-          const ayah = playback.ayah || 1;
-          Linking.openURL(`salah://quran/${playback.surah}/${ayah}`).catch(() => {});
-        }
-        break;
-      }
-      case ACTION_PLAY_PAUSE: {
-        const status = getPlaybackStatus();
-        if (status.isPlaying) {
-          pause();
-        } else {
-          resume();
-        }
-        break;
-      }
-      case ACTION_NEXT: {
-        playNext();
-        break;
-      }
-      case ACTION_PREVIOUS: {
-        playPrevious();
-        break;
-      }
-      case ACTION_STOP: {
-        stop(true);
-        break;
-      }
-      case 'skipForward':
-      case 'skip-forward': {
-        const status = getPlaybackStatus();
-        seekTo(status.positionMillis + 10000);
-        break;
-      }
-      case 'skipBackward':
-      case 'skip-backward': {
-        const status = getPlaybackStatus();
-        seekTo(Math.max(0, status.positionMillis - 10000));
-        break;
-      }
-      default:
-        break;
+export function handleNowPlayingNotificationResponse(
+  actionId: string,
+  data?: { url?: string },
+): void {
+  switch (actionId) {
+    case 'default':
+    case Notifications.DEFAULT_ACTION_IDENTIFIER: {
+      const playback = getCurrentPlayback();
+      const url = data?.url || (playback?.surah ? `salah://quran/${playback.surah}/${playback.ayah || 1}` : null);
+      if (url) Linking.openURL(url).catch(() => {});
+      break;
     }
-  });
+    case ACTION_PLAY_PAUSE: {
+      const status = getPlaybackStatus();
+      (status.isPlaying ? pause : resume)().catch(() => {});
+      break;
+    }
+    case ACTION_NEXT:
+      playNext().catch(() => {});
+      break;
+    case ACTION_PREVIOUS:
+      playPrevious().catch(() => {});
+      break;
+    case ACTION_STOP:
+      stop(true).catch(() => {});
+      break;
+    case 'skipForward':
+    case 'skip-forward': {
+      const status = getPlaybackStatus();
+      seekTo(status.positionMillis + 10000).catch(() => {});
+      break;
+    }
+    case 'skipBackward':
+    case 'skip-backward': {
+      const status = getPlaybackStatus();
+      seekTo(Math.max(0, status.positionMillis - 10000)).catch(() => {});
+      break;
+    }
+    default:
+      break;
+  }
 }
 
 async function ensureSetup(): Promise<boolean> {
@@ -219,7 +206,6 @@ async function ensureSetup(): Promise<boolean> {
   await ensureCategoryRegistered();
   await ensureChannelConfigured();
   ensureNotificationHandler();
-  setupResponseHandler();
   return true;
 }
 
@@ -249,15 +235,13 @@ function buildNotificationContent(
     color: '#0F5A4A',
     data: {
       nowPlaying: true,
+      type: 'now-playing',
       url: playback?.surah ? `salah://quran/${playback.surah}/${playback.ayah || 1}` : undefined,
     },
   };
 }
 
 export async function startNowPlayingNotification(): Promise<void> {
-  // Ensure notification response actions are hooked
-  setupResponseHandler();
-
   // Drive native lock screen / Control Center / Dynamic Island / MediaSession
   syncNowPlaying().catch(() => {});
 
@@ -367,14 +351,6 @@ export async function stopNowPlayingNotification(): Promise<void> {
 
 export function cleanupNowPlayingNotification(): void {
   clearNowPlaying().catch(() => {});
-  if (responseListener) {
-    try {
-      responseListener.remove();
-    } catch {
-      // ignore
-    }
-    responseListener = null;
-  }
   isCategoryRegistered = false;
   isChannelConfigured = false;
   isHandlerConfigured = false;
@@ -382,11 +358,4 @@ export function cleanupNowPlayingNotification(): void {
   lastPlaybackTitle = null;
   lastIsPlaying = null;
   lastUpdateTimestamp = 0;
-}
-
-export function registerNotificationResponseHandler(handler: (action: string) => void): () => void {
-  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    handler(response.actionIdentifier);
-  });
-  return () => subscription.remove();
 }

@@ -41,7 +41,17 @@ import {
   HEADER_PADDING_VERTICAL,
   HEADER_SEPARATOR,
 } from './src/lib/headerTokens';
-import { t, setAppLanguage, applyRTL, resolvePersistedLanguage, getBootLanguage, isRTL, isRtlLanguage } from './src/lib/i18n';
+import {
+  t,
+  setAppLanguage,
+  applyRTL,
+  resolvePersistedLanguage,
+  getBootLanguage,
+  isRTL,
+  isRtlLanguage,
+  useIsRTL,
+  useTranslation,
+} from './src/lib/i18n';
 import { getReadingMarkerSync, getReadingPositionSync } from './src/lib/continuing';
 import { HOME_THEME_TOKENS, getHomeTokens } from './src/lib/constants';
 import { getMushafPageForAyah } from './src/lib/quran';
@@ -102,7 +112,7 @@ import { LiveMiniPlayer } from './src/components/LiveMiniPlayer';
 import { ActiveLiveStream, setActiveLiveStream, subscribeLiveStream } from './src/lib/liveStream';
 import { AudioPlayerModal } from './src/components/AudioPlayerModal';
 import { useAudioMiniPlayer } from './src/lib/useAudioMiniPlayer';
-import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayingNotification, cleanupNowPlayingNotification } from './src/lib/nowPlayingNotification';
+import { startNowPlayingNotification, updateNowPlayingNotification, stopNowPlayingNotification, cleanupNowPlayingNotification, handleNowPlayingNotificationResponse } from './src/lib/nowPlayingNotification';
 import { addPlaybackStatusListener, getPlaybackStatus, getCurrentPlayback, unload } from './src/lib/quranAudio';
 import { stopAudioPreloading } from './src/lib/audioPreloader';
 import { rescheduleIfNeeded, setupNotificationResponseHandler } from './src/lib/notifications';
@@ -205,6 +215,10 @@ export function isTopLevelScreen(
   );
 }
 
+const NAVIGATION_BRIDGE_ENABLED =
+  (typeof __DEV__ !== 'undefined' && __DEV__) ||
+  process.env.EXPO_PUBLIC_NAVIGATION_PROOF === '1';
+
 function Root({ splashDone }: { splashDone: boolean }) {
   const { colors, mode } = useTheme();
   const homeTokens = HOME_THEME_TOKENS[mode];
@@ -212,6 +226,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const { isOnline } = useConnectivity();
   const { settings, setAutoLocation, setLocationMode, setWomenPinHash } = useSettings();
   const { request: requestLocation, status: locStatus } = useLocation();
+  const { i18n: activeI18n } = useTranslation();
+  const rtlVersion = useIsRTL();
   const [tab, setTab] = useState<TabKey>('home');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsBackRef = useRef<(() => boolean) | null>(null);
@@ -224,7 +240,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const [tools, setTools] = useState<ToolsView>({ screen: 'hub' });
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (NAVIGATION_BRIDGE_ENABLED && typeof window !== 'undefined') {
       (window as any).__NAVIGATE__ = {
         setTab,
         setQuran,
@@ -236,6 +252,11 @@ function Root({ splashDone }: { splashDone: boolean }) {
         openLocationSetup: () => setShowLocationSetup(true),
       };
     }
+    return () => {
+      if (NAVIGATION_BRIDGE_ENABLED && typeof window !== 'undefined') {
+        delete (window as any).__NAVIGATE__;
+      }
+    };
   }, []);
 
   // Session unlock & PIN protection for Women's Worship
@@ -504,7 +525,8 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
   // Setup notification action handler (Mark Complete)
   useEffect(() => {
-    setupNotificationResponseHandler();
+    const subscription = setupNotificationResponseHandler(handleNowPlayingNotificationResponse);
+    return () => subscription?.remove();
   }, []);
 
   // Background Quran Preloader: start with low priority after app startup.
@@ -691,7 +713,19 @@ function Root({ splashDone }: { splashDone: boolean }) {
       }
     });
     return () => sub.remove();
-  }, [settings]);
+  }, [
+    settings.locationMode,
+    settings.autoLocation,
+    settings.manualLocation,
+    settings.methodId,
+    settings.remindersEnabled,
+    settings.reminderOffsetMinutes,
+    settings.quranReminderEnabled,
+    settings.madhab,
+    settings.prayerConfigs,
+    settings.quranReminderTime,
+    settings.quranGoal,
+  ]);
 
   // Register the background preload task (continues Quran preloading in short
   // OS-allowed bursts when the app is backgrounded — respects user pause).
@@ -1026,7 +1060,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         onOpenSettings={handleOpenSettings}
       />
     );
-  }, [isTopLevel, handleOpenSettings]);
+  }, [isTopLevel, handleOpenSettings, activeI18n.language, rtlVersion]);
 
     return (
       <View
@@ -1759,33 +1793,24 @@ export default function App() {
     };
   }, []);
 
-  // Resolve the persisted app language.
-  // Note: Native layout direction is applied EXACTLY ONCE at module load before
-  // any UI mounts. Calling forceRTL after mount (in useEffect) triggers Android
-  // configuration recreation loops and touch unresponsiveness. On native, direction
-  // changes go through the reload path only. On web, applyRTL updates document.dir.
+  // Resolve persisted language before mounting native child UI. A first boot has
+  // no synchronous mirror, so the guarded applyRTL call is made here after
+  // AsyncStorage resolves while this component is still host-free.
   useEffect(() => {
     let mounted = true;
-    resolvePersistedLanguage(true)
-      .then((lang) => {
-        if (!mounted) return;
-        setAppLanguage(lang);
-        if (Platform.OS === 'web') {
-          applyRTL(isRtlLanguage(lang));
-        }
-        setLangReady(true);
-      })
-      .catch(() => {
-        if (!mounted) return;
-        const fallback = getBootLanguage();
-        setAppLanguage(fallback);
-        if (Platform.OS === 'web') {
-          applyRTL(isRtlLanguage(fallback));
-        }
-        setLangReady(true);
-      });
+    let settled = false;
+    const finish = (lang: ReturnType<typeof getBootLanguage>) => {
+      if (!mounted || settled) return;
+      settled = true;
+      setAppLanguage(lang);
+      applyRTL(isRtlLanguage(lang));
+      setLangReady(true);
+    };
+    const timeout = setTimeout(() => finish(getBootLanguage()), 5000);
+    resolvePersistedLanguage(true).then(finish).catch(() => finish(getBootLanguage()));
     return () => {
       mounted = false;
+      clearTimeout(timeout);
     };
   }, []);
 
@@ -1819,7 +1844,11 @@ export default function App() {
     setOnboardingCompleted(true);
   }, []);
 
-  if ((!fontsLoaded && !fontError) || !langReady || !onboardingChecked) {
+  if (!langReady) {
+    return null;
+  }
+
+  if ((!fontsLoaded && !fontError) || !onboardingChecked) {
     return (
       <View
         style={[

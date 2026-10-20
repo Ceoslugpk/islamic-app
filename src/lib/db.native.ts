@@ -6,38 +6,45 @@
 import * as SQLite from 'expo-sqlite';
 
 let db: SQLite.SQLiteDatabase | null = null;
+const DATABASE_SCHEMA_VERSION = 2;
+const LEGACY_PRAYER_CACHE_TABLE = 'prayer_cache_legacy_v0';
+
+interface LegacyPrayerCacheRow {
+  legacy_rowid: number;
+  date: string | null;
+  location: string | null;
+  method: number | null;
+  payload: string | null;
+  cached_at: number | null;
+}
 
 function getDb(): SQLite.SQLiteDatabase {
   if (!db) {
-    db = SQLite.openDatabaseSync('salah.db');
-    migrate(db);
+    const opened = SQLite.openDatabaseSync('salah.db');
+    try {
+      migrate(opened);
+      db = opened;
+    } catch (error) {
+      // Do not retain a handle whose migration failed. The migration itself is
+      // transactional, so a later call can retry against the pre-migration DB.
+      db = null;
+      throw error;
+    }
   }
   return db;
 }
 
-function migrate(database: SQLite.SQLiteDatabase) {
-  let hasCacheKey = false;
-  try {
-    const cols = database.getAllSync<{ name: string }>('PRAGMA table_info(prayer_cache)');
-    hasCacheKey = cols.some((c) => c.name === 'cache_key');
-  } catch {}
-
-  if (!hasCacheKey) {
-    database.execSync('DROP TABLE IF EXISTS prayer_cache');
-    database.execSync(`
-      CREATE TABLE prayer_cache (
-        cache_key TEXT PRIMARY KEY,
-        date TEXT NOT NULL,
-        location TEXT NOT NULL,
-        method INTEGER NOT NULL,
-        madhab TEXT NOT NULL,
-        payload TEXT NOT NULL,
-        cached_at INTEGER NOT NULL
-      );
-    `);
-  }
-
+function createSchema(database: SQLite.SQLiteDatabase) {
   database.execSync(`
+    CREATE TABLE IF NOT EXISTS prayer_cache (
+      cache_key TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      location TEXT NOT NULL,
+      method INTEGER NOT NULL,
+      madhab TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      cached_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS salah_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT NOT NULL,
@@ -157,6 +164,90 @@ function migrate(database: SQLite.SQLiteDatabase) {
       created_at INTEGER
     );
   `);
+}
+
+function tableColumns(database: SQLite.SQLiteDatabase, table: string): string[] {
+  return database.getAllSync<{ name: string }>(`PRAGMA table_info(${table})`).map((column) => column.name);
+}
+
+function migrateLegacyPrayerCache(database: SQLite.SQLiteDatabase): void {
+  const columns = tableColumns(database, 'prayer_cache');
+  if (columns.length === 0 || columns.includes('cache_key')) {
+    return;
+  }
+
+  if (tableColumns(database, LEGACY_PRAYER_CACHE_TABLE).length > 0) {
+    throw new Error('Cannot migrate prayer cache: a previous legacy copy already exists.');
+  }
+
+  const requiredColumns = ['date', 'location', 'method', 'payload', 'cached_at'];
+  if (!requiredColumns.every((column) => columns.includes(column))) {
+    throw new Error('Cannot migrate prayer cache: legacy schema is not recognized.');
+  }
+
+  // Renaming preserves the old rows. We deliberately retain this legacy table
+  // instead of dropping it; the new table is populated only after the copy is
+  // complete and the whole operation is protected by the migration transaction.
+  database.execSync(`ALTER TABLE prayer_cache RENAME TO ${LEGACY_PRAYER_CACHE_TABLE}`);
+  database.execSync(`
+    CREATE TABLE IF NOT EXISTS prayer_cache (
+      cache_key TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      location TEXT NOT NULL,
+      method INTEGER NOT NULL,
+      madhab TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      cached_at INTEGER NOT NULL
+    );
+  `);
+
+  const legacyRows = database.getAllSync<LegacyPrayerCacheRow>(
+    `SELECT rowid AS legacy_rowid, date, location, method, payload, cached_at
+     FROM ${LEGACY_PRAYER_CACHE_TABLE}`
+  );
+  for (const row of legacyRows) {
+    database.runSync(
+      `INSERT OR REPLACE INTO prayer_cache
+       (cache_key, date, location, method, madhab, payload, cached_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `legacy:${row.legacy_rowid}`,
+      row.date ?? '',
+      row.location ?? '',
+      row.method ?? 0,
+      'shafi',
+      row.payload ?? '{}',
+      row.cached_at ?? 0
+    );
+  }
+
+  const migratedCount = database.getFirstSync<{ count: number }>(
+    'SELECT COUNT(*) AS count FROM prayer_cache'
+  )?.count ?? 0;
+  if (migratedCount !== legacyRows.length) {
+    throw new Error('Cannot migrate prayer cache: legacy row count was not preserved.');
+  }
+}
+
+function migrate(database: SQLite.SQLiteDatabase) {
+  database.withTransactionSync(() => {
+    const versionRow = database.getFirstSync<{ user_version: number }>('PRAGMA user_version');
+    const currentVersion = Number(versionRow?.user_version ?? 0);
+    if (!Number.isInteger(currentVersion) || currentVersion < 0) {
+      throw new Error('Cannot migrate database: invalid schema version.');
+    }
+    if (currentVersion > DATABASE_SCHEMA_VERSION) {
+      throw new Error(`Database schema version ${currentVersion} is newer than this app supports.`);
+    }
+
+    if (currentVersion < 1) {
+      createSchema(database);
+      database.execSync('PRAGMA user_version = 1');
+    }
+    if (currentVersion < 2) {
+      migrateLegacyPrayerCache(database);
+      database.execSync('PRAGMA user_version = 2');
+    }
+  });
 
   try {
     enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, database);
@@ -332,6 +423,16 @@ export function getSalahHistory(days: number): Record<string, Record<string, boo
 }
 
 export const QURAN_CACHE_BUDGET_BYTES = 400 * 1024 * 1024; // 400 MB
+const QURAN_CACHE_COUNTER_KEY = 'quran_cache_bytes';
+const QURAN_CACHE_RECONCILE_INTERVAL = 32;
+
+interface QuranCacheAccounting {
+  totalBytes: number;
+  rowCount: number;
+  generation: number;
+}
+
+let quranCacheWritesSinceReconcile = 0;
 
 export const PROTECTED_QURAN_CACHE_KEYS = new Set<string>([
   'bookmarks',
@@ -410,8 +511,91 @@ export function selectKeysToEvict(
   return evicted;
 }
 
-export function computeCacheStamp(total: number, count: number): number {
-  return ((count & 0x7fffffff) * 31 + (total & 0x7fffffff)) >>> 0;
+function parseQuranCacheAccounting(row: { payload?: unknown; cached_at?: unknown } | null): QuranCacheAccounting | null {
+  if (!row || typeof row.payload !== 'string') return null;
+  try {
+    const parsed = JSON.parse(row.payload) as Partial<QuranCacheAccounting>;
+    const { totalBytes, rowCount, generation } = parsed;
+    if (
+      !parsed ||
+      typeof totalBytes !== 'number' ||
+      !Number.isSafeInteger(totalBytes) ||
+      totalBytes < 0 ||
+      typeof rowCount !== 'number' ||
+      !Number.isSafeInteger(rowCount) ||
+      rowCount < 0 ||
+      typeof generation !== 'number' ||
+      !Number.isSafeInteger(generation) ||
+      generation < 1 ||
+      (typeof row.cached_at === 'number' && row.cached_at !== generation)
+    ) {
+      return null;
+    }
+    return {
+      totalBytes,
+      rowCount,
+      generation,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readRawQuranCacheAccounting(database: SQLite.SQLiteDatabase): QuranCacheAccounting | null {
+  const row = database.getFirstSync<{ payload: string; cached_at: number }>(
+    'SELECT payload, cached_at FROM quran_cache WHERE key = ?',
+    QURAN_CACHE_COUNTER_KEY
+  );
+  return parseQuranCacheAccounting(row);
+}
+
+function writeQuranCacheAccounting(database: SQLite.SQLiteDatabase, accounting: QuranCacheAccounting): void {
+  database.runSync(
+    'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
+    QURAN_CACHE_COUNTER_KEY,
+    JSON.stringify(accounting),
+    accounting.generation
+  );
+}
+
+function nextQuranCacheGeneration(current: QuranCacheAccounting | null): number {
+  return Math.max(1, (current?.generation ?? 0) + 1);
+}
+
+function readValidatedQuranCacheAccounting(database: SQLite.SQLiteDatabase): QuranCacheAccounting {
+  const current = readRawQuranCacheAccounting(database);
+  const countRow = database.getFirstSync<{ count: number }>(
+    "SELECT COUNT(*) AS count FROM quran_cache WHERE key != 'quran_cache_bytes'"
+  );
+  const count = countRow?.count ?? 0;
+  if (current && current.rowCount === count) {
+    return current;
+  }
+
+  const total = reconcileQuranCacheBudget(database);
+  const reconciled = readRawQuranCacheAccounting(database);
+  return reconciled || {
+    totalBytes: Math.max(0, total),
+    rowCount: count,
+    generation: nextQuranCacheGeneration(current),
+  };
+}
+
+function updateQuranCacheAccountingAfterWrite(
+  database: SQLite.SQLiteDatabase,
+  current: QuranCacheAccounting,
+  totalBytes: number,
+  rowCount: number
+): void {
+  writeQuranCacheAccounting(database, {
+    totalBytes: Math.max(0, totalBytes),
+    rowCount: Math.max(0, rowCount),
+    generation: nextQuranCacheGeneration(current),
+  });
+  quranCacheWritesSinceReconcile += 1;
+  if (quranCacheWritesSinceReconcile >= QURAN_CACHE_RECONCILE_INTERVAL) {
+    reconcileQuranCacheBudget(database);
+  }
 }
 
 export function reconcileQuranCacheBudget(customDb?: SQLite.SQLiteDatabase): number {
@@ -422,12 +606,13 @@ export function reconcileQuranCacheBudget(customDb?: SQLite.SQLiteDatabase): num
     );
     const total = row?.total ?? 0;
     const count = row?.count ?? 0;
-    const stamp = computeCacheStamp(total, count);
-    database.runSync(
-      "INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES ('quran_cache_bytes', ?, ?)",
-      String(total),
-      stamp
-    );
+    const previous = readRawQuranCacheAccounting(database);
+    writeQuranCacheAccounting(database, {
+      totalBytes: Math.max(0, total),
+      rowCount: Math.max(0, count),
+      generation: nextQuranCacheGeneration(previous),
+    });
+    quranCacheWritesSinceReconcile = 0;
     return total;
   } catch (err) {
     console.warn('[db.native] reconcileQuranCacheBudget failed:', err);
@@ -438,24 +623,7 @@ export function reconcileQuranCacheBudget(customDb?: SQLite.SQLiteDatabase): num
 export function getQuranCacheTotalBytes(customDb?: SQLite.SQLiteDatabase): number {
   try {
     const database = customDb || getDb();
-    const row = database.getFirstSync<{ payload: string; cached_at: number }>(
-      "SELECT payload, cached_at FROM quran_cache WHERE key = 'quran_cache_bytes'"
-    );
-    if (!row || typeof row.payload !== 'string') {
-      return reconcileQuranCacheBudget(database);
-    }
-    const total = Number(row.payload);
-    if (Number.isNaN(total) || total < 0) {
-      return reconcileQuranCacheBudget(database);
-    }
-    const countRow = database.getFirstSync<{ count: number }>(
-      "SELECT COUNT(*) AS count FROM quran_cache WHERE key != 'quran_cache_bytes'"
-    );
-    const count = countRow?.count ?? 0;
-    if (row.cached_at !== computeCacheStamp(total, count)) {
-      return reconcileQuranCacheBudget(database);
-    }
-    return total;
+    return readValidatedQuranCacheAccounting(database).totalBytes;
   } catch {
     return 0;
   }
@@ -468,18 +636,18 @@ function applyQuranCacheWrite(
   now: number
 ): void {
   database.withTransactionSync(() => {
+    if (key === QURAN_CACHE_COUNTER_KEY) {
+      throw new Error('The Quran cache accounting row is managed internally.');
+    }
     const oldRow = database.getFirstSync<{ len: number }>(
       'SELECT length(payload) AS len FROM quran_cache WHERE key = ?',
       key
     );
-    const oldLen = oldRow ? oldRow.len : null;
+    const oldLen = oldRow ? (oldRow.len ?? 0) : 0;
 
-    // Fetch current validated total BEFORE inserting the new payload row to prevent double-counting if reconcile runs
-    const currentTotal = getQuranCacheTotalBytes(database);
-    const countRow = database.getFirstSync<{ count: number }>(
-      "SELECT COUNT(*) AS count FROM quran_cache WHERE key != 'quran_cache_bytes'"
-    );
-    const currentCount = countRow?.count ?? 0;
+    // Validate the independent row count before changing the payload. This also
+    // heals count-changing out-of-band writes before applying the delta.
+    const accounting = readValidatedQuranCacheAccounting(database);
 
     database.runSync(
       'INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)',
@@ -489,30 +657,58 @@ function applyQuranCacheWrite(
     );
 
     const newLen = payloadStr.length;
-    const delta = oldLen !== null ? newLen - oldLen : newLen;
-    const countDelta = oldLen !== null ? 0 : 1;
-    const newTotal = Math.max(0, currentTotal + delta);
-    const newCount = Math.max(0, currentCount + countDelta);
-    const stamp = computeCacheStamp(newTotal, newCount);
-
-    database.runSync(
-      "INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES ('quran_cache_bytes', ?, ?)",
-      String(newTotal),
-      stamp
+    const countDelta = oldRow ? 0 : 1;
+    updateQuranCacheAccountingAfterWrite(
+      database,
+      accounting,
+      accounting.totalBytes + newLen - oldLen,
+      accounting.rowCount + countDelta
     );
   });
 }
 
+export function deleteQuranCache(key: string): boolean {
+  if (key === QURAN_CACHE_COUNTER_KEY) return false;
+  try {
+    const database = getDb();
+    database.withTransactionSync(() => {
+      const oldRow = database.getFirstSync<{ len: number | null }>(
+        'SELECT length(payload) AS len FROM quran_cache WHERE key = ?',
+        key
+      );
+      if (!oldRow) return;
+      const accounting = readValidatedQuranCacheAccounting(database);
+      database.runSync('DELETE FROM quran_cache WHERE key = ?', key);
+      updateQuranCacheAccountingAfterWrite(
+        database,
+        accounting,
+        accounting.totalBytes - (oldRow.len ?? 0),
+        accounting.rowCount - 1
+      );
+    });
+    return true;
+  } catch (err) {
+    console.warn('[db.native] deleteQuranCache failed:', err);
+    return false;
+  }
+}
+
+interface EnforceQuranCacheBudgetOptions {
+  skipFullReconcile?: boolean;
+}
+
 export function enforceQuranCacheBudget(
   budgetBytes: number = QURAN_CACHE_BUDGET_BYTES,
-  customDb?: SQLite.SQLiteDatabase
+  customDb?: SQLite.SQLiteDatabase,
+  options?: EnforceQuranCacheBudgetOptions
 ): void {
   try {
     const database = customDb || getDb();
-    let total = getQuranCacheTotalBytes(database);
-    if (budgetBytes < QURAN_CACHE_BUDGET_BYTES) {
-      total = reconcileQuranCacheBudget(database);
-    }
+    // Public enforcement is a bounded reconciliation checkpoint. The normal
+    // save path opts out and relies on its O(1) counter plus the periodic scan.
+    let total = options?.skipFullReconcile
+      ? getQuranCacheTotalBytes(database)
+      : reconcileQuranCacheBudget(database);
     if (total <= budgetBytes) {
       return;
     }
@@ -557,15 +753,15 @@ export function saveQuranCache(key: string, payload: object): boolean {
   try {
     const database = getDb();
     applyQuranCacheWrite(database, key, JSON.stringify(payload), Date.now());
-    enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, database);
+    enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, database, { skipFullReconcile: true });
     return true;
   } catch (err) {
     console.warn('[db.native] saveQuranCache initial write failed, running eviction:', err);
     try {
       const database = getDb();
-      enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, database);
+      enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, database, { skipFullReconcile: true });
       applyQuranCacheWrite(database, key, JSON.stringify(payload), Date.now());
-      enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, database);
+      enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, database, { skipFullReconcile: true });
       return true;
     } catch (retryErr) {
       console.warn('[db.native] saveQuranCache retry failed (storage full?):', retryErr);

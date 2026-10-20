@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SURAH_AYAH_COUNTS } from './surahAyahCounts';
 import { getMushafPageForAyah } from './quran';
-import { loadLastReadPosition, loadQuranCache, saveQuranCache } from './db';
+import { deleteQuranCache, loadLastReadPosition, loadQuranCache, saveQuranCache } from './db';
 
 const STORAGE_KEY = 'quran-last-reading';
 const MARKER_KEY = 'quran-reading-marker';
@@ -208,7 +208,7 @@ export async function clearReadingPosition(): Promise<boolean> {
   inMemoryPosition = null;
   notifyPositionListeners();
   try {
-    saveQuranCache(STORAGE_KEY, null as any);
+    deleteQuranCache(STORAGE_KEY);
   } catch {}
   try {
     await AsyncStorage.removeItem(STORAGE_KEY);
@@ -285,7 +285,7 @@ export async function clearReadingMarker(): Promise<boolean> {
   inMemoryMarker = null;
   notifyPositionListeners();
   try {
-    saveQuranCache(MARKER_KEY, null as any);
+    deleteQuranCache(MARKER_KEY);
   } catch {}
   try {
     await AsyncStorage.removeItem(MARKER_KEY);

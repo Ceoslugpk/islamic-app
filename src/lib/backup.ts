@@ -25,6 +25,13 @@ import { webKV } from './webStorage';
 
 export const BACKUP_FORMAT_VERSION = 1;
 export const BACKUP_MIME = 'application/json';
+export const MAX_BACKUP_BYTES = 25 * 1024 * 1024;
+export const MAX_ROWS_PER_TABLE = 50000;
+
+export interface BuildBackupOptions {
+  /** Women's Worship records are sensitive and excluded unless explicitly requested. */
+  includeSensitiveWomenData?: boolean;
+}
 
 export interface BackupPayload {
   app: 'islamic';
@@ -35,6 +42,30 @@ export interface BackupPayload {
     tables: Record<string, unknown[]>;
     storage: Record<string, string>;
   };
+}
+
+export function getUtf8ByteLength(value: string): number {
+  if (typeof TextEncoder !== 'undefined') {
+    return new TextEncoder().encode(value).length;
+  }
+  return encodeURIComponent(value).replace(/%[0-9a-f]{2}/gi, 'x').length;
+}
+
+export function getBackupByteLength(payload: unknown): number {
+  const serialized = JSON.stringify(payload);
+  if (typeof serialized !== 'string') {
+    throw new Error('Backup file is not serializable JSON.');
+  }
+  return getUtf8ByteLength(serialized);
+}
+
+export function assertBackupSize(byteLength: number): void {
+  if (!Number.isFinite(byteLength) || byteLength < 0) {
+    throw new Error('Backup file size could not be determined.');
+  }
+  if (byteLength > MAX_BACKUP_BYTES) {
+    throw new Error(`Backup file exceeds the maximum allowed size of ${MAX_BACKUP_BYTES} bytes.`);
+  }
 }
 
 /** Real SQLite tables to back up in salah.db. */
@@ -68,6 +99,8 @@ export const VIRTUAL_USER_TABLES = [
   { table: 'audio_settings', cacheKey: 'audio-settings', isSingleObject: true },
 ] as const;
 
+const WITHHELD_SENSITIVE_TABLES = new Set(['period_entries', 'nifas_entries', 'missed_fasts']);
+
 /** Complete set of user tables included in backups. */
 export const USER_TABLES = [
   ...SQLITE_USER_TABLES,
@@ -95,6 +128,66 @@ export const EXCLUDED_STORAGE_KEYS = [
   'quran-audio-downloads',
   'quran_audio_arabic_reciters_cache',
 ] as const;
+
+const WOMEN_SPECIFIC_REASON_TOKENS = [
+  'menstru',
+  'period',
+  'menses',
+  'haidh',
+  'hayd',
+  'haydh',
+  'haiz',
+  'hayz',
+  'nifas',
+  'nifaas',
+  'post-natal',
+  'postnatal',
+  'post natal',
+  'postpartum',
+  'حيض',
+  'نفاس',
+] as const;
+
+function normalizeWomenReason(reason: string): string {
+  return reason
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\u064B-\u065F\u0670]/g, '')
+    .replace(/[‐‑‒–—]/g, '-');
+}
+
+/** The privacy classifier for free-text qada reasons. */
+export function isWomenSpecificReason(reason: unknown): boolean {
+  if (typeof reason !== 'string') return false;
+  const normalized = normalizeWomenReason(reason);
+  return WOMEN_SPECIFIC_REASON_TOKENS.some((token) => normalized.includes(token));
+}
+
+function isSensitiveWomenRecord(row: unknown): boolean {
+  if (!row || typeof row !== 'object') return false;
+  return isWomenSpecificReason((row as { reason?: unknown }).reason);
+}
+
+export function backupIncludesSensitiveWomenData(payload: Partial<BackupPayload> | null | undefined): boolean {
+  const tables = payload?.data?.tables;
+  if (!tables || typeof tables !== 'object') return false;
+  return (
+    (Array.isArray(tables.period_entries) && tables.period_entries.length > 0) ||
+    (Array.isArray(tables.nifas_entries) && tables.nifas_entries.length > 0) ||
+    (Array.isArray(tables.missed_fasts) && tables.missed_fasts.some(isSensitiveWomenRecord))
+  );
+}
+
+/** Whether the payload deliberately leaves one or more sensitive categories out. */
+export function backupOmitsSensitiveWomenData(payload: Partial<BackupPayload> | null | undefined): boolean {
+  const tables = payload?.data?.tables;
+  if (!tables || typeof tables !== 'object') return false;
+  return (
+    tables.period_entries === undefined ||
+    tables.nifas_entries === undefined ||
+    tables.missed_fasts === undefined
+  );
+}
 
 /** Test whether a storage key is on the allowed list for export and import. */
 export function isAllowedStorageKey(key: string): boolean {
@@ -246,20 +339,31 @@ export function formatTableSummary(tableCounts: Record<string, number>): string 
 
 /* ---------------------------- Native (SQLite) ---------------------------- */
 
-async function exportNativeTables(): Promise<Record<string, unknown[]>> {
+async function exportNativeTables(includeSensitiveWomenData: boolean): Promise<Record<string, unknown[]>> {
   if (!SQLite?.openDatabaseSync) {
     throw new Error('SQLite database is unavailable on this platform.');
   }
   const sqliteDb = SQLite.openDatabaseSync('salah.db');
   const out: Record<string, unknown[]> = {};
 
-  // 1. Export real SQLite tables
+  // 1. Export real SQLite tables. A privacy-withheld table is omitted rather
+  // than represented by [] because [] would make restore wipe device rows.
   for (const table of SQLITE_USER_TABLES) {
+    if (!includeSensitiveWomenData && (table === 'period_entries' || table === 'nifas_entries')) {
+      continue;
+    }
     try {
-      out[table] = sqliteDb.getAllSync(`SELECT * FROM ${table}`);
+      const rows = sqliteDb.getAllSync(`SELECT * FROM ${table}`) as unknown[];
+      if (table === 'missed_fasts' && !includeSensitiveWomenData && rows.some(isSensitiveWomenRecord)) {
+        // The table cannot be partially replaced safely: wiping it would
+        // destroy withheld rows. Omit the whole table and preserve all rows.
+        continue;
+      }
+      out[table] = rows;
     } catch {
-      // Table may not exist on older installs — skip gracefully.
-      out[table] = [];
+      // Table may not exist or may be unreadable — omit it so restore cannot
+      // mistake an unreadable table for an intentionally empty one.
+      continue;
     }
   }
 
@@ -270,18 +374,18 @@ async function exportNativeTables(): Promise<Record<string, unknown[]>> {
         'SELECT payload FROM quran_cache WHERE key = ?',
         cacheKey
       ) as { payload: string } | null;
-      if (row && row.payload) {
-        const parsed = JSON.parse(row.payload);
-        if (isSingleObject) {
-          out[table] = parsed && typeof parsed === 'object' ? [parsed] : [];
-        } else {
-          out[table] = Array.isArray(parsed) ? parsed : [];
-        }
-      } else {
-        out[table] = [];
+      if (!row || typeof row.payload !== 'string' || row.payload.length === 0) {
+        continue;
+      }
+      const parsed = JSON.parse(row.payload);
+      if (isSingleObject) {
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) out[table] = [parsed];
+      } else if (Array.isArray(parsed)) {
+        out[table] = parsed;
       }
     } catch {
-      out[table] = [];
+      // An unreadable virtual table is omitted so restore preserves the
+      // device's existing value instead of replacing it with an empty one.
     }
   }
 
@@ -300,7 +404,31 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
       // 1. Wipe real SQLite tables — ONLY those present in the backup (a partial
       //    backup must not silently destroy tables it doesn't cover). M1.
       for (const table of SQLITE_USER_TABLES) {
-        if (tables[table] === undefined) continue;
+        const rows = tables[table];
+        if (rows === undefined) continue;
+
+        // Older default exports represented withheld Women's Worship tables
+        // with [], which is an omission marker, not an instruction to clear
+        // the device. A genuinely empty array remains authoritative for every
+        // other table, including virtual user tables below.
+        if (WITHHELD_SENSITIVE_TABLES.has(table) && rows.length === 0) continue;
+
+        // Older exports could include only non-sensitive missed-fasts rows.
+        // Replace that subset while retaining the sensitive rows that were
+        // deliberately withheld from the backup.
+        if (table === 'missed_fasts' && !rows.some(isSensitiveWomenRecord)) {
+          const existingRows = sqliteDb.getAllSync('SELECT id, reason FROM missed_fasts') as unknown[];
+          for (const existingRow of existingRows) {
+            if (!isSensitiveWomenRecord(existingRow)) {
+              sqliteDb.runSync(
+                'DELETE FROM missed_fasts WHERE id = ?',
+                (existingRow as { id: unknown }).id as any,
+              );
+            }
+          }
+          continue;
+        }
+
         try {
           sqliteDb.execSync(`DELETE FROM ${table}`);
         } catch (e: any) {
@@ -344,6 +472,8 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
 
       // 3. Virtual user tables stored in quran_cache
       for (const { table, cacheKey, isSingleObject } of VIRTUAL_USER_TABLES) {
+        // An omitted virtual table means the exporter could not safely read
+        // it. An explicit [] is retained as a genuine user clear operation.
         if (tables[table] !== undefined) {
           const rows = tables[table];
           if (Array.isArray(rows)) {
@@ -427,7 +557,7 @@ async function importNativeStorage(storage: Record<string, string>): Promise<voi
   }
 }
 
-async function exportWebTables(): Promise<Record<string, unknown[]>> {
+async function exportWebTables(includeSensitiveWomenData: boolean): Promise<Record<string, unknown[]>> {
   const out: Record<string, unknown[]> = {};
 
   // salah_entries
@@ -562,16 +692,19 @@ async function exportWebTables(): Promise<Record<string, unknown[]>> {
 
   // missed_fasts
   try {
-    out['missed_fasts'] = db.loadMissedFasts().map((m: any) => ({
-      id: m.id,
-      date: m.date,
-      reason: m.reason,
-      made_up: m.madeUp ? 1 : 0,
-      made_up_date: m.madeUpDate,
-      created_at: m.createdAt,
-    }));
+    const rows = db.loadMissedFasts();
+    if (includeSensitiveWomenData || !rows.some(isSensitiveWomenRecord)) {
+      out['missed_fasts'] = rows.map((m: any) => ({
+        id: m.id,
+        date: m.date,
+        reason: m.reason,
+        made_up: m.madeUp ? 1 : 0,
+        made_up_date: m.madeUpDate,
+        created_at: m.createdAt,
+      }));
+    }
   } catch {
-    out['missed_fasts'] = [];
+    // Omit unreadable data so restore cannot wipe the device table.
   }
 
   // zakat_history
@@ -590,31 +723,33 @@ async function exportWebTables(): Promise<Record<string, unknown[]>> {
     out['zakat_history'] = [];
   }
 
-  // period_entries
-  try {
-    out['period_entries'] = db.loadPeriodEntries().map((p: any) => ({
-      id: p.id,
-      start_date: p.startDate,
-      end_date: p.endDate || null,
-      notes: p.notes || null,
-      purity_days: p.purityDays ? JSON.stringify(p.purityDays) : null,
-      created_at: p.createdAt,
-    }));
-  } catch {
-    out['period_entries'] = [];
-  }
+  if (includeSensitiveWomenData) {
+    // period_entries
+    try {
+      out['period_entries'] = db.loadPeriodEntries().map((p: any) => ({
+        id: p.id,
+        start_date: p.startDate,
+        end_date: p.endDate || null,
+        notes: p.notes || null,
+        purity_days: p.purityDays ? JSON.stringify(p.purityDays) : null,
+        created_at: p.createdAt,
+      }));
+    } catch {
+      out['period_entries'] = [];
+    }
 
-  // nifas_entries
-  try {
-    out['nifas_entries'] = db.loadNifasEntries().map((n: any) => ({
-      id: n.id,
-      start_date: n.startDate,
-      end_date: n.endDate || null,
-      notes: n.notes || null,
-      created_at: n.createdAt,
-    }));
-  } catch {
-    out['nifas_entries'] = [];
+    // nifas_entries
+    try {
+      out['nifas_entries'] = db.loadNifasEntries().map((n: any) => ({
+        id: n.id,
+        start_date: n.startDate,
+        end_date: n.endDate || null,
+        notes: n.notes || null,
+        created_at: n.createdAt,
+      }));
+    } catch {
+      out['nifas_entries'] = [];
+    }
   }
 
   // study_tags
@@ -643,58 +778,49 @@ async function exportWebTables(): Promise<Record<string, unknown[]>> {
     out['verse_highlights'] = [];
   }
 
-  // bookmarks
-  try {
-    const raw = db.loadQuranCache('bookmarks');
-    out['bookmarks'] = Array.isArray(raw) ? raw : [];
-  } catch {
-    out['bookmarks'] = [];
-  }
-
-  // notes
-  try {
-    const raw = db.loadQuranCache('notes');
-    out['notes'] = Array.isArray(raw) ? raw : [];
-  } catch {
-    out['notes'] = [];
-  }
-
-  // playlists
-  try {
-    const raw = db.loadPlaylists();
-    out['playlists'] = Array.isArray(raw) ? raw : [];
-  } catch {
-    out['playlists'] = [];
-  }
-
-  // audio_queue
-  try {
-    const raw = db.loadAudioQueue();
-    out['audio_queue'] = Array.isArray(raw) ? raw : [];
-  } catch {
-    out['audio_queue'] = [];
-  }
-
-  // audio_settings
-  try {
-    const raw = db.loadAudioSettings();
-    out['audio_settings'] = raw ? [raw] : [];
-  } catch {
-    out['audio_settings'] = [];
+  // Virtual user data must be read from the raw webKV blob so malformed data
+  // is distinguishable from a genuinely stored empty list.
+  for (const { table, cacheKey, isSingleObject } of VIRTUAL_USER_TABLES) {
+    try {
+      const raw = webKV.get(`quran:${cacheKey}`);
+      if (typeof raw !== 'string' || raw.length === 0) continue;
+      const parsed = JSON.parse(raw);
+      if (isSingleObject) {
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) out[table] = [parsed];
+      } else if (Array.isArray(parsed)) {
+        out[table] = parsed;
+      }
+    } catch {
+      // Omit unreadable virtual data so restore cannot overwrite it with [].
+    }
   }
 
   return out;
 }
 
 async function importWebTables(tables: Record<string, unknown[]>): Promise<void> {
-  // Wipe existing user keys in webKV
-  const userPrefixes = [
-    'salah:', 'tasbih:', 'plan:', 'hifz:', 'hadith:saved:', 'hadith:recent:',
-    'hadith:read:', 'fasting:entry:', 'fasting:missed:', 'zakat:history:',
-    'women:period:', 'women:nifas:', 'study:tag:', 'study:highlight:',
+  // Wipe only the web key scope represented by each table. In particular, an
+  // omitted sensitive table must leave its existing rows untouched.
+  const userTableScopes: Array<{ table: string; prefix: string; keep?: (key: string) => boolean }> = [
+    { table: 'salah_entries', prefix: 'salah:' },
+    { table: 'tasbih_entries', prefix: 'tasbih:', keep: (key) => !key.startsWith('tasbih:daily:') },
+    { table: 'tasbih_daily', prefix: 'tasbih:daily:' },
+    { table: 'plan_entries', prefix: 'plan:' },
+    { table: 'hifz_entries', prefix: 'hifz:' },
+    { table: 'hadith_saved', prefix: 'hadith:saved:' },
+    { table: 'hadith_recent', prefix: 'hadith:recent:' },
+    { table: 'hadith_read_markers', prefix: 'hadith:read:' },
+    { table: 'fasting_entries', prefix: 'fasting:entry:' },
+    { table: 'missed_fasts', prefix: 'fasting:missed:' },
+    { table: 'zakat_history', prefix: 'zakat:history:' },
+    { table: 'period_entries', prefix: 'women:period:' },
+    { table: 'nifas_entries', prefix: 'women:nifas:' },
+    { table: 'study_tags', prefix: 'study:tag:' },
+    { table: 'verse_highlights', prefix: 'study:highlight:' },
   ];
-  for (const prefix of userPrefixes) {
-    const existing = webKV.getAll(prefix);
+  for (const { table, prefix, keep } of userTableScopes) {
+    if (tables[table] === undefined) continue;
+    const existing = webKV.getAll(prefix).filter(({ key }) => !keep || keep(key));
     for (const { key } of existing) {
       webKV.delete(key);
     }
@@ -925,10 +1051,11 @@ async function importWebTables(tables: Record<string, unknown[]>): Promise<void>
 /* --------------------------------- Public API --------------------------------- */
 
 /** Build the full backup payload (tables + storage). */
-export async function buildBackupPayload(): Promise<BackupPayload> {
+export async function buildBackupPayload(options: BuildBackupOptions = {}): Promise<BackupPayload> {
+  const includeSensitiveWomenData = options.includeSensitiveWomenData === true;
   const [appVersion, tables, storage] = await Promise.all([
     getAppVersion(),
-    Platform.OS === 'web' ? exportWebTables() : exportNativeTables(),
+    Platform.OS === 'web' ? exportWebTables(includeSensitiveWomenData) : exportNativeTables(includeSensitiveWomenData),
     Platform.OS === 'web' ? exportWebStorage() : exportNativeStorage(),
   ]);
   return {
@@ -1002,7 +1129,7 @@ export function validateBackup(payload: unknown): payload is BackupPayload {
   }
 
   // Row shape & sanity hardening:
-  const MAX_ROWS_PER_TABLE = 50000;
+  assertBackupSize(getBackupByteLength(payload));
   for (const [table, rows] of Object.entries(p.data.tables)) {
     if (!Array.isArray(rows)) {
       throw new Error(`Invalid table data for "${table}": expected array of rows.`);

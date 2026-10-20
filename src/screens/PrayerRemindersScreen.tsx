@@ -39,12 +39,8 @@ import { t } from '../lib/i18n';
 import { useDiagnosticTarget, isDiagnosticModeEnabled, getTargetMeasurement } from '../lib/diagnostic';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
 import {
-  configureNotifications,
   requestNotificationPermission,
-  schedulePrayerNotifications,
-  cancelPrayerNotifications,
-  scheduleQuranReminder,
-  cancelQuranReminder,
+  rescheduleIfNeeded,
   getNotificationHealth,
   NotificationHealth,
   stopAdhanPlayback,
@@ -235,28 +231,22 @@ export default function PrayerRemindersScreen({
     setIsRescheduling(true);
     setTestStatusMessage(null);
     try {
-      await configureNotifications();
-      const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId, new Date(), {
-        madhab: settings.madhab,
-      });
-      await cancelPrayerNotifications();
-      await cancelQuranReminder();
-      if (remindersEnabled) {
-        await schedulePrayerNotifications(
-          data,
-          reminderOffsetMinutes,
-          settings.manualLocation.label,
-          prayerConfigs
-        );
-      }
-      if (quranReminderEnabled) {
-        await scheduleQuranReminder(quranReminderTime, quranGoal);
-      }
+      await rescheduleIfNeeded(
+        settings.manualLocation,
+        settings.methodId,
+        remindersEnabled,
+        reminderOffsetMinutes,
+        quranReminderEnabled,
+        settings.madhab,
+        prayerConfigs,
+        quranReminderTime,
+        quranGoal,
+      );
       await loadHealth();
-      setTestStatusMessage(`✓ ${t(notificationsRescheduled)}`);
+      setTestStatusMessage(`✓ ${notificationsRescheduled()}`);
       setTimeout(() => setTestStatusMessage(null), 3000);
     } catch {
-      setTestStatusMessage(t(notificationsRescheduleFailed));
+      setTestStatusMessage(notificationsRescheduleFailed());
     } finally {
       setIsRescheduling(false);
     }
@@ -268,26 +258,36 @@ export default function PrayerRemindersScreen({
     if (next) {
       const granted = await requestNotificationPermission();
       if (!granted) {
-        setPermissionError(t(notificationPermissionDenied));
+        setPermissionError(notificationPermissionDenied());
         return;
       }
-      await configureNotifications();
       try {
-        const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId, new Date(), {
-          madhab: settings.madhab,
-        });
-        await cancelPrayerNotifications();
-        await schedulePrayerNotifications(
-          data,
+        await rescheduleIfNeeded(
+          settings.manualLocation,
+          settings.methodId,
+          next,
           reminderOffsetMinutes,
-          settings.manualLocation.label,
-          prayerConfigs
+          quranReminderEnabled,
+          settings.madhab,
+          prayerConfigs,
+          quranReminderTime,
+          quranGoal,
         );
       } catch {
         // scheduling failed; still toggle
       }
     } else {
-      await cancelPrayerNotifications();
+      await rescheduleIfNeeded(
+        settings.manualLocation,
+        settings.methodId,
+        next,
+        reminderOffsetMinutes,
+        quranReminderEnabled,
+        settings.madhab,
+        prayerConfigs,
+        quranReminderTime,
+        quranGoal,
+      );
     }
     setReminders(next);
   }
@@ -298,14 +298,21 @@ export default function PrayerRemindersScreen({
     if (next) {
       const granted = await requestNotificationPermission();
       if (!granted) {
-        setPermissionError(t(notificationPermissionDenied));
+        setPermissionError(notificationPermissionDenied());
         return;
       }
-      await configureNotifications();
-      await scheduleQuranReminder(quranReminderTime, quranGoal);
-    } else {
-      await cancelQuranReminder();
     }
+    await rescheduleIfNeeded(
+      settings.manualLocation,
+      settings.methodId,
+      remindersEnabled,
+      reminderOffsetMinutes,
+      next,
+      settings.madhab,
+      prayerConfigs,
+      quranReminderTime,
+      quranGoal,
+    );
     setQuranReminderEnabled(next);
   }
 
@@ -313,15 +320,16 @@ export default function PrayerRemindersScreen({
     setReminderOffsetMinutes(mins);
     if (remindersEnabled) {
       try {
-        const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId, new Date(), {
-          madhab: settings.madhab,
-        });
-        await cancelPrayerNotifications();
-        await schedulePrayerNotifications(
-          data,
+        await rescheduleIfNeeded(
+          settings.manualLocation,
+          settings.methodId,
+          remindersEnabled,
           mins,
-          settings.manualLocation.label,
-          prayerConfigs
+          quranReminderEnabled,
+          settings.madhab,
+          prayerConfigs,
+          quranReminderTime,
+          quranGoal,
         );
         await loadHealth();
       } catch {
@@ -338,15 +346,16 @@ export default function PrayerRemindersScreen({
     if (remindersEnabled) {
       try {
         const newConfigs = { ...prayerConfigs, [prayer]: updated };
-        const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId, new Date(), {
-          madhab: settings.madhab,
-        });
-        await cancelPrayerNotifications();
-        await schedulePrayerNotifications(
-          data,
+        await rescheduleIfNeeded(
+          settings.manualLocation,
+          settings.methodId,
+          remindersEnabled,
           reminderOffsetMinutes,
-          settings.manualLocation.label,
-          newConfigs
+          quranReminderEnabled,
+          settings.madhab,
+          newConfigs,
+          quranReminderTime,
+          quranGoal,
         );
         await loadHealth();
       } catch {
@@ -371,9 +380,9 @@ export default function PrayerRemindersScreen({
     }
     const ok = await snoozePrayer('Prayer', 10);
     if (ok) {
-      setTestStatusMessage(t(snoozedTenMinutes));
+      setTestStatusMessage(snoozedTenMinutes());
     } else {
-      setTestStatusMessage(t(testAlertPermission));
+      setTestStatusMessage(testAlertPermission());
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -386,9 +395,9 @@ export default function PrayerRemindersScreen({
     }
     const id = await sendTestPrayerNotification(prayer, 'prayer-times-adhan');
     if (id) {
-      setTestStatusMessage(`✓ ${t(testAlertSent)}`);
+      setTestStatusMessage(`✓ ${testAlertSent()}`);
     } else {
-      setTestStatusMessage(t(testAlertPermission));
+      setTestStatusMessage(testAlertPermission());
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -401,9 +410,9 @@ export default function PrayerRemindersScreen({
     }
     const id = await sendTestPrePrayerNotification('Maghrib', reminderOffsetMinutes || 15);
     if (id) {
-      setTestStatusMessage(`✓ ${t(testAlertSent)}`);
+      setTestStatusMessage(`✓ ${testAlertSent()}`);
     } else {
-      setTestStatusMessage(t(testAlertPermission));
+      setTestStatusMessage(testAlertPermission());
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -418,7 +427,7 @@ export default function PrayerRemindersScreen({
     if (id) {
       setTestStatusMessage(t('✓ Quran reminder test sent — tap "Read Now" to try the reader link.'));
     } else {
-      setTestStatusMessage(t(testAlertPermission));
+      setTestStatusMessage(testAlertPermission());
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -429,9 +438,9 @@ export default function PrayerRemindersScreen({
     const updated = await setQuranDailyGoalCompleted(nextCompleted);
     setQuranProgress(updated);
     if (nextCompleted) {
-      setTestStatusMessage(`✓ ${t(dailyGoalDone)}`);
+      setTestStatusMessage(`✓ ${dailyGoalDone()}`);
     } else {
-      setTestStatusMessage(t(dailyGoalReopened));
+      setTestStatusMessage(dailyGoalReopened());
     }
     setTimeout(() => setTestStatusMessage(null), 3500);
   }
@@ -1210,7 +1219,17 @@ export default function PrayerRemindersScreen({
                     onPress={() => {
                       setQuranReminderTime(tVal);
                       if (quranReminderEnabled) {
-                        scheduleQuranReminder(tVal, quranGoal);
+                        void rescheduleIfNeeded(
+                          settings.manualLocation,
+                          settings.methodId,
+                          remindersEnabled,
+                          reminderOffsetMinutes,
+                          quranReminderEnabled,
+                          settings.madhab,
+                          prayerConfigs,
+                          tVal,
+                          quranGoal,
+                        );
                       }
                     }}
                     accessibilityLabel={`Set Quran reminder to ${tVal}`}

@@ -1,4 +1,4 @@
-import { Appearance, Platform, Linking } from 'react-native';
+import { Appearance, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Notifications from 'expo-notifications';
 import type { AudioMetadata, AudioLockScreenOptions } from 'expo-audio';
@@ -562,37 +562,6 @@ function setupWebMediaSessionHandlers(): void {
   }
 }
 
-/**
- * Handles external notification response actions (headset / Bluetooth / notification triggers)
- * routing them back to the existing player.
- */
-function setupNotificationResponseHandler(): () => void {
-  if (Platform.OS === 'web') return () => {};
-  try {
-    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
-      const actionId = response.actionIdentifier;
-      if (actionId === 'play-pause') {
-        handleRemoteCommand('toggle').catch(() => {});
-      } else if (actionId === 'next') {
-        handleRemoteCommand('next').catch(() => {});
-      } else if (actionId === 'previous') {
-        handleRemoteCommand('previous').catch(() => {});
-      } else if (actionId === 'stop') {
-        handleRemoteCommand('stop').catch(() => {});
-      } else if (actionId === 'default' || actionId === Notifications.DEFAULT_ACTION_IDENTIFIER) {
-        const playback = getCurrentPlayback();
-        if (playback?.surah) {
-          const ayah = playback.ayah || 1;
-          Linking.openURL(`salah://quran/${playback.surah}/${ayah}`).catch(() => {});
-        }
-      }
-    });
-    return () => sub.remove();
-  } catch {
-    return () => {};
-  }
-}
-
 let isAdapterInitialized = false;
 let adapterCleanup: (() => void) | null = null;
 
@@ -666,17 +635,14 @@ export function initSystemMediaAdapter(): () => void {
   // 3. Web MediaSession handlers
   setupWebMediaSessionHandlers();
 
-  // 4. Notification response listener
-  const unsubNotifications = setupNotificationResponseHandler();
-
-  // 5. Pre-warm media notification channels for OriginOS / lock screen integration
+  // 4. Pre-warm media notification channels for OriginOS / lock screen integration
   ensureSystemMediaNotificationChannels().catch(() => {});
 
-  // 6. Pre-warm artwork in cache asynchronously
+  // 5. Pre-warm artwork in cache asynchronously
   getOrPrepareArtworkUri(false).catch(() => {});
   getOrPrepareArtworkUri(true).catch(() => {});
 
-  // 7. If playback is already active at call time, sync immediately
+  // 6. If playback is already active at call time, sync immediately
   const existingPlayback = getCurrentPlayback();
   if (existingPlayback) {
     syncNowPlaying().catch(() => {});
@@ -685,7 +651,6 @@ export function initSystemMediaAdapter(): () => void {
   adapterCleanup = () => {
     unsubSoundCreated();
     unsubStatus();
-    unsubNotifications();
     isAdapterInitialized = false;
     adapterCleanup = null;
   };

@@ -93,6 +93,7 @@ interface AccessiblePressableProps {
   accessibilityRole?: AccessibilityRole;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  accessible?: boolean;
   testID?: string;
 }
 
@@ -105,6 +106,7 @@ function AccessiblePressable({
   accessibilityRole = 'button',
   accessibilityLabel,
   accessibilityHint,
+  accessible,
   testID,
 }: AccessiblePressableProps) {
   return (
@@ -113,6 +115,7 @@ function AccessiblePressable({
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
+      accessible={accessible}
       testID={testID}
       style={({ pressed }) => [
         style,
@@ -437,6 +440,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
           {/* ─── 3. Hero: Salah Tracker ───────────────────────────────────── */}
           <AccessiblePressable
             onPress={() => onOpen('tracker')}
+            accessible={false}
             style={[
               styles.heroCardWrap,
               { backgroundColor: tokens.heroGradient[0] },
@@ -508,6 +512,7 @@ const ToolsScreen = React.memo(function ToolsScreen({
                     <Pressable
                       key={prayer.key}
                       onPress={() => togglePrayer(prayer.key)}
+                      accessible
                       hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
                       accessibilityRole="button"
                       accessibilityLabel={`${t(prayer.label)}, ${isDone ? t('done') : t('not done')}`}

@@ -162,6 +162,8 @@ const diagState = loadTsModule('src/lib/diagnostic/diagnosticState.ts', {
   '../i18n': {
     default: { get language() { return mockActiveLanguage; } },
     isRTL: (lang) => (lang || mockActiveLanguage) === 'ar' || (lang || mockActiveLanguage) === 'ur',
+    isRtlLanguage: (lang) => (lang || mockActiveLanguage) === 'ar' || (lang || mockActiveLanguage) === 'ur',
+    getBootLanguage: () => mockActiveLanguage,
     t: (k) => k,
   },
   'expo-file-system/legacy': {

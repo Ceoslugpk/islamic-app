@@ -199,6 +199,13 @@ const stubSqlite = {
       },
       runSync(sql, ...args) {
         executedSql.push(['runSync', sql, args]);
+        if (
+          globalThis.__failQuranCounterWrites &&
+          sql.includes('quran_cache') &&
+          (args[0] === 'quran_cache_bytes' || sql.includes("'quran_cache_bytes'"))
+        ) {
+          throw new Error('Simulated counter write failure');
+        }
         const stmt = sqliteMem.prepare(sql);
         return stmt.run(...args);
       },
@@ -230,6 +237,7 @@ fs.writeFileSync(path.join(TMP_DIR, 'db_native.mjs'), dbNativeTranspiled);
 const dbNative = await import(path.join(TMP_DIR, 'db_native.mjs'));
 const {
   saveQuranCache,
+  deleteQuranCache,
   loadQuranCache,
   getQuranCacheTotalBytes,
   enforceQuranCacheBudget,
@@ -237,11 +245,45 @@ const {
   PROTECTED_QURAN_CACHE_KEYS,
 } = dbNative;
 
+fs.writeFileSync(path.join(TMP_DIR, 'stubRNBackup.mjs'), `export const Platform = { OS: 'android' };`);
+fs.writeFileSync(path.join(TMP_DIR, 'stubAsyncStorageBackup.mjs'), `
+  const store = new Map();
+  export default {
+    async getItem(k) { return store.get(k) ?? null; },
+    async setItem(k, v) { store.set(k, v); },
+    async removeItem(k) { store.delete(k); },
+    async getAllKeys() { return [...store.keys()]; },
+    async multiGet(keys) { return keys.map(k => [k, store.get(k) ?? null]); },
+    async multiSet(entries) { entries.forEach(([k, v]) => store.set(k, v)); },
+  };
+`);
+fs.writeFileSync(path.join(TMP_DIR, 'stubSettingsBackup.mjs'), `export const sanitizeSettings = (value) => value;`);
+fs.writeFileSync(path.join(TMP_DIR, 'stubWebStorageBackup.mjs'), `export const webKV = { get: () => null, set: () => {}, getAll: () => [], delete: () => {} };`);
+const backupSrcForTest = fs.readFileSync(path.join(SRC_DIR, 'lib/backup.ts'), 'utf8')
+  .replace("import { Platform } from 'react-native';", "import { Platform } from './stubRNBackup.mjs';")
+  .replace("import AsyncStorage from '@react-native-async-storage/async-storage';", "import AsyncStorage from './stubAsyncStorageBackup.mjs';")
+  .replace("import * as SQLite from 'expo-sqlite';", "import SQLite from './stubSqliteAdapter.mjs';")
+  .replace("import * as db from './db';", "import * as db from './db_native.mjs';")
+  .replace("import { sanitizeSettings } from './settings';", "import { sanitizeSettings } from './stubSettingsBackup.mjs';")
+  .replace("import { webKV } from './webStorage';", "import { webKV } from './stubWebStorageBackup.mjs';");
+fs.writeFileSync(path.join(TMP_DIR, 'backup.mjs'), ts.transpileModule(backupSrcForTest, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText);
+const backup = await import(path.join(TMP_DIR, 'backup.mjs'));
+
 const TRUE_TOTAL = () =>
   sqliteMem.prepare("SELECT COALESCE(SUM(length(payload)), 0) AS t FROM quran_cache WHERE key != 'quran_cache_bytes'").get().t;
 const RAW_COUNTER = () => {
   const r = sqliteMem.prepare("SELECT payload FROM quran_cache WHERE key = 'quran_cache_bytes'").get();
-  return r ? Number(r.payload) : null;
+  if (!r) return null;
+  try { return JSON.parse(r.payload); } catch { return null; }
+};
+const HAS_CACHE_ROW = (key) => Boolean(sqliteMem.prepare('SELECT 1 AS found FROM quran_cache WHERE key = ?').get(key));
+const FULL_SCAN = /SELECT\s+COALESCE\s*\(\s*SUM\s*\(\s*length\s*\(\s*payload\s*\)\s*\)/i;
+const resetCache = () => {
+  sqliteMem.exec('DELETE FROM quran_cache');
+  reconcileQuranCacheBudget();
+  executedSql.length = 0;
 };
 
 // 1. Verify protected keys include required metadata and reading markers
@@ -249,29 +291,31 @@ assert.ok(PROTECTED_QURAN_CACHE_KEYS.has('quran_cache_bytes'), 'quran_cache_byte
 assert.ok(PROTECTED_QURAN_CACHE_KEYS.has('quran-reading-marker'), 'quran-reading-marker must be protected from eviction');
 assert.ok(PROTECTED_QURAN_CACHE_KEYS.has('quran-last-reading'), 'quran-last-reading must be protected from eviction');
 
-// 2. Normal insert sequence: 60 inserts, verifying exact accounting at each step
-console.log('  Case 1: Normal insert sequence & O(1) statement check');
-let trueSum = 0;
-for (let i = 1; i <= 60; i++) {
+// 2. Normal inserts: verify the independent count, generation, and O(1) save path.
+console.log('  Case 1: Normal inserts and observable O(1) statement check');
+for (let i = 1; i <= 8; i++) {
   const payload = { text: 'Ayah ' + i + ' '.repeat(50), n: i };
   saveQuranCache(`surah:10:${i}`, payload);
 }
-trueSum = TRUE_TOTAL();
-const counterAfter60 = getQuranCacheTotalBytes();
-assert.equal(counterAfter60, trueSum, `Counter (${counterAfter60}) must equal true sum (${trueSum}) after 60 inserts`);
-console.log(`    Measured: trueSum=${trueSum} bytes, counter=${counterAfter60} bytes (drift=0)`);
+const normalTrue = TRUE_TOTAL();
+const normalAccounting = RAW_COUNTER();
+assert.equal(normalAccounting.totalBytes, normalTrue, 'Normal inserts must update the byte total');
+assert.equal(normalAccounting.rowCount, 8, 'Normal inserts must update the independent row count');
+assert.ok(normalAccounting.generation >= 8, 'Normal inserts must advance writer generation');
+console.log(`    Measured: trueSum=${normalTrue} bytes, counter=${normalAccounting.totalBytes} bytes, rows=${normalAccounting.rowCount}, generation=${normalAccounting.generation}`);
 
-// Verify O(1) execution proof: subsequent save executed ZERO full-table SUM scans
+// Verify O(1) execution by observing the exact production SQL. The pattern matches
+// the real COALESCE(SUM(length(payload))) reconciliation query.
 executedSql.length = 0;
 saveQuranCache('surah:10:999', { text: 'point insert' });
-const sumScans = executedSql.filter(([, sql]) =>
-  typeof sql === 'string' && /SELECT\s+SUM\s*\(\s*length\s*\(\s*payload\s*\)/i.test(sql)
-);
+const sumScans = executedSql.filter(([, sql]) => typeof sql === 'string' && FULL_SCAN.test(sql));
 assert.equal(sumScans.length, 0, 'saveQuranCache with counter present must execute 0 full-table SUM scans');
-console.log('    ✓ saveQuranCache executed zero full table scans (O(1) verified)');
+console.log(`    Measured: normal save issued ${sumScans.length} full-table SUM scans`);
 
-// Apply explicit budget of 20000 bytes
+// Explicit enforcement is a reconciliation checkpoint.
+executedSql.length = 0;
 enforceQuranCacheBudget(20000);
+assert.ok(executedSql.some(([, sql]) => typeof sql === 'string' && FULL_SCAN.test(sql)), 'Explicit enforcement must reconcile with SUM');
 const totalAfterEvict = TRUE_TOTAL();
 assert.ok(totalAfterEvict <= 20000, `True total (${totalAfterEvict}) must be within budget (20000)`);
 assert.equal(getQuranCacheTotalBytes(), totalAfterEvict, 'Counter must match true sum after budget enforcement');
@@ -288,66 +332,81 @@ const newLen = JSON.stringify(payloadNew).length;
 saveQuranCache('surah:20:1', payloadNew);
 
 const sumAfterMissingSave = TRUE_TOTAL();
-const counterAfterMissingSave = getQuranCacheTotalBytes();
+const counterAfterMissingSave = RAW_COUNTER();
 assert.equal(sumAfterMissingSave, sumBeforeMissingSave + newLen, 'True sum reflects exact added length');
-assert.equal(counterAfterMissingSave, sumAfterMissingSave, `Counter (${counterAfterMissingSave}) must match true sum (${sumAfterMissingSave}) with 0 drift`);
-console.log(`    Measured: trueSum=${sumAfterMissingSave}, counter=${counterAfterMissingSave} (drift=0, no double count)`);
+assert.equal(counterAfterMissingSave.totalBytes, sumAfterMissingSave, `Counter (${counterAfterMissingSave.totalBytes}) must match true sum (${sumAfterMissingSave}) with 0 drift`);
+console.log(`    Measured: trueSum=${sumAfterMissingSave}, counter=${counterAfterMissingSave.totalBytes} (drift=0, no double count)`);
 
-// 4. Corruption Case B: Direct out-of-band write (reconciliation must trigger on drift)
-console.log('  Case 3: Direct out-of-band write bypassing the counter');
-// Insert 20KB of out-of-band rows directly into SQLite
-for (let i = 1; i <= 20; i++) {
-  sqliteMem.prepare("INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)")
-    .run(`surah:out-of-band:${i}`, JSON.stringify({ text: 'Z'.repeat(1000) }), Date.now());
-}
-const trueSumAfterOOB = TRUE_TOTAL();
-// getQuranCacheTotalBytes detects the stamp mismatch (row count changed) and reconciles!
-const counterAfterOOB = getQuranCacheTotalBytes();
-assert.equal(counterAfterOOB, trueSumAfterOOB, `getQuranCacheTotalBytes must detect stamp mismatch and reconcile: ${counterAfterOOB} === ${trueSumAfterOOB}`);
-
-// Now enforce budget of 5000 bytes: must evict down to budget despite out-of-band additions
-enforceQuranCacheBudget(5000);
-const trueSumAfterEnforce = TRUE_TOTAL();
-assert.ok(trueSumAfterEnforce <= 5000, `True sum (${trueSumAfterEnforce}) must be <= budget (5000)`);
-assert.equal(getQuranCacheTotalBytes(), trueSumAfterEnforce, 'Counter matches true sum after enforce');
-console.log(`    Measured: trueSum=${trueSumAfterEnforce} <= budget 5000 (counter=${getQuranCacheTotalBytes()})`);
-
-// 5. Corruption Case C: Restored backup (importNativeTables writes virtual tables)
-console.log('  Case 4: Restored backup updating accounting in same transaction');
-// Simulate backup restore: direct write to virtual tables in a transaction + reconcile
-sqliteMem.exec('BEGIN');
+// 4. Out-of-band writes: COUNT(*) catches row-count changes, while explicit
+// enforcement catches count-preserving payload drift with an independent SUM.
+console.log('  Case 3: Out-of-band writes (count-changing and count-preserving)');
 sqliteMem.prepare("INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)")
-  .run('bookmarks', JSON.stringify([{ surah: 2, ayah: 255 }]), Date.now());
-sqliteMem.prepare("INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)")
-  .run('notes', JSON.stringify([{ surah: 18, ayah: 10, text: 'Note' }]), Date.now());
-reconcileQuranCacheBudget();
-sqliteMem.exec('COMMIT');
+  .run('surah:out-of-band:insert', JSON.stringify({ text: 'count changed' }), Date.now());
+const countChangedTrue = TRUE_TOTAL();
+const countChangedCounter = getQuranCacheTotalBytes();
+assert.equal(countChangedCounter, countChangedTrue, 'Count-changing out-of-band insert must trigger reconciliation');
+sqliteMem.prepare("DELETE FROM quran_cache WHERE key = ?").run('surah:out-of-band:insert');
+assert.equal(getQuranCacheTotalBytes(), TRUE_TOTAL(), 'Count-changing delete must trigger reconciliation');
 
+const beforePreservingUpdate = getQuranCacheTotalBytes();
+sqliteMem.prepare("UPDATE quran_cache SET payload = ? WHERE key = ?")
+  .run(JSON.stringify({ text: 'count preserving payload with a materially different length' }), 'surah:10:1');
+const preservingTrueBeforeEnforce = TRUE_TOTAL();
+const preservingBelievedBeforeEnforce = getQuranCacheTotalBytes();
+assert.notEqual(preservingBelievedBeforeEnforce, preservingTrueBeforeEnforce, 'Count-preserving UPDATE must not be mistaken for an accounted write');
+executedSql.length = 0;
+enforceQuranCacheBudget(20000);
+assert.ok(executedSql.some(([, sql]) => typeof sql === 'string' && FULL_SCAN.test(sql)), 'Enforcement must observe count-preserving payload drift');
+assert.equal(getQuranCacheTotalBytes(), TRUE_TOTAL(), 'Count-preserving drift must be healed before enforcement returns');
+console.log(`    Measured: before=${beforePreservingUpdate}, stale=${preservingBelievedBeforeEnforce}, real=${preservingTrueBeforeEnforce}, healed=${getQuranCacheTotalBytes()}`);
+
+// Exact QA counterexample: one existing key grows beyond the production budget while row count stays fixed.
+resetCache();
+for (let i = 1; i <= 50; i++) saveQuranCache(`surah:breach:${i}`, { text: 'seed-' + i });
+const breachBefore = TRUE_TOTAL();
+const breachRowsBefore = sqliteMem.prepare("SELECT COUNT(*) AS count FROM quran_cache WHERE key != 'quran_cache_bytes'").get().count;
+const largePayload = 'x'.repeat(401 * 1024 * 1024);
+sqliteMem.prepare("UPDATE quran_cache SET payload = ? WHERE key = ?").run(largePayload, 'surah:breach:1');
+const breachRealBefore = TRUE_TOTAL();
+const breachStale = getQuranCacheTotalBytes();
+const breachRowsAfter = sqliteMem.prepare("SELECT COUNT(*) AS count FROM quran_cache WHERE key != 'quran_cache_bytes'").get().count;
+assert.equal(breachRowsBefore, breachRowsAfter, 'Breach UPDATE must preserve row count');
+assert.equal(breachStale, breachBefore, 'The pre-enforcement counter is the cheap stamped value');
+assert.ok(breachRealBefore > dbNative.QURAN_CACHE_BUDGET_BYTES, 'Counterexample must exceed the production 400 MiB budget');
+enforceQuranCacheBudget(dbNative.QURAN_CACHE_BUDGET_BYTES);
+const breachRealAfter = TRUE_TOTAL();
+assert.ok(breachRealAfter <= dbNative.QURAN_CACHE_BUDGET_BYTES, 'Budget enforcement must evict the oversized count-preserving row');
+assert.equal(getQuranCacheTotalBytes(), breachRealAfter, 'Post-enforcement counter must equal measured bytes');
+console.log(`    Exact breach: before=${breachBefore}, realBefore=${breachRealBefore}, staleBefore=${breachStale}, realAfter=${breachRealAfter}, budget=${dbNative.QURAN_CACHE_BUDGET_BYTES}`);
+
+// 5. Real backup restore: execute backup.ts applyRestore, not a hand-written transaction.
+console.log('  Case 4: Real backup restore updates accounting in the production transaction');
+resetCache();
+saveQuranCache('bookmarks', [{ surah: 1, ayah: 1, note: 'old' }]);
+const backupPayload = {
+  app: 'islamic', formatVersion: 1, exportedAt: new Date().toISOString(), appVersion: '1.1.88',
+  data: { tables: { bookmarks: [{ surah: 2, ayah: 255, note: 'restored payload is longer than old' }] }, storage: {} },
+};
+await backup.applyRestore(backupPayload);
 const trueSumBackup = TRUE_TOTAL();
-assert.equal(getQuranCacheTotalBytes(), trueSumBackup, 'Counter matches exact true sum after backup restore');
-console.log(`    Measured: trueSum=${trueSumBackup}, counter=${getQuranCacheTotalBytes()} (exact match)`);
+const backupAccounting = RAW_COUNTER();
+assert.equal(backupAccounting.totalBytes, trueSumBackup, 'Real backup restore must reconcile exact bytes');
+assert.equal(getQuranCacheTotalBytes(), trueSumBackup, 'Real backup restore must leave readable accounting');
+console.log(`    Measured: trueSum=${trueSumBackup}, counter=${backupAccounting.totalBytes}, generation=${backupAccounting.generation}`);
 
-// 6. Corruption Case D: Interrupted write rollback
-console.log('  Case 5: Interrupted write transactional rollback');
+// 6. Real interrupted production save: a counter failure must roll back its payload write.
+console.log('  Case 5: Production saveQuranCache transaction rollback');
 const sumBeforeAbort = TRUE_TOTAL();
-const counterBeforeAbort = getQuranCacheTotalBytes();
-try {
-  sqliteMem.exec('BEGIN');
-  sqliteMem.prepare("INSERT OR REPLACE INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)")
-    .run('surah:aborted', JSON.stringify({ text: 'will fail' }), Date.now());
-  throw new Error('Simulated crash during write');
-} catch {
-  sqliteMem.exec('ROLLBACK');
-}
+const counterBeforeAbort = RAW_COUNTER();
+globalThis.__failQuranCounterWrites = true;
+const abortedSave = saveQuranCache('surah:aborted', { text: 'will fail' });
+globalThis.__failQuranCounterWrites = false;
+assert.equal(abortedSave, false, 'A failed production accounting write must report failure');
 assert.equal(TRUE_TOTAL(), sumBeforeAbort, 'True total unchanged after rolled-back write');
-assert.equal(getQuranCacheTotalBytes(), counterBeforeAbort, 'Counter unchanged after rolled-back write');
-console.log(`    Measured: trueSum=${TRUE_TOTAL()}, counter=${getQuranCacheTotalBytes()} (consistent)`);
+assert.deepEqual(RAW_COUNTER(), counterBeforeAbort, 'Counter unchanged after rolled-back write');
+console.log(`    Measured: trueSum=${TRUE_TOTAL()}, counter=${RAW_COUNTER().totalBytes} (consistent, production path returned false)`);
 
-// 7. Facade parity check with db.ts (web)
-const dbWebSrc = fs.readFileSync(path.join(SRC_DIR, 'lib/db.ts'), 'utf8');
-assert.ok(dbWebSrc.includes('export function reconcileQuranCacheBudget'), 'db.ts must export reconcileQuranCacheBudget');
-assert.ok(dbWebSrc.includes("'quran_cache_bytes'"), 'db.ts must protect quran_cache_bytes');
-console.log('  ✓ F-34 complete: All 5 budget guarantees proven on real SQLite');
+console.log('  ✓ F-34 complete: real production writes, restore, drift repair and SQL observations passed');
 
 
 /* ========================================================================== */
@@ -370,11 +429,13 @@ const virtualDb = {
   loadLastReadPosition: () => null,
   loadQuranCache: (k) => loadQuranCache(k),
   saveQuranCache: (k, v) => saveQuranCache(k, v),
+  deleteQuranCache: (k) => deleteQuranCache(k),
 };
 fs.writeFileSync(path.join(TMP_DIR, 'stubDbContinuing.mjs'), `
   export const loadLastReadPosition = globalThis.__stubDbCont.loadLastReadPosition;
   export const loadQuranCache = globalThis.__stubDbCont.loadQuranCache;
   export const saveQuranCache = globalThis.__stubDbCont.saveQuranCache;
+  export const deleteQuranCache = globalThis.__stubDbCont.deleteQuranCache;
 `);
 globalThis.__stubDbCont = virtualDb;
 
@@ -446,29 +507,11 @@ console.log('  ✓ getReadingPositionSync successfully retrieved position on nat
 // 4. Clear operations
 await clearReadingMarker();
 assert.equal(getReadingMarkerSync(), null, 'clearReadingMarker clears cache');
+assert.equal(HAS_CACHE_ROW('quran-reading-marker'), false, 'clearReadingMarker must remove the cache row, not write JSON null');
 await clearReadingPosition();
 assert.equal(getReadingPositionSync(), null, 'clearReadingPosition clears cache');
-
-// 5. Mutation check: Real pre-fix behaviour from git history
-// In pre-fix continuing.ts, getReadingMarkerSync only checked inMemoryMarker and localStorage.
-// On native (localStorage undefined) cold start, it returned null even when a marker was saved on disk!
-{
-  await saveReadingMarker(18, 10, 294);
-  _resetReadingMemoryStateForTest();
-  // Simulated pre-fix code (only in-memory and bare typeof localStorage check):
-  const preFixGetMarkerSync = () => {
-    if (typeof localStorage !== 'undefined') {
-      try { return JSON.parse(localStorage.getItem('quran-reading-marker')); } catch { return null; }
-    }
-    return null; // The real pre-fix defect: returned null on native cold start!
-  };
-  assert.equal(preFixGetMarkerSync(), null, 'Real pre-fix defect: returns null on native cold boot');
-  // Fixed code: returns the persisted marker!
-  const fixedMarker = getReadingMarkerSync();
-  assert.ok(fixedMarker !== null && fixedMarker.surah === 18, 'Fixed code: retrieves persisted marker synchronously');
-  await clearReadingMarker();
-  console.log('  ✓ F-38 Mutation check passed (Red when pre-fix returns null, Green with sync SQLite read)');
-}
+assert.equal(HAS_CACHE_ROW('quran-last-reading'), false, 'clearReadingPosition must remove the cache row, not write JSON null');
+console.log('  ✓ F-38 clear path removes the production cache rows; the real cold-start assertions above remain mutation-sensitive');
 
 
 /* ========================================================================== */

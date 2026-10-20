@@ -170,6 +170,16 @@ export function getSalahHistory(days: number): Record<string, Record<string, boo
 }
 
 export const QURAN_CACHE_BUDGET_BYTES = 5 * 1024 * 1024; // 5 MB for web localStorage
+const QURAN_CACHE_COUNTER_KEY = 'quran_cache_bytes';
+const QURAN_CACHE_RECONCILE_INTERVAL = 32;
+
+interface QuranCacheAccounting {
+  totalBytes: number;
+  rowCount: number;
+  generation: number;
+}
+
+let quranCacheWritesSinceReconcile = 0;
 
 export const PROTECTED_QURAN_CACHE_KEYS = new Set<string>([
   'bookmarks',
@@ -250,19 +260,104 @@ export function selectKeysToEvict(
 
 export function reconcileQuranCacheBudget(_customDb?: unknown): number {
   try {
-    const rows = webKV.getAll('quran:');
-    return rows.reduce((acc, r) => acc + r.value.length, 0);
+    const rows = webKV.getAll('quran:').filter((r) => r.key !== `quran:${QURAN_CACHE_COUNTER_KEY}`);
+    const previous = readRawQuranCacheAccounting();
+    const accounting: QuranCacheAccounting = {
+      totalBytes: rows.reduce((acc, r) => acc + r.value.length, 0),
+      rowCount: rows.length,
+      generation: Math.max(1, (previous?.generation ?? 0) + 1),
+    };
+    writeQuranCacheAccounting(accounting);
+    quranCacheWritesSinceReconcile = 0;
+    return accounting.totalBytes;
   } catch {
     return 0;
   }
 }
 
+function parseQuranCacheAccounting(raw: string | null): QuranCacheAccounting | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as Partial<QuranCacheAccounting>;
+    const { totalBytes, rowCount, generation } = parsed;
+    if (
+      !parsed ||
+      typeof totalBytes !== 'number' ||
+      !Number.isSafeInteger(totalBytes) ||
+      totalBytes < 0 ||
+      typeof rowCount !== 'number' ||
+      !Number.isSafeInteger(rowCount) ||
+      rowCount < 0 ||
+      typeof generation !== 'number' ||
+      !Number.isSafeInteger(generation) ||
+      generation < 1
+    ) return null;
+    return {
+      totalBytes,
+      rowCount,
+      generation,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function readRawQuranCacheAccounting(): QuranCacheAccounting | null {
+  return parseQuranCacheAccounting(webKV.get(`quran:${QURAN_CACHE_COUNTER_KEY}`));
+}
+
+function writeQuranCacheAccounting(accounting: QuranCacheAccounting): void {
+  webKV.set(`quran:${QURAN_CACHE_COUNTER_KEY}`, JSON.stringify(accounting));
+}
+
+function readValidatedQuranCacheAccounting(): QuranCacheAccounting {
+  const current = readRawQuranCacheAccounting();
+  const rows = webKV.getAll('quran:').filter((r) => r.key !== `quran:${QURAN_CACHE_COUNTER_KEY}`);
+  if (current && current.rowCount === rows.length) return current;
+  const total = reconcileQuranCacheBudget();
+  return readRawQuranCacheAccounting() || {
+    totalBytes: Math.max(0, total),
+    rowCount: rows.length,
+    generation: Math.max(1, (current?.generation ?? 0) + 1),
+  };
+}
+
+function updateQuranCacheAccountingAfterWrite(
+  current: QuranCacheAccounting,
+  totalBytes: number,
+  rowCount: number
+): void {
+  writeQuranCacheAccounting({
+    totalBytes: Math.max(0, totalBytes),
+    rowCount: Math.max(0, rowCount),
+    generation: Math.max(1, current.generation + 1),
+  });
+  quranCacheWritesSinceReconcile += 1;
+  if (quranCacheWritesSinceReconcile >= QURAN_CACHE_RECONCILE_INTERVAL) {
+    reconcileQuranCacheBudget();
+  }
+}
+
+export function getQuranCacheTotalBytes(): number {
+  try {
+    return readValidatedQuranCacheAccounting().totalBytes;
+  } catch {
+    return 0;
+  }
+}
+
+interface EnforceQuranCacheBudgetOptions {
+  skipFullReconcile?: boolean;
+}
+
 export function enforceQuranCacheBudget(
   budgetBytes: number = QURAN_CACHE_BUDGET_BYTES,
-  _customDb?: unknown
+  _customDb?: unknown,
+  options?: EnforceQuranCacheBudgetOptions
 ): void {
   try {
-    const rows = webKV.getAll('quran:');
+    if (!options?.skipFullReconcile) reconcileQuranCacheBudget();
+    const rows = webKV.getAll('quran:').filter((r) => r.key !== `quran:${QURAN_CACHE_COUNTER_KEY}`);
     const items = rows.map((r) => ({
       key: r.key.replace(/^quran:/, ''),
       size: r.value.length,
@@ -272,6 +367,7 @@ export function enforceQuranCacheBudget(
     for (const k of toEvict) {
       webKV.delete(`quran:${k}`);
     }
+    if (toEvict.length > 0) reconcileQuranCacheBudget();
   } catch (err) {
     console.warn('[db.web] enforceQuranCacheBudget failed:', err);
   }
@@ -279,8 +375,17 @@ export function enforceQuranCacheBudget(
 
 export function saveQuranCache(key: string, payload: object): boolean {
   try {
+    if (key === QURAN_CACHE_COUNTER_KEY) return false;
+    const raw = webKV.get(`quran:${key}`);
+    const current = readValidatedQuranCacheAccounting();
     webKV.set(`quran:${key}`, JSON.stringify(payload));
-    enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES);
+    const oldLen = raw?.length ?? 0;
+    updateQuranCacheAccountingAfterWrite(
+      current,
+      current.totalBytes + JSON.stringify(payload).length - oldLen,
+      current.rowCount + (raw === null ? 1 : 0)
+    );
+    enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, undefined, { skipFullReconcile: true });
     return true;
   } catch (err) {
     console.warn('[db.web] saveQuranCache initial write failed, attempting eviction:', err);
@@ -292,6 +397,22 @@ export function saveQuranCache(key: string, payload: object): boolean {
       console.warn('[db.web] saveQuranCache retry failed:', retryErr);
       return false;
     }
+  }
+}
+
+export function deleteQuranCache(key: string): boolean {
+  if (key === QURAN_CACHE_COUNTER_KEY) return false;
+  try {
+    const raw = webKV.get(`quran:${key}`);
+    if (raw === null) return true;
+    const current = readValidatedQuranCacheAccounting();
+    webKV.delete(`quran:${key}`);
+    updateQuranCacheAccountingAfterWrite(current, current.totalBytes - raw.length, current.rowCount - 1);
+    enforceQuranCacheBudget(QURAN_CACHE_BUDGET_BYTES, undefined, { skipFullReconcile: true });
+    return true;
+  } catch (err) {
+    console.warn('[db.web] deleteQuranCache failed:', err);
+    return false;
   }
 }
 

@@ -1,4 +1,5 @@
 import React, { createContext, useContext } from 'react';
+import { Text as RNText, View as RNView } from 'react-native';
 import { isDiagnosticModeEnabled } from './diagnosticConfig';
 
 export const DiagScreenContext = createContext<string>('App');
@@ -34,6 +35,85 @@ export function DiagParentProvider({ testID, children }: DiagParentProviderProps
   );
 }
 
+type DiagErrorRecorder = (err: any, options?: any) => void;
+let globalErrorRecorder: DiagErrorRecorder | null = null;
+
+export function setDiagErrorRecorder(recorder: DiagErrorRecorder | null): void {
+  globalErrorRecorder = recorder;
+}
+
+export function getDiagErrorRecorder(): DiagErrorRecorder | null {
+  return globalErrorRecorder;
+}
+
+export interface DiagErrorBoundaryProps {
+  screen?: string;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
+}
+
+export interface DiagErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export class DiagErrorBoundary extends React.Component<DiagErrorBoundaryProps, DiagErrorBoundaryState> {
+  constructor(props: DiagErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): DiagErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    if (!isDiagnosticModeEnabled()) return;
+    const screen = this.props.screen || getGlobalActiveScreen() || 'App';
+    if (globalErrorRecorder) {
+      globalErrorRecorder(error, {
+        screen,
+        source: 'render',
+        treeStillRenders: true,
+      });
+    }
+  }
+
+  render(): React.ReactNode {
+    if (!isDiagnosticModeEnabled()) {
+      return this.props.children;
+    }
+
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+      const FallbackView: any = RNView;
+      const FallbackText: any = RNText;
+
+      return React.createElement(
+        FallbackView,
+        {
+          testID: 'diag-render-error-fallback',
+          style: { flex: 1, padding: 24, justifyContent: 'center', alignItems: 'center' },
+        },
+        React.createElement(
+          FallbackText,
+          { style: { fontSize: 16, fontWeight: '700', color: '#b91c1c', marginBottom: 8, textAlign: 'center' } },
+          `Diagnostic: Render error in ${this.props.screen || 'Screen'}`
+        ),
+        React.createElement(
+          FallbackText,
+          { style: { fontSize: 12, color: '#4b5563', textAlign: 'center', lineHeight: 18 } },
+          'Error was captured by the diagnostic ledger. The screen tree was preserved from crashing.'
+        )
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export interface DiagScreenProviderProps {
   name: string;
   children: React.ReactNode;
@@ -57,7 +137,9 @@ export function DiagScreenProvider({ name, children }: DiagScreenProviderProps):
 
   return (
     <DiagScreenContext.Provider value={name}>
-      {children}
+      <DiagErrorBoundary screen={name}>
+        {children}
+      </DiagErrorBoundary>
     </DiagScreenContext.Provider>
   );
 }

@@ -1,5 +1,7 @@
 import assert from 'node:assert';
 import fs from 'node:fs';
+import path from 'node:path';
+import ts from 'typescript';
 
 console.log('=== STAGE-2 QA: LOCALE LIFECYCLE + 114 SURAH NAMES + METADATA LOCALIZATION + HEADER WORDMARK ===\n');
 
@@ -38,16 +40,7 @@ assert.ok(
   'setLanguage serializes and verifies the language in the same queued call'
 );
 // The reload must happen AFTER the persist resolves so the reload boots in ur
-const settingsScreenCode = fs.readFileSync('src/screens/SettingsScreen.tsx', 'utf8');
-assert.ok(
-  settingsScreenCode.includes('Promise.resolve(setLanguage(nextLang)).then(() =>'),
-  'SettingsScreen awaits language persist before reload'
-);
-assert.ok(
-  settingsScreenCode.includes("reloadAppAsync('App language changed')"),
-  'native reload triggered after persist (boots in new language)'
-);
-ok('en->ur: language persisted before the Expo core reload — reload boots in Urdu');
+// The executed SettingsScreen check runs after the helper declaration below.
 
 // (c) ur->en: English content defaults restored (quran translation, tafsir, audio)
 assert.ok(
@@ -166,4 +159,332 @@ for (const k of enKeys) {
 for (const k of urKeys) assert.ok(k in en, `missing en key: "${k}"`);
 ok(`en/ur parity: ${enKeys.length} keys both ways, all ur values non-empty`);
 
-console.log('\nALL STAGE-2 QA TESTS PASSED SUCCESSFULLY!');
+console.log('\nALL STATIC STAGE-2 QA TESTS PASSED SUCCESSFULLY!');
+
+function compileSettingsForRuntime(sourcePath, modules) {
+  const source = fs.readFileSync(sourcePath, 'utf8');
+  const { outputText } = ts.transpileModule(source, {
+    compilerOptions: {
+      jsx: ts.JsxEmit.React,
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+      esModuleInterop: true,
+    },
+    fileName: sourcePath,
+  });
+  const module = { exports: {} };
+  new Function('require', 'module', 'exports', outputText)((name) => {
+    if (Object.prototype.hasOwnProperty.call(modules, name)) return modules[name];
+    if (modules.__fallback) return modules.__fallback;
+    throw new Error('Unexpected SettingsScreen import: ' + name);
+  }, module, module.exports);
+  return module.exports;
+}
+
+function createRuntimeGenericComponent(props = {}) {
+  return props.children ?? null;
+}
+
+const runtimeGenericModule = new Proxy(
+  { __esModule: true, default: createRuntimeGenericComponent },
+  {
+    get(target, property) {
+      return property in target ? target[property] : createRuntimeGenericComponent;
+    },
+  },
+);
+
+function createRuntimeReact(setterEvents) {
+  const react = {
+    __esModule: true,
+    default: null,
+    createElement(type, props, ...children) {
+      const normalizedChildren = children.length <= 1 ? children[0] ?? null : children;
+      if (typeof type === 'function') {
+        return type({ ...(props ?? {}), children: normalizedChildren });
+      }
+      return { type, props: { ...(props ?? {}), children: normalizedChildren } };
+    },
+    useState(initial) {
+      let value = typeof initial === 'function' ? initial() : initial;
+      if (value && typeof value === 'object' && Object.prototype.hasOwnProperty.call(value, 'language')) {
+        value = { ...value, language: true };
+      }
+      return [value, (next) => setterEvents.push(typeof next === 'function' ? next(value) : next)];
+    },
+    useEffect() {},
+    useRef(value) {
+      return { current: value };
+    },
+    useMemo(factory) {
+      return factory();
+    },
+    useCallback(callback) {
+      return callback;
+    },
+  };
+  react.default = react;
+  return react;
+}
+
+function walkRuntimeTree(node, visit) {
+  if (!node) return;
+  if (Array.isArray(node)) {
+    node.forEach((child) => walkRuntimeTree(child, visit));
+    return;
+  }
+  if (typeof node !== 'object') return;
+  if (typeof node.type === 'string') visit(node);
+  walkRuntimeTree(node.props?.children, visit);
+}
+
+async function assertRealSettingsLanguagePersistence() {
+  const events = [];
+  const timers = [];
+  const setterEvents = [];
+  let resolveLanguage;
+  const settingsState = {
+    language: 'en',
+    themeMode: 'paper',
+    methodId: 2,
+    timeFormat: '12h',
+    remindersEnabled: false,
+    reminderOffsetMinutes: 10,
+    quranReminderEnabled: false,
+    madhab: 'standard',
+    prayerConfigs: {},
+    quranReminderTime: '09:00',
+    quranGoal: 1,
+    womenWorshipEnabled: false,
+    womenPinHash: null,
+    womenLockEnabled: false,
+    hapticsEnabled: true,
+    adhanReciterId: 'mishary',
+    quranArabicFont: 'amiri',
+    quranFontSize: 20,
+    quranLineHeight: 1.8,
+    quranShowTranslation: true,
+    quranPreloadRequested: false,
+    manualLocation: { latitude: 21.42, longitude: 39.83, label: 'Makkah', city: 'Makkah' },
+  };
+  const themeValue = new Proxy({}, { get: () => '#123456' });
+  const cardTokens = { borderWidth: 1, shadow: new Proxy({}, { get: () => ({}) }) };
+  const quranFonts = new Proxy(
+    {},
+    { get: () => ({ regular: 'serif', bold: 'serif' }) },
+  );
+  const native = {
+    Platform: { OS: 'android' },
+    I18nManager: { isRTL: false },
+    AccessibilityInfo: {
+      isReduceMotionEnabled: async () => false,
+      addEventListener: () => ({ remove() {} }),
+    },
+    LayoutAnimation: { configureNext() {} },
+    Modal: 'Modal',
+    Pressable: 'Pressable',
+    ScrollView: 'ScrollView',
+    StyleSheet: { create: (styles) => styles, absoluteFill: {} },
+    View: 'View',
+    Image: 'Image',
+    TouchableOpacity: 'TouchableOpacity',
+    Alert: { alert() {} },
+    ActivityIndicator: 'ActivityIndicator',
+    useWindowDimensions: () => ({ width: 390, height: 844, scale: 1, fontScale: 1 }),
+    Linking: { openSettings: async () => {} },
+    BackHandler: { addEventListener: () => ({ remove() {} }) },
+  };
+  const runtimeDetailScreen = Object.assign(createRuntimeGenericComponent, {
+    ScrollView: createRuntimeGenericComponent,
+  });
+  const runtimeModules = {
+    react: createRuntimeReact(setterEvents),
+    'react-native': native,
+    expo: { reloadAppAsync: async (reason) => events.push(['reload', reason]) },
+    'react-native-safe-area-context': {
+      useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+    },
+    '../lib/theme': {
+      useTheme: () => ({ colors: themeValue, mode: 'paper' }),
+    },
+    '../theme/tokens': {
+      useThemeTokens: () => ({ tokens: themeValue }),
+      getTokens: () => themeValue,
+      cardTokens,
+      getBrandLogoSource: () => ({}),
+    },
+    '../lib/iconMap': {
+      getForwardIcon: () => 'forward',
+      iconSizes: { inlineLg: 20 },
+    },
+    '../lib/buttonTokens': { touchTargetTokens: { hitSlop8: 8 } },
+    '../lib/i18n': {
+      t: (key) => key,
+      prepareNativeLayoutDirection: (language) => events.push(['prepare', language]),
+      isRtlLanguage: (language) => ['ar', 'ur', 'ps'].includes(language),
+    },
+    './LegalScreen': runtimeGenericModule,
+    './BackupRestoreScreen': runtimeGenericModule,
+    '../components/layout/DetailScreen': {
+      __esModule: true,
+      DetailScreen: runtimeDetailScreen,
+    },
+    '../lib/settings': {
+      useSettings: () => ({
+        settings: settingsState,
+        setLanguage: (language) => {
+          events.push(['persist-start', language]);
+          return new Promise((resolve) => {
+            resolveLanguage = () => {
+              events.push(['persist-done', language]);
+              resolve();
+            };
+          });
+        },
+        updateSettings() {},
+        setMethod() {},
+        setTimeFormat() {},
+        setReminders() {},
+        setReminderOffsetMinutes() {},
+        setQuranReminderEnabled() {},
+        setThemeMode() {},
+        setWomenWorship() {},
+        setWomenPinHash() {},
+        setWomenLockEnabled() {},
+        setHapticsEnabled() {},
+        setAdhanReciterId() {},
+        setQuranArabicFont() {},
+        setQuranFontSize() {},
+        setQuranLineHeight() {},
+        setQuranShowTranslation() {},
+        setQuranPreloadRequested() {},
+      }),
+      QURAN_FONT_SIZE_MIN: 12,
+      QURAN_FONT_SIZE_MAX: 40,
+      QURAN_FONT_SIZE_STEP: 1,
+      QURAN_LINE_HEIGHT_MIN: 1,
+      QURAN_LINE_HEIGHT_MAX: 3,
+      QURAN_LINE_HEIGHT_STEP: 0.1,
+    },
+    '../components/ArabicText': { QURAN_FONT_FAMILIES: quranFonts },
+    '../lib/haptics': { useHaptics: () => ({ haptic() {} }) },
+    '../lib/prayerTimes': {
+      CALC_METHODS: [{ id: 2, name: 'MWL', region: 'Global' }],
+      fetchPrayerTimes: async () => ({}),
+    },
+    '../lib/notifications': {
+      requestNotificationPermission: async () => false,
+      rescheduleIfNeeded: async () => {},
+      getNotificationHealth: async () => ({ status: 'ok' }),
+      isNotificationSchedulingSupported: () => false,
+    },
+    '../lib/audio': {
+      playAdhan: async () => {},
+      stopAdhan: async () => {},
+      getAdhanReciter: () => ({ name: 'Mishary', location: 'Kuwait' }),
+      addAdhanPlaybackListener: () => () => {},
+    },
+    '../components/AdhanReciterModal': runtimeGenericModule,
+    '../lib/quranLanguageState': { useQuranLanguage: () => ({ edition: 'en', flag: '🇬🇧' }) },
+    '../lib/timeFormat': { formatTime: () => '09:00' },
+    '../components/QuranLanguageModal': runtimeGenericModule,
+    '../lib/quranLanguages': { getLocalizedTranslatorName: () => 'Translator' },
+    '../lib/surahNamesLocalized': { getLocalizedLanguageName: (name) => name },
+    '../lib/db': { clearWomenData: async () => {}, clearCycleHistory: async () => {} },
+    '../components/WomenPinModal': runtimeGenericModule,
+    '../components/GeometricPattern': runtimeGenericModule,
+    '../lib/quranPreloader': {
+      useQuranPreload: () => ({
+        progress: { cached: 0, total: 114 },
+        startPreload() {},
+        pausePreload() {},
+      }),
+      verifyQuranPreloadCache: async () => ({}),
+      repairQuranPreloadCache: async () => {},
+    },
+    '../../app.json': { __esModule: true, default: { expo: { version: '1.1.94' } } },
+    '../lib/diagnostic': {
+      isDiagnosticModeEnabled: () => false,
+      DIAGNOSTIC_BUILD_ID: 'test',
+      GatedDiagnosticModal: createRuntimeGenericComponent,
+      usePressProbe: () => ({}),
+      wrapControlPress: (_id, _kind, _screen, onPress) => onPress,
+      recordControlState() {},
+      noteControlPress() {},
+      beginLanguageSwitch: () => ({
+        markResolved() {},
+        markRejected() {},
+        markNoRestart() {},
+        markReloadRequested() {},
+      }),
+      recordConsistencyCheck() {},
+    },
+    '../components/ui/AppText': runtimeGenericModule,
+    '@expo/vector-icons': runtimeGenericModule,
+    'expo-linear-gradient': runtimeGenericModule,
+    '../components/Hairline': runtimeGenericModule,
+    __fallback: runtimeGenericModule,
+  };
+  const settingsModule = compileSettingsForRuntime(
+    path.resolve('src/screens/SettingsScreen.tsx'),
+    runtimeModules,
+  );
+  const originalSetTimeout = globalThis.setTimeout;
+  const originalClearTimeout = globalThis.clearTimeout;
+  globalThis.setTimeout = (callback, delay) => {
+    const timer = { callback, delay, cleared: false };
+    timers.push(timer);
+    return timer;
+  };
+  globalThis.clearTimeout = (timer) => {
+    if (timer) timer.cleared = true;
+  };
+  try {
+    const tree = settingsModule.default({ onClose() {} });
+    let languageRow;
+    walkRuntimeTree(tree, (node) => {
+      if (
+        node.type === 'Pressable' &&
+        node.props?.accessibilityRole === 'radio' &&
+        String(node.props?.accessibilityLabel).includes('Urdu')
+      ) {
+        languageRow = node;
+      }
+    });
+    assert.ok(languageRow, 'real SettingsScreen must render the Urdu language row');
+    languageRow.props.onPress();
+    assert.deepEqual(events, [['persist-start', 'ur']]);
+    assert.ok(
+      timers.some((timer) => timer.delay === 10_000 && !timer.cleared),
+      'real SettingsScreen must arm the bounded language persistence timeout',
+    );
+    assert.equal(
+      timers.some((timer) => timer.delay === 300),
+      false,
+      'real SettingsScreen must not schedule reload before persistence resolves',
+    );
+    resolveLanguage();
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.deepEqual(events, [
+      ['persist-start', 'ur'],
+      ['persist-done', 'ur'],
+      ['prepare', 'ur'],
+    ]);
+    const reloadTimer = timers.find((timer) => timer.delay === 300 && !timer.cleared);
+    assert.ok(reloadTimer, 'real SettingsScreen must schedule reload after persistence and direction preparation');
+    reloadTimer.callback();
+    assert.deepEqual(events, [
+      ['persist-start', 'ur'],
+      ['persist-done', 'ur'],
+      ['prepare', 'ur'],
+      ['reload', 'App language changed'],
+    ]);
+  } finally {
+    globalThis.setTimeout = originalSetTimeout;
+    globalThis.clearTimeout = originalClearTimeout;
+  }
+}
+
+await assertRealSettingsLanguagePersistence();
+console.log('  [ok] executed SettingsScreen persistence -> direction preparation -> reload contract');
+console.log('ALL STAGE-2 QA TESTS PASSED SUCCESSFULLY!');

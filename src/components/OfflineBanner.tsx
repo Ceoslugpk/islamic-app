@@ -3,7 +3,6 @@ import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { offlineUsingSavedData } from '../lib/strings';
-import { t } from '../lib/i18n';
 import { AppText } from './ui/AppText';
 
 export function OfflineBanner({ topInset = 0 }: { topInset?: number }) {
@@ -24,7 +23,7 @@ export function OfflineBanner({ topInset = 0 }: { topInset?: number }) {
     >
       <View style={styles.content}>
         <Ionicons name="cloud-offline-outline" size={14} color={colors.accent} style={styles.icon} />
-        <AppText variant="caption" style={styles.text}>{t(offlineUsingSavedData)}</AppText>
+        <AppText variant="caption" style={styles.text}>{offlineUsingSavedData()}</AppText>
       </View>
     </View>
   );

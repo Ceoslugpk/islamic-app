@@ -1,248 +1,178 @@
 /**
- * Storage budget & eviction tests — self-contained (no TS imports).
- * Mirrors and validates selectKeysToEvict / budget enforcement logic
- * from src/lib/db.native.ts and src/lib/db.ts.
+ * Storage-budget regression tests.
+ *
+ * This suite transpiles and executes the production db.native.ts and db.ts
+ * modules. It intentionally contains no copied eviction/accounting helpers and
+ * no source-text assertions as behavioural evidence.
  */
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
+import ts from 'typescript';
 
-console.log('=== STORAGE BUDGET & EVICTION TEST SUITE ===\n');
+const ROOT = path.resolve(import.meta.dirname, '..');
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'islamic-storage-budget-'));
+const sqlite = new DatabaseSync(':memory:');
+const sqlLog = [];
+let failCounterWrites = false;
 
-const PROTECTED_QURAN_CACHE_KEYS = new Set([
-  'bookmarks',
-  'notes',
-  'playlists',
-  'audio-queue',
-  'audio-settings',
-  'last-read',
-  'recent-audio',
-  'quran-audio-downloads',
-  'surah-list',
-]);
+const sqliteAdapter = {
+  openDatabaseSync() {
+    return {
+      withTransactionSync(callback) {
+        sqlite.exec('BEGIN');
+        try {
+          const value = callback();
+          sqlite.exec('COMMIT');
+          return value;
+        } catch (error) {
+          sqlite.exec('ROLLBACK');
+          throw error;
+        }
+      },
+      execSync(sql) {
+        sqlLog.push(['execSync', sql]);
+        sqlite.exec(sql);
+      },
+      runSync(sql, ...args) {
+        sqlLog.push(['runSync', sql, args]);
+        if (failCounterWrites && sql.includes('quran_cache') && (args[0] === 'quran_cache_bytes' || sql.includes("'quran_cache_bytes'"))) {
+          throw new Error('simulated counter failure');
+        }
+        return sqlite.prepare(sql).run(...args);
+      },
+      getFirstSync(sql, ...args) {
+        sqlLog.push(['getFirstSync', sql, args]);
+        return sqlite.prepare(sql).get(...args) || null;
+      },
+      getAllSync(sql, ...args) {
+        sqlLog.push(['getAllSync', sql, args]);
+        return sqlite.prepare(sql).all(...args);
+      },
+    };
+  },
+};
 
-const DISPOSABLE_KEY_PREFIXES = [
-  'surah:',
-  'ayah:',
-  'mosque:',
-  'tafsir:',
-  'tafsir-',
-  'tajweed:',
-  'hadith:',
-];
+fs.writeFileSync(path.join(TMP, 'sqliteAdapter.mjs'), 'export default globalThis.__sqliteAdapter;');
+globalThis.__sqliteAdapter = sqliteAdapter;
+const dbNativeSource = fs.readFileSync(path.join(ROOT, 'src/lib/db.native.ts'), 'utf8')
+  .replace("import * as SQLite from 'expo-sqlite';", "import SQLite from './sqliteAdapter.mjs';");
+fs.writeFileSync(path.join(TMP, 'db.native.mjs'), ts.transpileModule(dbNativeSource, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText);
+const db = await import(path.join(TMP, 'db.native.mjs'));
 
-function isDisposableQuranCacheKey(key, protectedKeys) {
-  if (protectedKeys) {
-    if (protectedKeys instanceof Set && protectedKeys.has(key)) return false;
-    if (Array.isArray(protectedKeys) && protectedKeys.includes(key)) return false;
+const trueBytes = () => sqlite.prepare(
+  "SELECT COALESCE(SUM(length(payload)), 0) AS total FROM quran_cache WHERE key != 'quran_cache_bytes'"
+).get().total;
+const counter = () => {
+  const row = sqlite.prepare("SELECT payload FROM quran_cache WHERE key = 'quran_cache_bytes'").get();
+  return row ? JSON.parse(row.payload) : null;
+};
+const fullScan = /SELECT\s+COALESCE\s*\(\s*SUM\s*\(\s*length\s*\(\s*payload\s*\)\s*\)/i;
+const reset = () => {
+  try {
+    sqlite.exec('DELETE FROM quran_cache');
+  } catch {
+    db.saveQuranCache('surah:storage:init', {});
+    sqlite.exec('DELETE FROM quran_cache');
   }
-  if (PROTECTED_QURAN_CACHE_KEYS.has(key)) return false;
-  if (key.startsWith('prayer-') || key.startsWith('prayer:')) return false;
-  if (key.startsWith('surah-last-ayah:')) return false;
+  db.reconcileQuranCacheBudget();
+  sqlLog.length = 0;
+};
 
-  if (protectedKeys !== undefined) {
-    return true;
-  }
+console.log('=== STORAGE BUDGET: REAL PRODUCTION MODULES ===');
 
-  return DISPOSABLE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix));
-}
+// The eviction selector is the real exported production selector.
+assert.deepEqual(
+  db.selectKeysToEvict([
+    { key: 'surah:1:en', size: 100, cached_at: 1 },
+    { key: 'surah:2:en', size: 100, cached_at: 2 },
+    { key: 'bookmarks', size: 100, cached_at: 3 },
+  ], 150),
+  ['surah:1:en', 'surah:2:en'],
+  'Production selector evicts oldest disposable rows and preserves protected rows'
+);
+assert.ok(db.PROTECTED_QURAN_CACHE_KEYS.has('quran_cache_bytes'));
+assert.ok(db.PROTECTED_QURAN_CACHE_KEYS.has('quran-reading-marker'));
+assert.ok(db.PROTECTED_QURAN_CACHE_KEYS.has('quran-last-reading'));
+console.log('  ✓ Production eviction selector preserves protected data');
 
-function selectKeysToEvict(rows, budgetBytes, protectedKeys) {
-  const getRowSize = (r) => {
-    if (typeof r.size === 'number') return r.size;
-    if (typeof r.payload === 'string') return r.payload.length;
-    return 0;
+// Normal save path: exact counter plus no SUM scan.
+reset();
+for (let i = 0; i < 10; i++) db.saveQuranCache(`surah:storage:${i}`, { text: `row-${i}` });
+assert.equal(counter().totalBytes, trueBytes());
+assert.equal(counter().rowCount, 10);
+sqlLog.length = 0;
+db.saveQuranCache('surah:storage:normal', { text: 'normal save' });
+assert.equal(sqlLog.filter(([, sql]) => typeof sql === 'string' && fullScan.test(sql)).length, 0, 'Normal save must not run a full SUM scan');
+console.log(`  ✓ Normal inserts: measured=${trueBytes()} bytes, counter=${counter().totalBytes}, scans=0`);
+
+// Missing counter is rebuilt before the new payload is accounted.
+sqlite.prepare("DELETE FROM quran_cache WHERE key = 'quran_cache_bytes'").run();
+db.saveQuranCache('surah:storage:missing-counter', { text: 'new row' });
+assert.equal(counter().totalBytes, trueBytes(), 'Missing counter must not double count');
+console.log(`  ✓ Missing counter recovery: measured=${trueBytes()} bytes, counter=${counter().totalBytes}`);
+
+// Count-preserving UPDATE is invisible to COUNT(*) but explicit enforcement must SUM and repair it.
+const beforeUpdate = trueBytes();
+sqlite.prepare("UPDATE quran_cache SET payload = ? WHERE key = ?").run('x'.repeat(2000), 'surah:storage:0');
+const afterUpdate = trueBytes();
+assert.notEqual(db.getQuranCacheTotalBytes(), afterUpdate, 'Cheap counter path must expose the pre-reconcile stale value');
+sqlLog.length = 0;
+db.enforceQuranCacheBudget(50 * 1024 * 1024);
+assert.ok(sqlLog.some(([, sql]) => typeof sql === 'string' && fullScan.test(sql)), 'Explicit enforcement must observe count-preserving drift');
+assert.equal(db.getQuranCacheTotalBytes(), afterUpdate);
+console.log(`  ✓ Count-preserving UPDATE: before=${beforeUpdate}, real=${afterUpdate}, healed=${db.getQuranCacheTotalBytes()}`);
+
+// Count-changing writes are detected by the independent COUNT(*) query.
+sqlite.prepare("INSERT INTO quran_cache (key, payload, cached_at) VALUES (?, ?, ?)").run('surah:storage:oob', 'out-of-band', Date.now());
+assert.equal(db.getQuranCacheTotalBytes(), trueBytes(), 'Count-changing insert must trigger reconciliation');
+sqlite.prepare("DELETE FROM quran_cache WHERE key = ?").run('surah:storage:oob');
+assert.equal(db.getQuranCacheTotalBytes(), trueBytes(), 'Count-changing delete must trigger reconciliation');
+console.log(`  ✓ Count-changing out-of-band writes: measured=${trueBytes()}, counter=${db.getQuranCacheTotalBytes()}`);
+
+// Production transaction rollback: a counter failure cannot leave an orphan payload row.
+const beforeAbort = trueBytes();
+const counterBeforeAbort = counter();
+failCounterWrites = true;
+assert.equal(db.saveQuranCache('surah:storage:aborted', { text: 'must roll back' }), false);
+failCounterWrites = false;
+assert.equal(trueBytes(), beforeAbort);
+assert.deepEqual(counter(), counterBeforeAbort);
+console.log(`  ✓ Interrupted production save rolled back: measured=${trueBytes()}, counter=${counter().totalBytes}`);
+
+// Bounded periodic reconciliation is observed after the production write interval.
+reset();
+for (let i = 0; i < 32; i++) db.saveQuranCache(`surah:storage:periodic:${i}`, { text: String(i) });
+assert.ok(sqlLog.some(([, sql]) => typeof sql === 'string' && fullScan.test(sql)), 'Periodic write bound must eventually reconcile');
+assert.equal(counter().totalBytes, trueBytes());
+console.log('  ✓ Periodic reconciliation observed after bounded production writes');
+
+// Execute the web facade too; its accounting path is real, not a source parity assertion.
+const webMap = new Map();
+globalThis.__webMap = webMap;
+fs.writeFileSync(path.join(TMP, 'webStorage.mjs'), `
+  const map = globalThis.__webMap;
+  export const webKV = {
+    get: (key) => map.get(key) ?? null,
+    set: (key, value) => map.set(key, value),
+    delete: (key) => map.delete(key),
+    getAll: (prefix) => [...map.entries()].filter(([key]) => key.startsWith(prefix)).map(([key, value]) => ({ key, value })),
   };
+`);
+const dbWebSource = fs.readFileSync(path.join(ROOT, 'src/lib/db.ts'), 'utf8')
+  .replace("import { webKV } from './webStorage';", "import { webKV } from './webStorage.mjs';");
+fs.writeFileSync(path.join(TMP, 'db.web.mjs'), ts.transpileModule(dbWebSource, {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText);
+const web = await import(path.join(TMP, 'db.web.mjs'));
+web.saveQuranCache('surah:web:1', { text: 'web' });
+assert.equal(web.getQuranCacheTotalBytes(), JSON.stringify({ text: 'web' }).length);
+web.deleteQuranCache('surah:web:1');
+assert.equal(web.getQuranCacheTotalBytes(), 0);
+console.log('  ✓ Web facade accounting and deletion execute successfully');
 
-  let totalBytes = rows.reduce((acc, r) => acc + getRowSize(r), 0);
-  if (totalBytes <= budgetBytes) {
-    return [];
-  }
-
-  const sorted = [...rows].sort((a, b) => (a.cached_at ?? 0) - (b.cached_at ?? 0));
-
-  const evicted = [];
-  for (const row of sorted) {
-    if (totalBytes <= budgetBytes) {
-      break;
-    }
-    if (!isDisposableQuranCacheKey(row.key, protectedKeys)) {
-      continue;
-    }
-    evicted.push(row.key);
-    totalBytes -= getRowSize(row);
-  }
-
-  return evicted;
-}
-
-// 1. Evicts oldest first (by cached_at ascending)
-{
-  const rows = [
-    { key: 'surah:1:en', size: 100, cached_at: 1000 },
-    { key: 'surah:2:en', size: 100, cached_at: 2000 },
-    { key: 'surah:3:en', size: 100, cached_at: 3000 },
-  ];
-  // Total = 300, budget = 150 -> needs to evict at least 150 -> surah:1 (100) + surah:2 (100)
-  const evicted = selectKeysToEvict(rows, 150);
-  assert.deepEqual(evicted, ['surah:1:en', 'surah:2:en']);
-  console.log('  ✓ Test 1 passed: Evicts oldest rows first');
-}
-
-// 2. Never evicts protected user-data keys
-{
-  const rows = [
-    { key: 'bookmarks', size: 200, cached_at: 500 },
-    { key: 'notes', size: 200, cached_at: 600 },
-    { key: 'playlists', size: 200, cached_at: 700 },
-    { key: 'audio-queue', size: 200, cached_at: 800 },
-    { key: 'audio-settings', size: 200, cached_at: 900 },
-    { key: 'last-read', size: 200, cached_at: 1000 },
-    { key: 'recent-audio', size: 200, cached_at: 1100 },
-    { key: 'quran-audio-downloads', size: 200, cached_at: 1200 },
-    { key: 'surah-list', size: 200, cached_at: 1300 },
-    { key: 'prayer-cache-key', size: 200, cached_at: 1400 },
-    { key: 'prayer:2026-10-09:loc:1:shafi', size: 200, cached_at: 1500 },
-    { key: 'surah-last-ayah:1', size: 200, cached_at: 1600 },
-    { key: 'surah:1:en', size: 500, cached_at: 2000 },
-  ];
-  // Total = 2900, budget = 2500 -> needs to evict 400.
-  // Oldest items are all protected, so surah:1:en should be selected even though it has newest cached_at.
-  const evicted = selectKeysToEvict(rows, 2500);
-  assert.deepEqual(evicted, ['surah:1:en']);
-  for (const k of [
-    'bookmarks', 'notes', 'playlists', 'audio-queue', 'audio-settings',
-    'last-read', 'recent-audio', 'quran-audio-downloads', 'surah-list',
-    'prayer-cache-key', 'prayer:2026-10-09:loc:1:shafi', 'surah-last-ayah:1'
-  ]) {
-    assert.ok(!evicted.includes(k), `Protected key "${k}" must never be evicted`);
-  }
-  console.log('  ✓ Test 2 passed: Never evicts protected user-data keys');
-}
-
-// 3. Stops when under budget
-{
-  const rows = [
-    { key: 'surah:1:en', size: 50, cached_at: 100 },
-    { key: 'surah:2:en', size: 50, cached_at: 200 },
-    { key: 'surah:3:en', size: 50, cached_at: 300 },
-    { key: 'surah:4:en', size: 50, cached_at: 400 },
-  ];
-  // Total = 200, budget = 120 -> evicting surah:1:en (50) and surah:2:en (50) reduces total to 100 <= 120
-  const evicted = selectKeysToEvict(rows, 120);
-  assert.deepEqual(evicted, ['surah:1:en', 'surah:2:en']);
-  console.log('  ✓ Test 3 passed: Stops immediately once under budget');
-}
-
-// 4. Handles a single oversized row
-{
-  const rows = [
-    { key: 'surah:huge', size: 5000, cached_at: 100 },
-  ];
-  const evicted = selectKeysToEvict(rows, 1000);
-  assert.deepEqual(evicted, ['surah:huge']);
-
-  // If the single oversized row is protected, it must NOT be evicted:
-  const protectedRows = [
-    { key: 'bookmarks', size: 5000, cached_at: 100 },
-  ];
-  const evictedProtected = selectKeysToEvict(protectedRows, 1000);
-  assert.deepEqual(evictedProtected, []);
-  console.log('  ✓ Test 4 passed: Handles oversized disposable row (deletes it) and oversized protected row (preserves it)');
-}
-
-// 5. In-memory fake cache simulating enforceQuranCacheBudget
-{
-  const fakeCache = new Map();
-  // Insert protected items
-  fakeCache.set('bookmarks', { payload: JSON.stringify([{ id: 1 }]), cached_at: 100 });
-  fakeCache.set('notes', { payload: JSON.stringify([{ id: 'n1' }]), cached_at: 200 });
-  fakeCache.set('surah-list', { payload: JSON.stringify(new Array(114).fill(0)), cached_at: 300 });
-
-  // Insert disposable items
-  for (let i = 1; i <= 20; i++) {
-    fakeCache.set(`surah:${i}:en`, { payload: 'X'.repeat(500), cached_at: 1000 + i });
-  }
-
-  function simulateEnforceBudget(cache, budget) {
-    const items = [];
-    for (const [key, val] of cache.entries()) {
-      items.push({ key, size: val.payload.length, cached_at: val.cached_at });
-    }
-    const toEvict = selectKeysToEvict(items, budget);
-    for (const key of toEvict) {
-      cache.delete(key);
-    }
-    return toEvict;
-  }
-
-  // Pre-eviction size: 3 protected + 20 * 500 = 10000+ bytes
-  const budget = 3000;
-  const evicted = simulateEnforceBudget(fakeCache, budget);
-  assert.ok(evicted.length > 0, 'Some items must be evicted');
-  assert.ok(fakeCache.has('bookmarks'), 'Bookmarks preserved');
-  assert.ok(fakeCache.has('notes'), 'Notes preserved');
-  assert.ok(fakeCache.has('surah-list'), 'Surah list preserved');
-
-  let remainingSize = 0;
-  for (const val of fakeCache.values()) remainingSize += val.payload.length;
-  assert.ok(remainingSize <= budget, `Remaining size (${remainingSize}) must be <= budget (${budget})`);
-  console.log('  ✓ Test 5 passed: In-memory fake quran_cache enforces budget and preserves user tables');
-}
-
-// 6. Preloader bounds translations to active language group
-{
-  const quranPreloader = fs.readFileSync('src/lib/quranPreloader.ts', 'utf8');
-
-  assert.ok(quranPreloader.includes('getSelectedLanguageEditions'), 'Preloader must have getSelectedLanguageEditions helper');
-  assert.ok(!quranPreloader.includes('prioritizedEditions = [\n    editionIdentifier,\n    ...allEditions.filter'), 'Preloader must not prioritize all 49 editions in startQuranPreload');
-  assert.ok(quranPreloader.includes('consecutiveSaveFailures'), 'Preloader must track consecutiveSaveFailures');
-  assert.ok(quranPreloader.includes('MAX_CONSECUTIVE_SAVE_FAILURES'), 'Preloader must define MAX_CONSECUTIVE_SAVE_FAILURES');
-  console.log('  ✓ Test 6 passed: Preloader bounds preload to selected language editions and tracks consecutiveSaveFailures');
-}
-
-// 7. AsyncStorage pruning verification in quranProgress and hadithApi
-{
-  const quranProgress = fs.readFileSync('src/lib/quranProgress.ts', 'utf8');
-  assert.ok(quranProgress.includes('MAX_PROGRESS_HISTORY_DAYS = 90'), 'quranProgress must define 90-day history cap');
-  assert.ok(quranProgress.includes('pruneOldQuranDailyProgress'), 'quranProgress must implement pruneOldQuranDailyProgress');
-
-  const hadithApi = fs.readFileSync('src/lib/hadithApi.ts', 'utf8');
-  assert.ok(hadithApi.includes('MAX_HADITH_LIST_PAGES_PER_BOOK = 20'), 'hadithApi must cap list pages at 20 per book');
-  assert.ok(hadithApi.includes('MAX_HADITH_SINGLE_CACHE = 200'), 'hadithApi must cap single cache at 200');
-  assert.ok(hadithApi.includes('pruneHadithCaches'), 'hadithApi must implement pruneHadithCaches');
-  console.log('  ✓ Test 7 passed: AsyncStorage 90-day progress pruning and hadith cache caps verified');
-}
-
-// 8. Backup import transaction safety
-{
-  const backup = fs.readFileSync('src/lib/backup.ts', 'utf8');
-  assert.ok(backup.includes('cannot rollback'), 'backup.ts handles cannot rollback transaction errors');
-  assert.ok(backup.includes('SQLITE_FULL'), 'backup.ts handles and re-throws SQLITE_FULL errors');
-  console.log('  ✓ Test 8 passed: Backup import handles cannot rollback and surfaces storage full');
-}
-
-// 9. Native and Web DB facade symmetry
-{
-  const dbNative = fs.readFileSync('src/lib/db.native.ts', 'utf8');
-  const dbWeb = fs.readFileSync('src/lib/db.ts', 'utf8');
-
-  for (const fn of [
-    'QURAN_CACHE_BUDGET_BYTES',
-    'PROTECTED_QURAN_CACHE_KEYS',
-    'DISPOSABLE_KEY_PREFIXES',
-    'isDisposableQuranCacheKey',
-    'selectKeysToEvict',
-    'enforceQuranCacheBudget',
-    'reconcileQuranCacheBudget',
-    'saveQuranCache',
-    'savePrayerCache',
-  ]) {
-    assert.ok(dbNative.includes(fn), `db.native.ts must export/contain ${fn}`);
-    assert.ok(dbWeb.includes(fn), `db.ts must export/contain ${fn}`);
-  }
-  console.log('  ✓ Test 9 passed: db.native.ts and db.ts maintain strict facade export symmetry');
-}
-
-console.log('\n========================================================');
-console.log('ALL STORAGE BUDGET & EVICTION TESTS PASSED SUCCESSFULLY!');
-console.log('========================================================\n');
+console.log('=== STORAGE BUDGET: ALL REAL-MODULE TESTS PASSED ===');

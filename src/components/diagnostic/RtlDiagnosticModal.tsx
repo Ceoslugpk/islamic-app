@@ -462,6 +462,8 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
     matrix: false,
     network: false,
     errors: false,
+    appState: false,
+    controls: false,
   });
 
   const toggleSection = useCallback((key: string) => {
@@ -515,6 +517,9 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
   const themeMatrix = report.themeMatrix;
   const network = report.network;
   const errors = report.errors;
+  const errorGroups = errors.groups || [];
+  const appState = report.appState;
+  const controlCoverage = report.coverage.interactiveControls;
 
   const visitedSet = useMemo(() => {
     const set = new Set<string>();
@@ -1518,6 +1523,39 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
               </AppText>
             </>
           )}
+
+          {/* U3: interactive control coverage - instrumented (rendered) vs actually pressed.
+              A report can no longer look complete while a screen's controls were never
+              wired or never touched. */}
+          <View style={[styles.divider, { backgroundColor: tokens.cardBorder }]} />
+          <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+            <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+              {diagT('Interactive Controls (rendered)')}:
+            </AppText>
+            <AppText testID="diag-controls-instrumented" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+              {controlCoverage ? controlCoverage.totalInstrumented : 0}
+            </AppText>
+          </View>
+          <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+            <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+              {diagT('Controls actually pressed')}:
+            </AppText>
+            <AppText testID="diag-controls-pressed" variant="caption" style={[styles.infoValue, { color: tokens.accent, fontWeight: '700', textAlign: isScreenRTL ? 'left' : 'right' }]}>
+              {controlCoverage ? controlCoverage.totalPressed : 0} ({controlCoverage ? controlCoverage.coveragePercent : 0}%)
+            </AppText>
+          </View>
+          <AppText testID="diag-controls-unpressed" variant="caption" tone="faint" style={[styles.screenListText, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+            {diagT('Screens with controls never pressed')}:{' '}
+            {controlCoverage && controlCoverage.unpressedScreensWithInstrumentedControls.length > 0
+              ? controlCoverage.unpressedScreensWithInstrumentedControls.join(', ')
+              : diagT('none')}
+          </AppText>
+          {appState && appState.controls.stuckDisabledCount > 0 && (
+            <AppText testID="diag-controls-stuck" variant="caption" style={[{ color: tokens.danger, fontWeight: '600', fontSize: 11 }, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+              {diagT('Stuck disabled controls')} ({appState.controls.stuckDisabledCount}):{' '}
+              {appState.controls.stuckControlIds.join(', ')}
+            </AppText>
+          )}
         </PremiumCard>
 
         {/* Collapsible Interactions Section */}
@@ -1761,6 +1799,22 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
               {diagT('No runtime errors recorded.')}
             </AppText>
           ) : expandedSections.errors ? (
+            <>
+              {/* What the user could act on: class, screen, control id, how many times. */}
+              {errorGroups.map((group, i) => (
+                <AppText
+                  key={`error-group-${i}`}
+                  testID={`diag-error-group-${i}`}
+                  variant="caption"
+                  style={{ fontSize: 10, marginTop: 4, textAlign: isScreenRTL ? 'right' : 'left' }}
+                >
+                  {group.errorClass} · {group.screen}
+                  {group.controlId ? ` · ${group.controlId}` : ''} · x{group.occurrences} · {group.source}
+                </AppText>
+              ))}
+            </>
+          ) : null}
+          {errors.items.length > 0 && expandedSections.errors ? (
             errors.items.slice(0, MAX_DISPLAYED_ROWS).map((err, i) => (
               <View key={`error-${i}`} style={{ marginTop: 4, paddingTop: 4, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: tokens.cardBorder }}>
                 <AppText variant="caption" style={[{ color: tokens.danger, fontWeight: '600', fontSize: 11, textAlign: isScreenRTL ? 'right' : 'left' }]}>
@@ -1772,6 +1826,114 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
               </View>
             ))
           ) : null}
+        </PremiumCard>
+
+        {/* App state domain: language-switch attempts, language/direction verdict, stuck controls */}
+        <PremiumCard
+          style={[styles.card, getCardShadow(mode)]}
+          padded
+          testID="diag-app-state-card"
+        >
+          <TouchableOpacity
+            testID="diag-toggle-app-state-btn"
+            onPress={() => toggleSection('appState')}
+            style={styles.collapsibleHeaderBtn}
+            accessibilityRole="button"
+            accessibilityLabel={diagT('App State')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <AppText
+              variant="eyebrow"
+              highlight
+              style={[styles.sectionLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+            >
+              {diagT('App State')} ({(appState ? appState.defects.length : 0)} {diagT('defects')})
+            </AppText>
+            <Ionicons
+              name={expandedSections.appState ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={tokens.textMuted}
+            />
+          </TouchableOpacity>
+
+          <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+            <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+              {diagT('Language / direction')}:
+            </AppText>
+            <AppText
+              testID="diag-consistency-verdict"
+              variant="caption"
+              style={[styles.infoValue, { color: appState && appState.consistency.agrees ? tokens.accent : tokens.danger, fontWeight: '700', textAlign: isScreenRTL ? 'left' : 'right' }]}
+            >
+              {appState ? appState.consistency.verdict : '—'}
+            </AppText>
+          </View>
+          {appState && !appState.consistency.agrees && (
+            <AppText variant="caption" tone="faint" style={{ fontSize: 10, textAlign: isScreenRTL ? 'right' : 'left' }}>
+              {appState.consistency.persistedLanguage} → {appState.consistency.resolvedLanguage} ·{' '}
+              {diagT('app')}={appState.consistency.appDirection} · I18nManager.isRTL=
+              {String(appState.consistency.i18nManagerIsRTL)} · {appState.consistency.reason}
+            </AppText>
+          )}
+
+          <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+            <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+              {diagT('Language switch attempts')}:
+            </AppText>
+            <AppText testID="diag-switch-attempts" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+              {appState ? appState.languageSwitchAttempts.total : 0}
+              {appState && appState.languageSwitchAttempts.pendingCount > 0
+                ? ` (+${appState.languageSwitchAttempts.pendingCount} ${diagT('pending')})`
+                : ''}
+            </AppText>
+          </View>
+
+          {expandedSections.appState && (
+            <>
+              <View style={[styles.divider, { backgroundColor: tokens.cardBorder }]} />
+              {(appState ? appState.languageSwitchAttempts.items.slice(-MAX_DISPLAYED_ROWS) : []).map((attempt, i) => (
+                <AppText
+                  key={`switch-${attempt.id}`}
+                  testID={`diag-switch-attempt-${i}`}
+                  variant="caption"
+                  style={{ fontSize: 10, textAlign: isScreenRTL ? 'right' : 'left' }}
+                >
+                  {attempt.fromLanguage} → {attempt.toLanguage} · {attempt.status} · {attempt.elapsedMs}ms ·{' '}
+                  {attempt.reloadRequested ? diagT('reload requested') : diagT('no reload')}
+                  {attempt.reason ? ` · ${attempt.reason}` : ''}
+                </AppText>
+              ))}
+
+              <View style={[styles.divider, { backgroundColor: tokens.cardBorder }]} />
+              <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+                <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                  {diagT('Controls instrumented / pressed / disabled')}:
+                </AppText>
+                <AppText testID="diag-controls-tally" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                  {appState
+                    ? `${appState.controls.totalInstrumented} / ${appState.controls.pressedCount} / ${appState.controls.totalDisabled}`
+                    : '0 / 0 / 0'}
+                </AppText>
+              </View>
+
+              {(appState ? appState.defects : []).map((defect, i) => (
+                <View key={`appstate-defect-${i}`} style={{ marginTop: 4, paddingTop: 4, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: tokens.cardBorder }}>
+                  <AppText testID={`diag-appstate-defect-${i}`} variant="caption" style={[{ color: tokens.danger, fontWeight: '600', fontSize: 11, textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                    [{defect.defectClass}] {defect.screen}
+                    {defect.controlId ? ` · ${defect.controlId}` : ''}
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={{ fontSize: 10, textAlign: isScreenRTL ? 'right' : 'left' }}>
+                    {defect.reason}
+                  </AppText>
+                </View>
+              ))}
+              {(!appState || appState.defects.length === 0) && (
+                <AppText variant="caption" tone="faint" style={{ fontSize: 11, textAlign: isScreenRTL ? 'right' : 'left' }}>
+                  {diagT('No app-state defects recorded.')}
+                </AppText>
+              )}
+            </>
+          )}
         </PremiumCard>
 
         {/* Bottom Actions card */}

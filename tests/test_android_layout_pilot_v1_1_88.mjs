@@ -564,6 +564,8 @@ const mockDiagI18n = {
 const mockI18n = {
   default: { language: 'en' },
   isRTL: () => false,
+  isRtlLanguage: (lang) => /^(ur|ar|ps)\b/i.test(String(lang || '').trim()),
+  getBootLanguage: () => 'en',
   t: (k) => k,
 };
 

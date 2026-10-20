@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
-import i18n, { isRTL as isI18nRTL } from '../i18n';
+import i18n, { isRTL as isI18nRTL, isRtlLanguage, getBootLanguage } from '../i18n';
 import {
   getDiagnosticShareTitle,
   getDiagnosticShareDialogTitle,
@@ -25,7 +25,7 @@ import {
   DIAGNOSTIC_VERSION_CODE,
   isDiagnosticModeEnabled,
 } from './diagnosticConfig';
-import { useDiagScreen, useDiagParent, getGlobalActiveScreen } from './diagnosticScreenContext';
+import { useDiagScreen, useDiagParent, getGlobalActiveScreen, setDiagErrorRecorder } from './diagnosticScreenContext';
 import { KNOWN_SCREENS } from './diagnosticScreens';
 
 export type DiagnosticTargetId =
@@ -193,6 +193,10 @@ export interface DiagnosticMeasurementReportItem {
   nativeIsRTL: boolean;
 }
 
+/**
+ * Probe-derived defect classes. `defects.countsByClass` and `defects.totalDefects`
+ * count ONLY these, so the established probe-defect accounting is unchanged.
+ */
 export type DefectClass =
   | 'textTruncated'
   | 'subTouchTarget'
@@ -202,6 +206,9 @@ export type DefectClass =
   | 'rtlTextAlignMismatch'
   | 'rtlWritingDirectionSuspicious'
   | 'fixedHeightTextRisk';
+
+/** App-state defect classes; reported in the `appState` section with their own counts. */
+export type AppStateDefectClass = 'languageDirectionMismatch' | 'stuckDisabledControl';
 
 export interface DefectItem {
   flag: boolean | null;
@@ -304,6 +311,41 @@ export interface DiagnosticNetworkSummary {
   slowestCall: { host: string; path: string; method: string; durationMs: number } | null;
 }
 
+export interface DiagnosticControlRecord {
+  id: string;
+  screen: string;
+  kind: string;
+  disabled: boolean;
+  disabledSince: number | null;
+  pressCount: number;
+  lastPressedAt: string | null;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+/** A control id is composed as `<screen>::<kind>::<readable-name>`, e.g. `Settings::row::font-size`. */
+export interface DiagnosticControlPressOptions {
+  onPress?: (e?: any) => void;
+  disabled?: boolean;
+  testID?: string;
+  targetScreen?: string;
+}
+
+export interface DiagnosticControlProbeResult {
+  onPress?: (e?: any) => void;
+  testID?: string;
+  controlId: string;
+}
+
+export interface DiagnosticActionableErrorGroup {
+  errorClass: string;
+  screen: string;
+  controlId: string | null;
+  source: string;
+  occurrences: number;
+  lastSeen: string;
+}
+
 export interface DiagnosticErrorRecord {
   timestamp: string;
   errorName: string;
@@ -311,6 +353,24 @@ export interface DiagnosticErrorRecord {
   screen: string;
   language: string;
   theme: 'light' | 'dark';
+  controlId?: string;
+  source?: 'render' | 'press' | 'async' | 'global';
+  treeStillRenders?: boolean;
+  occurrences?: number;
+}
+
+export interface DiagnosticControlCoverage {
+  totalInstrumented: number;
+  totalPressed: number;
+  unpressedCount: number;
+  coveragePercent: number;
+  byScreen: Record<string, {
+    instrumented: string[];
+    pressed: string[];
+    unpressed: string[];
+  }>;
+  unpressedScreensWithInstrumentedControls: string[];
+  unpressedControlIds: string[];
 }
 
 export interface DiagnosticCoverage {
@@ -319,6 +379,66 @@ export interface DiagnosticCoverage {
   visitedCount: number;
   unvisitedCount: number;
   coveragePercent: number;
+  interactiveControls?: DiagnosticControlCoverage;
+  unpressedScreensWithInstrumentedControls?: string[];
+}
+
+export interface DiagnosticLanguageSwitchAttempt {
+  id: string;
+  fromLanguage: string;
+  toLanguage: string;
+  requestedAt: string;
+  reloadRequested: boolean;
+  status: 'pending' | 'resolved' | 'rejected' | 'noRestartObserved';
+  elapsedMs: number;
+  completedAt?: string;
+  errorClass?: string;
+  reason?: string;
+}
+
+/** Handle returned by beginLanguageSwitch(); all methods are no-ops when the gate is off. */
+export interface DiagnosticLanguageSwitchHandle {
+  id: string;
+  markReloadRequested(): void;
+  markResolved(): void;
+  markRejected(err?: any): void;
+  markNoRestart(): void;
+}
+
+export interface DiagnosticConsistencyVerdict {
+  persistedLanguage: string;
+  resolvedLanguage: string;
+  i18nManagerIsRTL: boolean;
+  appDirection: 'rtl' | 'ltr';
+  agrees: boolean;
+  verdict: 'consistent' | 'languageDirectionMismatch';
+  reason?: string;
+  lastChecked: string;
+}
+
+export interface DiagnosticAppStateDefect {
+  defectClass: AppStateDefectClass;
+  screen: string;
+  controlId?: string;
+  reason: string;
+}
+
+export interface DiagnosticAppState {
+  consistency: DiagnosticConsistencyVerdict;
+  languageSwitchAttempts: {
+    total: number;
+    pendingCount: number;
+    items: DiagnosticLanguageSwitchAttempt[];
+  };
+  controls: {
+    totalInstrumented: number;
+    pressedCount: number;
+    totalDisabled: number;
+    stuckDisabledCount: number;
+    stuckControlIds: string[];
+  };
+  defects: DiagnosticAppStateDefect[];
+  defectsByClass: Record<AppStateDefectClass, number>;
 }
 
 export interface AutoProbeRecord {
@@ -414,7 +534,11 @@ export interface DiagnosticReport {
     total: number;
     items: DiagnosticErrorRecord[];
     itemsTruncated?: boolean;
+    /** Grouped, de-duplicated view: error class + screen + control id + how many times. */
+    groups: DiagnosticActionableErrorGroup[];
   };
+  /** App-state domain: language-switch attempts, language/direction verdict, stuck controls. */
+  appState: DiagnosticAppState;
   coverage: DiagnosticCoverage;
   summary: {
     probeCount: number;
@@ -423,6 +547,10 @@ export interface DiagnosticReport {
     networkRequestCount: number;
     errorCount: number;
     visitedScreensCount: number;
+    instrumentedControls: number;
+    pressedControls: number;
+    stuckDisabledControls: number;
+    appStateDefects: number;
   };
   screensVisited: string[];
   screensUnvisited: string[];
@@ -707,6 +835,10 @@ export function resetDiagnosticProbes(): void {
   interactionLedger = [];
   networkLedger = [];
   errorLedger = [];
+  controlRegistry.clear();
+  languageSwitchAttempts = [];
+  switchAttemptSeq = 0;
+  lastConsistencyVerdict = null;
   probeLanguageHistory.clear();
   probeThemeHistory.clear();
   activeLanguageMode = null;
@@ -733,6 +865,330 @@ export function getNetworkLedger(): DiagnosticNetworkRecord[] {
 
 export function getErrorLedger(): DiagnosticErrorRecord[] {
   return [...errorLedger];
+}
+
+// ---------------------------------------------------------------------------
+// U1/U4: screen-level interactive control registry, app-state and stuck controls
+// ---------------------------------------------------------------------------
+
+export const MAX_CONTROL_RECORDS = 250;
+/** A control disabled longer than this, with nothing in flight to explain it, is a defect. */
+export const STUCK_DISABLED_THRESHOLD_MS = 4000;
+export const MAX_LANGUAGE_SWITCH_ATTEMPTS = 25;
+
+const controlRegistry = new Map<string, DiagnosticControlRecord>();
+let languageSwitchAttempts: DiagnosticLanguageSwitchAttempt[] = [];
+let switchAttemptSeq = 0;
+let lastConsistencyVerdict: DiagnosticConsistencyVerdict | null = null;
+
+export function getControlRegistry(): DiagnosticControlRecord[] {
+  return [...controlRegistry.values()];
+}
+
+/**
+ * Records an interactive control and its current disabled state. Safe to call during
+ * render (it is idempotent per id); a no-op when the gate is off.
+ */
+export function recordControlState(
+  controlId: string,
+  kind: string,
+  screen: string,
+  disabled: boolean
+): void {
+  if (!isDiagnosticModeEnabled() || !controlId) return;
+  const nowMs = Date.now();
+  const iso = new Date(nowMs).toISOString();
+  const nextDisabled = Boolean(disabled);
+  const existing = controlRegistry.get(controlId);
+  if (!existing) {
+    if (controlRegistry.size >= MAX_CONTROL_RECORDS) {
+      // Evict the least recently seen control that was never pressed.
+      let victim: DiagnosticControlRecord | null = null;
+      for (const rec of controlRegistry.values()) {
+        if (rec.pressCount > 0) continue;
+        if (!victim || rec.lastSeen < victim.lastSeen) victim = rec;
+      }
+      if (victim) controlRegistry.delete(victim.id);
+    }
+    controlRegistry.set(controlId, {
+      id: controlId,
+      screen: screen || 'App',
+      kind,
+      disabled: nextDisabled,
+      disabledSince: nextDisabled ? nowMs : null,
+      pressCount: 0,
+      lastPressedAt: null,
+      firstSeen: iso,
+      lastSeen: iso,
+    });
+    return;
+  }
+  existing.lastSeen = iso;
+  if (screen) existing.screen = screen;
+  if (existing.disabled !== nextDisabled) {
+    existing.disabled = nextDisabled;
+    existing.disabledSince = nextDisabled ? nowMs : null;
+  }
+}
+
+export function recordControlPress(controlId: string): void {
+  if (!isDiagnosticModeEnabled()) return;
+  const rec = controlRegistry.get(controlId);
+  if (!rec) return;
+  rec.pressCount += 1;
+  rec.lastPressedAt = new Date().toISOString();
+}
+
+/**
+ * Controls left disabled past STUCK_DISABLED_THRESHOLD_MS with no in-flight operation
+ * to explain it. This is the reported case: the language rows and the Appearance
+ * `Segmented` are gated on `isSwitchingLanguage`, so a flag that is never cleared
+ * leaves them dead for the whole session with no error shown anywhere.
+ */
+export function evaluateStuckControls(nowMs: number = Date.now()): DiagnosticControlRecord[] {
+  if (!isDiagnosticModeEnabled()) return [];
+  // ponytail: one global exemption for a fresh switch; per-screen if a second lock appears.
+  const hasFreshPendingSwitch = languageSwitchAttempts.some(
+    (a) => a.status === 'pending' && nowMs - Date.parse(a.requestedAt) <= STUCK_DISABLED_THRESHOLD_MS
+  );
+  if (hasFreshPendingSwitch) return [];
+  return getControlRegistry().filter(
+    (c) => c.disabled && c.disabledSince !== null && nowMs - c.disabledSince >= STUCK_DISABLED_THRESHOLD_MS
+  );
+}
+
+const NOOP_SWITCH_HANDLE: DiagnosticLanguageSwitchHandle = {
+  id: '',
+  markReloadRequested() {},
+  markResolved() {},
+  markRejected() {},
+  markNoRestart() {},
+};
+
+export function beginLanguageSwitch(
+  fromLanguage: string,
+  toLanguage: string,
+  options?: { reloadRequested?: boolean }
+): DiagnosticLanguageSwitchHandle {
+  if (!isDiagnosticModeEnabled()) return NOOP_SWITCH_HANDLE;
+
+  const requestedAtMs = Date.now();
+  if (languageSwitchAttempts.length >= MAX_LANGUAGE_SWITCH_ATTEMPTS) {
+    languageSwitchAttempts.shift();
+  }
+  const attempt: DiagnosticLanguageSwitchAttempt = {
+    id: `switch-${++switchAttemptSeq}`,
+    fromLanguage,
+    toLanguage,
+    requestedAt: new Date(requestedAtMs).toISOString(),
+    reloadRequested: Boolean(options?.reloadRequested),
+    status: 'pending',
+    elapsedMs: 0,
+  };
+  languageSwitchAttempts.push(attempt);
+
+  const finish = (
+    status: DiagnosticLanguageSwitchAttempt['status'],
+    errorClass?: string
+  ): void => {
+    // First outcome wins: a later fail-safe must not rewrite a recorded rejection.
+    if (attempt.status !== 'pending') return;
+    const nowMs = Date.now();
+    attempt.status = status;
+    attempt.elapsedMs = Math.max(0, nowMs - requestedAtMs);
+    attempt.completedAt = new Date(nowMs).toISOString();
+    if (errorClass) attempt.errorClass = errorClass;
+    notifyListeners();
+  };
+
+  return {
+    id: attempt.id,
+    markReloadRequested() {
+      attempt.reloadRequested = true;
+    },
+    markResolved() {
+      finish('resolved');
+    },
+    markRejected(err?: any) {
+      finish('rejected', sanitizeErrorMessageClass(err).errorName);
+    },
+    markNoRestart() {
+      finish('noRestartObserved');
+    },
+  };
+}
+
+export function getLanguageSwitchAttempts(): DiagnosticLanguageSwitchAttempt[] {
+  return languageSwitchAttempts.map((a) => ({ ...a }));
+}
+
+/**
+ * Language/direction consistency verdict. A half-switched app (language says one
+ * direction, the native layout says the other) is exactly how taps end up on the
+ * wrong targets, so disagreement is recorded as a `languageDirectionMismatch` defect.
+ */
+/**
+ * Direction the resolved language implies. Uses the app's own i18n helper; the fallback
+ * (same RTL script set) is reachable only in a harness that stubs i18n without it, so a
+ * partial environment can never crash the report builder.
+ */
+function rtlExpectationFor(language: string): boolean {
+  try {
+    if (typeof isRtlLanguage === 'function') return Boolean(isRtlLanguage(language));
+  } catch {
+    /* fall through to the local classification */
+  }
+  return /^(ur|ar|ps|ckb|fa|ug|he|sd|dv)\b/i.test(String(language || '').trim().toLowerCase());
+}
+
+export function evaluateConsistency(nowMs: number = Date.now()): DiagnosticConsistencyVerdict {
+  let persistedLanguage = '';
+  try {
+    persistedLanguage = getBootLanguage() || '';
+  } catch {
+    persistedLanguage = '';
+  }
+  const resolvedLanguage = getActiveLanguage();
+  const i18nManagerIsRTL = Boolean(I18nManager.isRTL);
+  const expectedRtl = rtlExpectationFor(resolvedLanguage);
+  let appIsRtl = expectedRtl;
+  try {
+    appIsRtl = isI18nRTL();
+  } catch {
+    appIsRtl = expectedRtl;
+  }
+
+  const reasons: string[] = [];
+  if (i18nManagerIsRTL !== expectedRtl) {
+    reasons.push(
+      `native I18nManager.isRTL=${i18nManagerIsRTL} but language "${resolvedLanguage}" expects ${expectedRtl ? 'rtl' : 'ltr'}`
+    );
+  }
+  if (appIsRtl !== expectedRtl) {
+    reasons.push(`app direction helper reports ${appIsRtl ? 'rtl' : 'ltr'} for language "${resolvedLanguage}"`);
+  }
+  if (persistedLanguage && persistedLanguage !== resolvedLanguage) {
+    reasons.push(`persisted language "${persistedLanguage}" differs from resolved "${resolvedLanguage}"`);
+  }
+
+  const agrees = reasons.length === 0;
+  return {
+    persistedLanguage,
+    resolvedLanguage,
+    i18nManagerIsRTL,
+    appDirection: appIsRtl ? 'rtl' : 'ltr',
+    agrees,
+    verdict: agrees ? 'consistent' : 'languageDirectionMismatch',
+    reason: agrees ? undefined : reasons.join('; '),
+    lastChecked: new Date(nowMs).toISOString(),
+  };
+}
+
+/** Records the current verdict (boot, and after every language switch). Gate-gated. */
+export function recordConsistencyCheck(nowMs: number = Date.now()): DiagnosticConsistencyVerdict | null {
+  const verdict = evaluateConsistency(nowMs);
+  if (!isDiagnosticModeEnabled()) return null;
+  lastConsistencyVerdict = verdict;
+  notifyListeners();
+  return verdict;
+}
+
+export function getLastConsistencyVerdict(): DiagnosticConsistencyVerdict | null {
+  return lastConsistencyVerdict ? { ...lastConsistencyVerdict } : null;
+}
+
+export function buildDiagnosticAppState(nowMs: number = Date.now()): DiagnosticAppState {
+  const consistency = lastConsistencyVerdict || evaluateConsistency(nowMs);
+
+  const items: DiagnosticLanguageSwitchAttempt[] = languageSwitchAttempts.map((a) => {
+    const copy: DiagnosticLanguageSwitchAttempt = { ...a };
+    const age = nowMs - Date.parse(copy.requestedAt);
+    // A switch that is still pending long after it was requested never restarted the
+    // app: saying "pending" forever would hide exactly the bug the user reported.
+    if (copy.status === 'pending' && age > STUCK_DISABLED_THRESHOLD_MS) {
+      copy.status = 'noRestartObserved';
+      copy.elapsedMs = age;
+      copy.reason = `still pending after ${age} ms: no restart observed and the switch never completed`;
+    }
+    return copy;
+  });
+
+  const controls = getControlRegistry();
+  const stuck = evaluateStuckControls(nowMs);
+
+  const defects: DiagnosticAppStateDefect[] = [];
+  if (consistency.verdict === 'languageDirectionMismatch') {
+    defects.push({
+      defectClass: 'languageDirectionMismatch',
+      screen: getGlobalActiveScreen() || 'App',
+      reason: consistency.reason || 'language and layout direction disagree',
+    });
+  }
+  for (const rec of stuck) {
+    defects.push({
+      defectClass: 'stuckDisabledControl',
+      screen: rec.screen,
+      controlId: rec.id,
+      reason: `disabled for ${nowMs - (rec.disabledSince || nowMs)} ms with no in-flight operation to explain it`,
+    });
+  }
+
+  const defectsByClass: Record<AppStateDefectClass, number> = {
+    languageDirectionMismatch: 0,
+    stuckDisabledControl: 0,
+  };
+  for (const defect of defects) defectsByClass[defect.defectClass]++;
+
+  return {
+    consistency,
+    languageSwitchAttempts: {
+      total: items.length,
+      pendingCount: items.filter((a) => a.status === 'pending').length,
+      items,
+    },
+    controls: {
+      totalInstrumented: controls.length,
+      pressedCount: controls.filter((c) => c.pressCount > 0).length,
+      totalDisabled: controls.filter((c) => c.disabled).length,
+      stuckDisabledCount: stuck.length,
+      stuckControlIds: stuck.map((c) => c.id).sort(),
+    },
+    defects,
+    defectsByClass,
+  };
+}
+
+/** Instrumented vs actually pressed, per screen. A report cannot look complete while
+ *  a whole screen's controls were never wired or never touched. */
+export function buildInteractiveControlCoverage(): DiagnosticControlCoverage {
+  const byScreen: Record<string, { instrumented: string[]; pressed: string[]; unpressed: string[] }> = {};
+  const records = getControlRegistry();
+  let pressedCount = 0;
+  for (const rec of records) {
+    if (!byScreen[rec.screen]) byScreen[rec.screen] = { instrumented: [], pressed: [], unpressed: [] };
+    byScreen[rec.screen].instrumented.push(rec.id);
+    if (rec.pressCount > 0) {
+      byScreen[rec.screen].pressed.push(rec.id);
+      pressedCount++;
+    } else {
+      byScreen[rec.screen].unpressed.push(rec.id);
+    }
+  }
+  for (const screen of Object.keys(byScreen)) {
+    byScreen[screen].instrumented.sort();
+    byScreen[screen].pressed.sort();
+    byScreen[screen].unpressed.sort();
+  }
+  const unpressedScreens = Object.keys(byScreen).filter((s) => byScreen[s].pressed.length === 0).sort();
+  return {
+    totalInstrumented: records.length,
+    totalPressed: pressedCount,
+    unpressedCount: records.length - pressedCount,
+    coveragePercent: records.length > 0 ? Math.round((pressedCount / records.length) * 100) : 0,
+    byScreen,
+    unpressedScreensWithInstrumentedControls: unpressedScreens,
+    unpressedControlIds: records.filter((r) => r.pressCount === 0).map((r) => r.id).sort(),
+  };
 }
 
 export function recordInteraction(record: DiagnosticInteractionRecord): void {
@@ -893,17 +1349,51 @@ export function sanitizeErrorMessageClass(err: any): { errorName: string; messag
   return { errorName, messageClass: `${errorName}: ${klass}` };
 }
 
+export interface DiagnosticErrorContext {
+  screen?: string;
+  controlId?: string;
+  source?: 'render' | 'press' | 'async' | 'global';
+  treeStillRenders?: boolean;
+}
+
+/** Repeat recordings of the same failure inside this window are one entry with a count. */
+const ERROR_DEDUPE_WINDOW_MS = 1000;
+
 export function recordDiagnosticRuntimeError(
   err: any,
-  screenOverride?: string
-): void {
-  if (!isDiagnosticModeEnabled()) return;
+  context?: string | DiagnosticErrorContext
+): DiagnosticErrorRecord | null {
+  if (!isDiagnosticModeEnabled()) return null;
 
+  const ctx: DiagnosticErrorContext = typeof context === 'string' ? { screen: context } : (context || {});
   const { errorName, messageClass } = sanitizeErrorMessageClass(err);
-  const screen = screenOverride || getGlobalActiveScreen() || 'App';
+  const screen = ctx.screen || getGlobalActiveScreen() || 'App';
   const language = getActiveLanguage();
   const theme = getActiveTheme();
+  const source = ctx.source || 'global';
   const timestamp = new Date().toISOString();
+  const nowMs = Date.now();
+
+  // Several hosts report the same failure through more than one hook (global JS error
+  // handler, promise-rejection hook). Collapse them into one entry with an honest count
+  // instead of inflating the ledger with duplicates.
+  for (let i = errorLedger.length - 1; i >= 0; i--) {
+    const prev = errorLedger[i];
+    if (nowMs - Date.parse(prev.timestamp) > ERROR_DEDUPE_WINDOW_MS) break;
+    if (
+      prev.errorName === errorName &&
+      prev.messageClass === messageClass &&
+      prev.screen === screen &&
+      (prev.controlId || null) === (ctx.controlId || null) &&
+      (prev.source || 'global') === source
+    ) {
+      prev.occurrences = (prev.occurrences || 1) + 1;
+      prev.timestamp = timestamp;
+      if (ctx.treeStillRenders !== undefined) prev.treeStillRenders = ctx.treeStillRenders;
+      notifyListeners();
+      return prev;
+    }
+  }
 
   const record: DiagnosticErrorRecord = {
     timestamp,
@@ -912,6 +1402,10 @@ export function recordDiagnosticRuntimeError(
     screen,
     language,
     theme,
+    source,
+    occurrences: 1,
+    ...(ctx.controlId ? { controlId: ctx.controlId } : {}),
+    ...(ctx.treeStillRenders !== undefined ? { treeStillRenders: ctx.treeStillRenders } : {}),
   };
 
   if (errorLedger.length >= MAX_ERROR_ENTRIES) {
@@ -919,6 +1413,33 @@ export function recordDiagnosticRuntimeError(
   }
   errorLedger.push(record);
   notifyListeners();
+  return record;
+}
+
+/**
+ * Groups the error ledger into what the user could act on: error class, screen,
+ * the control that triggered it (if any), and how many times it happened.
+ */
+export function groupActionableErrors(): DiagnosticActionableErrorGroup[] {
+  const groups = new Map<string, DiagnosticActionableErrorGroup>();
+  for (const entry of errorLedger) {
+    const key = [entry.errorName, entry.messageClass, entry.screen, entry.controlId || '', entry.source || 'global'].join('|');
+    const existing = groups.get(key);
+    if (existing) {
+      existing.occurrences += entry.occurrences || 1;
+      existing.lastSeen = entry.timestamp;
+      continue;
+    }
+    groups.set(key, {
+      errorClass: entry.messageClass,
+      screen: entry.screen,
+      controlId: entry.controlId || null,
+      source: entry.source || 'global',
+      occurrences: entry.occurrences || 1,
+      lastSeen: entry.timestamp,
+    });
+  }
+  return [...groups.values()].sort((a, b) => b.occurrences - a.occurrences);
 }
 
 let originalErrorHandler: any = null;
@@ -943,6 +1464,65 @@ export function installDiagnosticErrorInterceptor(): void {
   }
 }
 
+let unhandledRejectionListener: ((event: any) => void) | null = null;
+let unhandledRejectionProcessHandler: ((reason: any) => void) | null = null;
+let isRejectionInterceptionInstalled = false;
+
+/**
+ * Unhandled promise rejections. Three hooks, because the host differs:
+ *  - `globalThis.addEventListener('unhandledrejection')`  (web / JS runtimes that expose EventTarget)
+ *  - `globalThis.onunhandledrejection`                   (React Native's promise rejection tracking consults this)
+ *  - `process.on('unhandledRejection')`                  (Node-hosted off-device runs: test rigs, desktop shells)
+ * Only coarse classes are recorded (never the rejection text), and only under the gate.
+ */
+export function installDiagnosticUnhandledRejectionInterceptor(): void {
+  if (!isDiagnosticModeEnabled()) return;
+  if (isRejectionInterceptionInstalled) return;
+  const globalObj = globalThis as any;
+
+  unhandledRejectionListener = (event: any) => {
+    if (!isDiagnosticModeEnabled()) return;
+    const reason = event && typeof event === 'object' && 'reason' in event ? event.reason : event;
+    recordDiagnosticRuntimeError(reason, { screen: getGlobalActiveScreen(), source: 'async' });
+  };
+
+  if (typeof globalObj.addEventListener === 'function') {
+    globalObj.addEventListener('unhandledrejection', unhandledRejectionListener);
+  }
+  if (typeof globalObj.onunhandledrejection === 'undefined' || globalObj.onunhandledrejection === null) {
+    globalObj.onunhandledrejection = unhandledRejectionListener;
+  }
+  if (typeof process !== 'undefined' && typeof (process as any).on === 'function') {
+    unhandledRejectionProcessHandler = (reason: any) => {
+      if (!isDiagnosticModeEnabled()) return;
+      recordDiagnosticRuntimeError(reason, { screen: getGlobalActiveScreen(), source: 'async' });
+    };
+    (process as any).on('unhandledRejection', unhandledRejectionProcessHandler);
+  }
+
+  isRejectionInterceptionInstalled = true;
+}
+
+export function restoreDiagnosticUnhandledRejectionInterceptor(): void {
+  const globalObj = globalThis as any;
+  if (unhandledRejectionListener && typeof globalObj.removeEventListener === 'function') {
+    globalObj.removeEventListener('unhandledrejection', unhandledRejectionListener);
+  }
+  if (unhandledRejectionListener && globalObj.onunhandledrejection === unhandledRejectionListener) {
+    globalObj.onunhandledrejection = null;
+  }
+  if (unhandledRejectionProcessHandler && typeof process !== 'undefined' && typeof (process as any).removeListener === 'function') {
+    (process as any).removeListener('unhandledRejection', unhandledRejectionProcessHandler);
+  }
+  unhandledRejectionListener = null;
+  unhandledRejectionProcessHandler = null;
+  isRejectionInterceptionInstalled = false;
+}
+
+export function isUnhandledRejectionInterceptorInstalled(): boolean {
+  return isRejectionInterceptionInstalled;
+}
+
 export function restoreDiagnosticErrorInterceptor(): void {
   const globalObj = globalThis as any;
   if (isErrorInterceptionInstalled && globalObj.ErrorUtils && originalErrorHandler) {
@@ -950,6 +1530,46 @@ export function restoreDiagnosticErrorInterceptor(): void {
     originalErrorHandler = null;
     isErrorInterceptionInstalled = false;
   }
+}
+
+export function isErrorInterceptorInstalled(): boolean {
+  return isErrorInterceptionInstalled;
+}
+
+/** Records a runtime error thrown by an error boundary that caught a render failure. */
+export function recordRenderError(err: any, screenName: string, treeStillRenders: boolean): void {
+  recordDiagnosticRuntimeError(err, {
+    screen: screenName,
+    source: 'render',
+    treeStillRenders,
+  });
+}
+
+let appStateObserverInstalled = false;
+
+/**
+ * Boot-time diagnostic observer, installed ONCE under the two-factor gate:
+ *  - global JS error handler (ErrorUtils) and unhandled promise rejections -> error ledger
+ *  - network ledger interceptor
+ *  - error-boundary recorder registration
+ *  - boot language/direction consistency verdict
+ * Gate off: this function returns on its first line - zero listeners, zero timers.
+ */
+export function installDiagnosticAppStateObserver(): void {
+  if (!isDiagnosticModeEnabled()) return;
+  if (appStateObserverInstalled) return;
+  appStateObserverInstalled = true;
+  setDiagErrorRecorder((err: any, options?: any) =>
+    recordDiagnosticRuntimeError(err, options || {})
+  );
+  installDiagnosticErrorInterceptor();
+  installDiagnosticUnhandledRejectionInterceptor();
+  installDiagnosticNetworkInterceptor();
+  recordConsistencyCheck();
+}
+
+export function isDiagnosticAppStateObserverInstalled(): boolean {
+  return appStateObserverInstalled;
 }
 
 export function deriveProbeDefects(
@@ -1312,6 +1932,10 @@ export function resetDiagnosticMeasurements(): void {
   interactionLedger = [];
   networkLedger = [];
   errorLedger = [];
+  controlRegistry.clear();
+  languageSwitchAttempts = [];
+  switchAttemptSeq = 0;
+  lastConsistencyVerdict = null;
   probeLanguageHistory.clear();
   probeThemeHistory.clear();
   activeLanguageMode = null;
@@ -2287,6 +2911,236 @@ export function markProbeStale(id: string, reason: string = 'Element unmounted')
   notifyListeners();
 }
 
+/**
+ * Shared press execution for every instrumented control (shared primitives via
+ * useAutoProbe and screen-level controls via usePressProbe / wrapControlPress).
+ * Records the interaction, records press-handler failures into the error ledger with
+ * the control id, and re-throws so the caller's behaviour is unchanged.
+ */
+interface ProbedPressSpec {
+  id: string;
+  kind: string;
+  screen: string;
+  disabled?: boolean;
+  targetScreen?: string;
+  handlerPresent?: boolean;
+}
+
+interface ProbedPressSnapshot {
+  preScreen: string;
+  mutationSeq: number;
+  probeCount: number;
+  errorCount: number;
+}
+
+function snapshotBeforePress(screen: string): ProbedPressSnapshot {
+  return {
+    preScreen: screen && screen !== 'App' ? screen : getGlobalActiveScreen() || 'App',
+    mutationSeq: getProbeMutationSeq(),
+    probeCount: Object.keys(probeStore).length,
+    errorCount: errorLedger.length,
+  };
+}
+
+function classifySyncEffect(
+  record: DiagnosticInteractionRecord,
+  snapshot: ProbedPressSnapshot,
+  targetScreen?: string
+): void {
+  const currentGlobal = getGlobalActiveScreen();
+  const syncTarget = targetScreen || (currentGlobal !== snapshot.preScreen ? currentGlobal : undefined);
+  if (syncTarget && syncTarget !== snapshot.preScreen) {
+    record.effect = 'navigated';
+    record.targetScreen = syncTarget;
+  } else if (getProbeMutationSeq() !== snapshot.mutationSeq || Object.keys(probeStore).length !== snapshot.probeCount) {
+    record.effect = 'stateChanged';
+  }
+}
+
+/** The delayed re-check that upgrades a press to navigated/stateChanged/error once its effects land. */
+function scheduleEffectRecheck(record: DiagnosticInteractionRecord, snapshot: ProbedPressSnapshot, spec: ProbedPressSpec): void {
+  const timerId = setTimeout(() => {
+    globalPendingTimers.delete(timerId);
+    const postScreen = getGlobalActiveScreen();
+    const postTarget = spec.targetScreen || (postScreen !== snapshot.preScreen ? postScreen : undefined);
+    const probeAfter = probeStore[spec.id];
+    const isProbeStale = probeAfter?.staleAfterUnmount === true;
+
+    if (postTarget && postTarget !== snapshot.preScreen) {
+      record.effect = 'navigated';
+      record.targetScreen = postTarget;
+    } else if (errorLedger.length > snapshot.errorCount) {
+      record.effect = 'error';
+    } else if (
+      getProbeMutationSeq() !== snapshot.mutationSeq ||
+      Object.keys(probeStore).length !== snapshot.probeCount ||
+      isProbeStale
+    ) {
+      record.effect = 'stateChanged';
+    } else if (!record.effect || record.effect === 'noObservableEffect') {
+      record.effect = 'noObservableEffect';
+    }
+    notifyListeners();
+  }, 250);
+  globalPendingTimers.add(timerId);
+}
+
+function newInteractionRecord(spec: ProbedPressSpec, snapshot: ProbedPressSnapshot): DiagnosticInteractionRecord {
+  return {
+    id: spec.id,
+    screen: snapshot.preScreen,
+    language: getActiveLanguage(),
+    theme: getActiveTheme(),
+    timestamp: new Date().toISOString(),
+    handlerPresent: spec.handlerPresent !== false,
+    disabled: Boolean(spec.disabled),
+    effect: 'noObservableEffect',
+    ...(spec.targetScreen ? { targetScreen: spec.targetScreen } : {}),
+  };
+}
+
+/**
+ * Shared press execution for instrumented controls. Records the interaction, records
+ * press-handler failures into the error ledger with the control id, and re-throws so the
+ * caller's behaviour is unchanged.
+ */
+function executeProbedPress(spec: ProbedPressSpec & { onPress: (e?: any) => void }): void {
+  const snapshot = snapshotBeforePress(spec.screen);
+  const record = newInteractionRecord(spec, snapshot);
+
+  if (spec.disabled) {
+    recordInteraction(record);
+    return;
+  }
+
+  try {
+    spec.onPress();
+  } catch (err: any) {
+    record.effect = 'error';
+    record.errorName = err?.name || 'Error';
+    recordInteraction(record);
+    // Discoverable next to the interaction record: same control id, screen, language, theme.
+    recordDiagnosticRuntimeError(err, { screen: snapshot.preScreen, controlId: spec.id, source: 'press' });
+    throw err;
+  }
+
+  classifySyncEffect(record, snapshot, spec.targetScreen);
+  recordInteraction(record);
+  scheduleEffectRecheck(record, snapshot, spec);
+}
+
+/**
+ * Records a press on a control whose handler is invoked by the caller itself (used where
+ * the handler must be the element's own onPress reference). Never calls the handler, never
+ * throws, and is a no-op when the gate is off.
+ */
+export function noteControlPress(
+  controlId: string,
+  kind: string,
+  screen: string,
+  options?: { disabled?: boolean; targetScreen?: string }
+): void {
+  if (!isDiagnosticModeEnabled() || !controlId) return;
+  const spec: ProbedPressSpec = {
+    id: controlId,
+    kind,
+    screen,
+    disabled: options?.disabled,
+    targetScreen: options?.targetScreen,
+  };
+  recordControlState(controlId, kind, screen, Boolean(options?.disabled));
+  if (!options?.disabled) recordControlPress(controlId);
+  const snapshot = snapshotBeforePress(screen);
+  const record = newInteractionRecord(spec, snapshot);
+  if (options?.disabled) {
+    recordInteraction(record);
+    return;
+  }
+  classifySyncEffect(record, snapshot, spec.targetScreen);
+  recordInteraction(record);
+  scheduleEffectRecheck(record, snapshot, spec);
+}
+
+/**
+ * Screen-level press probe for controls built inline (modals, mapped rows, segmented
+ * options) where a hook cannot be called per item. When the gate is OFF the handler
+ * reference passed in is returned UNCHANGED - no wrapper, no registry write, no timer.
+ */
+export function wrapControlPress(
+  controlId: string,
+  kind: string,
+  screen: string,
+  onPress?: (e?: any) => void,
+  options?: { disabled?: boolean; targetScreen?: string }
+): ((e?: any) => void) | undefined {
+  if (!isDiagnosticModeEnabled() || !onPress) return onPress;
+  return (e?: any) => {
+    if (!isDiagnosticModeEnabled() || !controlId) {
+      onPress(e);
+      return;
+    }
+    if (!options?.disabled) recordControlPress(controlId);
+    executeProbedPress({
+      id: controlId,
+      kind,
+      screen,
+      onPress,
+      disabled: options?.disabled,
+      targetScreen: options?.targetScreen,
+    });
+  };
+}
+
+/**
+ * Screen-level press probe. Gated exactly like useAutoProbe:
+ * - gate OFF: returns the caller's own onPress (identical reference) and testID, and
+ *   writes nothing to any registry - zero listeners, zero timers, zero props changed.
+ * - gate ON: registers the control (id = `<screen>::<kind>::<name>`, e.g.
+ *   `Settings::row::font-size`), tracks its disabled state for stuck-control detection,
+ *   records the press and re-throws handler errors into the error ledger.
+ */
+export function usePressProbe(
+  id: string,
+  kind: string,
+  options?: DiagnosticControlPressOptions
+): DiagnosticControlProbeResult {
+  const isEnabled = isDiagnosticModeEnabled();
+  const contextScreen = useDiagScreen();
+  const screen = contextScreen || getGlobalActiveScreen() || 'App';
+  const controlId = isEnabled && id ? `${screen}::${kind}::${id}` : '';
+
+  if (isEnabled && controlId) {
+    recordControlState(controlId, kind, screen, Boolean(options?.disabled));
+  }
+
+  const wrappedOnPress = useCallback(
+    (e?: any) => {
+      if (!options?.onPress) return;
+      if (!options?.disabled) recordControlPress(controlId);
+      executeProbedPress({
+        id: controlId,
+        kind,
+        screen,
+        onPress: options.onPress,
+        disabled: options.disabled,
+        targetScreen: options.targetScreen,
+      });
+    },
+    [controlId, kind, screen, options]
+  );
+
+  if (!isEnabled) {
+    // Hard gate: the caller's exact props, no wrapper of any kind.
+    return { onPress: options?.onPress, testID: options?.testID, controlId: '' };
+  }
+
+  return {
+    onPress: options?.onPress ? wrappedOnPress : undefined,
+    testID: options?.testID,
+    controlId,
+  };
+}
+
 export interface AutoProbeOptions {
   isInteractive?: boolean;
   isText?: boolean;
@@ -2395,85 +3249,18 @@ export function useAutoProbe(
       options?.onPress?.(e);
       return;
     }
-
-    const preScreen = (screen && screen !== 'App') ? screen : (getGlobalActiveScreen() || 'App');
-    const preMutationSeq = getProbeMutationSeq();
-    const preProbesCount = Object.keys(probeStore).length;
-    const preErrorCount = errorLedger.length;
-    const activeLang = getActiveLanguage();
-    const activeTheme = getActiveTheme();
-    const timestamp = new Date().toISOString();
-
-    const initialTarget = options?.targetScreen;
-
-    const record: DiagnosticInteractionRecord = {
+    // One shared press path for shared primitives and screen-level controls, so a
+    // handler failure lands in the error ledger with the probe id for both.
+    executeProbedPress({
       id: stableId,
-      screen: preScreen,
-      language: activeLang,
-      theme: activeTheme,
-      timestamp,
+      kind: effectiveKind,
+      screen,
+      onPress: (ev?: any) => options?.onPress?.(ev ?? e),
+      disabled: Boolean(options?.disabled) || !options?.onPress,
+      targetScreen: options?.targetScreen,
       handlerPresent: typeof options?.onPress === 'function',
-      disabled: Boolean(options?.disabled),
-      effect: 'noObservableEffect',
-      ...(initialTarget ? { targetScreen: initialTarget } : {}),
-    };
-
-    if (options?.disabled || !options?.onPress) {
-      record.effect = 'noObservableEffect';
-      recordInteraction(record);
-      return;
-    }
-
-    let threw = false;
-    try {
-      options.onPress(e);
-    } catch (err: any) {
-      threw = true;
-      record.effect = 'error';
-      record.errorName = err?.name || 'Error';
-      recordInteraction(record);
-      throw err;
-    }
-
-    if (!threw) {
-      const currentGlobal = getGlobalActiveScreen();
-      const syncTarget = options?.targetScreen || (currentGlobal !== preScreen ? currentGlobal : undefined);
-
-      if (syncTarget && syncTarget !== preScreen) {
-        record.effect = 'navigated';
-        record.targetScreen = syncTarget;
-      } else if (getProbeMutationSeq() !== preMutationSeq || Object.keys(probeStore).length !== preProbesCount) {
-        record.effect = 'stateChanged';
-      }
-
-      recordInteraction(record);
-
-      const timerId = setTimeout(() => {
-        globalPendingTimers.delete(timerId);
-        const postScreen = getGlobalActiveScreen();
-        const postTarget = options?.targetScreen || (postScreen !== preScreen ? postScreen : undefined);
-        const probeAfter = probeStore[stableId];
-        const isProbeStale = probeAfter?.staleAfterUnmount === true;
-
-        if (postTarget && postTarget !== preScreen) {
-          record.effect = 'navigated';
-          record.targetScreen = postTarget;
-        } else if (errorLedger.length > preErrorCount) {
-          record.effect = 'error';
-        } else if (
-          getProbeMutationSeq() !== preMutationSeq ||
-          Object.keys(probeStore).length !== preProbesCount ||
-          isProbeStale
-        ) {
-          record.effect = 'stateChanged';
-        } else if (!record.effect || record.effect === 'noObservableEffect') {
-          record.effect = 'noObservableEffect';
-        }
-        notifyListeners();
-      }, 250);
-      globalPendingTimers.add(timerId);
-    }
-  }, [isEnabled, stableId, screen, options]);
+    });
+  }, [isEnabled, stableId, effectiveKind, screen, options]);
 
   // Strict hard gate check: return immediately if gate is off
   if (!isEnabled) {
@@ -2749,12 +3536,20 @@ export function buildDiagnosticReport(): DiagnosticReport {
   // Screen coverage
   const visitedScreens = Array.from(new Set(rawProbes.map((p) => p.screen))).filter(Boolean).sort();
   const unvisitedScreens = KNOWN_SCREENS.filter((s) => !visitedScreens.includes(s)).sort();
+
+  // U3: instrumented vs actually pressed controls, so a report cannot look complete
+  // while a whole screen's controls were never wired or never touched.
+  const appState = buildDiagnosticAppState();
+  const interactiveControls = buildInteractiveControlCoverage();
+
   const coverage: DiagnosticCoverage = {
     screensVisited: visitedScreens,
     screensUnvisited: unvisitedScreens,
     visitedCount: visitedScreens.length,
     unvisitedCount: unvisitedScreens.length,
     coveragePercent: KNOWN_SCREENS.length > 0 ? Math.round((visitedScreens.length / KNOWN_SCREENS.length) * 100) : 0,
+    interactiveControls,
+    unpressedScreensWithInstrumentedControls: interactiveControls.unpressedScreensWithInstrumentedControls,
   };
 
   return {
@@ -2800,7 +3595,9 @@ export function buildDiagnosticReport(): DiagnosticReport {
     errors: {
       total: errorLedger.length,
       items: [...errorLedger],
+      groups: groupActionableErrors(),
     },
+    appState,
     coverage,
     summary: {
       probeCount: probes.length,
@@ -2809,6 +3606,10 @@ export function buildDiagnosticReport(): DiagnosticReport {
       networkRequestCount: networkLedger.length,
       errorCount: errorLedger.length,
       visitedScreensCount: visitedScreens.length,
+      instrumentedControls: interactiveControls.totalInstrumented,
+      pressedControls: interactiveControls.totalPressed,
+      stuckDisabledControls: appState.controls.stuckDisabledCount,
+      appStateDefects: appState.defects.length,
     },
     screensVisited: visitedScreens,
     screensUnvisited: unvisitedScreens,
@@ -2850,9 +3651,14 @@ export interface DiagnosticSummaryReport {
   directionHelperResult: string;
   i18nManagerIsRTL: boolean;
   coverage: DiagnosticCoverage;
+  appState: DiagnosticAppState;
   counts: {
     probes: number;
     totalDefects: number;
+    instrumentedControls: number;
+    pressedControls: number;
+    stuckDisabledControls: number;
+    appStateDefects: number;
     defectsByClass: Record<DefectClass, number>;
     interactions: number;
     networkRequests: number;
@@ -2889,9 +3695,14 @@ export function buildDiagnosticSummary(): DiagnosticSummaryReport {
     directionHelperResult: report.directionHelperResult,
     i18nManagerIsRTL: report.i18nManagerIsRTL,
     coverage: report.coverage,
+    appState: report.appState,
     counts: {
       probes: report.probeCount,
       totalDefects: report.defects.totalDefects,
+      instrumentedControls: report.appState.controls.totalInstrumented,
+      pressedControls: report.appState.controls.pressedCount,
+      stuckDisabledControls: report.appState.controls.stuckDisabledCount,
+      appStateDefects: report.appState.defects.length,
       defectsByClass: report.defects.countsByClass,
       interactions: report.interactions.total,
       networkRequests: report.network.summary.total,

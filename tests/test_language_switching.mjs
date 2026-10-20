@@ -3,10 +3,10 @@
  * Self-contained (no native runtime dependencies).
  * Tests:
  *  1. Code structure / contract verification across settings.tsx, i18n.ts, SettingsScreen.tsx, and App.tsx
- *  2. en -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
- *  3. ur -> en ordering: write -> readback verify -> forceRTL(false) -> reload
- *  4. Storage write failure -> zero forceRTL, zero reload, state rolled back
- *  4b. Readback mismatch -> zero forceRTL, zero reload, state rolled back
+ *  2. en -> ur ordering: write -> readback verify -> direction preparation -> reload
+ *  3. ur -> en ordering: write -> readback verify -> direction preparation -> reload
+ *  4. Storage write failure -> zero direction preparation, zero reload, state rolled back
+ *  4b. Readback mismatch -> zero direction preparation, zero reload, state rolled back
  *  5. Repeated rapid switching converges on final selected language without double-reload
  *  6. Stale-closure write impossibility (concurrent settings updates preserved)
  *  7. Side-effect ordering & resilience (quran lang / tafsir / audio run only after persist; failures do not lose language)
@@ -15,6 +15,7 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertRealI18nLayoutDirectionContract } from './i18n_layout_direction_contract.mjs';
 
 console.log('=== LANGUAGE SWITCHING & PERSISTENCE TEST SUITE ===\n');
 
@@ -118,10 +119,7 @@ assert.ok(
   i18nCode.includes('export function prepareNativeLayoutDirection('),
   'i18n.ts must export prepareNativeLayoutDirection helper'
 );
-assert.ok(
-  i18nCode.includes('I18nManager.forceRTL(isRtl)') || i18nCode.includes('I18nManager.forceRTL(isUrdu)'),
-  'prepareNativeLayoutDirection must configure I18nManager.forceRTL for RTL layout'
-);
+assertRealI18nLayoutDirectionContract();
 
 // (f) SettingsScreen integration of prepareNativeLayoutDirection & reload guards
 assert.ok(
@@ -192,18 +190,20 @@ console.log('\n--- 2. Dynamic Behavioral Test Suite ---');
 
 class MockI18nManager {
   constructor(initialRTL = false) {
-    this.isRTL = initialRTL;
-    this.allowRTLCalls = [];
-    this.forceRTLCalls = [];
+    this.bootDirection = initialRTL;
+    this.languageMirror = null;
   }
 
-  allowRTL(allow) {
-    this.allowRTLCalls.push(allow);
+  get isRTL() {
+    return this.languageMirror ? ['ur', 'ar', 'ps'].includes(this.languageMirror) : this.bootDirection;
   }
 
-  forceRTL(force) {
-    this.forceRTLCalls.push(force);
-    this.isRTL = force;
+  set isRTL(value) {
+    this.bootDirection = value;
+  }
+
+  stageLanguage(language) {
+    this.languageMirror = language;
   }
 }
 
@@ -347,10 +347,8 @@ class SettingsHarness {
   }
 
   prepareNativeLayoutDirection(lang) {
-    const isRtl = ['ur', 'ar', 'ps'].includes(lang);
-    this.i18n.allowRTL(true);
-    this.i18n.forceRTL(isRtl);
-    this.operationLog.push(`forceRTL:${isRtl}`);
+    this.i18n.stageLanguage(lang);
+    this.operationLog.push('prepareNativeLayoutDirection');
   }
 
   async runSideEffects(nextLang) {
@@ -484,7 +482,7 @@ class SettingsHarness {
 }
 
 // ---------------------------------------------------------------------------
-// Test 2: en -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2: en -> ur ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -501,9 +499,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ur',
     'readback_verify:ur',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ur',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ur');
   assert.strictEqual(harness.activeLang, 'ur');
@@ -516,11 +514,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ur');
 
-  console.log('  ✓ Test 2 passed: en -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2 passed: en -> ur ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 3: ur -> en ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 3: ur -> en ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -539,9 +537,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:en',
     'readback_verify:en',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:en',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'en');
   assert.strictEqual(harness.activeLang, 'en');
@@ -553,11 +551,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'en');
 
-  console.log('  ✓ Test 3 passed: ur -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 3 passed: ur -> en ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2b: en -> ar ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2b: en -> ar ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -573,9 +571,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ar',
     'readback_verify:ar',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ar',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ar');
   assert.strictEqual(harness.activeLang, 'ar');
@@ -588,11 +586,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ar');
 
-  console.log('  ✓ Test 2b passed: en -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2b passed: en -> ar ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2c: ur -> ar ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2c: ur -> ar ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -610,9 +608,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ar',
     'readback_verify:ar',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ar',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ar');
   assert.strictEqual(harness.activeLang, 'ar');
@@ -624,11 +622,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ar');
 
-  console.log('  ✓ Test 2c passed: ur -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2c passed: ur -> ar ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2d: ar -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2d: ar -> ur ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -646,9 +644,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ur',
     'readback_verify:ur',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ur',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ur');
   assert.strictEqual(harness.activeLang, 'ur');
@@ -660,11 +658,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ur');
 
-  console.log('  ✓ Test 2d passed: ar -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2d passed: ar -> ur ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2e: ar -> en ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2e: ar -> en ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -682,9 +680,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:en',
     'readback_verify:en',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:en',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'en');
   assert.strictEqual(harness.activeLang, 'en');
@@ -696,11 +694,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'en');
 
-  console.log('  ✓ Test 2e passed: ar -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2e passed: ar -> en ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2f: en -> hi ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2f: en -> hi ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -716,9 +714,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:hi',
     'readback_verify:hi',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:hi',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'hi');
   assert.strictEqual(harness.activeLang, 'hi');
@@ -731,11 +729,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'hi');
 
-  console.log('  ✓ Test 2f passed: en -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2f passed: en -> hi ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2g: hi -> en ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2g: hi -> en ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -753,9 +751,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:en',
     'readback_verify:en',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:en',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'en');
   assert.strictEqual(harness.activeLang, 'en');
@@ -767,11 +765,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'en');
 
-  console.log('  ✓ Test 2g passed: hi -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2g passed: hi -> en ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2h: ur -> hi ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2h: ur -> hi ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -789,9 +787,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:hi',
     'readback_verify:hi',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:hi',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'hi');
   assert.strictEqual(harness.activeLang, 'hi');
@@ -803,11 +801,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'hi');
 
-  console.log('  ✓ Test 2h passed: ur -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2h passed: ur -> hi ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2i: hi -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2i: hi -> ur ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -825,9 +823,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ur',
     'readback_verify:ur',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ur',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ur');
   assert.strictEqual(harness.activeLang, 'ur');
@@ -839,11 +837,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ur');
 
-  console.log('  ✓ Test 2i passed: hi -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2i passed: hi -> ur ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2j: ar -> hi ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2j: ar -> hi ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -861,9 +859,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:hi',
     'readback_verify:hi',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:hi',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'hi');
   assert.strictEqual(harness.activeLang, 'hi');
@@ -875,11 +873,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'hi');
 
-  console.log('  ✓ Test 2j passed: ar -> hi ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2j passed: ar -> hi ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2k: hi -> ar ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2k: hi -> ar ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -897,9 +895,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ar',
     'readback_verify:ar',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ar',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ar');
   assert.strictEqual(harness.activeLang, 'ar');
@@ -911,11 +909,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ar');
 
-  console.log('  ✓ Test 2k passed: hi -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2k passed: hi -> ar ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2l: en -> ml ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2l: en -> ml ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -931,9 +929,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ml',
     'readback_verify:ml',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:ml',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ml');
   assert.strictEqual(harness.activeLang, 'ml');
@@ -946,11 +944,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ml');
 
-  console.log('  ✓ Test 2l passed: en -> ml ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2l passed: en -> ml ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2m: ml -> en ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2m: ml -> en ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -968,9 +966,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:en',
     'readback_verify:en',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:en',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'en');
   assert.strictEqual(harness.activeLang, 'en');
@@ -982,11 +980,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'en');
 
-  console.log('  ✓ Test 2m passed: ml -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2m passed: ml -> en ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2n: ur -> ml ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2n: ur -> ml ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1004,9 +1002,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ml',
     'readback_verify:ml',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:ml',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ml');
   assert.strictEqual(harness.activeLang, 'ml');
@@ -1018,11 +1016,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ml');
 
-  console.log('  ✓ Test 2n passed: ur -> ml ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2n passed: ur -> ml ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2o: ml -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2o: ml -> ur ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1040,9 +1038,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ur',
     'readback_verify:ur',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ur',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ur');
   assert.strictEqual(harness.activeLang, 'ur');
@@ -1054,11 +1052,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ur');
 
-  console.log('  ✓ Test 2o passed: ml -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2o passed: ml -> ur ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2p: ar -> ml ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2p: ar -> ml ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1076,9 +1074,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ml',
     'readback_verify:ml',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:ml',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ml');
   assert.strictEqual(harness.activeLang, 'ml');
@@ -1090,11 +1088,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ml');
 
-  console.log('  ✓ Test 2p passed: ar -> ml ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2p passed: ar -> ml ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2q: ml -> ar ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2q: ml -> ar ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1112,9 +1110,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ar',
     'readback_verify:ar',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ar',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ar');
   assert.strictEqual(harness.activeLang, 'ar');
@@ -1126,11 +1124,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ar');
 
-  console.log('  ✓ Test 2q passed: ml -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2q passed: ml -> ar ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2r: en -> si ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2r: en -> si ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1146,9 +1144,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:si',
     'readback_verify:si',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:si',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'si');
   assert.strictEqual(harness.activeLang, 'si');
@@ -1161,11 +1159,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'si');
 
-  console.log('  ✓ Test 2r passed: en -> si ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2r passed: en -> si ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2s: si -> en ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2s: si -> en ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1183,9 +1181,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:en',
     'readback_verify:en',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:en',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'en');
   assert.strictEqual(harness.activeLang, 'en');
@@ -1197,11 +1195,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'en');
 
-  console.log('  ✓ Test 2s passed: si -> en ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2s passed: si -> en ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2t: ur -> si ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2t: ur -> si ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1219,9 +1217,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:si',
     'readback_verify:si',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:si',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'si');
   assert.strictEqual(harness.activeLang, 'si');
@@ -1233,11 +1231,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'si');
 
-  console.log('  ✓ Test 2t passed: ur -> si ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2t passed: ur -> si ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2u: si -> ur ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2u: si -> ur ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1255,9 +1253,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ur',
     'readback_verify:ur',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ur',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ur');
   assert.strictEqual(harness.activeLang, 'ur');
@@ -1269,11 +1267,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ur');
 
-  console.log('  ✓ Test 2u passed: si -> ur ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2u passed: si -> ur ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2v: ar -> si ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2v: ar -> si ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1291,9 +1289,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:si',
     'readback_verify:si',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:si',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'si');
   assert.strictEqual(harness.activeLang, 'si');
@@ -1305,11 +1303,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'si');
 
-  console.log('  ✓ Test 2v passed: ar -> si ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2v passed: ar -> si ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2w: si -> ar ordering: write -> readback verify -> forceRTL(true) -> reload
+// Test 2w: si -> ar ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1327,9 +1325,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ar',
     'readback_verify:ar',
-    'forceRTL:true',
+    'prepareNativeLayoutDirection',
     'reload:ar',
-  ], 'Ordering must be write -> readback verify -> forceRTL(true) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ar');
   assert.strictEqual(harness.activeLang, 'ar');
@@ -1341,11 +1339,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ar');
 
-  console.log('  ✓ Test 2w passed: si -> ar ordering write -> readback verify -> forceRTL(true) -> reload verified.');
+  console.log('  ✓ Test 2w passed: si -> ar ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2x: ml -> si ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2x: ml -> si ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1363,9 +1361,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:si',
     'readback_verify:si',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:si',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'si');
   assert.strictEqual(harness.activeLang, 'si');
@@ -1377,11 +1375,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'si');
 
-  console.log('  ✓ Test 2x passed: ml -> si ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2x passed: ml -> si ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 2y: si -> ml ordering: write -> readback verify -> forceRTL(false) -> reload
+// Test 2y: si -> ml ordering: write -> readback verify -> direction preparation -> reload
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1399,9 +1397,9 @@ class SettingsHarness {
   assert.deepStrictEqual(harness.operationLog, [
     'write:ml',
     'readback_verify:ml',
-    'forceRTL:false',
+    'prepareNativeLayoutDirection',
     'reload:ml',
-  ], 'Ordering must be write -> readback verify -> forceRTL(false) -> reload');
+  ], 'Ordering must be write -> readback verify -> direction preparation -> reload');
 
   assert.strictEqual(harness.settings.language, 'ml');
   assert.strictEqual(harness.activeLang, 'ml');
@@ -1413,11 +1411,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.strictEqual(stored.language, 'ml');
 
-  console.log('  ✓ Test 2y passed: si -> ml ordering write -> readback verify -> forceRTL(false) -> reload verified.');
+  console.log('  ✓ Test 2y passed: si -> ml ordering write -> readback verify -> direction preparation -> reload verified.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 4: Storage write failure -> zero forceRTL, zero reload, state rolled back
+// Test 4: Storage write failure -> zero direction preparation, zero reload, state rolled back
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1436,8 +1434,8 @@ class SettingsHarness {
   assert.strictEqual(harness.reloadScheduled, false);
   assert.strictEqual(harness.reloadLang, null);
 
-  // forceRTL must NEVER have been called
-  assert.strictEqual(i18n.forceRTLCalls.length, 0, 'forceRTL must not be called when write fails');
+  // Direction preparation must never run when persistence fails.
+  assert.strictEqual(i18n.languageMirror, null, 'direction preparation must not run when write fails');
   assert.strictEqual(i18n.isRTL, false);
 
   // State must NOT claim urdu (rolled back / kept at 'en')
@@ -1451,11 +1449,11 @@ class SettingsHarness {
   const stored = storage.dump(STORAGE_KEY);
   assert.ok(!stored || stored.language === 'en');
 
-  console.log('  ✓ Test 4 passed: Write failure results in zero forceRTL, zero reload, and clean rollback.');
+  console.log('  ✓ Test 4 passed: Write failure results in zero direction preparation, zero reload, and clean rollback.');
 }
 
 // ---------------------------------------------------------------------------
-// Test 4b: Readback verification failure -> zero forceRTL, zero reload, rollback
+// Test 4b: Readback verification failure -> zero direction preparation, zero reload, rollback
 // ---------------------------------------------------------------------------
 {
   const storage = new MockStorage();
@@ -1474,8 +1472,8 @@ class SettingsHarness {
   assert.strictEqual(harness.reloadScheduled, false);
   assert.strictEqual(harness.reloadLang, null);
 
-  // forceRTL must NEVER have been called because readback verification failed
-  assert.strictEqual(i18n.forceRTLCalls.length, 0, 'forceRTL must not be called when readback fails/mismatches');
+  // Direction preparation must never run because readback verification failed.
+  assert.strictEqual(i18n.languageMirror, null, 'direction preparation must not run when readback fails/mismatches');
   assert.strictEqual(i18n.isRTL, false);
 
   // State kept at 'en'
@@ -1485,7 +1483,7 @@ class SettingsHarness {
   // Error notice displayed
   assert.strictEqual(harness.lastError, 'Still could not load. Try again later.');
 
-  console.log('  ✓ Test 4b passed: Readback mismatch results in zero forceRTL, zero reload, and clean rollback.');
+  console.log('  ✓ Test 4b passed: Readback mismatch results in zero direction preparation, zero reload, and clean rollback.');
 }
 
 // ---------------------------------------------------------------------------
@@ -2055,7 +2053,7 @@ class SettingsHarness {
 }
 
 // ---------------------------------------------------------------------------
-// Test 9: All newly wired languages persist, auto-link Quran translation, and set direction
+// Test 9: All newly wired languages persist, auto-link Quran translation, and stage direction
 // ---------------------------------------------------------------------------
 for (const language of ['bn', 'ms', 'ta', 'id', 'ps']) {
   const storage = new MockStorage();
@@ -2067,7 +2065,7 @@ for (const language of ['bn', 'ms', 'ta', 'id', 'ps']) {
   assert.strictEqual(storage.dump(STORAGE_KEY).language, language, `${language} survives settings readback`);
   assert.strictEqual(await storage.getItem('quran-translation-language'), language, `${language} auto-links its Quran translation`);
   harness.prepareNativeLayoutDirection(language);
-  assert.strictEqual(i18n.isRTL, language === 'ps', `${language} has the expected layout direction`);
+  assert.strictEqual(i18n.languageMirror, language, `${language} stages the expected layout direction`);
 
   await harness.setLanguage('en');
   assert.strictEqual(await storage.getItem('quran-translation-language'), 'en', `${language}->en restores English Quran translation`);

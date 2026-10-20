@@ -10,7 +10,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { SPACING_CONTRACT } from '../src/components/layout/layout.constants.ts';
+import {
+  SPACING_CONTRACT,
+  NAV_HEIGHT,
+  NAV_SIDE_MARGIN,
+} from '../src/components/layout/layout.constants.ts';
 
 console.log('='.repeat(70));
 console.log('AUDIT TASK 3: ACCESSIBILITY, SEMANTICS & GEOMETRY VERIFICATION');
@@ -62,10 +66,25 @@ assert.ok(
 );
 console.log('  ✓ FloatingNav tab semantics, aria-selected, and keyboard activation verified');
 
-// Preserved geometry
-assert.ok(floatingNavSrc.includes('NAV_HEIGHT = 54.5') || floatingNavSrc.includes('height: 54.5') || floatingNavSrc.includes('NAV_HEIGHT'), 'FloatingNav 54.5dp height must be preserved');
-assert.ok(floatingNavSrc.includes('NAV_SIDE_MARGIN = 14') || floatingNavSrc.includes('14'), 'FloatingNav 14dp side margins must be preserved');
-console.log('  ✓ FloatingNav geometry (54.5dp height, 14dp margins) preserved');
+// Preserved geometry — assert the REAL exported constants, not a mirror of them.
+assert.equal(
+  NAV_HEIGHT,
+  54.5,
+  'FloatingNav NAV_HEIGHT constant must be 54.5dp (asserted against the real export, not source text)',
+);
+assert.equal(
+  NAV_SIDE_MARGIN,
+  14,
+  'FloatingNav NAV_SIDE_MARGIN constant must be 14dp (asserted against the real export, not source text)',
+);
+// The dock must consume those constants rather than hardcoding duplicated literals.
+assert.ok(
+  floatingNavSrc.includes('height: NAV_HEIGHT') &&
+    floatingNavSrc.includes('left: NAV_SIDE_MARGIN') &&
+    floatingNavSrc.includes('right: NAV_SIDE_MARGIN'),
+  'FloatingNav dockContainer must derive its height/insets from NAV_HEIGHT and NAV_SIDE_MARGIN',
+);
+console.log('  ✓ FloatingNav geometry (54.5dp height, 14dp margins) verified against real exports');
 
 // -----------------------------------------------------------------------------
 // 3. Task B — Settings Radios, Modal Backdrop, Inputs, Nested Interactive Fix
@@ -235,8 +254,8 @@ assert.ok(
   'FloatingNav must let native layout direction mirror tab order and use rtl only for typography'
 );
 assert.ok(
-  floatingNavSrc.includes("fontFamily: rtl ? 'Amiri_700Bold' : 'Poppins_500Medium'"),
-  'FloatingNav must switch font family between Amiri for RTL and Poppins for LTR'
+  floatingNavSrc.includes("fontFamily: rtl ? 'NotoNaskhArabic_700Bold' : 'Poppins_500Medium'"),
+  'FloatingNav must switch font family between NotoNaskhArabic for RTL and Poppins for LTR'
 );
 console.log('  ✓ FloatingNav native RTL/LTR tab order and font switching verified');
 

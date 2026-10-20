@@ -2,6 +2,8 @@
  * Zakat calculator definitions, currency conversion rates, and asset breakdown logic.
  */
 
+import { getCurrentLanguage, isAppLanguage } from './i18n';
+
 export interface CurrencyConfig {
   code: string;
   name: string;
@@ -100,10 +102,14 @@ export function formatCurrencyAmount(
 ): string {
   const cfg = getCurrencyConfig(currencyCode);
   const cleanAmount = isNaN(amount) || !isFinite(amount) ? 0 : amount;
-  return cleanAmount.toLocaleString('en-US', {
+  const activeLanguage = getCurrentLanguage();
+  const locale = typeof activeLanguage === 'string' && isAppLanguage(activeLanguage)
+    ? activeLanguage
+    : 'en-US';
+  return new Intl.NumberFormat(locale, {
     minimumFractionDigits: cfg.decimals,
     maximumFractionDigits: cfg.decimals,
-  });
+  }).format(cleanAmount);
 }
 
 export function calculateZakat(inputs: ZakatInputs): ZakatEvaluation {

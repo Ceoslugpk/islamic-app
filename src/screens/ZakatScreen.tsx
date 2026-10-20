@@ -37,8 +37,13 @@ import {
   loadZakatCalculations,
   deleteZakatCalculation,
 } from '../lib/db';
+import { formatYMD } from '../lib/womensFiqh';
 
 type ZakatSubTab = 'calculator' | 'history' | 'guide';
+
+export function getZakatRecordDate(now: Date = new Date()): string {
+  return formatYMD(now);
+}
 
 function ZakatScreen({
   onBack,
@@ -145,7 +150,7 @@ function ZakatScreen({
     } catch { /* ignore */ }
 
     const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10);
+    const dateStr = getZakatRecordDate(now);
     const newCalc: ZakatCalculation = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       date: dateStr,
@@ -315,6 +320,9 @@ function ZakatScreen({
                       },
                     ]}
                     onPress={() => setNisabStandard('gold')}
+                    accessibilityRole="radio"
+                    accessibilityLabel={t('Gold (85g)')}
+                    accessibilityState={{ selected: nisabStandard === 'gold' }}
                   >
                     {nisabStandard === 'gold' && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />}
                     <AppText
@@ -343,6 +351,9 @@ function ZakatScreen({
                       },
                     ]}
                     onPress={() => setNisabStandard('silver')}
+                    accessibilityRole="radio"
+                    accessibilityLabel={t('Silver (595g)')}
+                    accessibilityState={{ selected: nisabStandard === 'silver' }}
                   >
                     {nisabStandard === 'silver' && <LinearGradient pointerEvents="none" colors={tokens.goldGradient} style={[StyleSheet.absoluteFill, { borderRadius: 14 }]} />}
                     <AppText

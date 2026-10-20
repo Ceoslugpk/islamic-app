@@ -56,12 +56,15 @@ const { OfflineBanner } = load('src/components/OfflineBanner.tsx', {
   react: React, 'react-native': native,
   '@expo/vector-icons': { Ionicons: 'Icon' },
   '../lib/theme': { useTheme: () => ({ colors: { accentDim: '#eee', borderSubtle: '#aaa', accent: '#105A4B' } }) },
-  '../lib/strings': { offlineUsingSavedData: 'Offline' },
+  '../lib/strings': { offlineUsingSavedData: () => 'Offline' },
   '../lib/i18n': { t: (key) => key },
   './ui/AppText': { AppText: 'AppText' },
 });
 for (const inset of [0, 24, 44]) {
-  const style = Object.assign({}, ...OfflineBanner({ topInset: inset }).props.style);
+  const banner = OfflineBanner({ topInset: inset });
+  const style = Object.assign({}, ...banner.props.style);
+  const text = elements(banner).find((element) => element.type === 'AppText');
+  assert.equal(text?.props?.children, 'Offline', 'OfflineBanner must execute the lazy saved-data string export');
   assert.equal(style.paddingTop, 6 + inset, 'Offline text stays below the system-bar surface');
   assert.equal(style.paddingTop + style.paddingVertical + style.marginBottom, 12, 'Offline notice must not duplicate the following screen top inset');
 }

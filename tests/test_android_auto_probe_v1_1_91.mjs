@@ -144,7 +144,13 @@ const diagState = loadTsModule('src/lib/diagnostic/diagnosticState.ts', {
     DiagParentContext: { Provider: ({ children }) => children },
     DiagScreenProvider: ({ children }) => children,
   },
-  '../i18n': { default: { language: 'en' }, isRTL: () => false, t: (k) => k },
+  '../i18n': {
+    default: { language: 'en' },
+    isRTL: () => false,
+    isRtlLanguage: (lang) => /^(ur|ar|ps)\b/i.test(String(lang || '').trim()),
+    getBootLanguage: () => 'en',
+    t: (k) => k,
+  },
   'expo-file-system/legacy': {},
   'expo-sharing': {},
 });

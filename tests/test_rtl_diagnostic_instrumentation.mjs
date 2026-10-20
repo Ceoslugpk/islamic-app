@@ -223,6 +223,8 @@ const boundaryModule = loadTsModule('src/lib/diagnostic/index.ts', {
   './diagnosticConfig': diagConfig,
   './diagnosticState': {
     useDiagnosticTarget: () => ({ isDiagnostic: false, parentProps: {}, targetProps: {} }),
+    // The barrel installs the gated boot observer on import (U2/U4); the mock mirrors it.
+    installDiagnosticAppStateObserver: () => {},
   },
   './diagnosticI18n': { diagT: (k) => k },
   '../../components/diagnostic/RtlDiagnosticModal': { RtlDiagnosticModal: () => ({ type: 'modal' }) },

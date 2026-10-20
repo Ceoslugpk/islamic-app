@@ -8,6 +8,7 @@
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertRealI18nLayoutDirectionContract } from './i18n_layout_direction_contract.mjs';
 
 console.log('=== FOUR PHYSICAL-DEVICE URDU DEFECTS REGRESSION TEST SUITE ===\n');
 
@@ -17,21 +18,12 @@ console.log('=== FOUR PHYSICAL-DEVICE URDU DEFECTS REGRESSION TEST SUITE ===\n')
 console.log('--- Task 1: Urdu -> English Switch Flow & Reload Resilience ---');
 
 const settingsCode = fs.readFileSync('src/lib/settings.tsx', 'utf8');
-const i18nCode = fs.readFileSync('src/lib/i18n.ts', 'utf8');
 const settingsScreenCode = fs.readFileSync('src/screens/SettingsScreen.tsx', 'utf8');
 const appCode = fs.readFileSync('App.tsx', 'utf8');
 
-// 1a. prepareNativeLayoutDirection sets allowRTL(isUrdu) to prevent stuck RTL on RTL devices
-assert.ok(
-  i18nCode.includes('I18nManager.allowRTL(isRtl)') || i18nCode.includes('I18nManager.allowRTL(isUrdu)') || i18nCode.includes("I18nManager.allowRTL(lang === 'ur')"),
-  'prepareNativeLayoutDirection must set allowRTL(false) when switching to English so RTL-device locales do not remain stuck in RTL'
-);
-
-// 1b. applyRTL also sets allowRTL matching isRTL
-assert.ok(
-  i18nCode.includes('I18nManager.allowRTL(isRTL)'),
-  'applyRTL must set allowRTL(isRTL) dynamically rather than hardcoding true'
-);
+// 1a/1b. Execute the real i18n module: boot writes native direction once;
+// mounted switch preparation only stages the mirror and web direction.
+assertRealI18nLayoutDirectionContract();
 
 // 1c. App.tsx boot effect calls resolvePersistedLanguage with forceFresh = true
 assert.ok(

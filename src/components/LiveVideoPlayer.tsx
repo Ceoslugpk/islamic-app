@@ -18,6 +18,94 @@ import { Card } from './Card';
 import { LiveStreamId, setActiveLiveStream } from '../lib/liveStream';
 import { t } from '../lib/i18n';
 
+export const LIVE_VIDEO_ORIGIN_WHITELIST = [
+  'https://www.youtube-nocookie.com',
+  'https://www.youtube.com',
+];
+
+type LiveVideoNavigationRequest = {
+  url?: unknown;
+  nativeEvent?: { url?: unknown };
+};
+
+function getNavigationUrl(request: LiveVideoNavigationRequest): string | null {
+  const directUrl = request && typeof request.url === 'string' ? request.url : null;
+  if (directUrl) return directUrl;
+  return request?.nativeEvent && typeof request.nativeEvent.url === 'string'
+    ? request.nativeEvent.url
+    : null;
+}
+
+function isAllowedLiveVideoOrigin(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' && LIVE_VIDEO_ORIGIN_WHITELIST.includes(parsed.origin);
+  } catch {
+    return false;
+  }
+}
+
+export function sanitizeYouTubeEmbedUrl(value: unknown): string | null {
+  if (typeof value !== 'string' || value.length > 2048 || !isAllowedLiveVideoOrigin(value)) return null;
+  try {
+    const parsed = new URL(value);
+    if (!parsed.pathname.startsWith('/embed/') || parsed.pathname === '/embed/') return null;
+    parsed.searchParams.set('playsinline', '1');
+    parsed.searchParams.set('enablejsapi', '1');
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll("'", '&#39;');
+}
+
+export function buildLiveVideoHtml(embedUrl: unknown, backgroundColor: string): string {
+  const safeUrl = sanitizeYouTubeEmbedUrl(embedUrl);
+  if (!safeUrl) return '';
+  const safeBackgroundColor = escapeHtmlAttribute(backgroundColor);
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: ${safeBackgroundColor}; overflow: hidden; }
+    iframe { width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
+<body>
+  <iframe
+    src="${escapeHtmlAttribute(safeUrl)}"
+    frameborder="0"
+    sandbox="allow-scripts allow-same-origin"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    allowfullscreen
+  ></iframe>
+</body>
+</html>`;
+}
+
+export function createLiveVideoNavigationHandler(
+  reportBlocked: (url: string) => void = (url) => {
+    console.warn('[LiveVideoPlayer] Blocked navigation outside the YouTube allow-list:', url);
+  },
+): (request: LiveVideoNavigationRequest) => boolean {
+  return (request) => {
+    const url = getNavigationUrl(request);
+    if (url && isAllowedLiveVideoOrigin(url)) return true;
+    reportBlocked(url || '<missing-url>');
+    return false;
+  };
+}
+
 /**
  * In-app live video player for Makkah / Madinah / Hajj live screens.
  *
@@ -162,30 +250,10 @@ export function LiveVideoPlayer({
   };
 
   const webViewHtml = useMemo(() => {
-    if (!embedUrl) return '';
-    const safeUrl = embedUrl.includes('?')
-      ? `${embedUrl}&playsinline=1&enablejsapi=1`
-      : `${embedUrl}?playsinline=1&enablejsapi=1`;
-    const bgColor = tokens.cardBottom;
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <style>
-    body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: ${bgColor}; overflow: hidden; }
-    iframe { width: 100%; height: 100%; border: 0; }
-  </style>
-</head>
-<body>
-  <iframe
-    src="${safeUrl}"
-    frameborder="0"
-    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-    allowfullscreen
-  ></iframe>
-</body>
-</html>`;
+    return buildLiveVideoHtml(embedUrl, tokens.cardBottom);
   }, [embedUrl, tokens.cardBottom]);
+  const safeEmbedUrl = useMemo(() => sanitizeYouTubeEmbedUrl(embedUrl), [embedUrl]);
+  const handleWebViewNavigation = useMemo(() => createLiveVideoNavigationHandler(), []);
 
   // 1. Native HLS available (.m3u8) → native VideoView
   if (hlsUrl && Platform.OS !== 'web') {
@@ -203,16 +271,10 @@ export function LiveVideoPlayer({
   }
 
   // 2. Web → YouTube iframe embed with failure detection
-  if (Platform.OS === 'web' && embedUrl) {
+  if (Platform.OS === 'web' && safeEmbedUrl) {
     if (webIframeFailed) {
       // fall through to fallback card below
     } else {
-      const safeEmbedUrl = embedUrl.includes('enablejsapi=1')
-        ? embedUrl
-        : embedUrl.includes('?')
-        ? `${embedUrl}&enablejsapi=1`
-        : `${embedUrl}?enablejsapi=1`;
-
       return (
         <View
           style={[
@@ -238,7 +300,7 @@ export function LiveVideoPlayer({
   }
 
   // 3. Native YouTube via WebView (in-app playback)
-  if (Platform.OS !== 'web' && embedUrl && !webViewFailed) {
+  if (Platform.OS !== 'web' && safeEmbedUrl && !webViewFailed) {
     return (
       <View style={styles.wrapper}>
         <View
@@ -251,6 +313,8 @@ export function LiveVideoPlayer({
         >
           <WebView
             source={{ html: webViewHtml, baseUrl: 'https://www.youtube-nocookie.com' }}
+            originWhitelist={LIVE_VIDEO_ORIGIN_WHITELIST}
+            onShouldStartLoadWithRequest={handleWebViewNavigation}
             style={[styles.webView, { backgroundColor: tokens.cardBottom }]}
             allowsInlineMediaPlayback={true}
             mediaPlaybackRequiresUserAction={false}

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { assertRealI18nLayoutDirectionContract } from './i18n_layout_direction_contract.mjs';
 
 const read = (path) => fs.readFileSync(path, 'utf8');
 const en = JSON.parse(read('src/locales/en.json'));
@@ -11,8 +12,7 @@ const app = read('App.tsx');
 console.log('=== RTL LANGUAGE DIRECTION AND PASHTO COVERAGE ===');
 
 assert.ok(i18n.includes("['ur', 'ar', 'ps'].some"), 'Urdu, Arabic, and Pashto must share RTL detection');
-assert.ok(i18n.includes('I18nManager.allowRTL(isRtl)') && i18n.includes('I18nManager.forceRTL(isRtl)'), 'Native RTL setting must be saved consistently');
-assert.ok(i18n.includes("document.documentElement.dir = isRtl ? 'rtl' : 'ltr'"), 'Web language changes must update document direction');
+assertRealI18nLayoutDirectionContract();
 assert.ok(app.includes('resolvePersistedLanguage(true)') && app.includes('applyRTL(isRtlLanguage(lang))'), 'Cold boot must apply direction from the persisted app language before rendering');
 assert.ok(read('android/app/src/main/AndroidManifest.xml').includes('android:supportsRtl="true"'), 'Android manifest must allow RTL layouts');
 

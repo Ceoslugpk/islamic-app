@@ -1,4 +1,4 @@
-import * as BackgroundFetch from 'expo-background-fetch';
+import * as BackgroundTask from 'expo-background-task';
 import * as TaskManager from 'expo-task-manager';
 import { startQuranPreload, getQuranPreloadProgress } from './quranPreloader';
 
@@ -7,12 +7,17 @@ import { startQuranPreload, getQuranPreloadProgress } from './quranPreloader';
  *
  * Android restricts background execution: a JS loop stops when the app is
  * backgrounded. This task runs in short OS-allowed bursts (via
- * expo-background-fetch, minimum interval 15 min) and continues the Quran
+ * expo-background-task, minimum interval 15 min) and continues the Quran
  * preload from where it left off — always respecting the existing
  * pause/cache-skip logic (never refetches cached surahs).
  *
  * The user's explicit pause flag (`quranPreloadRequested` in settings) is
  * respected: the task only runs while preloading is enabled.
+ *
+ * Migrated from the deprecated `expo-background-fetch` (F-44). The new API
+ * has no `stopOnTerminate`/`startOnBoot` options: on Android `WorkManager`
+ * persists the task across reboots and app-termination-by-system by default,
+ * which is the behaviour those old flags requested.
  */
 
 const BACKGROUND_PRELOAD_TASK = 'islamic-quran-preload';
@@ -27,7 +32,7 @@ export async function registerBackgroundPreload(): Promise<void> {
         try {
           const now = Date.now();
           if (now - lastRunAt < MIN_BURST_GAP_MS) {
-            return BackgroundFetch.BackgroundFetchResult.NoData;
+            return BackgroundTask.BackgroundTaskResult.Success;
           }
           lastRunAt = now;
 
@@ -43,38 +48,36 @@ export async function registerBackgroundPreload(): Promise<void> {
             }
           }
           if (!enabled) {
-            return BackgroundFetch.BackgroundFetchResult.NoData;
+            return BackgroundTask.BackgroundTaskResult.Success;
           }
 
           const progress = getQuranPreloadProgress();
           if (progress.isComplete) {
-            return BackgroundFetch.BackgroundFetchResult.NoData;
+            return BackgroundTask.BackgroundTaskResult.Success;
           }
 
           // Resume the preload (it skips already-cached surahs). Bound it to a
           // short burst: start a limited run; the preloader's own loop breaks
-          // on shouldStopPreloader, and background-fetch terminates us shortly.
+          // on shouldStopPreloader, and the background task terminates us shortly.
           await startQuranPreload();
-          return BackgroundFetch.BackgroundFetchResult.NewData;
+          return BackgroundTask.BackgroundTaskResult.Success;
         } catch {
-          return BackgroundFetch.BackgroundFetchResult.Failed;
+          return BackgroundTask.BackgroundTaskResult.Failed;
         }
       });
     }
 
-    await BackgroundFetch.registerTaskAsync(BACKGROUND_PRELOAD_TASK, {
-      minimumInterval: 15, // minutes; Android may adjust
-      stopOnTerminate: false,
-      startOnBoot: true,
+    await BackgroundTask.registerTaskAsync(BACKGROUND_PRELOAD_TASK, {
+      minimumInterval: 15, // minutes; Android may adjust (minimum 15)
     });
   } catch {
-    // Background fetch unavailable (web/simulator) — preload stays foreground-only
+    // Background task unavailable (web/simulator) — preload stays foreground-only
   }
 }
 
 export async function unregisterBackgroundPreload(): Promise<void> {
   try {
-    await BackgroundFetch.unregisterTaskAsync(BACKGROUND_PRELOAD_TASK);
+    await BackgroundTask.unregisterTaskAsync(BACKGROUND_PRELOAD_TASK);
   } catch {
     // ignore
   }
@@ -83,7 +86,7 @@ export async function unregisterBackgroundPreload(): Promise<void> {
 /** True if the background task is registered (for a Settings toggle). */
 export async function isBackgroundPreloadRegistered(): Promise<boolean> {
   try {
-    return await BackgroundFetch.getStatusAsync() === BackgroundFetch.BackgroundFetchStatus.Available;
+    return await BackgroundTask.getStatusAsync() === BackgroundTask.BackgroundTaskStatus.Available;
   } catch {
     return false;
   }

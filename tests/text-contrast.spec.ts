@@ -76,6 +76,175 @@ const TOKENS = {
   },
 };
 
+// WCAG 2.1 minimum contrast for large text / UI components (3:1). The harness
+// evaluates rendered text at this threshold and MUST fail the run on any violation.
+export const WCAG_MIN_RUNTIME_RATIO = 3.0;
+
+interface DOMContrastReport {
+  checked: number;
+  minContrast: number;
+  avgContrast: number;
+  lowCount: number;
+  lowSamples: { text: string; fg: string; bg: string; cr: number }[];
+}
+
+export const evaluateDOMContrast = ({
+  theme,
+  routeId,
+  minRatio,
+}: {
+  theme: 'paper' | 'ink';
+  routeId?: string;
+  minRatio: number;
+}): DOMContrastReport => {
+  function parseRgba(str: string): [number, number, number, number] {
+    const m = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (!m) return [0, 0, 0, 1];
+    return [
+      parseInt(m[1]),
+      parseInt(m[2]),
+      parseInt(m[3]),
+      m[4] !== undefined ? parseFloat(m[4]) : 1,
+    ];
+  }
+
+  function parseGrad(bgImg: string): [number, number, number, number] | null {
+    if (!bgImg || !bgImg.includes('gradient')) return null;
+    const m = bgImg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (!m) return null;
+    return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), 1];
+  }
+
+  function composite(
+    fg: [number, number, number, number],
+    bg: [number, number, number, number],
+  ): [number, number, number, number] {
+    const a = fg[3] + bg[3] * (1 - fg[3]);
+    if (a === 0) return [0, 0, 0, 0];
+    const r = Math.round((fg[0] * fg[3] + bg[0] * bg[3] * (1 - fg[3])) / a);
+    const g = Math.round((fg[1] * fg[3] + bg[1] * bg[3] * (1 - fg[3])) / a);
+    const b = Math.round((fg[2] * fg[3] + bg[2] * bg[3] * (1 - fg[3])) / a);
+    return [r, g, b, a];
+  }
+
+  function channelLum(c: number): number {
+    const s = c / 255;
+    return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  }
+
+  function relLum(r: number, g: number, b: number): number {
+    return 0.2126 * channelLum(r) + 0.7152 * channelLum(g) + 0.0722 * channelLum(b);
+  }
+
+  function getContrast(
+    c1: [number, number, number, number],
+    c2: [number, number, number, number],
+  ): number {
+    const l1 = relLum(c1[0], c1[1], c1[2]);
+    const l2 = relLum(c2[0], c2[1], c2[2]);
+    const lighter = Math.max(l1, l2);
+    const darker = Math.min(l1, l2);
+    return (lighter + 0.05) / (darker + 0.05);
+  }
+
+  const rootBg: [number, number, number, number] =
+    theme === 'paper' ? [248, 244, 234, 1] : [18, 18, 28, 1];
+
+  // Scope contrast evaluation to visible/occluding content.
+  // When SettingsModal is open, evaluate only the modal subtree so underlying Fasting DOM is excluded.
+  const activeModal = document.querySelector('[aria-modal="true"], [role="dialog"]');
+  const rootScope: Element | Document =
+    routeId === 'settings' && activeModal ? activeModal : document;
+
+  const elements = Array.from(rootScope.querySelectorAll('*')).filter((e) => {
+    if (e.children.length !== 0 || !e.textContent || e.textContent.trim().length <= 1) {
+      return false;
+    }
+    if (routeId !== 'settings' && activeModal && activeModal.contains(e)) {
+      return false;
+    }
+    return true;
+  });
+
+  const low: { text: string; fg: string; bg: string; cr: number }[] = [];
+  let checked = 0;
+  let sumContrast = 0;
+  let minContrast = 999;
+
+  for (const el of elements) {
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0 || rect.bottom < 0 || rect.top > 852) continue;
+
+    const style = window.getComputedStyle(el);
+    if (
+      style.visibility === 'hidden' ||
+      style.display === 'none' ||
+      parseFloat(style.opacity) < 0.1
+    ) {
+      continue;
+    }
+
+    const fg = parseRgba(style.color);
+    if (fg[3] < 0.1) continue;
+
+    // Ancestor background traversal with opaque layer & gradient termination
+    const stack: [number, number, number, number][] = [];
+    let curr: Element | null = el;
+    while (curr) {
+      // Direct gradient on container
+      const grad = parseGrad(window.getComputedStyle(curr).backgroundImage);
+      if (grad) {
+        stack.unshift(grad);
+        break;
+      }
+      // Direct first child gradient (LinearGradient absolute fill layer)
+      if (curr.firstElementChild) {
+        const fcGrad = parseGrad(window.getComputedStyle(curr.firstElementChild).backgroundImage);
+        if (fcGrad) {
+          stack.unshift(fcGrad);
+          break;
+        }
+      }
+      const c = parseRgba(window.getComputedStyle(curr).backgroundColor);
+      if (c[3] > 0) {
+        stack.unshift(c);
+        if (c[3] >= 0.98) break;
+      }
+      curr = curr.parentElement;
+    }
+
+    let bg = rootBg;
+    if (stack.length > 0 && stack[0][3] >= 0.98) {
+      bg = stack[0];
+      for (let i = 1; i < stack.length; i++) bg = composite(stack[i], bg);
+    } else {
+      for (const l of stack) bg = composite(l, bg);
+    }
+
+    const cr = Math.round(getContrast(fg, bg) * 100) / 100;
+    checked++;
+    sumContrast += cr;
+    if (cr < minContrast) minContrast = cr;
+
+    if (cr < minRatio) {
+      low.push({
+        text: el.textContent!.trim().slice(0, 30),
+        fg: style.color,
+        bg: `rgb(${bg[0]},${bg[1]},${bg[2]})`,
+        cr,
+      });
+    }
+  }
+
+  return {
+    checked,
+    minContrast: minContrast === 999 ? 0 : minContrast,
+    avgContrast: checked > 0 ? Math.round((sumContrast / checked) * 100) / 100 : 0,
+    lowCount: low.length,
+    lowSamples: low.slice(0, 5),
+  };
+};
+
 function parseHex(hex: string): [number, number, number] {
   const clean = hex.replace('#', '');
   const r = parseInt(clean.substring(0, 2), 16);
@@ -326,168 +495,6 @@ async function runProofHarness() {
     },
   ];
 
-  interface DOMContrastReport {
-    checked: number;
-    minContrast: number;
-    avgContrast: number;
-    lowCount: number;
-    lowSamples: { text: string; fg: string; bg: string; cr: number }[];
-  }
-
-  const evaluateDOMContrast = ({
-    theme,
-    routeId,
-  }: {
-    theme: 'paper' | 'ink';
-    routeId?: string;
-  }): DOMContrastReport => {
-    function parseRgba(str: string): [number, number, number, number] {
-      const m = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-      if (!m) return [0, 0, 0, 1];
-      return [
-        parseInt(m[1]),
-        parseInt(m[2]),
-        parseInt(m[3]),
-        m[4] !== undefined ? parseFloat(m[4]) : 1,
-      ];
-    }
-
-    function parseGrad(bgImg: string): [number, number, number, number] | null {
-      if (!bgImg || !bgImg.includes('gradient')) return null;
-      const m = bgImg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-      if (!m) return null;
-      return [parseInt(m[1]), parseInt(m[2]), parseInt(m[3]), 1];
-    }
-
-    function composite(
-      fg: [number, number, number, number],
-      bg: [number, number, number, number],
-    ): [number, number, number, number] {
-      const a = fg[3] + bg[3] * (1 - fg[3]);
-      if (a === 0) return [0, 0, 0, 0];
-      const r = Math.round((fg[0] * fg[3] + bg[0] * bg[3] * (1 - fg[3])) / a);
-      const g = Math.round((fg[1] * fg[3] + bg[1] * bg[3] * (1 - fg[3])) / a);
-      const b = Math.round((fg[2] * fg[3] + bg[2] * bg[3] * (1 - fg[3])) / a);
-      return [r, g, b, a];
-    }
-
-    function channelLum(c: number): number {
-      const s = c / 255;
-      return s <= 0.04045 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-    }
-
-    function relLum(r: number, g: number, b: number): number {
-      return 0.2126 * channelLum(r) + 0.7152 * channelLum(g) + 0.0722 * channelLum(b);
-    }
-
-    function getContrast(
-      c1: [number, number, number, number],
-      c2: [number, number, number, number],
-    ): number {
-      const l1 = relLum(c1[0], c1[1], c1[2]);
-      const l2 = relLum(c2[0], c2[1], c2[2]);
-      const lighter = Math.max(l1, l2);
-      const darker = Math.min(l1, l2);
-      return (lighter + 0.05) / (darker + 0.05);
-    }
-
-    const rootBg: [number, number, number, number] =
-      theme === 'paper' ? [248, 244, 234, 1] : [18, 18, 28, 1];
-
-    // Scope contrast evaluation to visible/occluding content.
-    // When SettingsModal is open, evaluate only the modal subtree so underlying Fasting DOM is excluded.
-    const activeModal = document.querySelector('[aria-modal="true"], [role="dialog"]');
-    const rootScope: Element | Document =
-      routeId === 'settings' && activeModal ? activeModal : document;
-
-    const elements = Array.from(rootScope.querySelectorAll('*')).filter((e) => {
-      if (e.children.length !== 0 || !e.textContent || e.textContent.trim().length <= 1) {
-        return false;
-      }
-      if (routeId !== 'settings' && activeModal && activeModal.contains(e)) {
-        return false;
-      }
-      return true;
-    });
-
-    const low: { text: string; fg: string; bg: string; cr: number }[] = [];
-    let checked = 0;
-    let sumContrast = 0;
-    let minContrast = 999;
-
-    for (const el of elements) {
-      const rect = el.getBoundingClientRect();
-      if (rect.width === 0 || rect.height === 0 || rect.bottom < 0 || rect.top > 852) continue;
-
-      const style = window.getComputedStyle(el);
-      if (
-        style.visibility === 'hidden' ||
-        style.display === 'none' ||
-        parseFloat(style.opacity) < 0.1
-      ) {
-        continue;
-      }
-
-      const fg = parseRgba(style.color);
-      if (fg[3] < 0.1) continue;
-
-      // Ancestor background traversal with opaque layer & gradient termination
-      const stack: [number, number, number, number][] = [];
-      let curr: Element | null = el;
-      while (curr) {
-        // Direct gradient on container
-        const grad = parseGrad(window.getComputedStyle(curr).backgroundImage);
-        if (grad) {
-          stack.unshift(grad);
-          break;
-        }
-        // Direct first child gradient (LinearGradient absolute fill layer)
-        if (curr.firstElementChild) {
-          const fcGrad = parseGrad(window.getComputedStyle(curr.firstElementChild).backgroundImage);
-          if (fcGrad) {
-            stack.unshift(fcGrad);
-            break;
-          }
-        }
-        const c = parseRgba(window.getComputedStyle(curr).backgroundColor);
-        if (c[3] > 0) {
-          stack.unshift(c);
-          if (c[3] >= 0.98) break;
-        }
-        curr = curr.parentElement;
-      }
-
-      let bg = rootBg;
-      if (stack.length > 0 && stack[0][3] >= 0.98) {
-        bg = stack[0];
-        for (let i = 1; i < stack.length; i++) bg = composite(stack[i], bg);
-      } else {
-        for (const l of stack) bg = composite(l, bg);
-      }
-
-      const cr = Math.round(getContrast(fg, bg) * 100) / 100;
-      checked++;
-      sumContrast += cr;
-      if (cr < minContrast) minContrast = cr;
-
-      if (cr < 3.0) {
-        low.push({
-          text: el.textContent!.trim().slice(0, 30),
-          fg: style.color,
-          bg: `rgb(${bg[0]},${bg[1]},${bg[2]})`,
-          cr,
-        });
-      }
-    }
-
-    return {
-      checked,
-      minContrast: minContrast === 999 ? 0 : minContrast,
-      avgContrast: checked > 0 ? Math.round((sumContrast / checked) * 100) / 100 : 0,
-      lowCount: low.length,
-      lowSamples: low.slice(0, 5),
-    };
-  };
 
   const blockedRows: { route: string; theme: string; reason: string }[] = [];
 
@@ -546,12 +553,15 @@ async function runProofHarness() {
         const report = await page.evaluate(evaluateDOMContrast, {
           theme,
           routeId: r.id,
+          minRatio: WCAG_MIN_RUNTIME_RATIO,
         });
         assert.ok(
           report.checked > 0,
           `Route ${r.id} (${theme}) has 0 text elements evaluated! Never report PASS for unrendered routes.`,
         );
 
+        // Real, falsifiable WCAG assertion: a computed ratio below the threshold
+        // is a failure, not a log line. This is what makes the harness able to go red.
         if (report.lowCount === 0) {
           console.log(
             `  ✓ [${theme.padEnd(5)}] ${r.name.padEnd(24)} Rendered: YES, Checked: ${String(
@@ -561,7 +571,8 @@ async function runProofHarness() {
             )}:1 [PASS]`,
           );
         } else {
-          const reason = `${report.lowCount} element(s) below WCAG contrast threshold (e.g. ${report.lowSamples[0]?.text})`;
+          const worst = report.lowSamples[0];
+          const reason = `${report.lowCount} element(s) below WCAG contrast threshold ${WCAG_MIN_RUNTIME_RATIO}:1 (worst computed ${worst?.cr.toFixed(2)}:1 on "${worst?.text}")`;
           blockedRows.push({ route: r.id, theme, reason });
           console.log(
             `  ⚠ [${theme.padEnd(5)}] ${r.name.padEnd(24)} Rendered: YES, Checked: ${String(
@@ -571,6 +582,11 @@ async function runProofHarness() {
             )}:1 [BLOCKED: ${reason}]`,
           );
         }
+        assert.equal(
+          report.lowCount,
+          0,
+          `Route ${r.id} (${theme}): ${report.lowCount} element(s) below WCAG ${WCAG_MIN_RUNTIME_RATIO}:1 minimum (worst ${report.minContrast.toFixed(2)}:1). Blocked rows: ${JSON.stringify(report.lowSamples)}`,
+        );
       }
 
       await context.close();
@@ -706,13 +722,34 @@ async function runProofHarness() {
       });
     }
     console.log('='.repeat(70) + '\n');
+
+    // Falsifiable gate: any runtime contrast violation fails the harness.
+    // Previously this block only logged blockedRows and always exited 0.
+    assert.equal(
+      blockedRows.length,
+      0,
+      `Text contrast harness failed: ${blockedRows.length}/20 runtime route rows violate the WCAG ${WCAG_MIN_RUNTIME_RATIO}:1 threshold. See breakdown above.`,
+    );
   } finally {
     await browser.close();
     server.close();
   }
 }
 
-runProofHarness().catch((err) => {
-  console.error('\n[FATAL] Error in text-contrast harness:', err);
-  process.exit(1);
-});
+// Only auto-run when executed directly, so the exported `evaluateDOMContrast`
+// and `WCAG_MIN_RUNTIME_RATIO` can be imported by focused tests without
+// launching the browser harness.
+const __isDirectRun =
+  typeof process !== 'undefined' &&
+  Array.isArray(process.argv) &&
+  process.argv[1] &&
+  path.resolve(process.argv[1]) === path.resolve(new URL(import.meta.url).pathname);
+
+if (__isDirectRun) {
+  runProofHarness().catch((err) => {
+    console.error('\n[FATAL] Error in text-contrast harness:', err);
+    process.exit(1);
+  });
+}
+
+export { runProofHarness };

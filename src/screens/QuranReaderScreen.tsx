@@ -1228,7 +1228,7 @@ export default function QuranReaderScreen({
           setSurah(arCached);
           return;
         }
-        setError(surahLoadFailed);
+        setError(surahLoadFailed());
       }
     } finally {
       if (requestId === surahRequestIdRef.current && isReaderMountedRef.current) {
@@ -1952,7 +1952,7 @@ export default function QuranReaderScreen({
           setTafsirEdition(res.edition);
         }
       } catch {
-        setTafsirText(tafsirLoadFailed);
+        setTafsirText(tafsirLoadFailed());
       } finally {
         setTafsirLoading(false);
       }
@@ -1986,7 +1986,7 @@ export default function QuranReaderScreen({
           }
         })
         .catch(() => {
-          setTafsirText(tafsirLoadFailed);
+          setTafsirText(tafsirLoadFailed());
         })
         .finally(() => {
           setTafsirLoading(false);
@@ -2033,9 +2033,9 @@ export default function QuranReaderScreen({
           size: surahDownloadSize || '—',
         }),
         [
-          { text: cancel, style: 'cancel' },
+          { text: cancel(), style: 'cancel' },
           {
-            text: remove,
+            text: remove(),
             style: 'destructive',
             onPress: () => {
               removeSurahDownload(selectedReciter, surahNumber, bitrate)
@@ -2060,7 +2060,7 @@ export default function QuranReaderScreen({
       }
       refreshDownloadState();
     } catch {
-      Alert.alert(downloadFailedTitle, downloadFailedBody);
+      Alert.alert(downloadFailedTitle(), downloadFailedBody());
     } finally {
       setSurahDownloading(false);
       setSurahDownloadProgress(null);
@@ -3767,7 +3767,7 @@ export default function QuranReaderScreen({
               accessibilityRole="button"
               accessibilityLabel={t('Retry loading page')}
             >
-              <AppText variant="caption" highlight style={styles.retryBtnText}>{retry}</AppText>
+              <AppText variant="caption" highlight style={styles.retryBtnText}>{retry()}</AppText>
             </TouchableOpacity>
           </View>
         ) : !currentPageData || currentPageData.pageNumber !== currentPage ? null : (
@@ -4033,7 +4033,7 @@ export default function QuranReaderScreen({
             accessibilityRole="button"
             accessibilityLabel={t('Retry loading surah')}
           >
-            <AppText variant="caption" highlight style={styles.retryBtnText}>{retry}</AppText>
+            <AppText variant="caption" highlight style={styles.retryBtnText}>{retry()}</AppText>
           </TouchableOpacity>
         </View>
       ) : (

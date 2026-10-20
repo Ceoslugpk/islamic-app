@@ -253,7 +253,7 @@ const HomeScreen = React.memo(function HomeScreen({
       settings.madhab
     );
   });
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [now, setNow] = useState(new Date());
   const [completed, setCompleted] = useState<Record<string, boolean>>(() => {
     const currentDate = new Date();
@@ -407,7 +407,7 @@ const HomeScreen = React.memo(function HomeScreen({
       if (requestId !== loadRequestIdRef.current || !isHomeScreenMountedRef.current) return;
       setLoading(false);
       if (!dataRef.current) {
-        setError(prayerTimesOfflineError);
+        setError(prayerTimesOfflineError());
       }
       return;
     }
@@ -461,7 +461,7 @@ const HomeScreen = React.memo(function HomeScreen({
         setData(fallbackCached);
         setError(null);
       } else if (!dataRef.current) {
-        setError(prayerTimesOfflineError);
+        setError(prayerTimesOfflineError());
       }
     } finally {
       if (requestId === loadRequestIdRef.current && isHomeScreenMountedRef.current) {
@@ -780,8 +780,8 @@ const HomeScreen = React.memo(function HomeScreen({
         >
           <SectionHeader
             eyebrow="Today"
-            title={gettingPrayerTimes}
-            subtitle={preparingDashboard}
+            title={gettingPrayerTimes()}
+            subtitle={preparingDashboard()}
             style={styles.sectionHeader}
           />
           <CountdownCardSkeleton />
@@ -834,13 +834,13 @@ const HomeScreen = React.memo(function HomeScreen({
           tone="danger"
           style={[styles.errorText, { textAlign: 'center', marginBottom: 8, fontSize: 16, fontWeight: '600' }]}
         >
-          {t(error || prayerTimesOfflineError)}
+          {prayerTimesOfflineError()}
         </AppText>
         <AppText
           variant="subtitle"
           style={{ textAlign: 'center', marginBottom: 20, fontSize: 14 }}
         >
-          {t(prayerTimesNeedsConnection)}
+          {prayerTimesNeedsConnection()}
         </AppText>
         <TouchableOpacity
           style={{
@@ -865,7 +865,7 @@ const HomeScreen = React.memo(function HomeScreen({
             tone="onGold"
             style={{ fontWeight: '600', fontSize: 14 }}
           >
-            {t(retry)}
+            {retry()}
           </AppText>
         </TouchableOpacity>
         </View>

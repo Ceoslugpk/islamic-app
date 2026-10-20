@@ -15,6 +15,7 @@ import {
   Linking,
   BackHandler,
   Platform,
+  I18nManager,
 } from 'react-native';
 import type { AccessibilityRole, AccessibilityState, GestureResponderEvent } from 'react-native';
 import { AppText } from '../components/ui/AppText';
@@ -27,7 +28,7 @@ import { useTheme } from '../lib/theme';
 import { useThemeTokens, getTokens, cardTokens, getBrandLogoSource } from '../theme/tokens';
 import { getForwardIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
-import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage, setAppLanguage } from '../lib/i18n';
+import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage } from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import { SheetHeader } from '../components/layout/SheetHeader';
@@ -47,12 +48,8 @@ import { useHaptics } from '../lib/haptics';
 import { Hairline } from '../components/Hairline';
 import { CALC_METHODS, fetchPrayerTimes } from '../lib/prayerTimes';
 import {
-  configureNotifications,
   requestNotificationPermission,
-  schedulePrayerNotifications,
-  scheduleQuranReminder,
-  cancelPrayerNotifications,
-  cancelQuranReminder,
+  rescheduleIfNeeded,
   getNotificationHealth,
   isNotificationSchedulingSupported,
   NotificationHealth,
@@ -84,9 +81,73 @@ import {
   isDiagnosticModeEnabled,
   DIAGNOSTIC_BUILD_ID,
   GatedDiagnosticModal,
+  usePressProbe,
+  wrapControlPress,
+  recordControlState,
+  noteControlPress,
+  beginLanguageSwitch,
+  recordConsistencyCheck,
 } from '../lib/diagnostic';
 
 const APP_VERSION = appConfig.expo.version;
+
+const LANGUAGE_WRITE_TIMEOUT_MS = 10_000;
+
+function withLanguageWriteTimeout<T>(task: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('Language persistence timed out')),
+      LANGUAGE_WRITE_TIMEOUT_MS,
+    );
+    task.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      },
+    );
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Screen-level control instrumentation (gated diagnostic recorder).
+// With the diagnostic gate OFF every helper below is a no-op: `probePress` returns
+// the handler it was given UNCHANGED, and no wrapper or extra prop ever reaches a
+// host component. Control ids are stable and readable:
+//   Settings::row::font-size, Settings::switch::women-lock, Settings::stepper::...
+// ---------------------------------------------------------------------------
+const SETTINGS_SCREEN = 'Settings';
+
+const settingsControlId = (kind: string, name: string): string =>
+  `${SETTINGS_SCREEN}::${kind}::${name}`;
+
+/** Wraps an inline (mapped / modal) control's handler. Identity when the gate is off. */
+const probePress = (
+  kind: string,
+  name: string,
+  onPress?: ((...args: any[]) => any) | undefined,
+  options?: { disabled?: boolean; targetScreen?: string }
+): any =>
+  wrapControlPress(settingsControlId(kind, name), kind, SETTINGS_SCREEN, onPress as any, options);
+
+/**
+ * Registers an inline control (and its current disabled state) while it renders, so
+ * coverage and stuck-disabled reporting see it even when it can never be pressed.
+ * Gated: a no-op with the diagnostic gate off.
+ */
+const probeControlState = (kind: string, name: string, disabled: boolean): void =>
+  recordControlState(settingsControlId(kind, name), kind, SETTINGS_SCREEN, disabled);
+
+/**
+ * Records a press on an inline control whose handler is the element's own onPress
+ * reference (mapped rows, where the handler cannot be wrapped at render time).
+ * Gated: a no-op with the diagnostic gate off; never calls the handler itself.
+ */
+const noteProbedPress = (kind: string, name: string, disabled: boolean): void =>
+  noteControlPress(settingsControlId(kind, name), kind, SETTINGS_SCREEN, { disabled });
 
 /**
  * The app's mission, in several languages.
@@ -198,10 +259,14 @@ interface SectionProps {
   expanded?: boolean;
   onToggle?: () => void;
   summary?: string;
+  /** Stable diagnostic control name, e.g. `language` -> Settings::section::language. */
+  probeId?: string;
 }
 
-/** Uppercase section label ABOVE a surface card; hairlines separate rows inside. */
-function Section({ label, children, collapsible, expanded, onToggle, summary }: SectionProps) {
+/** Uppercase section label ABOVE a surface card; hairlines separate rows inside.
+ *  Exported for the diagnostic capture-coverage tests (no behaviour change). */
+export function Section({ label, children, collapsible, expanded, onToggle, summary, probeId }: SectionProps) {
+  const sectionProbe = usePressProbe(probeId || '', 'section', { onPress: onToggle });
   const { mode } = useTheme();
   const homeTokens = getTokens(mode);
   const layout = useSettingsLayout();
@@ -216,7 +281,7 @@ function Section({ label, children, collapsible, expanded, onToggle, summary }: 
         </AppText>
         {collapsible && onToggle && (
           <Pressable
-            onPress={onToggle}
+            onPress={sectionProbe.onPress}
             accessibilityRole="button"
             accessibilityState={{ expanded: isExpanded }}
             accessibilityLabel={`${t(label)}, ${isExpanded ? t('Expanded') : t('Collapsed')}`}
@@ -247,7 +312,7 @@ function Section({ label, children, collapsible, expanded, onToggle, summary }: 
         />
         {collapsible && !isExpanded ? (
           <Pressable
-            onPress={onToggle}
+            onPress={sectionProbe.onPress}
             accessibilityRole="button"
             accessibilityState={{ expanded: false }}
             accessibilityLabel={`${t(label)}${summary ? `, ${summary}` : ''}, ${t('Collapsed')}`}
@@ -301,10 +366,13 @@ interface RowProps {
   accessibilityLabel?: string;
   accessibilityState?: AccessibilityState;
   testID?: string;
+  /** Stable diagnostic control name, e.g. `font-size` -> Settings::row::font-size. */
+  probeId?: string;
 }
 
-/** One settings row: comfortable touch target, title + optional description. */
-function Row({
+/** One settings row: comfortable touch target, title + optional description.
+ *  Exported for the diagnostic capture-coverage tests (no behaviour change). */
+export function Row({
   title,
   desc,
   right,
@@ -319,7 +387,9 @@ function Row({
   accessibilityLabel,
   accessibilityState,
   testID,
+  probeId,
 }: RowProps) {
+  const rowProbe = usePressProbe(probeId || '', 'row', { onPress, disabled });
   const { mode } = useTheme();
   const homeTokens = getTokens(mode);
   const layout = useSettingsLayout();
@@ -362,7 +432,7 @@ function Row({
       <Pressable
         testID={testID}
         style={({ pressed }) => [rowStyle, pressed && { backgroundColor: `${homeTokens.gold}14` }]}
-        onPress={onPress}
+        onPress={probeId ? rowProbe.onPress : onPress}
         accessibilityRole={accessibilityRole ?? 'button'}
         accessibilityLabel={accessibilityLabel ?? [t(title), desc ? t(desc) : ''].filter(Boolean).join(', ')}
         accessibilityState={{
@@ -398,15 +468,19 @@ function Row({
   );
 }
 
-function Toggle({
+export function Toggle({
   checked,
   onChange,
   label,
+  probeId,
 }: {
   checked: boolean;
   onChange: () => void;
   label?: string;
+  /** Stable diagnostic control name, e.g. `women-lock` -> Settings::switch::women-lock. */
+  probeId?: string;
 }) {
+  const switchProbe = usePressProbe(probeId || '', 'switch', { onPress: onChange });
   const { mode } = useTheme();
   const themeTokens = getTokens(mode);
   return (
@@ -416,7 +490,7 @@ function Toggle({
         { borderColor: themeTokens.goldBorder, backgroundColor: 'transparent', overflow: 'hidden' },
         pressed && styles.buttonPressed,
       ]}
-      onPress={onChange}
+      onPress={probeId ? switchProbe.onPress : onChange}
       hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
       accessibilityRole="switch"
       accessibilityState={{ checked }}
@@ -480,7 +554,7 @@ interface SegmentedProps<T> {
 }
 
 /** Compact segmented control with expanded hit targets and explicit selected state. */
-function Segmented<T extends string | number>({
+export function Segmented<T extends string | number>({
   options,
   value,
   onChange,
@@ -488,7 +562,8 @@ function Segmented<T extends string | number>({
   label,
   compact = false,
   inline = false,
-}: SegmentedProps<T>) {
+  probeId,
+}: SegmentedProps<T> & { probeId?: string }) {
   const { colors, mode } = useTheme();
   const layout = useSettingsLayout();
   const themeTokens = getTokens(mode);
@@ -527,7 +602,13 @@ function Segmented<T extends string | number>({
               disabled && { opacity: 0.55 },
               pressed && !disabled && styles.buttonPressed,
             ]}
-            onPress={() => onChange(option.value)}
+            onPress={
+              probeId
+                ? probePress('segmented', `${probeId}-${String(option.value)}`, () => onChange(option.value), {
+                    disabled,
+                  })
+                : () => onChange(option.value)
+            }
             disabled={disabled}
             accessibilityRole="radio"
             accessibilityLabel={`${t(label)}: ${t(option.label)}`}
@@ -574,7 +655,7 @@ interface AdjustRowProps {
  * Slider-style control: label + value on top, [−] / tappable track / [+] below.
  * Deliberately dependency-free (no @react-native-community/slider).
  */
-function AdjustRow({
+export function AdjustRow({
   label,
   valueLabel,
   min,
@@ -585,7 +666,8 @@ function AdjustRow({
   decreaseLabel = 'A−',
   increaseLabel = 'A+',
   rtl = false,
-}: AdjustRowProps) {
+  probeId,
+}: AdjustRowProps & { probeId?: string }) {
   const { colors } = useTheme();
   const layout = useSettingsLayout();
   const [trackWidth, setTrackWidth] = useState(0);
@@ -604,6 +686,19 @@ function AdjustRow({
     apply(min + ratio * (max - min));
   };
 
+  // Instrumented stepper: `Settings::stepper::<name>-{decrease,track,increase}`.
+  const minusProbe = usePressProbe(probeId ? `${probeId}-decrease` : '', 'stepper', {
+    onPress: () => apply(clamped - step),
+    disabled: clamped <= min,
+  });
+  const trackProbe = usePressProbe(probeId ? `${probeId}-track` : '', 'stepper', {
+    onPress: handleTrackPress,
+  });
+  const plusProbe = usePressProbe(probeId ? `${probeId}-increase` : '', 'stepper', {
+    onPress: () => apply(clamped + step),
+    disabled: clamped >= max,
+  });
+
   return (
     <View style={[styles.adjustRow, { paddingHorizontal: layout.cardPad }]}>
       <View style={styles.adjustHeader}>
@@ -613,7 +708,7 @@ function AdjustRow({
       <View style={styles.adjustControls}>
         <Pressable
           style={({ pressed }) => [styles.adjustBtn, { borderColor: colors.borderSubtle, opacity: clamped <= min ? 0.4 : 1 }, pressed && styles.buttonPressed]}
-          onPress={() => apply(clamped - step)}
+          onPress={probeId ? minusProbe.onPress : () => apply(clamped - step)}
           disabled={clamped <= min}
           hitSlop={{ top: 8, bottom: 8 }}
           accessibilityRole="button"
@@ -625,7 +720,7 @@ function AdjustRow({
         <Pressable
           style={({ pressed }) => [styles.adjustTrackArea, pressed && styles.buttonPressed]}
           onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
-          onPress={handleTrackPress}
+          onPress={probeId ? trackProbe.onPress : handleTrackPress}
           hitSlop={{ top: 8, bottom: 8 }}
           accessibilityRole="adjustable"
           accessibilityLabel={`${label}, ${valueLabel}`}
@@ -638,7 +733,7 @@ function AdjustRow({
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.adjustBtn, { borderColor: colors.borderSubtle, opacity: clamped >= max ? 0.4 : 1 }, pressed && styles.buttonPressed]}
-          onPress={() => apply(clamped + step)}
+          onPress={probeId ? plusProbe.onPress : () => apply(clamped + step)}
           disabled={clamped >= max}
           hitSlop={{ top: 8, bottom: 8 }}
           accessibilityRole="button"
@@ -756,6 +851,12 @@ export default function SettingsScreen({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedMissionLanguage(getMissionLanguage(settings.language));
   }, [settings.language]);
+
+  useEffect(() => {
+    // Gated: re-record the language/direction verdict after every language change and
+    // after the language-switch lock clears (no-op with the diagnostic gate off).
+    recordConsistencyCheck();
+  }, [settings.language, isSwitchingLanguage]);
 
   useEffect(() => {
     let mounted = true;
@@ -888,15 +989,32 @@ export default function SettingsScreen({
         if (next) {
           const granted = await requestNotificationPermission();
           if (granted) {
-            await configureNotifications();
-            const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
-            await cancelPrayerNotifications();
-            await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
+            await rescheduleIfNeeded(
+              settings.manualLocation,
+              settings.methodId,
+              next,
+              reminderOffsetMinutes,
+              quranReminderEnabled,
+              settings.madhab,
+              settings.prayerConfigs,
+              settings.quranReminderTime,
+              settings.quranGoal,
+            );
           }
           // Denied: the preference still flips and the "permission needed"
           // banner appears (health refreshes on remindersEnabled change).
         } else {
-          await cancelPrayerNotifications();
+          await rescheduleIfNeeded(
+            settings.manualLocation,
+            settings.methodId,
+            next,
+            reminderOffsetMinutes,
+            quranReminderEnabled,
+            settings.madhab,
+            settings.prayerConfigs,
+            settings.quranReminderTime,
+            settings.quranGoal,
+          );
         }
       } catch {
         // scheduling failed; the toggle still flips, user can retry
@@ -913,11 +1031,30 @@ export default function SettingsScreen({
         if (next) {
           const granted = await requestNotificationPermission();
           if (granted) {
-            await configureNotifications();
-            await scheduleQuranReminder();
+            await rescheduleIfNeeded(
+              settings.manualLocation,
+              settings.methodId,
+              remindersEnabled,
+              reminderOffsetMinutes,
+              next,
+              settings.madhab,
+              settings.prayerConfigs,
+              settings.quranReminderTime,
+              settings.quranGoal,
+            );
           }
         } else {
-          await cancelQuranReminder();
+          await rescheduleIfNeeded(
+            settings.manualLocation,
+            settings.methodId,
+            remindersEnabled,
+            reminderOffsetMinutes,
+            next,
+            settings.madhab,
+            settings.prayerConfigs,
+            settings.quranReminderTime,
+            settings.quranGoal,
+          );
         }
       } catch {
         // scheduling failed; the toggle still flips, user can retry
@@ -1059,6 +1196,7 @@ export default function SettingsScreen({
 
         {/* App language and writing direction */}
         <Section
+          probeId="language"
           label={t('Language / زبان')}
           collapsible
           expanded={expandedGroups.language}
@@ -1102,6 +1240,150 @@ export default function SettingsScreen({
               const nextLang = opt.value;
               const isArabicScript = opt.value === 'ar' || opt.value === 'ur' || opt.value === 'ps';
 
+              // Gated: this row is registered (with its disabled state) while it renders.
+              probeControlState('row', `language-${opt.value}`, isSwitchingLanguage);
+
+              const onSelectLanguage = () => {
+                // Gated: the press is recorded before the handler runs.
+                noteProbedPress('row', `language-${opt.value}`, isSwitchingLanguage);
+                if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
+                  const currentLang = settings.language;
+                  const currentIsRtl = isRtlLanguage(currentLang);
+                  const nextIsRtl = isRtlLanguage(nextLang);
+                  const isDirectionChange = currentIsRtl !== nextIsRtl;
+                  const nativeDirectionMismatch =
+                    Platform.OS !== 'web' && I18nManager.isRTL !== nextIsRtl;
+                  const needsNativeReload =
+                    Platform.OS !== 'web' && (isDirectionChange || nativeDirectionMismatch);
+                  const restoreLanguage = () =>
+                    withLanguageWriteTimeout(Promise.resolve(setLanguage(currentLang))).then(() => {
+                      prepareNativeLayoutDirection(currentLang);
+                    });
+
+                  // Gated app-state record: what was asked for, and what happened to it.
+                  const languageSwitch = beginLanguageSwitch(currentLang, nextLang, {
+                    reloadRequested: needsNativeReload,
+                  });
+
+                  isSwitchingLanguageRef.current = true;
+                  setIsSwitchingLanguage(true);
+                  setSwitchingTargetLang(nextLang);
+                  setLanguageError(null);
+                  haptic('selection');
+                  if (reloadTimerRef.current) {
+                    clearTimeout(reloadTimerRef.current);
+                    reloadTimerRef.current = null;
+                  }
+                  if (failSafeTimerRef.current) {
+                    clearTimeout(failSafeTimerRef.current);
+                    failSafeTimerRef.current = null;
+                  }
+
+                  // Case 1: Native reload is unnecessary only when the current native
+                  // direction already matches the target direction. Web updates live.
+                  if (!needsNativeReload) {
+                    withLanguageWriteTimeout(Promise.resolve(setLanguage(nextLang)))
+                      .then(() => {
+                        languageSwitch.markResolved();
+                        prepareNativeLayoutDirection(nextLang);
+                        isSwitchingLanguageRef.current = false;
+                        if (mountedRef.current) {
+                          setIsSwitchingLanguage(false);
+                          setSwitchingTargetLang(null);
+                        }
+                      })
+                      .catch(() => {
+                        void restoreLanguage().catch(() => {}).finally(() => {
+                          languageSwitch.markRejected();
+                          isSwitchingLanguageRef.current = false;
+                          if (mountedRef.current) {
+                            setIsSwitchingLanguage(false);
+                            setSwitchingTargetLang(null);
+                            setLanguageError(t('Failed to save settings. Please try again.'));
+                          }
+                        });
+                      });
+                    return;
+                  }
+
+                  // Case 2: Native direction needs repair (including stale same-direction state).
+                  // React Native native layout direction (I18nManager.forceRTL)
+                  // requires a native reload for views to mirror.
+                  // We persist the choice, prepare native direction for next boot,
+                  // and trigger a native reload.
+                  // Fail-safe guarantee: if the reload promise rejects, or if the
+                  // reload resolves without restarting the process, the UI is
+                  // guaranteed to unlock on a bounded timer and inform the user.
+                  const RELOAD_TIMEOUT_MS = 1500;
+
+                  const handleReloadFallback = async () => {
+                    // The switch neither restarted the app nor completed: say so.
+                    languageSwitch.markNoRestart();
+                    if (reloadTimerRef.current) {
+                      clearTimeout(reloadTimerRef.current);
+                      reloadTimerRef.current = null;
+                    }
+                    if (failSafeTimerRef.current) {
+                      clearTimeout(failSafeTimerRef.current);
+                      failSafeTimerRef.current = null;
+                    }
+                    try {
+                      await restoreLanguage();
+                    } catch {
+                      // Always unlock below; a later attempt can retry.
+                    }
+                    isSwitchingLanguageRef.current = false;
+                    if (mountedRef.current) {
+                      setIsSwitchingLanguage(false);
+                      setSwitchingTargetLang(null);
+                      setLanguageError(
+                        t('Please restart the app to apply the new layout direction.')
+                      );
+                    }
+                  };
+
+                  withLanguageWriteTimeout(Promise.resolve(setLanguage(nextLang))).then(() => {
+                    languageSwitch.markReloadRequested();
+                    onPrepareReload?.();
+                    prepareNativeLayoutDirection(nextLang);
+
+                    reloadTimerRef.current = setTimeout(() => {
+                      reloadTimerRef.current = null;
+
+                      // Safety window: if JS engine is still executing after this duration,
+                      // reloadAppAsync did not restart the process (e.g. standalone release APK).
+                      failSafeTimerRef.current = setTimeout(() => {
+                        failSafeTimerRef.current = null;
+                        handleReloadFallback();
+                      }, RELOAD_TIMEOUT_MS);
+
+                      reloadAppAsync('App language changed').catch(() => {
+                        void handleReloadFallback();
+                      });
+                    }, 300);
+                  })
+                    .catch(() => {
+                      void restoreLanguage().catch(() => {}).finally(() => {
+                        languageSwitch.markRejected();
+                        isSwitchingLanguageRef.current = false;
+                        if (reloadTimerRef.current) {
+                          clearTimeout(reloadTimerRef.current);
+                          reloadTimerRef.current = null;
+                        }
+                        if (failSafeTimerRef.current) {
+                          clearTimeout(failSafeTimerRef.current);
+                          failSafeTimerRef.current = null;
+                        }
+                        if (mountedRef.current) {
+                          setIsSwitchingLanguage(false);
+                          setSwitchingTargetLang(null);
+                          setLanguageError(t('Still could not load. Try again later.'));
+                        }
+                      });
+                    });
+                }
+              };
+
               return (
                 <View key={opt.value}>
                   {index > 0 && <Hairline />}
@@ -1117,128 +1399,7 @@ export default function SettingsScreen({
                       pressed && styles.buttonPressed,
                     ]}
                     disabled={isSwitchingLanguage}
-                    onPress={() => {
-                      if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
-                        const currentLang = settings.language;
-                        const currentIsRtl = isRtlLanguage(currentLang);
-                        const nextIsRtl = isRtlLanguage(nextLang);
-                        const isDirectionChange = currentIsRtl !== nextIsRtl;
-
-                        isSwitchingLanguageRef.current = true;
-                        setIsSwitchingLanguage(true);
-                        setSwitchingTargetLang(nextLang);
-                        setLanguageError(null);
-                        haptic('selection');
-                        if (reloadTimerRef.current) {
-                          clearTimeout(reloadTimerRef.current);
-                          reloadTimerRef.current = null;
-                        }
-                        if (failSafeTimerRef.current) {
-                          clearTimeout(failSafeTimerRef.current);
-                          failSafeTimerRef.current = null;
-                        }
-
-                        // Case 1: Same layout direction (e.g. LTR->LTR or RTL->RTL) or Web.
-                        // No native reload needed! Persist and switch live immediately.
-                        if (Platform.OS === 'web' || !isDirectionChange) {
-                          Promise.resolve(setLanguage(nextLang))
-                            .then(() => {
-                              if (Platform.OS === 'web') {
-                                prepareNativeLayoutDirection(nextLang);
-                              }
-                              isSwitchingLanguageRef.current = false;
-                              if (mountedRef.current) {
-                                setIsSwitchingLanguage(false);
-                                setSwitchingTargetLang(null);
-                              }
-                            })
-                            .catch(() => {
-                              isSwitchingLanguageRef.current = false;
-                              if (mountedRef.current) {
-                                setIsSwitchingLanguage(false);
-                                setSwitchingTargetLang(null);
-                                setLanguageError(t('Failed to save settings. Please try again.'));
-                              }
-                            });
-                          return;
-                        }
-
-                        // Case 2: Direction Change on Native (LTR <-> RTL).
-                        // React Native native layout direction (I18nManager.forceRTL)
-                        // requires a native reload for views to mirror.
-                        // We persist the choice, prepare native direction for next boot,
-                        // and trigger a native reload.
-                        // Fail-safe guarantee: if the reload promise rejects, or if the
-                        // reload resolves without restarting the process, the UI is
-                        // guaranteed to unlock on a bounded timer and inform the user.
-                        const RELOAD_TIMEOUT_MS = 1500;
-
-                        const handleReloadFallback = () => {
-                          if (reloadTimerRef.current) {
-                            clearTimeout(reloadTimerRef.current);
-                            reloadTimerRef.current = null;
-                          }
-                          if (failSafeTimerRef.current) {
-                            clearTimeout(failSafeTimerRef.current);
-                            failSafeTimerRef.current = null;
-                          }
-                          // Keep in-memory session consistent with active layout direction
-                          // so language and layout direction never disagree in this session.
-                          setAppLanguage(currentLang);
-                          updateSettings((prev) => ({ ...prev, language: currentLang }));
-                          isSwitchingLanguageRef.current = false;
-                          if (mountedRef.current) {
-                            setIsSwitchingLanguage(false);
-                            setSwitchingTargetLang(null);
-                            setLanguageError(
-                              t('Please restart the app to apply the new layout direction.')
-                            );
-                          }
-                        };
-
-                        Promise.resolve(setLanguage(nextLang)).then(() => {
-                          onPrepareReload?.();
-                          prepareNativeLayoutDirection(nextLang);
-
-                          reloadTimerRef.current = setTimeout(() => {
-                            reloadTimerRef.current = null;
-
-                            // Safety window: if JS engine is still executing after this duration,
-                            // reloadAppAsync did not restart the process (e.g. standalone release APK).
-                            failSafeTimerRef.current = setTimeout(() => {
-                              failSafeTimerRef.current = null;
-                              handleReloadFallback();
-                            }, RELOAD_TIMEOUT_MS);
-
-                            reloadAppAsync('App language changed').catch(() => {
-                              isSwitchingLanguageRef.current = false;
-                              if (mountedRef.current) {
-                                setIsSwitchingLanguage(false);
-                                setSwitchingTargetLang(null);
-                                setLanguageError(t('Still could not load. Try again later.'));
-                              }
-                              handleReloadFallback();
-                            });
-                          }, 300);
-                        })
-                          .catch(() => {
-                            isSwitchingLanguageRef.current = false;
-                            if (reloadTimerRef.current) {
-                              clearTimeout(reloadTimerRef.current);
-                              reloadTimerRef.current = null;
-                            }
-                            if (failSafeTimerRef.current) {
-                              clearTimeout(failSafeTimerRef.current);
-                              failSafeTimerRef.current = null;
-                            }
-                            if (mountedRef.current) {
-                              setIsSwitchingLanguage(false);
-                              setSwitchingTargetLang(null);
-                              setLanguageError(t('Still could not load. Try again later.'));
-                            }
-                          });
-                      }
-                    }}
+                    onPress={onSelectLanguage}
                     accessibilityRole="radio"
                     accessibilityState={{ selected: isSelected, disabled: isSwitchingLanguage }}
                     {...(Platform.OS === 'web' ? { 'aria-checked': isSelected as any } : {})}
@@ -1364,6 +1525,7 @@ export default function SettingsScreen({
 
         {/* Appearance — theme and haptics */}
         <Section
+          probeId="appearance"
           label={t("Appearance")}
           collapsible
           expanded={expandedGroups.appearance}
@@ -1375,7 +1537,9 @@ export default function SettingsScreen({
             desc={themeMode === 'system' ? t('Follow system') : themeMode === 'ink' ? t('Dark (Ink)') : t('Light (Paper)')}
             accessibilityRole="text"
             right={
-              <Segmented<'system' | 'ink' | 'paper'>
+              <Segmented
+                <'system' | 'ink' | 'paper'>
+                probeId="theme"
                 label={t("Theme")}
                 options={themeOptions}
                 value={themeMode}
@@ -1391,6 +1555,7 @@ export default function SettingsScreen({
             desc={t("Subtle vibration feedback for meaningful actions")}
             right={
               <Toggle
+                probeId="haptics"
                 checked={hapticsEnabled}
                 onChange={() => setHapticsEnabled(!hapticsEnabled)}
                 label={`${t("Haptics")}, ${t("Subtle vibration feedback for meaningful actions")}`}
@@ -1401,6 +1566,7 @@ export default function SettingsScreen({
 
         {/* Quran: Translation, Downloads, and Display */}
         <Section
+          probeId="quran"
           label={t("Holy Quran")}
           collapsible
           expanded={expandedGroups.quran}
@@ -1408,6 +1574,7 @@ export default function SettingsScreen({
           summary={`${getLocalizedLanguageName(edition.language)} · ${quranFontSize}pt · ${quranLineHeight.toFixed(1)}×`}
         >
           <Row
+            probeId="translation-language"
             title={t("Translation Language")}
             desc={`${flag} ${getLocalizedLanguageName(edition.language)} (${getLocalizedTranslatorName(edition.editionIdentifier, edition.name)})`}
             onPress={() => { setQuranLangModalOpen(true); haptic('light'); }}
@@ -1425,6 +1592,7 @@ export default function SettingsScreen({
             })}
             right={
               <Toggle
+                probeId="preload-quran-text"
                 checked={settings.quranPreloadRequested}
                 onChange={() => handleToggleQuranTextPreload(!settings.quranPreloadRequested)}
                 label={`${t('Preload Quran text')}, ${t('{{n}}/114 cached · {{edition}}', {
@@ -1453,7 +1621,7 @@ export default function SettingsScreen({
             right={
               <OutlineButton
                 label={verifyingText ? t('Checking…') : t('Check')}
-                onPress={handleVerifyQuranText}
+                onPress={probePress('button', 'verify-offline-copy', handleVerifyQuranText)}
                 disabled={verifyingText}
                 accessibilityLabel={`${t('Verify offline copy')}, ${t('Check that all 114 surahs are stored and readable offline')}`}
               />
@@ -1463,9 +1631,10 @@ export default function SettingsScreen({
             <>
               <Hairline />
               <Row
+                probeId="repair-incomplete-surahs"
                 title={t("Repair incomplete surahs")}
                 desc={t('Re-download only the {{count}} surahs that failed verification', { count: textVerification.missingSurahs.length + textVerification.invalidSurahs.length })}
-                onPress={handleRepairQuranText}
+                onPress={probePress('button', 'repair-incomplete-surahs', handleRepairQuranText)}
                 accessibilityLabel={t('Re-download incomplete surahs')}
                 right={<Ionicons name="cloud-download-outline" size={18} color={colors.accent} />}
               />
@@ -1484,6 +1653,7 @@ export default function SettingsScreen({
             return (
               <View key={option.key}>
                 <Row
+                  probeId={`quran-script-${option.key}`}
                   title={option.label}
                   desc={option.desc}
                   titleFont={QURAN_FONT_FAMILIES[option.key].regular}
@@ -1522,6 +1692,7 @@ export default function SettingsScreen({
 
           <Hairline />
           <AdjustRow
+            probeId="font-size"
             label={t("Font Size")}
             valueLabel={`${quranFontSize}pt`}
             min={QURAN_FONT_SIZE_MIN}
@@ -1534,6 +1705,7 @@ export default function SettingsScreen({
 
           <Hairline />
           <AdjustRow
+            probeId="line-height"
             label={t("Line Height")}
             valueLabel={`${quranLineHeight.toFixed(1)}×`}
             min={QURAN_LINE_HEIGHT_MIN}
@@ -1552,6 +1724,7 @@ export default function SettingsScreen({
             desc={t("Show the translation beneath each ayah")}
             right={
               <Toggle
+                probeId="show-translation"
                 checked={quranShowTranslation}
                 onChange={() => { setQuranShowTranslation(!quranShowTranslation); haptic('light'); }}
                 label={`${t("Translation")}, ${t("Show the translation beneath each ayah")}`}
@@ -1562,6 +1735,7 @@ export default function SettingsScreen({
 
         {/* Prayer & Reminders */}
         <Section
+          probeId="prayer-times"
           label={t("Prayer Times")}
           collapsible
           expanded={expandedGroups.prayer}
@@ -1569,6 +1743,7 @@ export default function SettingsScreen({
           summary={`${CALC_METHODS.find((m) => m.id === methodId)?.name || ''} · ${timeFormat} · ${remindersEnabled ? t('Reminders on') : t('Reminders off')}`}
         >
           <Row
+            probeId="calculation-method"
             title={t("Calculation method")}
             desc={`${selectedMethod.name} · ${selectedMethod.region}`}
             onPress={() => { setMethodSheetOpen(true); haptic('light'); }}
@@ -1578,7 +1753,9 @@ export default function SettingsScreen({
           <Hairline />
           {/* Time format */}
           <Row title={t("Time format")} desc={t("How prayer times are shown across the app")} accessibilityRole="text" />
-          <Segmented<'12h' | '24h'>
+          <Segmented
+            <'12h' | '24h'>
+            probeId="time-format"
             label={t("Time format")}
             options={timeOptions}
             value={timeFormat}
@@ -1623,14 +1800,22 @@ export default function SettingsScreen({
                   marginTop: layout.rowPad,
                 },
               ]}
-              onPress={async () => {
+              onPress={probePress('button', 'notification-permission-banner', async () => {
                 try {
                   const granted = await requestNotificationPermission();
                   if (granted) {
-                    await configureNotifications();
+                    await rescheduleIfNeeded(
+                      settings.manualLocation,
+                      settings.methodId,
+                      true,
+                      reminderOffsetMinutes,
+                      quranReminderEnabled,
+                      settings.madhab,
+                      settings.prayerConfigs,
+                      settings.quranReminderTime,
+                      settings.quranGoal,
+                    );
                     const data = await fetchPrayerTimes(settings.manualLocation, settings.methodId);
-                    await cancelPrayerNotifications();
-                    await schedulePrayerNotifications(data, reminderOffsetMinutes, settings.manualLocation.label);
                     const h = await getNotificationHealth(data, settings.manualLocation, settings.methodId, true);
                     setHealth(h);
                     setReminders(true);
@@ -1643,7 +1828,7 @@ export default function SettingsScreen({
                 } catch {
                   // scheduling failed; health row shows the current state
                 }
-              }}
+              })}
               accessibilityRole="button"
               accessibilityLabel={t('Notification permission needed. Tap to allow notifications.')}
             >
@@ -1669,6 +1854,7 @@ export default function SettingsScreen({
             }
             right={
               <Toggle
+                probeId="prayer-reminders"
                 checked={remindersEnabled}
                 onChange={() => { onToggleReminders(); }}
                 label={`${t('Prayer reminders')}, ${remindersEnabled ? `On · ${reminderOffsetMinutes} min before each prayer` : 'Off — no prayer notifications'}`}
@@ -1683,7 +1869,9 @@ export default function SettingsScreen({
             desc={`${reminderOffsetMinutes} min before each prayer`}
             accessibilityRole="text"
           />
-          <Segmented<number>
+          <Segmented
+            <number>
+            probeId="reminder-offset"
             label={t("Remind before prayer")}
             options={offsetOptions}
             value={reminderOffsetMinutes}
@@ -1695,6 +1883,7 @@ export default function SettingsScreen({
           {/* Adhan Reciter Choice */}
           <Hairline />
           <Row
+            probeId="adhan-reciter"
             title={t("Adhan Reciter")}
             desc={`${getAdhanReciter(settings.adhanReciterId).name} · ${getAdhanReciter(settings.adhanReciterId).location}`}
             onPress={() => { setAdhanModalOpen(true); haptic('light'); }}
@@ -1718,7 +1907,7 @@ export default function SettingsScreen({
               <OutlineButton
                 label={isPlayingAdhan ? t('Stop') : t('Play')}
                 icon={isPlayingAdhan ? 'stop' : 'play'}
-                onPress={onTestAdhan}
+                onPress={probePress('button', 'test-adhan-sound', onTestAdhan)}
                 accessibilityLabel={`${t('Test adhan sound')}, Preview ${getAdhanReciter(settings.adhanReciterId).name}, ${isPlayingAdhan ? t('Stop') : t('Play')}`}
               />
             }
@@ -1735,6 +1924,7 @@ export default function SettingsScreen({
             }
             right={
               <Toggle
+                probeId="quran-reminder"
                 checked={quranReminderEnabled}
                 onChange={onToggleQuranReminder}
                 label={`${t('Quran reminder')}, ${quranReminderEnabled ? `On · daily at ${formatTime(settings.quranReminderTime, timeFormat)}` : 'Off — no daily reminder'}`}
@@ -1760,6 +1950,7 @@ export default function SettingsScreen({
 
         {/* Women's Worship */}
         <Section
+          probeId="women"
           label={t("Women's Worship")}
           collapsible
           expanded={expandedGroups.women}
@@ -1771,6 +1962,7 @@ export default function SettingsScreen({
             desc={t("Show women's worship tools (period tracking, purity, fiqh)")}
             right={
               <Toggle
+                probeId="womens-worship"
                 checked={womenWorshipEnabled}
                 onChange={onToggleWomenWorship}
                 label={`${t("Women's Worship")}, ${t("Show women's worship tools (period tracking, purity, fiqh)")}`}
@@ -1801,14 +1993,14 @@ export default function SettingsScreen({
               <View style={styles.consentBtnsInline}>
                 <TouchableOpacity
                   style={[styles.consentBtn, { borderColor: colors.borderSubtle }]}
-                  onPress={() => setConsentOpen(false)}
+                  onPress={probePress('button', 'women-consent-cancel', () => setConsentOpen(false))}
                   accessibilityRole="button"
                 >
                   <AppText variant="caption" style={styles.consentBtnText}>{t('Cancel')}</AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.consentBtn, styles.consentBtnPrimary, { overflow: 'hidden' }]}
-                  onPress={confirmWomenEnable}
+                  onPress={probePress('button', 'women-consent-enable', confirmWomenEnable)}
                   accessibilityRole="button"
                 >
                   <LinearGradient colors={tokens.goldGradient} style={absoluteStartEndFill} />
@@ -1853,7 +2045,7 @@ export default function SettingsScreen({
                 right={
                   <TouchableOpacity
                     style={[styles.privacyActionBtn, { borderColor: colors.accent }]}
-                    onPress={() => {
+                    onPress={probePress('button', 'women-lock-action', () => {
                       if (womenLockEnabled) {
                         if (womenPinHash) {
                           setPinModalMode('verifyDisableLock');
@@ -1871,7 +2063,7 @@ export default function SettingsScreen({
                           setWomenLockEnabled(true);
                         }
                       }
-                    }}
+                    })}
                     accessibilityRole="button"
                     accessibilityLabel={womenLockEnabled ? "Disable App lock PIN" : "Enable App lock PIN"}
                   >
@@ -1883,12 +2075,14 @@ export default function SettingsScreen({
               />
               {womenPinHash ? (
                 <Row
+                  probeId="change-pin"
                   title={t("Change PIN")}
                   onPress={() => setPinModalMode('change')}
                   right={<AppText variant="link" style={styles.privacyActionText}>{t('Change')}</AppText>}
                 />
               ) : (
                 <Row
+                  probeId="set-pin"
                   title={t("Set PIN")}
                   desc={t("Add a 4-digit PIN to lock women's screens")}
                   onPress={() => setPinModalMode('set')}
@@ -1903,6 +2097,7 @@ export default function SettingsScreen({
                 desc={t("Require your device security (fingerprint, face, or PIN) before viewing private Women's Worship information.")}
                 right={
                   <Toggle
+                    probeId="women-lock"
                     checked={womenLockEnabled}
                     onChange={() => {
                       if (womenLockEnabled) {
@@ -1925,6 +2120,7 @@ export default function SettingsScreen({
                 <>
                   <Hairline />
                   <Row
+                    probeId="women-cycle-tracker"
                     title={t("Cycle Tracker")}
                     desc={t("Period logging, cycle duration & predictions")}
                     onPress={() => {
@@ -1941,6 +2137,7 @@ export default function SettingsScreen({
                   />
                   <Hairline />
                   <Row
+                    probeId="women-purity-ghusl"
                     title={t("Purity & Ghusl")}
                     desc={t("Step-by-step ghusl guide, tuhr & nifas tracker")}
                     onPress={() => {
@@ -1957,6 +2154,7 @@ export default function SettingsScreen({
                   />
                   <Hairline />
                   <Row
+                    probeId="women-worship-guidance"
                     title={t("Worship Guidance")}
                     desc={t("Authentic fiqh, exemptions & bleeding types")}
                     onPress={() => {
@@ -1973,6 +2171,7 @@ export default function SettingsScreen({
                   />
                   <Hairline />
                   <Row
+                    probeId="women-qada-fasts"
                     title={t("Qada Fasts")}
                     desc={t("Missed Ramadan fasts makeup ledger")}
                     onPress={() => {
@@ -1993,6 +2192,7 @@ export default function SettingsScreen({
               {/* Clear cycle history */}
               <Hairline />
               <Row
+                probeId="clear-cycle-history"
                 title={t("Clear cycle history")}
                 desc={t("Remove all period entries")}
                 onPress={() =>
@@ -2021,6 +2221,7 @@ export default function SettingsScreen({
               {/* Delete all women's data */}
               <Hairline />
               <Row
+                probeId="delete-womens-data"
                 title={t("Delete women's data")}
                 desc={t("Erase everything, on this device")}
                 danger
@@ -2056,6 +2257,7 @@ export default function SettingsScreen({
               {/* Hide features (keeps data) */}
               <Hairline />
               <Row
+                probeId="hide-womens-features"
                 title={t("Hide women's features")}
                 desc={t("Hide the tools now (your data is kept)")}
                 onPress={() => setWomenWorship(false)}
@@ -2115,6 +2317,7 @@ export default function SettingsScreen({
 
         {/* Data & About */}
         <Section
+          probeId="about-legal"
           label={t("About & Legal")}
           collapsible
           expanded={expandedGroups.data}
@@ -2122,6 +2325,7 @@ export default function SettingsScreen({
           summary={`${t('Privacy Policy')} · ${t('Backup & Restore')} · v${APP_VERSION}`}
         >
           <Row
+            probeId="legal-privacy-policy"
             title={t("Privacy Policy")}
             desc={t("No tracking, no accounts, data stays on device")}
             onPress={() => {
@@ -2138,6 +2342,7 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
+            probeId="legal-terms-of-use"
             title={t("Terms of Use")}
             desc={t("Free service provided as-is for educational use")}
             onPress={() => {
@@ -2154,6 +2359,7 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
+            probeId="legal-data-privacy"
             title={t("Data & Privacy")}
             desc={t("Local storage, third-party requests & data removal")}
             onPress={() => {
@@ -2170,6 +2376,7 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
+            probeId="legal-open-source-licenses"
             title={t("Open Source Licenses")}
             desc={t("Expo, React Native & open-source libraries")}
             onPress={() => {
@@ -2186,6 +2393,7 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
+            probeId="legal-third-party-services"
             title={t("Third-Party Services")}
             desc={t("Public APIs for prayer times, Quran text & audio")}
             onPress={() => {
@@ -2204,6 +2412,7 @@ export default function SettingsScreen({
 
           {/* Data & App */}
           <Row
+            probeId="backup-restore"
             title={t("Backup & Restore")}
             desc={t("Export or restore your local data from a file")}
             onPress={() => {
@@ -2220,6 +2429,7 @@ export default function SettingsScreen({
           />
           <Hairline />
           <Row
+            probeId="app-credits"
             title={t("App Credits")}
             desc={t("Built with the open-source Expo & React Native ecosystem")}
             onPress={() => {
@@ -2240,6 +2450,7 @@ export default function SettingsScreen({
             <>
               <Hairline />
               <Row
+                probeId="rtl-diagnostics"
                 testID="open-rtl-diagnostics-row"
                 title={`${t('Details')} · RTL`}
                 desc={`${t('App version')} · ${DIAGNOSTIC_BUILD_ID}`}
@@ -2329,7 +2540,7 @@ export default function SettingsScreen({
               contentContainerStyle={[styles.missionTabsContent, { direction: 'ltr' }]}
               accessibilityRole="tablist"
             >
-              {MISSION_TABS.map((tab) => {
+              {MISSION_TABS.map((tab, missionIndex) => {
                 const selected = tab.lang === selectedMissionLanguage;
                 const tabFont = tab.lang === 'العربية' || tab.lang === 'اردو'
                   ? 'NotoNaskhArabic_400Regular'
@@ -2338,7 +2549,7 @@ export default function SettingsScreen({
                   <Pressable
                     key={tab.lang}
                     style={({ pressed }) => [styles.missionTab, { borderColor: tokens.goldBorder }, pressed && styles.buttonPressed]}
-                    onPress={() => setSelectedMissionLanguage(tab.lang)}
+                    onPress={probePress('segmented', `mission-language-tab-${missionIndex}`, () => setSelectedMissionLanguage(tab.lang))}
                     accessibilityRole="tab"
                     accessibilityState={{ selected }}
                     accessibilityLabel={`${tab.label}${selected ? ', selected' : ''}`}
@@ -2430,7 +2641,7 @@ export default function SettingsScreen({
           <View style={styles.methodModalRoot}>
             <Pressable
               style={styles.methodBackdrop}
-              onPress={() => setMethodSheetOpen(false)}
+              onPress={probePress('backdrop', 'calculation-method-sheet', () => setMethodSheetOpen(false))}
               accessibilityRole="button"
               accessibilityLabel={t('Close calculation method sheet')}
             />
@@ -2467,7 +2678,7 @@ export default function SettingsScreen({
                     <View key={m.id}>
                       <Pressable
                         style={({ pressed }) => [styles.methodOptionRow, pressed && { backgroundColor: `${homeTokens.gold}14` }]}
-                        onPress={() => selectCalculationMethod(m)}
+                        onPress={probePress('row', `calculation-method-${m.id}`, () => selectCalculationMethod(m))}
                         accessibilityRole="radio"
                         accessibilityState={{ selected, checked: selected }}
                         {...(Platform.OS === 'web' ? { 'aria-checked': selected as any } : {})}

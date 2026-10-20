@@ -296,7 +296,7 @@ async function requestLocationPermissionDirectly(): Promise<Loc | null> {
 
 /**
  * First-launch permission onboarding orchestrator.
- * - Runs once per install (tracked by 'permissions-asked-v1').
+ * - Runs until the requested first-launch steps complete (tracked by 'permissions-asked-v1').
  * - NON-BLOCKING: Notifications permission is only asked when reminders are enabled in settings.
  *   If reminders are off (default on fresh install), zero notification prompts appear.
  * - When reminders are enabled and permission is undetermined, asks with a real choice
@@ -306,9 +306,26 @@ async function requestLocationPermissionDirectly(): Promise<Loc | null> {
  * - Location setup only fires when no usable location exists AND user hasn't opted out.
  *   If location setup is needed, prompts with real choice ('Use location' vs 'Not now').
  * - Users with everything off or saved location get ZERO blocking dialogs — Home opens clean.
- * - Graceful fallback on denial or platform unavailability (never throws or crashes).
+ * - User decisions and terminal platform states complete the flow; dependency failures propagate
+ *   so the caller can surface them and a later run can retry instead of silently looping.
  */
-export async function runFirstLaunchPermissions(
+let firstLaunchPermissionsInFlight: Promise<FirstLaunchPermissionsResult> | null = null;
+
+export function runFirstLaunchPermissions(
+  options?: FirstLaunchPermissionsOptions
+): Promise<FirstLaunchPermissionsResult> {
+  if (firstLaunchPermissionsInFlight) {
+    return firstLaunchPermissionsInFlight;
+  }
+
+  const run = runFirstLaunchPermissionsOnce(options);
+  firstLaunchPermissionsInFlight = run.finally(() => {
+    firstLaunchPermissionsInFlight = null;
+  });
+  return firstLaunchPermissionsInFlight;
+}
+
+async function runFirstLaunchPermissionsOnce(
   options?: FirstLaunchPermissionsOptions
 ): Promise<FirstLaunchPermissionsResult> {
   const alreadyAsked = await hasAskedPermissions();
@@ -321,9 +338,6 @@ export async function runFirstLaunchPermissions(
     };
   }
 
-  // Mark asked immediately so concurrent calls or fast restarts don't prompt twice
-  await markPermissionsAsked();
-
   const [remindersActive, hasUsableLoc] = await Promise.all([
     resolveRemindersEnabled(options),
     resolveHasUsableLocation(options),
@@ -332,33 +346,38 @@ export async function runFirstLaunchPermissions(
   let notificationsGranted = false;
   let didPromptNotifications = false;
   let userDeclinedNotifications = false;
+  let notificationStepComplete = !remindersActive;
 
   // Step 1: Notifications permission
   // NON-BLOCKING: Only asked if user has reminders enabled in settings.
   // If reminders are disabled, do NOT show rationale Alert, do NOT request OS permission.
   if (remindersActive) {
-    try {
-      const notifStatus = await checkNotificationPermission();
-      if (notifStatus === 'granted') {
-        notificationsGranted = true;
-        await configureNotifications().catch(() => {});
-      } else if (notifStatus === 'undetermined') {
-        const proceedNotif = await promptNotificationRationale();
-        if (proceedNotif) {
-          didPromptNotifications = true;
-          notificationsGranted = await requestNotificationPermission();
-          if (notificationsGranted) {
-            await configureNotifications().catch(() => {});
-          }
-        } else {
-          userDeclinedNotifications = true;
+    const notifStatus = await checkNotificationPermission();
+    if (notifStatus === 'granted') {
+      notificationsGranted = true;
+      await configureNotifications();
+      notificationStepComplete = true;
+    } else if (notifStatus === 'undetermined') {
+      const proceedNotif = await promptNotificationRationale();
+      if (proceedNotif) {
+        didPromptNotifications = true;
+        notificationsGranted = await requestNotificationPermission();
+        if (notificationsGranted) {
+          await configureNotifications();
         }
+        // Resolving the OS request is itself the user's decision, whether granted or denied.
+        notificationStepComplete = true;
+      } else {
+        userDeclinedNotifications = true;
+        // "Not now" is an explicit decision; do not ask the same rationale on every launch.
+        notificationStepComplete = true;
       }
-      // If notifStatus === 'denied': never re-trigger rationale Alert or re-request on launch;
-      // user re-enables from Settings banner.
-    } catch {
-      notificationsGranted = false;
+    } else if (notifStatus === 'denied') {
+      // The OS has already made the decision; Settings owns any future retry.
+      notificationStepComplete = true;
     }
+    // If notifStatus === 'denied': never re-trigger rationale Alert or re-request on launch;
+    // user re-enables from Settings banner.
   }
 
   // Step 2: Location permission
@@ -367,6 +386,7 @@ export async function runFirstLaunchPermissions(
   let locationGranted = false;
   let locationResult: Loc | null = null;
   const shouldSkipLocation = Boolean(options?.skipLocation || hasUsableLoc || userDeclinedNotifications);
+  let locationStepComplete = shouldSkipLocation;
 
   if (!shouldSkipLocation) {
     // Gap between prompts only if notifications prompt was actually shown
@@ -395,6 +415,7 @@ export async function runFirstLaunchPermissions(
         }
         if (locationResult) {
           locationGranted = true;
+          locationStepComplete = true;
           options?.onLocationGranted?.(locationResult);
         }
       } else if (locStatus === 'pending') {
@@ -408,15 +429,28 @@ export async function runFirstLaunchPermissions(
           }
           if (locationResult) {
             locationGranted = true;
+            locationStepComplete = true;
             options?.onLocationGranted?.(locationResult);
           }
+        } else {
+          // "Not now" is an explicit decision for this install, just like notifications.
+          locationStepComplete = true;
         }
+      } else if (locStatus === 'denied' || locStatus === 'unavailable') {
+        // The OS has already made the decision or the platform cannot provide
+        // this permission; Settings/location setup owns any future retry.
+        locationStepComplete = true;
       }
       // If locStatus === 'denied' or 'unavailable': do NOT prompt; Settings banner handles it.
     } catch {
       locationGranted = false;
       locationResult = null;
+      locationStepComplete = false;
     }
+  }
+
+  if (notificationStepComplete && locationStepComplete) {
+    await markPermissionsAsked();
   }
 
   return {

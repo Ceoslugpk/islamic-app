@@ -268,6 +268,8 @@ export function WomenPinModal({
               width: maxW,
             },
           ]}
+          accessibilityViewIsModal
+          importantForAccessibility="yes"
         >
           {/* Header Icon */}
           <View style={[styles.iconWrap, { backgroundColor: colors.accentDim, borderColor: colors.accent }]}>

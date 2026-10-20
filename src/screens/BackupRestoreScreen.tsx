@@ -4,6 +4,7 @@ import {
   StyleSheet,
   Alert,
   Platform,
+  Pressable,
 } from 'react-native';
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +19,10 @@ import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard, PrimaryButton, Chip } from '../components/ui';
 import {
   buildBackupPayload,
+  backupIncludesSensitiveWomenData,
+  backupOmitsSensitiveWomenData,
+  assertBackupSize,
+  getUtf8ByteLength,
   validateBackup,
   applyRestore,
   describeBackup,
@@ -47,20 +52,26 @@ export function BackupRestoreScreen({ onBack }: Props) {
   const { tokens } = useThemeTokens();
   const [busy, setBusy] = useState<'export' | 'import' | null>(null);
   const [lastInfo, setLastInfo] = useState<BackupActivityInfo | null>(null);
+  const [includeSensitiveWomenData, setIncludeSensitiveWomenData] = useState(false);
 
   const handleExport = async () => {
     if (busy) return;
     setBusy('export');
     try {
-      const payload = await buildBackupPayload();
+      const payload = await buildBackupPayload({ includeSensitiveWomenData });
       const fileName = `islamic-backup-${payload.exportedAt.slice(0, 10)}.json`;
       const desc = describeBackup(payload);
       const summaryText = desc.tables;
+      const serializedPayload = JSON.stringify(payload, null, 2);
+      assertBackupSize(getUtf8ByteLength(serializedPayload));
+      const sensitiveNotice = backupIncludesSensitiveWomenData(payload)
+        ? `\n\n${t("Women's Worship records are included in a user-created backup via Backup & Restore. The exported backup file is not automatically uploaded by the app; if you choose to share it using your device's share or document tools, you control where it goes. Because the exported file itself is not encrypted by the app, store any backup that contains Women's Worship data securely.")}`
+        : '';
       let destinationPath: string | undefined;
 
       if (Platform.OS === 'web') {
         // Web: download as a JSON file.
-        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const blob = new Blob([serializedPayload], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -70,7 +81,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
 
         Alert.alert(
           t('Backup exported'),
-          `${t('File')}: ${fileName}\n\n${t('Included in backup')}:\n${summaryText}`
+          `${t('File')}: ${fileName}\n\n${t('Included in backup')}:\n${summaryText}${sensitiveNotice}`
         );
       } else {
         const isSharingAvailable = Sharing?.isAvailableAsync ? await Sharing.isAvailableAsync().catch(() => false) : false;
@@ -79,7 +90,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
           const cacheDir = (FileSystem?.cacheDirectory || FileSystem?.documentDirectory || '') + 'islamic-backup/';
           await FileSystem?.makeDirectoryAsync?.(cacheDir, { intermediates: true })?.catch?.(() => {});
           const path = cacheDir + fileName;
-          await FileSystem?.writeAsStringAsync?.(path, JSON.stringify(payload, null, 2));
+          await FileSystem?.writeAsStringAsync?.(path, serializedPayload);
           destinationPath = path;
 
           await Sharing.shareAsync(path, {
@@ -89,19 +100,19 @@ export function BackupRestoreScreen({ onBack }: Props) {
 
           Alert.alert(
             t('Backup exported'),
-            `${t('File')}: ${fileName}\n\n${t('Included in backup')}:\n${summaryText}`
+            `${t('File')}: ${fileName}\n\n${t('Included in backup')}:\n${summaryText}${sensitiveNotice}`
           );
         } else {
           // Native when sharing unavailable: write to user-visible Documents directory
           const docDir = (FileSystem.documentDirectory || FileSystem.cacheDirectory || '') + 'islamic-backup/';
           await FileSystem.makeDirectoryAsync(docDir, { intermediates: true }).catch(() => {});
           const path = docDir + fileName;
-          await FileSystem.writeAsStringAsync(path, JSON.stringify(payload, null, 2));
+          await FileSystem.writeAsStringAsync(path, serializedPayload);
           destinationPath = path;
 
           Alert.alert(
             t('Backup saved to Documents'),
-            `${t('Sharing is unavailable on this device.')}\n\n${t('File saved to')}:\n${path}\n\n${t('Included in backup')}:\n${summaryText}`
+            `${t('Sharing is unavailable on this device.')}\n\n${t('File saved to')}:\n${path}\n\n${t('Included in backup')}:\n${summaryText}${sensitiveNotice}`
           );
         }
       }
@@ -142,6 +153,7 @@ export function BackupRestoreScreen({ onBack }: Props) {
           setBusy(null);
           return;
         }
+        assertBackupSize(picked.size);
         text = await picked.text();
       } else {
         if (!DocumentPicker?.getDocumentAsync) {
@@ -156,6 +168,8 @@ export function BackupRestoreScreen({ onBack }: Props) {
           return;
         }
         const uri = res.assets[0].uri;
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        assertBackupSize(fileInfo.exists && typeof fileInfo.size === 'number' ? fileInfo.size : Number.NaN);
         text = await FileSystem.readAsStringAsync(uri);
       }
 
@@ -166,11 +180,19 @@ export function BackupRestoreScreen({ onBack }: Props) {
       const info = describeBackup(p);
       const currentVersion = await getAppVersion();
       const isNewer = isNewerVersion(p.appVersion, currentVersion);
+      const sensitiveNotice = [
+        backupIncludesSensitiveWomenData(p)
+          ? t("Women's Worship records are included in this backup. Store the file securely because it is not encrypted by the app.")
+          : '',
+        backupOmitsSensitiveWomenData(p)
+          ? t("This backup omits Women's Worship data (cycle, postnatal, and sensitive missed-fast records). Restoring it will leave existing records in those categories on this device unchanged; other tables present in the backup may be overwritten.")
+          : '',
+      ].filter(Boolean).map((notice) => `\n\n${notice}`).join('');
 
       const confirmRestore = () => {
         Alert.alert(
           t('Confirm restore'),
-          `${t('Backup from')}: ${info.exportedAt}\n${t('App version')}: ${info.appVersion}\n\n${t('Includes')}:\n${info.tables}\n\n${t("Note: For your privacy, Women's Worship PIN is never included in backups and must be configured on this device.")}\n\n${t('This will OVERWRITE your current local data. This cannot be undone.')}`,
+          `${t('Backup from')}: ${info.exportedAt}\n${t('App version')}: ${info.appVersion}\n\n${t('Includes')}:\n${info.tables}${sensitiveNotice}\n\n${t("Note: For your privacy, Women's Worship PIN is never included in backups and must be configured on this device.")}\n\n${t('This will OVERWRITE your current local data. This cannot be undone.')}`,
           [
             { text: t('Cancel'), style: 'cancel', onPress: () => setBusy(null) },
             {
@@ -281,6 +303,34 @@ export function BackupRestoreScreen({ onBack }: Props) {
             accessibilityLabel={t('Export backup')}
             accessibilityHint={t('Creates a JSON backup file with your prayers, bookmarks, notes, and settings')}
           />
+          <View style={styles.sensitiveOption}>
+            <View style={styles.sensitiveCopy}>
+              <AppText variant="rowTitle" style={styles.sensitiveTitle}>
+                {t("Women's Worship Data")}
+              </AppText>
+              <AppText variant="caption" style={styles.sensitiveDescription}>
+                {t('Cycle & purity information is sensitive. Your data:\n• Stays on this device by default\n• Needs no account or sign-in\n• Is never uploaded or included in analytics or logs\n• Can be deleted anytime')}
+              </AppText>
+              {includeSensitiveWomenData ? (
+                <AppText variant="caption" style={[styles.sensitiveDescription, { color: tokens.danger }]}>
+                  {t("Women's Worship records are included in a user-created backup via Backup & Restore. The exported backup file is not automatically uploaded by the app; if you choose to share it using your device's share or document tools, you control where it goes. Because the exported file itself is not encrypted by the app, store any backup that contains Women's Worship data securely.")}
+                </AppText>
+              ) : null}
+            </View>
+            <Pressable
+              onPress={() => setIncludeSensitiveWomenData((current) => !current)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: includeSensitiveWomenData }}
+              accessibilityLabel={t("Include Women's Worship data in backup")}
+              style={({ pressed }) => [styles.sensitiveToggle, pressed && styles.sensitiveTogglePressed]}
+            >
+              <Ionicons
+                name={includeSensitiveWomenData ? 'checkbox' : 'square-outline'}
+                size={26}
+                color={includeSensitiveWomenData ? tokens.danger : tokens.muted}
+              />
+            </Pressable>
+          </View>
         </PremiumCard>
 
         {/* Restore Card */}
@@ -407,6 +457,20 @@ const styles = StyleSheet.create({
   iconWrap: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
   cardTitle: { fontFamily: 'Manrope_700Bold', fontSize: 15 },
   cardSub: { fontFamily: 'Manrope_400Regular', fontSize: 12, marginTop: 2 },
+  sensitiveOption: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(128, 128, 128, 0.25)',
+  },
+  sensitiveCopy: { flex: 1, minWidth: 0, gap: 4 },
+  sensitiveTitle: { fontFamily: 'Manrope_600SemiBold', fontSize: 13 },
+  sensitiveDescription: { fontFamily: 'Manrope_400Regular', fontSize: 11, lineHeight: 16 },
+  sensitiveToggle: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  sensitiveTogglePressed: { opacity: 0.7 },
   infoCard: {
     marginBottom: 16,
   },
