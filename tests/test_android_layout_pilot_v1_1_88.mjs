@@ -37,7 +37,7 @@ function loadTsModule(filePath, mocks = {}) {
   return moduleObj.exports;
 }
 
-console.log('=== ANDROID LAYOUT PILOT v1.1.89 TEST SUITE (SOURCE ONLY) ===\n');
+console.log('=== ANDROID LAYOUT PILOT v1.1.90 TEST SUITE (SOURCE ONLY) ===\n');
 
 // -------------------------------------------------------------------------
 // 1. Diagnostic Identity & Two-Factor Gate
@@ -50,32 +50,32 @@ const buildGradle = read('android/app/build.gradle');
 
 // Build identity constants
 assert.ok(
-  diagConfigSrc.includes("export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-1.1.89-PILOT-B';"),
-  'diagnosticConfig must declare DIAGNOSTIC_BUILD_ID as RTL-STRUCT-1.1.89-PILOT-B'
+  diagConfigSrc.includes("export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-1.1.90-PILOT-C';"),
+  'diagnosticConfig must declare DIAGNOSTIC_BUILD_ID as RTL-STRUCT-1.1.90-PILOT-C'
 );
 assert.ok(
-  diagConfigSrc.includes("export const DIAGNOSTIC_VERSION = '1.1.89';"),
-  'diagnosticConfig must declare DIAGNOSTIC_VERSION as 1.1.89'
+  diagConfigSrc.includes("export const DIAGNOSTIC_VERSION = '1.1.90';"),
+  'diagnosticConfig must declare DIAGNOSTIC_VERSION as 1.1.90'
 );
 assert.ok(
-  diagConfigSrc.includes('export const DIAGNOSTIC_VERSION_CODE = 108;'),
-  'diagnosticConfig must declare DIAGNOSTIC_VERSION_CODE as 108'
+  diagConfigSrc.includes('export const DIAGNOSTIC_VERSION_CODE = 109;'),
+  'diagnosticConfig must declare DIAGNOSTIC_VERSION_CODE as 109'
 );
 
 // Version and code across project metadata
-assert.equal(packageJson.version, '1.1.89', 'package.json version must be 1.1.89');
-assert.equal(appJson.version, '1.1.89', 'app.json version must be 1.1.89');
-assert.equal(appJson.android.versionCode, 108, 'app.json versionCode must be 108');
-assert.ok(buildGradle.includes('versionCode 108'), 'android/app/build.gradle versionCode must be 108');
-assert.ok(buildGradle.includes('versionName "1.1.89"'), 'android/app/build.gradle versionName must be 1.1.89');
+assert.equal(packageJson.version, '1.1.90', 'package.json version must be 1.1.90');
+assert.equal(appJson.version, '1.1.90', 'app.json version must be 1.1.90');
+assert.equal(appJson.android.versionCode, 109, 'app.json versionCode must be 109');
+assert.ok(buildGradle.includes('versionCode 109'), 'android/app/build.gradle versionCode must be 109');
+assert.ok(buildGradle.includes('versionName "1.1.90"'), 'android/app/build.gradle versionName must be 1.1.90');
 
 // Deterministic build command
 assert.ok(
-  diagConfigSrc.includes('EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.89-PILOT-B'),
-  'DIAGNOSTIC_BUILD_COMMAND must require both EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.89-PILOT-B'
+  diagConfigSrc.includes('EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.90-PILOT-C'),
+  'DIAGNOSTIC_BUILD_COMMAND must require both EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.90-PILOT-C'
 );
 
-console.log('  ✓ Diagnostic build identity and metadata verified for v1.1.89 (code 107)');
+console.log('  ✓ Diagnostic build identity and metadata verified for v1.1.90 (code 107)');
 
 // -------------------------------------------------------------------------
 // 2. Shared Primitive Width Ownership & Hierarchy Probes: PrimaryButton
@@ -544,9 +544,9 @@ const mockReactNative = {
   Share: { share: () => Promise.resolve({ action: 'sharedAction' }) },
 };
 const mockDiagConfig = {
-  DIAGNOSTIC_BUILD_ID: 'RTL-STRUCT-1.1.89-PILOT-B',
-  DIAGNOSTIC_VERSION: '1.1.89',
-  DIAGNOSTIC_VERSION_CODE: 108,
+  DIAGNOSTIC_BUILD_ID: 'RTL-STRUCT-1.1.90-PILOT-C',
+  DIAGNOSTIC_VERSION: '1.1.90',
+  DIAGNOSTIC_VERSION_CODE: 109,
   isDiagnosticModeEnabled: () => true,
 };
 const mockDiagI18n = {
@@ -695,5 +695,5 @@ for (const filePath of nonPilotCallers) {
 console.log(`  ✓ Genuine contract execution verified and all ${nonPilotCallers.length} non-pilot callers checked`);
 
 console.log('\n============================================================');
-console.log('ALL ANDROID LAYOUT PILOT v1.1.89 SOURCE CONTRACTS VERIFIED');
+console.log('ALL ANDROID LAYOUT PILOT v1.1.90 SOURCE CONTRACTS VERIFIED');
 console.log('============================================================\n');

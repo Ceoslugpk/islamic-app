@@ -40,6 +40,8 @@ export interface NamedLayoutRect {
   frameUnavailable?: boolean;
   measurementUnavailable?: boolean;
   unavailabilityReason?: string;
+  staleAfterUnmount?: boolean;
+  staleReason?: string;
   edgeOverflow?: {
     overflowsLeft: boolean;
     overflowsTop: boolean;
@@ -57,6 +59,8 @@ export interface NamedLayoutRect {
 }
 
 export interface TargetLayoutRecord {
+  staleAfterUnmount?: boolean;
+  staleReason?: string;
   screenId: string;
   componentId: DiagnosticTargetId;
   targetTestId: string;
@@ -839,6 +843,34 @@ export function recordMeasurementUnavailable(
  * Invalidate a diagnostic target on unmount or screen transition.
  * Wipes out all stale values and marks measurementUnavailable.
  */
+/**
+ * Keeps the last measured snapshot after a screen unmounts, flagged as stale.
+ * Practical need: the diagnostics panel is opened from Settings, so by the time
+ * the user exports a report the measured screen has already unmounted. Clearing
+ * the values (invalidateDiagnosticTarget) would destroy the only device evidence.
+ * Values are preserved but explicitly labelled, never presented as current.
+ */
+export function markDiagnosticTargetStale(
+  targetId: DiagnosticTargetId,
+  reason: string = 'Target unmounted'
+): void {
+  if (!isDiagnosticModeEnabled()) return;
+
+  const record = measurementsStore[targetId];
+  if (!record) return;
+
+  record.staleAfterUnmount = true;
+  record.staleReason = reason;
+
+  Object.values(record.rectangles ?? {}).forEach((rect) => {
+    if (!rect) return;
+    rect.staleAfterUnmount = true;
+    rect.staleReason = reason;
+  });
+
+  notifyListeners();
+}
+
 export function invalidateDiagnosticTarget(
   targetId: DiagnosticTargetId,
   reason: string = 'Target unmounted or invalidated'
@@ -875,6 +907,7 @@ export function useDiagnosticTarget(
       recordNamedUnavailable: () => {},
       getNamedRectProps: () => ({}),
       invalidateTarget: () => {},
+      markTargetStale: () => {},
     };
   }
 
@@ -983,6 +1016,7 @@ export function useDiagnosticTarget(
     recordNamedUnavailable,
     getNamedRectProps,
     invalidateTarget,
+    markTargetStale: (reason?: string) => markDiagnosticTargetStale(targetId, reason),
   };
 }
 
@@ -1007,6 +1041,8 @@ export function buildDiagnosticReport(): DiagnosticReport {
     parentTestId: item.parentTestId,
     status: item.status,
     measurementUnavailable: item.measurementUnavailable,
+    staleAfterUnmount: item.staleAfterUnmount ?? false,
+    staleReason: item.staleReason,
     nativeComputedStyleUnavailable: true,
     dimensions: {
       targetX: item.targetX,

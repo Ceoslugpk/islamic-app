@@ -122,7 +122,7 @@ function DownloadsScreen({
       diag.invalidateTarget('Downloads populated; empty CTA is unmounted');
     }
     return () => {
-      diag.invalidateTarget('DownloadsScreen unmounted');
+      diag.markTargetStale('DownloadsScreen unmounted');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDiag, filteredSurahs.length]);

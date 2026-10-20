@@ -470,7 +470,7 @@ export default function PrayerRemindersScreen({
   useEffect(() => {
     if (!isDiag) return;
     return () => {
-      diag.invalidateTarget('PrayerRemindersScreen unmounted');
+      diag.markTargetStale('PrayerRemindersScreen unmounted');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDiag]);

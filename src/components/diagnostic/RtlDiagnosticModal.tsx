@@ -365,6 +365,17 @@ export function RtlDiagnosticModal({ visible, onClose }: RtlDiagnosticModalProps
                   </View>
                 </View>
 
+                {target.staleAfterUnmount ? (
+                  <AppText
+                    testID={`diag-stale-${target.componentId}`}
+                    variant="caption"
+                    tone="faint"
+                    style={styles.staleNote}
+                  >
+                    Snapshot taken before this screen was closed; reopen it for current values.
+                  </AppText>
+                ) : null}
+
                 <View style={[styles.divider, { backgroundColor: tokens.cardBorder }]} />
 
                 <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
@@ -756,6 +767,10 @@ export function RtlDiagnosticModal({ visible, onClose }: RtlDiagnosticModalProps
 }
 
 const styles = StyleSheet.create({
+  staleNote: {
+    marginTop: 4,
+    flexShrink: 1,
+  },
   safeArea: {
     flex: 1,
   },

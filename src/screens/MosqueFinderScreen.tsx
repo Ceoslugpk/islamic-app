@@ -372,7 +372,7 @@ export default function MosqueFinderScreen({
   useEffect(() => {
     if (!isDiag) return;
     return () => {
-      diag.invalidateTarget('MosqueFinderScreen unmounted');
+      diag.markTargetStale('MosqueFinderScreen unmounted');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDiag]);

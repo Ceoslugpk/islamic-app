@@ -2,7 +2,7 @@
   "expo": {
     "name": "Islamic - Your Daily Companion",
     "slug": "islamic",
-    "version": "1.1.89",
+    "version": "1.1.90",
     "scheme": "salah",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,7 +17,7 @@
     },
     "android": {
       "package": "com.qashi.islamic",
-      "versionCode": 108,
+      "versionCode": 109,
       "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#105A4B",
