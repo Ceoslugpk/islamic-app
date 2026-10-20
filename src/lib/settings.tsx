@@ -118,6 +118,7 @@ export interface AppSettings {
 
 interface SettingsContextValue {
   settings: AppSettings;
+  updateSettings: (updater: (current: AppSettings) => AppSettings) => AppSettings;
   setMethod: (id: number) => void;
   setMadhab: (m: Madhab) => void;
   setTimeFormat: (f: TimeFormat) => void;
@@ -818,6 +819,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
 
   const value: SettingsContextValue = {
     settings,
+    updateSettings,
     setMethod: (methodId) => updateSettings((prev) => ({ ...prev, methodId })),
     setMadhab: (madhab) => updateSettings((prev) => ({ ...prev, madhab })),
     setTimeFormat: (timeFormat) => updateSettings((prev) => ({ ...prev, timeFormat })),

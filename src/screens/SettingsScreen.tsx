@@ -672,6 +672,7 @@ export default function SettingsScreen({
   const { height: screenHeight } = useWindowDimensions();
   const {
     settings,
+    updateSettings,
     setLanguage,
     setMethod,
     setTimeFormat,
@@ -699,7 +700,7 @@ export default function SettingsScreen({
   const [adhanModalOpen, setAdhanModalOpen] = useState(false);
   const [isPlayingAdhan, setIsPlayingAdhan] = useState(false);
   const [consentOpen, setConsentOpen] = useState(false);
-  const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'verifyDisableLock' | 'set' | 'change' | null>(null);
+  const [pinModalMode, setPinModalMode] = useState<'verify' | 'verifyEnable' | 'verifyDisableLock' | 'verifyClearCycle' | 'verifyDeleteWomenData' | 'set' | 'change' | null>(null);
   const [health, setHealth] = useState<NotificationHealth | null>(null);
   const [activeLegalScreen, setActiveLegalScreen] = useState<LegalScreenKey | null>(null);
   const [showBackupRestore, setShowBackupRestore] = useState(false);
@@ -1912,8 +1913,18 @@ export default function SettingsScreen({
                 desc={t("Remove all period entries")}
                 onPress={() =>
                   Alert.alert(t("Clear Cycle History?"), t("This deletes all period/cycle entries. Other women's data is kept."), [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Clear', style: 'destructive', onPress: () => clearCycleHistory() },
+                    { text: t('Cancel'), style: 'cancel' },
+                    {
+                      text: t('Clear'),
+                      style: 'destructive',
+                      onPress: () => {
+                        if (womenPinHash) {
+                          setPinModalMode('verifyClearCycle');
+                        } else {
+                          clearCycleHistory();
+                        }
+                      },
+                    },
                   ])
                 }
                 right={<AppText variant="link" style={styles.privacyActionText}>{t('Clear')}</AppText>}
@@ -1927,8 +1938,28 @@ export default function SettingsScreen({
                 danger
                 onPress={() =>
                   Alert.alert(t("Delete Women's Data?"), t("This permanently deletes all cycle, purity, nifas and women's qada data from this device. This cannot be undone."), [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Delete', style: 'destructive', onPress: () => { clearWomenData(); setWomenWorship(false); } },
+                    { text: t('Cancel'), style: 'cancel' },
+                    {
+                      text: t('Delete'),
+                      style: 'destructive',
+                      onPress: () => {
+                        if (womenPinHash) {
+                          setPinModalMode('verifyDeleteWomenData');
+                        } else {
+                          try {
+                            clearWomenData();
+                            updateSettings((prev) => ({
+                              ...prev,
+                              womenWorshipEnabled: false,
+                              womenPinHash: null,
+                              womenLockEnabled: false,
+                            }));
+                          } catch (err: any) {
+                            Alert.alert(t('Error'), err?.message || String(err));
+                          }
+                        }
+                      },
+                    },
                   ])
                 }
                 right={<Ionicons name="trash-outline" size={18} color={tokens.danger} />}
@@ -1959,6 +1990,26 @@ export default function SettingsScreen({
             } else if (pinModalMode === 'verifyDisableLock') {
               setPinModalMode(null);
               setWomenLockEnabled(false);
+            } else if (pinModalMode === 'verifyClearCycle') {
+              setPinModalMode(null);
+              try {
+                clearCycleHistory();
+              } catch (err: any) {
+                Alert.alert(t('Error'), err?.message || String(err));
+              }
+            } else if (pinModalMode === 'verifyDeleteWomenData') {
+              setPinModalMode(null);
+              try {
+                clearWomenData();
+                updateSettings((prev) => ({
+                  ...prev,
+                  womenWorshipEnabled: false,
+                  womenPinHash: null,
+                  womenLockEnabled: false,
+                }));
+              } catch (err: any) {
+                Alert.alert(t('Error'), err?.message || String(err));
+              }
             } else {
               setPinModalMode(null);
             }

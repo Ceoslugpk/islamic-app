@@ -622,6 +622,15 @@ export async function rescheduleIfNeeded(
     const { fetchPrayerTimes } = await import('./prayerTimes');
     // fetchPrayerTimes is cache-aware: serves cached schedule without network when offline
     const data = await fetchPrayerTimes(location, methodId, new Date(), { madhab: madhab as any });
+
+    // Snapshot pending user-initiated snoozes before reschedule cycle
+    const pendingSnoozes = (await Notifications.getAllScheduledNotificationsAsync().catch(() => [])).filter(
+      (n) => {
+        const type = (n.content?.data as { type?: string } | undefined)?.type;
+        return type === 'prayer-snooze' || type === 'quran-snooze';
+      }
+    );
+
     await cancelPrayerNotifications();
     await cancelQuranReminder();
     if (remindersEnabled) {
@@ -629,6 +638,30 @@ export async function rescheduleIfNeeded(
     }
     if (quranReminderEnabled) {
       await scheduleQuranReminder(quranReminderTime, quranGoal);
+    }
+
+    // Explicitly ensure any pending snooze remains scheduled after reschedule
+    const afterScheduled = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+    const scheduledIds = new Set(afterScheduled.map((n) => n.identifier));
+    for (const snooze of pendingSnoozes) {
+      if (!scheduledIds.has(snooze.identifier)) {
+        const trigger = snooze.trigger as any;
+        const seconds = typeof trigger?.seconds === 'number' ? trigger.seconds : 600;
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: snooze.content.title ?? undefined,
+            subtitle: snooze.content.subtitle ?? undefined,
+            body: snooze.content.body ?? undefined,
+            data: snooze.content.data,
+            categoryIdentifier: snooze.content.categoryIdentifier ?? undefined,
+            sound: snooze.content.sound ?? 'default',
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+            seconds: Math.max(1, seconds),
+          },
+        }).catch(() => {});
+      }
     }
     await storeFingerprint(currentFp);
     return true;
@@ -750,20 +783,30 @@ export async function schedulePrayerNotifications(
   return ids;
 }
 
+export const OWNED_PRAYER_NOTIFICATION_TYPES = new Set([
+  'prayer-reminder',
+  'prayer-before',
+  'prayer-at',
+  'prayer-adhan',
+]);
+
 /**
  * Cancel scheduled prayer notifications.
- * The Quran reminder is intentionally preserved — it has its own toggle and is
- * cancelled by `cancelQuranReminder()`. Anything else (legacy prayer payloads,
- * notifications from older builds) is cancelled.
+ * Preserves user-set prayer snooze notifications ('prayer-snooze') and Quran reminders
+ * ('quran-reminder', 'quran-snooze'). Cancels only the types owned by the prayer times scheduler,
+ * plus legacy typeless notifications from older app builds.
  */
 export async function cancelPrayerNotifications() {
   if (!isNotificationSchedulingSupported()) return;
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     for (const n of scheduled) {
-      const data = n.content.data as { type?: string } | undefined;
-      if (data?.type === 'quran-reminder') continue;
-      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      const data = n.content?.data as { type?: string; nowPlaying?: boolean } | undefined;
+      const type = data?.type;
+      const isLegacyTypeless = !type && !data?.nowPlaying && n.identifier !== 'now-playing-audio';
+      if ((type && OWNED_PRAYER_NOTIFICATION_TYPES.has(type)) || isLegacyTypeless) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
     }
   } catch {
     // ignore (unsupported platform or nothing scheduled)
@@ -826,17 +869,24 @@ export async function scheduleQuranReminder(
   }
 }
 
+export const OWNED_QURAN_NOTIFICATION_TYPES = new Set([
+  'quran-reminder',
+]);
+
 /**
  * Cancel only the daily Quran reminder.
+ * Preserves user-set Quran snooze notifications ('quran-snooze').
  */
 export async function cancelQuranReminder() {
   if (!isNotificationSchedulingSupported()) return;
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     for (const n of scheduled) {
-      const data = n.content.data as { type?: string } | undefined;
-      if (data?.type !== 'quran-reminder') continue;
-      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      const data = n.content?.data as { type?: string } | undefined;
+      const type = data?.type;
+      if (type && OWNED_QURAN_NOTIFICATION_TYPES.has(type)) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
     }
   } catch {
     // ignore (unsupported platform or nothing scheduled)
@@ -948,7 +998,7 @@ export function setupNotificationResponseHandler() {
         content: {
           title: '📖 Continue your Quran (Snoozed 10m)',
           body: 'Open the Quran and keep your daily reading habit alive.',
-          data: { ...data, type: 'quran-reminder' },
+          data: { ...data, type: 'quran-snooze' },
           categoryIdentifier: 'quran',
           sound: 'default',
         },

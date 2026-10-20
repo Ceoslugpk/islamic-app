@@ -13,6 +13,11 @@
  */
 
 import assert from 'node:assert/strict';
+import path from 'node:path';
+import { setupHarness } from './test_harness_loader.mjs';
+
+const _tmpDir = setupHarness();
+const { isWomenLocked, isWomenGateArmed } = await import(path.join(_tmpDir, 'privacy.mjs'));
 
 console.log('=== RUNNING SECURITY AUDIT REGRESSION TEST SUITE ===\n');
 
@@ -302,15 +307,12 @@ assert.equal(pendingTarget, null);
 assert.equal(modalOpened, false);
 assert.equal(toolsScreen, 'women-cycle', 'navigates directly when unlocked');
 
-// Case C: Lock condition engagement when womenWorshipEnabled is on + PIN set even if womenLockEnabled is false
-function computeWomenLocked(womenLockEnabled, womenWorshipEnabled, womenPinHash, womenUnlocked) {
-  const pinRequired = Boolean(womenPinHash);
-  const lockedBySetting = Boolean(womenLockEnabled || womenWorshipEnabled);
-  return lockedBySetting && pinRequired && !womenUnlocked;
-}
-assert.equal(computeWomenLocked(false, true, 'hash123', false), true, 'PIN set gates deep links even if womenLockEnabled is false');
-assert.equal(computeWomenLocked(false, true, 'hash123', true), false, 'unlocked state allows passage');
-assert.equal(computeWomenLocked(false, true, null, false), false, 'no PIN set -> not locked');
+// Case C: Lock condition engagement: womenLockEnabled toggle is authoritative
+assert.equal(isWomenLocked({ womenLockEnabled: false, womenWorshipEnabled: true, womenPinHash: 'hash123' }, false), false, 'womenLockEnabled=false respects user preference even if PIN is set');
+assert.equal(isWomenLocked({ womenLockEnabled: true, womenWorshipEnabled: true, womenPinHash: 'hash123' }, false), true, 'womenLockEnabled=true gates deep links when PIN is set and locked');
+assert.equal(isWomenLocked({ womenLockEnabled: true, womenWorshipEnabled: true, womenPinHash: 'hash123' }, true), false, 'unlocked state allows passage');
+assert.equal(isWomenLocked({ womenLockEnabled: true, womenWorshipEnabled: true, womenPinHash: null }, false), false, 'no PIN set -> not locked');
+assert.equal(isWomenGateArmed({ womenLockEnabled: true, womenPinHash: null }, false), true, 'isWomenGateArmed arms on toggle without PIN');
 
 console.log('  ✓ PASSED');
 

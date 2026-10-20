@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSettings } from '../lib/settings';
 import { t } from '../lib/i18n';
+import { isWomenGateArmed } from '../lib/privacy';
 import { AppText } from './ui/AppText';
 
 /**
@@ -31,7 +32,7 @@ const LOCK_TIMEOUT_MS = 45000;
 export function WomenLockGate({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
   const { settings } = useSettings();
-  const lockEnabled = settings.womenLockEnabled || Boolean(settings.womenWorshipEnabled && settings.womenPinHash);
+  const lockEnabled = isWomenGateArmed(settings, false);
 
   const [unlocked, setUnlocked] = useState(false);
   const [checking, setChecking] = useState(true);

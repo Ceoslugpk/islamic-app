@@ -5,9 +5,40 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { enqueueSettingsUpdate } from './settings';
+import { createSerializedSettingsWriter, StringStorage } from './settingsWriteQueue';
 
 export const KDF_ROUNDS = 100000;
 export const KDF_PREFIX = 'kdf_v2_';
+
+export interface WomenLockSettings {
+  womenLockEnabled?: boolean;
+  womenPinHash?: string | null;
+  womenWorshipEnabled?: boolean;
+}
+
+/**
+ * Authoritative predicate for Women's Worship PIN lock:
+ * Evaluates true ONLY when lock toggle is enabled, a PIN hash is set,
+ * and the session is not currently unlocked.
+ */
+export function isWomenLocked(
+  settings: WomenLockSettings | null | undefined,
+  womenUnlocked: boolean
+): boolean {
+  return Boolean(settings?.womenLockEnabled && settings?.womenPinHash && !womenUnlocked);
+}
+
+/**
+ * Evaluates whether the Women's Worship lock gate is armed.
+ * Arms on lock toggle enabled and session not unlocked, independently of
+ * whether a PIN hash is present (supports device biometric security).
+ */
+export function isWomenGateArmed(
+  settings: WomenLockSettings | null | undefined,
+  womenUnlocked: boolean
+): boolean {
+  return Boolean(settings?.womenLockEnabled && !womenUnlocked);
+}
 
 /**
  * Legacy deterministic salted hash for local 4-digit PIN protection.
@@ -118,9 +149,17 @@ export function getLockoutDurationMs(attempts: number): number {
   return Math.min(30000 * Math.pow(2, step), 300000);
 }
 
-export async function loadPinLockoutState(): Promise<PinLockoutState> {
+const defaultLockoutWriter = createSerializedSettingsWriter<PinLockoutState>(
+  AsyncStorage,
+  PIN_LOCKOUT_STORAGE_KEY,
+  () => {}
+);
+
+let lockoutMutex: Promise<unknown> = Promise.resolve();
+
+export async function loadPinLockoutState(storage: StringStorage = AsyncStorage): Promise<PinLockoutState> {
   try {
-    const raw = await AsyncStorage.getItem(PIN_LOCKOUT_STORAGE_KEY);
+    const raw = await storage.getItem(PIN_LOCKOUT_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (
@@ -138,34 +177,54 @@ export async function loadPinLockoutState(): Promise<PinLockoutState> {
   return { attempts: 0, lockedUntil: 0 };
 }
 
-export async function savePinLockoutState(state: PinLockoutState): Promise<void> {
+export async function savePinLockoutState(
+  state: PinLockoutState,
+  storage: StringStorage = AsyncStorage
+): Promise<void> {
   try {
-    await AsyncStorage.setItem(PIN_LOCKOUT_STORAGE_KEY, JSON.stringify(state));
+    const writer = storage === AsyncStorage
+      ? defaultLockoutWriter
+      : createSerializedSettingsWriter<PinLockoutState>(storage, PIN_LOCKOUT_STORAGE_KEY, () => {});
+    await writer(state);
   } catch {
     // non-fatal
   }
 }
 
-export async function resetPinLockoutState(): Promise<void> {
-  await savePinLockoutState({ attempts: 0, lockedUntil: 0 });
+export async function resetPinLockoutState(storage: StringStorage = AsyncStorage): Promise<void> {
+  const run = async () => {
+    await savePinLockoutState({ attempts: 0, lockedUntil: 0 }, storage);
+  };
+  const task = lockoutMutex.then(run, run);
+  lockoutMutex = task.then(() => undefined, () => undefined);
+  return task as Promise<void>;
 }
 
-export async function recordFailedPinAttempt(): Promise<{ locked: boolean; remainingSeconds: number; attempts: number }> {
-  const current = await loadPinLockoutState();
-  const nextAttempts = current.attempts + 1;
-  let lockedUntil = 0;
-  let remainingSeconds = 0;
-  let locked = false;
+export async function recordFailedPinAttempt(
+  storage: StringStorage = AsyncStorage
+): Promise<{ locked: boolean; remainingSeconds: number; attempts: number }> {
+  const run = async () => {
+    const current = await loadPinLockoutState(storage);
+    const nextAttempts = current.attempts + 1;
+    let lockedUntil = 0;
+    let remainingSeconds = 0;
+    let locked = false;
 
-  if (nextAttempts >= PIN_LOCKOUT_THRESHOLD) {
-    const durationMs = getLockoutDurationMs(nextAttempts);
-    lockedUntil = Date.now() + durationMs;
-    remainingSeconds = Math.ceil(durationMs / 1000);
-    locked = true;
-  }
+    if (nextAttempts >= PIN_LOCKOUT_THRESHOLD) {
+      const durationMs = getLockoutDurationMs(nextAttempts);
+      lockedUntil = Date.now() + durationMs;
+      remainingSeconds = Math.ceil(durationMs / 1000);
+      locked = true;
+    }
 
-  await savePinLockoutState({ attempts: nextAttempts, lockedUntil });
-  return { locked, remainingSeconds, attempts: nextAttempts };
+    const nextState: PinLockoutState = { attempts: nextAttempts, lockedUntil };
+    await savePinLockoutState(nextState, storage);
+    return { locked, remainingSeconds, attempts: nextAttempts };
+  };
+
+  const task = lockoutMutex.then(run, run);
+  lockoutMutex = task.then(() => undefined, () => undefined);
+  return task as Promise<{ locked: boolean; remainingSeconds: number; attempts: number }>;
 }
 
 /** Update womenPinHash in stored islamic-settings on upgrade via serialized settings queue */

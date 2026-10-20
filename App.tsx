@@ -82,6 +82,7 @@ import PrayerRemindersScreen from './src/screens/PrayerRemindersScreen';
 import MosqueFinderScreen from './src/screens/MosqueFinderScreen';
 import WomenCycleScreen from './src/screens/WomenCycleScreen';
 import { WomenLockGate } from './src/components/WomenLockGate';
+import { isWomenGateArmed, isWomenLocked } from './src/lib/privacy';
 import WomenPurityScreen from './src/screens/WomenPurityScreen';
 import WomenGuidanceScreen from './src/screens/WomenGuidanceScreen';
 import WomenQadaScreen from './src/screens/WomenQadaScreen';
@@ -249,7 +250,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
       if (nextState.match(/inactive|background/)) {
         setWomenUnlocked(false);
         setPendingWomenScreen(null);
-        if (settings.womenLockEnabled || (settings.womenWorshipEnabled && settings.womenPinHash) || !settings.womenWorshipEnabled) {
+        if (isWomenGateArmed(settings, false) || !settings.womenWorshipEnabled) {
           setTools((prev) => {
             if (prev.screen.startsWith('women-')) {
               return { screen: 'hub' };
@@ -284,10 +285,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
       setSettingsOpen(false);
       if (!settings.womenWorshipEnabled) return;
       setTab('tools');
-      const isLocked =
-        Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
-        Boolean(settings.womenPinHash) &&
-        !womenUnlocked;
+      const isLocked = isWomenLocked(settings, womenUnlocked);
       if (isLocked) {
         setPendingWomenTab('tools');
         setPendingWomenScreen({ screen: key });
@@ -610,11 +608,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
     setSettingsOpen,
     setPendingWomenScreen,
     openWomenPinModal: () => setWomenPinModalOpen(true),
-    isWomenLocked: () => {
-      const pinRequired = Boolean(settings.womenPinHash);
-      const lockedBySetting = Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled);
-      return lockedBySetting && pinRequired && !womenUnlocked;
-    },
+    isWomenLocked: () => isWomenLocked(settings, womenUnlocked),
   };
 
   const pendingDeepLinkRef = useRef<string | null>(null);
@@ -882,10 +876,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const openToolsItem = useCallback((key: ToolsItemKey) => {
     if (key.startsWith('women-')) {
       if (!settings.womenWorshipEnabled) return;
-      const isLocked =
-        Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
-        Boolean(settings.womenPinHash) &&
-        !womenUnlocked;
+      const isLocked = isWomenLocked(settings, womenUnlocked);
       if (isLocked) {
         setPendingWomenTab('tools');
         setPendingWomenScreen({ screen: key as any });
@@ -922,10 +913,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const openLibraryItem = useCallback((key: LibraryItemKey) => {
     if (key.startsWith('women-')) {
       if (!settings.womenWorshipEnabled) return;
-      const isLocked =
-        Boolean(settings.womenLockEnabled || settings.womenWorshipEnabled) &&
-        Boolean(settings.womenPinHash) &&
-        !womenUnlocked;
+      const isLocked = isWomenLocked(settings, womenUnlocked);
       if (isLocked) {
         setPendingWomenTab('library');
         setPendingWomenScreen({ screen: key as any });

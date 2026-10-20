@@ -57,6 +57,7 @@ export function WomenPinModal({
   const [firstPin, setFirstPin] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [lockoutSeconds, setLockoutSeconds] = useState<number>(0);
+  const [verifying, setVerifying] = useState<boolean>(false);
 
   const [prevVisible, setPrevVisible] = useState(visible);
   const [prevMode, setPrevMode] = useState(mode);
@@ -68,6 +69,7 @@ export function WomenPinModal({
       setPin('');
       setFirstPin('');
       setErrorMsg(null);
+      setVerifying(false);
       if (mode === 'verify') setStep('verify');
       else if (mode === 'set') setStep('enter_new');
       else if (mode === 'change') setStep('verify_old');
@@ -124,7 +126,7 @@ export function WomenPinModal({
   };
 
   const handleDigit = (d: string) => {
-    if (lockoutSeconds > 0) return;
+    if (lockoutSeconds > 0 || verifying) return;
     if (pin.length >= 4) return;
     triggerHaptic('light');
     const next = pin + d;
@@ -137,7 +139,7 @@ export function WomenPinModal({
   };
 
   const handleDelete = () => {
-    if (lockoutSeconds > 0) return;
+    if (lockoutSeconds > 0 || verifying) return;
     if (pin.length > 0) {
       triggerHaptic('light');
       setPin(pin.slice(0, -1));
@@ -146,78 +148,83 @@ export function WomenPinModal({
   };
 
   const processCompletedPin = async (entered: string) => {
-    if (lockoutSeconds > 0) return;
+    if (lockoutSeconds > 0 || verifying) return;
+    setVerifying(true);
 
-    if (step === 'verify') {
-      const res = verifyPinDetailed(entered, currentHash);
-      if (res.valid) {
-        await resetPinLockoutState();
-        if (res.needsUpgrade && res.upgradedHash) {
-          if (onSetPin) {
-            onSetPin(res.upgradedHash);
-          } else {
-            await persistUpgradedPinHash(res.upgradedHash);
+    try {
+      if (step === 'verify') {
+        const res = verifyPinDetailed(entered, currentHash);
+        if (res.valid) {
+          await resetPinLockoutState();
+          if (res.needsUpgrade && res.upgradedHash) {
+            if (onSetPin) {
+              onSetPin(res.upgradedHash);
+            } else {
+              await persistUpgradedPinHash(res.upgradedHash);
+            }
           }
-        }
-        onSuccess();
-      } else {
-        triggerHaptic('error');
-        const lockInfo = await recordFailedPinAttempt();
-        if (lockInfo.locked) {
-          setLockoutSeconds(lockInfo.remainingSeconds);
-          setErrorMsg(`Too many attempts. Try again in ${lockInfo.remainingSeconds}s.`);
+          onSuccess();
         } else {
-          setErrorMsg('Incorrect PIN. Please try again.');
-        }
-        setTimeout(() => setPin(''), 300);
-      }
-    } else if (step === 'verify_old') {
-      const res = verifyPinDetailed(entered, currentHash);
-      if (res.valid) {
-        await resetPinLockoutState();
-        if (res.needsUpgrade && res.upgradedHash) {
-          if (onSetPin) {
-            onSetPin(res.upgradedHash);
+          triggerHaptic('error');
+          const lockInfo = await recordFailedPinAttempt();
+          if (lockInfo.locked) {
+            setLockoutSeconds(lockInfo.remainingSeconds);
+            setErrorMsg(`Too many attempts. Try again in ${lockInfo.remainingSeconds}s.`);
           } else {
-            await persistUpgradedPinHash(res.upgradedHash);
+            setErrorMsg('Incorrect PIN. Please try again.');
           }
+          setTimeout(() => setPin(''), 300);
         }
-        setPin('');
-        setStep('enter_new');
-      } else {
-        triggerHaptic('error');
-        const lockInfo = await recordFailedPinAttempt();
-        if (lockInfo.locked) {
-          setLockoutSeconds(lockInfo.remainingSeconds);
-          setErrorMsg(`Too many attempts. Try again in ${lockInfo.remainingSeconds}s.`);
-        } else {
-          setErrorMsg('Current PIN is incorrect.');
-        }
-        setTimeout(() => setPin(''), 300);
-      }
-    } else if (step === 'enter_new') {
-      setFirstPin(entered);
-      setPin('');
-      setStep('confirm_new');
-    } else if (step === 'confirm_new') {
-      if (entered === firstPin) {
-        const newHash = hashPin(entered);
-        await resetPinLockoutState();
-        if (onSetPin) {
-          onSetPin(newHash);
-        } else {
-          await persistUpgradedPinHash(newHash);
-        }
-        onSuccess();
-      } else {
-        triggerHaptic('error');
-        setErrorMsg('PINs did not match. Please try again.');
-        setTimeout(() => {
-          setFirstPin('');
+      } else if (step === 'verify_old') {
+        const res = verifyPinDetailed(entered, currentHash);
+        if (res.valid) {
+          await resetPinLockoutState();
+          if (res.needsUpgrade && res.upgradedHash) {
+            if (onSetPin) {
+              onSetPin(res.upgradedHash);
+            } else {
+              await persistUpgradedPinHash(res.upgradedHash);
+            }
+          }
           setPin('');
           setStep('enter_new');
-        }, 600);
+        } else {
+          triggerHaptic('error');
+          const lockInfo = await recordFailedPinAttempt();
+          if (lockInfo.locked) {
+            setLockoutSeconds(lockInfo.remainingSeconds);
+            setErrorMsg(`Too many attempts. Try again in ${lockInfo.remainingSeconds}s.`);
+          } else {
+            setErrorMsg('Current PIN is incorrect.');
+          }
+          setTimeout(() => setPin(''), 300);
+        }
+      } else if (step === 'enter_new') {
+        setFirstPin(entered);
+        setPin('');
+        setStep('confirm_new');
+      } else if (step === 'confirm_new') {
+        if (entered === firstPin) {
+          const newHash = hashPin(entered);
+          await resetPinLockoutState();
+          if (onSetPin) {
+            onSetPin(newHash);
+          } else {
+            await persistUpgradedPinHash(newHash);
+          }
+          onSuccess();
+        } else {
+          triggerHaptic('error');
+          setErrorMsg('PINs did not match. Please try again.');
+          setTimeout(() => {
+            setFirstPin('');
+            setPin('');
+            setStep('enter_new');
+          }, 600);
+        }
       }
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -327,9 +334,9 @@ export function WomenPinModal({
                     return (
                       <TouchableOpacity
                         key={item}
-                        style={[styles.keyBtn, styles.specialKey, { opacity: lockoutSeconds > 0 ? 0.4 : 1 }]}
+                        style={[styles.keyBtn, styles.specialKey, { opacity: (lockoutSeconds > 0 || verifying) ? 0.4 : 1 }]}
                         onPress={handleDelete}
-                        disabled={lockoutSeconds > 0}
+                        disabled={lockoutSeconds > 0 || verifying}
                         accessibilityRole="button"
                         accessibilityLabel={t('Delete last digit')}
                       >
@@ -345,11 +352,11 @@ export function WomenPinModal({
                         {
                           backgroundColor: colors.bgBase,
                           borderColor: colors.borderSubtle,
-                          opacity: lockoutSeconds > 0 ? 0.4 : 1,
+                          opacity: (lockoutSeconds > 0 || verifying) ? 0.4 : 1,
                         },
                       ]}
                       onPress={() => handleDigit(item)}
-                      disabled={lockoutSeconds > 0}
+                      disabled={lockoutSeconds > 0 || verifying}
                       accessibilityRole="button"
                       accessibilityLabel={`Digit ${item}`}
                     >

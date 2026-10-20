@@ -1551,7 +1551,7 @@ export function getAllVerseHighlights(): VerseHighlight[] {
 /** Delete ALL women-scoped data: cycle/period, purity, nifas, and qada
  *  missed-fasts recorded as "Menstruation / Post-natal". On-device only. */
 export function clearWomenData(): void {
-  try {
+  getDb().withTransactionSync(() => {
     getDb().runSync('DELETE FROM period_entries');
     getDb().runSync('DELETE FROM nifas_entries');
     const missed = loadMissedFasts();
@@ -1561,14 +1561,12 @@ export function clearWomenData(): void {
         deleteMissedFast(item.id);
       }
     }
-  } catch { /* non-fatal */ }
+  });
 }
 
 /** Delete ONLY cycle/period history (keeps purity/ghusl/nifas/qada). */
 export function clearCycleHistory(): void {
-  try {
-    getDb().runSync('DELETE FROM period_entries');
-  } catch { /* non-fatal */ }
+  getDb().runSync('DELETE FROM period_entries');
 }
 
 

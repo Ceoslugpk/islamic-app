@@ -315,29 +315,29 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
       // 2. Insert rows into real SQLite tables
       for (const table of SQLITE_USER_TABLES) {
         const rows = tables[table] || [];
-        for (const row of rows) {
+        for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+          const rowObj = rows[rowIdx] as Record<string, unknown>;
+          const cols = Object.keys(rowObj);
+          if (cols.length === 0) continue;
+          // Security-audit M2: reject non-identifier column names (prevents
+          // SQL injection via attacker-controlled backup row keys — SQLite's
+          // double-quote does not escape embedded quotes in identifiers).
+          const isSafeCol = (c: string) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(c);
+          if (!cols.every(isSafeCol)) {
+            throw new Error(`Unsafe column identifier in table "${table}" at row index ${rowIdx}.`);
+          }
+          if (cols.length > 64) {
+            throw new Error(`Column limit exceeded in table "${table}" at row index ${rowIdx}.`);
+          }
+          const placeholders = cols.map(() => '?').join(', ');
+          const values = cols.map((c) => rowObj[c]);
           try {
-            const rowObj = row as Record<string, unknown>;
-            const cols = Object.keys(rowObj);
-            if (cols.length === 0) continue;
-            // Security-audit M2: reject non-identifier column names (prevents
-            // SQL injection via attacker-controlled backup row keys — SQLite's
-            // double-quote does not escape embedded quotes in identifiers).
-            const isSafeCol = (c: string) => /^[A-Za-z_][A-Za-z0-9_]*$/.test(c);
-            if (!cols.every(isSafeCol)) continue;
-            if (cols.length > 64) continue;
-            const placeholders = cols.map(() => '?').join(', ');
-            const values = cols.map((c) => rowObj[c]);
             sqliteDb.runSync(
               `INSERT OR REPLACE INTO ${table} (${cols.map((c) => `"${c}"`).join(', ')}) VALUES (${placeholders})`,
               ...(values as any[])
             );
-          } catch (e: any) {
-            const msg = String(e?.message || e);
-            if (msg.includes('SQLITE_FULL') || msg.includes('full') || msg.includes('disk')) {
-              throw e;
-            }
-            // Skip a row that violates constraints; keep the rest intact.
+          } catch (insertErr: any) {
+            throw new Error(`Failed to insert into table "${table}" at row index ${rowIdx}: ${insertErr?.message || insertErr}`);
           }
         }
       }
@@ -361,11 +361,7 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
                 );
               }
             } catch (e: any) {
-              const msg = String(e?.message || e);
-              if (msg.includes('SQLITE_FULL') || msg.includes('full') || msg.includes('disk')) {
-                throw e;
-              }
-              // non-fatal per-item error
+              throw new Error(`Failed to restore virtual table "${table}": ${e?.message || e}`);
             }
           }
         }
@@ -941,6 +937,48 @@ export async function buildBackupPayload(): Promise<BackupPayload> {
   };
 }
 
+const SQLITE_TABLE_CONSTRAINTS: Record<string, {
+  requiredStrings?: string[];
+  requiredNumbers?: string[];
+}> = {
+  salah_entries: { requiredStrings: ['date', 'prayer'] },
+  tasbih_entries: { requiredStrings: ['id'] },
+  tasbih_daily: { requiredStrings: ['date'] },
+  plan_entries: { requiredStrings: ['plan_id'], requiredNumbers: ['day'] },
+  hifz_entries: { requiredNumbers: ['surah'], requiredStrings: ['status'] },
+  hadith_saved: { requiredStrings: ['id', 'collection', 'book_number', 'hadith_number'] },
+  hadith_recent: { requiredStrings: ['id', 'collection', 'book_number', 'hadith_number'] },
+  hadith_read_markers: { requiredStrings: ['id', 'collection'] },
+  fasting_entries: { requiredStrings: ['date', 'type'] },
+  missed_fasts: { requiredStrings: ['id', 'date', 'reason'] },
+  zakat_history: {
+    requiredStrings: ['id', 'date', 'currency', 'nisab_standard', 'breakdown'],
+    requiredNumbers: ['total_wealth', 'zakat_due'],
+  },
+  period_entries: { requiredStrings: ['id', 'start_date'] },
+  nifas_entries: { requiredStrings: ['id', 'start_date'] },
+  study_tags: { requiredStrings: ['id', 'tag'], requiredNumbers: ['surah', 'ayah'] },
+  verse_highlights: { requiredStrings: ['id', 'color'], requiredNumbers: ['surah', 'ayah'] },
+};
+
+export const SQLITE_TABLE_COLUMNS: Record<string, readonly string[]> = {
+  salah_entries: ['id', 'date', 'prayer', 'completed', 'completed_at'],
+  tasbih_entries: ['id', 'count', 'updated_at'],
+  tasbih_daily: ['date', 'total', 'updated_at'],
+  plan_entries: ['plan_id', 'day', 'completed', 'completed_at'],
+  hifz_entries: ['surah', 'status', 'updated_at'],
+  hadith_saved: ['id', 'collection', 'collection_name', 'book_number', 'book_name', 'hadith_number', 'arabic_text', 'english_text', 'grade', 'saved_at'],
+  hadith_recent: ['id', 'collection', 'collection_name', 'book_number', 'book_name', 'hadith_number', 'arabic_text', 'english_text', 'grade', 'read_at'],
+  hadith_read_markers: ['id', 'collection', 'read_at'],
+  fasting_entries: ['date', 'fasting', 'type', 'notes', 'completed_at'],
+  missed_fasts: ['id', 'date', 'reason', 'made_up', 'made_up_date', 'created_at'],
+  zakat_history: ['id', 'date', 'currency', 'total_wealth', 'zakat_due', 'nisab_standard', 'breakdown', 'created_at'],
+  period_entries: ['id', 'start_date', 'end_date', 'notes', 'purity_days', 'created_at'],
+  nifas_entries: ['id', 'start_date', 'end_date', 'notes', 'created_at'],
+  study_tags: ['id', 'surah', 'ayah', 'tag', 'created_at'],
+  verse_highlights: ['id', 'surah', 'ayah', 'color', 'created_at'],
+};
+
 /** Validate a backup payload before restoring. Throws on incompatibility or corruption. */
 export function validateBackup(payload: unknown): payload is BackupPayload {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
@@ -969,10 +1007,43 @@ export function validateBackup(payload: unknown): payload is BackupPayload {
     if (rows.length > MAX_ROWS_PER_TABLE) {
       throw new Error(`Table "${table}" exceeds row limit (${rows.length} rows).`);
     }
+    const constraints = SQLITE_TABLE_CONSTRAINTS[table];
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       if (!row || typeof row !== 'object' || Array.isArray(row)) {
         throw new Error(`Invalid row in table "${table}" at index ${i}: expected object.`);
+      }
+      const rowObj = row as Record<string, unknown>;
+      const cols = Object.keys(rowObj);
+      if (cols.length > 64) {
+        throw new Error(`Invalid row in table "${table}" at index ${i}: exceeds column limit (64 columns).`);
+      }
+      for (const col of cols) {
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(col)) {
+          throw new Error(`Invalid row in table "${table}" at index ${i}: unsafe column identifier "${col}".`);
+        }
+      }
+      const allowedCols = SQLITE_TABLE_COLUMNS[table];
+      if (allowedCols) {
+        for (const col of cols) {
+          if (!allowedCols.includes(col)) {
+            throw new Error(`Invalid row in table "${table}" at index ${i}: unknown column "${col}".`);
+          }
+        }
+      }
+      if (constraints) {
+        for (const reqStr of constraints.requiredStrings || []) {
+          const val = rowObj[reqStr];
+          if (typeof val !== 'string' || val.trim().length === 0) {
+            throw new Error(`Invalid row in table "${table}" at index ${i}: missing or invalid required field "${reqStr}".`);
+          }
+        }
+        for (const reqNum of constraints.requiredNumbers || []) {
+          const val = rowObj[reqNum];
+          if (typeof val !== 'number' || !Number.isFinite(val)) {
+            throw new Error(`Invalid row in table "${table}" at index ${i}: missing or invalid required numeric field "${reqNum}".`);
+          }
+        }
       }
     }
   }
@@ -1006,15 +1077,62 @@ export function validateBackup(payload: unknown): payload is BackupPayload {
 
 /** Restore validated backup into the local DB + storage. */
 export async function applyRestore(payload: BackupPayload): Promise<void> {
+  validateBackup(payload);
   if (Platform.OS === 'web') {
-    await importWebStorage(payload.data.storage || {});
-    await importWebTables(payload.data.tables || {});
+    const rawStorage = payload.data.storage || {};
+    const filteredStorage = filterAllowedStorage(rawStorage);
+    const storageKeys = Object.keys(filteredStorage);
+    const webSnapshot: [string, string | null][] = [];
+    if (typeof localStorage !== 'undefined') {
+      for (const k of storageKeys) {
+        webSnapshot.push([k, localStorage.getItem(k)]);
+      }
+    }
+    try {
+      await importWebStorage(rawStorage);
+      await importWebTables(payload.data.tables || {});
+    } catch (err) {
+      if (typeof localStorage !== 'undefined') {
+        for (const [k, prevVal] of webSnapshot) {
+          if (prevVal === null) {
+            localStorage.removeItem(k);
+          } else {
+            localStorage.setItem(k, prevVal);
+          }
+        }
+      }
+      throw err;
+    }
   } else {
-    // Import storage FIRST (AsyncStorage is quota/failure-prone), then the
-    // transactional SQLite import. If storage fails, SQLite is left untouched
-    // rather than wiped-and-half-restored (security-audit M1).
-    await importNativeStorage(payload.data.storage || {});
-    await importNativeTables(payload.data.tables || {});
+    // Snapshot storage before writing so an abort leaves the previous state intact (C5).
+    const rawStorage = payload.data.storage || {};
+    const filteredStorage = filterAllowedStorage(rawStorage);
+    const storageKeys = Object.keys(filteredStorage);
+    const storageSnapshot: [string, string | null][] = [];
+    for (const k of storageKeys) {
+      storageSnapshot.push([k, await AsyncStorage.getItem(k)]);
+    }
+
+    try {
+      await importNativeStorage(rawStorage);
+      await importNativeTables(payload.data.tables || {});
+    } catch (err) {
+      // Rollback storage on any failure so previous state remains exactly intact.
+      if (storageSnapshot.length > 0) {
+        try {
+          for (const [k, prevVal] of storageSnapshot) {
+            if (prevVal === null) {
+              await AsyncStorage.removeItem(k);
+            } else {
+              await AsyncStorage.setItem(k, prevVal);
+            }
+          }
+        } catch (rollbackErr) {
+          console.warn('[backup] Failed to rollback storage after restore failure:', rollbackErr);
+        }
+      }
+      throw err;
+    }
   }
 }
 
