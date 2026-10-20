@@ -39,10 +39,21 @@ assert.ok(
 );
 console.log('  ✓ Transparent status bar & navigation bar verified in styles.xml');
 
+const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const appJson = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo;
+assert.equal(packageJson.version, appJson.version, 'package.json version must equal app.json version');
+assert.ok(/^\d+\.\d+\.\d+$/.test(appJson.version), 'app.json version must be valid semver');
+assert.ok(
+  typeof appJson.android.versionCode === 'number' &&
+  Number.isInteger(appJson.android.versionCode) &&
+  appJson.android.versionCode >= 111,
+  'app.json versionCode must be a positive integer not lower than 111'
+);
+
 const appGradle = fs.readFileSync('android/app/build.gradle', 'utf8');
-assert.ok(appGradle.includes('versionCode 111'), 'build.gradle must have versionCode 111');
-assert.ok(appGradle.includes('versionName "1.1.92"'), 'build.gradle must have versionName "1.1.92"');
-console.log('  ✓ Android release version bumped to versionCode 111, versionName 1.1.92');
+assert.ok(appGradle.includes(`versionCode ${appJson.android.versionCode}`), `build.gradle must have versionCode ${appJson.android.versionCode}`);
+assert.ok(appGradle.includes(`versionName "${appJson.version}"`), `build.gradle must have versionName "${appJson.version}"`);
+console.log(`  ✓ Android release version bumped to versionCode ${appJson.android.versionCode}, versionName ${appJson.version}`);
 
 // ---------------------------------------------------------------------------
 // 2. DetailScreen Authoritative Inset Ownership

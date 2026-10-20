@@ -2,9 +2,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
-const EXPECTED_VERSION = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.version;
-const EXPECTED_CODE = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.android.versionCode;
-const derivedBuildId = `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`;
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
@@ -78,7 +75,8 @@ assert.ok(buildGradle.includes(`versionCode ${appJson.android.versionCode}`), 'a
 assert.ok(buildGradle.includes(`versionName "${appJson.version}"`), 'android/app/build.gradle versionName must equal app.json version');
 
 const diagConfig = loadTsModule('src/lib/diagnostic/diagnosticConfig.ts');
-assert.equal(diagConfig.DIAGNOSTIC_BUILD_ID, `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`, 'Build ID must be RTL-STRUCT-1.1.92-EVIDENCE');
+const expectedBuildId = `RTL-STRUCT-${appJson.version}-EVIDENCE`;
+assert.equal(diagConfig.DIAGNOSTIC_BUILD_ID, expectedBuildId, `Build ID must be ${expectedBuildId}`);
 assert.equal(diagConfig.DIAGNOSTIC_VERSION, appJson.version, 'Diagnostic version must match app.json');
 
 // GATE IDENTITY GUARD (added after v1.1.93's first build shipped with diagnostics
@@ -86,11 +84,11 @@ assert.equal(diagConfig.DIAGNOSTIC_VERSION, appJson.version, 'Diagnostic version
 // two-factor gate compared two different strings and evaluated false).
 assert.equal(
   diagConfig.DIAGNOSTIC_BUILD_ID,
-  derivedBuildId,
-  `DIAGNOSTIC_BUILD_ID must be derived from the version (expected ${derivedBuildId})`
+  expectedBuildId,
+  `DIAGNOSTIC_BUILD_ID must be derived from the version (expected ${expectedBuildId})`
 );
 assert.ok(
-  diagConfig.DIAGNOSTIC_BUILD_COMMAND.includes(`EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=${derivedBuildId}`),
+  diagConfig.DIAGNOSTIC_BUILD_COMMAND.includes(`EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=${expectedBuildId}`),
   'the documented diagnostic build command must pass the same build id the gate expects'
 );
 assert.ok(
@@ -102,11 +100,11 @@ assert.equal(diagConfig.DIAGNOSTIC_VERSION_CODE, appJson.android.versionCode, 'D
 // Two-factor gate matrix
 assert.equal(diagConfig.evaluateDiagnosticGate(undefined, undefined), false);
 assert.equal(diagConfig.evaluateDiagnosticGate('1', undefined), false, 'Leaked env without exact build ID must be false');
-assert.equal(diagConfig.evaluateDiagnosticGate(undefined, `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`), false, 'Build ID without env flag must be false');
+assert.equal(diagConfig.evaluateDiagnosticGate(undefined, expectedBuildId), false, 'Build ID without env flag must be false');
 assert.equal(diagConfig.evaluateDiagnosticGate('1', 'wrong-id'), false, 'Mismatched build ID must be false');
-assert.equal(diagConfig.evaluateDiagnosticGate('1', `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`), true, 'Gate true ONLY when BOTH factors match');
+assert.equal(diagConfig.evaluateDiagnosticGate('1', expectedBuildId), true, 'Gate true ONLY when BOTH factors match');
 
-console.log('  ✓ Version 1.1.92 (code 111), build ID RTL-STRUCT-1.1.92-EVIDENCE, and two-factor gate verified');
+console.log(`  ✓ Version ${appJson.version} (code ${appJson.android.versionCode}), build ID ${expectedBuildId}, and two-factor gate verified`);
 
 // -----------------------------------------------------------------------------
 // Setup Mocks & Load Diagnostic State
@@ -144,6 +142,9 @@ const diagScreenContext = {
   useDiagScreen: () => mockGlobalScreen,
   getGlobalActiveScreen: () => mockGlobalScreen,
   setGlobalActiveScreen: (s) => { mockGlobalScreen = s; },
+  useDiagParent: () => undefined,
+  DiagParentProvider: ({ children }) => children,
+  DiagParentContext: { Provider: ({ children }) => children },
   DiagScreenProvider: ({ children }) => children,
 };
 
@@ -416,7 +417,8 @@ const offScreenBeyondHeight = diagState.deriveProbeDefects(
     bottomSafeInset: 48,
   }
 );
-assert.equal(offScreenBeyondHeight.offScreen.flag, true, 'y + height > windowHeight - bottomSafeInset must flag offScreen: true');
+// T1: vertical overflow is normal scrolling, must never be reported as offScreen
+assert.equal(offScreenBeyondHeight.offScreen.flag, false, 'Vertical overflow below window must flag offScreen: false');
 
 const inScreenProbe = diagState.deriveProbeDefects(
   {
@@ -536,7 +538,9 @@ const arWritingDirMismatch = diagState.deriveProbeDefects(
     resolvedStyleWritingDirection: 'ltr',
   }
 );
-assert.equal(arWritingDirMismatch.rtlTextAlignMismatch.flag, true, 'RTL with writingDirection: ltr must trigger mismatch');
+// T2: RTL with only writingDirection: ltr is softer suspicious signal, not hard mismatch
+assert.equal(arWritingDirMismatch.rtlTextAlignMismatch.flag, false, 'RTL with only writingDirection: ltr must not be hard mismatch');
+assert.equal(arWritingDirMismatch.rtlWritingDirectionSuspicious.flag, true, 'RTL with writingDirection: ltr must trigger rtlWritingDirectionSuspicious: true');
 
 const arValid = diagState.deriveProbeDefects(
   {
@@ -915,7 +919,7 @@ const fullReport = diagState.buildDiagnosticReport();
 
 // Check presence of all required sections
 assert.ok(fullReport.timestamp);
-assert.equal(fullReport.buildId, `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`);
+assert.equal(fullReport.buildId, `RTL-STRUCT-${appJson.version}-EVIDENCE`);
 assert.equal(fullReport.version, appJson.version);
 assert.equal(fullReport.versionCode, appJson.android.versionCode);
 assert.ok(Array.isArray(fullReport.probes));

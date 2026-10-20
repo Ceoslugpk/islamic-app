@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   I18nManager,
   Platform,
@@ -25,7 +25,7 @@ import {
   DIAGNOSTIC_VERSION_CODE,
   isDiagnosticModeEnabled,
 } from './diagnosticConfig';
-import { useDiagScreen, getGlobalActiveScreen } from './diagnosticScreenContext';
+import { useDiagScreen, useDiagParent, getGlobalActiveScreen } from './diagnosticScreenContext';
 import { KNOWN_SCREENS } from './diagnosticScreens';
 
 export type DiagnosticTargetId =
@@ -200,6 +200,7 @@ export type DefectClass =
   | 'outsideParent'
   | 'siblingOverlap'
   | 'rtlTextAlignMismatch'
+  | 'rtlWritingDirectionSuspicious'
   | 'fixedHeightTextRisk';
 
 export interface DefectItem {
@@ -214,6 +215,7 @@ export interface ProbeDefects {
   outsideParent: DefectItem;
   siblingOverlap: DefectItem;
   rtlTextAlignMismatch: DefectItem;
+  rtlWritingDirectionSuspicious: DefectItem;
   fixedHeightTextRisk: DefectItem;
 }
 
@@ -221,6 +223,7 @@ export interface DiagnosticDefectReportItem {
   probeId: string;
   defectClass: DefectClass;
   screen: string;
+  parentIdentity?: string;
   reason?: string;
 }
 
@@ -272,6 +275,7 @@ export interface DiagnosticNetworkRecord {
   path: string;
   method: string;
   status: number;
+  statusText?: string;
   ok: boolean;
   durationMs: number;
   errorClassName?: string;
@@ -286,6 +290,7 @@ export interface DiagnosticNetworkSummary {
   total: number;
   ok: number;
   failed: number;
+  transportFailures: number;
   statusClassBreakdown: {
     '2xx': number;
     '3xx': number;
@@ -293,6 +298,7 @@ export interface DiagnosticNetworkSummary {
     '5xx': number;
     'network/0': number;
   };
+  humanReadableStatus?: string;
   timeouts: number;
   offlineFallbacks: number;
   slowestCall: { host: string; path: string; method: string; durationMs: number } | null;
@@ -351,6 +357,9 @@ export interface AutoProbeRecord {
   containerFixedStyleHeight?: number;
   resolvedStyleTextAlign?: string;
   resolvedStyleWritingDirection?: string;
+  parentIdentity?: string | null;
+  hasScrollableAncestor?: boolean;
+  scrollable?: boolean;
   defects: ProbeDefects;
 }
 
@@ -648,10 +657,27 @@ export function getActiveLanguage(): string {
 }
 
 const monotonicCounters: Record<string, number> = {};
+const ancestorKindCounters: Record<string, number> = {};
+let probeMutationSeq = 0;
+const globalPendingTimers = new Set<any>();
+
+export function getProbeMutationSeq(): number {
+  return probeMutationSeq;
+}
+
+export function incrementProbeMutationSeq(): void {
+  probeMutationSeq++;
+}
 
 export function getNextMonotonicProbeId(kind: string = 'probe'): string {
   monotonicCounters[kind] = (monotonicCounters[kind] || 0) + 1;
   return `auto-${kind}-${monotonicCounters[kind]}`;
+}
+
+export function getNextAncestorProbeIndex(ancestorId: string, kind: string = 'probe'): number {
+  const key = `${ancestorId}::${kind}`;
+  ancestorKindCounters[key] = (ancestorKindCounters[key] || 0) + 1;
+  return ancestorKindCounters[key];
 }
 
 export function getNextProbeInstanceSeq(): number {
@@ -663,9 +689,19 @@ export function resetMonotonicCounters(): void {
   for (const k of Object.keys(monotonicCounters)) {
     delete monotonicCounters[k];
   }
+  for (const k of Object.keys(ancestorKindCounters)) {
+    delete ancestorKindCounters[k];
+  }
+}
+
+export function clearGlobalPendingTimers(): void {
+  globalPendingTimers.forEach((t) => clearTimeout(t));
+  globalPendingTimers.clear();
 }
 
 export function resetDiagnosticProbes(): void {
+  clearGlobalPendingTimers();
+  probeMutationSeq = 0;
   probeStore = {};
   probeLRUOrder = [];
   interactionLedger = [];
@@ -791,6 +827,7 @@ export function installDiagnosticNetworkInterceptor(): void {
         path,
         method,
         status: response.status,
+        statusText: response.ok ? 'OK' : `HTTP ${response.status}`,
         ok: response.ok,
         durationMs,
         retryCount: null,
@@ -802,7 +839,7 @@ export function installDiagnosticNetworkInterceptor(): void {
       return response;
     } catch (err: any) {
       const durationMs = Date.now() - startTime;
-      const errorClassName = err?.name || 'NetworkError';
+      const errorClassName = err?.name || 'Error';
       const isTimeout = errorClassName === 'AbortError' || /timeout/i.test(err?.message || '');
       const isOffline = /network|offline|failed to fetch/i.test(err?.message || '');
 
@@ -811,6 +848,7 @@ export function installDiagnosticNetworkInterceptor(): void {
         path,
         method,
         status: 0,
+        statusText: 'Transport Failure',
         ok: false,
         durationMs,
         errorClassName,
@@ -928,6 +966,8 @@ export function deriveProbeDefects(
     windowDimensions?: { width: number; height: number };
     bottomSafeInset?: number;
     siblings?: Partial<AutoProbeRecord>[];
+    hasScrollableAncestor?: boolean;
+    scrollable?: boolean;
   }
 ): ProbeDefects {
   const isText = options?.isText ?? probe.isText ?? false;
@@ -949,13 +989,12 @@ export function deriveProbeDefects(
     const reportedHeight = options?.reportedTotalLineHeight ?? probe.reportedTotalLineHeight;
 
     if (numLines != null && reportedLines != null) {
-      if (reportedLines >= numLines && reportedHeight != null && height != null && height < reportedHeight - 1) {
-        textTruncated = { flag: true, reason: `Text reached ${numLines} line limit and measured height (${height}) is less than line layout height (${reportedHeight})` };
+      if (reportedLines > numLines) {
+        textTruncated = { flag: true, reason: `Text exceeded ${numLines} line limit (${reportedLines} lines)` };
       } else if (reportedHeight != null && height != null && height < reportedHeight - 1) {
         textTruncated = { flag: true, reason: `Measured height (${height}) is less than reported line layout height (${reportedHeight})` };
-      } else if (reportedLines >= numLines) {
-        textTruncated = { flag: true, reason: `Text reached ${numLines} line limit (${reportedLines} lines)` };
       } else {
+        // Fits limit honestly: reportedLines <= numLines and height is not clipped
         textTruncated = { flag: false };
       }
     } else if (reportedHeight != null && height != null && height < reportedHeight - 1) {
@@ -984,26 +1023,44 @@ export function deriveProbeDefects(
   if (x == null || y == null || width == null || height == null) {
     offScreen = { flag: null, reason: 'Geometry unavailable' };
   } else {
+    const EPSILON = 2.0;
     let winWidth = 360;
-    let winHeight = 640;
     try {
       const win = Dimensions?.get('window');
-      if (win && win.width > 0 && win.height > 0) {
+      if (win && win.width > 0) {
         winWidth = win.width;
-        winHeight = win.height;
       }
     } catch {}
     if (options?.windowDimensions) {
       winWidth = options.windowDimensions.width;
-      winHeight = options.windowDimensions.height;
     }
 
-    const bottomInset = options?.bottomSafeInset ?? 24;
-    const maxAllowedY = winHeight - bottomInset;
-    if (x < 0 || y < 0 || (x + width) > winWidth || (y + height) > maxAllowedY) {
+    const hasScrollableAncestor = Boolean(
+      options?.hasScrollableAncestor ??
+      probe.hasScrollableAncestor ??
+      options?.scrollable ??
+      probe.scrollable ??
+      probe.kind === 'ScreenTab'
+    );
+
+    // Rule 1: Never report vertical overflow (scrolling is normal on mobile).
+    // Rule 2: Tolerate ~2px epsilon on boundaries.
+    // Rule 3: Elements inside a scrollable ancestor are expected to scroll; do not flag horizontal overflow for scroll containers.
+    // Rule 4: Genuine horizontal overflow with no scrollable ancestor:
+    const genuineHorizontalOverflow = !hasScrollableAncestor && (x < -EPSILON || (x + width) > winWidth + EPSILON);
+
+    // Rule 5: Text clipped by its own container frame:
+    const textClippedByContainer = isText && frameWidth != null && frameWidth > 0 && (width > frameWidth + EPSILON) && !hasScrollableAncestor;
+
+    if (genuineHorizontalOverflow) {
       offScreen = {
         flag: true,
-        reason: `Element rect (${x}, ${y}, ${width}, ${height}) extends outside window bounds (${winWidth}x${maxAllowedY})`,
+        reason: `Element horizontal bounds [${x}, ${(x + width).toFixed(1)}] extend outside viewport width (${winWidth}) without a scrollable container`,
+      };
+    } else if (textClippedByContainer) {
+      offScreen = {
+        flag: true,
+        reason: `Text width (${width}) exceeds container frame width (${frameWidth})`,
       };
     } else {
       offScreen = { flag: false };
@@ -1052,33 +1109,62 @@ export function deriveProbeDefects(
     }
   }
 
-  // 6. rtlTextAlignMismatch:
+  // 6. rtlTextAlignMismatch and rtlWritingDirectionSuspicious:
   let rtlTextAlignMismatch: DefectItem;
+  let rtlWritingDirectionSuspicious: DefectItem;
   if (!isText) {
     rtlTextAlignMismatch = { flag: null, reason: 'Not a text element' };
+    rtlWritingDirectionSuspicious = { flag: null, reason: 'Not a text element' };
   } else {
     const isRtl = isI18nRTL();
     const align = (options?.resolvedStyleTextAlign ?? probe.resolvedStyleTextAlign)?.toLowerCase();
     const dir = (options?.resolvedStyleWritingDirection ?? probe.resolvedStyleWritingDirection)?.toLowerCase();
+
     if (!align && !dir) {
       rtlTextAlignMismatch = { flag: null, reason: 'Alignment and writing direction unresolved' };
+      rtlWritingDirectionSuspicious = { flag: null, reason: 'Alignment and writing direction unresolved' };
+    } else if (align === 'center') {
+      // Center must NEVER be flagged as an RTL mismatch (centring is direction-neutral)
+      rtlTextAlignMismatch = { flag: false };
+      rtlWritingDirectionSuspicious = { flag: false };
     } else if (isRtl) {
-      if (align === 'left' || dir === 'ltr') {
+      if (align === 'left') {
+        // Hard defect: left-aligned text in RTL locale (original user complaint)
         rtlTextAlignMismatch = {
           flag: true,
           reason: `RTL locale has LTR alignment (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
         };
+        rtlWritingDirectionSuspicious = { flag: false };
+      } else if (dir === 'ltr') {
+        // Softer signal: right-aligned or default text with explicit LTR writing direction
+        rtlTextAlignMismatch = { flag: false };
+        rtlWritingDirectionSuspicious = {
+          flag: true,
+          reason: `RTL locale has LTR writing direction (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
+        };
       } else {
         rtlTextAlignMismatch = { flag: false };
+        rtlWritingDirectionSuspicious = { flag: false };
       }
     } else {
-      if (align === 'right' || dir === 'rtl') {
+      // LTR locale
+      if (align === 'right') {
+        // Hard defect: right-aligned text in LTR locale
         rtlTextAlignMismatch = {
           flag: true,
           reason: `LTR locale has RTL alignment (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
         };
+        rtlWritingDirectionSuspicious = { flag: false };
+      } else if (dir === 'rtl') {
+        // Softer signal: left-aligned or default text with explicit RTL writing direction
+        rtlTextAlignMismatch = { flag: false };
+        rtlWritingDirectionSuspicious = {
+          flag: true,
+          reason: `LTR locale has RTL writing direction (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
+        };
       } else {
         rtlTextAlignMismatch = { flag: false };
+        rtlWritingDirectionSuspicious = { flag: false };
       }
     }
   }
@@ -1109,6 +1195,7 @@ export function deriveProbeDefects(
     outsideParent,
     siblingOverlap,
     rtlTextAlignMismatch,
+    rtlWritingDirectionSuspicious,
     fixedHeightTextRisk,
   };
 }
@@ -1473,6 +1560,7 @@ export function recordTargetLayout(
   } else {
     resetRecordToUnavailable(record, 'Target dimensions reported <= 0');
   }
+  incrementProbeMutationSeq();
   notifyListeners();
 }
 
@@ -1497,6 +1585,7 @@ export function recordNamedLayout(
   }
 ): void {
   if (!isDiagnosticModeEnabled()) return;
+  incrementProbeMutationSeq();
 
   const record = measurementsStore[targetId];
   if (!record) return;
@@ -1939,9 +2028,13 @@ export function recordProbeLayout(
     containerFixedStyleHeight?: number;
     resolvedStyleTextAlign?: string;
     resolvedStyleWritingDirection?: string;
+    parentIdentity?: string | null;
+    hasScrollableAncestor?: boolean;
+    scrollable?: boolean;
   }
 ): void {
   if (!isDiagnosticModeEnabled()) return;
+  incrementProbeMutationSeq();
 
   if (
     !layout ||
@@ -1972,6 +2065,9 @@ export function recordProbeLayout(
 
   const fw = meta?.frameWidth != null ? Math.round(meta.frameWidth * 10) / 10 : existing?.frameWidth ?? null;
   const fh = meta?.frameHeight != null ? Math.round(meta.frameHeight * 10) / 10 : existing?.frameHeight ?? null;
+  const parentIdentity = meta?.parentIdentity ?? existing?.parentIdentity ?? null;
+  const hasScrollableAncestor = meta?.hasScrollableAncestor ?? existing?.hasScrollableAncestor ?? false;
+  const scrollable = meta?.scrollable ?? existing?.scrollable ?? false;
 
   let overflow: AutoProbeRecord['overflow'] = null;
   let overflowStatus: 'unknown' | 'no_overflow' | 'overflow' = 'unknown';
@@ -2042,6 +2138,9 @@ export function recordProbeLayout(
     containerFixedStyleHeight,
     resolvedStyleTextAlign,
     resolvedStyleWritingDirection,
+    parentIdentity,
+    hasScrollableAncestor,
+    scrollable,
   };
 
   const defects = deriveProbeDefects(probeDraft, {
@@ -2054,6 +2153,8 @@ export function recordProbeLayout(
     resolvedStyleTextAlign,
     resolvedStyleWritingDirection,
     siblings,
+    hasScrollableAncestor,
+    scrollable,
   });
 
   // LRU store eviction at MAX_AUTO_PROBES (400)
@@ -2104,6 +2205,9 @@ export function recordProbeLayout(
     containerFixedStyleHeight,
     resolvedStyleTextAlign,
     resolvedStyleWritingDirection,
+    parentIdentity,
+    hasScrollableAncestor,
+    scrollable,
     defects,
   };
 
@@ -2144,6 +2248,7 @@ export function recordProbeTextLayout(
   lines: { x?: number; y?: number; width?: number; height?: number }[]
 ): void {
   if (!isDiagnosticModeEnabled()) return;
+  incrementProbeMutationSeq();
   const probe = probeStore[id];
   if (!probe) return;
 
@@ -2165,6 +2270,8 @@ export function recordProbeTextLayout(
     containerFixedStyleHeight: probe.containerFixedStyleHeight,
     resolvedStyleTextAlign: probe.resolvedStyleTextAlign,
     resolvedStyleWritingDirection: probe.resolvedStyleWritingDirection,
+    hasScrollableAncestor: probe.hasScrollableAncestor,
+    scrollable: probe.scrollable,
   });
 
   notifyListeners();
@@ -2172,6 +2279,7 @@ export function recordProbeTextLayout(
 
 export function markProbeStale(id: string, reason: string = 'Element unmounted'): void {
   if (!isDiagnosticModeEnabled()) return;
+  incrementProbeMutationSeq();
   const probe = probeStore[id];
   if (!probe) return;
   probe.staleAfterUnmount = true;
@@ -2190,6 +2298,10 @@ export interface AutoProbeOptions {
   disabled?: boolean;
   containerFixedStyleHeight?: number;
   testID?: string;
+  targetScreen?: string;
+  parentIdentity?: string;
+  scrollable?: boolean;
+  hasScrollableAncestor?: boolean;
 }
 
 /**
@@ -2210,27 +2322,37 @@ export function useAutoProbe(
 } {
   const isEnabled = isDiagnosticModeEnabled();
   const screen = useDiagScreen();
+  const contextParent = useDiagParent();
   const effectiveKind = kind || 'probe';
+  const effectiveParent = options?.parentIdentity || contextParent || undefined;
 
-  const [monotonicFallback] = useState(() =>
-    isEnabled && (!id || id.trim().length === 0) ? getNextMonotonicProbeId(effectiveKind) : ''
-  );
+  const callerId = (options?.testID && options.testID.trim().length > 0)
+    ? options.testID.trim()
+    : (id && id.trim().length > 0)
+    ? id.trim()
+    : undefined;
+
+  const [generatedBaseId] = useState(() => {
+    if (!isEnabled) return '';
+    if (callerId) return callerId;
+    if (effectiveParent) {
+      const idx = getNextAncestorProbeIndex(effectiveParent, effectiveKind);
+      return `${effectiveParent}__${effectiveKind}-${idx}`;
+    }
+    return getNextMonotonicProbeId(effectiveKind);
+  });
+
+  const baseId = callerId || generatedBaseId;
 
   const [instanceSeq] = useState(() => (isEnabled ? getNextProbeInstanceSeq() : 0));
-  const baseId = (id && id.trim().length > 0) ? id.trim() : monotonicFallback;
   const stableId = isEnabled
     ? `${screen || 'unknown'}::${effectiveKind}::${baseId}#${instanceSeq}`
     : '';
 
-  const activeTimersRef = useRef<Set<any>>(new Set());
-
   useEffect(() => {
     if (!isEnabled || !stableId) return;
-    const timers = activeTimersRef.current;
     return () => {
       markProbeStale(stableId, `${effectiveKind} unmounted`);
-      timers.forEach((t) => clearTimeout(t));
-      timers.clear();
     };
   }, [isEnabled, stableId, effectiveKind]);
 
@@ -2253,9 +2375,12 @@ export function useAutoProbe(
         containerFixedStyleHeight: fixedStyleHeight,
         resolvedStyleTextAlign: options?.textAlign,
         resolvedStyleWritingDirection: options?.writingDirection,
+        parentIdentity: effectiveParent,
+        hasScrollableAncestor: options?.hasScrollableAncestor || options?.scrollable || effectiveKind === 'ScreenTab',
+        scrollable: options?.scrollable,
       });
     }
-  }, [isEnabled, stableId, effectiveKind, screen, options]);
+  }, [isEnabled, stableId, effectiveKind, screen, effectiveParent, options]);
 
   const onTextLayout = useCallback((e: NativeSyntheticEvent<TextLayoutEventData>) => {
     if (!isEnabled || !stableId) return;
@@ -2271,12 +2396,15 @@ export function useAutoProbe(
       return;
     }
 
-    const preScreen = getGlobalActiveScreen() || screen || 'App';
+    const preScreen = (screen && screen !== 'App') ? screen : (getGlobalActiveScreen() || 'App');
+    const preMutationSeq = getProbeMutationSeq();
     const preProbesCount = Object.keys(probeStore).length;
     const preErrorCount = errorLedger.length;
     const activeLang = getActiveLanguage();
     const activeTheme = getActiveTheme();
     const timestamp = new Date().toISOString();
+
+    const initialTarget = options?.targetScreen;
 
     const record: DiagnosticInteractionRecord = {
       id: stableId,
@@ -2287,7 +2415,7 @@ export function useAutoProbe(
       handlerPresent: typeof options?.onPress === 'function',
       disabled: Boolean(options?.disabled),
       effect: 'noObservableEffect',
-      targetScreen: preScreen,
+      ...(initialTarget ? { targetScreen: initialTarget } : {}),
     };
 
     if (options?.disabled || !options?.onPress) {
@@ -2308,25 +2436,42 @@ export function useAutoProbe(
     }
 
     if (!threw) {
+      const currentGlobal = getGlobalActiveScreen();
+      const syncTarget = options?.targetScreen || (currentGlobal !== preScreen ? currentGlobal : undefined);
+
+      if (syncTarget && syncTarget !== preScreen) {
+        record.effect = 'navigated';
+        record.targetScreen = syncTarget;
+      } else if (getProbeMutationSeq() !== preMutationSeq || Object.keys(probeStore).length !== preProbesCount) {
+        record.effect = 'stateChanged';
+      }
+
       recordInteraction(record);
-      // Single-shot bounded timer (1000ms max, cleared on unmount)
+
       const timerId = setTimeout(() => {
-        activeTimersRef.current.delete(timerId);
-        const currentScreen = getGlobalActiveScreen() || 'App';
-        if (currentScreen !== preScreen) {
+        globalPendingTimers.delete(timerId);
+        const postScreen = getGlobalActiveScreen();
+        const postTarget = options?.targetScreen || (postScreen !== preScreen ? postScreen : undefined);
+        const probeAfter = probeStore[stableId];
+        const isProbeStale = probeAfter?.staleAfterUnmount === true;
+
+        if (postTarget && postTarget !== preScreen) {
           record.effect = 'navigated';
-          record.targetScreen = currentScreen;
+          record.targetScreen = postTarget;
         } else if (errorLedger.length > preErrorCount) {
           record.effect = 'error';
-        } else if (Object.keys(probeStore).length !== preProbesCount) {
+        } else if (
+          getProbeMutationSeq() !== preMutationSeq ||
+          Object.keys(probeStore).length !== preProbesCount ||
+          isProbeStale
+        ) {
           record.effect = 'stateChanged';
-        } else {
-          // Explicitly documented: signal to investigate, not proof of a broken button
+        } else if (!record.effect || record.effect === 'noObservableEffect') {
           record.effect = 'noObservableEffect';
         }
         notifyListeners();
-      }, 1000);
-      activeTimersRef.current.add(timerId);
+      }, 250);
+      globalPendingTimers.add(timerId);
     }
   }, [isEnabled, stableId, screen, options]);
 
@@ -2430,6 +2575,7 @@ export function buildDiagnosticReport(): DiagnosticReport {
     outsideParent: 0,
     siblingOverlap: 0,
     rtlTextAlignMismatch: 0,
+    rtlWritingDirectionSuspicious: 0,
     fixedHeightTextRisk: 0,
   };
   const defectItems: DiagnosticDefectReportItem[] = [];
@@ -2444,6 +2590,7 @@ export function buildDiagnosticReport(): DiagnosticReport {
             probeId: p.id,
             defectClass: cls,
             screen: p.screen,
+            parentIdentity: p.parentIdentity || undefined,
             reason: item.reason,
           });
         }
@@ -2557,10 +2704,13 @@ export function buildDiagnosticReport(): DiagnosticReport {
   });
 
   // Network summary
+  const transportFailuresCount = networkLedger.filter((n) => n.status === 0).length;
+  const failedCount = networkLedger.filter((n) => !n.ok).length;
   const netSummary: DiagnosticNetworkSummary = {
     total: networkLedger.length,
     ok: networkLedger.filter((n) => n.ok).length,
-    failed: networkLedger.filter((n) => !n.ok).length,
+    failed: failedCount,
+    transportFailures: transportFailuresCount,
     statusClassBreakdown: {
       '2xx': 0,
       '3xx': 0,
@@ -2568,6 +2718,11 @@ export function buildDiagnosticReport(): DiagnosticReport {
       '5xx': 0,
       'network/0': 0,
     },
+    humanReadableStatus: transportFailuresCount > 0
+      ? `${transportFailuresCount} transport failure(s)`
+      : (failedCount > 0
+        ? `${failedCount} HTTP failure(s)`
+        : 'All network calls successful'),
     timeouts: networkLedger.filter((n) => n.timeout).length,
     offlineFallbacks: networkLedger.filter((n) => n.cachedFallback).length,
     slowestCall: null,

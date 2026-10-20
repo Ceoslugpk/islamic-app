@@ -995,6 +995,32 @@ const DIAGNOSTIC_TRANSLATIONS: Record<string, Record<string, string>> = {
     ml: 'ഡയഗ്നോസ്റ്റിക് പ്രകടനം',
     si: 'රෝග විනිශ්චය කාර්ය සාධනය',
   },
+  'Suspicious RTL Writing Direction': {
+    en: 'Suspicious RTL Writing Direction',
+    ur: 'مشتبہ دائیں سے بائیں تحریری سمت',
+    ar: 'اتجاه كتابة مريب من اليمين لليسار',
+    hi: 'संदिग्ध आरटीएल लेखन दिशा',
+    bn: 'সন্দেহজনক আরটিএল লেখার দিক',
+    ms: 'Arah Penulisan RTL Mencurigakan',
+    id: 'Arah Penulisan RTL Mencurigakan',
+    ps: 'مشکوک ښي څخه کیڼ لور لیکنه',
+    ta: 'சந்தேகத்திற்கிடமான வலமிருந்து இடமாக எழுதும் திசை',
+    ml: 'സംശയാസ്പദമായ RTL എഴുത്ത് ദിശ',
+    si: 'සැක සහිත RTL ලිවීමේ දිශාව',
+  },
+  'Transport Failure': {
+    en: 'Transport Failure',
+    ur: 'ٹرانسپورٹ کی ناکامی',
+    ar: 'فشل النقل',
+    hi: 'ट्रांसपोर्ट विफलता',
+    bn: 'ট্রান্সপোর্ট ব্যর্থতা',
+    ms: 'Kegagalan Pengangkutan',
+    id: 'Kegagalan Transport',
+    ps: 'د ترانسپورت ناکامي',
+    ta: 'போக்குவரத்து தோல்வி',
+    ml: 'ട്രാൻസ്പോർട്ട് പരാജയം',
+    si: 'ප්‍රවාහන අසමත් වීම',
+  },
 };
 
 /**

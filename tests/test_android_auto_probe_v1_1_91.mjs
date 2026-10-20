@@ -2,9 +2,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
-const EXPECTED_VERSION = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.version;
-const EXPECTED_CODE = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.android.versionCode;
-const derivedBuildId = `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`;
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
@@ -98,9 +95,9 @@ console.log('\n--- 2. Two-Factor Gate & Zero-Cost-When-Off ---');
 
 assert.equal(diagConfig.evaluateDiagnosticGate(undefined, undefined), false);
 assert.equal(diagConfig.evaluateDiagnosticGate('1', undefined), false, 'Leaked env without exact build ID must be false');
-assert.equal(diagConfig.evaluateDiagnosticGate(undefined, `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`), false, 'Build ID without env must be false');
+assert.equal(diagConfig.evaluateDiagnosticGate(undefined, `RTL-STRUCT-${appJson.version}-EVIDENCE`), false, 'Build ID without env must be false');
 assert.equal(diagConfig.evaluateDiagnosticGate('1', 'wrong-id'), false, 'Mismatched build ID must be false');
-assert.equal(diagConfig.evaluateDiagnosticGate('1', `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`), true, 'Both factors present must be true');
+assert.equal(diagConfig.evaluateDiagnosticGate('1', `RTL-STRUCT-${appJson.version}-EVIDENCE`), true, 'Both factors present must be true');
 
 // Mock React & React Native
 const mockReact = {
@@ -141,6 +138,10 @@ const diagState = loadTsModule('src/lib/diagnostic/diagnosticState.ts', {
   './diagnosticScreens': diagScreens,
   './diagnosticScreenContext': {
     useDiagScreen: () => 'Settings',
+    useDiagParent: () => undefined,
+    getGlobalActiveScreen: () => 'Settings',
+    DiagParentProvider: ({ children }) => children,
+    DiagParentContext: { Provider: ({ children }) => children },
     DiagScreenProvider: ({ children }) => children,
   },
   '../i18n': { default: { language: 'en' }, isRTL: () => false, t: (k) => k },

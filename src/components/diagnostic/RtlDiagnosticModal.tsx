@@ -407,16 +407,18 @@ interface DefectRowProps {
 }
 
 const DefectRow = React.memo(function DefectRow({ defect, tokens, isScreenRTL }: DefectRowProps) {
+  const isSuspicious = defect.defectClass === 'rtlWritingDirectionSuspicious';
+  const tagColor = isSuspicious ? (tokens.eyebrow || '#D97706') : tokens.danger;
   return (
     <View style={styles.defectItemWrap}>
       <AppText
         variant="caption"
         style={[
           styles.defectTitle,
-          { color: tokens.danger, textAlign: isScreenRTL ? 'right' : 'left' },
+          { color: tagColor, textAlign: isScreenRTL ? 'right' : 'left' },
         ]}
       >
-        [{defect.defectClass}] {defect.probeId}
+        [{defect.defectClass}] {defect.probeId}{defect.parentIdentity ? ` (parent: ${defect.parentIdentity})` : ''}
       </AppText>
       {defect.reason ? (
         <AppText
@@ -1301,6 +1303,14 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
           </View>
           <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
             <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+              {diagT('Suspicious RTL Writing Direction')}:
+            </AppText>
+            <AppText testID="diag-defect-rtl-writing-dir" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+              {defects.countsByClass.rtlWritingDirectionSuspicious ?? 0}
+            </AppText>
+          </View>
+          <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+            <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
               {diagT('Fixed Height Text Risk')}:
             </AppText>
             <AppText testID="diag-defect-fixed-height" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
@@ -1673,7 +1683,7 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
               {diagT('Total Requests')}:
             </AppText>
             <AppText testID="diag-network-total" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
-              {network.summary.total} ({network.summary.ok} ok, {network.summary.failed} failed)
+              {network.summary.total} ({network.summary.ok} ok, {network.summary.failed} failed{network.summary.transportFailures > 0 ? `, ${network.summary.transportFailures} transport failure` : ''})
             </AppText>
           </View>
           <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
@@ -1684,6 +1694,30 @@ function RtlDiagnosticModalContent({ visible, onClose }: RtlDiagnosticModalProps
               {network.summary.timeouts} / {network.summary.offlineFallbacks}
             </AppText>
           </View>
+          {expandedSections.network && network.items.length > 0 && (
+            <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: tokens.cardBorder }}>
+              <AppText variant="caption" style={{ fontWeight: '700', marginBottom: 4, textAlign: isScreenRTL ? 'right' : 'left' }}>
+                {diagT('Network Requests')} ({network.items.length}):
+              </AppText>
+              {network.items.slice(0, MAX_DISPLAYED_ROWS).map((net, i) => {
+                const isTransportFailure = net.status === 0;
+                const statusLabel = isTransportFailure
+                  ? diagT('Transport Failure')
+                  : `HTTP ${net.status}`;
+                const statusColor = net.ok ? tokens.eyebrow : tokens.danger;
+                return (
+                  <View key={`net-${i}`} style={{ marginTop: 4, paddingTop: 4, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: tokens.cardBorder }}>
+                    <AppText variant="caption" style={[{ color: statusColor, fontWeight: '600', fontSize: 11, textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                      [{statusLabel}] {net.method} {net.host} ({net.durationMs}ms)
+                    </AppText>
+                    <AppText variant="caption" tone="faint" style={{ fontSize: 10, textAlign: isScreenRTL ? 'right' : 'left' }}>
+                      {net.path} {net.errorClassName ? `· ${net.errorClassName}` : ''}
+                    </AppText>
+                  </View>
+                );
+              })}
+            </View>
+          )}
         </PremiumCard>
 
         {/* Collapsible Runtime Errors Section */}
