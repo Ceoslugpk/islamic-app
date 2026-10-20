@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
+const EXPECTED_VERSION = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.version;
+const EXPECTED_CODE = JSON.parse(fs.readFileSync('app.json', 'utf8')).expo.android.versionCode;
+const derivedBuildId = `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`;
 
 const read = (p) => fs.readFileSync(p, 'utf8');
 
@@ -60,28 +63,33 @@ const appJson = JSON.parse(read('app.json')).expo;
 const buildGradle = read('android/app/build.gradle');
 const diagConfigSrc = read('src/lib/diagnostic/diagnosticConfig.ts');
 
-assert.equal(packageJson.version, '1.1.92', 'package.json version must be 1.1.92');
-assert.equal(appJson.version, '1.1.92', 'app.json version must be 1.1.92');
-assert.equal(appJson.android.versionCode, 111, 'app.json versionCode must be 111');
-assert.ok(buildGradle.includes('versionCode 111'), 'android/app/build.gradle versionCode must be 111');
-assert.ok(buildGradle.includes('versionName "1.1.92"'), 'android/app/build.gradle versionName must be 1.1.92');
+assert.equal(packageJson.version, appJson.version, 'package.json version must equal app.json version');
+assert.ok(/^\d+\.\d+\.\d+$/.test(appJson.version), 'app.json version must be valid semver');
+assert.ok(
+  typeof appJson.android.versionCode === 'number' &&
+  Number.isInteger(appJson.android.versionCode) &&
+  appJson.android.versionCode >= 111,
+  'app.json versionCode must be a positive integer not lower than 111'
+);
+assert.ok(buildGradle.includes(`versionCode ${appJson.android.versionCode}`), 'android/app/build.gradle versionCode must equal app.json versionCode');
+assert.ok(buildGradle.includes(`versionName "${appJson.version}"`), 'android/app/build.gradle versionName must equal app.json version');
 
 const diagConfig = loadTsModule('src/lib/diagnostic/diagnosticConfig.ts');
-assert.equal(diagConfig.DIAGNOSTIC_BUILD_ID, 'RTL-STRUCT-1.1.92-EVIDENCE', 'Build ID must be RTL-STRUCT-1.1.92-EVIDENCE');
-assert.equal(diagConfig.DIAGNOSTIC_VERSION, '1.1.92', 'Diagnostic version must be 1.1.92');
-assert.equal(diagConfig.DIAGNOSTIC_VERSION_CODE, 111, 'Diagnostic versionCode must be 111');
+assert.equal(diagConfig.DIAGNOSTIC_BUILD_ID, `RTL-STRUCT-${appJson.version}-EVIDENCE`, `Build ID must be RTL-STRUCT-${appJson.version}-EVIDENCE`);
+assert.equal(diagConfig.DIAGNOSTIC_VERSION, appJson.version, 'Diagnostic version must match app.json');
+assert.equal(diagConfig.DIAGNOSTIC_VERSION_CODE, appJson.android.versionCode, 'Diagnostic versionCode must match app.json');
 
 // Deterministic build command check
 assert.ok(
-  diagConfig.DIAGNOSTIC_BUILD_COMMAND.includes('cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.92-EVIDENCE'),
-  'DIAGNOSTIC_BUILD_COMMAND must propagate EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.92-EVIDENCE'
+  diagConfig.DIAGNOSTIC_BUILD_COMMAND.includes(`cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-${appJson.version}-EVIDENCE`),
+  `DIAGNOSTIC_BUILD_COMMAND must propagate EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-${appJson.version}-EVIDENCE`
 );
 assert.ok(
   !diagConfig.ORDINARY_RELEASE_BUILD_COMMAND.includes('EXPO_PUBLIC_ANDROID_DIAGNOSTIC'),
   'ORDINARY_RELEASE_BUILD_COMMAND must contain zero diagnostic flags'
 );
 
-console.log('  ✓ v1.1.92 metadata, versionCode 111, build ID RTL-STRUCT-1.1.92-EVIDENCE, and Gradle commands verified');
+console.log(`  ✓ v${appJson.version} metadata, versionCode ${appJson.android.versionCode}, build ID RTL-STRUCT-1.1.92-EVIDENCE, and Gradle commands verified`);
 
 // -----------------------------------------------------------------------------
 // 2. Two-Factor Gate & Zero-Cost-When-Off Contract
@@ -90,9 +98,9 @@ console.log('\n--- 2. Two-Factor Gate & Zero-Cost-When-Off ---');
 
 assert.equal(diagConfig.evaluateDiagnosticGate(undefined, undefined), false);
 assert.equal(diagConfig.evaluateDiagnosticGate('1', undefined), false, 'Leaked env without exact build ID must be false');
-assert.equal(diagConfig.evaluateDiagnosticGate(undefined, 'RTL-STRUCT-1.1.92-EVIDENCE'), false, 'Build ID without env must be false');
+assert.equal(diagConfig.evaluateDiagnosticGate(undefined, `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`), false, 'Build ID without env must be false');
 assert.equal(diagConfig.evaluateDiagnosticGate('1', 'wrong-id'), false, 'Mismatched build ID must be false');
-assert.equal(diagConfig.evaluateDiagnosticGate('1', 'RTL-STRUCT-1.1.92-EVIDENCE'), true, 'Both factors present must be true');
+assert.equal(diagConfig.evaluateDiagnosticGate('1', `RTL-STRUCT-${EXPECTED_VERSION}-EVIDENCE`), true, 'Both factors present must be true');
 
 // Mock React & React Native
 const mockReact = {

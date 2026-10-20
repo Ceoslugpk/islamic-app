@@ -1,6 +1,13 @@
-export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-1.1.92-EVIDENCE';
-export const DIAGNOSTIC_VERSION = '1.1.92';
-export const DIAGNOSTIC_VERSION_CODE = 111;
+export const DIAGNOSTIC_VERSION = '1.1.93';
+export const DIAGNOSTIC_VERSION_CODE = 112;
+
+/**
+ * The build identity is DERIVED from the version, never written twice.
+ * The two-factor gate compares this constant against the value passed to the
+ * build, so a version bump that forgets to update a hardcoded id would silently
+ * switch diagnostics off in the field (it did, in v1.1.93's first build).
+ */
+export const DIAGNOSTIC_BUILD_ID = `RTL-STRUCT-${DIAGNOSTIC_VERSION}-EVIDENCE`;
 
 /**
  * Source/test marker: Exact deterministic build command for building the signed v1.1.92 diagnostic APK.
@@ -8,7 +15,7 @@ export const DIAGNOSTIC_VERSION_CODE = 111;
  * they propagate to the Metro bundler sub-process.
  */
 export const DIAGNOSTIC_BUILD_COMMAND =
-  'cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.92-EVIDENCE ANDROID_HOME=/opt/android-sdk GRADLE_OPTS="-Xmx2048m -XX:MaxMetaspaceSize=768m -Dorg.gradle.workers.max=4" ./gradlew assembleRelease --no-daemon';
+  `cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=${DIAGNOSTIC_BUILD_ID} ANDROID_HOME=/opt/android-sdk GRADLE_OPTS="-Xmx2048m -XX:MaxMetaspaceSize=768m -Dorg.gradle.workers.max=4" ./gradlew assembleRelease --no-daemon`;
 
 /**
  * Standard build command for an ordinary release (diagnostics completely disabled).

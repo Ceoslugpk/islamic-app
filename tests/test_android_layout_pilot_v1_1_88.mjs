@@ -50,32 +50,39 @@ const buildGradle = read('android/app/build.gradle');
 
 // Build identity constants
 assert.ok(
-  diagConfigSrc.includes("export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-1.1.92-EVIDENCE';"),
-  'diagnosticConfig must declare DIAGNOSTIC_BUILD_ID as RTL-STRUCT-1.1.92-EVIDENCE'
+  /export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-\d+\.\d+\.\d+-EVIDENCE';/.test(diagConfigSrc) ||
+  /export const DIAGNOSTIC_BUILD_ID = `RTL-STRUCT-\${DIAGNOSTIC_VERSION}-EVIDENCE`;/.test(diagConfigSrc),
+  'diagnosticConfig must declare the current DIAGNOSTIC_BUILD_ID'
 );
 assert.ok(
-  diagConfigSrc.includes("export const DIAGNOSTIC_VERSION = '1.1.92';"),
-  'diagnosticConfig must declare DIAGNOSTIC_VERSION as 1.1.92'
+  diagConfigSrc.includes(`export const DIAGNOSTIC_VERSION = '${appJson.version}';`),
+  `diagnosticConfig must declare DIAGNOSTIC_VERSION as ${appJson.version}`
 );
 assert.ok(
-  diagConfigSrc.includes('export const DIAGNOSTIC_VERSION_CODE = 111;'),
-  'diagnosticConfig must declare DIAGNOSTIC_VERSION_CODE as 111'
+  diagConfigSrc.includes(`export const DIAGNOSTIC_VERSION_CODE = ${appJson.android.versionCode};`),
+  `diagnosticConfig must declare DIAGNOSTIC_VERSION_CODE as ${appJson.android.versionCode}`
 );
 
 // Version and code across project metadata
-assert.equal(packageJson.version, '1.1.92', 'package.json version must be 1.1.92');
-assert.equal(appJson.version, '1.1.92', 'app.json version must be 1.1.92');
-assert.equal(appJson.android.versionCode, 111, 'app.json versionCode must be 111');
-assert.ok(buildGradle.includes('versionCode 111'), 'android/app/build.gradle versionCode must be 111');
-assert.ok(buildGradle.includes('versionName "1.1.92"'), 'android/app/build.gradle versionName must be 1.1.92');
+assert.equal(packageJson.version, appJson.version, 'package.json version must equal app.json version');
+assert.ok(/^\d+\.\d+\.\d+$/.test(appJson.version), 'app.json version must be valid semver');
+assert.ok(
+  typeof appJson.android.versionCode === 'number' &&
+  Number.isInteger(appJson.android.versionCode) &&
+  appJson.android.versionCode >= 111,
+  'app.json versionCode must be a positive integer not lower than 111'
+);
+assert.ok(buildGradle.includes(`versionCode ${appJson.android.versionCode}`), 'android/app/build.gradle versionCode must equal app.json versionCode');
+assert.ok(buildGradle.includes(`versionName "${appJson.version}"`), 'android/app/build.gradle versionName must equal app.json version');
 
 // Deterministic build command
 assert.ok(
-  diagConfigSrc.includes('EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.92-EVIDENCE'),
-  'DIAGNOSTIC_BUILD_COMMAND must require both EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.92-EVIDENCE'
+  diagConfigSrc.includes(`EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-${appJson.version}-EVIDENCE`) ||
+  diagConfigSrc.includes('EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=${DIAGNOSTIC_BUILD_ID}'),
+  `DIAGNOSTIC_BUILD_COMMAND must propagate diagnostic flags`
 );
 
-console.log('  ✓ Diagnostic build identity and metadata verified for v1.1.92 (code 111)');
+console.log(`  ✓ Diagnostic build identity and metadata verified for v${appJson.version} (code ${appJson.android.versionCode})`);
 
 // -------------------------------------------------------------------------
 // 2. Shared Primitive Width Ownership & Hierarchy Probes: PrimaryButton
@@ -544,9 +551,9 @@ const mockReactNative = {
   Share: { share: () => Promise.resolve({ action: 'sharedAction' }) },
 };
 const mockDiagConfig = {
-  DIAGNOSTIC_BUILD_ID: 'RTL-STRUCT-1.1.92-EVIDENCE',
-  DIAGNOSTIC_VERSION: '1.1.92',
-  DIAGNOSTIC_VERSION_CODE: 111,
+  DIAGNOSTIC_BUILD_ID: `RTL-STRUCT-${appJson.version}-EVIDENCE`,
+  DIAGNOSTIC_VERSION: appJson.version,
+  DIAGNOSTIC_VERSION_CODE: appJson.android.versionCode,
   isDiagnosticModeEnabled: () => true,
 };
 const mockDiagI18n = {
