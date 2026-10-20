@@ -433,6 +433,15 @@ export default function QuranReaderScreen({
   // failed-retry) must not fire mid-scroll and yank the list.
   const userScrollingRef = useRef<boolean>(false);
   const userScrollClearTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const surahRequestIdRef = useRef<number>(0);
+  const isReaderMountedRef = useRef<boolean>(true);
+
+  useEffect(() => {
+    isReaderMountedRef.current = true;
+    return () => {
+      isReaderMountedRef.current = false;
+    };
+  }, []);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Guard: positioning (jump to saved/initial ayah) happens exactly once per mount
   const positionedRef = useRef<boolean>(false);
@@ -1144,6 +1153,7 @@ export default function QuranReaderScreen({
 
   // Fetch Surah data (cache-first: instant display from cache, graceful background refresh if forced)
   const loadSurah = useCallback(async (force = false, targetSurahNumber?: number) => {
+    const requestId = ++surahRequestIdRef.current;
     const sNum = targetSurahNumber || safeSurahNumber;
     // Record the visit as soon as the reader opens so Recently Read also works
     // when Quran content must load from cache or the network is unavailable.
@@ -1155,14 +1165,20 @@ export default function QuranReaderScreen({
     const cached = !force ? loadQuranCache<SurahDetail>(key) : null;
     const isCached = Boolean(cached && Array.isArray(cached.ayahs) && cached.ayahs.length > 0);
     if (isCached && cached) {
+      if (requestId !== surahRequestIdRef.current || !isReaderMountedRef.current) return;
       setSurah(cached);
       setLoading(false);
     } else if (!force) {
-      setLoading(true);
+      if (isReaderMountedRef.current) {
+        setLoading(true);
+      }
     }
-    setError(null);
+    if (isReaderMountedRef.current) {
+      setError(null);
+    }
     try {
       const data = await fetchSurah(sNum, true, edition?.editionIdentifier || 'en.sahih', force);
+      if (requestId !== surahRequestIdRef.current || !isReaderMountedRef.current) return;
       if (data && Array.isArray(data.ayahs) && data.ayahs.length > 0) {
         setSurah(data);
       }
@@ -1188,6 +1204,7 @@ export default function QuranReaderScreen({
       if (!isProgrammaticPositioningRef.current && targetAyahForPosition <= 1 && !restorationTargetRef.current && readingMode === 'cards') {
         saveLastReadPosition(sNum, startAyah, data?.englishName);
         const prevPos = await getReadingPosition();
+        if (requestId !== surahRequestIdRef.current || !isReaderMountedRef.current) return;
         if (!prevPos || (prevPos.surah === sNum ? startAyah > prevPos.ayah : true)) {
           saveReadingPosition(sNum, startAyah);
         }
@@ -1203,6 +1220,7 @@ export default function QuranReaderScreen({
         }
       }
     } catch {
+      if (requestId !== surahRequestIdRef.current || !isReaderMountedRef.current) return;
       if (!isCached) {
         // Fallback: if Arabic text is available offline, display it so the user never sees "no data"
         const arCached = loadQuranCache<SurahDetail>(`surah:${sNum}:ar`);
@@ -1213,7 +1231,9 @@ export default function QuranReaderScreen({
         setError(surahLoadFailed);
       }
     } finally {
-      setLoading(false);
+      if (requestId === surahRequestIdRef.current && isReaderMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [safeSurahNumber, initialAyah, edition, readingMode, targetAyahForPosition]);
 

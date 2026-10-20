@@ -181,6 +181,9 @@ export const PROTECTED_QURAN_CACHE_KEYS = new Set<string>([
   'recent-audio',
   'quran-audio-downloads',
   'surah-list',
+  'quran-reading-marker',
+  'quran-last-reading',
+  'quran_cache_bytes',
 ]);
 
 export const DISPOSABLE_KEY_PREFIXES = [
@@ -245,7 +248,19 @@ export function selectKeysToEvict(
   return evicted;
 }
 
-export function enforceQuranCacheBudget(budgetBytes: number = QURAN_CACHE_BUDGET_BYTES): void {
+export function reconcileQuranCacheBudget(_customDb?: unknown): number {
+  try {
+    const rows = webKV.getAll('quran:');
+    return rows.reduce((acc, r) => acc + r.value.length, 0);
+  } catch {
+    return 0;
+  }
+}
+
+export function enforceQuranCacheBudget(
+  budgetBytes: number = QURAN_CACHE_BUDGET_BYTES,
+  _customDb?: unknown
+): void {
   try {
     const rows = webKV.getAll('quran:');
     const items = rows.map((r) => ({

@@ -1367,8 +1367,19 @@ export function setCurrentPlayback(item: CurrentPlayback | null): void {
   notifyListeners(item?.isPlaying ?? false);
 }
 
+let playbackGeneration = 0;
+
+export function getPlaybackGeneration(): number {
+  return playbackGeneration;
+}
+
+export function bumpPlaybackGeneration(): number {
+  return ++playbackGeneration;
+}
+
 /** Clear the session playback item completely. */
 export function clearPlayback(): void {
+  playbackGeneration++;
   currentPlayback = null;
   notifyListeners(false);
 }
@@ -1712,13 +1723,15 @@ export async function switchToLanguageSegment(target: PlaybackSegmentType): Prom
   }
 }
 
-async function playAudioUrl(url: string): Promise<void> {
+export async function playAudioUrl(url: string): Promise<void> {
+  const generation = ++playbackGeneration;
   await setAudioModeAsync({
     playsInSilentMode: true,
     shouldPlayInBackground: true,
     interruptionMode: 'doNotMix',
     shouldRouteThroughEarpiece: false,
   }).catch(() => {});
+  if (generation !== playbackGeneration) return;
 
   // Resolve local offline audio URI if surah mode is active and downloaded
   const targetUri =
@@ -1734,6 +1747,7 @@ async function playAudioUrl(url: string): Promise<void> {
   if (currentSound && currentPlaybackUrl === targetUri && !isPlayerRemoved(currentSound)) {
     try {
       await currentSound.seekTo(0);
+      if (generation !== playbackGeneration) return;
       currentSound.play();
       if (currentPlayback) currentPlayback.isPlaying = true;
       notifyStatusListeners({
@@ -1758,6 +1772,10 @@ async function playAudioUrl(url: string): Promise<void> {
           currentSound.setPlaybackRate(currentPlaybackRate);
         } catch {}
       }
+      if (generation !== playbackGeneration) {
+        cleanupCurrentSound(false);
+        return;
+      }
       currentSound.play();
       notifySoundCreated(currentSound);
       if (currentPlayback) currentPlayback.isPlaying = true;
@@ -1777,6 +1795,12 @@ async function playAudioUrl(url: string): Promise<void> {
 
   // Attempt instant buffer-free playback from preloaded sound cache
   const preloaded = await takePreloadedSound(url);
+  if (generation !== playbackGeneration) {
+    if (preloaded) {
+      safeRemovePlayer(preloaded);
+    }
+    return;
+  }
   if (preloaded) {
     if (isPlayerRemoved(preloaded)) {
       // Ignored if already removed
@@ -1824,6 +1848,11 @@ async function playAudioUrl(url: string): Promise<void> {
       try {
         player.setPlaybackRate(currentPlaybackRate);
       } catch {}
+    }
+    if (generation !== playbackGeneration) {
+      safeRemovePlayer(player);
+      player = null;
+      return;
     }
     currentSoundSubscription = player.addListener('playbackStatusUpdate', handlePlaybackStatusUpdate);
     player.play();
@@ -1873,6 +1902,11 @@ async function playAudioUrl(url: string): Promise<void> {
             try {
               fallbackPlayer.setPlaybackRate(currentPlaybackRate);
             } catch {}
+          }
+          if (generation !== playbackGeneration) {
+            safeRemovePlayer(fallbackPlayer);
+            fallbackPlayer = null;
+            return;
           }
           currentSoundSubscription = fallbackPlayer.addListener('playbackStatusUpdate', handlePlaybackStatusUpdate);
           fallbackPlayer.play();
@@ -2505,6 +2539,7 @@ export function getCurrentPlaybackUrl(): string | null {
 
 /** Stop playback and release the sound. */
 export async function stop(clearSession = false): Promise<void> {
+  playbackGeneration++;
   await stopAudioPreloading();
   try {
     cleanupCurrentSound(true);
@@ -2531,6 +2566,7 @@ export async function stop(clearSession = false): Promise<void> {
 
 /** Unload current sound if cached. */
 export async function unload(): Promise<void> {
+  playbackGeneration++;
   await stopAudioPreloading();
   try {
     cleanupCurrentSound(true);

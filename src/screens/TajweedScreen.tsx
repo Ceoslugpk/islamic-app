@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -49,18 +49,32 @@ export function TajweedScreen({ onBack, backLabel }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const loadRequestIdRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const loadSurah = useCallback(async (surah: number) => {
+    const requestId = ++loadRequestIdRef.current;
     setLoading(true);
     setError(null);
     setAyahs(null);
     try {
       const data = await fetchTajweedSurah(surah);
+      if (requestId !== loadRequestIdRef.current || !isMountedRef.current) return;
       setAyahs(data);
     } catch {
+      if (requestId !== loadRequestIdRef.current || !isMountedRef.current) return;
       setError(t('Could not load tajweed text. Check your connection and try again.'));
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestIdRef.current && isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [t]);
 

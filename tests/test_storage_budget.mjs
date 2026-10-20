@@ -233,6 +233,7 @@ function selectKeysToEvict(rows, budgetBytes, protectedKeys) {
     'isDisposableQuranCacheKey',
     'selectKeysToEvict',
     'enforceQuranCacheBudget',
+    'reconcileQuranCacheBudget',
     'saveQuranCache',
     'savePrayerCache',
   ]) {

@@ -366,6 +366,9 @@ async function importNativeTables(tables: Record<string, unknown[]>): Promise<vo
           }
         }
       }
+      if (typeof db.reconcileQuranCacheBudget === 'function') {
+        db.reconcileQuranCacheBudget(sqliteDb);
+      }
     });
   } catch (err: any) {
     const msg = String(err?.message || err);

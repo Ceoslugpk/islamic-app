@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BackHandler,
   FlatList,
@@ -89,7 +89,18 @@ export default function TafsirScreen({
     fetchSurahList().then(setSurahs).catch(() => {});
   }, []);
 
+  const loadRequestIdRef = useRef(0);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const loadData = useCallback(async () => {
+    const requestId = ++loadRequestIdRef.current;
     setLoading(true);
     setError(null);
     setSurahDetail(null);
@@ -99,12 +110,16 @@ export default function TafsirScreen({
         fetchSurah(currentSurah, false),
         fetchSurahTafsir(currentSurah, tafsirIdentifier),
       ]);
+      if (requestId !== loadRequestIdRef.current || !isMountedRef.current) return;
       setSurahDetail(detail);
       setTafsirList(tafsirs);
     } catch {
+      if (requestId !== loadRequestIdRef.current || !isMountedRef.current) return;
       setError(t('Could not load Tafsir. Check your connection.'));
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestIdRef.current && isMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [currentSurah, tafsirIdentifier]);
 

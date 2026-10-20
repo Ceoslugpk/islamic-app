@@ -359,11 +359,31 @@ const HomeScreen = React.memo(function HomeScreen({
 
   const lastDateStrRef = useRef<string>(todayDdmmyyyy(new Date()));
   const dataRef = useRef(data);
+  const loadRequestIdRef = useRef<number>(0);
+  const loadTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isHomeScreenMountedRef = useRef<boolean>(true);
+
   useEffect(() => {
     dataRef.current = data;
   }, [data]);
 
+  useEffect(() => {
+    isHomeScreenMountedRef.current = true;
+    return () => {
+      isHomeScreenMountedRef.current = false;
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
   const load = useCallback(async (showSpinner = false, force = false) => {
+    const requestId = ++loadRequestIdRef.current;
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
     const today = new Date();
     // 1. Fast cache check: if not forcing, check if today's schedule is already cached for current config
     if (!force) {
@@ -374,6 +394,7 @@ const HomeScreen = React.memo(function HomeScreen({
         settings.madhab
       );
       if (cached) {
+        if (requestId !== loadRequestIdRef.current || !isHomeScreenMountedRef.current) return;
         setData(cached);
         setLoading(false);
         setError(null);
@@ -383,6 +404,7 @@ const HomeScreen = React.memo(function HomeScreen({
 
     // 2. Fast offline check: if offline and not forcing, check cache or show offline state immediately (0ms)
     if (!force && !isAppOnline()) {
+      if (requestId !== loadRequestIdRef.current || !isHomeScreenMountedRef.current) return;
       setLoading(false);
       if (!dataRef.current) {
         setError(prayerTimesOfflineError);
@@ -391,24 +413,43 @@ const HomeScreen = React.memo(function HomeScreen({
     }
 
     // 3. Needs fetch: only show spinner if we don't already have data to display
-    if (showSpinner && !dataRef.current) {
-      setLoading(true);
+    if (isHomeScreenMountedRef.current) {
+      if (showSpinner && !dataRef.current) {
+        setLoading(true);
+      }
+      setError(null);
     }
-    setError(null);
 
+    let thisTimeout: ReturnType<typeof setTimeout> | null = null;
     try {
       const result = await Promise.race([
         fetchPrayerTimes(effectiveLocation, settings.methodId, today, {
           force,
           madhab: settings.madhab,
         }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Prayer times load timed out')), 6000)
-        ),
+        new Promise<never>((_, reject) => {
+          thisTimeout = setTimeout(() => {
+            if (loadTimeoutRef.current === thisTimeout) {
+              loadTimeoutRef.current = null;
+            }
+            reject(new Error('Prayer times load timed out'));
+          }, 6000);
+          loadTimeoutRef.current = thisTimeout;
+        }),
       ]);
+      if (requestId !== loadRequestIdRef.current || !isHomeScreenMountedRef.current) return;
+      if (loadTimeoutRef.current === thisTimeout) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
       setData(result);
       setError(null);
     } catch {
+      if (requestId !== loadRequestIdRef.current || !isHomeScreenMountedRef.current) return;
+      if (loadTimeoutRef.current === thisTimeout) {
+        clearTimeout(loadTimeoutRef.current);
+        loadTimeoutRef.current = null;
+      }
       // Check cache one more time in case it exists
       const fallbackCached = getCachedPrayerTimes(
         effectiveLocation,
@@ -423,7 +464,9 @@ const HomeScreen = React.memo(function HomeScreen({
         setError(prayerTimesOfflineError);
       }
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestIdRef.current && isHomeScreenMountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [effectiveLocation, settings.methodId, settings.madhab]);
 
