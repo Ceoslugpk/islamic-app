@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, Text, TextStyle, StyleProp, PixelRatio, Platform } from 'react-native';
 import { useTheme } from '../lib/theme';
 import type { QuranArabicFont } from '../lib/settings';
+import { useAutoProbe } from '../lib/diagnostic';
 
 /**
  * Quran Arabic is a critical dense layout: fixed lineHeights (1.8x base) and
@@ -64,6 +65,15 @@ export function ArabicText({
   const requestedLineHeight = Math.max(lineHeight ?? 0, flattenedStyle?.lineHeight ?? 0);
   const minimumLineHeight = Math.ceil(effectiveSize * 1.8);
   const resolvedLineHeight = Math.max(requestedLineHeight ?? 0, minimumLineHeight) * fontScale;
+
+  const autoProbe = useAutoProbe(undefined, 'ArabicText', {
+    isText: true,
+    numberOfLines,
+    style,
+    textAlign: align,
+    writingDirection: 'rtl',
+  });
+
   return (
     <Text
       style={[
@@ -81,6 +91,8 @@ export function ArabicText({
       numberOfLines={numberOfLines}
       allowFontScaling
       maxFontSizeMultiplier={resolvedMaxMultiplier}
+      onLayout={autoProbe.onLayout}
+      onTextLayout={autoProbe.onTextLayout}
     >
       {children}
     </Text>

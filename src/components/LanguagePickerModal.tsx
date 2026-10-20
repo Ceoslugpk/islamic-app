@@ -13,6 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAutoProbe } from '../lib/diagnostic';
 import { iconSizes } from '../lib/iconMap';
 import { Hairline } from './Hairline';
 import { isRTL, t } from '../lib/i18n';
@@ -72,6 +73,8 @@ export function LanguagePickerModal({
     onClose();
   };
 
+  const autoProbe = useAutoProbe('language-picker-sheet', 'ModalSheet');
+
   return (
     <Modal
       visible={visible}
@@ -86,6 +89,7 @@ export function LanguagePickerModal({
         </TouchableWithoutFeedback>
 
         <View
+          onLayout={autoProbe.onLayout}
           style={[
             styles.sheet,
             isTablet && styles.sheetTablet,

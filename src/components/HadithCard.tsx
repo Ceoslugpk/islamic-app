@@ -18,7 +18,7 @@ interface HadithCardProps {
 
 export function HadithCard({ hadith, onRefresh, loading }: HadithCardProps) {
   return (
-    <Card style={styles.card}>
+    <Card style={styles.card} testID="hadith-card">
       <View style={styles.header}>
         <AppText variant="eyebrow" style={styles.eyebrow}>{t('Hadith of the Day')}</AppText>
         {onRefresh && (

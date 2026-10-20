@@ -59,8 +59,15 @@ export function RtlDiagnosticModal({ visible, onClose }: RtlDiagnosticModalProps
     });
   }, [visible]);
 
+  const report = buildDiagnosticReport();
   const measurements = getTargetMeasurements();
   const probes = getAutoProbes();
+  const defects = report.defects;
+  const interactions = report.interactions;
+  const languageMatrix = report.languageMatrix;
+  const themeMatrix = report.themeMatrix;
+  const network = report.network;
+  const errors = report.errors;
 
   const visitedSet = new Set<string>();
   for (const p of probes) {
@@ -793,6 +800,263 @@ export function RtlDiagnosticModal({ visible, onClose }: RtlDiagnosticModalProps
                   })}
                 </View>
               </>
+            )}
+          </PremiumCard>
+
+          {/* Derived Defect Classes Section */}
+          <AppText
+            variant="eyebrow"
+            highlight
+            style={[styles.groupHeading, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+          >
+            {diagT('Defects')} ({defects.totalDefects})
+          </AppText>
+
+          <PremiumCard
+            style={[styles.card, getCardShadow(mode)]}
+            padded
+            testID="diag-defects-card"
+          >
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Text Truncated')}:
+              </AppText>
+              <AppText testID="diag-defect-text-truncated" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {defects.countsByClass.textTruncated}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Sub-44dp Touch Target')}:
+              </AppText>
+              <AppText testID="diag-defect-sub-touch" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {defects.countsByClass.subTouchTarget}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Off-Screen')}:
+              </AppText>
+              <AppText testID="diag-defect-offscreen" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {defects.countsByClass.offScreen}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Outside Parent Frame')}:
+              </AppText>
+              <AppText testID="diag-defect-outside-parent" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {defects.countsByClass.outsideParent}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Sibling Overlap')}:
+              </AppText>
+              <AppText testID="diag-defect-sibling-overlap" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {defects.countsByClass.siblingOverlap}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('RTL Text Align Mismatch')}:
+              </AppText>
+              <AppText testID="diag-defect-rtl-mismatch" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {defects.countsByClass.rtlTextAlignMismatch}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Fixed Height Text Risk')}:
+              </AppText>
+              <AppText testID="diag-defect-fixed-height" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {defects.countsByClass.fixedHeightTextRisk}
+              </AppText>
+            </View>
+
+            {defects.items.length > 0 && (
+              <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: tokens.cardBorder }}>
+                <AppText variant="caption" style={{ fontWeight: '700', marginBottom: 4, textAlign: isScreenRTL ? 'right' : 'left' }}>
+                  {diagT('Detected Defect Items')} ({defects.items.length}):
+                </AppText>
+                {defects.items.slice(0, 15).map((d, i) => (
+                  <View key={`${d.probeId}-${d.defectClass}-${i}`} style={{ marginBottom: 4 }}>
+                    <AppText variant="caption" style={[{ color: tokens.danger, fontWeight: '600', fontSize: 11, textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                      [{d.defectClass}] {d.probeId}
+                    </AppText>
+                    {d.reason ? (
+                      <AppText variant="caption" tone="faint" style={{ fontSize: 10, textAlign: isScreenRTL ? 'right' : 'left' }}>
+                        {d.reason}
+                      </AppText>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            )}
+          </PremiumCard>
+
+          {/* Element Behaviour (Interactions) Section */}
+          <AppText
+            variant="eyebrow"
+            highlight
+            style={[styles.groupHeading, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+          >
+            {diagT('Interactions')} ({interactions.total})
+          </AppText>
+
+          <PremiumCard
+            style={[styles.card, getCardShadow(mode)]}
+            padded
+            testID="diag-interactions-card"
+          >
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Total Interactions')}:
+              </AppText>
+              <AppText testID="diag-interactions-count" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {interactions.total}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Navigated')}:
+              </AppText>
+              <AppText variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {interactions.countsByEffect.navigated}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('State Changed')}:
+              </AppText>
+              <AppText variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {interactions.countsByEffect.stateChanged}
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('No Observable Effect')}:
+              </AppText>
+              <AppText variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {interactions.countsByEffect.noObservableEffect}
+              </AppText>
+            </View>
+            <AppText variant="caption" tone="faint" style={{ fontSize: 10, marginTop: 4, textAlign: isScreenRTL ? 'right' : 'left' }}>
+              * {diagT('noObservableEffect is an investigation signal, not proof of failure.')}
+            </AppText>
+          </PremiumCard>
+
+          {/* Language & Theme Matrices Section */}
+          <AppText
+            variant="eyebrow"
+            highlight
+            style={[styles.groupHeading, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+          >
+            {diagT('Language Matrix')} & {diagT('Theme Matrix')}
+          </AppText>
+
+          <PremiumCard
+            style={[styles.card, getCardShadow(mode)]}
+            padded
+            testID="diag-matrix-card"
+          >
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Language Matrix Entries')}:
+              </AppText>
+              <AppText testID="diag-lang-matrix-count" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {languageMatrix.items.length} ({languageMatrix.mismatchCount} {diagT('mismatches')})
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Theme Matrix Entries')}:
+              </AppText>
+              <AppText testID="diag-theme-matrix-count" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {themeMatrix.items.length} ({themeMatrix.mismatchCount} {diagT('mismatches')})
+              </AppText>
+            </View>
+          </PremiumCard>
+
+          {/* Network / API Ledger Section */}
+          <AppText
+            variant="eyebrow"
+            highlight
+            style={[styles.groupHeading, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+          >
+            {diagT('Network Ledger')} ({network.items.length})
+          </AppText>
+
+          <PremiumCard
+            style={[styles.card, getCardShadow(mode)]}
+            padded
+            testID="diag-network-card"
+          >
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Total Requests')}:
+              </AppText>
+              <AppText testID="diag-network-total" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {network.summary.total} ({network.summary.ok} ok, {network.summary.failed} failed)
+              </AppText>
+            </View>
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Timeouts / Offline Fallbacks')}:
+              </AppText>
+              <AppText variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {network.summary.timeouts} / {network.summary.offlineFallbacks}
+              </AppText>
+            </View>
+            {network.summary.slowestCall ? (
+              <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+                <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                  {diagT('Slowest Call')}:
+                </AppText>
+                <AppText variant="caption" style={[styles.infoValue, { fontSize: 11, textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                  {network.summary.slowestCall.method} {network.summary.slowestCall.host}{network.summary.slowestCall.path} ({network.summary.slowestCall.durationMs}ms)
+                </AppText>
+              </View>
+            ) : null}
+          </PremiumCard>
+
+          {/* Runtime Errors Section */}
+          <AppText
+            variant="eyebrow"
+            highlight
+            style={[styles.groupHeading, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+          >
+            {diagT('Runtime Errors')} ({errors.total})
+          </AppText>
+
+          <PremiumCard
+            style={[styles.card, getCardShadow(mode)]}
+            padded
+            testID="diag-errors-card"
+          >
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText variant="caption" tone="faint" style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                {diagT('Captured Errors')}:
+              </AppText>
+              <AppText testID="diag-errors-count" variant="caption" style={[styles.infoValue, { textAlign: isScreenRTL ? 'left' : 'right' }]}>
+                {errors.total}
+              </AppText>
+            </View>
+            {errors.items.length === 0 ? (
+              <AppText variant="caption" tone="faint" style={{ fontSize: 11, textAlign: isScreenRTL ? 'right' : 'left' }}>
+                {diagT('No runtime errors recorded.')}
+              </AppText>
+            ) : (
+              errors.items.slice(0, 10).map((err, i) => (
+                <View key={`error-${i}`} style={{ marginTop: 4, paddingTop: 4, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: tokens.cardBorder }}>
+                  <AppText variant="caption" style={[{ color: tokens.danger, fontWeight: '600', fontSize: 11, textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                    [{err.errorName}] {err.screen}
+                  </AppText>
+                  <AppText variant="caption" tone="faint" style={{ fontSize: 10, textAlign: isScreenRTL ? 'right' : 'left' }}>
+                    {err.messageClass}
+                  </AppText>
+                </View>
+              ))
             )}
           </PremiumCard>
 

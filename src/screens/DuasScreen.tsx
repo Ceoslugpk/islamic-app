@@ -153,6 +153,7 @@ export default function DuasScreen({
     return (
       <PremiumCard
         key={item.id}
+        testID={`dua-card-${item.id}`}
         padded={false}
         borderRadius={cardTokens.borderRadius}
         style={[

@@ -51,7 +51,11 @@ export function OutlineButton({
   const borderColor = tokens.goldBorder;
   const textColor = tokens.eyebrow;
 
-  const autoProbe = useAutoProbe(testID, 'OutlineButton');
+  const autoProbe = useAutoProbe(testID, 'OutlineButton', {
+    isInteractive: true,
+    onPress,
+    disabled: disabled || loading,
+  });
   const combinedOnLayout = autoProbe.onLayout
     ? (e: LayoutChangeEvent) => {
         autoProbe.onLayout?.(e);
@@ -63,7 +67,7 @@ export function OutlineButton({
     <TouchableOpacity
       testID={testID}
       activeOpacity={0.75}
-      onPress={onPress}
+      onPress={autoProbe.onPress || onPress}
       onLayout={combinedOnLayout}
       disabled={disabled || loading}
       hitSlop={buttonTokens.hitSlop}

@@ -81,6 +81,7 @@ const { AppText } = load('src/components/ui/AppText.tsx', {
   '../../theme/tokens': { fontRoles: roles },
   '../../lib/i18n': { getCurrentLanguage: () => language },
   '../../lib/typography': type,
+  '../../lib/diagnostic': { useAutoProbe: () => ({}) },
 });
 function renderText(props) {
   const node = AppText.render(props, null);

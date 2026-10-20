@@ -1,5 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
-import { I18nManager, Platform, Share, LayoutChangeEvent, StyleSheet } from 'react-native';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  I18nManager,
+  Platform,
+  Share,
+  LayoutChangeEvent,
+  StyleSheet,
+  Dimensions,
+  Appearance,
+  StyleProp,
+  NativeSyntheticEvent,
+  TextLayoutEventData,
+} from 'react-native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
 import i18n, { isRTL as isI18nRTL } from '../i18n';
@@ -13,7 +24,7 @@ import {
   DIAGNOSTIC_VERSION_CODE,
   isDiagnosticModeEnabled,
 } from './diagnosticConfig';
-import { useDiagScreen } from './diagnosticScreenContext';
+import { useDiagScreen, getGlobalActiveScreen } from './diagnosticScreenContext';
 import { KNOWN_SCREENS } from './diagnosticScreens';
 
 export type DiagnosticTargetId =
@@ -181,10 +192,134 @@ export interface DiagnosticMeasurementReportItem {
   nativeIsRTL: boolean;
 }
 
+export type DefectClass =
+  | 'textTruncated'
+  | 'subTouchTarget'
+  | 'offScreen'
+  | 'outsideParent'
+  | 'siblingOverlap'
+  | 'rtlTextAlignMismatch'
+  | 'fixedHeightTextRisk';
+
+export interface DefectItem {
+  flag: boolean | null;
+  reason?: string;
+}
+
+export interface ProbeDefects {
+  textTruncated: DefectItem;
+  subTouchTarget: DefectItem;
+  offScreen: DefectItem;
+  outsideParent: DefectItem;
+  siblingOverlap: DefectItem;
+  rtlTextAlignMismatch: DefectItem;
+  fixedHeightTextRisk: DefectItem;
+}
+
+export interface DiagnosticDefectReportItem {
+  probeId: string;
+  defectClass: DefectClass;
+  screen: string;
+  reason?: string;
+}
+
+export type InteractionEffect = 'navigated' | 'stateChanged' | 'noObservableEffect' | 'error';
+
+export interface DiagnosticInteractionRecord {
+  id: string;
+  screen: string;
+  language: string;
+  theme: 'light' | 'dark';
+  timestamp: string;
+  handlerPresent: boolean;
+  disabled: boolean;
+  effect: InteractionEffect;
+  targetScreen?: string;
+  errorName?: string;
+}
+
+export interface DiagnosticLanguageMatrixItem {
+  probeId: string;
+  screen: string;
+  captures: Record<
+    string,
+    {
+      width: number | null;
+      height: number | null;
+      textAlign?: string;
+      writingDirection?: string;
+      timestamp?: string;
+    }
+  >;
+  languageGeometryMismatch: boolean;
+  needsRevisit?: boolean;
+  reason?: string;
+}
+
+export interface DiagnosticThemeMatrixItem {
+  probeId: string;
+  screen: string;
+  light?: { width: number | null; height: number | null; timestamp?: string };
+  dark?: { width: number | null; height: number | null; timestamp?: string };
+  themeGeometryMismatch: boolean;
+  needsRevisit?: boolean;
+  reason?: string;
+}
+
+export interface DiagnosticNetworkRecord {
+  host: string;
+  path: string;
+  method: string;
+  status: number;
+  ok: boolean;
+  durationMs: number;
+  errorClassName?: string;
+  retryCount: number | null;
+  timeout: boolean;
+  offline: boolean;
+  cachedFallback: boolean;
+  timestamp: string;
+}
+
+export interface DiagnosticNetworkSummary {
+  total: number;
+  ok: number;
+  failed: number;
+  statusClassBreakdown: {
+    '2xx': number;
+    '3xx': number;
+    '4xx': number;
+    '5xx': number;
+    'network/0': number;
+  };
+  timeouts: number;
+  offlineFallbacks: number;
+  slowestCall: { host: string; path: string; method: string; durationMs: number } | null;
+}
+
+export interface DiagnosticErrorRecord {
+  timestamp: string;
+  errorName: string;
+  messageClass: string;
+  screen: string;
+  language: string;
+  theme: 'light' | 'dark';
+}
+
+export interface DiagnosticCoverage {
+  screensVisited: string[];
+  screensUnvisited: string[];
+  visitedCount: number;
+  unvisitedCount: number;
+  coveragePercent: number;
+}
+
 export interface AutoProbeRecord {
   id: string;
   kind: string;
   screen: string;
+  language: string;
+  theme: 'light' | 'dark';
   x: number | null;
   y: number | null;
   width: number | null;
@@ -194,6 +329,8 @@ export interface AutoProbeRecord {
   measuredAt: string | null;
   staleAfterUnmount: boolean;
   staleReason?: string;
+  measurementUnavailable: boolean;
+  unavailabilityReason?: string;
   overflow: {
     status: OverflowStatus;
     reason?: string;
@@ -205,31 +342,18 @@ export interface AutoProbeRecord {
   } | null;
   overflowStatus: 'unknown' | 'no_overflow' | 'overflow';
   reason?: string;
+  isText?: boolean;
+  isInteractive?: boolean;
+  numberOfLines?: number;
+  reportedLineCount?: number;
+  reportedTotalLineHeight?: number;
+  containerFixedStyleHeight?: number;
+  resolvedStyleTextAlign?: string;
+  resolvedStyleWritingDirection?: string;
+  defects: ProbeDefects;
 }
 
-export interface DiagnosticProbeReportItem {
-  id: string;
-  kind: string;
-  screen: string;
-  x: number | null;
-  y: number | null;
-  width: number | null;
-  height: number | null;
-  measuredAt: string | null;
-  staleAfterUnmount: boolean;
-  staleReason?: string;
-  overflow: {
-    status: OverflowStatus;
-    reason?: string;
-    hasOverflow: boolean;
-    overflowsLeft?: boolean;
-    overflowsTop?: boolean;
-    overflowsRight?: boolean;
-    overflowsBottom?: boolean;
-  } | null;
-  overflowStatus: 'unknown' | 'no_overflow' | 'overflow';
-  reason?: string;
-}
+export type DiagnosticProbeReportItem = AutoProbeRecord;
 
 export interface DiagnosticReport {
   timestamp: string;
@@ -237,10 +361,47 @@ export interface DiagnosticReport {
   version: string;
   versionCode: number;
   locale: string;
+  theme: 'light' | 'dark';
   directionHelperResult: 'rtl' | 'ltr';
   i18nManagerIsRTL: boolean;
   probeCount: number;
   probes: DiagnosticProbeReportItem[];
+  defects: {
+    countsByClass: Record<DefectClass, number>;
+    totalDefects: number;
+    items: DiagnosticDefectReportItem[];
+  };
+  interactions: {
+    total: number;
+    countsByEffect: Record<InteractionEffect, number>;
+    items: DiagnosticInteractionRecord[];
+  };
+  languageMatrix: {
+    mismatchCount: number;
+    items: DiagnosticLanguageMatrixItem[];
+  };
+  themeMatrix: {
+    mismatchCount: number;
+    items: DiagnosticThemeMatrixItem[];
+  };
+  network: {
+    summary: DiagnosticNetworkSummary;
+    items: DiagnosticNetworkRecord[];
+  };
+  errors: {
+    total: number;
+    items: DiagnosticErrorRecord[];
+  };
+  coverage: DiagnosticCoverage;
+  summary: {
+    probeCount: number;
+    totalDefects: number;
+    interactionCount: number;
+    networkRequestCount: number;
+    errorCount: number;
+    visitedScreensCount: number;
+  };
+  // Backwards compatibility for existing tests
   screensVisited: string[];
   screensUnvisited: string[];
   measurements: DiagnosticMeasurementReportItem[];
@@ -413,6 +574,52 @@ function createInitialStore(): Record<DiagnosticTargetId, TargetLayoutRecord> {
 
 let measurementsStore: Record<DiagnosticTargetId, TargetLayoutRecord> = createInitialStore();
 let probeStore: Record<string, AutoProbeRecord> = {};
+let probeLRUOrder: string[] = [];
+
+export const MAX_AUTO_PROBES = 400;
+export const MAX_INTERACTION_ENTRIES = 200;
+export const MAX_NETWORK_ENTRIES = 200;
+export const MAX_ERROR_ENTRIES = 50;
+
+let interactionLedger: DiagnosticInteractionRecord[] = [];
+let networkLedger: DiagnosticNetworkRecord[] = [];
+let errorLedger: DiagnosticErrorRecord[] = [];
+
+const probeLanguageHistory = new Map<
+  string,
+  Map<string, { width: number | null; height: number | null; x: number | null; y: number | null; textAlign?: string; writingDirection?: string; timestamp: string }>
+>();
+
+const probeThemeHistory = new Map<
+  string,
+  Map<'light' | 'dark', { width: number | null; height: number | null; x: number | null; y: number | null; timestamp: string }>
+>();
+
+let activeThemeMode: 'light' | 'dark' = 'light';
+let activeLanguageMode: string | null = null;
+
+export function setDiagnosticActiveTheme(theme: 'light' | 'dark'): void {
+  activeThemeMode = theme;
+}
+
+export function setDiagnosticActiveLanguage(lang: string | null): void {
+  activeLanguageMode = lang;
+}
+
+export function getActiveTheme(): 'light' | 'dark' {
+  if (activeThemeMode) return activeThemeMode;
+  try {
+    return Appearance?.getColorScheme() === 'dark' ? 'dark' : 'light';
+  } catch {
+    return 'light';
+  }
+}
+
+export function getActiveLanguage(): string {
+  if (activeLanguageMode) return activeLanguageMode;
+  return i18n?.language || 'en';
+}
+
 const monotonicCounters: Record<string, number> = {};
 
 export function getNextMonotonicProbeId(kind: string = 'probe'): string {
@@ -433,6 +640,14 @@ export function resetMonotonicCounters(): void {
 
 export function resetDiagnosticProbes(): void {
   probeStore = {};
+  probeLRUOrder = [];
+  interactionLedger = [];
+  networkLedger = [];
+  errorLedger = [];
+  probeLanguageHistory.clear();
+  probeThemeHistory.clear();
+  activeLanguageMode = null;
+  activeThemeMode = 'light';
   resetMonotonicCounters();
   notifyListeners();
 }
@@ -443,6 +658,432 @@ export function getAutoProbes(): AutoProbeRecord[] {
 
 export function getAutoProbe(id: string): AutoProbeRecord | undefined {
   return probeStore[id];
+}
+
+export function getInteractionLedger(): DiagnosticInteractionRecord[] {
+  return [...interactionLedger];
+}
+
+export function getNetworkLedger(): DiagnosticNetworkRecord[] {
+  return [...networkLedger];
+}
+
+export function getErrorLedger(): DiagnosticErrorRecord[] {
+  return [...errorLedger];
+}
+
+export function recordInteraction(record: DiagnosticInteractionRecord): void {
+  if (!isDiagnosticModeEnabled()) return;
+  if (interactionLedger.length >= MAX_INTERACTION_ENTRIES) {
+    interactionLedger.shift();
+  }
+  interactionLedger.push(record);
+  notifyListeners();
+}
+
+export function sanitizeNetworkUrl(input: any): { host: string; path: string } {
+  try {
+    const rawUrl = typeof input === 'string' ? input : input?.url || '';
+    if (!rawUrl) return { host: 'unknown', path: '/' };
+
+    const match = rawUrl.match(/^https?:\/\/([^/?#]+)([^?#]*)/i);
+    if (match) {
+      // Strip any userinfo (credentials) so a URL like https://user:pass@host/x
+      // can never leak a secret into the report.
+      const host = match[1].toLowerCase().replace(/^[^@]*@/, '').replace(/[^a-z0-9.\-:]/g, '');
+      const path = match[2] || '/';
+      return { host, path };
+    }
+    const relMatch = rawUrl.match(/^([^?#]*)/);
+    return { host: 'internal', path: relMatch ? relMatch[1] : '/' };
+  } catch {
+    return { host: 'unknown', path: '/' };
+  }
+}
+
+export function recordDiagnosticNetworkEvent(event: DiagnosticNetworkRecord): void {
+  if (!isDiagnosticModeEnabled()) return;
+  if (networkLedger.length >= MAX_NETWORK_ENTRIES) {
+    networkLedger.shift();
+  }
+  networkLedger.push(event);
+  notifyListeners();
+}
+
+export function recordDiagnosticNetworkFallback(details: {
+  host: string;
+  path: string;
+  method?: string;
+  status?: number;
+}): void {
+  if (!isDiagnosticModeEnabled()) return;
+  recordDiagnosticNetworkEvent({
+    host: details.host,
+    path: details.path,
+    method: (details.method || 'GET').toUpperCase(),
+    status: details.status ?? 200,
+    ok: true,
+    durationMs: 0,
+    retryCount: null,
+    timeout: false,
+    offline: false,
+    cachedFallback: true,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+let originalGlobalFetch: typeof fetch | null = null;
+let isFetchInterceptionInstalled = false;
+
+export function installDiagnosticNetworkInterceptor(): void {
+  if (!isDiagnosticModeEnabled()) return;
+  if (isFetchInterceptionInstalled) return;
+  if (typeof globalThis.fetch !== 'function') return;
+
+  originalGlobalFetch = globalThis.fetch;
+  isFetchInterceptionInstalled = true;
+
+  globalThis.fetch = async function diagnosticWrappedFetch(
+    input: any,
+    init?: any
+  ): Promise<Response> {
+    if (!isDiagnosticModeEnabled()) {
+      return originalGlobalFetch!(input, init);
+    }
+
+    const { host, path } = sanitizeNetworkUrl(input);
+    const method = (init?.method || (typeof input === 'object' && input?.method) || 'GET').toUpperCase();
+    const startTime = Date.now();
+    const timestamp = new Date().toISOString();
+
+    try {
+      const response = await originalGlobalFetch!(input, init);
+      const durationMs = Date.now() - startTime;
+      recordDiagnosticNetworkEvent({
+        host,
+        path,
+        method,
+        status: response.status,
+        ok: response.ok,
+        durationMs,
+        retryCount: null,
+        timeout: false,
+        offline: false,
+        cachedFallback: false,
+        timestamp,
+      });
+      return response;
+    } catch (err: any) {
+      const durationMs = Date.now() - startTime;
+      const errorClassName = err?.name || 'NetworkError';
+      const isTimeout = errorClassName === 'AbortError' || /timeout/i.test(err?.message || '');
+      const isOffline = /network|offline|failed to fetch/i.test(err?.message || '');
+
+      recordDiagnosticNetworkEvent({
+        host,
+        path,
+        method,
+        status: 0,
+        ok: false,
+        durationMs,
+        errorClassName,
+        retryCount: null,
+        timeout: isTimeout,
+        offline: isOffline,
+        cachedFallback: false,
+        timestamp,
+      });
+      throw err;
+    }
+  };
+}
+
+export function restoreDiagnosticNetworkInterceptor(): void {
+  if (isFetchInterceptionInstalled && originalGlobalFetch) {
+    globalThis.fetch = originalGlobalFetch;
+    originalGlobalFetch = null;
+    isFetchInterceptionInstalled = false;
+  }
+}
+
+export function sanitizeErrorMessageClass(err: any): { errorName: string; messageClass: string } {
+  const errorName = err?.name || (typeof err === 'string' ? 'Error' : 'UnknownError');
+  const raw = (typeof err === 'string' ? err : err?.message || String(err || '')).toLowerCase();
+
+  // messageClass is a coarse CATEGORY, never free text. Earlier revisions kept a
+  // truncated copy of the raw message, which could retain an e-mail address or
+  // arbitrary user content. Classification only - no message text is stored.
+  let klass = 'unknown';
+  if (/network request failed|failed to fetch|networkerror|offline/.test(raw)) klass = 'network';
+  else if (/timed? ?out|timeout/.test(raw)) klass = 'timeout';
+  else if (/abort|cancel/.test(raw)) klass = 'aborted';
+  else if (/json|parse|unexpected ?(tok|char)|syntaxerror/.test(raw)) klass = 'parse';
+  else if (/unauthor|forbidden|401|403/.test(raw)) klass = 'auth';
+  else if (/rate limit|too many|429/.test(raw)) klass = 'rate_limited';
+  else if (/not found|404/.test(raw)) klass = 'not_found';
+  else if (/permission|denied/.test(raw)) klass = 'permission';
+  else if (/sqlite|database|storage/.test(raw)) klass = 'storage';
+  else if (/invalid|validation|required/.test(raw)) klass = 'validation';
+
+  return { errorName, messageClass: `${errorName}: ${klass}` };
+}
+
+export function recordDiagnosticRuntimeError(
+  err: any,
+  screenOverride?: string
+): void {
+  if (!isDiagnosticModeEnabled()) return;
+
+  const { errorName, messageClass } = sanitizeErrorMessageClass(err);
+  const screen = screenOverride || getGlobalActiveScreen() || 'App';
+  const language = getActiveLanguage();
+  const theme = getActiveTheme();
+  const timestamp = new Date().toISOString();
+
+  const record: DiagnosticErrorRecord = {
+    timestamp,
+    errorName,
+    messageClass,
+    screen,
+    language,
+    theme,
+  };
+
+  if (errorLedger.length >= MAX_ERROR_ENTRIES) {
+    errorLedger.shift();
+  }
+  errorLedger.push(record);
+  notifyListeners();
+}
+
+let originalErrorHandler: any = null;
+let isErrorInterceptionInstalled = false;
+
+export function installDiagnosticErrorInterceptor(): void {
+  if (!isDiagnosticModeEnabled()) return;
+  if (isErrorInterceptionInstalled) return;
+
+  const globalObj = globalThis as any;
+  if (globalObj.ErrorUtils && typeof globalObj.ErrorUtils.getGlobalHandler === 'function') {
+    originalErrorHandler = globalObj.ErrorUtils.getGlobalHandler();
+    isErrorInterceptionInstalled = true;
+    globalObj.ErrorUtils.setGlobalHandler((error: any, isFatal?: boolean) => {
+      if (isDiagnosticModeEnabled()) {
+        recordDiagnosticRuntimeError(error);
+      }
+      if (typeof originalErrorHandler === 'function') {
+        originalErrorHandler(error, isFatal);
+      }
+    });
+  }
+}
+
+export function restoreDiagnosticErrorInterceptor(): void {
+  const globalObj = globalThis as any;
+  if (isErrorInterceptionInstalled && globalObj.ErrorUtils && originalErrorHandler) {
+    globalObj.ErrorUtils.setGlobalHandler(originalErrorHandler);
+    originalErrorHandler = null;
+    isErrorInterceptionInstalled = false;
+  }
+}
+
+export function deriveProbeDefects(
+  probe: Partial<AutoProbeRecord>,
+  options?: {
+    isText?: boolean;
+    isInteractive?: boolean;
+    numberOfLines?: number;
+    reportedLineCount?: number;
+    reportedTotalLineHeight?: number;
+    containerFixedStyleHeight?: number;
+    resolvedStyleTextAlign?: string;
+    resolvedStyleWritingDirection?: string;
+    windowDimensions?: { width: number; height: number };
+    bottomSafeInset?: number;
+    siblings?: Partial<AutoProbeRecord>[];
+  }
+): ProbeDefects {
+  const isText = options?.isText ?? probe.isText ?? false;
+  const isInteractive = options?.isInteractive ?? probe.isInteractive ?? false;
+  const x = probe.x ?? null;
+  const y = probe.y ?? null;
+  const width = probe.width ?? null;
+  const height = probe.height ?? null;
+  const frameWidth = probe.frameWidth ?? null;
+  const frameHeight = probe.frameHeight ?? null;
+
+  // 1. textTruncated:
+  let textTruncated: DefectItem;
+  if (!isText) {
+    textTruncated = { flag: null, reason: 'Not a text element' };
+  } else {
+    const numLines = options?.numberOfLines ?? probe.numberOfLines;
+    const reportedLines = options?.reportedLineCount ?? probe.reportedLineCount;
+    const reportedHeight = options?.reportedTotalLineHeight ?? probe.reportedTotalLineHeight;
+
+    if (numLines != null && reportedLines != null) {
+      if (reportedLines >= numLines && reportedHeight != null && height != null && height < reportedHeight - 1) {
+        textTruncated = { flag: true, reason: `Text reached ${numLines} line limit and measured height (${height}) is less than line layout height (${reportedHeight})` };
+      } else if (reportedHeight != null && height != null && height < reportedHeight - 1) {
+        textTruncated = { flag: true, reason: `Measured height (${height}) is less than reported line layout height (${reportedHeight})` };
+      } else if (reportedLines >= numLines) {
+        textTruncated = { flag: true, reason: `Text reached ${numLines} line limit (${reportedLines} lines)` };
+      } else {
+        textTruncated = { flag: false };
+      }
+    } else if (reportedHeight != null && height != null && height < reportedHeight - 1) {
+      textTruncated = { flag: true, reason: `Measured height (${height}) is less than reported line layout height (${reportedHeight})` };
+    } else if (reportedLines != null) {
+      textTruncated = { flag: false };
+    } else {
+      textTruncated = { flag: null, reason: 'Text line layout metrics unavailable' };
+    }
+  }
+
+  // 2. subTouchTarget:
+  let subTouchTarget: DefectItem;
+  if (!isInteractive) {
+    subTouchTarget = { flag: null, reason: 'Non-interactive element' };
+  } else if (width == null || height == null) {
+    subTouchTarget = { flag: null, reason: 'Geometry unavailable' };
+  } else if (width < 44 || height < 44) {
+    subTouchTarget = { flag: true, reason: `Interactive touch target ${width}x${height}dp is under 44x44dp minimum` };
+  } else {
+    subTouchTarget = { flag: false };
+  }
+
+  // 3. offScreen:
+  let offScreen: DefectItem;
+  if (x == null || y == null || width == null || height == null) {
+    offScreen = { flag: null, reason: 'Geometry unavailable' };
+  } else {
+    let winWidth = 360;
+    let winHeight = 640;
+    try {
+      const win = Dimensions?.get('window');
+      if (win && win.width > 0 && win.height > 0) {
+        winWidth = win.width;
+        winHeight = win.height;
+      }
+    } catch {}
+    if (options?.windowDimensions) {
+      winWidth = options.windowDimensions.width;
+      winHeight = options.windowDimensions.height;
+    }
+
+    const bottomInset = options?.bottomSafeInset ?? 24;
+    const maxAllowedY = winHeight - bottomInset;
+    if (x < 0 || y < 0 || (x + width) > winWidth || (y + height) > maxAllowedY) {
+      offScreen = {
+        flag: true,
+        reason: `Element rect (${x}, ${y}, ${width}, ${height}) extends outside window bounds (${winWidth}x${maxAllowedY})`,
+      };
+    } else {
+      offScreen = { flag: false };
+    }
+  }
+
+  // 4. outsideParent:
+  let outsideParent: DefectItem;
+  if (frameWidth == null || frameHeight == null) {
+    outsideParent = { flag: null, reason: 'No known parent frame' };
+  } else if (x == null || y == null || width == null || height == null) {
+    outsideParent = { flag: null, reason: 'Geometry unavailable' };
+  } else if (x < 0 || y < 0 || (x + width) > frameWidth || (y + height) > frameHeight) {
+    outsideParent = {
+      flag: true,
+      reason: `Child rect (${x}, ${y}, ${width}, ${height}) exceeds parent frame (${frameWidth}x${frameHeight})`,
+    };
+  } else {
+    outsideParent = { flag: false };
+  }
+
+  // 5. siblingOverlap:
+  let siblingOverlap: DefectItem;
+  const siblings = options?.siblings || [];
+  if (x == null || y == null || width == null || height == null || siblings.length === 0) {
+    siblingOverlap = { flag: null, reason: 'No siblings observed in parent frame' };
+  } else {
+    let foundOverlap = false;
+    let overlapDetails = '';
+    for (const sib of siblings) {
+      if (!sib || sib.id === probe.id || sib.x == null || sib.y == null || sib.width == null || sib.height == null) {
+        continue;
+      }
+      const xOverlap = Math.max(0, Math.min(x + width, sib.x + sib.width) - Math.max(x, sib.x));
+      const yOverlap = Math.max(0, Math.min(y + height, sib.y + sib.height) - Math.max(y, sib.y));
+      if (xOverlap > 1 && yOverlap > 1) {
+        foundOverlap = true;
+        overlapDetails = `Intersects sibling '${sib.id || sib.kind}' by ${xOverlap.toFixed(1)}x${yOverlap.toFixed(1)}dp`;
+        break;
+      }
+    }
+    if (foundOverlap) {
+      siblingOverlap = { flag: true, reason: overlapDetails };
+    } else {
+      siblingOverlap = { flag: false };
+    }
+  }
+
+  // 6. rtlTextAlignMismatch:
+  let rtlTextAlignMismatch: DefectItem;
+  if (!isText) {
+    rtlTextAlignMismatch = { flag: null, reason: 'Not a text element' };
+  } else {
+    const isRtl = isI18nRTL();
+    const align = (options?.resolvedStyleTextAlign ?? probe.resolvedStyleTextAlign)?.toLowerCase();
+    const dir = (options?.resolvedStyleWritingDirection ?? probe.resolvedStyleWritingDirection)?.toLowerCase();
+    if (!align && !dir) {
+      rtlTextAlignMismatch = { flag: null, reason: 'Alignment and writing direction unresolved' };
+    } else if (isRtl) {
+      if (align === 'left' || dir === 'ltr') {
+        rtlTextAlignMismatch = {
+          flag: true,
+          reason: `RTL locale has LTR alignment (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
+        };
+      } else {
+        rtlTextAlignMismatch = { flag: false };
+      }
+    } else {
+      if (align === 'right' || dir === 'rtl') {
+        rtlTextAlignMismatch = {
+          flag: true,
+          reason: `LTR locale has RTL alignment (textAlign='${align || 'unset'}', writingDirection='${dir || 'unset'}')`,
+        };
+      } else {
+        rtlTextAlignMismatch = { flag: false };
+      }
+    }
+  }
+
+  // 7. fixedHeightTextRisk:
+  let fixedHeightTextRisk: DefectItem;
+  const fixedHeight = options?.containerFixedStyleHeight ?? probe.containerFixedStyleHeight;
+  const numLines = options?.numberOfLines ?? probe.numberOfLines;
+  if (!isText) {
+    fixedHeightTextRisk = { flag: null, reason: 'Not a text element' };
+  } else if (fixedHeight != null && numLines != null) {
+    if (height != null && Math.abs(height - fixedHeight) <= 1) {
+      fixedHeightTextRisk = {
+        flag: true,
+        reason: `Container fixed height style (${fixedHeight}dp) equals container height with numberOfLines=${numLines}`,
+      };
+    } else {
+      fixedHeightTextRisk = { flag: false };
+    }
+  } else {
+    fixedHeightTextRisk = { flag: null, reason: 'No fixed height style with numberOfLines' };
+  }
+
+  return {
+    textTruncated,
+    subTouchTarget,
+    offScreen,
+    outsideParent,
+    siblingOverlap,
+    rtlTextAlignMismatch,
+    fixedHeightTextRisk,
+  };
 }
 
 const listeners = new Set<() => void>();
@@ -467,6 +1108,14 @@ export function addDiagnosticListener(listener: () => void): () => void {
 export function resetDiagnosticMeasurements(): void {
   measurementsStore = createInitialStore();
   probeStore = {};
+  probeLRUOrder = [];
+  interactionLedger = [];
+  networkLedger = [];
+  errorLedger = [];
+  probeLanguageHistory.clear();
+  probeThemeHistory.clear();
+  activeLanguageMode = null;
+  activeThemeMode = 'light';
   resetMonotonicCounters();
   notifyListeners();
 }
@@ -1169,6 +1818,14 @@ export function recordProbeLayout(
   meta?: {
     frameWidth?: number | null;
     frameHeight?: number | null;
+    isText?: boolean;
+    isInteractive?: boolean;
+    numberOfLines?: number;
+    reportedLineCount?: number;
+    reportedTotalLineHeight?: number;
+    containerFixedStyleHeight?: number;
+    resolvedStyleTextAlign?: string;
+    resolvedStyleWritingDirection?: string;
   }
 ): void {
   if (!isDiagnosticModeEnabled()) return;
@@ -1183,12 +1840,22 @@ export function recordProbeLayout(
     return;
   }
 
+  // Ensure network and error interceptors are active in diagnostic builds
+  if (typeof globalThis.fetch === 'function' && !isFetchInterceptionInstalled) {
+    installDiagnosticNetworkInterceptor();
+  }
+  if (!isErrorInterceptionInstalled) {
+    installDiagnosticErrorInterceptor();
+  }
+
   const existing = probeStore[id];
   const x = typeof layout.x === 'number' ? Math.round(layout.x * 10) / 10 : 0;
   const y = typeof layout.y === 'number' ? Math.round(layout.y * 10) / 10 : 0;
   const width = Math.round(layout.width * 10) / 10;
   const height = Math.round(layout.height * 10) / 10;
   const measuredAt = new Date().toISOString();
+  const activeLanguage = getActiveLanguage();
+  const activeTheme = getActiveTheme();
 
   const fw = meta?.frameWidth != null ? Math.round(meta.frameWidth * 10) / 10 : existing?.frameWidth ?? null;
   const fh = meta?.frameHeight != null ? Math.round(meta.frameHeight * 10) / 10 : existing?.frameHeight ?? null;
@@ -1220,7 +1887,31 @@ export function recordProbeLayout(
     reason = 'No known parent frame for auto-probe (status: unknown)';
   }
 
-  probeStore[id] = {
+  // Find existing siblings in the same frame
+  const siblings: Partial<AutoProbeRecord>[] = [];
+  if (fw != null && fh != null) {
+    Object.values(probeStore).forEach((other) => {
+      if (
+        other.id !== id &&
+        other.screen === screen &&
+        other.frameWidth === fw &&
+        other.frameHeight === fh
+      ) {
+        siblings.push(other);
+      }
+    });
+  }
+
+  const isText = meta?.isText ?? existing?.isText ?? false;
+  const isInteractive = meta?.isInteractive ?? existing?.isInteractive ?? false;
+  const numberOfLines = meta?.numberOfLines ?? existing?.numberOfLines;
+  const reportedLineCount = meta?.reportedLineCount ?? existing?.reportedLineCount;
+  const reportedTotalLineHeight = meta?.reportedTotalLineHeight ?? existing?.reportedTotalLineHeight;
+  const containerFixedStyleHeight = meta?.containerFixedStyleHeight ?? existing?.containerFixedStyleHeight;
+  const resolvedStyleTextAlign = meta?.resolvedStyleTextAlign ?? existing?.resolvedStyleTextAlign;
+  const resolvedStyleWritingDirection = meta?.resolvedStyleWritingDirection ?? existing?.resolvedStyleWritingDirection;
+
+  const probeDraft: Partial<AutoProbeRecord> = {
     id,
     kind,
     screen,
@@ -1230,13 +1921,138 @@ export function recordProbeLayout(
     height,
     frameWidth: fw,
     frameHeight: fh,
+    isText,
+    isInteractive,
+    numberOfLines,
+    reportedLineCount,
+    reportedTotalLineHeight,
+    containerFixedStyleHeight,
+    resolvedStyleTextAlign,
+    resolvedStyleWritingDirection,
+  };
+
+  const defects = deriveProbeDefects(probeDraft, {
+    isText,
+    isInteractive,
+    numberOfLines,
+    reportedLineCount,
+    reportedTotalLineHeight,
+    containerFixedStyleHeight,
+    resolvedStyleTextAlign,
+    resolvedStyleWritingDirection,
+    siblings,
+  });
+
+  // LRU store eviction at MAX_AUTO_PROBES (400)
+  if (!probeStore[id]) {
+    if (probeLRUOrder.length >= MAX_AUTO_PROBES) {
+      const oldestId = probeLRUOrder.shift();
+      if (oldestId) {
+        delete probeStore[oldestId];
+        // Keep the matrices bounded too: an evicted probe must not linger there.
+        probeLanguageHistory.delete(oldestId);
+        probeThemeHistory.delete(oldestId);
+      }
+    }
+    probeLRUOrder.push(id);
+  } else {
+    const idx = probeLRUOrder.indexOf(id);
+    if (idx >= 0) {
+      probeLRUOrder.splice(idx, 1);
+    }
+    probeLRUOrder.push(id);
+  }
+
+  probeStore[id] = {
+    id,
+    kind,
+    screen,
+    language: activeLanguage,
+    theme: activeTheme,
+    x,
+    y,
+    width,
+    height,
+    frameWidth: fw,
+    frameHeight: fh,
     measuredAt,
     staleAfterUnmount: false,
     staleReason: undefined,
+    measurementUnavailable: false,
+    unavailabilityReason: undefined,
     overflow,
     overflowStatus,
     reason,
+    isText,
+    isInteractive,
+    numberOfLines,
+    reportedLineCount,
+    reportedTotalLineHeight,
+    containerFixedStyleHeight,
+    resolvedStyleTextAlign,
+    resolvedStyleWritingDirection,
+    defects,
   };
+
+  // Record history for Language and Theme matrices
+  let langMap = probeLanguageHistory.get(id);
+  if (!langMap) {
+    langMap = new Map();
+    probeLanguageHistory.set(id, langMap);
+  }
+  langMap.set(activeLanguage, {
+    width,
+    height,
+    x,
+    y,
+    textAlign: resolvedStyleTextAlign,
+    writingDirection: resolvedStyleWritingDirection,
+    timestamp: measuredAt,
+  });
+
+  let themeMap = probeThemeHistory.get(id);
+  if (!themeMap) {
+    themeMap = new Map();
+    probeThemeHistory.set(id, themeMap);
+  }
+  themeMap.set(activeTheme, {
+    width,
+    height,
+    x,
+    y,
+    timestamp: measuredAt,
+  });
+
+  notifyListeners();
+}
+
+export function recordProbeTextLayout(
+  id: string,
+  lines: { x?: number; y?: number; width?: number; height?: number }[]
+): void {
+  if (!isDiagnosticModeEnabled()) return;
+  const probe = probeStore[id];
+  if (!probe) return;
+
+  const reportedLineCount = lines.length;
+  let reportedTotalLineHeight = 0;
+  for (const line of lines) {
+    reportedTotalLineHeight += (line.height || 0);
+  }
+
+  probe.reportedLineCount = reportedLineCount;
+  probe.reportedTotalLineHeight = reportedTotalLineHeight;
+
+  // Re-derive defects with updated text metrics
+  probe.defects = deriveProbeDefects(probe, {
+    isText: true,
+    numberOfLines: probe.numberOfLines,
+    reportedLineCount,
+    reportedTotalLineHeight,
+    containerFixedStyleHeight: probe.containerFixedStyleHeight,
+    resolvedStyleTextAlign: probe.resolvedStyleTextAlign,
+    resolvedStyleWritingDirection: probe.resolvedStyleWritingDirection,
+  });
 
   notifyListeners();
 }
@@ -1250,40 +2066,58 @@ export function markProbeStale(id: string, reason: string = 'Element unmounted')
   notifyListeners();
 }
 
+export interface AutoProbeOptions {
+  isInteractive?: boolean;
+  isText?: boolean;
+  numberOfLines?: number;
+  style?: StyleProp<any>;
+  textAlign?: string;
+  writingDirection?: string;
+  onPress?: (e?: any) => void;
+  disabled?: boolean;
+  containerFixedStyleHeight?: number;
+  testID?: string;
+}
+
 /**
  * Production auto-probe hook for shared primitives.
  * Gated by two-factor diagnostic gate:
- * - When gate is OFF: returns {} (no onLayout, no registration, no listeners).
- * - When gate is ON: returns { onLayout }, registers stable/monotonic id, tags with active screen,
- *   and retains last-measured snapshot on unmount without wiping values.
+ * - When gate is OFF: returns {} (or { onPress } if provided; zero onLayout, zero listeners, zero timers).
+ * - When gate is ON: returns { onLayout, onTextLayout, onPress }, registers stable/monotonic id,
+ *   tags with active screen, language, theme, and records interaction effects.
  */
 export function useAutoProbe(
   id?: string,
-  kind?: string
-): { onLayout?: (e: LayoutChangeEvent) => void } {
+  kind?: string,
+  options?: AutoProbeOptions
+): {
+  onLayout?: (e: LayoutChangeEvent) => void;
+  onTextLayout?: (e: NativeSyntheticEvent<TextLayoutEventData>) => void;
+  onPress?: (e?: any) => void;
+} {
   const isEnabled = isDiagnosticModeEnabled();
   const screen = useDiagScreen();
   const effectiveKind = kind || 'probe';
+
   const [monotonicFallback] = useState(() =>
-    isEnabled && (!id || id.trim().length === 0)
-      ? getNextMonotonicProbeId(effectiveKind)
-      : ''
+    isEnabled && (!id || id.trim().length === 0) ? getNextMonotonicProbeId(effectiveKind) : ''
   );
 
-  // Default testIDs ('btn-primary', 'chip', 'card', 'search', ...) repeat across
-  // screens, so a bare id collides and silently collapses multiple probes into one
-  // record. Compose screen + kind + base id + instance sequence to guarantee
-  // uniqueness while keeping the id readable in the report.
   const [instanceSeq] = useState(() => (isEnabled ? getNextProbeInstanceSeq() : 0));
   const baseId = (id && id.trim().length > 0) ? id.trim() : monotonicFallback;
   const stableId = isEnabled
     ? `${screen || 'unknown'}::${effectiveKind}::${baseId}#${instanceSeq}`
     : '';
 
+  const activeTimersRef = useRef<Set<any>>(new Set());
+
   useEffect(() => {
     if (!isEnabled || !stableId) return;
+    const timers = activeTimersRef.current;
     return () => {
       markProbeStale(stableId, `${effectiveKind} unmounted`);
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
     };
   }, [isEnabled, stableId, effectiveKind]);
 
@@ -1291,15 +2125,108 @@ export function useAutoProbe(
     if (!isEnabled || !stableId) return;
     const layout = e?.nativeEvent?.layout;
     if (layout) {
-      recordProbeLayout(stableId, effectiveKind, screen, layout);
-    }
-  }, [isEnabled, stableId, effectiveKind, screen]);
+      let fixedStyleHeight: number | undefined = options?.containerFixedStyleHeight;
+      if (fixedStyleHeight === undefined && options?.style) {
+        const flat = StyleSheet.flatten(options.style);
+        if (typeof flat?.height === 'number') {
+          fixedStyleHeight = flat.height;
+        }
+      }
 
+      recordProbeLayout(stableId, effectiveKind, screen, layout, {
+        isText: options?.isText,
+        isInteractive: options?.isInteractive,
+        numberOfLines: options?.numberOfLines,
+        containerFixedStyleHeight: fixedStyleHeight,
+        resolvedStyleTextAlign: options?.textAlign,
+        resolvedStyleWritingDirection: options?.writingDirection,
+      });
+    }
+  }, [isEnabled, stableId, effectiveKind, screen, options]);
+
+  const onTextLayout = useCallback((e: NativeSyntheticEvent<TextLayoutEventData>) => {
+    if (!isEnabled || !stableId) return;
+    const lines = e?.nativeEvent?.lines;
+    if (Array.isArray(lines)) {
+      recordProbeTextLayout(stableId, lines);
+    }
+  }, [isEnabled, stableId]);
+
+  const wrappedOnPress = useCallback((e?: any) => {
+    if (!isEnabled) {
+      options?.onPress?.(e);
+      return;
+    }
+
+    const preScreen = getGlobalActiveScreen() || screen || 'App';
+    const preProbesCount = Object.keys(probeStore).length;
+    const preErrorCount = errorLedger.length;
+    const activeLang = getActiveLanguage();
+    const activeTheme = getActiveTheme();
+    const timestamp = new Date().toISOString();
+
+    const record: DiagnosticInteractionRecord = {
+      id: stableId,
+      screen: preScreen,
+      language: activeLang,
+      theme: activeTheme,
+      timestamp,
+      handlerPresent: typeof options?.onPress === 'function',
+      disabled: Boolean(options?.disabled),
+      effect: 'noObservableEffect',
+      targetScreen: preScreen,
+    };
+
+    if (options?.disabled || !options?.onPress) {
+      record.effect = 'noObservableEffect';
+      recordInteraction(record);
+      return;
+    }
+
+    let threw = false;
+    try {
+      options.onPress(e);
+    } catch (err: any) {
+      threw = true;
+      record.effect = 'error';
+      record.errorName = err?.name || 'Error';
+      recordInteraction(record);
+      throw err;
+    }
+
+    if (!threw) {
+      recordInteraction(record);
+      // Single-shot bounded timer (1000ms max, cleared on unmount)
+      const timerId = setTimeout(() => {
+        activeTimersRef.current.delete(timerId);
+        const currentScreen = getGlobalActiveScreen() || 'App';
+        if (currentScreen !== preScreen) {
+          record.effect = 'navigated';
+          record.targetScreen = currentScreen;
+        } else if (errorLedger.length > preErrorCount) {
+          record.effect = 'error';
+        } else if (Object.keys(probeStore).length !== preProbesCount) {
+          record.effect = 'stateChanged';
+        } else {
+          // Explicitly documented: signal to investigate, not proof of a broken button
+          record.effect = 'noObservableEffect';
+        }
+        notifyListeners();
+      }, 1000);
+      activeTimersRef.current.add(timerId);
+    }
+  }, [isEnabled, stableId, screen, options]);
+
+  // Strict hard gate check: return immediately if gate is off
   if (!isEnabled) {
-    return {};
+    return options?.onPress ? { onPress: options.onPress } : {};
   }
 
-  return { onLayout };
+  return {
+    onLayout,
+    onTextLayout: options?.isText ? onTextLayout : undefined,
+    onPress: options?.onPress ? wrappedOnPress : undefined,
+  };
 }
 
 /**
@@ -1312,7 +2239,8 @@ export function useAutoProbe(
  * - Exported payload is strictly limited to structural layout geometry (dimensions, relative offsets x/y, overflow flags) and developer component/test IDs.
  */
 export function buildDiagnosticReport(): DiagnosticReport {
-  const activeLocale = i18n.language || 'en';
+  const activeLocale = getActiveLanguage();
+  const activeTheme = getActiveTheme();
   const directionHelper = isI18nRTL() ? 'rtl' : 'ltr';
   const nativeIsRTL = Boolean(I18nManager.isRTL);
 
@@ -1369,27 +2297,197 @@ export function buildDiagnosticReport(): DiagnosticReport {
 
   // Diagnostics must not measure themselves: the panel renders the same shared
   // primitives, so excluding its own probe ids keeps the report about the app.
-  const rawProbes = getAutoProbes().filter(
-    (p) => !p.id.startsWith('diag-') && !p.id.includes('::Diagnostic') && p.screen !== 'Diagnostics'
-  );
+  const isDiagnosticSelfProbe = (p: { id: string; kind?: string; screen?: string }) => {
+    if (p.screen === 'Diagnostics') return true;
+    if ((p.kind || '').startsWith('diag')) return true;
+    // ids are composed as screen::kind::base#instance in current builds, and were
+    // plain base ids in earlier ones - check every segment for the diag- prefix.
+    return p.id.split(/::|#/).some((seg) => seg.startsWith('diag-'));
+  };
+  const rawProbes = getAutoProbes().filter((p) => !isDiagnosticSelfProbe(p));
   const probes: DiagnosticProbeReportItem[] = rawProbes.map((p) => ({
-    id: p.id,
-    kind: p.kind,
-    screen: p.screen,
-    x: p.x,
-    y: p.y,
-    width: p.width,
-    height: p.height,
-    measuredAt: p.measuredAt,
-    staleAfterUnmount: p.staleAfterUnmount,
-    staleReason: p.staleReason,
-    overflow: p.overflow,
-    overflowStatus: p.overflowStatus,
-    reason: p.reason,
+    ...p,
   }));
 
+  // Derive defect counts and items
+  const defectCounts: Record<DefectClass, number> = {
+    textTruncated: 0,
+    subTouchTarget: 0,
+    offScreen: 0,
+    outsideParent: 0,
+    siblingOverlap: 0,
+    rtlTextAlignMismatch: 0,
+    fixedHeightTextRisk: 0,
+  };
+  const defectItems: DiagnosticDefectReportItem[] = [];
+
+  for (const p of rawProbes) {
+    if (p.defects) {
+      (Object.keys(defectCounts) as DefectClass[]).forEach((cls) => {
+        const item = p.defects[cls];
+        if (item && item.flag === true) {
+          defectCounts[cls]++;
+          defectItems.push({
+            probeId: p.id,
+            defectClass: cls,
+            screen: p.screen,
+            reason: item.reason,
+          });
+        }
+      });
+    }
+  }
+  const totalDefects = Object.values(defectCounts).reduce((a, b) => a + b, 0);
+
+  // Interaction breakdown
+  const interactionCounts: Record<InteractionEffect, number> = {
+    navigated: 0,
+    stateChanged: 0,
+    noObservableEffect: 0,
+    error: 0,
+  };
+  interactionLedger.forEach((it) => {
+    if (interactionCounts[it.effect] !== undefined) {
+      interactionCounts[it.effect]++;
+    }
+  });
+
+  // Language matrix
+  const languageMatrixItems: DiagnosticLanguageMatrixItem[] = [];
+  let languageMismatchCount = 0;
+  probeLanguageHistory.forEach((capturesMap, probeId) => {
+    const probe = probeStore[probeId];
+    const screen = probe?.screen || 'unknown';
+    const captures = Object.fromEntries(capturesMap.entries());
+    let mismatch = false;
+
+    if (capturesMap.size >= 2) {
+      let minW = Infinity;
+      let maxW = -Infinity;
+      let minH = Infinity;
+      let maxH = -Infinity;
+      capturesMap.forEach((cap) => {
+        if (cap.width != null && cap.width > 0) {
+          minW = Math.min(minW, cap.width);
+          maxW = Math.max(maxW, cap.width);
+        }
+        if (cap.height != null && cap.height > 0) {
+          minH = Math.min(minH, cap.height);
+          maxH = Math.max(maxH, cap.height);
+        }
+      });
+      if (minW < Infinity && maxW > -Infinity && minW > 0) {
+        if ((maxW - minW) / minW > 0.20) mismatch = true;
+      }
+      if (minH < Infinity && maxH > -Infinity && minH > 0) {
+        if ((maxH - minH) / minH > 0.20) mismatch = true;
+      }
+      if (mismatch) languageMismatchCount++;
+      languageMatrixItems.push({
+        probeId,
+        screen,
+        captures,
+        languageGeometryMismatch: mismatch,
+        needsRevisit: false,
+      });
+    } else {
+      languageMatrixItems.push({
+        probeId,
+        screen,
+        captures,
+        languageGeometryMismatch: false,
+        needsRevisit: true,
+        reason: 'Only 1 language captured; switch language to record comparison',
+      });
+    }
+  });
+
+  // Theme matrix
+  const themeMatrixItems: DiagnosticThemeMatrixItem[] = [];
+  let themeMismatchCount = 0;
+  probeThemeHistory.forEach((themeMap, probeId) => {
+    const probe = probeStore[probeId];
+    const screen = probe?.screen || 'unknown';
+    const light = themeMap.get('light');
+    const dark = themeMap.get('dark');
+
+    if (light && dark) {
+      let mismatch = false;
+      if (light.width != null && dark.width != null && Math.min(light.width, dark.width) > 0) {
+        const minW = Math.min(light.width, dark.width);
+        if (Math.abs(light.width - dark.width) / minW > 0.20) mismatch = true;
+      }
+      if (light.height != null && dark.height != null && Math.min(light.height, dark.height) > 0) {
+        const minH = Math.min(light.height, dark.height);
+        if (Math.abs(light.height - dark.height) / minH > 0.20) mismatch = true;
+      }
+      if (mismatch) themeMismatchCount++;
+      themeMatrixItems.push({
+        probeId,
+        screen,
+        light,
+        dark,
+        themeGeometryMismatch: mismatch,
+        needsRevisit: false,
+      });
+    } else {
+      themeMatrixItems.push({
+        probeId,
+        screen,
+        light,
+        dark,
+        themeGeometryMismatch: false,
+        needsRevisit: true,
+        reason: 'Only 1 theme captured; toggle theme to record comparison',
+      });
+    }
+  });
+
+  // Network summary
+  const netSummary: DiagnosticNetworkSummary = {
+    total: networkLedger.length,
+    ok: networkLedger.filter((n) => n.ok).length,
+    failed: networkLedger.filter((n) => !n.ok).length,
+    statusClassBreakdown: {
+      '2xx': 0,
+      '3xx': 0,
+      '4xx': 0,
+      '5xx': 0,
+      'network/0': 0,
+    },
+    timeouts: networkLedger.filter((n) => n.timeout).length,
+    offlineFallbacks: networkLedger.filter((n) => n.cachedFallback).length,
+    slowestCall: null,
+  };
+  let maxDuration = -1;
+  networkLedger.forEach((n) => {
+    if (n.status >= 200 && n.status < 300) netSummary.statusClassBreakdown['2xx']++;
+    else if (n.status >= 300 && n.status < 400) netSummary.statusClassBreakdown['3xx']++;
+    else if (n.status >= 400 && n.status < 500) netSummary.statusClassBreakdown['4xx']++;
+    else if (n.status >= 500 && n.status < 600) netSummary.statusClassBreakdown['5xx']++;
+    else netSummary.statusClassBreakdown['network/0']++;
+
+    if (n.durationMs > maxDuration) {
+      maxDuration = n.durationMs;
+      netSummary.slowestCall = {
+        host: n.host,
+        path: n.path,
+        method: n.method,
+        durationMs: n.durationMs,
+      };
+    }
+  });
+
+  // Screen coverage
   const visitedScreens = Array.from(new Set(rawProbes.map((p) => p.screen))).filter(Boolean).sort();
   const unvisitedScreens = KNOWN_SCREENS.filter((s) => !visitedScreens.includes(s)).sort();
+  const coverage: DiagnosticCoverage = {
+    screensVisited: visitedScreens,
+    screensUnvisited: unvisitedScreens,
+    visitedCount: visitedScreens.length,
+    unvisitedCount: unvisitedScreens.length,
+    coveragePercent: KNOWN_SCREENS.length > 0 ? Math.round((visitedScreens.length / KNOWN_SCREENS.length) * 100) : 0,
+  };
 
   return {
     timestamp: new Date().toISOString(),
@@ -1397,10 +2495,46 @@ export function buildDiagnosticReport(): DiagnosticReport {
     version: DIAGNOSTIC_VERSION,
     versionCode: DIAGNOSTIC_VERSION_CODE,
     locale: activeLocale,
+    theme: activeTheme,
     directionHelperResult: directionHelper,
     i18nManagerIsRTL: nativeIsRTL,
     probeCount: probes.length,
     probes,
+    defects: {
+      countsByClass: defectCounts,
+      totalDefects,
+      items: defectItems,
+    },
+    interactions: {
+      total: interactionLedger.length,
+      countsByEffect: interactionCounts,
+      items: [...interactionLedger],
+    },
+    languageMatrix: {
+      mismatchCount: languageMismatchCount,
+      items: languageMatrixItems,
+    },
+    themeMatrix: {
+      mismatchCount: themeMismatchCount,
+      items: themeMatrixItems,
+    },
+    network: {
+      summary: netSummary,
+      items: [...networkLedger],
+    },
+    errors: {
+      total: errorLedger.length,
+      items: [...errorLedger],
+    },
+    coverage,
+    summary: {
+      probeCount: probes.length,
+      totalDefects,
+      interactionCount: interactionLedger.length,
+      networkRequestCount: networkLedger.length,
+      errorCount: errorLedger.length,
+      visitedScreensCount: visitedScreens.length,
+    },
     screensVisited: visitedScreens,
     screensUnvisited: unvisitedScreens,
     measurements,

@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, View, ViewStyle, StyleProp, Platform } from 'react-native';
+import { StyleSheet, View, ViewStyle, StyleProp, Platform, LayoutChangeEvent } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
 import { themeTokens, cardTokens } from '../theme/tokens';
+import { useAutoProbe } from '../lib/diagnostic';
 
 export interface CardProps {
   children: React.ReactNode;
@@ -10,12 +11,13 @@ export interface CardProps {
   contentStyle?: StyleProp<ViewStyle>;
   padded?: boolean;
   testID?: string;
+  onLayout?: (e: LayoutChangeEvent) => void;
 }
 
 /**
  * Floating surface card with a neutral theme-aware border and soft clipped surface.
  */
-export function Card({ children, style, contentStyle, padded = true, testID = 'card' }: CardProps) {
+export function Card({ children, style, contentStyle, padded = true, testID = 'card', onLayout }: CardProps) {
   const { mode } = useTheme();
   const tokens = themeTokens[mode];
   const shadowToken = cardTokens.shadow[mode];
@@ -23,10 +25,19 @@ export function Card({ children, style, contentStyle, padded = true, testID = 'c
   const customRadius = flatStyle?.borderRadius;
   const resolvedRadius = Math.max(cardTokens.borderRadius, typeof customRadius === 'number' ? customRadius : 0);
   const innerRadius = Math.max(0, resolvedRadius - 1);
+  const autoProbe = useAutoProbe(testID, 'Card');
 
   return (
     <View
       testID={testID}
+      onLayout={
+        autoProbe.onLayout
+          ? (e: LayoutChangeEvent) => {
+              onLayout?.(e);
+              autoProbe.onLayout?.(e);
+            }
+          : onLayout
+      }
       style={[
         styles.cardOuter,
         {

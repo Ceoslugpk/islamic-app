@@ -15,6 +15,7 @@ import {
   HEADER_BOTTOM,
 } from './layout.constants';
 import { HeaderRingButton } from './HeaderRingButton';
+import { useAutoProbe } from '../../lib/diagnostic';
 
 export interface AppHeaderProps {
   onOpenSettings: () => void;
@@ -36,6 +37,7 @@ export function AppHeader({
   const containerHeight = headerBottom;
   const rowTop = HEADER_ROW_TOP(safeTop);
   const rtl = isRTL();
+  const autoProbe = useAutoProbe(testID || 'app-header', 'AppHeader');
 
   return (
     <View
@@ -50,6 +52,7 @@ export function AppHeader({
       ]}
       testID="app-header"
       {...(testID && testID !== 'app-header' && testID !== 'app-header-container' ? { testID } : {})}
+      onLayout={autoProbe.onLayout}
     >
       {/* Background: Solid tokens.bgTop to HEADER_BOTTOM if not transparent */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none" testID="app-header-bg">

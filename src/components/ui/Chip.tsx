@@ -61,7 +61,11 @@ export function Chip({
   const textColor = selected ? tokens.onGold : tokens.heading;
   const isInteractive = interactive !== undefined ? interactive : typeof onPress === 'function';
 
-  const autoProbe = useAutoProbe(actualTestId, 'Chip');
+  const autoProbe = useAutoProbe(actualTestId, 'Chip', {
+    isInteractive,
+    onPress,
+    disabled,
+  });
   const onLayout = autoProbe.onLayout
     ? (e: LayoutChangeEvent) => {
         autoProbe.onLayout?.(e);
@@ -227,7 +231,7 @@ export function Chip({
     <TouchableOpacity
       testID={actualTestId}
       activeOpacity={0.75}
-      onPress={onPress}
+      onPress={autoProbe.onPress || onPress}
       onLayout={onLayout}
       disabled={disabled}
       accessibilityRole="button"

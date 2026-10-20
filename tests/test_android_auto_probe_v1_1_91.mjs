@@ -60,28 +60,28 @@ const appJson = JSON.parse(read('app.json')).expo;
 const buildGradle = read('android/app/build.gradle');
 const diagConfigSrc = read('src/lib/diagnostic/diagnosticConfig.ts');
 
-assert.equal(packageJson.version, '1.1.91', 'package.json version must be 1.1.91');
-assert.equal(appJson.version, '1.1.91', 'app.json version must be 1.1.91');
-assert.equal(appJson.android.versionCode, 110, 'app.json versionCode must be 110');
-assert.ok(buildGradle.includes('versionCode 110'), 'android/app/build.gradle versionCode must be 110');
-assert.ok(buildGradle.includes('versionName "1.1.91"'), 'android/app/build.gradle versionName must be 1.1.91');
+assert.equal(packageJson.version, '1.1.92', 'package.json version must be 1.1.92');
+assert.equal(appJson.version, '1.1.92', 'app.json version must be 1.1.92');
+assert.equal(appJson.android.versionCode, 111, 'app.json versionCode must be 111');
+assert.ok(buildGradle.includes('versionCode 111'), 'android/app/build.gradle versionCode must be 111');
+assert.ok(buildGradle.includes('versionName "1.1.92"'), 'android/app/build.gradle versionName must be 1.1.92');
 
 const diagConfig = loadTsModule('src/lib/diagnostic/diagnosticConfig.ts');
-assert.equal(diagConfig.DIAGNOSTIC_BUILD_ID, 'RTL-STRUCT-1.1.91-PROBE', 'Build ID must be RTL-STRUCT-1.1.91-PROBE');
-assert.equal(diagConfig.DIAGNOSTIC_VERSION, '1.1.91', 'Diagnostic version must be 1.1.91');
-assert.equal(diagConfig.DIAGNOSTIC_VERSION_CODE, 110, 'Diagnostic versionCode must be 110');
+assert.equal(diagConfig.DIAGNOSTIC_BUILD_ID, 'RTL-STRUCT-1.1.92-EVIDENCE', 'Build ID must be RTL-STRUCT-1.1.92-EVIDENCE');
+assert.equal(diagConfig.DIAGNOSTIC_VERSION, '1.1.92', 'Diagnostic version must be 1.1.92');
+assert.equal(diagConfig.DIAGNOSTIC_VERSION_CODE, 111, 'Diagnostic versionCode must be 111');
 
 // Deterministic build command check
 assert.ok(
-  diagConfig.DIAGNOSTIC_BUILD_COMMAND.includes('cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.91-PROBE'),
-  'DIAGNOSTIC_BUILD_COMMAND must propagate EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.91-PROBE'
+  diagConfig.DIAGNOSTIC_BUILD_COMMAND.includes('cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.92-EVIDENCE'),
+  'DIAGNOSTIC_BUILD_COMMAND must propagate EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.92-EVIDENCE'
 );
 assert.ok(
   !diagConfig.ORDINARY_RELEASE_BUILD_COMMAND.includes('EXPO_PUBLIC_ANDROID_DIAGNOSTIC'),
   'ORDINARY_RELEASE_BUILD_COMMAND must contain zero diagnostic flags'
 );
 
-console.log('  ✓ v1.1.91 metadata, versionCode 110, build ID RTL-STRUCT-1.1.91-PROBE, and Gradle commands verified');
+console.log('  ✓ v1.1.92 metadata, versionCode 111, build ID RTL-STRUCT-1.1.92-EVIDENCE, and Gradle commands verified');
 
 // -----------------------------------------------------------------------------
 // 2. Two-Factor Gate & Zero-Cost-When-Off Contract
@@ -90,9 +90,9 @@ console.log('\n--- 2. Two-Factor Gate & Zero-Cost-When-Off ---');
 
 assert.equal(diagConfig.evaluateDiagnosticGate(undefined, undefined), false);
 assert.equal(diagConfig.evaluateDiagnosticGate('1', undefined), false, 'Leaked env without exact build ID must be false');
-assert.equal(diagConfig.evaluateDiagnosticGate(undefined, 'RTL-STRUCT-1.1.91-PROBE'), false, 'Build ID without env must be false');
+assert.equal(diagConfig.evaluateDiagnosticGate(undefined, 'RTL-STRUCT-1.1.92-EVIDENCE'), false, 'Build ID without env must be false');
 assert.equal(diagConfig.evaluateDiagnosticGate('1', 'wrong-id'), false, 'Mismatched build ID must be false');
-assert.equal(diagConfig.evaluateDiagnosticGate('1', 'RTL-STRUCT-1.1.91-PROBE'), true, 'Both factors present must be true');
+assert.equal(diagConfig.evaluateDiagnosticGate('1', 'RTL-STRUCT-1.1.92-EVIDENCE'), true, 'Both factors present must be true');
 
 // Mock React & React Native
 const mockReact = {
@@ -347,20 +347,18 @@ const tabsSrc = read('src/components/ui/ScreenTabs.tsx');
 const inputSrc = read('src/components/ui/InputField.tsx');
 const appTextSrc = read('src/components/ui/AppText.tsx');
 
-assert.ok(primaryBtnSrc.includes("useAutoProbe(testID, 'PrimaryButton')"), 'PrimaryButton must call useAutoProbe');
-assert.ok(outlineBtnSrc.includes("useAutoProbe(testID, 'OutlineButton')"), 'OutlineButton must call useAutoProbe');
-assert.ok(chipSrc.includes("useAutoProbe(actualTestId, 'Chip')"), 'Chip must call useAutoProbe');
-assert.ok(searchSrc.includes("useAutoProbe(testID, 'SearchField')"), 'SearchField must call useAutoProbe');
+assert.ok(primaryBtnSrc.includes("useAutoProbe(testID, 'PrimaryButton'"), 'PrimaryButton must call useAutoProbe');
+assert.ok(outlineBtnSrc.includes("useAutoProbe(testID, 'OutlineButton'"), 'OutlineButton must call useAutoProbe');
+assert.ok(chipSrc.includes("useAutoProbe(actualTestId, 'Chip'"), 'Chip must call useAutoProbe');
+assert.ok(searchSrc.includes("useAutoProbe(testID, 'SearchField'"), 'SearchField must call useAutoProbe');
 assert.ok(cardSrc.includes("useAutoProbe(testID, 'PremiumCard')"), 'PremiumCard must call useAutoProbe');
-assert.ok(tabsSrc.includes("useAutoProbe(tabTestId, 'ScreenTab')"), 'ScreenTabs must call useAutoProbe for each tab');
-assert.ok(inputSrc.includes("useAutoProbe(testID, 'InputField')"), 'InputField must call useAutoProbe');
+assert.ok(tabsSrc.includes("useAutoProbe(tabTestId, 'ScreenTab'"), 'ScreenTabs must call useAutoProbe for each tab');
+assert.ok(inputSrc.includes("useAutoProbe(testID, 'InputField'"), 'InputField must call useAutoProbe');
 
-// Verify AppText rationale:
-// AppText is excluded because attaching onLayout to thousands of text nodes in Quran reader and lists
-// causes severe bridge serialization, JS thread thrashing, and risks font baseline shift.
-assert.ok(!appTextSrc.includes('useAutoProbe'), 'AppText must NOT attach auto-probe (performance & layout safety)');
+// In v1.1.92, AppText is instrumented with useAutoProbe
+assert.ok(appTextSrc.includes('useAutoProbe'), 'AppText must call useAutoProbe in v1.1.92');
 
-console.log('  ✓ All 7 shared primitives instrumented; AppText exclusion verified');
+console.log('  ✓ Shared primitives instrumented; AppText instrumentation verified');
 
 // -----------------------------------------------------------------------------
 // 10. Screen Identification via DiagScreenProvider in App.tsx

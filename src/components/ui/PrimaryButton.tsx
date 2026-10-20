@@ -62,7 +62,11 @@ export function PrimaryButton({
   const { padding, paddingHorizontal, paddingVertical, paddingStart, paddingEnd, paddingTop, paddingBottom, paddingLeft, paddingRight, ...outerStyle } = StyleSheet.flatten(style) ?? {};
   const contentPadding = { padding, paddingHorizontal, paddingVertical, paddingStart, paddingEnd, paddingTop, paddingBottom, paddingLeft, paddingRight };
   const radius = outerStyle.borderRadius ?? buttonTokens.borderRadius;
-  const autoProbe = useAutoProbe(testID, 'PrimaryButton');
+  const autoProbe = useAutoProbe(testID, 'PrimaryButton', {
+    isInteractive: true,
+    onPress,
+    disabled: disabled || loading,
+  });
   const onLayout = autoProbe.onLayout
     ? (e: LayoutChangeEvent) => {
         autoProbe.onLayout?.(e);
@@ -74,7 +78,7 @@ export function PrimaryButton({
     <TouchableOpacity
       testID={testID}
       activeOpacity={0.8}
-      onPress={onPress}
+      onPress={autoProbe.onPress || onPress}
       onLayout={onLayout}
       disabled={disabled || loading}
       hitSlop={buttonTokens.hitSlop}

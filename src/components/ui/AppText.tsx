@@ -14,6 +14,7 @@ import {
   detectScriptFromContent,
   calculateScriptLineHeight,
 } from '../../lib/typography';
+import { useAutoProbe } from '../../lib/diagnostic';
 
 export type AppTextVariant =
   | 'screenTitle'
@@ -280,6 +281,16 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
         }
       : undefined;
 
+  const autoProbe = useAutoProbe(rest.testID, 'AppText', {
+    isText: true,
+    numberOfLines: rest.numberOfLines,
+    style,
+    textAlign: alignmentStyle.textAlign,
+    writingDirection: alignmentStyle.writingDirection,
+    onPress: rest.onPress,
+    disabled: rest.disabled,
+  });
+
   return (
     <Text
       ref={ref}
@@ -296,6 +307,9 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
       ]}
       maxFontSizeMultiplier={resolvedMaxMultiplier}
       {...rest}
+      onLayout={autoProbe.onLayout || rest.onLayout}
+      onTextLayout={autoProbe.onTextLayout || rest.onTextLayout}
+      onPress={autoProbe.onPress || rest.onPress}
     >
       {children}
     </Text>

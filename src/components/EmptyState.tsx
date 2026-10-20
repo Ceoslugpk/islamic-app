@@ -6,6 +6,7 @@ import { useTheme } from '../lib/theme';
 import { getTokens } from '../theme/tokens';
 import { AppText } from './ui/AppText';
 import { t } from '../lib/i18n';
+import { useAutoProbe } from '../lib/diagnostic';
 
 export interface EmptyStateProps {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -20,9 +21,10 @@ export interface EmptyStateProps {
 export function EmptyState({ icon, title, subtitle, actionLabel, onAction, iconSize = 28 }: EmptyStateProps) {
   const { mode } = useTheme();
   const tokens = getTokens(mode);
+  const autoProbe = useAutoProbe('empty-state', 'EmptyState');
 
   return (
-    <View style={styles.wrap}>
+    <View style={styles.wrap} onLayout={autoProbe.onLayout}>
       <View style={[styles.iconCircle, { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, borderWidth: 1 }]}>
         <Ionicons name={icon} size={iconSize} color={tokens.accent} />
       </View>

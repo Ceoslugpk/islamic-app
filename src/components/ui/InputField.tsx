@@ -51,7 +51,7 @@ export function InputField({
 
   const backgroundColor = mode === 'ink' ? tokens.bgTop : colors.bgBase;
 
-  const autoProbe = useAutoProbe(testID, 'InputField');
+  const autoProbe = useAutoProbe(testID, 'InputField', { isInteractive: true });
   const combinedOnLayout = autoProbe.onLayout
     ? (e: LayoutChangeEvent) => {
         autoProbe.onLayout?.(e);

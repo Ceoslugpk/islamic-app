@@ -243,6 +243,7 @@ const activeFeed = !isProphet && feed && feed.language === language ? feed : nul
     return (
       <PremiumCard
         key={item.number}
+        testID={`name-row-${item.number}`}
         padded={false}
         borderRadius={18}
         style={styles.card}

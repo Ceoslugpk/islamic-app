@@ -3,6 +3,16 @@ import { isDiagnosticModeEnabled } from './diagnosticConfig';
 
 export const DiagScreenContext = createContext<string>('App');
 
+let globalCurrentScreen = 'App';
+
+export function setGlobalActiveScreen(screen: string): void {
+  globalCurrentScreen = screen || 'App';
+}
+
+export function getGlobalActiveScreen(): string {
+  return globalCurrentScreen || 'App';
+}
+
 export interface DiagScreenProviderProps {
   name: string;
   children: React.ReactNode;
@@ -16,6 +26,10 @@ export function DiagScreenProvider({ name, children }: DiagScreenProviderProps):
   if (!isDiagnosticModeEnabled()) {
     return <>{children}</>;
   }
+
+  // Sync global screen reference for non-hook diagnostic listeners
+  setGlobalActiveScreen(name);
+
   return (
     <DiagScreenContext.Provider value={name}>
       {children}

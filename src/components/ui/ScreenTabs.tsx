@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -45,7 +45,13 @@ function ScreenTabItem({
   tokens,
 }: ScreenTabItemProps) {
   const tabTestId = isSelected ? 'tab-selected' : `tab-${tab.id}`;
-  const autoProbe = useAutoProbe(tabTestId, 'ScreenTab');
+  const handleTabPress = useCallback(() => {
+    onChange(tab.id);
+  }, [onChange, tab.id]);
+  const autoProbe = useAutoProbe(tabTestId, 'ScreenTab', {
+    isInteractive: true,
+    onPress: handleTabPress,
+  });
 
   const innerContent = (
     <>
@@ -89,7 +95,7 @@ function ScreenTabItem({
       testID={tabTestId}
       onLayout={autoProbe.onLayout}
       activeOpacity={0.8}
-      onPress={() => onChange(tab.id)}
+      onPress={autoProbe.onPress || handleTabPress}
       accessibilityRole="tab"
       role="tab"
       accessibilityState={{ selected: isSelected }}

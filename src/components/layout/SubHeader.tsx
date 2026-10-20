@@ -23,6 +23,7 @@ import { HEADER_FADE, SUBHEADER_HEIGHT } from './layout.constants';
 import { fontRoles } from '../../theme/tokens';
 import { HeaderRingButton } from './HeaderRingButton';
 import { AppText } from '../ui/AppText';
+import { useAutoProbe } from '../../lib/diagnostic';
 
 export interface SubHeaderProps {
   /** Main screen title in Lora (display font) or Noto Naskh Arabic (RTL) at 24sp */
@@ -88,10 +89,13 @@ export function SubHeader({
       ? ['rgba(18, 18, 28, 0.85)', 'rgba(18, 18, 28, 0)']
       : ['rgba(248, 244, 234, 0.9)', 'rgba(248, 244, 234, 0)'];
 
+  const autoProbe = useAutoProbe(testID || 'sub-header', 'SubHeader');
+
   return (
     <View
       testID="subheader"
       {...(testID && testID !== 'subheader' && testID !== 'sub-header' ? { testID } : {})}
+      onLayout={autoProbe.onLayout}
       style={[
         styles.container,
         {

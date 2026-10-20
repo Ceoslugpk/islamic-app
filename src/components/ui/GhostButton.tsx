@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, buttonTokens, fontRoles } from '../../theme/tokens';
 import { AppText } from './AppText';
+import { useAutoProbe } from '../../lib/diagnostic';
 
 export interface GhostButtonProps {
   title?: string;
@@ -41,11 +42,18 @@ export function GhostButton({
   const tokens = themeTokens[mode];
   const textColor = tokens.eyebrow;
 
+  const autoProbe = useAutoProbe(testID, 'GhostButton', {
+    isInteractive: true,
+    onPress,
+    disabled: disabled || loading,
+  });
+
   return (
     <TouchableOpacity
       testID={testID}
       activeOpacity={0.7}
-      onPress={onPress}
+      onPress={autoProbe.onPress || onPress}
+      onLayout={autoProbe.onLayout}
       disabled={disabled || loading}
       hitSlop={buttonTokens.hitSlop}
       accessibilityRole="button"

@@ -17,6 +17,7 @@ import { iconSizes } from '../lib/iconMap';
 import { t } from '../lib/i18n';
 import { isRtlScript } from '../lib/rtl';
 import { AppText } from './ui/AppText';
+import { useAutoProbe } from '../lib/diagnostic';
 
 export interface AyahBookmarkButtonProps {
   isBookmarked: boolean;
@@ -208,7 +209,12 @@ const AyahCardRowComponent = ({
   const isActiveAyah = isPlaying || isTafsirOpen || isCopied;
   const actionColor = isActiveAyah ? accentColor : textMutedColor;
 
+  const autoProbe = useAutoProbe(`ayah-row-${ayahNumber}`, 'AyahCardRow', {
+    isInteractive: true,
+  });
+
   const handleCardLayout = (e: LayoutChangeEvent) => {
+    autoProbe.onLayout?.(e);
     const { height, y } = e.nativeEvent.layout;
     if (onAyahLayout && height > 0) {
       onAyahLayout(ayahNumber, height, y);

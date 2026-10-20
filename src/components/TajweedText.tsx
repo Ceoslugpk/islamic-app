@@ -3,6 +3,7 @@ import { StyleSheet, Text, View, Platform } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { parseTajweedAny, TajweedRule, TAJWEED_RULES, TajweedSpan } from '../lib/tajweed';
 import { AppText } from './ui/AppText';
+import { useAutoProbe } from '../lib/diagnostic';
 
 /**
  * Renders islamic.app tajweed HTML with rule colors.
@@ -34,6 +35,12 @@ export function TajweedText({
   const resolvedLineHeight = Math.max(lineHeight ?? 0, minimumLineHeight);
   const resolvedFamily = fontFamily ?? 'Amiri_400Regular';
 
+  const autoProbe = useAutoProbe(undefined, 'TajweedText', {
+    isText: true,
+    writingDirection: 'rtl',
+    textAlign: 'right',
+  });
+
   return (
     <Text
       style={[
@@ -48,6 +55,8 @@ export function TajweedText({
       ]}
       allowFontScaling
       maxFontSizeMultiplier={maxFontSizeMultiplier}
+      onLayout={autoProbe.onLayout}
+      onTextLayout={autoProbe.onTextLayout}
     >
       {spans.map((span, i) =>
         span.rule ? (

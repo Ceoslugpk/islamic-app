@@ -15,6 +15,7 @@ import { useTheme } from '../lib/theme';
 import { AppText } from './ui/AppText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { iconSizes } from '../lib/iconMap';
+import { useAutoProbe } from '../lib/diagnostic';
 import {
   QURAN_LANGUAGE_EDITIONS,
   QuranLanguageEdition,
@@ -83,6 +84,8 @@ export function QuranLanguageModal({
     onClose();
   };
 
+  const autoProbe = useAutoProbe('quran-language-sheet', 'ModalSheet');
+
   return (
     <Modal
       visible={visible}
@@ -97,6 +100,7 @@ export function QuranLanguageModal({
         </TouchableWithoutFeedback>
 
         <View
+          onLayout={autoProbe.onLayout}
           style={[
             styles.sheet,
             getCardShadow(mode),

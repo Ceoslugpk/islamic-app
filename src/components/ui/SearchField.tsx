@@ -51,7 +51,7 @@ export function SearchField({
     onClear?.();
   };
 
-  const autoProbe = useAutoProbe(testID, 'SearchField');
+  const autoProbe = useAutoProbe(testID, 'SearchField', { isInteractive: true });
   const onLayout = autoProbe.onLayout
     ? (e: LayoutChangeEvent) => {
         autoProbe.onLayout?.(e);
