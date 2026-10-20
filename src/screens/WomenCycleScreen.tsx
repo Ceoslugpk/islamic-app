@@ -19,6 +19,7 @@ import {
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { isRTL } from '../lib/i18n';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { SubHeader } from '../components/layout/SubHeader';
@@ -61,6 +62,7 @@ function WomenCycleScreen({
   onOpenGuidance,
 }: WomenCycleScreenProps) {
   const { t } = useTranslation();
+  const isRtl = isRTL();
   const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -493,7 +495,16 @@ function WomenCycleScreen({
               </View>
             </View>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.ringFill,
+                  textAlign: isRtl ? 'right' : 'left',
+                  writingDirection: 'ltr',
+                },
+              ]}
               value={newStartDate}
               onChangeText={setNewStartDate}
               placeholder="YYYY-MM-DD"
@@ -522,7 +533,16 @@ function WomenCycleScreen({
               </View>
             </View>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.ringFill,
+                  textAlign: isRtl ? 'right' : 'left',
+                  writingDirection: 'ltr',
+                },
+              ]}
               value={newEndDate}
               onChangeText={setNewEndDate}
               placeholder="YYYY-MM-DD"
@@ -533,7 +553,16 @@ function WomenCycleScreen({
 
             <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('Notes (Optional)')}</AppText>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.ringFill }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.ringFill,
+                  textAlign: isRtl ? 'right' : 'left',
+                  writingDirection: isRtl ? 'rtl' : 'ltr',
+                },
+              ]}
               value={newNotes}
               onChangeText={setNewNotes}
               placeholder={t('Cycle notes, flow intensity, pain...')}

@@ -1,4 +1,5 @@
 import { I18nManager, StyleProp, ViewStyle } from 'react-native';
+import { isRTL as isI18nRTL } from './i18n';
 
 /**
  * RTL fix for horizontal ScrollViews / rows.
@@ -13,7 +14,7 @@ import { I18nManager, StyleProp, ViewStyle } from 'react-native';
  *   <ScrollView horizontal contentContainerStyle={[styles.row, hScrollRTLStyle()]}>
  */
 export function hScrollRTLStyle(): StyleProp<ViewStyle> | null {
-  return I18nManager.isRTL ? { flexDirection: 'row-reverse' as const } : null;
+  return (I18nManager.isRTL || isI18nRTL()) ? { flexDirection: 'row-reverse' as const } : null;
 }
 
 export const isRTL = I18nManager.isRTL;

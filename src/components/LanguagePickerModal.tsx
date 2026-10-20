@@ -134,7 +134,12 @@ export function LanguagePickerModal({
               <TextInput
                 style={[
                   styles.searchInput,
-                  { color: colors.textPrimary, fontSize: isCompact ? 13 : 14 },
+                  {
+                    color: colors.textPrimary,
+                    fontSize: isCompact ? 13 : 14,
+                    textAlign: isRTL() ? 'right' : 'left',
+                    writingDirection: isRTL() ? 'rtl' : 'ltr',
+                  },
                 ]}
                 placeholder={searchPlaceholder}
                 placeholderTextColor={colors.textMuted}

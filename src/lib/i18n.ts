@@ -188,7 +188,7 @@ export function setAppLanguage(lang: AppLanguage): void {
   // and immediately before Updates.reloadAsync().
 }
 
-export function getCurrentLanguage(): AppLanguage {
+export function getCurrentLanguage(): AppLanguage | string {
   const lng = i18n.language;
   if (!lng) return 'en';
   const normalized = lng.toLowerCase();
@@ -202,11 +202,12 @@ export function getCurrentLanguage(): AppLanguage {
   if (matchesLanguageTag(normalized, 'ta')) return 'ta';
   if (matchesLanguageTag(normalized, 'id')) return 'id';
   if (matchesLanguageTag(normalized, 'ps')) return 'ps';
-  return 'en';
+  if (matchesLanguageTag(normalized, 'en')) return 'en';
+  return normalized;
 }
 
 export function isRTL(): boolean {
-  return isRtlLanguage(getCurrentLanguage());
+  return isRtlLanguage(i18n.language) || isRtlLanguage(getCurrentLanguage());
 }
 
 /**

@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { isRTL } from '../lib/i18n';
 import { useThemeTokens } from '../theme/tokens';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getPillShadow } from '../lib/homeThemeTokens';
@@ -49,6 +50,7 @@ function WomenPurityScreen({
   onOpenGuidance,
 }: WomenPurityScreenProps) {
   const { t } = useTranslation();
+  const isRtl = isRTL();
   const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
@@ -290,7 +292,16 @@ function WomenPurityScreen({
               </View>
             </View>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.cardTop,
+                  textAlign: isRtl ? 'right' : 'left',
+                  writingDirection: 'ltr',
+                },
+              ]}
               value={newNifasStart}
               onChangeText={setNewNifasStart}
               placeholder="YYYY-MM-DD"
@@ -311,7 +322,16 @@ function WomenPurityScreen({
               ) : null}
             </View>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.cardTop,
+                  textAlign: isRtl ? 'right' : 'left',
+                  writingDirection: 'ltr',
+                },
+              ]}
               value={newNifasEnd}
               onChangeText={setNewNifasEnd}
               placeholder="YYYY-MM-DD"
@@ -322,7 +342,16 @@ function WomenPurityScreen({
 
             <AppText variant="caption" tone="faint" style={styles.inputLabel}>{t('Notes (Optional)')}</AppText>
             <TextInput
-              style={[styles.textInput, { color: tokens.text, borderColor: tokens.cardBorder, backgroundColor: tokens.cardTop }]}
+              style={[
+                styles.textInput,
+                {
+                  color: tokens.text,
+                  borderColor: tokens.cardBorder,
+                  backgroundColor: tokens.cardTop,
+                  textAlign: isRtl ? 'right' : 'left',
+                  writingDirection: isRtl ? 'rtl' : 'ltr',
+                },
+              ]}
               value={newNifasNotes}
               onChangeText={setNewNifasNotes}
               placeholder={t('Delivery notes, physician guidance...')}

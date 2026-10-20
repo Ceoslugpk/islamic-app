@@ -14,6 +14,7 @@ import { AppText } from '../components/ui/AppText';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { isRTL } from '../lib/i18n';
 import { useThemeTokens } from '../theme/tokens';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
@@ -47,6 +48,7 @@ function ZakatScreen({
   backLabel?: string;
 }) {
   const { t } = useTranslation();
+  const isRtl = isRTL();
   const { tokens, mode } = useThemeTokens();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -367,7 +369,7 @@ function ZakatScreen({
                       {t('Gold / g')} ({currencyConfig.symbol})
                     </AppText>
                     <TextInput
-                      style={[styles.rateInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                      style={[styles.rateInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text, textAlign: isRtl ? 'right' : 'left' }]}
                       value={goldPriceInput}
                       onChangeText={setGoldPriceInput}
                       keyboardType="numeric"
@@ -379,7 +381,7 @@ function ZakatScreen({
                       {t('Silver / g')} ({currencyConfig.symbol})
                     </AppText>
                     <TextInput
-                      style={[styles.rateInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                      style={[styles.rateInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text, textAlign: isRtl ? 'right' : 'left' }]}
                       value={silverPriceInput}
                       onChangeText={setSilverPriceInput}
                       keyboardType="numeric"
@@ -544,7 +546,7 @@ function ZakatScreen({
                   </AppText>
                 </View>
                 <TextInput
-                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text, textAlign: isRtl ? 'right' : 'left' }]}
                   value={cashInput}
                   onChangeText={setCashInput}
                   keyboardType="numeric"
@@ -570,7 +572,7 @@ function ZakatScreen({
                   </AppText>
                 </View>
                 <TextInput
-                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text, textAlign: isRtl ? 'right' : 'left' }]}
                   value={goldGramsInput}
                   onChangeText={setGoldGramsInput}
                   keyboardType="numeric"
@@ -596,7 +598,7 @@ function ZakatScreen({
                   </AppText>
                 </View>
                 <TextInput
-                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text, textAlign: isRtl ? 'right' : 'left' }]}
                   value={silverGramsInput}
                   onChangeText={setSilverGramsInput}
                   keyboardType="numeric"
@@ -620,7 +622,7 @@ function ZakatScreen({
                   </AppText>
                 </View>
                 <TextInput
-                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text, textAlign: isRtl ? 'right' : 'left' }]}
                   value={investmentsInput}
                   onChangeText={setInvestmentsInput}
                   keyboardType="numeric"
@@ -644,7 +646,7 @@ function ZakatScreen({
                   </AppText>
                 </View>
                 <TextInput
-                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text, textAlign: isRtl ? 'right' : 'left' }]}
                   value={otherAssetsInput}
                   onChangeText={setOtherAssetsInput}
                   keyboardType="numeric"
@@ -668,7 +670,7 @@ function ZakatScreen({
                   </AppText>
                 </View>
                 <TextInput
-                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text }]}
+                  style={[styles.mainInput, { backgroundColor: tokens.ringFill, borderColor: tokens.cardBorder, color: tokens.text, textAlign: isRtl ? 'right' : 'left' }]}
                   value={liabilitiesInput}
                   onChangeText={setLiabilitiesInput}
                   keyboardType="numeric"
@@ -1016,6 +1018,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 12.5,
+    writingDirection: 'ltr',
   },
 
   /* Results Card */
@@ -1171,6 +1174,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontFamily: 'Manrope_600SemiBold',
     fontSize: 15,
+    writingDirection: 'ltr',
   },
 
   /* History */

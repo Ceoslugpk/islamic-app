@@ -73,6 +73,7 @@ export function InputField({
             borderColor,
             color: colors.textPrimary,
             textAlign: rtl ? 'right' : 'left',
+            writingDirection: rtl ? 'rtl' : 'ltr',
           },
           inputStyle,
         ]}

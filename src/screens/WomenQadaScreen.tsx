@@ -262,6 +262,7 @@ function WomenQadaScreen({
                   borderColor: tokens.cardBorder,
                   backgroundColor: tokens.ringFill,
                   textAlign: isRTL() ? 'right' : 'left',
+                  writingDirection: isRTL() ? 'rtl' : 'ltr',
                 },
               ]}
               value={qadaDate}
@@ -280,6 +281,7 @@ function WomenQadaScreen({
                   borderColor: tokens.cardBorder,
                   backgroundColor: tokens.ringFill,
                   textAlign: isRTL() ? 'right' : 'left',
+                  writingDirection: isRTL() ? 'rtl' : 'ltr',
                 },
               ]}
               value={qadaReason}
@@ -297,6 +299,7 @@ function WomenQadaScreen({
                   borderColor: tokens.cardBorder,
                   backgroundColor: tokens.ringFill,
                   textAlign: isRTL() ? 'right' : 'left',
+                  writingDirection: isRTL() ? 'rtl' : 'ltr',
                 },
               ]}
               value={qadaNote}

@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
 import { useSettings } from '../lib/settings';
-import { t } from '../lib/i18n';
+import { t, isRTL } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
@@ -81,6 +81,7 @@ function FastingScreen({
 }: FastingScreenProps) {
   const { tokens, mode } = useThemeTokens();
   const { settings } = useSettings();
+  const isRtl = isRTL();
   const { width } = useWindowDimensions();
   const maxW = Math.min(width, 680);
 
@@ -580,7 +581,7 @@ function FastingScreen({
                       {t('Suhoor & Iftar Timings')}
                     </AppText>
                   </View>
-                  <View style={[styles.phasePill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, flexShrink: 0 }]}>
+                  <View style={[styles.phasePill, getPillShadow(mode), { backgroundColor: tokens.ringFill, borderColor: tokens.ringBorder, flexShrink: 0, alignSelf: isRtl ? 'flex-end' : 'flex-start' }]}>
                     <Ionicons
                       name={countdown.phase === 'fasting' ? 'sunny' : 'moon'}
                       size={13}
@@ -883,7 +884,16 @@ function FastingScreen({
 
                   <AppText variant="rowTitle" style={styles.inputLabel}>{t('Date (YYYY-MM-DD):')}</AppText>
                   <TextInput
-                    style={[styles.textInput, { backgroundColor: tokens.inset, borderColor: tokens.cardBorder, color: tokens.text }]}
+                    style={[
+                      styles.textInput,
+                      {
+                        backgroundColor: tokens.inset,
+                        borderColor: tokens.cardBorder,
+                        color: tokens.text,
+                        textAlign: isRtl ? 'right' : 'left',
+                        writingDirection: 'ltr',
+                      },
+                    ]}
                     value={missedDateInput}
                     onChangeText={setMissedDateInput}
                     placeholder="YYYY-MM-DD"
@@ -1215,7 +1225,7 @@ const styles = StyleSheet.create({
   heroHeader: {
     flexDirection: 'column',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
     gap: 10,
   },
   heroEyebrow: {

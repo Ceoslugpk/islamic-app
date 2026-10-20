@@ -1812,7 +1812,7 @@ const styles = StyleSheet.create({
   heroLeftColRtl: {
     flex: 1,
     minWidth: 0,
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
   },
   heroNextPrayerBadge: {
     flexDirection: 'row',

@@ -738,7 +738,7 @@ const styles = StyleSheet.create({
   },
   nameColumn: {
     flexDirection: 'column',
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
     gap: 0,
   },
   englishName: {

@@ -13,7 +13,7 @@ import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { getCardShadow, getHeroCardShadow, getPillShadow } from '../lib/homeThemeTokens';
-import { t } from '../lib/i18n';
+import { t, isRTL } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { ArabicText } from '../components/ArabicText';
@@ -34,6 +34,7 @@ const NEXT_STATUS: Record<HifzStatus, HifzStatus> = {
 
 export default function HifzScreen({ onBack }: { onBack?: () => void }) {
   const { tokens, mode } = useThemeTokens();
+  const isRtl = isRTL();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 14 : 20;
@@ -319,7 +320,11 @@ export default function HifzScreen({ onBack }: { onBack?: () => void }) {
               accessibilityLabel={t('Search surahs by name or number...')}
               style={[
                 styles.searchInput,
-                { color: tokens.text },
+                {
+                  color: tokens.text,
+                  textAlign: isRtl ? 'right' : 'left',
+                  writingDirection: isRtl ? 'rtl' : 'ltr',
+                },
                 Platform.OS === 'web' && ({ outlineStyle: 'none' } as any),
               ]}
               autoCapitalize="none"

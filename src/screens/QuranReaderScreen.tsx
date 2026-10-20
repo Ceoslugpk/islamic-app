@@ -4085,7 +4085,14 @@ export default function QuranReaderScreen({
                 accessibilityLabel={t('Search reciter name...')}
                 value={reciterSearch}
                 onChangeText={setReciterSearch}
-                style={[styles.reciterSearchInput, { color: colors.textPrimary }]}
+                style={[
+                  styles.reciterSearchInput,
+                  {
+                    color: colors.textPrimary,
+                    textAlign: isRTL() ? 'right' : 'left',
+                    writingDirection: isRTL() ? 'rtl' : 'ltr',
+                  },
+                ]}
               />
               {reciterSearch.length > 0 && (
                 <TouchableOpacity onPress={() => setReciterSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -4211,7 +4218,14 @@ export default function QuranReaderScreen({
                 accessibilityLabel={t('Search translation edition or language...')}
                 value={translationSearch}
                 onChangeText={setTranslationSearch}
-                style={[styles.reciterSearchInput, { color: colors.textPrimary }]}
+                style={[
+                  styles.reciterSearchInput,
+                  {
+                    color: colors.textPrimary,
+                    textAlign: isRTL() ? 'right' : 'left',
+                    writingDirection: isRTL() ? 'rtl' : 'ltr',
+                  },
+                ]}
               />
               {translationSearch.length > 0 && (
                 <TouchableOpacity onPress={() => setTranslationSearch('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
@@ -4706,6 +4720,8 @@ export default function QuranReaderScreen({
                     color: colors.textPrimary,
                     borderColor: tokens.cardBorder,
                     backgroundColor: tokens.ringFill,
+                    textAlign: isRTL() ? 'right' : 'left',
+                    writingDirection: isRTL() ? 'rtl' : 'ltr',
                   },
                 ]}
               />

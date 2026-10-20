@@ -11,7 +11,7 @@ import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeTokens } from '../theme/tokens';
 import { getCardShadow, getPillShadow } from '../lib/homeThemeTokens';
-import { t } from '../lib/i18n';
+import { t, isRTL } from '../lib/i18n';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import { getNotes, addNote, deleteNote, Note } from '../lib/study';
@@ -31,6 +31,7 @@ function NotesScreen({
   onOpenVerse,
 }: NotesScreenProps) {
   const { tokens, mode } = useThemeTokens();
+  const isRtl = isRTL();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 14 : 20;
@@ -201,6 +202,8 @@ function NotesScreen({
               color: tokens.text,
               borderColor: tokens.cardBorder,
               backgroundColor: tokens.inset,
+              textAlign: isRtl ? 'right' : 'left',
+              writingDirection: isRtl ? 'rtl' : 'ltr',
             },
           ]}
         />
@@ -217,6 +220,8 @@ function NotesScreen({
                 color: tokens.text,
                 borderColor: tokens.cardBorder,
                 backgroundColor: tokens.inset,
+                textAlign: isRtl ? 'right' : 'left',
+                writingDirection: 'ltr',
               },
             ]}
           />
