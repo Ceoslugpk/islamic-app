@@ -1759,23 +1759,29 @@ export default function App() {
     };
   }, []);
 
-  // Resolve the persisted app language + native RTL direction BEFORE any UI
-  // mounts. Without this the app can boot with language=en but layout=RTL (or
-  // vice versa) when the persisted language differs from the device locale.
+  // Resolve the persisted app language.
+  // Note: Native layout direction is applied EXACTLY ONCE at module load before
+  // any UI mounts. Calling forceRTL after mount (in useEffect) triggers Android
+  // configuration recreation loops and touch unresponsiveness. On native, direction
+  // changes go through the reload path only. On web, applyRTL updates document.dir.
   useEffect(() => {
     let mounted = true;
     resolvePersistedLanguage(true)
       .then((lang) => {
         if (!mounted) return;
         setAppLanguage(lang);
-        applyRTL(isRtlLanguage(lang)); // pre-UI-mount: safe to force native direction
+        if (Platform.OS === 'web') {
+          applyRTL(isRtlLanguage(lang));
+        }
         setLangReady(true);
       })
       .catch(() => {
         if (!mounted) return;
         const fallback = getBootLanguage();
         setAppLanguage(fallback);
-        applyRTL(isRtlLanguage(fallback));
+        if (Platform.OS === 'web') {
+          applyRTL(isRtlLanguage(fallback));
+        }
         setLangReady(true);
       });
     return () => {

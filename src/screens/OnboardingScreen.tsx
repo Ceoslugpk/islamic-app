@@ -188,10 +188,17 @@ export async function executeOnboardingSubmitTransaction(params: OnboardingTrans
     if (currentPlatform !== 'web' && isSwitchingRTL) {
       prepareNativeLayoutDirectionFn(selectedAppLang); // prepareNativeLayoutDirection(selectedAppLang)
       scheduleReload(() => {
+        let completed = false;
+        const completeOnce = () => {
+          if (!completed) {
+            completed = true;
+            onComplete();
+          }
+        };
+        const failSafeTimer = setTimeout(completeOnce, 1500);
         reloadApp().catch(() => {
-          // The preference is already durable. Let the user continue if the
-          // native reload fails; a later cold start will apply the stored RTL.
-          onComplete();
+          clearTimeout(failSafeTimer);
+          completeOnce();
         }); // appReloader().catch
       }, 300);
     } else {

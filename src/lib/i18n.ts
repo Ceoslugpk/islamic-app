@@ -83,13 +83,6 @@ export async function resolvePersistedLanguage(forceFresh = false): Promise<AppL
 /** Synchronously readable current language (module-level cache, set at boot). */
 export function getBootLanguage(): AppLanguage {
   if (persistedLanguage) return persistedLanguage;
-  if (Platform.OS !== 'web') {
-    if (I18nManager.isRTL) {
-      const detected = resolveDeviceAppLanguage(deviceLanguageCode);
-      return isRtlLanguage(detected) ? detected : 'ur';
-    }
-    return 'en';
-  }
   return resolveDeviceAppLanguage(deviceLanguageCode);
 }
 
@@ -119,29 +112,46 @@ i18nextUse(initReactI18next).init({
   compatibilityJSON: 'v4',
 });
 
-// Set the native layout direction ONCE at module load from the boot language.
-// forceRTL is only reliable when called before the UI mounts, and calling it
-// repeatedly (or after mount) is what leaves RTL stuck on Android.
-applyRTL(isRtlLanguage(initialLanguage));
+let nativeDirectionApplied = false;
 
 /**
  * Configure RTL layout direction for React Native and Web.
  * At boot, force the direction before any screens mount so the native view tree
  * inherits the direction for its full lifetime. Language changes persist their
  * target direction with prepareNativeLayoutDirection() and then use an app reload.
+ *
+ * Enforces single source of truth: native allowRTL/forceRTL is applied at most ONCE
+ * per process, strictly before UI mounts. Runtime direction changes after mount trigger
+ * Android activity configuration change loops and detach touch targets.
  */
 export function applyRTL(isRTL: boolean): void {
-  try {
-    I18nManager.allowRTL(isRTL);
-    I18nManager.forceRTL(isRTL);
-  } catch {
-    // Ignore native module errors in environments where not supported
+  if (Platform.OS !== 'web') {
+    if (nativeDirectionApplied) {
+      return;
+    }
+    nativeDirectionApplied = true;
+    try {
+      I18nManager.allowRTL(isRTL);
+      I18nManager.forceRTL(isRTL);
+    } catch {
+      // Ignore native module errors in environments where not supported
+    }
   }
   if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
     document.documentElement.lang = getCurrentLanguage();
   }
 }
+
+/** Reset flag for isolated runtime testing. Internal / test use only. */
+export function __resetNativeDirectionAppliedForTest(): void {
+  nativeDirectionApplied = false;
+}
+
+// Set the native layout direction ONCE at module load from the boot language.
+// forceRTL is only reliable when called before the UI mounts, and calling it
+// repeatedly (or after mount) is what leaves RTL stuck on Android.
+applyRTL(isRtlLanguage(initialLanguage));
 
 /**
  * Switch preparation helper called AFTER persistent storage is verified and
@@ -208,6 +218,15 @@ export function getCurrentLanguage(): AppLanguage | string {
 
 export function isRTL(): boolean {
   return isRtlLanguage(i18n.language) || isRtlLanguage(getCurrentLanguage());
+}
+
+/**
+ * Reactive hook for React components to subscribe to layout direction changes.
+ * Components reading this re-render whenever the active i18n language changes.
+ */
+export function useIsRTL(): boolean {
+  const { i18n: i18nInstance } = useTranslation();
+  return isRtlLanguage(i18nInstance.language) || isRtlLanguage(getCurrentLanguage());
 }
 
 /**

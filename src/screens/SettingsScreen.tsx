@@ -27,7 +27,7 @@ import { useTheme } from '../lib/theme';
 import { useThemeTokens, getTokens, cardTokens, getBrandLogoSource } from '../theme/tokens';
 import { getForwardIcon, iconSizes } from '../lib/iconMap';
 import { touchTargetTokens } from '../lib/buttonTokens';
-import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage } from '../lib/i18n';
+import { t, prepareNativeLayoutDirection, AppLanguage, isRtlLanguage, setAppLanguage } from '../lib/i18n';
 import LegalScreen, { LegalScreenKey } from './LegalScreen';
 import { BackupRestoreScreen } from './BackupRestoreScreen';
 import { SheetHeader } from '../components/layout/SheetHeader';
@@ -712,6 +712,7 @@ export default function SettingsScreen({
   const [selectedMissionLanguage, setSelectedMissionLanguage] = useState(() => getMissionLanguage(settings.language));
   const [reduceMotion, setReduceMotion] = useState(false);
   const reloadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failSafeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isSwitchingLanguageRef = useRef(false);
   const mountedRef = useRef(true);
 
@@ -775,6 +776,10 @@ export default function SettingsScreen({
       if (reloadTimerRef.current && !isSwitchingLanguageRef.current) {
         clearTimeout(reloadTimerRef.current);
         reloadTimerRef.current = null;
+      }
+      if (failSafeTimerRef.current) {
+        clearTimeout(failSafeTimerRef.current);
+        failSafeTimerRef.current = null;
       }
     };
   }, []);
@@ -1114,6 +1119,11 @@ export default function SettingsScreen({
                     disabled={isSwitchingLanguage}
                     onPress={() => {
                       if (nextLang !== settings.language && !isSwitchingLanguageRef.current) {
+                        const currentLang = settings.language;
+                        const currentIsRtl = isRtlLanguage(currentLang);
+                        const nextIsRtl = isRtlLanguage(nextLang);
+                        const isDirectionChange = currentIsRtl !== nextIsRtl;
+
                         isSwitchingLanguageRef.current = true;
                         setIsSwitchingLanguage(true);
                         setSwitchingTargetLang(nextLang);
@@ -1123,43 +1133,103 @@ export default function SettingsScreen({
                           clearTimeout(reloadTimerRef.current);
                           reloadTimerRef.current = null;
                         }
-                        // RTL/LTR layout direction (I18nManager.forceRTL) only takes effect
-                        // after a reload on Android/iOS — trigger a native reload so the
-                        // user doesn't have to restart manually. Await the persist so the
-                        // reload boots in the NEW language (otherwise Urdu->English could
-                        // reload stale). setLanguage is typed Promise<void>|void.
+                        if (failSafeTimerRef.current) {
+                          clearTimeout(failSafeTimerRef.current);
+                          failSafeTimerRef.current = null;
+                        }
+
+                        // Case 1: Same layout direction (e.g. LTR->LTR or RTL->RTL) or Web.
+                        // No native reload needed! Persist and switch live immediately.
+                        if (Platform.OS === 'web' || !isDirectionChange) {
+                          Promise.resolve(setLanguage(nextLang))
+                            .then(() => {
+                              if (Platform.OS === 'web') {
+                                prepareNativeLayoutDirection(nextLang);
+                              }
+                              isSwitchingLanguageRef.current = false;
+                              if (mountedRef.current) {
+                                setIsSwitchingLanguage(false);
+                                setSwitchingTargetLang(null);
+                              }
+                            })
+                            .catch(() => {
+                              isSwitchingLanguageRef.current = false;
+                              if (mountedRef.current) {
+                                setIsSwitchingLanguage(false);
+                                setSwitchingTargetLang(null);
+                                setLanguageError(t('Failed to save settings. Please try again.'));
+                              }
+                            });
+                          return;
+                        }
+
+                        // Case 2: Direction Change on Native (LTR <-> RTL).
+                        // React Native native layout direction (I18nManager.forceRTL)
+                        // requires a native reload for views to mirror.
+                        // We persist the choice, prepare native direction for next boot,
+                        // and trigger a native reload.
+                        // Fail-safe guarantee: if the reload promise rejects, or if the
+                        // reload resolves without restarting the process, the UI is
+                        // guaranteed to unlock on a bounded timer and inform the user.
+                        const RELOAD_TIMEOUT_MS = 1500;
+
+                        const handleReloadFallback = () => {
+                          if (reloadTimerRef.current) {
+                            clearTimeout(reloadTimerRef.current);
+                            reloadTimerRef.current = null;
+                          }
+                          if (failSafeTimerRef.current) {
+                            clearTimeout(failSafeTimerRef.current);
+                            failSafeTimerRef.current = null;
+                          }
+                          // Keep in-memory session consistent with active layout direction
+                          // so language and layout direction never disagree in this session.
+                          setAppLanguage(currentLang);
+                          updateSettings((prev) => ({ ...prev, language: currentLang }));
+                          isSwitchingLanguageRef.current = false;
+                          if (mountedRef.current) {
+                            setIsSwitchingLanguage(false);
+                            setSwitchingTargetLang(null);
+                            setLanguageError(
+                              t('Please restart the app to apply the new layout direction.')
+                            );
+                          }
+                        };
+
                         Promise.resolve(setLanguage(nextLang)).then(() => {
                           onPrepareReload?.();
                           prepareNativeLayoutDirection(nextLang);
-                          if (Platform.OS !== 'web') {
-                            reloadTimerRef.current = setTimeout(() => {
-                              reloadTimerRef.current = null;
-                              // expo-updates is intentionally disabled in this APK. Its
-                              // reloadAsync path can therefore reject and leave the
-                              // language picker permanently disabled in release builds.
-                              // Expo's core reload works in Expo Go and standalone builds.
-                              reloadAppAsync('App language changed').catch(() => {
-                                isSwitchingLanguageRef.current = false;
-                                if (mountedRef.current) {
-                                  setIsSwitchingLanguage(false);
-                                  setSwitchingTargetLang(null);
-                                  setLanguageError(t('Still could not load. Try again later.'));
-                                }
-                              });
-                            }, 400);
-                          } else {
-                            isSwitchingLanguageRef.current = false;
-                            if (mountedRef.current) {
-                              setIsSwitchingLanguage(false);
-                              setSwitchingTargetLang(null);
-                            }
-                          }
+
+                          reloadTimerRef.current = setTimeout(() => {
+                            reloadTimerRef.current = null;
+
+                            // Safety window: if JS engine is still executing after this duration,
+                            // reloadAppAsync did not restart the process (e.g. standalone release APK).
+                            failSafeTimerRef.current = setTimeout(() => {
+                              failSafeTimerRef.current = null;
+                              handleReloadFallback();
+                            }, RELOAD_TIMEOUT_MS);
+
+                            reloadAppAsync('App language changed').catch(() => {
+                              isSwitchingLanguageRef.current = false;
+                              if (mountedRef.current) {
+                                setIsSwitchingLanguage(false);
+                                setSwitchingTargetLang(null);
+                                setLanguageError(t('Still could not load. Try again later.'));
+                              }
+                              handleReloadFallback();
+                            });
+                          }, 300);
                         })
                           .catch(() => {
                             isSwitchingLanguageRef.current = false;
                             if (reloadTimerRef.current) {
                               clearTimeout(reloadTimerRef.current);
                               reloadTimerRef.current = null;
+                            }
+                            if (failSafeTimerRef.current) {
+                              clearTimeout(failSafeTimerRef.current);
+                              failSafeTimerRef.current = null;
                             }
                             if (mountedRef.current) {
                               setIsSwitchingLanguage(false);

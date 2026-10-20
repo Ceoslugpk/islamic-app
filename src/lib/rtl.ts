@@ -17,7 +17,15 @@ export function hScrollRTLStyle(): StyleProp<ViewStyle> | null {
   return (I18nManager.isRTL || isI18nRTL()) ? { flexDirection: 'row-reverse' as const } : null;
 }
 
-export const isRTL = I18nManager.isRTL;
+/**
+ * Dynamic layout direction check.
+ * Evaluates dynamically from the current active i18n language rather than freezing at import.
+ */
+export function isRTL(): boolean {
+  return isI18nRTL();
+}
+
+export { useIsRTL } from './i18n';
 
 export { calculateTimelineRatio } from './timelineRatio';
 
