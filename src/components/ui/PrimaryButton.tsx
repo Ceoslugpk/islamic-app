@@ -126,7 +126,6 @@ const styles = StyleSheet.create({
   },
   gradient: {
     alignSelf: 'stretch',
-    flexGrow: 1,
     minHeight: buttonTokens.minHeight,
     paddingHorizontal: 16,
     paddingVertical: 10,

@@ -1,14 +1,14 @@
-export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-1.1.88-PILOT-A';
-export const DIAGNOSTIC_VERSION = '1.1.88';
-export const DIAGNOSTIC_VERSION_CODE = 107;
+export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-1.1.89-PILOT-B';
+export const DIAGNOSTIC_VERSION = '1.1.89';
+export const DIAGNOSTIC_VERSION_CODE = 108;
 
 /**
- * Source/test marker: Exact deterministic build command for building the signed v1.1.88 diagnostic APK.
+ * Source/test marker: Exact deterministic build command for building the signed v1.1.89 diagnostic APK.
  * The environment variables must be placed on the Gradle command itself so that
  * they propagate to the Metro bundler sub-process.
  */
 export const DIAGNOSTIC_BUILD_COMMAND =
-  'cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.88-PILOT-A ANDROID_HOME=/opt/android-sdk GRADLE_OPTS="-Xmx2048m -XX:MaxMetaspaceSize=768m -Dorg.gradle.workers.max=4" ./gradlew assembleRelease --no-daemon';
+  'cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.89-PILOT-B ANDROID_HOME=/opt/android-sdk GRADLE_OPTS="-Xmx2048m -XX:MaxMetaspaceSize=768m -Dorg.gradle.workers.max=4" ./gradlew assembleRelease --no-daemon';
 
 /**
  * Standard build command for an ordinary release (diagnostics completely disabled).
