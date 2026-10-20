@@ -34,6 +34,22 @@ export const SCRIM_HEIGHT = (safeBottom: number): number => safeBottom + 14 + NA
 export const TAB_PAD_TOP = (_safeTop: number): number => 0;
 export const TAB_PAD_BOTTOM = (safeBottom: number): number => NAV_HEIGHT + safeBottom + 14 + 32;
 
+/**
+ * Detail route bottom clearance helper with single-owner safe-area clearance contract.
+ * - When a normal-flow audio player sibling is present (hasPlayback = true):
+ *   The player wrapper in App.tsx renders as a normal-flow sibling below the screen
+ *   and already owns the safe bottom inset (Math.max(insets.bottom, 12)).
+ *   The detail route content sits above the player and requires ONLY standard content
+ *   breathing room (SPACING_CONTRACT.BOTTOM_CLEARANCE = 32dp). It must NOT add insets.bottom again.
+ * - When no normal-flow player is present (hasPlayback = false):
+ *   The detail route extends directly to the device bottom, so detail content is the sole
+ *   owner of safe bottom clearance: safeBottom + SPACING_CONTRACT.BOTTOM_CLEARANCE (32dp).
+ */
+export const DETAIL_PAD_BOTTOM = (safeBottom: number, hasPlayback: boolean = false): number =>
+  hasPlayback ? SPACING_CONTRACT.BOTTOM_CLEARANCE : safeBottom + SPACING_CONTRACT.BOTTOM_CLEARANCE;
+
+export const DETAIL_CONTENT_PAD_BOTTOM = DETAIL_PAD_BOTTOM;
+
 /** Auto-hide navigation configuration for reader screens */
 export const READER_AUTOHIDE_NAV = {
   THRESHOLD_Y: 90,
@@ -51,3 +67,5 @@ export const getNavTop = NAV_TOP;
 export const getScrimHeight = SCRIM_HEIGHT;
 export const getTabPadTop = TAB_PAD_TOP;
 export const getTabPadBottom = TAB_PAD_BOTTOM;
+export const getDetailPadBottom = DETAIL_PAD_BOTTOM;
+export const getDetailContentPadBottom = DETAIL_CONTENT_PAD_BOTTOM;

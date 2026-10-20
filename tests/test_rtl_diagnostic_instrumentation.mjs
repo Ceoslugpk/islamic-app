@@ -285,11 +285,12 @@ assert.ok(
   'Downloads empty CTA btn testID must be absent when gate is off'
 );
 assert.ok(
-  downloadsSrc.includes('onLayout={isDiag ? diag.parentProps.onLayout : undefined}'),
-  'Downloads parent onLayout must be undefined when gate is off'
+  downloadsSrc.includes('onLayout={isDiag ? (e: LayoutChangeEvent) => {') &&
+    /onLayout=\{isDiag \? \(e: LayoutChangeEvent\) => \{[\s\S]*?\} : undefined\}/.test(downloadsSrc),
+  'Downloads parent onLayout must be gated behind isDiag and collapse to undefined when the gate is off'
 );
 assert.ok(
-  downloadsSrc.includes('onLayout={isDiag ? diag.targetProps.onLayout : undefined}'),
+  /onLayout=\{isDiag \? \(e(: LayoutChangeEvent)?\) => \{[\s\S]*?\} : undefined\}/.test(downloadsSrc),
   'Downloads target onLayout must be undefined when gate is off'
 );
 
@@ -307,15 +308,34 @@ assert.ok(
   'Prayer reminders chip testIDs must be absent when gate is off'
 );
 assert.ok(
-  prayerRemindersSrc.includes('onLayout={isDiag ? diag.parentProps.onLayout : undefined}'),
+  /onLayout=\{isDiag \? \(e(: LayoutChangeEvent)?\) => \{[\s\S]*?\} : undefined\}/.test(prayerRemindersSrc),
   'Prayer reminders parent onLayout must be undefined when gate is off'
 );
 assert.ok(
-  prayerRemindersSrc.includes('onLayout={isDiag ? diag.targetProps.onLayout : undefined}'),
+  /onLayout=\{isDiag \? \(e(: LayoutChangeEvent)?\) => \{[\s\S]*?\} : undefined\}/.test(prayerRemindersSrc),
   'Prayer reminders controls onLayout must be undefined when gate is off'
 );
 
-// 2f. Document Metro bundler behavior honestly
+// 2f. MosqueFinderScreen: verify testIDs and callbacks are strictly conditional on isDiag
+const mosqueFinderSrc = read('src/screens/MosqueFinderScreen.tsx');
+assert.ok(
+  mosqueFinderSrc.includes('testID={isDiag ? "mosque-finder-search-card" : undefined}'),
+  'Mosque finder card testID must be absent when gate is off'
+);
+assert.ok(
+  mosqueFinderSrc.includes('testID={isDiag ? "mosque-finder-search-controls" : undefined}'),
+  'Mosque finder controls testID must be absent when gate is off'
+);
+assert.ok(
+  /onLayout=\{isDiag \? \(e(: LayoutChangeEvent)?\) => \{[\s\S]*?\} : undefined\}/.test(mosqueFinderSrc),
+  'Mosque finder parent onLayout must be undefined when gate is off'
+);
+assert.ok(
+  /onLayout=\{isDiag \? \(e(: LayoutChangeEvent)?\) => \{[\s\S]*?\} : undefined\}/.test(mosqueFinderSrc),
+  'Mosque finder controls onLayout must be undefined when gate is off'
+);
+
+// 2g. Document Metro bundler behavior honestly
 assert.ok(
   diagConfigSrc.includes('NOTE ON METRO BUNDLER BEHAVIOR'),
   'diagnosticConfig must document Metro static bundler retention behavior honestly without false byte-level claims'
@@ -332,22 +352,22 @@ const packageJson = JSON.parse(read('package.json'));
 const appJson = JSON.parse(read('app.json')).expo;
 const buildGradle = read('android/app/build.gradle');
 
-assert.equal(packageJson.version, '1.1.87', 'package.json version must be 1.1.87');
-assert.equal(appJson.version, '1.1.87', 'app.json version must be 1.1.87');
-assert.equal(appJson.android.versionCode, 106, 'app.json versionCode must be 106');
+assert.equal(packageJson.version, '1.1.88', 'package.json version must be 1.1.88');
+assert.equal(appJson.version, '1.1.88', 'app.json version must be 1.1.88');
+assert.equal(appJson.android.versionCode, 107, 'app.json versionCode must be 107');
 assert.equal(appJson.android.package, 'com.qashi.islamic', 'package ID must remain com.qashi.islamic');
 
-assert.ok(buildGradle.includes('versionCode 106'), 'android/app/build.gradle versionCode must be 106');
-assert.ok(buildGradle.includes('versionName "1.1.87"'), 'android/app/build.gradle versionName must be 1.1.87');
+assert.ok(buildGradle.includes('versionCode 107'), 'android/app/build.gradle versionCode must be 107');
+assert.ok(buildGradle.includes('versionName "1.1.88"'), 'android/app/build.gradle versionName must be 1.1.88');
 assert.ok(buildGradle.includes("applicationId 'com.qashi.islamic'"), 'applicationId must remain com.qashi.islamic');
 
-assert.equal(DIAGNOSTIC_BUILD_ID, 'RTL-STRUCT-1.1.87-DIAG-A', 'DIAGNOSTIC_BUILD_ID must be RTL-STRUCT-1.1.87-DIAG-A');
-assert.equal(DIAGNOSTIC_VERSION, '1.1.87', 'DIAGNOSTIC_VERSION must be 1.1.87');
-assert.equal(DIAGNOSTIC_VERSION_CODE, 106, 'DIAGNOSTIC_VERSION_CODE must be 106');
+assert.equal(DIAGNOSTIC_BUILD_ID, 'RTL-STRUCT-1.1.88-PILOT-A', 'DIAGNOSTIC_BUILD_ID must be RTL-STRUCT-1.1.88-PILOT-A');
+assert.equal(DIAGNOSTIC_VERSION, '1.1.88', 'DIAGNOSTIC_VERSION must be 1.1.88');
+assert.equal(DIAGNOSTIC_VERSION_CODE, 107, 'DIAGNOSTIC_VERSION_CODE must be 107');
 
 // Verify deterministic build command marker
 assert.ok(
-  DIAGNOSTIC_BUILD_COMMAND.includes('cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.87-DIAG-A'),
+  DIAGNOSTIC_BUILD_COMMAND.includes('cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.88-PILOT-A'),
   'DIAGNOSTIC_BUILD_COMMAND must propagate EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID after cd android'
 );
 assert.ok(
@@ -356,7 +376,7 @@ assert.ok(
   'ORDINARY_RELEASE_BUILD_COMMAND must not include diagnostic flags'
 );
 
-console.log('  ✓ Version 1.1.87, versionCode 106, build ID, and Gradle command flag propagation verified');
+console.log('  ✓ Version 1.1.88, versionCode 107, build ID, and Gradle command flag propagation verified');
 
 // -----------------------------------------------------------------------------
 // 4. Actual Rendered Style Probes & Native RTL Inspection
@@ -452,7 +472,10 @@ const {
   resetDiagnosticMeasurements,
   recordParentLayout,
   recordTargetLayout,
+  recordNamedLayout,
+  recordNamedLayoutUnavailable,
   recordMeasurementUnavailable,
+  invalidateDiagnosticTarget,
   getTargetMeasurement,
   getTargetMeasurements,
   buildDiagnosticReport,
@@ -558,8 +581,8 @@ recordTargetLayout(
 const report = buildDiagnosticReport();
 assert.ok(report.timestamp, 'Report must contain timestamp');
 assert.equal(report.buildId, DIAGNOSTIC_BUILD_ID);
-assert.equal(report.version, '1.1.87');
-assert.equal(report.versionCode, 106);
+assert.equal(report.version, '1.1.88');
+assert.equal(report.versionCode, 107);
 assert.equal(report.i18nManagerIsRTL, true, 'Report must capture native I18nManager.isRTL');
 
 const quranReportItem = report.measurements.find((m) => m.componentId === 'quran-landing-surah-card');
@@ -645,7 +668,235 @@ assert.equal(prayerRecord.parentWidth, null);
 assert.equal(prayerRecord.overflowStatus, 'unavailable');
 assert.equal(prayerRecord.unavailabilityReason, 'Layout unmounted');
 
-console.log('  ✓ Actual resolved styles, nativeComputedStyleUnavailable flag, native RTL per item, bounded geometry, and stale state reset verified');
+// Transition 4: Edge-aware overflow calculation tests (x < 0, y < 0, x + w > parent.w, y + h > parent.h)
+// Case A: Target has smaller dimensions than parent, but x is negative -> overflow!
+recordParentLayout('downloads-empty-cta-card', { x: 0, y: 0, width: 300, height: 200 });
+recordTargetLayout('downloads-empty-cta-card', { x: -10, y: 10, width: 100, height: 40 });
+const edgeOverLeft = getTargetMeasurement('downloads-empty-cta-card');
+assert.equal(edgeOverLeft.overflowStatus, 'overflow', 'Target with x < 0 must report overflow');
+assert.equal(edgeOverLeft.edgeOverflow?.overflowsLeft, true);
+assert.equal(edgeOverLeft.edgeOverflow?.hasOverflow, true);
+
+// Case B: Target has smaller dimensions, but y is negative -> overflow!
+recordTargetLayout('downloads-empty-cta-card', { x: 10, y: -5, width: 100, height: 40 });
+const edgeOverTop = getTargetMeasurement('downloads-empty-cta-card');
+assert.equal(edgeOverTop.overflowStatus, 'overflow', 'Target with y < 0 must report overflow');
+assert.equal(edgeOverTop.edgeOverflow?.overflowsTop, true);
+
+// Case C: Target has smaller dimensions, but x + width > parent.width -> overflow!
+recordTargetLayout('downloads-empty-cta-card', { x: 250, y: 10, width: 100, height: 40 });
+const edgeOverRight = getTargetMeasurement('downloads-empty-cta-card');
+assert.equal(edgeOverRight.overflowStatus, 'overflow', 'Target with x + width > parent.width must report overflow');
+assert.equal(edgeOverRight.edgeOverflow?.overflowsRight, true);
+
+// Case D: Target has smaller dimensions, but y + height > parent.height -> overflow!
+recordTargetLayout('downloads-empty-cta-card', { x: 10, y: 180, width: 100, height: 40 });
+const edgeOverBottom = getTargetMeasurement('downloads-empty-cta-card');
+assert.equal(edgeOverBottom.overflowStatus, 'overflow', 'Target with y + height > parent.height must report overflow');
+assert.equal(edgeOverBottom.edgeOverflow?.overflowsBottom, true);
+
+// Case E: Target inside bounds -> no_overflow
+recordTargetLayout('downloads-empty-cta-card', { x: 10, y: 10, width: 100, height: 40 });
+const edgeBounded = getTargetMeasurement('downloads-empty-cta-card');
+assert.equal(edgeBounded.overflowStatus, 'no_overflow', 'Target within bounds must report no_overflow');
+assert.equal(edgeBounded.edgeOverflow?.hasOverflow, false);
+
+// 4d. Named layout rectangles measurement and hierarchy tracking:
+recordNamedLayout('downloads-empty-cta-card', 'button', { x: 20, y: 60, width: 160, height: 44 }, {
+  testID: 'downloads-empty-cta-btn',
+  parentIdentity: 'downloads-empty-cta-card',
+  frameWidth: 320,
+  frameHeight: 400,
+  cardWidth: 320,
+  cardHeight: 400,
+  ancestorCard: 'downloads-empty-cta-card',
+});
+recordNamedLayout('downloads-empty-cta-card', 'gradient', { x: 0, y: 0, width: 160, height: 44 }, {
+  testID: 'downloads-empty-cta-gradient',
+  parentIdentity: 'downloads-empty-cta-btn',
+  frameWidth: 160,
+  frameHeight: 44,
+  cardWidth: 320,
+  cardHeight: 400,
+  ancestorCard: 'downloads-empty-cta-card',
+});
+recordNamedLayout('downloads-empty-cta-card', 'label', { x: 10, y: 10, width: 140, height: 24 }, {
+  testID: 'downloads-empty-cta-btn-label',
+  parentIdentity: 'downloads-empty-cta-gradient',
+  frameWidth: 160,
+  frameHeight: 44,
+  cardWidth: 320,
+  cardHeight: 400,
+  ancestorCard: 'downloads-empty-cta-card',
+});
+recordNamedLayout('downloads-empty-cta-card', 'listViewport', { x: 0, y: 0, width: 360, height: 600 }, {
+  testID: 'downloads-list-viewport',
+  parentIdentity: 'detail-screen-root',
+  frameWidth: 360,
+  frameHeight: 600,
+});
+
+const downloadsWithRects = getTargetMeasurement('downloads-empty-cta-card');
+assert.ok(downloadsWithRects.rectangles);
+assert.equal(downloadsWithRects.rectangles.button.isAvailable, true);
+assert.equal(downloadsWithRects.rectangles.button.width, 160);
+assert.equal(downloadsWithRects.rectangles.button.height, 44);
+assert.equal(downloadsWithRects.rectangles.button.frameWidth, 320);
+assert.equal(downloadsWithRects.rectangles.gradient.isAvailable, true);
+assert.equal(downloadsWithRects.rectangles.label.isAvailable, true);
+assert.equal(downloadsWithRects.rectangles.listViewport.isAvailable, true);
+
+// 4e. Coordinate frame overflow & ancestor allocation test:
+// Label: x=30, width=140 inside a 100dp gradient frame -> x + width = 170 > 100 (overflowsRight).
+// Outer card is 300dp -> x + width = 170 < 300 (no allocation overflow).
+recordNamedLayout('downloads-empty-cta-card', 'label', { x: 30, y: 0, width: 140, height: 24 }, {
+  testID: 'downloads-empty-cta-btn-label',
+  parentIdentity: 'downloads-empty-cta-gradient',
+  frameWidth: 100,
+  frameHeight: 24,
+  cardWidth: 300,
+  cardHeight: 700,
+  ancestorCard: 'downloads-empty-cta-card',
+});
+const labelMeasurement = getTargetMeasurement('downloads-empty-cta-card').rectangles.label;
+assert.equal(labelMeasurement.isAvailable, true);
+assert.equal(labelMeasurement.frameWidth, 100);
+assert.equal(labelMeasurement.cardWidth, 300);
+assert.equal(labelMeasurement.edgeOverflow?.overflowsRight, true, 'Label 140dp at x=30 in 100dp frame must overflow right');
+assert.equal(labelMeasurement.edgeOverflow?.hasOverflow, true, 'Label exceeding frame must report edge overflow');
+assert.equal(labelMeasurement.allocationOverflow?.hasOverflow, false, 'Label fits inside 300dp ancestor card allocation');
+
+// Negative offset: x = -10dp
+recordNamedLayout('downloads-empty-cta-card', 'label', { x: -10, y: 0, width: 80, height: 24 }, {
+  testID: 'downloads-empty-cta-btn-label',
+  parentIdentity: 'downloads-empty-cta-gradient',
+  frameWidth: 100,
+  frameHeight: 24,
+  cardWidth: 300,
+  cardHeight: 700,
+  ancestorCard: 'downloads-empty-cta-card',
+});
+const labelNegOffset = getTargetMeasurement('downloads-empty-cta-card').rectangles.label;
+assert.equal(labelNegOffset.edgeOverflow?.overflowsLeft, true, 'Negative offset x < 0 must report overflowsLeft');
+assert.equal(labelNegOffset.edgeOverflow?.hasOverflow, true);
+
+// Negative top offset: y = -4dp
+recordNamedLayout('downloads-empty-cta-card', 'label', { x: 0, y: -4, width: 80, height: 24 }, {
+  testID: 'downloads-empty-cta-btn-label',
+  parentIdentity: 'downloads-empty-cta-gradient',
+  frameWidth: 100,
+  frameHeight: 24,
+  cardWidth: 300,
+  cardHeight: 700,
+  ancestorCard: 'downloads-empty-cta-card',
+});
+const labelNegTop = getTargetMeasurement('downloads-empty-cta-card').rectangles.label;
+assert.equal(labelNegTop.edgeOverflow?.overflowsTop, true, 'Negative offset y < 0 must report overflowsTop');
+assert.equal(labelNegTop.edgeOverflow?.hasOverflow, true);
+
+// Scaled fractional values: width 140.4dp, frame 100.2dp
+recordNamedLayout('downloads-empty-cta-card', 'label', { x: 0, y: 0, width: 140.4, height: 24.2 }, {
+  testID: 'downloads-empty-cta-btn-label',
+  parentIdentity: 'downloads-empty-cta-gradient',
+  frameWidth: 100.2,
+  frameHeight: 24.2,
+  cardWidth: 300,
+  cardHeight: 700,
+  ancestorCard: 'downloads-empty-cta-card',
+});
+const labelScaled = getTargetMeasurement('downloads-empty-cta-card').rectangles.label;
+assert.equal(labelScaled.width, 140.4);
+assert.equal(labelScaled.frameWidth, 100.2);
+assert.equal(labelScaled.edgeOverflow?.overflowsRight, true);
+assert.equal(labelScaled.edgeOverflow?.hasOverflow, true);
+
+// Unknown frame: frameWidth/frameHeight missing -> frameUnavailable: true, measurementUnavailable: true, never emit hasOverflow: false
+recordNamedLayout('downloads-empty-cta-card', 'label', { x: 0, y: 0, width: 80, height: 24 }, {
+  testID: 'downloads-empty-cta-btn-label',
+  parentIdentity: 'downloads-empty-cta-gradient',
+  // frameWidth and frameHeight omitted / unknown
+});
+const labelUnknownFrame = getTargetMeasurement('downloads-empty-cta-card').rectangles.label;
+assert.equal(labelUnknownFrame.frameUnavailable, true, 'Missing frame must set frameUnavailable');
+assert.equal(labelUnknownFrame.measurementUnavailable, true, 'Missing frame must set measurementUnavailable');
+assert.equal(labelUnknownFrame.edgeOverflow, null, 'Unknown frame must not emit edgeOverflow or hasOverflow: false');
+
+// 4f. Valid -> Unmount -> Report showing stale values removed test:
+recordParentLayout('downloads-empty-cta-card', { x: 0, y: 0, width: 320, height: 400 });
+recordTargetLayout('downloads-empty-cta-card', { x: 10, y: 10, width: 150, height: 40 });
+recordNamedLayout('downloads-empty-cta-card', 'button', { x: 10, y: 10, width: 150, height: 40 }, {
+  testID: 'downloads-empty-cta-btn',
+  frameWidth: 320,
+  frameHeight: 400,
+  cardWidth: 320,
+  cardHeight: 400,
+  ancestorCard: 'downloads-empty-cta-card',
+});
+const measuredBeforeUnmount = getTargetMeasurement('downloads-empty-cta-card');
+assert.equal(measuredBeforeUnmount.status, 'measured');
+assert.equal(measuredBeforeUnmount.measurementUnavailable, false);
+assert.equal(measuredBeforeUnmount.rectangles.button.isAvailable, true);
+
+// Target unmounts (e.g. downloads list populated or screen unmounts)
+invalidateDiagnosticTarget('downloads-empty-cta-card', 'Downloads populated; empty CTA unmounted');
+const unmountedTarget = getTargetMeasurement('downloads-empty-cta-card');
+assert.equal(unmountedTarget.status, 'measurementUnavailable');
+assert.equal(unmountedTarget.measurementUnavailable, true);
+assert.equal(unmountedTarget.unavailabilityReason, 'Downloads populated; empty CTA unmounted');
+assert.equal(unmountedTarget.targetWidth, null);
+assert.equal(unmountedTarget.targetHeight, null);
+assert.equal(unmountedTarget.targetX, null);
+assert.equal(unmountedTarget.targetY, null);
+assert.equal(unmountedTarget.parentWidth, null);
+assert.equal(unmountedTarget.parentHeight, null);
+assert.equal(unmountedTarget.edgeOverflow, null);
+assert.equal(unmountedTarget.rectangles.button.isAvailable, false);
+assert.equal(unmountedTarget.rectangles.button.width, null);
+assert.equal(unmountedTarget.rectangles.button.height, null);
+assert.equal(unmountedTarget.rectangles.button.frameWidth, null);
+assert.equal(unmountedTarget.rectangles.button.frameHeight, null);
+assert.equal(unmountedTarget.rectangles.button.edgeOverflow, null);
+assert.equal(unmountedTarget.rectangles.button.measurementUnavailable, true);
+
+// Confirm exported report shows zero stale values
+const unmountedReport = buildDiagnosticReport();
+const reportItem = unmountedReport.measurements.find((m) => m.componentId === 'downloads-empty-cta-card');
+assert.equal(reportItem.status, 'measurementUnavailable');
+assert.equal(reportItem.measurementUnavailable, true);
+assert.equal(reportItem.dimensions.targetWidth, null);
+assert.equal(reportItem.dimensions.targetHeight, null);
+assert.equal(reportItem.dimensions.parentWidth, null);
+assert.equal(reportItem.overflow.edgeOverflow, null);
+assert.equal(reportItem.rectangles.button.isAvailable, false);
+assert.equal(reportItem.rectangles.button.width, null);
+
+// Invalid named layout clears stale values
+recordNamedLayout('downloads-empty-cta-card', 'button', { width: 0, height: 0 });
+assert.equal(downloadsWithRects.rectangles.button.isAvailable, false);
+assert.equal(downloadsWithRects.rectangles.button.width, null);
+assert.equal(downloadsWithRects.rectangles.button.height, null);
+assert.equal(downloadsWithRects.rectangles.button.x, null);
+assert.equal(downloadsWithRects.rectangles.button.y, null);
+
+// Explicit named layout unavailable reporting
+recordNamedLayoutUnavailable('mosque-finder-search-controls', 'resultRow', 'No search results present', {
+  testID: 'mosque-finder-result-row-0',
+  parentIdentity: 'mosque-finder-list-viewport',
+});
+const mosqueWithRects = getTargetMeasurement('mosque-finder-search-controls');
+assert.equal(mosqueWithRects.rectangles.resultRow.isAvailable, false);
+assert.equal(mosqueWithRects.rectangles.resultRow.unavailabilityReason, 'No search results present');
+
+// Verify useDiagnosticTarget hook helpers
+const activeHook = useDiagnosticTarget('mosque-finder-search-controls');
+assert.equal(typeof activeHook.recordNamed, 'function');
+assert.equal(typeof activeHook.recordNamedUnavailable, 'function');
+assert.equal(typeof activeHook.getNamedRectProps, 'function');
+const searchFieldProps = activeHook.getNamedRectProps('searchField', { testID: 'mosque-finder-search-field' });
+assert.equal(searchFieldProps.testID, 'mosque-finder-search-field');
+assert.equal(typeof searchFieldProps.onLayout, 'function');
+
+console.log('  ✓ Actual resolved styles, nativeComputedStyleUnavailable flag, native RTL per item, edge-aware geometry, named rectangles hierarchy, and stale state reset verified');
 
 // -----------------------------------------------------------------------------
 // 5. Truthful Export Semantics, Android Share Dismissal Wording & Privacy
@@ -767,10 +1018,9 @@ assert.ok(
   'Modal must never claim "Backup exported (Status: Share)" when chooser completion is unconfirmed'
 );
 
-// 5g. Privacy boundaries: Zero coordinates (no x/y offsets), zero Quran text, zero user content, zero secrets
+// 5g. Privacy boundaries: Zero Quran text, zero user content, zero secrets.
+// Exported report strictly limited to structural layout geometry and test IDs.
 const bannedPatterns = [
-  /\bnativeEvent\.layout\.x\b/,
-  /\bnativeEvent\.layout\.y\b/,
   /\bitem\.text\b/,
   /\bsurahText\b/,
   /\btranslationText\b/,
@@ -782,6 +1032,25 @@ const bannedPatterns = [
 ];
 for (const banned of bannedPatterns) {
   assert.ok(!banned.test(stateSrc), `diagnosticState must not record or include banned field: ${banned}`);
+}
+
+// Assert diagnosticState truthful privacy documentation (no mismatch with exported x/y geometry)
+assert.ok(
+  stateSrc.includes('Zero Quran text') &&
+  stateSrc.includes('Zero user content') &&
+  stateSrc.includes('Zero secrets/tokens') &&
+  stateSrc.includes('structural layout geometry'),
+  'diagnosticState must document truthful privacy contract matching exported geometry'
+);
+
+// Verify report structure explicitly includes geometry (targetX/Y, parentX/Y) without user content
+const sampleReport = buildDiagnosticReport();
+assert.ok(sampleReport.measurements.length > 0);
+for (const m of sampleReport.measurements) {
+  assert.equal(m.quranText, undefined);
+  assert.equal(m.userContent, undefined);
+  assert.ok('targetX' in m.dimensions);
+  assert.ok('targetY' in m.dimensions);
 }
 
 console.log('  ✓ File generation confirmed, shareStatus: unknown / userActionRequired, truthful retry, and privacy boundaries passed');

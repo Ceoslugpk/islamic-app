@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -6,14 +6,18 @@ import {
   ActivityIndicator,
   useWindowDimensions,
   Linking,
+  LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../lib/theme';
 import { useThemeTokens, cardTokens } from '../theme/tokens';
 import { useSettings, PrayerNameKey, QuranGoalType } from '../lib/settings';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
+import { DETAIL_PAD_BOTTOM } from '../components/layout/layout.constants';
 import {
   PremiumCard,
   OutlineButton,
@@ -445,9 +449,47 @@ export default function PrayerRemindersScreen({
   }
 
   const currentReciter = getAdhanReciter(adhanReciterId);
+  const insets = useSafeAreaInsets();
+  const { playback } = useAudioMiniPlayer();
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
+
+  // Diagnostic layout tracking refs for hierarchy and coordinate frame resolution
+  const cardLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const segRowLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const selectedChipLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const unselectedChipLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const selectedGradLayoutRef = useRef<any>(null);
+  const selectedLabelLayoutRef = useRef<any>(null);
+  const unselectedLabelLayoutRef = useRef<any>(null);
+  const lastSelectedChipEventRef = useRef<any>(null);
+  const lastUnselectedChipEventRef = useRef<any>(null);
+
+  // Invalidate on unmount
+  useEffect(() => {
+    if (!isDiag) return;
+    return () => {
+      diag.invalidateTarget('PrayerRemindersScreen unmounted');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDiag]);
+
+  // When selection offset changes, mark previous gradient/label unavailable pending new selection layout
+  useEffect(() => {
+    if (!isDiag) return;
+    diag.recordNamedUnavailable('gradient', 'Offset changed; awaiting layout of new selection', {
+      testID: 'prayer-reminders-chip-gradient',
+      parentIdentity: `prayer-reminders-chip-${reminderOffsetMinutes}`,
+      ancestorCard: 'prayer-reminders-selection-card',
+    });
+    diag.recordNamedUnavailable('label', 'Offset changed; awaiting layout of new selection', {
+      testID: 'prayer-reminders-chip-label',
+      parentIdentity: 'prayer-reminders-chip-gradient',
+      ancestorCard: 'prayer-reminders-selection-card',
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDiag, reminderOffsetMinutes]);
 
   // Calculate goal progress percentage
   const goalTarget = quranGoal?.target || 15;
@@ -472,6 +514,7 @@ export default function PrayerRemindersScreen({
       />
       <DetailScreen
         style={styles.detailScreen}
+        customPadBottom={DETAIL_PAD_BOTTOM(insets.bottom, Boolean(playback))}
         header={
           <SubHeader
             title={t('Prayer Reminders')}
@@ -796,7 +839,16 @@ export default function PrayerRemindersScreen({
           style={styles.groupCard}
           borderRadius={cardTokens.borderRadius}
           padded={false}
-          onLayout={isDiag ? diag.parentProps.onLayout : undefined}
+          onLayout={isDiag ? (e: LayoutChangeEvent) => {
+            cardLayoutRef.current = e?.nativeEvent?.layout ?? null;
+            diag.recordNamed('card', e, {
+              testID: 'prayer-reminders-selection-card',
+              parentIdentity: 'detail-screen-root',
+              cardWidth: cardLayoutRef.current?.width,
+              cardHeight: cardLayoutRef.current?.height,
+              ancestorCard: 'prayer-reminders-selection-card',
+            });
+          } : undefined}
         >
           <AppText variant="caption" tone="faint" style={styles.groupDesc}>
             {t('Send an early heads-up before each prayer so you can prepare wudu. Choose "Off" for alerts only at prayer time.')}
@@ -804,19 +856,163 @@ export default function PrayerRemindersScreen({
           <View
             testID={isDiag ? "prayer-reminders-selection-controls" : undefined}
             style={styles.segRow}
-            onLayout={isDiag ? diag.targetProps.onLayout : undefined}
+            onLayout={isDiag ? (e: LayoutChangeEvent) => {
+              segRowLayoutRef.current = e?.nativeEvent?.layout ?? null;
+              diag.recordNamed('selectionControls', e, {
+                testID: 'prayer-reminders-selection-controls',
+                parentIdentity: 'prayer-reminders-selection-card',
+                frameWidth: cardLayoutRef.current?.width,
+                frameHeight: cardLayoutRef.current?.height,
+                cardWidth: cardLayoutRef.current?.width,
+                cardHeight: cardLayoutRef.current?.height,
+                ancestorCard: 'prayer-reminders-selection-card',
+              });
+              if (lastSelectedChipEventRef.current) {
+                diag.recordNamed('chipSelected', lastSelectedChipEventRef.current, {
+                  testID: `prayer-reminders-chip-${reminderOffsetMinutes}`,
+                  parentIdentity: 'prayer-reminders-selection-controls',
+                  frameWidth: segRowLayoutRef.current?.width,
+                  frameHeight: segRowLayoutRef.current?.height,
+                  cardWidth: cardLayoutRef.current?.width,
+                  cardHeight: cardLayoutRef.current?.height,
+                  ancestorCard: 'prayer-reminders-selection-card',
+                });
+              }
+              if (lastUnselectedChipEventRef.current) {
+                diag.recordNamed('chipUnselected', lastUnselectedChipEventRef.current, {
+                  testID: `prayer-reminders-chip-${reminderOffsetMinutes === 0 ? 5 : 0}`,
+                  parentIdentity: 'prayer-reminders-selection-controls',
+                  frameWidth: segRowLayoutRef.current?.width,
+                  frameHeight: segRowLayoutRef.current?.height,
+                  cardWidth: cardLayoutRef.current?.width,
+                  cardHeight: cardLayoutRef.current?.height,
+                  ancestorCard: 'prayer-reminders-selection-card',
+                });
+              }
+            } : undefined}
           >
             {REMINDER_OFFSETS.map((item) => {
               const isSelected = reminderOffsetMinutes === item.value;
+              const isRepresentativeUnselected = !isSelected && item.value === (reminderOffsetMinutes === 0 ? 5 : 0);
               return (
                 <Chip
                   key={item.label}
                   testID={isDiag ? `prayer-reminders-chip-${item.value}` : undefined}
+                  onLayout={isDiag ? (e: LayoutChangeEvent) => {
+                    if (isSelected) {
+                      lastSelectedChipEventRef.current = e;
+                      selectedChipLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                      diag.recordNamed('chipSelected', e, {
+                        testID: `prayer-reminders-chip-${item.value}`,
+                        parentIdentity: 'prayer-reminders-selection-controls',
+                        frameWidth: segRowLayoutRef.current?.width,
+                        frameHeight: segRowLayoutRef.current?.height,
+                        cardWidth: cardLayoutRef.current?.width,
+                        cardHeight: cardLayoutRef.current?.height,
+                        ancestorCard: 'prayer-reminders-selection-card',
+                      });
+                      if (selectedGradLayoutRef.current) {
+                        diag.recordNamed('gradient', selectedGradLayoutRef.current, {
+                          testID: 'prayer-reminders-chip-gradient',
+                          parentIdentity: `prayer-reminders-chip-${item.value}`,
+                          frameWidth: selectedChipLayoutRef.current?.width,
+                          frameHeight: selectedChipLayoutRef.current?.height,
+                          cardWidth: cardLayoutRef.current?.width,
+                          cardHeight: cardLayoutRef.current?.height,
+                          ancestorCard: 'prayer-reminders-selection-card',
+                        });
+                      }
+                    } else if (isRepresentativeUnselected) {
+                      lastUnselectedChipEventRef.current = e;
+                      unselectedChipLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                      diag.recordNamed('chipUnselected', e, {
+                        testID: `prayer-reminders-chip-${item.value}`,
+                        parentIdentity: 'prayer-reminders-selection-controls',
+                        frameWidth: segRowLayoutRef.current?.width,
+                        frameHeight: segRowLayoutRef.current?.height,
+                        cardWidth: cardLayoutRef.current?.width,
+                        cardHeight: cardLayoutRef.current?.height,
+                        ancestorCard: 'prayer-reminders-selection-card',
+                      });
+                      // Unselected state has no gradient layer (rendered with solid background)
+                      diag.recordNamedUnavailable(
+                        'unselectedGradient',
+                        'Unselected chip has no gradient layer (rendered with solid background)',
+                        {
+                          testID: 'prayer-reminders-chip-unselected-gradient',
+                          parentIdentity: `prayer-reminders-chip-${item.value}`,
+                          ancestorCard: 'prayer-reminders-selection-card',
+                        }
+                      );
+                      if (unselectedLabelLayoutRef.current) {
+                        diag.recordNamed('unselectedLabel', unselectedLabelLayoutRef.current, {
+                          testID: 'prayer-reminders-chip-unselected-label',
+                          parentIdentity: `prayer-reminders-chip-${item.value}`,
+                          frameWidth: unselectedChipLayoutRef.current?.width,
+                          frameHeight: unselectedChipLayoutRef.current?.height,
+                          cardWidth: cardLayoutRef.current?.width,
+                          cardHeight: cardLayoutRef.current?.height,
+                          ancestorCard: 'prayer-reminders-selection-card',
+                        });
+                      }
+                    }
+                  } : undefined}
+                  onGradientLayout={isDiag && isSelected ? (e) => {
+                    selectedGradLayoutRef.current = e;
+                    diag.recordNamed('gradient', e, {
+                      testID: 'prayer-reminders-chip-gradient',
+                      parentIdentity: `prayer-reminders-chip-${item.value}`,
+                      frameWidth: selectedChipLayoutRef.current?.width,
+                      frameHeight: selectedChipLayoutRef.current?.height,
+                      cardWidth: cardLayoutRef.current?.width,
+                      cardHeight: cardLayoutRef.current?.height,
+                      ancestorCard: 'prayer-reminders-selection-card',
+                    });
+                    if (selectedLabelLayoutRef.current) {
+                      diag.recordNamed('label', selectedLabelLayoutRef.current, {
+                        testID: 'prayer-reminders-chip-label',
+                        parentIdentity: 'prayer-reminders-chip-gradient',
+                        frameWidth: e?.nativeEvent?.layout?.width,
+                        frameHeight: e?.nativeEvent?.layout?.height,
+                        cardWidth: cardLayoutRef.current?.width,
+                        cardHeight: cardLayoutRef.current?.height,
+                        ancestorCard: 'prayer-reminders-selection-card',
+                      });
+                    }
+                  } : undefined}
+                  gradientTestID={isDiag && isSelected ? 'prayer-reminders-chip-gradient' : undefined}
+                  onLabelLayout={isDiag ? (e) => {
+                    if (isSelected) {
+                      selectedLabelLayoutRef.current = e;
+                      diag.recordNamed('label', e, {
+                        testID: 'prayer-reminders-chip-label',
+                        parentIdentity: 'prayer-reminders-chip-gradient',
+                        frameWidth: selectedGradLayoutRef.current?.nativeEvent?.layout?.width,
+                        frameHeight: selectedGradLayoutRef.current?.nativeEvent?.layout?.height,
+                        cardWidth: cardLayoutRef.current?.width,
+                        cardHeight: cardLayoutRef.current?.height,
+                        ancestorCard: 'prayer-reminders-selection-card',
+                      });
+                    } else if (isRepresentativeUnselected) {
+                      unselectedLabelLayoutRef.current = e;
+                      diag.recordNamed('unselectedLabel', e, {
+                        testID: 'prayer-reminders-chip-unselected-label',
+                        parentIdentity: `prayer-reminders-chip-${item.value}`,
+                        frameWidth: unselectedChipLayoutRef.current?.width,
+                        frameHeight: unselectedChipLayoutRef.current?.height,
+                        cardWidth: cardLayoutRef.current?.width,
+                        cardHeight: cardLayoutRef.current?.height,
+                        ancestorCard: 'prayer-reminders-selection-card',
+                      });
+                    }
+                  } : undefined}
+                  labelTestID={isDiag ? (isSelected ? 'prayer-reminders-chip-label' : (isRepresentativeUnselected ? 'prayer-reminders-chip-unselected-label' : undefined)) : undefined}
                   label={t(item.label)}
                   selected={isSelected}
                   disabled={!remindersEnabled}
                   onPress={() => onSelectOffset(item.value)}
                   accessibilityLabel={item.value === 0 ? t('Off') : `${item.value} ${t('minutes before')}`}
+                  numberOfLines={0}
                 />
               );
             })}
@@ -1046,6 +1242,7 @@ export default function PrayerRemindersScreen({
                       setQuranGoal({ type, target: quranGoal?.type === type ? quranGoal.target : defaultTarget });
                     }}
                     accessibilityLabel={`Goal type: ${label}`}
+                    numberOfLines={0}
                   />
                 );
               })}
@@ -1483,6 +1680,7 @@ const styles = StyleSheet.create({
   },
   miniPillText: {
     fontSize: 12,
+    flexShrink: 1,
   },
   testIconBtn: {
     flexDirection: 'row',

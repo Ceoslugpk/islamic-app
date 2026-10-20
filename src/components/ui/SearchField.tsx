@@ -8,6 +8,7 @@ import {
   ViewStyle,
   TextStyle,
   TextInputProps,
+  LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../lib/theme';
@@ -22,6 +23,9 @@ export interface SearchFieldProps extends Omit<TextInputProps, 'style'> {
   style?: StyleProp<ViewStyle>;
   inputStyle?: StyleProp<TextStyle>;
   testID?: string;
+  onLayout?: (e: LayoutChangeEvent) => void;
+  inputOnLayout?: (e: LayoutChangeEvent) => void;
+  inputTestID?: string;
 }
 
 export function SearchField({
@@ -32,6 +36,9 @@ export function SearchField({
   style,
   inputStyle,
   testID = 'search',
+  onLayout,
+  inputOnLayout,
+  inputTestID,
   ...rest
 }: SearchFieldProps) {
   const { mode, colors } = useTheme();
@@ -46,6 +53,7 @@ export function SearchField({
   return (
     <View
       testID={testID}
+      onLayout={onLayout}
       style={[
         styles.container,
         {
@@ -63,6 +71,8 @@ export function SearchField({
         style={rtl ? styles.iconRtl : styles.iconLtr}
       />
       <TextInput
+        testID={inputTestID}
+        onLayout={inputOnLayout}
         style={[
           styles.input,
           {
@@ -100,7 +110,8 @@ export function SearchField({
 
 const styles = StyleSheet.create({
   container: {
-    height: 44,
+    minHeight: 44,
+    paddingVertical: 4,
     borderWidth: 1,
     borderRadius: 22,
     paddingHorizontal: 14,
@@ -121,7 +132,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     fontFamily: fontRoles.ui,
     fontSize: 14,
-    height: '100%',
+    minHeight: 36,
   },
   clearBtn: {
     padding: 4,

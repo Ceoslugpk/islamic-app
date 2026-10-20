@@ -16,11 +16,45 @@ import {
 export type DiagnosticTargetId =
   | 'quran-landing-surah-card'
   | 'downloads-empty-cta-card'
-  | 'prayer-reminders-selection-controls';
+  | 'prayer-reminders-selection-controls'
+  | 'mosque-finder-search-controls';
 
 export type MeasurementStatus = 'measured' | 'pending' | 'measurementUnavailable';
 export type OverflowStatus = 'no_overflow' | 'overflow' | 'unavailable';
 export type ClippingStatus = 'not_clipped' | 'clipped' | 'unavailable';
+
+export interface NamedLayoutRect {
+  name: string;
+  testID: string;
+  parentIdentity: string;
+  x: number | null;
+  y: number | null;
+  width: number | null;
+  height: number | null;
+  frameWidth: number | null;
+  frameHeight: number | null;
+  cardWidth?: number | null;
+  cardHeight?: number | null;
+  ancestorCard?: string | null;
+  isAvailable: boolean;
+  frameUnavailable?: boolean;
+  measurementUnavailable?: boolean;
+  unavailabilityReason?: string;
+  edgeOverflow?: {
+    overflowsLeft: boolean;
+    overflowsTop: boolean;
+    overflowsRight: boolean;
+    overflowsBottom: boolean;
+    hasOverflow: boolean;
+  } | null;
+  allocationOverflow?: {
+    overflowsLeft: boolean;
+    overflowsTop: boolean;
+    overflowsRight: boolean;
+    overflowsBottom: boolean;
+    hasOverflow: boolean;
+  } | null;
+}
 
 export interface TargetLayoutRecord {
   screenId: string;
@@ -30,6 +64,10 @@ export interface TargetLayoutRecord {
   status: MeasurementStatus;
   measurementUnavailable: boolean;
   nativeComputedStyleUnavailable: boolean;
+  targetX: number | null;
+  targetY: number | null;
+  parentX: number | null;
+  parentY: number | null;
   targetWidth: number | null;
   targetHeight: number | null;
   textContainerWidth: number | null; // Compatibility alias for targetWidth
@@ -37,10 +75,14 @@ export interface TargetLayoutRecord {
   parentWidth: number | null;
   parentHeight: number | null;
   resolvedContainerLayout: {
+    x?: number | null;
+    y?: number | null;
     width: number | null;
     height: number | null;
   };
   parentLayout: {
+    x?: number | null;
+    y?: number | null;
     width: number | null;
     height: number | null;
   };
@@ -56,10 +98,22 @@ export interface TargetLayoutRecord {
   clippingStatus: ClippingStatus;
   isWidthOverflowing: boolean | null;
   isHeightOverflowing: boolean | null;
+  edgeOverflow?: {
+    overflowsLeft: boolean;
+    overflowsTop: boolean;
+    overflowsRight: boolean;
+    overflowsBottom: boolean;
+    hasOverflow: boolean;
+  } | null;
   overflowDetails: {
     widthOverflow: boolean | null;
     heightOverflow: boolean | null;
+    left?: boolean;
+    top?: boolean;
+    right?: boolean;
+    bottom?: boolean;
   };
+  rectangles: Record<string, NamedLayoutRect>;
   nativeIsRTL: boolean;
   measuredAt?: string;
   unavailabilityReason?: string;
@@ -74,18 +128,26 @@ export interface DiagnosticMeasurementReportItem {
   measurementUnavailable: boolean;
   nativeComputedStyleUnavailable: boolean;
   dimensions: {
+    targetX?: number | null;
+    targetY?: number | null;
     targetWidth: number | null;
     targetHeight: number | null;
     textContainerWidth: number | null;
     textContainerHeight: number | null;
+    parentX?: number | null;
+    parentY?: number | null;
     parentWidth: number | null;
     parentHeight: number | null;
   };
   resolvedContainerLayout: {
+    x?: number | null;
+    y?: number | null;
     width: number | null;
     height: number | null;
   };
   parentLayout: {
+    x?: number | null;
+    y?: number | null;
     width: number | null;
     height: number | null;
   };
@@ -100,7 +162,15 @@ export interface DiagnosticMeasurementReportItem {
     clippingStatus: ClippingStatus;
     isWidthOverflowing: boolean | null;
     isHeightOverflowing: boolean | null;
+    edgeOverflow?: {
+      overflowsLeft: boolean;
+      overflowsTop: boolean;
+      overflowsRight: boolean;
+      overflowsBottom: boolean;
+      hasOverflow: boolean;
+    } | null;
   };
+  rectangles: Record<string, NamedLayoutRect>;
   nativeIsRTL: boolean;
 }
 
@@ -160,11 +230,78 @@ const DEFAULT_TARGETS: Record<
     targetTestId: 'prayer-reminders-selection-controls',
     parentTestId: 'prayer-reminders-selection-card',
   },
+  'mosque-finder-search-controls': {
+    screenId: 'MosqueFinder',
+    targetTestId: 'mosque-finder-search-controls',
+    parentTestId: 'mosque-finder-search-card',
+  },
+};
+
+const DEFAULT_NAMED_RECTS: Record<
+  DiagnosticTargetId,
+  { name: string; testID: string; parentIdentity: string; ancestorCard?: string }[]
+> = {
+  'quran-landing-surah-card': [
+    { name: 'parent', testID: 'surah-row-1', parentIdentity: 'detail-screen-root' },
+    { name: 'target', testID: 'quran-landing-surah-card-text', parentIdentity: 'surah-row-1' },
+  ],
+  'downloads-empty-cta-card': [
+    { name: 'parent', testID: 'downloads-empty-cta-card', parentIdentity: 'downloads-list-viewport' },
+    { name: 'button', testID: 'downloads-empty-cta-btn', parentIdentity: 'downloads-empty-cta-card', ancestorCard: 'downloads-empty-cta-card' },
+    { name: 'gradient', testID: 'downloads-empty-cta-gradient', parentIdentity: 'downloads-empty-cta-btn', ancestorCard: 'downloads-empty-cta-card' },
+    { name: 'label', testID: 'downloads-empty-cta-btn-label', parentIdentity: 'downloads-empty-cta-gradient', ancestorCard: 'downloads-empty-cta-card' },
+    { name: 'listViewport', testID: 'downloads-list-viewport', parentIdentity: 'detail-screen-root' },
+  ],
+  'prayer-reminders-selection-controls': [
+    { name: 'parent', testID: 'prayer-reminders-selection-card', parentIdentity: 'detail-screen-root' },
+    { name: 'chipSelected', testID: 'prayer-reminders-chip-0', parentIdentity: 'prayer-reminders-selection-controls', ancestorCard: 'prayer-reminders-selection-card' },
+    { name: 'chipUnselected', testID: 'prayer-reminders-chip-5', parentIdentity: 'prayer-reminders-selection-controls', ancestorCard: 'prayer-reminders-selection-card' },
+    { name: 'gradient', testID: 'prayer-reminders-chip-gradient', parentIdentity: 'prayer-reminders-chip-0', ancestorCard: 'prayer-reminders-selection-card' },
+    { name: 'label', testID: 'prayer-reminders-chip-label', parentIdentity: 'prayer-reminders-chip-gradient', ancestorCard: 'prayer-reminders-selection-card' },
+    { name: 'unselectedGradient', testID: 'prayer-reminders-chip-unselected-gradient', parentIdentity: 'prayer-reminders-chip-5', ancestorCard: 'prayer-reminders-selection-card' },
+    { name: 'unselectedLabel', testID: 'prayer-reminders-chip-unselected-label', parentIdentity: 'prayer-reminders-chip-5', ancestorCard: 'prayer-reminders-selection-card' },
+  ],
+  'mosque-finder-search-controls': [
+    { name: 'parent', testID: 'mosque-finder-search-card', parentIdentity: 'detail-screen-root' },
+    { name: 'searchField', testID: 'mosque-finder-search-field', parentIdentity: 'mosque-finder-search-controls', ancestorCard: 'mosque-finder-search-card' },
+    { name: 'textInput', testID: 'mosque-finder-search-input', parentIdentity: 'mosque-finder-search-field', ancestorCard: 'mosque-finder-search-card' },
+    { name: 'button', testID: 'mosque-finder-find-btn', parentIdentity: 'mosque-finder-search-controls', ancestorCard: 'mosque-finder-search-card' },
+    { name: 'buttonGradient', testID: 'mosque-finder-find-btn-gradient', parentIdentity: 'mosque-finder-find-btn', ancestorCard: 'mosque-finder-search-card' },
+    { name: 'buttonLabel', testID: 'mosque-finder-find-btn-label', parentIdentity: 'mosque-finder-find-btn-gradient', ancestorCard: 'mosque-finder-search-card' },
+    { name: 'radiusSelected', testID: 'mosque-finder-radius-chip-selected', parentIdentity: 'mosque-finder-radius-pills', ancestorCard: 'mosque-finder-search-card' },
+    { name: 'radiusUnselected', testID: 'mosque-finder-radius-chip-unselected', parentIdentity: 'mosque-finder-radius-pills', ancestorCard: 'mosque-finder-search-card' },
+    { name: 'listViewport', testID: 'mosque-finder-list-viewport', parentIdentity: 'detail-screen-root' },
+    { name: 'resultRow', testID: 'mosque-finder-result-row-0', parentIdentity: 'mosque-finder-list-viewport' },
+  ],
 };
 
 function createInitialStore(): Record<DiagnosticTargetId, TargetLayoutRecord> {
   const store = {} as Record<DiagnosticTargetId, TargetLayoutRecord>;
   (Object.keys(DEFAULT_TARGETS) as DiagnosticTargetId[]).forEach((id) => {
+    const rects: Record<string, NamedLayoutRect> = {};
+    (DEFAULT_NAMED_RECTS[id] || []).forEach((spec) => {
+      rects[spec.name] = {
+        name: spec.name,
+        testID: spec.testID,
+        parentIdentity: spec.parentIdentity,
+        x: null,
+        y: null,
+        width: null,
+        height: null,
+        frameWidth: null,
+        frameHeight: null,
+        cardWidth: null,
+        cardHeight: null,
+        ancestorCard: spec.ancestorCard || null,
+        isAvailable: false,
+        frameUnavailable: true,
+        measurementUnavailable: true,
+        unavailabilityReason: 'Pending layout measurement',
+        edgeOverflow: null,
+        allocationOverflow: null,
+      };
+    });
+
     store[id] = {
       screenId: DEFAULT_TARGETS[id].screenId,
       componentId: id,
@@ -173,14 +310,18 @@ function createInitialStore(): Record<DiagnosticTargetId, TargetLayoutRecord> {
       status: 'pending',
       measurementUnavailable: true,
       nativeComputedStyleUnavailable: true,
+      targetX: null,
+      targetY: null,
+      parentX: null,
+      parentY: null,
       targetWidth: null,
       targetHeight: null,
       textContainerWidth: null,
       textContainerHeight: null,
       parentWidth: null,
       parentHeight: null,
-      resolvedContainerLayout: { width: null, height: null },
-      parentLayout: { width: null, height: null },
+      resolvedContainerLayout: { x: null, y: null, width: null, height: null },
+      parentLayout: { x: null, y: null, width: null, height: null },
       resolvedStyleTextAlign: 'unavailable',
       resolvedStyleWritingDirection: 'unavailable',
       resolvedAlignment: 'unavailable',
@@ -193,10 +334,16 @@ function createInitialStore(): Record<DiagnosticTargetId, TargetLayoutRecord> {
       clippingStatus: 'unavailable',
       isWidthOverflowing: null,
       isHeightOverflowing: null,
+      edgeOverflow: null,
       overflowDetails: {
         widthOverflow: null,
         heightOverflow: null,
+        left: false,
+        top: false,
+        right: false,
+        bottom: false,
       },
+      rectangles: rects,
       nativeIsRTL: Boolean(I18nManager.isRTL),
     };
   });
@@ -240,14 +387,19 @@ function resetRecordToUnavailable(record: TargetLayoutRecord, reason: string): v
   record.status = 'measurementUnavailable';
   record.measurementUnavailable = true;
   record.unavailabilityReason = reason;
+  record.targetX = null;
+  record.targetY = null;
+  record.parentX = null;
+  record.parentY = null;
   record.targetWidth = null;
   record.targetHeight = null;
   record.textContainerWidth = null;
   record.textContainerHeight = null;
   record.parentWidth = null;
   record.parentHeight = null;
-  record.resolvedContainerLayout = { width: null, height: null };
-  record.parentLayout = { width: null, height: null };
+  record.resolvedContainerLayout = { x: null, y: null, width: null, height: null };
+  record.parentLayout = { x: null, y: null, width: null, height: null };
+  record.edgeOverflow = null;
   record.overflowStatus = 'unavailable';
   record.clippingStatus = 'unavailable';
   record.isWidthOverflowing = null;
@@ -255,8 +407,32 @@ function resetRecordToUnavailable(record: TargetLayoutRecord, reason: string): v
   record.overflowDetails = {
     widthOverflow: null,
     heightOverflow: null,
+    left: false,
+    top: false,
+    right: false,
+    bottom: false,
   };
   record.nativeIsRTL = Boolean(I18nManager.isRTL);
+
+  if (record.rectangles) {
+    for (const name of Object.keys(record.rectangles)) {
+      const rect = record.rectangles[name];
+      rect.isAvailable = false;
+      rect.x = null;
+      rect.y = null;
+      rect.width = null;
+      rect.height = null;
+      rect.frameWidth = null;
+      rect.frameHeight = null;
+      rect.cardWidth = null;
+      rect.cardHeight = null;
+      rect.edgeOverflow = null;
+      rect.allocationOverflow = null;
+      rect.frameUnavailable = true;
+      rect.measurementUnavailable = true;
+      rect.unavailabilityReason = reason;
+    }
+  }
 }
 
 function updateOverflowAndStatus(record: TargetLayoutRecord): void {
@@ -264,28 +440,81 @@ function updateOverflowAndStatus(record: TargetLayoutRecord): void {
   const hasTarget = record.targetWidth != null && record.targetHeight != null && record.targetWidth > 0 && record.targetHeight > 0;
 
   if (hasParent && hasTarget) {
-    const widthOverflow = record.targetWidth! > record.parentWidth!;
-    const heightOverflow = record.targetHeight! > record.parentHeight!;
-    const anyOverflow = widthOverflow || heightOverflow;
+    const x = record.targetX ?? 0;
+    const y = record.targetY ?? 0;
+    const targetW = record.targetWidth!;
+    const targetH = record.targetHeight!;
+    const parentW = record.parentWidth!;
+    const parentH = record.parentHeight!;
 
-    record.isWidthOverflowing = widthOverflow;
-    record.isHeightOverflowing = heightOverflow;
+    const overflowsLeft = x < 0;
+    const overflowsTop = y < 0;
+    const overflowsRight = (x + targetW) > parentW;
+    const overflowsBottom = (y + targetH) > parentH;
+    const anyOverflow = overflowsLeft || overflowsTop || overflowsRight || overflowsBottom;
+
+    record.edgeOverflow = {
+      overflowsLeft,
+      overflowsTop,
+      overflowsRight,
+      overflowsBottom,
+      hasOverflow: anyOverflow,
+    };
+    record.isWidthOverflowing = overflowsLeft || overflowsRight;
+    record.isHeightOverflowing = overflowsTop || overflowsBottom;
     record.overflowDetails = {
-      widthOverflow,
-      heightOverflow,
+      widthOverflow: record.isWidthOverflowing,
+      heightOverflow: record.isHeightOverflowing,
+      left: overflowsLeft,
+      top: overflowsTop,
+      right: overflowsRight,
+      bottom: overflowsBottom,
     };
     record.overflowStatus = anyOverflow ? 'overflow' : 'no_overflow';
     record.clippingStatus = anyOverflow ? 'clipped' : 'not_clipped';
     record.status = 'measured';
     record.measurementUnavailable = false;
     record.measuredAt = new Date().toISOString();
+
+    // Re-evaluate ancestor card allocation overflow ONLY when explicitly named
+    if (record.rectangles) {
+      for (const name of Object.keys(record.rectangles)) {
+        const rect = record.rectangles[name];
+        if (rect.ancestorCard && rect.ancestorCard === record.parentTestId) {
+          rect.cardWidth = parentW;
+          rect.cardHeight = parentH;
+          if (rect.isAvailable && rect.width != null && rect.height != null) {
+            const rx = rect.x ?? 0;
+            const ry = rect.y ?? 0;
+            const aLeft = rx < 0;
+            const aTop = ry < 0;
+            const aRight = (rx + rect.width) > parentW;
+            const aBottom = (ry + rect.height) > parentH;
+            rect.allocationOverflow = {
+              overflowsLeft: aLeft,
+              overflowsTop: aTop,
+              overflowsRight: aRight,
+              overflowsBottom: aBottom,
+              hasOverflow: aLeft || aTop || aRight || aBottom || rect.width > parentW || rect.height > parentH,
+            };
+          }
+        }
+      }
+    }
   } else {
     // When either parent or target cannot be measured, do not report false or stale values
+    record.targetX = null;
+    record.targetY = null;
+    record.edgeOverflow = null;
     record.isWidthOverflowing = null;
     record.isHeightOverflowing = null;
     record.overflowDetails = {
       widthOverflow: null,
       heightOverflow: null,
+      left: false,
+      top: false,
+      right: false,
+      bottom: false,
     };
     record.overflowStatus = 'unavailable';
     record.clippingStatus = 'unavailable';
@@ -295,7 +524,7 @@ function updateOverflowAndStatus(record: TargetLayoutRecord): void {
 
 export function recordParentLayout(
   targetId: DiagnosticTargetId,
-  layout: { width: number; height: number }
+  layout: { x?: number; y?: number; width: number; height: number }
 ): void {
   if (!isDiagnosticModeEnabled()) return;
 
@@ -303,13 +532,27 @@ export function recordParentLayout(
   if (!record) return;
 
   if (layout && typeof layout.width === 'number' && typeof layout.height === 'number' && layout.width > 0 && layout.height > 0) {
+    record.parentX = typeof layout.x === 'number' ? Math.round(layout.x * 10) / 10 : 0;
+    record.parentY = typeof layout.y === 'number' ? Math.round(layout.y * 10) / 10 : 0;
     record.parentWidth = Math.round(layout.width * 10) / 10;
     record.parentHeight = Math.round(layout.height * 10) / 10;
     record.parentLayout = {
+      x: record.parentX,
+      y: record.parentY,
       width: record.parentWidth,
       height: record.parentHeight,
     };
     record.nativeIsRTL = Boolean(I18nManager.isRTL);
+
+    if (record.rectangles && record.rectangles.parent) {
+      record.rectangles.parent.isAvailable = true;
+      record.rectangles.parent.x = record.parentX;
+      record.rectangles.parent.y = record.parentY;
+      record.rectangles.parent.width = record.parentWidth;
+      record.rectangles.parent.height = record.parentHeight;
+      record.rectangles.parent.unavailabilityReason = undefined;
+    }
+
     updateOverflowAndStatus(record);
   } else {
     resetRecordToUnavailable(record, 'Parent dimensions reported <= 0');
@@ -319,7 +562,7 @@ export function recordParentLayout(
 
 export function recordTargetLayout(
   targetId: DiagnosticTargetId,
-  layout: { width: number; height: number },
+  layout: { x?: number; y?: number; width: number; height: number },
   actualStyle?: {
     textAlign?: string;
     writingDirection?: string;
@@ -356,11 +599,15 @@ export function recordTargetLayout(
   }
 
   if (layout && typeof layout.width === 'number' && typeof layout.height === 'number' && layout.width > 0 && layout.height > 0) {
+    record.targetX = typeof layout.x === 'number' ? Math.round(layout.x * 10) / 10 : 0;
+    record.targetY = typeof layout.y === 'number' ? Math.round(layout.y * 10) / 10 : 0;
     record.targetWidth = Math.round(layout.width * 10) / 10;
     record.targetHeight = Math.round(layout.height * 10) / 10;
     record.textContainerWidth = record.targetWidth;
     record.textContainerHeight = record.targetHeight;
     record.resolvedContainerLayout = {
+      x: record.targetX,
+      y: record.targetY,
       width: record.targetWidth,
       height: record.targetHeight,
     };
@@ -376,9 +623,225 @@ export function recordTargetLayout(
  */
 export const recordTextLayout = recordTargetLayout;
 
+export function recordNamedLayout(
+  targetId: DiagnosticTargetId,
+  name: string,
+  layout: { x?: number; y?: number; width: number; height: number } | null | undefined,
+  meta?: {
+    testID?: string;
+    parentIdentity?: string;
+    frameWidth?: number | null;
+    frameHeight?: number | null;
+    cardWidth?: number | null;
+    cardHeight?: number | null;
+    ancestorCard?: string | null;
+    unavailabilityReason?: string;
+  }
+): void {
+  if (!isDiagnosticModeEnabled()) return;
+
+  const record = measurementsStore[targetId];
+  if (!record) return;
+
+  if (!record.rectangles) {
+    record.rectangles = {};
+  }
+
+  const existing: NamedLayoutRect = record.rectangles[name] || {
+    name,
+    testID: meta?.testID || name,
+    parentIdentity: meta?.parentIdentity || record.parentTestId,
+    x: null,
+    y: null,
+    width: null,
+    height: null,
+    frameWidth: null,
+    frameHeight: null,
+    cardWidth: null,
+    cardHeight: null,
+    ancestorCard: meta?.ancestorCard || null,
+    isAvailable: false,
+    frameUnavailable: true,
+    measurementUnavailable: true,
+    unavailabilityReason: 'Pending layout measurement',
+    edgeOverflow: null,
+    allocationOverflow: null,
+  };
+
+  if (meta?.testID) existing.testID = meta.testID;
+  if (meta?.parentIdentity) existing.parentIdentity = meta.parentIdentity;
+  existing.ancestorCard = meta?.ancestorCard !== undefined ? meta.ancestorCard : null;
+  existing.frameWidth = meta?.frameWidth != null ? Math.round(meta.frameWidth * 10) / 10 : null;
+  existing.frameHeight = meta?.frameHeight != null ? Math.round(meta.frameHeight * 10) / 10 : null;
+  existing.cardWidth = meta?.cardWidth != null ? Math.round(meta.cardWidth * 10) / 10 : null;
+  existing.cardHeight = meta?.cardHeight != null ? Math.round(meta.cardHeight * 10) / 10 : null;
+
+  if (
+    layout &&
+    typeof layout.width === 'number' &&
+    typeof layout.height === 'number' &&
+    layout.width > 0 &&
+    layout.height > 0
+  ) {
+    existing.isAvailable = true;
+    existing.x = typeof layout.x === 'number' ? Math.round(layout.x * 10) / 10 : 0;
+    existing.y = typeof layout.y === 'number' ? Math.round(layout.y * 10) / 10 : 0;
+    existing.width = Math.round(layout.width * 10) / 10;
+    existing.height = Math.round(layout.height * 10) / 10;
+
+    // Evaluate edge overflow against the record's OWN frame:
+    // If frame is unknown, set frameUnavailable/measurementUnavailable and do NOT emit hasOverflow: false.
+    if (
+      existing.frameWidth != null &&
+      existing.frameHeight != null &&
+      existing.frameWidth > 0 &&
+      existing.frameHeight > 0
+    ) {
+      const fw = existing.frameWidth;
+      const fh = existing.frameHeight;
+      const rx = existing.x ?? 0;
+      const ry = existing.y ?? 0;
+      const rw = existing.width;
+      const rh = existing.height;
+
+      const overflowsLeft = rx < 0;
+      const overflowsTop = ry < 0;
+      const overflowsRight = (rx + rw) > fw;
+      const overflowsBottom = (ry + rh) > fh;
+      const hasOverflow = overflowsLeft || overflowsTop || overflowsRight || overflowsBottom;
+
+      existing.edgeOverflow = {
+        overflowsLeft,
+        overflowsTop,
+        overflowsRight,
+        overflowsBottom,
+        hasOverflow,
+      };
+      existing.frameUnavailable = false;
+      existing.measurementUnavailable = false;
+      existing.unavailabilityReason = undefined;
+    } else {
+      existing.frameUnavailable = true;
+      existing.measurementUnavailable = true;
+      existing.edgeOverflow = null;
+      existing.unavailabilityReason = meta?.unavailabilityReason || 'Frame dimensions unavailable';
+    }
+
+    // Evaluate allocationOverflow against ancestor card ONLY when explicitly named
+    if (
+      existing.ancestorCard &&
+      existing.cardWidth != null &&
+      existing.cardHeight != null &&
+      existing.cardWidth > 0 &&
+      existing.cardHeight > 0
+    ) {
+      const cw = existing.cardWidth;
+      const ch = existing.cardHeight;
+      const rx = existing.x ?? 0;
+      const ry = existing.y ?? 0;
+      const rw = existing.width;
+      const rh = existing.height;
+
+      const aLeft = rx < 0;
+      const aTop = ry < 0;
+      const aRight = (rx + rw) > cw;
+      const aBottom = (ry + rh) > ch;
+      const hasAllocOverflow = aLeft || aTop || aRight || aBottom || rw > cw || rh > ch;
+
+      existing.allocationOverflow = {
+        overflowsLeft: aLeft,
+        overflowsTop: aTop,
+        overflowsRight: aRight,
+        overflowsBottom: aBottom,
+        hasOverflow: hasAllocOverflow,
+      };
+    } else {
+      existing.allocationOverflow = null;
+    }
+  } else {
+    // Clear stale values on invalid events or unmount
+    existing.isAvailable = false;
+    existing.x = null;
+    existing.y = null;
+    existing.width = null;
+    existing.height = null;
+    existing.frameWidth = null;
+    existing.frameHeight = null;
+    existing.cardWidth = null;
+    existing.cardHeight = null;
+    existing.edgeOverflow = null;
+    existing.allocationOverflow = null;
+    existing.frameUnavailable = true;
+    existing.measurementUnavailable = true;
+    existing.unavailabilityReason = meta?.unavailabilityReason || 'Dimensions <= 0 or invalid event';
+  }
+
+  record.rectangles[name] = existing;
+  notifyListeners();
+}
+
+export function recordNamedLayoutUnavailable(
+  targetId: DiagnosticTargetId,
+  name: string,
+  reason: string,
+  meta?: {
+    testID?: string;
+    parentIdentity?: string;
+    ancestorCard?: string | null;
+  }
+): void {
+  if (!isDiagnosticModeEnabled()) return;
+
+  const record = measurementsStore[targetId];
+  if (!record) return;
+
+  if (!record.rectangles) {
+    record.rectangles = {};
+  }
+
+  record.rectangles[name] = {
+    name,
+    testID: meta?.testID || name,
+    parentIdentity: meta?.parentIdentity || record.parentTestId,
+    x: null,
+    y: null,
+    width: null,
+    height: null,
+    frameWidth: null,
+    frameHeight: null,
+    cardWidth: null,
+    cardHeight: null,
+    ancestorCard: meta?.ancestorCard || null,
+    isAvailable: false,
+    frameUnavailable: true,
+    measurementUnavailable: true,
+    unavailabilityReason: reason,
+    edgeOverflow: null,
+    allocationOverflow: null,
+  };
+  notifyListeners();
+}
+
 export function recordMeasurementUnavailable(
   targetId: DiagnosticTargetId,
   reason: string = 'Native measurement could not be obtained'
+): void {
+  if (!isDiagnosticModeEnabled()) return;
+
+  const record = measurementsStore[targetId];
+  if (!record) return;
+
+  resetRecordToUnavailable(record, reason);
+  notifyListeners();
+}
+
+/**
+ * Invalidate a diagnostic target on unmount or screen transition.
+ * Wipes out all stale values and marks measurementUnavailable.
+ */
+export function invalidateDiagnosticTarget(
+  targetId: DiagnosticTargetId,
+  reason: string = 'Target unmounted or invalidated'
 ): void {
   if (!isDiagnosticModeEnabled()) return;
 
@@ -408,17 +871,96 @@ export function useDiagnosticTarget(
       isDiagnostic: false,
       parentProps: {},
       targetProps: {},
+      recordNamed: () => {},
+      recordNamedUnavailable: () => {},
+      getNamedRectProps: () => ({}),
+      invalidateTarget: () => {},
     };
   }
 
   const flattenedStyle = options?.actualStyle ? StyleSheet.flatten(options.actualStyle) : undefined;
+  const targetTestID = options?.targetTestId || DEFAULT_TARGETS[targetId].targetTestId;
+  const parentTestID = options?.parentTestId || DEFAULT_TARGETS[targetId].parentTestId;
+
+  const recordNamed = (
+    name: string,
+    e: LayoutChangeEvent,
+    meta?: {
+      testID?: string;
+      parentIdentity?: string;
+      frameWidth?: number | null;
+      frameHeight?: number | null;
+      cardWidth?: number | null;
+      cardHeight?: number | null;
+      ancestorCard?: string | null;
+      unavailabilityReason?: string;
+    }
+  ) => {
+    const layout = e?.nativeEvent?.layout;
+    if (
+      !layout ||
+      typeof layout.width !== 'number' ||
+      typeof layout.height !== 'number' ||
+      layout.width <= 0 ||
+      layout.height <= 0
+    ) {
+      recordNamedLayout(targetId, name, null, {
+        testID: meta?.testID || name,
+        parentIdentity: meta?.parentIdentity || parentTestID,
+        ancestorCard: meta?.ancestorCard,
+        unavailabilityReason: 'Empty or invalid layout event on named rectangle',
+      });
+      return;
+    }
+    recordNamedLayout(targetId, name, layout, {
+      testID: meta?.testID || name,
+      parentIdentity: meta?.parentIdentity || parentTestID,
+      frameWidth: meta?.frameWidth,
+      frameHeight: meta?.frameHeight,
+      cardWidth: meta?.cardWidth,
+      cardHeight: meta?.cardHeight,
+      ancestorCard: meta?.ancestorCard,
+    });
+  };
+
+  const recordNamedUnavailable = (
+    name: string,
+    reason: string,
+    meta?: { testID?: string; parentIdentity?: string; ancestorCard?: string | null }
+  ) => {
+    recordNamedLayoutUnavailable(targetId, name, reason, {
+      testID: meta?.testID || name,
+      parentIdentity: meta?.parentIdentity || parentTestID,
+      ancestorCard: meta?.ancestorCard,
+    });
+  };
+
+  const getNamedRectProps = (
+    name: string,
+    meta?: {
+      testID?: string;
+      parentIdentity?: string;
+      frameWidth?: number | null;
+      frameHeight?: number | null;
+      cardWidth?: number | null;
+      cardHeight?: number | null;
+      ancestorCard?: string | null;
+    }
+  ) => ({
+    testID: meta?.testID || name,
+    onLayout: (e: LayoutChangeEvent) => recordNamed(name, e, meta),
+  });
+
+  const invalidateTarget = (reason?: string) => {
+    invalidateDiagnosticTarget(targetId, reason || 'Target unmounted or invalidated');
+  };
 
   return {
     isDiagnostic: true,
     parentProps: {
-      testID: options?.parentTestId || DEFAULT_TARGETS[targetId].parentTestId,
+      testID: parentTestID,
       onLayout: (e: LayoutChangeEvent) => {
-        const layout = e.nativeEvent?.layout;
+        const layout = e?.nativeEvent?.layout;
         if (!layout || typeof layout.width !== 'number' || typeof layout.height !== 'number' || layout.width <= 0 || layout.height <= 0) {
           recordMeasurementUnavailable(targetId, 'Empty or invalid layout event on parent');
           return;
@@ -427,9 +969,9 @@ export function useDiagnosticTarget(
       },
     },
     targetProps: {
-      testID: options?.targetTestId || DEFAULT_TARGETS[targetId].targetTestId,
+      testID: targetTestID,
       onLayout: (e: LayoutChangeEvent) => {
-        const layout = e.nativeEvent?.layout;
+        const layout = e?.nativeEvent?.layout;
         if (!layout || typeof layout.width !== 'number' || typeof layout.height !== 'number' || layout.width <= 0 || layout.height <= 0) {
           recordMeasurementUnavailable(targetId, 'Empty or invalid layout event on target');
           return;
@@ -437,6 +979,10 @@ export function useDiagnosticTarget(
         recordTargetLayout(targetId, layout, flattenedStyle);
       },
     },
+    recordNamed,
+    recordNamedUnavailable,
+    getNamedRectProps,
+    invalidateTarget,
   };
 }
 
@@ -444,10 +990,10 @@ export function useDiagnosticTarget(
  * Builds an anonymized JSON report:
  * STRICT PRIVACY GUARANTEE:
  * - Zero Quran text
- * - Zero user content
- * - Zero coordinates (no x/y offsets)
+ * - Zero user content / user data
  * - Zero settings values
- * - Zero secrets/tokens
+ * - Zero secrets/tokens / credentials
+ * - Exported payload is strictly limited to structural layout geometry (dimensions, relative offsets x/y, overflow flags) and developer component/test IDs.
  */
 export function buildDiagnosticReport(): DiagnosticReport {
   const activeLocale = i18n.language || 'en';
@@ -463,18 +1009,26 @@ export function buildDiagnosticReport(): DiagnosticReport {
     measurementUnavailable: item.measurementUnavailable,
     nativeComputedStyleUnavailable: true,
     dimensions: {
+      targetX: item.targetX,
+      targetY: item.targetY,
       targetWidth: item.targetWidth,
       targetHeight: item.targetHeight,
       textContainerWidth: item.textContainerWidth,
       textContainerHeight: item.textContainerHeight,
+      parentX: item.parentX,
+      parentY: item.parentY,
       parentWidth: item.parentWidth,
       parentHeight: item.parentHeight,
     },
     resolvedContainerLayout: {
+      x: item.targetX,
+      y: item.targetY,
       width: item.targetWidth,
       height: item.targetHeight,
     },
     parentLayout: {
+      x: item.parentX,
+      y: item.parentY,
       width: item.parentWidth,
       height: item.parentHeight,
     },
@@ -489,7 +1043,9 @@ export function buildDiagnosticReport(): DiagnosticReport {
       clippingStatus: item.clippingStatus,
       isWidthOverflowing: item.isWidthOverflowing,
       isHeightOverflowing: item.isHeightOverflowing,
+      edgeOverflow: item.edgeOverflow,
     },
+    rectangles: item.rectangles || {},
     nativeIsRTL: item.nativeIsRTL,
   }));
 

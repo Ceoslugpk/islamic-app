@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   View,
+  LayoutChangeEvent,
 } from 'react-native';
 import { AppText } from '../components/ui/AppText';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,8 +16,8 @@ import { t } from '../lib/i18n';
 import { iconSizes } from '../lib/iconMap';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
+import { DETAIL_PAD_BOTTOM } from '../components/layout/layout.constants';
 import { PremiumCard, PrimaryButton, OutlineButton, ScreenTabs, SearchField } from '../components/ui';
-import { NAV_BOTTOM, NAV_HEIGHT } from '../components/layout/layout.constants';
 import { ArabicText } from '../components/ArabicText';
 import {
   clearAllDownloads,
@@ -82,9 +83,20 @@ function DownloadsScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const { saveUndoState } = useUndoToast();
 
-  const bottomClearance = playback
-    ? NAV_BOTTOM(insets.bottom) + NAV_HEIGHT + 68 + 16
-    : undefined;
+  // Single-owner bottom clearance contract:
+  // AudioMiniPlayer is a normal-flow sibling rendered below the flex:1 screen in App.tsx.
+  // It already shortens the screen viewport and owns the bottom safe-area padding.
+  // When playback is active: list content requires only local breathing room (SPACING_CONTRACT.BOTTOM_CLEARANCE = 32dp).
+  // When playback is inactive: the screen extends to the device bottom, so it uses DETAIL_PAD_BOTTOM(insets.bottom).
+  const bottomClearance = DETAIL_PAD_BOTTOM(insets.bottom, Boolean(playback));
+
+  // Diagnostic layout tracking refs for hierarchy and coordinate frame resolution
+  const emptyCardLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const emptyBtnLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const emptyGradLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const lastEmptyBtnEventRef = useRef<any>(null);
+  const lastEmptyGradEventRef = useRef<any>(null);
+  const lastEmptyLabelEventRef = useRef<any>(null);
 
   const filteredSurahs = useMemo(() => {
     if (activeTab === 'text') return [];
@@ -102,6 +114,18 @@ function DownloadsScreen({
     }
     return list;
   }, [downloadedSurahs, activeTab, searchQuery]);
+
+  // Invalidate empty CTA measurements when downloads become populated or on screen unmount
+  useEffect(() => {
+    if (!isDiag) return;
+    if (filteredSurahs.length > 0) {
+      diag.invalidateTarget('Downloads populated; empty CTA is unmounted');
+    }
+    return () => {
+      diag.invalidateTarget('DownloadsScreen unmounted');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDiag, filteredSurahs.length]);
 
   // When everything claims to be cached, prove it by reading the local cache only.
   const autoVerifyDone = useRef(false);
@@ -404,8 +428,15 @@ function DownloadsScreen({
         }
       >
         <DetailScreen.FlatList
-        style={styles.contentWrap}
-        data={filteredSurahs}
+          style={styles.contentWrap}
+          testID={isDiag ? "downloads-list-viewport" : undefined}
+          onLayout={isDiag ? (e) => diag.recordNamed('listViewport', e, {
+            testID: 'downloads-list-viewport',
+            parentIdentity: 'detail-screen-root',
+            frameWidth: width,
+            frameHeight: undefined,
+          }) : undefined}
+          data={filteredSurahs}
           keyExtractor={(item) => `${item.edition}:${item.surah}:${item.bitrate}`}
           contentContainerStyle={[
             styles.listContent,
@@ -418,7 +449,28 @@ function DownloadsScreen({
               testID={isDiag ? "downloads-empty-cta-card" : undefined}
               style={styles.emptyCard}
               padded
-              onLayout={isDiag ? diag.parentProps.onLayout : undefined}
+              onLayout={isDiag ? (e: LayoutChangeEvent) => {
+                emptyCardLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                diag.recordNamed('card', e, {
+                  testID: 'downloads-empty-cta-card',
+                  parentIdentity: 'downloads-list-viewport',
+                  frameWidth: width,
+                  frameHeight: undefined,
+                  cardWidth: width,
+                  ancestorCard: 'downloads-empty-cta-card',
+                });
+                if (lastEmptyBtnEventRef.current) {
+                  diag.recordNamed('button', lastEmptyBtnEventRef.current, {
+                    testID: 'downloads-empty-cta-btn',
+                    parentIdentity: 'downloads-empty-cta-card',
+                    frameWidth: emptyCardLayoutRef.current?.width,
+                    frameHeight: emptyCardLayoutRef.current?.height,
+                    cardWidth: emptyCardLayoutRef.current?.width,
+                    cardHeight: emptyCardLayoutRef.current?.height,
+                    ancestorCard: 'downloads-empty-cta-card',
+                  });
+                }
+              } : undefined}
             >
               <View
                 testID={isDiag ? "downloads-empty-cta-wrap" : undefined}
@@ -446,6 +498,68 @@ function DownloadsScreen({
                 {onOpenSurah && (
                   <PrimaryButton
                     testID={isDiag ? "downloads-empty-cta-btn" : undefined}
+                    onLayout={isDiag ? (e: LayoutChangeEvent) => {
+                      lastEmptyBtnEventRef.current = e;
+                      emptyBtnLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                      diag.recordNamed('button', e, {
+                        testID: 'downloads-empty-cta-btn',
+                        parentIdentity: 'downloads-empty-cta-card',
+                        frameWidth: emptyCardLayoutRef.current?.width,
+                        frameHeight: emptyCardLayoutRef.current?.height,
+                        cardWidth: emptyCardLayoutRef.current?.width,
+                        cardHeight: emptyCardLayoutRef.current?.height,
+                        ancestorCard: 'downloads-empty-cta-card',
+                      });
+                      if (lastEmptyGradEventRef.current) {
+                        diag.recordNamed('gradient', lastEmptyGradEventRef.current, {
+                          testID: 'downloads-empty-cta-gradient',
+                          parentIdentity: 'downloads-empty-cta-btn',
+                          frameWidth: emptyBtnLayoutRef.current?.width,
+                          frameHeight: emptyBtnLayoutRef.current?.height,
+                          cardWidth: emptyCardLayoutRef.current?.width,
+                          cardHeight: emptyCardLayoutRef.current?.height,
+                          ancestorCard: 'downloads-empty-cta-card',
+                        });
+                      }
+                    } : undefined}
+                    onGradientLayout={isDiag ? (e) => {
+                      lastEmptyGradEventRef.current = e;
+                      emptyGradLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                      diag.recordNamed('gradient', e, {
+                        testID: 'downloads-empty-cta-gradient',
+                        parentIdentity: 'downloads-empty-cta-btn',
+                        frameWidth: emptyBtnLayoutRef.current?.width,
+                        frameHeight: emptyBtnLayoutRef.current?.height,
+                        cardWidth: emptyCardLayoutRef.current?.width,
+                        cardHeight: emptyCardLayoutRef.current?.height,
+                        ancestorCard: 'downloads-empty-cta-card',
+                      });
+                      if (lastEmptyLabelEventRef.current) {
+                        diag.recordNamed('label', lastEmptyLabelEventRef.current, {
+                          testID: 'downloads-empty-cta-btn-label',
+                          parentIdentity: 'downloads-empty-cta-gradient',
+                          frameWidth: emptyGradLayoutRef.current?.width,
+                          frameHeight: emptyGradLayoutRef.current?.height,
+                          cardWidth: emptyCardLayoutRef.current?.width,
+                          cardHeight: emptyCardLayoutRef.current?.height,
+                          ancestorCard: 'downloads-empty-cta-card',
+                        });
+                      }
+                    } : undefined}
+                    gradientTestID={isDiag ? "downloads-empty-cta-gradient" : undefined}
+                    onLabelLayout={isDiag ? (e) => {
+                      lastEmptyLabelEventRef.current = e;
+                      diag.recordNamed('label', e, {
+                        testID: 'downloads-empty-cta-btn-label',
+                        parentIdentity: 'downloads-empty-cta-gradient',
+                        frameWidth: emptyGradLayoutRef.current?.width,
+                        frameHeight: emptyGradLayoutRef.current?.height,
+                        cardWidth: emptyCardLayoutRef.current?.width,
+                        cardHeight: emptyCardLayoutRef.current?.height,
+                        ancestorCard: 'downloads-empty-cta-card',
+                      });
+                    } : undefined}
+                    labelTestID={isDiag ? "downloads-empty-cta-btn-label" : undefined}
                     title={t('Browse Surahs')}
                     onPress={() => onOpenSurah(1)}
                     accessibilityLabel={t('Browse Quran Surahs')}

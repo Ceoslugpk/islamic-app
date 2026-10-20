@@ -6,6 +6,7 @@ import {
   StyleProp,
   ViewStyle,
   TextStyle,
+  LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +27,11 @@ export interface ChipProps {
   accessibilityLabel?: string;
   interactive?: boolean;
   numberOfLines?: number;
+  onLayout?: (e: LayoutChangeEvent) => void;
+  onGradientLayout?: (e: LayoutChangeEvent) => void;
+  gradientTestID?: string;
+  onLabelLayout?: (e: LayoutChangeEvent) => void;
+  labelTestID?: string;
 }
 
 export function Chip({
@@ -41,6 +47,11 @@ export function Chip({
   accessibilityLabel,
   interactive,
   numberOfLines,
+  onLayout,
+  onGradientLayout,
+  gradientTestID,
+  onLabelLayout,
+  labelTestID,
 }: ChipProps) {
   const { mode } = useTheme();
   const tokens = themeTokens[mode];
@@ -60,6 +71,8 @@ export function Chip({
         />
       )}
       <AppText
+        testID={labelTestID}
+        onLayout={onLabelLayout}
         variant="caption"
         tone={selected ? 'onGold' : undefined}
         style={[
@@ -180,6 +193,7 @@ export function Chip({
       <View
         testID={actualTestId}
         accessibilityLabel={accessibilityLabel}
+        onLayout={onLayout}
         style={outerContainerStyle}
       >
         {selected ? (
@@ -187,6 +201,8 @@ export function Chip({
             colors={tokens.goldGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
+            testID={gradientTestID}
+            onLayout={onGradientLayout}
             style={gradientStyle}
           >
             {innerContent}
@@ -203,6 +219,7 @@ export function Chip({
       testID={actualTestId}
       activeOpacity={0.75}
       onPress={onPress}
+      onLayout={onLayout}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
@@ -215,6 +232,8 @@ export function Chip({
           colors={tokens.goldGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
+          testID={gradientTestID}
+          onLayout={onGradientLayout}
           style={gradientStyle}
         >
           {innerContent}
@@ -249,7 +268,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    width: '100%',
     alignSelf: 'stretch',
   },
   label: {

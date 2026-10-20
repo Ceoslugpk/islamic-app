@@ -6,6 +6,7 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
+  LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +27,11 @@ export interface PrimaryButtonProps {
   testID?: string;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  onLayout?: (e: LayoutChangeEvent) => void;
+  onGradientLayout?: (e: LayoutChangeEvent) => void;
+  gradientTestID?: string;
+  onLabelLayout?: (e: LayoutChangeEvent) => void;
+  labelTestID?: string;
 }
 
 export function PrimaryButton({
@@ -41,6 +47,11 @@ export function PrimaryButton({
   testID = 'btn-primary',
   accessibilityLabel,
   accessibilityHint,
+  onLayout,
+  onGradientLayout,
+  gradientTestID,
+  onLabelLayout,
+  labelTestID,
 }: PrimaryButtonProps) {
   const { mode } = useTheme();
   const tokens = themeTokens[mode];
@@ -56,6 +67,7 @@ export function PrimaryButton({
       testID={testID}
       activeOpacity={0.8}
       onPress={onPress}
+      onLayout={onLayout}
       disabled={disabled || loading}
       hitSlop={buttonTokens.hitSlop}
       accessibilityRole="button"
@@ -72,6 +84,8 @@ export function PrimaryButton({
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
+        testID={gradientTestID}
+        onLayout={onGradientLayout}
         style={[styles.gradient, { borderRadius: radius }, Object.fromEntries(Object.entries(contentPadding).filter(([, value]) => value !== undefined))]}
       >
         {loading ? (
@@ -85,6 +99,8 @@ export function PrimaryButton({
               children
             ) : title ? (
               <AppText
+                testID={labelTestID}
+                onLayout={onLabelLayout}
                 variant="link"
                 tone="onGold"
                 style={[styles.text, textStyle]}
@@ -109,7 +125,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   gradient: {
-    width: '100%',
+    alignSelf: 'stretch',
     flexGrow: 1,
     minHeight: buttonTokens.minHeight,
     paddingHorizontal: 16,

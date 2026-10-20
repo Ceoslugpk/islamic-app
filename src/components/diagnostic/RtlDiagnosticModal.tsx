@@ -495,6 +495,48 @@ export function RtlDiagnosticModal({ visible, onClose }: RtlDiagnosticModalProps
                   </AppText>
                 </View>
 
+                {target.rectangles && Object.keys(target.rectangles).length > 0 && (
+                  <View style={{ marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: tokens.cardBorder }}>
+                    <AppText
+                      variant="caption"
+                      tone="faint"
+                      style={{ fontWeight: '700', marginBottom: 4, textAlign: isScreenRTL ? 'right' : 'left' }}
+                    >
+                      {t('Details')} · {diagT('Runtime Layout')} ({Object.keys(target.rectangles).length}):
+                    </AppText>
+                    {Object.entries(target.rectangles).map(([rName, r]) => (
+                      <View key={rName} style={[styles.infoRow, isScreenRTL && styles.infoRowRTL, { marginBottom: 2 }]}>
+                        <AppText variant="caption" tone="faint" style={[styles.infoLabel, { fontSize: 11, textAlign: isScreenRTL ? 'right' : 'left' }]}>
+                          {rName}:
+                        </AppText>
+                        <AppText
+                          variant="caption"
+                          style={[
+                            styles.infoValue,
+                            {
+                              fontSize: 11,
+                              color: r.isAvailable ? (r.edgeOverflow?.hasOverflow ? '#EF4444' : tokens.text) : tokens.textMuted,
+                              textAlign: isScreenRTL ? 'left' : 'right',
+                            },
+                          ]}
+                        >
+                          {r.isAvailable
+                            ? `${r.width}×${r.height}${r.x != null && r.y != null ? ` @(${r.x},${r.y})` : ''} (${
+                                r.frameUnavailable
+                                  ? diagT('Unavailable')
+                                  : r.edgeOverflow?.hasOverflow
+                                    ? ((r.edgeOverflow.overflowsLeft || r.edgeOverflow.overflowsRight)
+                                        ? diagT('Width Overflow')
+                                        : diagT('Height Overflow'))
+                                    : diagT('No Overflow (Bounded)')
+                              })`
+                            : t('Pending')}
+                        </AppText>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
                 {!isMeasured && (
                   <AppText
                     variant="caption"

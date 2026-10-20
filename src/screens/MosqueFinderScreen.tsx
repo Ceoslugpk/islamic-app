@@ -7,6 +7,7 @@ import {
   RefreshControl,
   Linking,
   useWindowDimensions,
+  LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '../components/ui/AppText';
@@ -15,8 +16,11 @@ import { useSettings } from '../lib/settings';
 import { useLocation } from '../lib/useLocation';
 import { Location as Loc } from '../lib/prayerTimes';
 import { fetchNearbyMosques, geocodeAreaNominatim, type MosqueItem } from '../lib/mosqueFinderApi';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SubHeader } from '../components/layout/SubHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
+import { DETAIL_PAD_BOTTOM } from '../components/layout/layout.constants';
+import { useAudioMiniPlayer } from '../lib/useAudioMiniPlayer';
 import { cardTokens } from '../theme/tokens';
 import {
   PremiumCard,
@@ -32,6 +36,7 @@ import { loadMosqueCache, saveMosqueCache } from '../lib/db';
 import { useSearchHistory } from '../lib/searchHistory';
 import { t } from '../lib/i18n';
 import { hScrollRTLStyle } from '../lib/rtl';
+import { isDiagnosticModeEnabled, useDiagnosticTarget } from '../lib/diagnostic';
 
 const RADIUS_OPTIONS = [5, 10, 20]; // in km
 
@@ -76,6 +81,12 @@ export default function MosqueFinderScreen({
     removeQuery: removeAreaQuery,
     clearHistory: clearAreaHistory,
   } = useSearchHistory('mosque-areas');
+
+  const isDiag = isDiagnosticModeEnabled();
+  const diag = useDiagnosticTarget('mosque-finder-search-controls', {
+    targetTestId: 'mosque-finder-search-controls',
+    parentTestId: 'mosque-finder-search-card',
+  });
 
   // Radius & Results
   const [radiusKm, setRadiusKm] = useState<number>(10);
@@ -334,13 +345,52 @@ export default function MosqueFinderScreen({
     ? t('GPS AUTO')
     : `${t('MANUAL')} (${settings.manualLocation.label || 'Makkah, Saudi Arabia'})`;
 
+  const insets = useSafeAreaInsets();
+  const { playback } = useAudioMiniPlayer();
   const isCompact = width < 440;
   const isWide = width >= 600;
   const paddingH = isCompact ? 16 : 20;
 
+  // Diagnostic layout tracking refs for hierarchy and coordinate frame resolution
+  const searchCardLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const searchFieldLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const findBtnLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const findBtnGradLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const listViewportLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const radiusRowLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const radiusPillsLayoutRef = useRef<{ width: number; height: number } | null>(null);
+  const lastSearchFieldEventRef = useRef<any>(null);
+  const lastTextInputEventRef = useRef<any>(null);
+  const lastFindBtnEventRef = useRef<any>(null);
+  const lastFindGradEventRef = useRef<any>(null);
+  const lastFindLabelEventRef = useRef<any>(null);
+  const lastRadiusSelEventRef = useRef<any>(null);
+  const lastRadiusUnselEventRef = useRef<any>(null);
+  const lastResultRowEventRef = useRef<any>(null);
+
+  // Invalidate on unmount
+  useEffect(() => {
+    if (!isDiag) return;
+    return () => {
+      diag.invalidateTarget('MosqueFinderScreen unmounted');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDiag]);
+
+  useEffect(() => {
+    if (isDiag && mosques.length === 0) {
+      diag.recordNamedUnavailable('resultRow', 'No search results present to measure representative row', {
+        testID: 'mosque-finder-result-row-0',
+        parentIdentity: 'mosque-finder-list-viewport',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDiag, mosques.length]);
+
   return (
     <DetailScreen
       style={{ backgroundColor: colors.bgBase }}
+      customPadBottom={DETAIL_PAD_BOTTOM(insets.bottom, Boolean(playback))}
       header={
         <SubHeader
           eyebrow={t('Tools')}
@@ -354,11 +404,89 @@ export default function MosqueFinderScreen({
       }
     >
       <View style={{ maxWidth: maxW, alignSelf: 'center', width: '100%', paddingHorizontal: paddingH }}>
-        <View style={styles.headerWrap}>
+        <View
+          testID={isDiag ? "mosque-finder-search-card" : undefined}
+          onLayout={isDiag ? (e: LayoutChangeEvent) => {
+            searchCardLayoutRef.current = e?.nativeEvent?.layout ?? null;
+            diag.recordNamed('card', e, {
+              testID: 'mosque-finder-search-card',
+              parentIdentity: 'detail-screen-root',
+              frameWidth: width,
+              frameHeight: undefined,
+              cardWidth: width,
+              ancestorCard: 'mosque-finder-search-card',
+            });
+            if (lastSearchFieldEventRef.current) {
+              diag.recordNamed('searchField', lastSearchFieldEventRef.current, {
+                testID: 'mosque-finder-search-field',
+                parentIdentity: 'mosque-finder-search-card',
+                frameWidth: searchCardLayoutRef.current?.width,
+                frameHeight: searchCardLayoutRef.current?.height,
+                cardWidth: searchCardLayoutRef.current?.width,
+                cardHeight: searchCardLayoutRef.current?.height,
+                ancestorCard: 'mosque-finder-search-card',
+              });
+            }
+            if (lastFindBtnEventRef.current) {
+              diag.recordNamed('button', lastFindBtnEventRef.current, {
+                testID: 'mosque-finder-find-btn',
+                parentIdentity: 'mosque-finder-search-card',
+                frameWidth: searchCardLayoutRef.current?.width,
+                frameHeight: searchCardLayoutRef.current?.height,
+                cardWidth: searchCardLayoutRef.current?.width,
+                cardHeight: searchCardLayoutRef.current?.height,
+                ancestorCard: 'mosque-finder-search-card',
+              });
+            }
+          } : undefined}
+          style={styles.headerWrap}
+        >
           {/* Area Search Input Bar */}
-          <View style={[styles.searchRow, isCompact && styles.searchRowCompact]}>
+          <View
+            testID={isDiag ? "mosque-finder-search-controls" : undefined}
+            onLayout={isDiag ? diag.targetProps.onLayout : undefined}
+            style={[styles.searchRow, isCompact && styles.searchRowCompact]}
+          >
             <View style={[styles.searchFieldWrap, isCompact && styles.searchFieldWrapCompact]}>
               <SearchField
+                testID={isDiag ? "mosque-finder-search-field" : "search"}
+                onLayout={isDiag ? (e: LayoutChangeEvent) => {
+                  lastSearchFieldEventRef.current = e;
+                  searchFieldLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                  diag.recordNamed('searchField', e, {
+                    testID: 'mosque-finder-search-field',
+                    parentIdentity: 'mosque-finder-search-controls',
+                    frameWidth: searchCardLayoutRef.current?.width,
+                    frameHeight: searchCardLayoutRef.current?.height,
+                    cardWidth: searchCardLayoutRef.current?.width,
+                    cardHeight: searchCardLayoutRef.current?.height,
+                    ancestorCard: 'mosque-finder-search-card',
+                  });
+                  if (lastTextInputEventRef.current) {
+                    diag.recordNamed('textInput', lastTextInputEventRef.current, {
+                      testID: 'mosque-finder-search-input',
+                      parentIdentity: 'mosque-finder-search-field',
+                      frameWidth: searchFieldLayoutRef.current?.width,
+                      frameHeight: searchFieldLayoutRef.current?.height,
+                      cardWidth: searchCardLayoutRef.current?.width,
+                      cardHeight: searchCardLayoutRef.current?.height,
+                      ancestorCard: 'mosque-finder-search-card',
+                    });
+                  }
+                } : undefined}
+                inputTestID={isDiag ? "mosque-finder-search-input" : undefined}
+                inputOnLayout={isDiag ? (e) => {
+                  lastTextInputEventRef.current = e;
+                  diag.recordNamed('textInput', e, {
+                    testID: 'mosque-finder-search-input',
+                    parentIdentity: 'mosque-finder-search-field',
+                    frameWidth: searchFieldLayoutRef.current?.width,
+                    frameHeight: searchFieldLayoutRef.current?.height,
+                    cardWidth: searchCardLayoutRef.current?.width,
+                    cardHeight: searchCardLayoutRef.current?.height,
+                    ancestorCard: 'mosque-finder-search-card',
+                  });
+                } : undefined}
                 value={areaInput}
                 onChangeText={setAreaInput}
                 placeholder={isCompact ? t('Search city or area...') : t("Search area or city, e.g. 'Dubai Marina' or 'Lahore'...")}
@@ -368,6 +496,69 @@ export default function MosqueFinderScreen({
               />
             </View>
             <PrimaryButton
+              testID={isDiag ? "mosque-finder-find-btn" : undefined}
+              onLayout={isDiag ? (e: LayoutChangeEvent) => {
+                lastFindBtnEventRef.current = e;
+                findBtnLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                diag.recordNamed('button', e, {
+                  testID: 'mosque-finder-find-btn',
+                  parentIdentity: 'mosque-finder-search-controls',
+                  frameWidth: searchCardLayoutRef.current?.width,
+                  frameHeight: searchCardLayoutRef.current?.height,
+                  cardWidth: searchCardLayoutRef.current?.width,
+                  cardHeight: searchCardLayoutRef.current?.height,
+                  ancestorCard: 'mosque-finder-search-card',
+                });
+                if (lastFindGradEventRef.current) {
+                  diag.recordNamed('buttonGradient', lastFindGradEventRef.current, {
+                    testID: 'mosque-finder-find-btn-gradient',
+                    parentIdentity: 'mosque-finder-find-btn',
+                    frameWidth: findBtnLayoutRef.current?.width,
+                    frameHeight: findBtnLayoutRef.current?.height,
+                    cardWidth: searchCardLayoutRef.current?.width,
+                    cardHeight: searchCardLayoutRef.current?.height,
+                    ancestorCard: 'mosque-finder-search-card',
+                  });
+                }
+              } : undefined}
+              onGradientLayout={isDiag ? (e) => {
+                lastFindGradEventRef.current = e;
+                findBtnGradLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                diag.recordNamed('buttonGradient', e, {
+                  testID: 'mosque-finder-find-btn-gradient',
+                  parentIdentity: 'mosque-finder-find-btn',
+                  frameWidth: findBtnLayoutRef.current?.width,
+                  frameHeight: findBtnLayoutRef.current?.height,
+                  cardWidth: searchCardLayoutRef.current?.width,
+                  cardHeight: searchCardLayoutRef.current?.height,
+                  ancestorCard: 'mosque-finder-search-card',
+                });
+                if (lastFindLabelEventRef.current) {
+                  diag.recordNamed('buttonLabel', lastFindLabelEventRef.current, {
+                    testID: 'mosque-finder-find-btn-label',
+                    parentIdentity: 'mosque-finder-find-btn-gradient',
+                    frameWidth: findBtnGradLayoutRef.current?.width,
+                    frameHeight: findBtnGradLayoutRef.current?.height,
+                    cardWidth: searchCardLayoutRef.current?.width,
+                    cardHeight: searchCardLayoutRef.current?.height,
+                    ancestorCard: 'mosque-finder-search-card',
+                  });
+                }
+              } : undefined}
+              gradientTestID={isDiag ? "mosque-finder-find-btn-gradient" : undefined}
+              onLabelLayout={isDiag ? (e) => {
+                lastFindLabelEventRef.current = e;
+                diag.recordNamed('buttonLabel', e, {
+                  testID: 'mosque-finder-find-btn-label',
+                  parentIdentity: 'mosque-finder-find-btn-gradient',
+                  frameWidth: findBtnGradLayoutRef.current?.width,
+                  frameHeight: findBtnGradLayoutRef.current?.height,
+                  cardWidth: searchCardLayoutRef.current?.width,
+                  cardHeight: searchCardLayoutRef.current?.height,
+                  ancestorCard: 'mosque-finder-search-card',
+                });
+              } : undefined}
+              labelTestID={isDiag ? "mosque-finder-find-btn-label" : undefined}
               title={searchingArea ? '' : t('Find')}
               icon={searchingArea ? undefined : 'search'}
               loading={searchingArea}
@@ -426,6 +617,24 @@ export default function MosqueFinderScreen({
 
       <DetailScreen.FlatList
         style={{ flex: 1 }}
+        testID={isDiag ? "mosque-finder-list-viewport" : undefined}
+        onLayout={isDiag ? (e: LayoutChangeEvent) => {
+          listViewportLayoutRef.current = e?.nativeEvent?.layout ?? null;
+          diag.recordNamed('listViewport', e, {
+            testID: 'mosque-finder-list-viewport',
+            parentIdentity: 'detail-screen-root',
+            frameWidth: width,
+            frameHeight: undefined,
+          });
+          if (lastResultRowEventRef.current) {
+            diag.recordNamed('resultRow', lastResultRowEventRef.current, {
+              testID: 'mosque-finder-result-row-0',
+              parentIdentity: 'mosque-finder-list-viewport',
+              frameWidth: Math.max(0, (listViewportLayoutRef.current?.width ?? 0) - paddingH * 2),
+              frameHeight: listViewportLayoutRef.current?.height,
+            });
+          }
+        } : undefined}
         key={isWide ? 'mosques-grid' : 'mosques-list'}
         numColumns={isWide ? 2 : 1}
         data={mosques}
@@ -581,16 +790,98 @@ export default function MosqueFinderScreen({
 
               <Hairline style={styles.controlDivider} />
 
-              <View style={styles.radiusRow}>
+              <View
+                style={styles.radiusRow}
+                onLayout={isDiag ? (e: LayoutChangeEvent) => {
+                  radiusRowLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                  if (lastRadiusSelEventRef.current) {
+                    diag.recordNamed('radiusSelected', lastRadiusSelEventRef.current, {
+                      testID: 'mosque-finder-radius-chip-selected',
+                      parentIdentity: 'mosque-finder-radius-pills',
+                      frameWidth: radiusPillsLayoutRef.current?.width,
+                      frameHeight: radiusPillsLayoutRef.current?.height,
+                      cardWidth: searchCardLayoutRef.current?.width,
+                      cardHeight: searchCardLayoutRef.current?.height,
+                      ancestorCard: 'mosque-finder-search-card',
+                    });
+                  }
+                  if (lastRadiusUnselEventRef.current) {
+                    diag.recordNamed('radiusUnselected', lastRadiusUnselEventRef.current, {
+                      testID: 'mosque-finder-radius-chip-unselected',
+                      parentIdentity: 'mosque-finder-radius-pills',
+                      frameWidth: radiusPillsLayoutRef.current?.width,
+                      frameHeight: radiusPillsLayoutRef.current?.height,
+                      cardWidth: searchCardLayoutRef.current?.width,
+                      cardHeight: searchCardLayoutRef.current?.height,
+                      ancestorCard: 'mosque-finder-search-card',
+                    });
+                  }
+                } : undefined}
+              >
                 <AppText variant="caption" tone="faint" style={styles.radiusLabel}>
                   {t('Search Radius:')}
                 </AppText>
-                <View style={styles.radiusPills}>
+                <View
+                  testID={isDiag ? "mosque-finder-radius-pills" : undefined}
+                  style={styles.radiusPills}
+                  onLayout={isDiag ? (e: LayoutChangeEvent) => {
+                    radiusPillsLayoutRef.current = e?.nativeEvent?.layout ?? null;
+                    if (lastRadiusSelEventRef.current) {
+                      diag.recordNamed('radiusSelected', lastRadiusSelEventRef.current, {
+                        testID: 'mosque-finder-radius-chip-selected',
+                        parentIdentity: 'mosque-finder-radius-pills',
+                        frameWidth: radiusPillsLayoutRef.current?.width,
+                        frameHeight: radiusPillsLayoutRef.current?.height,
+                        cardWidth: searchCardLayoutRef.current?.width,
+                        cardHeight: searchCardLayoutRef.current?.height,
+                        ancestorCard: 'mosque-finder-search-card',
+                      });
+                    }
+                    if (lastRadiusUnselEventRef.current) {
+                      diag.recordNamed('radiusUnselected', lastRadiusUnselEventRef.current, {
+                        testID: 'mosque-finder-radius-chip-unselected',
+                        parentIdentity: 'mosque-finder-radius-pills',
+                        frameWidth: radiusPillsLayoutRef.current?.width,
+                        frameHeight: radiusPillsLayoutRef.current?.height,
+                        cardWidth: searchCardLayoutRef.current?.width,
+                        cardHeight: searchCardLayoutRef.current?.height,
+                        ancestorCard: 'mosque-finder-search-card',
+                      });
+                    }
+                  } : undefined}
+                >
                   {RADIUS_OPTIONS.map((r) => {
                     const isSelected = radiusKm === r;
+                    const isRepresentativeUnselected = !isSelected && r === (radiusKm === 5 ? 10 : 5);
                     return (
                       <Chip
                         key={r}
+                        testID={isDiag ? (isSelected ? 'mosque-finder-radius-chip-selected' : isRepresentativeUnselected ? 'mosque-finder-radius-chip-unselected' : `mosque-finder-radius-chip-${r}`) : undefined}
+                        onLayout={isDiag ? (e: LayoutChangeEvent) => {
+                          if (isSelected) {
+                            lastRadiusSelEventRef.current = e;
+                            diag.recordNamed('radiusSelected', e, {
+                              testID: 'mosque-finder-radius-chip-selected',
+                              parentIdentity: 'mosque-finder-radius-pills',
+                              frameWidth: radiusPillsLayoutRef.current?.width,
+                              frameHeight: radiusPillsLayoutRef.current?.height,
+                              cardWidth: searchCardLayoutRef.current?.width,
+                              cardHeight: searchCardLayoutRef.current?.height,
+                              ancestorCard: 'mosque-finder-search-card',
+                            });
+                          } else if (isRepresentativeUnselected) {
+                            lastRadiusUnselEventRef.current = e;
+                            diag.recordNamed('radiusUnselected', e, {
+                              testID: 'mosque-finder-radius-chip-unselected',
+                              parentIdentity: 'mosque-finder-radius-pills',
+                              frameWidth: radiusPillsLayoutRef.current?.width,
+                              frameHeight: radiusPillsLayoutRef.current?.height,
+                              cardWidth: searchCardLayoutRef.current?.width,
+                              cardHeight: searchCardLayoutRef.current?.height,
+                              ancestorCard: 'mosque-finder-search-card',
+                            });
+                          }
+                        } : undefined}
                         label={`${r} km`}
                         selected={isSelected}
                         onPress={() => setRadiusKm(r)}
@@ -615,7 +906,19 @@ export default function MosqueFinderScreen({
           </View>
         }
         renderItem={({ item, index }) => (
-          <View style={[styles.itemWrap, isWide && styles.itemCell]}>
+          <View
+            style={[styles.itemWrap, isWide && styles.itemCell]}
+            testID={isDiag && index === 0 ? "mosque-finder-result-row-0" : undefined}
+            onLayout={isDiag && index === 0 ? (e) => {
+              lastResultRowEventRef.current = e;
+              diag.recordNamed('resultRow', e, {
+                testID: 'mosque-finder-result-row-0',
+                parentIdentity: 'mosque-finder-list-viewport',
+                frameWidth: listViewportLayoutRef.current?.width,
+                frameHeight: listViewportLayoutRef.current?.height,
+              });
+            } : undefined}
+          >
             <PremiumCard
               style={styles.mosqueCard}
               borderRadius={cardTokens.borderRadius}
@@ -806,6 +1109,7 @@ const styles = StyleSheet.create({
   },
   searchButton: {
     minHeight: 44,
+    minWidth: 84,
     paddingHorizontal: 16,
   },
   searchButtonCompact: {
@@ -1063,6 +1367,8 @@ const styles = StyleSheet.create({
   },
   radiusLabel: {
     fontSize: 12.5,
+    flexShrink: 1,
+    minWidth: 0,
   },
   radiusPills: {
     flexDirection: 'row',
