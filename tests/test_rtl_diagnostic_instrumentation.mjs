@@ -352,22 +352,22 @@ const packageJson = JSON.parse(read('package.json'));
 const appJson = JSON.parse(read('app.json')).expo;
 const buildGradle = read('android/app/build.gradle');
 
-assert.equal(packageJson.version, '1.1.90', 'package.json version must be 1.1.90');
-assert.equal(appJson.version, '1.1.90', 'app.json version must be 1.1.90');
-assert.equal(appJson.android.versionCode, 109, 'app.json versionCode must be 109');
+assert.equal(packageJson.version, '1.1.91', 'package.json version must be 1.1.91');
+assert.equal(appJson.version, '1.1.91', 'app.json version must be 1.1.91');
+assert.equal(appJson.android.versionCode, 110, 'app.json versionCode must be 110');
 assert.equal(appJson.android.package, 'com.qashi.islamic', 'package ID must remain com.qashi.islamic');
 
-assert.ok(buildGradle.includes('versionCode 109'), 'android/app/build.gradle versionCode must be 109');
-assert.ok(buildGradle.includes('versionName "1.1.90"'), 'android/app/build.gradle versionName must be 1.1.90');
+assert.ok(buildGradle.includes('versionCode 110'), 'android/app/build.gradle versionCode must be 110');
+assert.ok(buildGradle.includes('versionName "1.1.91"'), 'android/app/build.gradle versionName must be 1.1.91');
 assert.ok(buildGradle.includes("applicationId 'com.qashi.islamic'"), 'applicationId must remain com.qashi.islamic');
 
-assert.equal(DIAGNOSTIC_BUILD_ID, 'RTL-STRUCT-1.1.90-PILOT-C', 'DIAGNOSTIC_BUILD_ID must be RTL-STRUCT-1.1.90-PILOT-C');
-assert.equal(DIAGNOSTIC_VERSION, '1.1.90', 'DIAGNOSTIC_VERSION must be 1.1.90');
-assert.equal(DIAGNOSTIC_VERSION_CODE, 109, 'DIAGNOSTIC_VERSION_CODE must be 108');
+assert.equal(DIAGNOSTIC_BUILD_ID, 'RTL-STRUCT-1.1.91-PROBE', 'DIAGNOSTIC_BUILD_ID must be RTL-STRUCT-1.1.91-PROBE');
+assert.equal(DIAGNOSTIC_VERSION, '1.1.91', 'DIAGNOSTIC_VERSION must be 1.1.91');
+assert.equal(DIAGNOSTIC_VERSION_CODE, 110, 'DIAGNOSTIC_VERSION_CODE must be 110');
 
 // Verify deterministic build command marker
 assert.ok(
-  DIAGNOSTIC_BUILD_COMMAND.includes('cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.90-PILOT-C'),
+  DIAGNOSTIC_BUILD_COMMAND.includes('cd android && EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.91-PROBE'),
   'DIAGNOSTIC_BUILD_COMMAND must propagate EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID after cd android'
 );
 assert.ok(
@@ -376,7 +376,7 @@ assert.ok(
   'ORDINARY_RELEASE_BUILD_COMMAND must not include diagnostic flags'
 );
 
-console.log('  ✓ Version 1.1.90, versionCode 109, build ID, and Gradle command flag propagation verified');
+console.log('  ✓ Version 1.1.91, versionCode 110, build ID, and Gradle command flag propagation verified');
 
 // -----------------------------------------------------------------------------
 // 4. Actual Rendered Style Probes & Native RTL Inspection
@@ -459,6 +459,8 @@ const diagI18nModule = loadTsModule('src/lib/diagnostic/diagnosticI18n.ts', {
   '../i18n': mockI18n,
 });
 
+const diagScreensModule = loadTsModule('src/lib/diagnostic/diagnosticScreens.ts', {});
+
 const diagStateModule = loadTsModule('src/lib/diagnostic/diagnosticState.ts', {
   'react-native': mockReactNative,
   'expo-file-system/legacy': mockFileSystem,
@@ -466,6 +468,7 @@ const diagStateModule = loadTsModule('src/lib/diagnostic/diagnosticState.ts', {
   '../i18n': mockI18n,
   './diagnosticConfig': diagConfig,
   './diagnosticI18n': diagI18nModule,
+  './diagnosticScreens': diagScreensModule,
 });
 
 const {
@@ -581,8 +584,8 @@ recordTargetLayout(
 const report = buildDiagnosticReport();
 assert.ok(report.timestamp, 'Report must contain timestamp');
 assert.equal(report.buildId, DIAGNOSTIC_BUILD_ID);
-assert.equal(report.version, '1.1.90');
-assert.equal(report.versionCode, 109);
+assert.equal(report.version, '1.1.91');
+assert.equal(report.versionCode, 110);
 assert.equal(report.i18nManagerIsRTL, true, 'Report must capture native I18nManager.isRTL');
 
 const quranReportItem = report.measurements.find((m) => m.componentId === 'quran-landing-surah-card');

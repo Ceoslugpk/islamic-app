@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, fontRoles } from '../../theme/tokens';
+import { useAutoProbe } from '../../lib/diagnostic';
 import { AppText } from './AppText';
 
 export interface ChipProps {
@@ -47,7 +48,7 @@ export function Chip({
   accessibilityLabel,
   interactive,
   numberOfLines,
-  onLayout,
+  onLayout: onLayoutProp,
   onGradientLayout,
   gradientTestID,
   onLabelLayout,
@@ -59,6 +60,14 @@ export function Chip({
   const actualTestId = testID || (selected ? 'chip-selected' : 'chip');
   const textColor = selected ? tokens.onGold : tokens.heading;
   const isInteractive = interactive !== undefined ? interactive : typeof onPress === 'function';
+
+  const autoProbe = useAutoProbe(actualTestId, 'Chip');
+  const onLayout = autoProbe.onLayout
+    ? (e: LayoutChangeEvent) => {
+        autoProbe.onLayout?.(e);
+        onLayoutProp?.(e);
+      }
+    : onLayoutProp;
 
   const innerContent = (
     <>

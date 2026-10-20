@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
 import { cardTokens, themeTokens } from '../../theme/tokens';
+import { useAutoProbe } from '../../lib/diagnostic';
 
 export interface PremiumCardProps {
   children?: React.ReactNode;
@@ -61,6 +62,14 @@ export function PremiumCard({
   const finalBorderColor = borderColor || currentTokens.cardBorder;
   const colors = gradientColors || currentTokens.cardGradient;
 
+  const autoProbe = useAutoProbe(testID, 'PremiumCard');
+  const combinedOnLayout = autoProbe.onLayout
+    ? (e: LayoutChangeEvent) => {
+        autoProbe.onLayout?.(e);
+        onLayout?.(e);
+      }
+    : onLayout;
+
   const cardContent = (
     <View
       style={[
@@ -109,7 +118,7 @@ export function PremiumCard({
         testID={testID}
         activeOpacity={activeOpacity}
         onPress={onPress}
-        onLayout={onLayout}
+        onLayout={combinedOnLayout}
         style={containerStyle}
         accessibilityRole={accessibilityRole || 'button'}
         accessibilityLabel={accessibilityLabel}
@@ -122,7 +131,7 @@ export function PremiumCard({
   return (
     <View
       testID={testID}
-      onLayout={onLayout}
+      onLayout={combinedOnLayout}
       style={containerStyle}
       accessibilityRole={accessibilityRole}
       accessibilityLabel={accessibilityLabel}

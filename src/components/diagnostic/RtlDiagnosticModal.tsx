@@ -30,10 +30,12 @@ import {
 } from '../../lib/diagnostic/diagnosticConfig';
 import {
   getTargetMeasurements,
+  getAutoProbes,
+  KNOWN_SCREENS,
   addDiagnosticListener,
   buildDiagnosticReport,
   exportDiagnosticReport,
-} from '../../lib/diagnostic/diagnosticState';
+} from '../../lib/diagnostic';
 
 interface RtlDiagnosticModalProps {
   visible: boolean;
@@ -58,6 +60,26 @@ export function RtlDiagnosticModal({ visible, onClose }: RtlDiagnosticModalProps
   }, [visible]);
 
   const measurements = getTargetMeasurements();
+  const probes = getAutoProbes();
+
+  const visitedSet = new Set<string>();
+  for (const p of probes) {
+    if (p.screen) {
+      visitedSet.add(p.screen);
+    }
+  }
+  const visitedScreens = Array.from(visitedSet).sort();
+  const unvisitedScreens = KNOWN_SCREENS.filter((s) => !visitedSet.has(s)).sort();
+  const [copiedProbes, setCopiedProbes] = useState(false);
+
+  const handleCopyProbes = useCallback(() => {
+    try {
+      const currentProbes = getAutoProbes();
+      Clipboard.setString(JSON.stringify(currentProbes, null, 2));
+      setCopiedProbes(true);
+      setTimeout(() => setCopiedProbes(false), 2500);
+    } catch {}
+  }, []);
 
   const handleExport = useCallback(async () => {
     setExportStatus({ state: 'busy' });
@@ -561,6 +583,219 @@ export function RtlDiagnosticModal({ visible, onClose }: RtlDiagnosticModalProps
             );
           })}
 
+          {/* Screen Coverage Section */}
+          <AppText
+            variant="eyebrow"
+            highlight
+            style={[styles.groupHeading, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+          >
+            {diagT('Screen Coverage')} ({visitedScreens.length} / {KNOWN_SCREENS.length})
+          </AppText>
+
+          <PremiumCard
+            style={[styles.card, getCardShadow(mode)]}
+            padded
+            testID="diag-screen-coverage-card"
+          >
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText
+                variant="caption"
+                tone="faint"
+                style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+              >
+                {diagT('Visited')} ({visitedScreens.length}):
+              </AppText>
+              <AppText
+                testID="diag-visited-count"
+                variant="caption"
+                style={[
+                  styles.infoValue,
+                  {
+                    color: visitedScreens.length > 0 ? tokens.accent : tokens.textMuted,
+                    fontWeight: '700',
+                    textAlign: isScreenRTL ? 'left' : 'right',
+                  },
+                ]}
+              >
+                {visitedScreens.length}
+              </AppText>
+            </View>
+            <AppText
+              testID="diag-visited-list"
+              variant="caption"
+              tone="faint"
+              style={[
+                styles.screenListText,
+                { textAlign: isScreenRTL ? 'right' : 'left' },
+              ]}
+            >
+              {visitedScreens.length > 0 ? visitedScreens.join(', ') : '—'}
+            </AppText>
+
+            <View style={[styles.divider, { backgroundColor: tokens.cardBorder }]} />
+
+            <View style={[styles.infoRow, isScreenRTL && styles.infoRowRTL]}>
+              <AppText
+                variant="caption"
+                tone="faint"
+                style={[styles.infoLabel, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+              >
+                {diagT('Unvisited')} ({unvisitedScreens.length}):
+              </AppText>
+              <AppText
+                testID="diag-unvisited-count"
+                variant="caption"
+                style={[
+                  styles.infoValue,
+                  {
+                    color: tokens.textMuted,
+                    fontWeight: '700',
+                    textAlign: isScreenRTL ? 'left' : 'right',
+                  },
+                ]}
+              >
+                {unvisitedScreens.length}
+              </AppText>
+            </View>
+            <AppText
+              testID="diag-unvisited-list"
+              variant="caption"
+              tone="faint"
+              style={[
+                styles.screenListText,
+                { textAlign: isScreenRTL ? 'right' : 'left' },
+              ]}
+            >
+              {unvisitedScreens.length > 0 ? unvisitedScreens.join(', ') : '—'}
+            </AppText>
+          </PremiumCard>
+
+          {/* Automatic Primitive Probes Section */}
+          <AppText
+            variant="eyebrow"
+            highlight
+            style={[styles.groupHeading, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+          >
+            {diagT('Probes')} ({probes.length})
+          </AppText>
+
+          <PremiumCard
+            style={[styles.card, getCardShadow(mode)]}
+            padded
+            testID="diag-probes-card"
+          >
+            {probes.length === 0 ? (
+              <AppText
+                testID="diag-probes-empty"
+                variant="caption"
+                tone="faint"
+                style={[styles.pendingHint, { textAlign: isScreenRTL ? 'right' : 'left' }]}
+              >
+                {diagT('No primitive probes recorded yet.')}
+              </AppText>
+            ) : (
+              <>
+                <View style={[styles.probesSummaryRow, isScreenRTL && styles.infoRowRTL]}>
+                  <AppText
+                    testID="diag-probes-count"
+                    variant="caption"
+                    style={[styles.infoLabel, { fontWeight: '700', textAlign: isScreenRTL ? 'right' : 'left' }]}
+                  >
+                    {probes.length} {diagT('Probes')}
+                  </AppText>
+                  <TouchableOpacity
+                    testID="diag-copy-probes-btn"
+                    onPress={handleCopyProbes}
+                    style={[styles.probeActionButton, { borderColor: tokens.cardBorder, backgroundColor: tokens.bgRaised }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${t('Copy')} ${diagT('Probes')}`}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons
+                      name={copiedProbes ? 'checkmark' : 'copy-outline'}
+                      size={16}
+                      color={tokens.accent}
+                    />
+                    <AppText
+                      variant="caption"
+                      style={{ color: tokens.accent, fontWeight: '700', marginStart: 6 }}
+                    >
+                      {copiedProbes ? t('Copied') : `${t('Copy')} ${diagT('Probes')}`}
+                    </AppText>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.probesList}>
+                  {probes.map((probe) => {
+                    const hasOverflow = Boolean(probe.overflow?.hasOverflow);
+                    const isUnknown = probe.overflow === null;
+                    const statusColor = hasOverflow
+                      ? '#EF4444'
+                      : isUnknown
+                      ? tokens.textMuted
+                      : '#10B981';
+                    const statusBg = hasOverflow
+                      ? '#EF444418'
+                      : isUnknown
+                      ? tokens.cardBorder
+                      : '#10B98118';
+                    const statusText = hasOverflow
+                      ? (probe.overflow?.overflowsLeft || probe.overflow?.overflowsRight
+                          ? diagT('Width Overflow')
+                          : diagT('Height Overflow'))
+                      : isUnknown
+                      ? diagT('Unknown')
+                      : diagT('No overflow');
+
+                    return (
+                      <View
+                        key={probe.id}
+                        testID={`diag-probe-${probe.id}`}
+                        style={[
+                          styles.probeItem,
+                          { borderBottomColor: tokens.cardBorder },
+                          isScreenRTL && styles.targetHeaderRTL,
+                        ]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <AppText
+                            variant="caption"
+                            style={[
+                              styles.probeTitle,
+                              { color: tokens.text, textAlign: isScreenRTL ? 'right' : 'left' },
+                            ]}
+                          >
+                            {probe.id}
+                          </AppText>
+                          <AppText
+                            variant="caption"
+                            tone="faint"
+                            style={{ fontSize: 10, textAlign: isScreenRTL ? 'right' : 'left' }}
+                          >
+                            {probe.screen || 'Unknown'} · {probe.kind || 'primitive'} · {probe.width}×{probe.height}
+                            {probe.staleAfterUnmount ? ` · ${diagT('Stale')}` : ''}
+                          </AppText>
+                        </View>
+                        <View style={[styles.statusPill, { backgroundColor: statusBg }]}>
+                          <AppText
+                            variant="caption"
+                            style={{
+                              color: statusColor,
+                              fontWeight: '700',
+                              fontSize: 10,
+                            }}
+                          >
+                            {statusText}
+                          </AppText>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              </>
+            )}
+          </PremiumCard>
+
           {/* Export & Actions Section */}
           <PremiumCard
             style={[styles.card, getCardShadow(mode), { marginTop: 12 }]}
@@ -894,5 +1129,42 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 8,
     borderRadius: 6,
+  },
+  screenListText: {
+    marginTop: 4,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  probesSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  probeActionButton: {
+    minHeight: 44,
+    minWidth: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  probesList: {
+    marginTop: 4,
+  },
+  probeItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+  },
+  probeTitle: {
+    fontWeight: '700',
+    fontSize: 12,
   },
 });

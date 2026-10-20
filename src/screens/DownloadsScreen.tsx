@@ -94,7 +94,6 @@ function DownloadsScreen({
   const emptyCardLayoutRef = useRef<{ width: number; height: number } | null>(null);
   const emptyBtnLayoutRef = useRef<{ width: number; height: number } | null>(null);
   const emptyGradLayoutRef = useRef<{ width: number; height: number } | null>(null);
-  const lastEmptyBtnEventRef = useRef<any>(null);
   const lastEmptyGradEventRef = useRef<any>(null);
   const lastEmptyLabelEventRef = useRef<any>(null);
 
@@ -459,17 +458,6 @@ function DownloadsScreen({
                   cardWidth: width,
                   ancestorCard: 'downloads-empty-cta-card',
                 });
-                if (lastEmptyBtnEventRef.current) {
-                  diag.recordNamed('button', lastEmptyBtnEventRef.current, {
-                    testID: 'downloads-empty-cta-btn',
-                    parentIdentity: 'downloads-empty-cta-card',
-                    frameWidth: emptyCardLayoutRef.current?.width,
-                    frameHeight: emptyCardLayoutRef.current?.height,
-                    cardWidth: emptyCardLayoutRef.current?.width,
-                    cardHeight: emptyCardLayoutRef.current?.height,
-                    ancestorCard: 'downloads-empty-cta-card',
-                  });
-                }
               } : undefined}
             >
               <View
@@ -499,7 +487,6 @@ function DownloadsScreen({
                   <PrimaryButton
                     testID={isDiag ? "downloads-empty-cta-btn" : undefined}
                     onLayout={isDiag ? (e: LayoutChangeEvent) => {
-                      lastEmptyBtnEventRef.current = e;
                       emptyBtnLayoutRef.current = e?.nativeEvent?.layout ?? null;
                       diag.recordNamed('button', e, {
                         testID: 'downloads-empty-cta-btn',

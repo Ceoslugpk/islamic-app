@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, buttonTokens, fontRoles } from '../../theme/tokens';
+import { useAutoProbe } from '../../lib/diagnostic';
 import { AppText } from './AppText';
 
 export interface PrimaryButtonProps {
@@ -47,7 +48,7 @@ export function PrimaryButton({
   testID = 'btn-primary',
   accessibilityLabel,
   accessibilityHint,
-  onLayout,
+  onLayout: onLayoutProp,
   onGradientLayout,
   gradientTestID,
   onLabelLayout,
@@ -61,6 +62,13 @@ export function PrimaryButton({
   const { padding, paddingHorizontal, paddingVertical, paddingStart, paddingEnd, paddingTop, paddingBottom, paddingLeft, paddingRight, ...outerStyle } = StyleSheet.flatten(style) ?? {};
   const contentPadding = { padding, paddingHorizontal, paddingVertical, paddingStart, paddingEnd, paddingTop, paddingBottom, paddingLeft, paddingRight };
   const radius = outerStyle.borderRadius ?? buttonTokens.borderRadius;
+  const autoProbe = useAutoProbe(testID, 'PrimaryButton');
+  const onLayout = autoProbe.onLayout
+    ? (e: LayoutChangeEvent) => {
+        autoProbe.onLayout?.(e);
+        onLayoutProp?.(e);
+      }
+    : onLayoutProp;
 
   return (
     <TouchableOpacity

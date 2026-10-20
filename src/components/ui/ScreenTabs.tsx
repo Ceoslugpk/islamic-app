@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, fontRoles } from '../../theme/tokens';
 import { hScrollRTLStyle } from '../../lib/rtl';
+import { useAutoProbe } from '../../lib/diagnostic';
 import { AppText } from './AppText';
 
 export interface TabItem {
@@ -28,6 +29,94 @@ export interface ScreenTabsProps {
   testID?: string;
 }
 
+interface ScreenTabItemProps {
+  tab: TabItem;
+  isSelected: boolean;
+  scrollable: boolean;
+  onChange: (id: string) => void;
+  tokens: any;
+}
+
+function ScreenTabItem({
+  tab,
+  isSelected,
+  scrollable,
+  onChange,
+  tokens,
+}: ScreenTabItemProps) {
+  const tabTestId = isSelected ? 'tab-selected' : `tab-${tab.id}`;
+  const autoProbe = useAutoProbe(tabTestId, 'ScreenTab');
+
+  const innerContent = (
+    <>
+      <AppText
+        variant="caption"
+        tone={isSelected ? 'onGold' : undefined}
+        style={[
+          styles.tabText,
+          {
+            fontFamily: isSelected ? fontRoles.uiSemiBold : fontRoles.ui,
+          },
+        ]}
+        numberOfLines={scrollable ? 1 : 2}
+      >
+        {tab.label}
+      </AppText>
+      {tab.badge !== undefined && (
+        <View
+          style={[
+            styles.badge,
+            {
+              backgroundColor: isSelected ? tokens.onGold : tokens.cardBorder,
+            },
+          ]}
+        >
+          <AppText
+            variant="caption"
+            highlight={isSelected}
+            style={styles.badgeText}
+          >
+            {tab.badge}
+          </AppText>
+        </View>
+      )}
+    </>
+  );
+
+  return (
+    <TouchableOpacity
+      key={tab.id}
+      testID={tabTestId}
+      onLayout={autoProbe.onLayout}
+      activeOpacity={0.8}
+      onPress={() => onChange(tab.id)}
+      accessibilityRole="tab"
+      role="tab"
+      accessibilityState={{ selected: isSelected }}
+      aria-selected={isSelected}
+      hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
+      style={[
+        styles.tabItem,
+        scrollable && styles.tabScrollable,
+        isSelected && styles.tabItemSelected,
+      ]}
+    >
+      {isSelected ? (
+        <LinearGradient
+          colors={tokens.goldGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.tabGradient, scrollable && styles.tabGradientScrollable]}
+        >
+          {innerContent}
+        </LinearGradient>
+      ) : (
+        innerContent
+      )}
+    </TouchableOpacity>
+  );
+}
+
 export function ScreenTabs({
   tabs,
   activeTab,
@@ -38,78 +127,16 @@ export function ScreenTabs({
 }: ScreenTabsProps) {
   const { mode } = useTheme();
   const tokens = themeTokens[mode];
-  const tabElements = tabs.map((tab) => {
-    const isSelected = tab.id === activeTab;
-    const tabTestId = isSelected ? 'tab-selected' : `tab-${tab.id}`;
-
-    const innerContent = (
-      <>
-        <AppText
-          variant="caption"
-          tone={isSelected ? 'onGold' : undefined}
-          style={[
-            styles.tabText,
-            {
-              fontFamily: isSelected ? fontRoles.uiSemiBold : fontRoles.ui,
-            },
-          ]}
-          numberOfLines={scrollable ? 1 : 2}
-        >
-          {tab.label}
-        </AppText>
-        {tab.badge !== undefined && (
-          <View
-            style={[
-              styles.badge,
-              {
-                backgroundColor: isSelected ? tokens.onGold : tokens.cardBorder,
-              },
-            ]}
-          >
-            <AppText
-              variant="caption"
-              highlight={isSelected}
-              style={styles.badgeText}
-            >
-              {tab.badge}
-            </AppText>
-          </View>
-        )}
-      </>
-    );
-
-    return (
-      <TouchableOpacity
-        key={tab.id}
-        testID={tabTestId}
-        activeOpacity={0.8}
-        onPress={() => onChange(tab.id)}
-        accessibilityRole="tab"
-        role="tab"
-        accessibilityState={{ selected: isSelected }}
-        aria-selected={isSelected}
-        hitSlop={{ top: 6, bottom: 6, left: 4, right: 4 }}
-        style={[
-          styles.tabItem,
-          scrollable && styles.tabScrollable,
-          isSelected && styles.tabItemSelected,
-        ]}
-      >
-        {isSelected ? (
-          <LinearGradient
-            colors={tokens.goldGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={[styles.tabGradient, scrollable && styles.tabGradientScrollable]}
-          >
-            {innerContent}
-          </LinearGradient>
-        ) : (
-          innerContent
-        )}
-      </TouchableOpacity>
-    );
-  });
+  const tabElements = tabs.map((tab) => (
+    <ScreenTabItem
+      key={tab.id}
+      tab={tab}
+      isSelected={tab.id === activeTab}
+      scrollable={scrollable}
+      onChange={onChange}
+      tokens={tokens}
+    />
+  ));
 
   const containerContent = (
     <View

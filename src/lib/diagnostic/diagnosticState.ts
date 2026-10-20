@@ -1,3 +1,4 @@
+import { useState, useEffect, useCallback } from 'react';
 import { I18nManager, Platform, Share, LayoutChangeEvent, StyleSheet } from 'react-native';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -12,6 +13,8 @@ import {
   DIAGNOSTIC_VERSION_CODE,
   isDiagnosticModeEnabled,
 } from './diagnosticConfig';
+import { useDiagScreen } from './diagnosticScreenContext';
+import { KNOWN_SCREENS } from './diagnosticScreens';
 
 export type DiagnosticTargetId =
   | 'quran-landing-surah-card'
@@ -178,6 +181,56 @@ export interface DiagnosticMeasurementReportItem {
   nativeIsRTL: boolean;
 }
 
+export interface AutoProbeRecord {
+  id: string;
+  kind: string;
+  screen: string;
+  x: number | null;
+  y: number | null;
+  width: number | null;
+  height: number | null;
+  frameWidth?: number | null;
+  frameHeight?: number | null;
+  measuredAt: string | null;
+  staleAfterUnmount: boolean;
+  staleReason?: string;
+  overflow: {
+    status: OverflowStatus;
+    reason?: string;
+    hasOverflow: boolean;
+    overflowsLeft?: boolean;
+    overflowsTop?: boolean;
+    overflowsRight?: boolean;
+    overflowsBottom?: boolean;
+  } | null;
+  overflowStatus: 'unknown' | 'no_overflow' | 'overflow';
+  reason?: string;
+}
+
+export interface DiagnosticProbeReportItem {
+  id: string;
+  kind: string;
+  screen: string;
+  x: number | null;
+  y: number | null;
+  width: number | null;
+  height: number | null;
+  measuredAt: string | null;
+  staleAfterUnmount: boolean;
+  staleReason?: string;
+  overflow: {
+    status: OverflowStatus;
+    reason?: string;
+    hasOverflow: boolean;
+    overflowsLeft?: boolean;
+    overflowsTop?: boolean;
+    overflowsRight?: boolean;
+    overflowsBottom?: boolean;
+  } | null;
+  overflowStatus: 'unknown' | 'no_overflow' | 'overflow';
+  reason?: string;
+}
+
 export interface DiagnosticReport {
   timestamp: string;
   buildId: string;
@@ -186,6 +239,10 @@ export interface DiagnosticReport {
   locale: string;
   directionHelperResult: 'rtl' | 'ltr';
   i18nManagerIsRTL: boolean;
+  probeCount: number;
+  probes: DiagnosticProbeReportItem[];
+  screensVisited: string[];
+  screensUnvisited: string[];
   measurements: DiagnosticMeasurementReportItem[];
 }
 
@@ -355,6 +412,34 @@ function createInitialStore(): Record<DiagnosticTargetId, TargetLayoutRecord> {
 }
 
 let measurementsStore: Record<DiagnosticTargetId, TargetLayoutRecord> = createInitialStore();
+let probeStore: Record<string, AutoProbeRecord> = {};
+const monotonicCounters: Record<string, number> = {};
+
+export function getNextMonotonicProbeId(kind: string = 'probe'): string {
+  monotonicCounters[kind] = (monotonicCounters[kind] || 0) + 1;
+  return `auto-${kind}-${monotonicCounters[kind]}`;
+}
+
+export function resetMonotonicCounters(): void {
+  for (const k of Object.keys(monotonicCounters)) {
+    delete monotonicCounters[k];
+  }
+}
+
+export function resetDiagnosticProbes(): void {
+  probeStore = {};
+  resetMonotonicCounters();
+  notifyListeners();
+}
+
+export function getAutoProbes(): AutoProbeRecord[] {
+  return Object.values(probeStore);
+}
+
+export function getAutoProbe(id: string): AutoProbeRecord | undefined {
+  return probeStore[id];
+}
+
 const listeners = new Set<() => void>();
 
 function notifyListeners(): void {
@@ -376,6 +461,8 @@ export function addDiagnosticListener(listener: () => void): () => void {
 
 export function resetDiagnosticMeasurements(): void {
   measurementsStore = createInitialStore();
+  probeStore = {};
+  resetMonotonicCounters();
   notifyListeners();
 }
 
@@ -675,8 +762,29 @@ export function recordNamedLayout(
   if (meta?.testID) existing.testID = meta.testID;
   if (meta?.parentIdentity) existing.parentIdentity = meta.parentIdentity;
   existing.ancestorCard = meta?.ancestorCard !== undefined ? meta.ancestorCard : null;
-  existing.frameWidth = meta?.frameWidth != null ? Math.round(meta.frameWidth * 10) / 10 : null;
-  existing.frameHeight = meta?.frameHeight != null ? Math.round(meta.frameHeight * 10) / 10 : null;
+  const storedGrad = record.rectangles?.gradient;
+  // Bug 2: Prayer chip label rect reported frameWidth/frameHeight equal to its own size (24.3x19)
+  // due to React Native synthetic event recycling in screen handlers.
+  // Authoritative label frame must come from the stored gradient rect, never from the label's own event.
+  const isLabelOwnEventRecycled =
+    name === 'label' &&
+    storedGrad?.isAvailable &&
+    storedGrad.width != null &&
+    storedGrad.height != null &&
+    layout != null &&
+    meta?.frameWidth != null &&
+    meta?.frameHeight != null &&
+    meta.frameWidth === Math.round(layout.width * 10) / 10 &&
+    meta.frameHeight === Math.round(layout.height * 10) / 10 &&
+    (meta.frameWidth !== storedGrad.width || meta.frameHeight !== storedGrad.height);
+
+  if (isLabelOwnEventRecycled && storedGrad) {
+    existing.frameWidth = storedGrad.width;
+    existing.frameHeight = storedGrad.height;
+  } else {
+    existing.frameWidth = meta?.frameWidth != null ? Math.round(meta.frameWidth * 10) / 10 : null;
+    existing.frameHeight = meta?.frameHeight != null ? Math.round(meta.frameHeight * 10) / 10 : null;
+  }
   existing.cardWidth = meta?.cardWidth != null ? Math.round(meta.cardWidth * 10) / 10 : null;
   existing.cardHeight = meta?.cardHeight != null ? Math.round(meta.cardHeight * 10) / 10 : null;
 
@@ -781,6 +889,34 @@ export function recordNamedLayout(
   }
 
   record.rectangles[name] = existing;
+
+  // When gradient rect is recorded/updated, propagate its dimensions to child label if present
+  if (name === 'gradient' && existing.isAvailable && record.rectangles?.label?.isAvailable) {
+    const lbl = record.rectangles.label;
+    if (existing.width != null && existing.height != null && existing.width > 0 && existing.height > 0) {
+      lbl.frameWidth = existing.width;
+      lbl.frameHeight = existing.height;
+      if (lbl.width != null && lbl.height != null) {
+        const rx = lbl.x ?? 0;
+        const ry = lbl.y ?? 0;
+        const overflowsLeft = rx < 0;
+        const overflowsTop = ry < 0;
+        const overflowsRight = (rx + lbl.width) > existing.width;
+        const overflowsBottom = (ry + lbl.height) > existing.height;
+        lbl.edgeOverflow = {
+          overflowsLeft,
+          overflowsTop,
+          overflowsRight,
+          overflowsBottom,
+          hasOverflow: overflowsLeft || overflowsTop || overflowsRight || overflowsBottom,
+        };
+        lbl.frameUnavailable = false;
+        lbl.measurementUnavailable = false;
+        lbl.unavailabilityReason = undefined;
+      }
+    }
+  }
+
   notifyListeners();
 }
 
@@ -1020,6 +1156,141 @@ export function useDiagnosticTarget(
   };
 }
 
+export function recordProbeLayout(
+  id: string,
+  kind: string,
+  screen: string,
+  layout: { x?: number; y?: number; width: number; height: number } | null | undefined,
+  meta?: {
+    frameWidth?: number | null;
+    frameHeight?: number | null;
+  }
+): void {
+  if (!isDiagnosticModeEnabled()) return;
+
+  if (
+    !layout ||
+    typeof layout.width !== 'number' ||
+    typeof layout.height !== 'number' ||
+    layout.width <= 0 ||
+    layout.height <= 0
+  ) {
+    return;
+  }
+
+  const existing = probeStore[id];
+  const x = typeof layout.x === 'number' ? Math.round(layout.x * 10) / 10 : 0;
+  const y = typeof layout.y === 'number' ? Math.round(layout.y * 10) / 10 : 0;
+  const width = Math.round(layout.width * 10) / 10;
+  const height = Math.round(layout.height * 10) / 10;
+  const measuredAt = new Date().toISOString();
+
+  const fw = meta?.frameWidth != null ? Math.round(meta.frameWidth * 10) / 10 : existing?.frameWidth ?? null;
+  const fh = meta?.frameHeight != null ? Math.round(meta.frameHeight * 10) / 10 : existing?.frameHeight ?? null;
+
+  let overflow: AutoProbeRecord['overflow'] = null;
+  let overflowStatus: 'unknown' | 'no_overflow' | 'overflow' = 'unknown';
+  let reason: string | undefined = undefined;
+
+  if (fw != null && fh != null && fw > 0 && fh > 0) {
+    const overflowsLeft = x < 0;
+    const overflowsTop = y < 0;
+    const overflowsRight = (x + width) > fw;
+    const overflowsBottom = (y + height) > fh;
+    const hasOverflow = overflowsLeft || overflowsTop || overflowsRight || overflowsBottom;
+
+    overflow = {
+      status: hasOverflow ? 'overflow' : 'no_overflow',
+      hasOverflow,
+      overflowsLeft,
+      overflowsTop,
+      overflowsRight,
+      overflowsBottom,
+      reason: hasOverflow ? 'Exceeds frame dimensions' : 'Within frame bounds',
+    };
+    overflowStatus = hasOverflow ? 'overflow' : 'no_overflow';
+  } else {
+    overflow = null;
+    overflowStatus = 'unknown';
+    reason = 'No known parent frame for auto-probe (status: unknown)';
+  }
+
+  probeStore[id] = {
+    id,
+    kind,
+    screen,
+    x,
+    y,
+    width,
+    height,
+    frameWidth: fw,
+    frameHeight: fh,
+    measuredAt,
+    staleAfterUnmount: false,
+    staleReason: undefined,
+    overflow,
+    overflowStatus,
+    reason,
+  };
+
+  notifyListeners();
+}
+
+export function markProbeStale(id: string, reason: string = 'Element unmounted'): void {
+  if (!isDiagnosticModeEnabled()) return;
+  const probe = probeStore[id];
+  if (!probe) return;
+  probe.staleAfterUnmount = true;
+  probe.staleReason = reason;
+  notifyListeners();
+}
+
+/**
+ * Production auto-probe hook for shared primitives.
+ * Gated by two-factor diagnostic gate:
+ * - When gate is OFF: returns {} (no onLayout, no registration, no listeners).
+ * - When gate is ON: returns { onLayout }, registers stable/monotonic id, tags with active screen,
+ *   and retains last-measured snapshot on unmount without wiping values.
+ */
+export function useAutoProbe(
+  id?: string,
+  kind?: string
+): { onLayout?: (e: LayoutChangeEvent) => void } {
+  const isEnabled = isDiagnosticModeEnabled();
+  const screen = useDiagScreen();
+  const effectiveKind = kind || 'probe';
+  const [monotonicFallback] = useState(() =>
+    isEnabled && (!id || id.trim().length === 0)
+      ? getNextMonotonicProbeId(effectiveKind)
+      : ''
+  );
+
+  const stableId = isEnabled
+    ? ((id && id.trim().length > 0) ? id : monotonicFallback)
+    : '';
+
+  useEffect(() => {
+    if (!isEnabled || !stableId) return;
+    return () => {
+      markProbeStale(stableId, `${effectiveKind} unmounted`);
+    };
+  }, [isEnabled, stableId, effectiveKind]);
+
+  const onLayout = useCallback((e: LayoutChangeEvent) => {
+    if (!isEnabled || !stableId) return;
+    const layout = e?.nativeEvent?.layout;
+    if (layout) {
+      recordProbeLayout(stableId, effectiveKind, screen, layout);
+    }
+  }, [isEnabled, stableId, effectiveKind, screen]);
+
+  if (!isEnabled) {
+    return {};
+  }
+
+  return { onLayout };
+}
+
 /**
  * Builds an anonymized JSON report:
  * STRICT PRIVACY GUARANTEE:
@@ -1085,6 +1356,26 @@ export function buildDiagnosticReport(): DiagnosticReport {
     nativeIsRTL: item.nativeIsRTL,
   }));
 
+  const rawProbes = getAutoProbes();
+  const probes: DiagnosticProbeReportItem[] = rawProbes.map((p) => ({
+    id: p.id,
+    kind: p.kind,
+    screen: p.screen,
+    x: p.x,
+    y: p.y,
+    width: p.width,
+    height: p.height,
+    measuredAt: p.measuredAt,
+    staleAfterUnmount: p.staleAfterUnmount,
+    staleReason: p.staleReason,
+    overflow: p.overflow,
+    overflowStatus: p.overflowStatus,
+    reason: p.reason,
+  }));
+
+  const visitedScreens = Array.from(new Set(rawProbes.map((p) => p.screen))).filter(Boolean).sort();
+  const unvisitedScreens = KNOWN_SCREENS.filter((s) => !visitedScreens.includes(s)).sort();
+
   return {
     timestamp: new Date().toISOString(),
     buildId: DIAGNOSTIC_BUILD_ID,
@@ -1093,6 +1384,10 @@ export function buildDiagnosticReport(): DiagnosticReport {
     locale: activeLocale,
     directionHelperResult: directionHelper,
     i18nManagerIsRTL: nativeIsRTL,
+    probeCount: probes.length,
+    probes,
+    screensVisited: visitedScreens,
+    screensUnvisited: unvisitedScreens,
     measurements,
   };
 }

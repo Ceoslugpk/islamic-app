@@ -6,10 +6,12 @@ import {
   ViewStyle,
   TextStyle,
   StyleProp,
+  LayoutChangeEvent,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, buttonTokens, fontRoles } from '../../theme/tokens';
+import { useAutoProbe } from '../../lib/diagnostic';
 import { AppText } from './AppText';
 
 export interface OutlineButtonProps {
@@ -25,6 +27,7 @@ export interface OutlineButtonProps {
   testID?: string;
   accessibilityLabel?: string;
   accessibilityHint?: string;
+  onLayout?: (e: LayoutChangeEvent) => void;
 }
 
 export function OutlineButton({
@@ -40,6 +43,7 @@ export function OutlineButton({
   testID = 'btn-outline',
   accessibilityLabel,
   accessibilityHint,
+  onLayout,
 }: OutlineButtonProps) {
   const { mode } = useTheme();
   const tokens = themeTokens[mode];
@@ -47,11 +51,20 @@ export function OutlineButton({
   const borderColor = tokens.goldBorder;
   const textColor = tokens.eyebrow;
 
+  const autoProbe = useAutoProbe(testID, 'OutlineButton');
+  const combinedOnLayout = autoProbe.onLayout
+    ? (e: LayoutChangeEvent) => {
+        autoProbe.onLayout?.(e);
+        onLayout?.(e);
+      }
+    : onLayout;
+
   return (
     <TouchableOpacity
       testID={testID}
       activeOpacity={0.75}
       onPress={onPress}
+      onLayout={combinedOnLayout}
       disabled={disabled || loading}
       hitSlop={buttonTokens.hitSlop}
       accessibilityRole="button"

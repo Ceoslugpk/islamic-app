@@ -36,7 +36,7 @@ import {
   testAlertPermission,
 } from '../lib/strings';
 import { t } from '../lib/i18n';
-import { useDiagnosticTarget, isDiagnosticModeEnabled } from '../lib/diagnostic';
+import { useDiagnosticTarget, isDiagnosticModeEnabled, getTargetMeasurement } from '../lib/diagnostic';
 import { fetchPrayerTimes, DayTimings } from '../lib/prayerTimes';
 import {
   configureNotifications,
@@ -984,11 +984,12 @@ export default function PrayerRemindersScreen({
                   onLabelLayout={isDiag ? (e) => {
                     if (isSelected) {
                       selectedLabelLayoutRef.current = e;
+                      const storedGrad = getTargetMeasurement('prayer-reminders-selection-controls')?.rectangles?.gradient;
                       diag.recordNamed('label', e, {
                         testID: 'prayer-reminders-chip-label',
                         parentIdentity: 'prayer-reminders-chip-gradient',
-                        frameWidth: selectedGradLayoutRef.current?.nativeEvent?.layout?.width,
-                        frameHeight: selectedGradLayoutRef.current?.nativeEvent?.layout?.height,
+                        frameWidth: storedGrad?.isAvailable && storedGrad.width != null ? storedGrad.width : undefined,
+                        frameHeight: storedGrad?.isAvailable && storedGrad.height != null ? storedGrad.height : undefined,
                         cardWidth: cardLayoutRef.current?.width,
                         cardHeight: cardLayoutRef.current?.height,
                         ancestorCard: 'prayer-reminders-selection-card',

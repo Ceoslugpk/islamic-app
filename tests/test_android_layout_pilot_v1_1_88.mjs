@@ -37,7 +37,7 @@ function loadTsModule(filePath, mocks = {}) {
   return moduleObj.exports;
 }
 
-console.log('=== ANDROID LAYOUT PILOT v1.1.90 TEST SUITE (SOURCE ONLY) ===\n');
+console.log('=== ANDROID LAYOUT PILOT v1.1.91 TEST SUITE (SOURCE ONLY) ===\n');
 
 // -------------------------------------------------------------------------
 // 1. Diagnostic Identity & Two-Factor Gate
@@ -50,32 +50,32 @@ const buildGradle = read('android/app/build.gradle');
 
 // Build identity constants
 assert.ok(
-  diagConfigSrc.includes("export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-1.1.90-PILOT-C';"),
-  'diagnosticConfig must declare DIAGNOSTIC_BUILD_ID as RTL-STRUCT-1.1.90-PILOT-C'
+  diagConfigSrc.includes("export const DIAGNOSTIC_BUILD_ID = 'RTL-STRUCT-1.1.91-PROBE';"),
+  'diagnosticConfig must declare DIAGNOSTIC_BUILD_ID as RTL-STRUCT-1.1.91-PROBE'
 );
 assert.ok(
-  diagConfigSrc.includes("export const DIAGNOSTIC_VERSION = '1.1.90';"),
-  'diagnosticConfig must declare DIAGNOSTIC_VERSION as 1.1.90'
+  diagConfigSrc.includes("export const DIAGNOSTIC_VERSION = '1.1.91';"),
+  'diagnosticConfig must declare DIAGNOSTIC_VERSION as 1.1.91'
 );
 assert.ok(
-  diagConfigSrc.includes('export const DIAGNOSTIC_VERSION_CODE = 109;'),
-  'diagnosticConfig must declare DIAGNOSTIC_VERSION_CODE as 109'
+  diagConfigSrc.includes('export const DIAGNOSTIC_VERSION_CODE = 110;'),
+  'diagnosticConfig must declare DIAGNOSTIC_VERSION_CODE as 110'
 );
 
 // Version and code across project metadata
-assert.equal(packageJson.version, '1.1.90', 'package.json version must be 1.1.90');
-assert.equal(appJson.version, '1.1.90', 'app.json version must be 1.1.90');
-assert.equal(appJson.android.versionCode, 109, 'app.json versionCode must be 109');
-assert.ok(buildGradle.includes('versionCode 109'), 'android/app/build.gradle versionCode must be 109');
-assert.ok(buildGradle.includes('versionName "1.1.90"'), 'android/app/build.gradle versionName must be 1.1.90');
+assert.equal(packageJson.version, '1.1.91', 'package.json version must be 1.1.91');
+assert.equal(appJson.version, '1.1.91', 'app.json version must be 1.1.91');
+assert.equal(appJson.android.versionCode, 110, 'app.json versionCode must be 110');
+assert.ok(buildGradle.includes('versionCode 110'), 'android/app/build.gradle versionCode must be 110');
+assert.ok(buildGradle.includes('versionName "1.1.91"'), 'android/app/build.gradle versionName must be 1.1.91');
 
 // Deterministic build command
 assert.ok(
-  diagConfigSrc.includes('EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.90-PILOT-C'),
-  'DIAGNOSTIC_BUILD_COMMAND must require both EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.90-PILOT-C'
+  diagConfigSrc.includes('EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.91-PROBE'),
+  'DIAGNOSTIC_BUILD_COMMAND must require both EXPO_PUBLIC_ANDROID_DIAGNOSTIC=1 and EXPO_PUBLIC_DIAGNOSTIC_BUILD_ID=RTL-STRUCT-1.1.91-PROBE'
 );
 
-console.log('  ✓ Diagnostic build identity and metadata verified for v1.1.90 (code 107)');
+console.log('  ✓ Diagnostic build identity and metadata verified for v1.1.91 (code 110)');
 
 // -------------------------------------------------------------------------
 // 2. Shared Primitive Width Ownership & Hierarchy Probes: PrimaryButton
@@ -544,9 +544,9 @@ const mockReactNative = {
   Share: { share: () => Promise.resolve({ action: 'sharedAction' }) },
 };
 const mockDiagConfig = {
-  DIAGNOSTIC_BUILD_ID: 'RTL-STRUCT-1.1.90-PILOT-C',
-  DIAGNOSTIC_VERSION: '1.1.90',
-  DIAGNOSTIC_VERSION_CODE: 109,
+  DIAGNOSTIC_BUILD_ID: 'RTL-STRUCT-1.1.91-PROBE',
+  DIAGNOSTIC_VERSION: '1.1.91',
+  DIAGNOSTIC_VERSION_CODE: 110,
   isDiagnosticModeEnabled: () => true,
 };
 const mockDiagI18n = {
@@ -560,10 +560,13 @@ const mockI18n = {
   t: (k) => k,
 };
 
+const diagScreens = loadTsModule('src/lib/diagnostic/diagnosticScreens.ts', {});
+
 const diagState = loadTsModule('src/lib/diagnostic/diagnosticState.ts', {
   'react-native': mockReactNative,
   './diagnosticConfig': mockDiagConfig,
   './diagnosticI18n': mockDiagI18n,
+  './diagnosticScreens': diagScreens,
   '../i18n': mockI18n,
   'expo-file-system/legacy': {},
   'expo-sharing': {},
@@ -695,5 +698,5 @@ for (const filePath of nonPilotCallers) {
 console.log(`  ✓ Genuine contract execution verified and all ${nonPilotCallers.length} non-pilot callers checked`);
 
 console.log('\n============================================================');
-console.log('ALL ANDROID LAYOUT PILOT v1.1.90 SOURCE CONTRACTS VERIFIED');
+console.log('ALL ANDROID LAYOUT PILOT v1.1.91 SOURCE CONTRACTS VERIFIED');
 console.log('============================================================\n');

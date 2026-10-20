@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, fontRoles } from '../../theme/tokens';
 import { isRTL, t } from '../../lib/i18n';
+import { useAutoProbe } from '../../lib/diagnostic';
 
 export interface SearchFieldProps extends Omit<TextInputProps, 'style'> {
   value: string;
@@ -36,7 +37,7 @@ export function SearchField({
   style,
   inputStyle,
   testID = 'search',
-  onLayout,
+  onLayout: onLayoutProp,
   inputOnLayout,
   inputTestID,
   ...rest
@@ -49,6 +50,14 @@ export function SearchField({
     onChangeText('');
     onClear?.();
   };
+
+  const autoProbe = useAutoProbe(testID, 'SearchField');
+  const onLayout = autoProbe.onLayout
+    ? (e: LayoutChangeEvent) => {
+        autoProbe.onLayout?.(e);
+        onLayoutProp?.(e);
+      }
+    : onLayoutProp;
 
   return (
     <View

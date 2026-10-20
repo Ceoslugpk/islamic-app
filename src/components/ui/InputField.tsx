@@ -7,10 +7,12 @@ import {
   StyleProp,
   ViewStyle,
   TextStyle,
+  LayoutChangeEvent,
 } from 'react-native';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, fontRoles } from '../../theme/tokens';
 import { isRTL } from '../../lib/i18n';
+import { useAutoProbe } from '../../lib/diagnostic';
 import { AppText } from './AppText';
 
 export interface InputFieldProps extends TextInputProps {
@@ -21,6 +23,7 @@ export interface InputFieldProps extends TextInputProps {
   inputStyle?: StyleProp<TextStyle>;
   labelStyle?: StyleProp<TextStyle>;
   testID?: string;
+  onLayout?: (e: LayoutChangeEvent) => void;
 }
 
 export function InputField({
@@ -33,6 +36,7 @@ export function InputField({
   testID,
   value,
   onChangeText,
+  onLayout,
   ...rest
 }: InputFieldProps) {
   const { mode, colors } = useTheme();
@@ -47,8 +51,16 @@ export function InputField({
 
   const backgroundColor = mode === 'ink' ? tokens.bgTop : colors.bgBase;
 
+  const autoProbe = useAutoProbe(testID, 'InputField');
+  const combinedOnLayout = autoProbe.onLayout
+    ? (e: LayoutChangeEvent) => {
+        autoProbe.onLayout?.(e);
+        onLayout?.(e);
+      }
+    : onLayout;
+
   return (
-    <View style={[styles.container, containerStyle]}>
+    <View style={[styles.container, containerStyle]} onLayout={combinedOnLayout}>
       {label ? (
         <AppText
           variant="caption"
