@@ -3,6 +3,7 @@ import {
   I18nManager,
   Platform,
   Share,
+  Clipboard,
   LayoutChangeEvent,
   StyleSheet,
   Dimensions,
@@ -366,31 +367,44 @@ export interface DiagnosticReport {
   i18nManagerIsRTL: boolean;
   probeCount: number;
   probes: DiagnosticProbeReportItem[];
+  probesTruncated?: boolean;
+  totalProbes?: number;
+  includedProbes?: number;
+  probesKept?: 'all' | 'newest' | 'defect-probes+newest' | 'oldest';
   defects: {
     countsByClass: Record<DefectClass, number>;
     totalDefects: number;
     items: DiagnosticDefectReportItem[];
+    defectsTruncated?: boolean;
+    includedDefects?: number;
+    kept?: 'all' | 'newest' | 'newest-per-class' | 'defect-probes+newest' | 'oldest';
+    defectClassesDropped?: DefectClass[];
   };
   interactions: {
     total: number;
     countsByEffect: Record<InteractionEffect, number>;
     items: DiagnosticInteractionRecord[];
+    itemsTruncated?: boolean;
   };
   languageMatrix: {
     mismatchCount: number;
     items: DiagnosticLanguageMatrixItem[];
+    itemsTruncated?: boolean;
   };
   themeMatrix: {
     mismatchCount: number;
     items: DiagnosticThemeMatrixItem[];
+    itemsTruncated?: boolean;
   };
   network: {
     summary: DiagnosticNetworkSummary;
     items: DiagnosticNetworkRecord[];
+    itemsTruncated?: boolean;
   };
   errors: {
     total: number;
     items: DiagnosticErrorRecord[];
+    itemsTruncated?: boolean;
   };
   coverage: DiagnosticCoverage;
   summary: {
@@ -401,10 +415,16 @@ export interface DiagnosticReport {
     errorCount: number;
     visitedScreensCount: number;
   };
-  // Backwards compatibility for existing tests
   screensVisited: string[];
   screensUnvisited: string[];
   measurements: DiagnosticMeasurementReportItem[];
+  truncation?: {
+    wasTruncated: boolean;
+    trimmed: string[];
+    reasons?: string[];
+    finalSizeBytes?: number;
+    maxBytes?: number;
+  };
 }
 
 export type ExportStatus =
@@ -419,6 +439,10 @@ export type ExportStatus =
 
 export type ShareStatus = 'unknown' | 'completed' | 'cancelled' | 'unavailable';
 
+export interface ExportReportOptions {
+  summaryOnly?: boolean;
+}
+
 export interface ExportReportResult {
   success: boolean;
   status: ExportStatus;
@@ -427,6 +451,9 @@ export interface ExportReportResult {
   shareInvoked?: boolean;
   error?: string;
   filePath?: string;
+  fileSizeBytes?: number;
+  clipboardCopied?: boolean;
+  message?: string;
 }
 
 const DEFAULT_TARGETS: Record<
@@ -1087,8 +1114,58 @@ export function deriveProbeDefects(
 }
 
 const listeners = new Set<() => void>();
+let isCoalesceScheduled = false;
+let coalesceTimer: ReturnType<typeof setTimeout> | null = null;
+let notifyDirty = false;
+const COALESCE_INTERVAL_MS = 250;
 
-function notifyListeners(): void {
+let notifiesRequestedCount = 0;
+let notifiesDeliveredCount = 0;
+
+export interface DiagnosticNotificationStats {
+  requested: number;
+  delivered: number;
+  coalesced: number;
+}
+
+export function getDiagnosticNotificationStats(): DiagnosticNotificationStats {
+  const coalesced = Math.max(0, notifiesRequestedCount - notifiesDeliveredCount);
+  return {
+    requested: notifiesRequestedCount,
+    delivered: notifiesDeliveredCount,
+    coalesced,
+  };
+}
+
+export function resetDiagnosticNotificationStats(): void {
+  notifiesRequestedCount = 0;
+  notifiesDeliveredCount = 0;
+  notifyDirty = false;
+  if (coalesceTimer !== null) {
+    clearTimeout(coalesceTimer);
+    coalesceTimer = null;
+    isCoalesceScheduled = false;
+  }
+}
+
+export function getDiagnosticListenerCount(): number {
+  return listeners.size;
+}
+
+export function flushDiagnosticNotifications(): void {
+  if (coalesceTimer !== null) {
+    clearTimeout(coalesceTimer);
+    coalesceTimer = null;
+    isCoalesceScheduled = false;
+  }
+  if (!notifyDirty) {
+    return;
+  }
+  notifyDirty = false;
+  if (listeners.size === 0) {
+    return;
+  }
+  notifiesDeliveredCount++;
   listeners.forEach((listener) => {
     try {
       listener();
@@ -1098,14 +1175,50 @@ function notifyListeners(): void {
   });
 }
 
+function notifyListeners(): void {
+  notifiesRequestedCount++;
+  notifyDirty = true;
+
+  // Closed app pays nothing: zero timers when zero listeners registered
+  if (listeners.size === 0) {
+    return;
+  }
+
+  // Single pending timer: coalesces multiple layout/interaction records into one flush
+  if (!isCoalesceScheduled) {
+    isCoalesceScheduled = true;
+    coalesceTimer = setTimeout(() => {
+      isCoalesceScheduled = false;
+      coalesceTimer = null;
+      flushDiagnosticNotifications();
+    }, COALESCE_INTERVAL_MS);
+  }
+}
+
 export function addDiagnosticListener(listener: () => void): () => void {
   listeners.add(listener);
   return () => {
     listeners.delete(listener);
+    // When last listener unregisters, clear any pending timer so no idle work occurs
+    if (listeners.size === 0 && coalesceTimer !== null) {
+      clearTimeout(coalesceTimer);
+      coalesceTimer = null;
+      isCoalesceScheduled = false;
+      notifyDirty = false;
+    }
   };
 }
 
 export function resetDiagnosticMeasurements(): void {
+  if (coalesceTimer !== null) {
+    clearTimeout(coalesceTimer);
+    coalesceTimer = null;
+    isCoalesceScheduled = false;
+  }
+  notifyDirty = false;
+  notifiesRequestedCount = 0;
+  notifiesDeliveredCount = 0;
+
   measurementsStore = createInitialStore();
   probeStore = {};
   probeLRUOrder = [];
@@ -2500,10 +2613,17 @@ export function buildDiagnosticReport(): DiagnosticReport {
     i18nManagerIsRTL: nativeIsRTL,
     probeCount: probes.length,
     probes,
+    probesTruncated: false,
+    totalProbes: probes.length,
+    includedProbes: probes.length,
+    probesKept: 'all',
     defects: {
       countsByClass: defectCounts,
       totalDefects,
       items: defectItems,
+      defectsTruncated: false,
+      includedDefects: defectItems.length,
+      kept: 'all',
     },
     interactions: {
       total: interactionLedger.length,
@@ -2541,20 +2661,508 @@ export function buildDiagnosticReport(): DiagnosticReport {
   };
 }
 
-/**
- * Truthful export handling:
- * - Generates anonymized file successfully on disk first.
- * - Confirmed success is strictly reserved for confirmed filesystem writes / copy operations.
- * - On Android expo-sharing, chooser completion cannot be confirmed by the OS.
- *   Therefore, it is NEVER reported as success or "report ready" implying share completed.
- *   It explicitly returns shareStatus: 'unknown' and status: 'userActionRequired' with fileReady: true.
- * - Always keeps export actionable for retry with zero private content.
- */
-export async function exportDiagnosticReport(): Promise<ExportReportResult> {
+export const MAX_REPORT_PAYLOAD_BYTES = 1572864; // 1.5 MB target cap
+
+export function getUtf8ByteLength(str: string): number {
+  if (typeof TextEncoder !== 'undefined') {
+    return new TextEncoder().encode(str).length;
+  }
+  const globalObj = typeof globalThis !== 'undefined' ? (globalThis as any) : null;
+  if (globalObj && globalObj.Buffer) {
+    return globalObj.Buffer.byteLength(str, 'utf8');
+  }
+  try {
+    return encodeURIComponent(str).replace(/%[A-F\d]{2}/gi, 'U').length;
+  } catch {
+    return str.length;
+  }
+}
+
+export function formatByteSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+export interface DiagnosticSummaryReport {
+  type: 'summary';
+  timestamp: string;
+  buildId: string;
+  version: string;
+  versionCode: number;
+  locale: string;
+  theme: string;
+  directionHelperResult: string;
+  i18nManagerIsRTL: boolean;
+  coverage: DiagnosticCoverage;
+  counts: {
+    probes: number;
+    totalDefects: number;
+    defectsByClass: Record<DefectClass, number>;
+    interactions: number;
+    networkRequests: number;
+    errors: number;
+    visitedScreens: number;
+    unvisitedScreens: number;
+  };
+  defects: DiagnosticDefectReportItem[];
+  notificationStats: {
+    requested: number;
+    delivered: number;
+    coalesced: number;
+  };
+}
+
+export function buildDiagnosticSummary(): DiagnosticSummaryReport {
+  const report = buildDiagnosticReport();
+  // Ensure EVERY defect item survives into the summary fallback, with per-item fields trimmed cleanly
+  const trimmedDefects: DiagnosticDefectReportItem[] = (report.defects.items || []).map((d) => ({
+    probeId: d.probeId,
+    defectClass: d.defectClass,
+    screen: d.screen,
+    ...(d.reason ? { reason: d.reason.trim() } : {}),
+  }));
+
+  return {
+    type: 'summary',
+    timestamp: report.timestamp,
+    buildId: report.buildId,
+    version: report.version,
+    versionCode: report.versionCode,
+    locale: report.locale,
+    theme: report.theme,
+    directionHelperResult: report.directionHelperResult,
+    i18nManagerIsRTL: report.i18nManagerIsRTL,
+    coverage: report.coverage,
+    counts: {
+      probes: report.probeCount,
+      totalDefects: report.defects.totalDefects,
+      defectsByClass: report.defects.countsByClass,
+      interactions: report.interactions.total,
+      networkRequests: report.network.summary.total,
+      errors: report.errors.total,
+      visitedScreens: report.coverage.visitedCount,
+      unvisitedScreens: report.coverage.unvisitedCount,
+    },
+    defects: trimmedDefects,
+    notificationStats: getDiagnosticNotificationStats(),
+  };
+}
+
+function droppedDefectClasses(
+  keptItems: DiagnosticDefectReportItem[],
+  allItems: DiagnosticDefectReportItem[]
+): DefectClass[] {
+  const keptClasses = new Set(keptItems.map((i) => i.defectClass));
+  return [...new Set(allItems.map((i) => i.defectClass))].filter((c) => !keptClasses.has(c));
+}
+
+export function trimMeasurementRectangles(
+  measurements: DiagnosticMeasurementReportItem[]
+): DiagnosticMeasurementReportItem[] {
+  return measurements.map((m) => {
+    if (!m.rectangles) return m;
+    const trimmedRects: Record<string, NamedLayoutRect> = {};
+    for (const [key, rect] of Object.entries(m.rectangles)) {
+      // Drop duplicated nested parent rectangle where flat fields already carry the data
+      if (
+        key === 'parent' &&
+        rect.x === m.parentLayout?.x &&
+        rect.y === m.parentLayout?.y &&
+        rect.width === m.parentLayout?.width &&
+        rect.height === m.parentLayout?.height
+      ) {
+        continue;
+      }
+      trimmedRects[key] = rect;
+    }
+    return {
+      ...m,
+      rectangles: trimmedRects,
+    };
+  });
+}
+
+export function serializeReportBounded(
+  report: DiagnosticReport,
+  maxBytes: number = MAX_REPORT_PAYLOAD_BYTES
+): string {
+  // Always trim duplicated parent layout rectangles from legacy measurements first
+  const trimmedMeasurements = trimMeasurementRectangles(report.measurements || []);
+
+  const totalProbesCount = report.probes?.length || 0;
+  const totalDefectsCount = report.defects?.totalDefects ?? (report.defects?.items?.length || 0);
+
+  // Initial candidate: KEEP ALL defects, ALL probes, and full item detail
+  let currentReport: DiagnosticReport = {
+    ...report,
+    measurements: trimmedMeasurements,
+    probes: [...(report.probes || [])],
+    probesTruncated: false,
+    totalProbes: totalProbesCount,
+    includedProbes: totalProbesCount,
+    probesKept: 'all',
+    defects: {
+      ...report.defects,
+      items: [...(report.defects?.items || [])],
+      defectsTruncated: false,
+      totalDefects: totalDefectsCount,
+      includedDefects: report.defects?.items?.length || 0,
+      kept: 'all',
+    },
+    interactions: {
+      ...report.interactions,
+      items: [...(report.interactions?.items || [])],
+    },
+    network: {
+      ...report.network,
+      items: [...(report.network?.items || [])],
+    },
+    errors: {
+      ...report.errors,
+      items: [...(report.errors?.items || [])],
+    },
+    languageMatrix: {
+      ...report.languageMatrix,
+      items: [...(report.languageMatrix?.items || [])],
+    },
+    themeMatrix: {
+      ...report.themeMatrix,
+      items: [...(report.themeMatrix?.items || [])],
+    },
+    truncation: {
+      wasTruncated: false,
+      trimmed: [],
+    },
+  };
+
+  // Step 1: Pretty formatted full report (preferred for human inspection)
+  let json = JSON.stringify(currentReport, null, 2);
+  let size = getUtf8ByteLength(json);
+  if (size <= maxBytes) {
+    return json;
+  }
+
+  // If over cap, progressively trim in a bounded loop, re-measuring after each step
+  const trimmedLedger: string[] = [];
+
+  // Step 2: Switch to compact JSON (no indentation)
+  json = JSON.stringify(currentReport);
+  size = getUtf8ByteLength(json);
+  if (size <= maxBytes) {
+    return json;
+  }
+  trimmedLedger.push('compact_formatting');
+
+  // Step 3: Trim auxiliary event items (network, interactions, errors, matrices) while preserving summaries
+  trimmedLedger.push('auxiliary_ledgers_trimmed_to_25');
+  currentReport = {
+    ...currentReport,
+    interactions: {
+      ...currentReport.interactions,
+      items: currentReport.interactions.items.slice(0, 25),
+      itemsTruncated: currentReport.interactions.items.length > 25,
+    },
+    network: {
+      ...currentReport.network,
+      items: currentReport.network.items.slice(0, 25),
+      itemsTruncated: currentReport.network.items.length > 25,
+    },
+    errors: {
+      ...currentReport.errors,
+      items: currentReport.errors.items.slice(0, 25),
+      itemsTruncated: currentReport.errors.items.length > 25,
+    },
+    languageMatrix: {
+      ...currentReport.languageMatrix,
+      items: currentReport.languageMatrix.items.slice(0, 25),
+      itemsTruncated: currentReport.languageMatrix.items.length > 25,
+    },
+    themeMatrix: {
+      ...currentReport.themeMatrix,
+      items: currentReport.themeMatrix.items.slice(0, 25),
+      itemsTruncated: currentReport.themeMatrix.items.length > 25,
+    },
+    measurements: currentReport.measurements.slice(0, 25),
+    truncation: {
+      wasTruncated: true,
+      trimmed: [...trimmedLedger],
+    },
+  };
+
+  json = JSON.stringify(currentReport);
+  size = getUtf8ByteLength(json);
+  if (size <= maxBytes) {
+    return json;
+  }
+
+  // Step 4: Empty auxiliary ledgers to 0 items (keep summaries)
+  trimmedLedger.push('auxiliary_ledgers_emptied');
+  currentReport = {
+    ...currentReport,
+    interactions: {
+      ...currentReport.interactions,
+      items: [],
+      itemsTruncated: true,
+    },
+    network: {
+      ...currentReport.network,
+      items: [],
+      itemsTruncated: true,
+    },
+    errors: {
+      ...currentReport.errors,
+      items: [],
+      itemsTruncated: true,
+    },
+    languageMatrix: {
+      ...currentReport.languageMatrix,
+      items: [],
+      itemsTruncated: true,
+    },
+    themeMatrix: {
+      ...currentReport.themeMatrix,
+      items: [],
+      itemsTruncated: true,
+    },
+    measurements: [],
+    truncation: {
+      wasTruncated: true,
+      trimmed: [...trimmedLedger],
+    },
+  };
+
+  json = JSON.stringify(currentReport);
+  size = getUtf8ByteLength(json);
+  if (size <= maxBytes) {
+    return json;
+  }
+
+  // Step 5: Trim normal probes (keep defect probes first, and keep the NEWEST normal probes)
+  const allProbes = report.probes || [];
+  const defectProbes = allProbes.filter(
+    (p) => p.defects && Object.values(p.defects).some((d) => d?.flag === true)
+  );
+  const normalProbes = allProbes.filter(
+    (p) => !p.defects || !Object.values(p.defects).some((d) => d?.flag === true)
+  );
+
+  const normalProbeLimits = [250, 150, 50, 0];
+  for (const limit of normalProbeLimits) {
+    // Normal probes: keep the NEWEST by slicing the tail
+    const newestNormal = limit > 0 ? normalProbes.slice(-limit) : [];
+    const combinedProbes = [...defectProbes, ...newestNormal];
+
+    currentReport = {
+      ...currentReport,
+      probes: combinedProbes,
+      probesTruncated: combinedProbes.length < totalProbesCount,
+      totalProbes: totalProbesCount,
+      includedProbes: combinedProbes.length,
+      probesKept: 'defect-probes+newest',
+      truncation: {
+        wasTruncated: true,
+        trimmed: [...trimmedLedger, `normal_probes_capped_${limit}`],
+      },
+    };
+
+    json = JSON.stringify(currentReport);
+    size = getUtf8ByteLength(json);
+    if (size <= maxBytes) {
+      trimmedLedger.push(`normal_probes_capped_${limit}`);
+      return json;
+    }
+  }
+  trimmedLedger.push('normal_probes_dropped');
+
+  // Step 6: If still over cap (e.g. adversarial probes or oversized probe IDs/fields),
+  // progressively reduce defect probes keeping NEWEST, and sanitize oversized probe string fields
+  let remainingProbes = [...currentReport.probes];
+  const defectProbeLimits = [50, 25, 10, 5, 0];
+  for (const pLimit of defectProbeLimits) {
+    // Keep newest defect probes
+    const sliced = remainingProbes.slice(-pLimit);
+    // Sanitize any excessively long probe string fields (> 128 chars, e.g. crafted 100 KB test probes)
+    const sanitized = sliced.map((p) => {
+      const pId = typeof p.id === 'string' && p.id.length > 128 ? p.id.slice(0, 128) + '...' : p.id;
+      return {
+        ...p,
+        id: pId,
+      };
+    });
+
+    currentReport = {
+      ...currentReport,
+      probes: sanitized,
+      probesTruncated: sanitized.length < totalProbesCount,
+      totalProbes: totalProbesCount,
+      includedProbes: sanitized.length,
+      probesKept: 'defect-probes+newest',
+      truncation: {
+        wasTruncated: true,
+        trimmed: [...trimmedLedger, `probes_capped_${pLimit}`],
+      },
+    };
+
+    json = JSON.stringify(currentReport);
+    size = getUtf8ByteLength(json);
+    if (size <= maxBytes) {
+      trimmedLedger.push(`probes_capped_${pLimit}`);
+      return json;
+    }
+  }
+  trimmedLedger.push('probes_heavily_trimmed');
+
+  // Step 7: Defect items trimming (ONLY IF ABSOLUTELY NECESSARY to satisfy maxBytes)
+  // Ensure every defect class survives if possible, keeping NEWEST items,
+  // and EXPLICITLY disclose truncation.
+  const allDefectItems = report.defects?.items || [];
+  let curDefectItems = [...allDefectItems];
+
+  let iterations = 0;
+  while (size > maxBytes && iterations < 20) {
+    iterations++;
+    const targetCount = Math.max(1, Math.floor(curDefectItems.length * 0.5));
+
+    // Preserve at least 1 item of each defect class present in the store
+    const classesSeen = new Set<DefectClass>();
+    const representativeItems: DiagnosticDefectReportItem[] = [];
+    const otherItems: DiagnosticDefectReportItem[] = [];
+
+    // Traverse from newest to oldest
+    for (let i = curDefectItems.length - 1; i >= 0; i--) {
+      const item = curDefectItems[i];
+      if (!classesSeen.has(item.defectClass)) {
+        classesSeen.add(item.defectClass);
+        representativeItems.push(item);
+      } else {
+        otherItems.push(item);
+      }
+    }
+
+    const remainingBudget = Math.max(0, targetCount - representativeItems.length);
+    const chosenOthers = otherItems.slice(0, remainingBudget);
+    // Rebuild in the ORIGINAL (oldest -> newest) order. Concatenating the
+    // newest-first representatives with the newest-first others scrambles the
+    // ordering, so the next iteration's reverse traversal starts at the OLDEST
+    // item and "newest per class" silently degrades into an arbitrary pick.
+    const chosenSet = new Set([...representativeItems, ...chosenOthers]);
+    curDefectItems = curDefectItems.filter((item) => chosenSet.has(item));
+
+    // Sanitize oversized strings (> 128 chars)
+    curDefectItems = curDefectItems.map((d) => ({
+      ...d,
+      reason: d.reason && d.reason.length > 128 ? d.reason.slice(0, 125) + '...' : d.reason,
+    }));
+
+    currentReport = {
+      ...currentReport,
+      defects: {
+        ...currentReport.defects,
+        items: curDefectItems,
+        defectsTruncated: curDefectItems.length < totalDefectsCount,
+        totalDefects: totalDefectsCount,
+        includedDefects: curDefectItems.length,
+        kept: 'newest-per-class',
+        // Classes lost by trimming must be disclosed, never silently dropped.
+        defectClassesDropped: droppedDefectClasses(curDefectItems, allDefectItems),
+      },
+      truncation: {
+        wasTruncated: true,
+        trimmed: [...trimmedLedger, `defects_capped_${curDefectItems.length}`],
+        finalSizeBytes: size,
+        maxBytes,
+      },
+    };
+
+    json = JSON.stringify(currentReport);
+    size = getUtf8ByteLength(json);
+    if (size <= maxBytes) {
+      return json;
+    }
+
+    if (curDefectItems.length <= 1) {
+      break;
+    }
+  }
+
+  // Final hard guarantee: if STILL over maxBytes, aggressively slice to fit strictly under maxBytes
+  if (size > maxBytes) {
+    currentReport = {
+      ...currentReport,
+      defects: {
+        ...currentReport.defects,
+        items: currentReport.defects.items.slice(-1).map((d) => ({
+          probeId: String(d.probeId).slice(0, 32),
+          defectClass: d.defectClass,
+          screen: String(d.screen).slice(0, 32),
+          reason: d.reason ? d.reason.slice(0, 32) : undefined,
+        })),
+        defectsTruncated: true,
+        totalDefects: totalDefectsCount,
+        includedDefects: Math.min(1, currentReport.defects.items.length),
+        kept: 'newest-per-class',
+        defectClassesDropped: droppedDefectClasses(
+          currentReport.defects.items.slice(-1),
+          allDefectItems
+        ),
+      },
+      probes: [],
+      probesTruncated: true,
+      totalProbes: totalProbesCount,
+      includedProbes: 0,
+      probesKept: 'defect-probes+newest',
+      truncation: {
+        wasTruncated: true,
+        trimmed: [...trimmedLedger, 'emergency_hard_trim'],
+        finalSizeBytes: size,
+        maxBytes,
+      },
+    };
+    json = JSON.stringify(currentReport);
+  }
+
+  return json;
+}
+
+export function getEstimatedReportSizeBytes(): number {
   try {
     const report = buildDiagnosticReport();
-    const jsonString = JSON.stringify(report, null, 2);
-    const fileName = `rtl-diagnostic-report-${Date.now()}.json`;
+    const str = serializeReportBounded(report);
+    return getUtf8ByteLength(str);
+  } catch {
+    return 1024;
+  }
+}
+
+export function getEstimatedSummarySizeBytes(): number {
+  try {
+    const summary = buildDiagnosticSummary();
+    const str = JSON.stringify(summary, null, 2);
+    return getUtf8ByteLength(str);
+  } catch {
+    return 512;
+  }
+}
+
+/**
+ * Truthful export handling with 3 reliable paths:
+ * Path 1: Sharing.shareAsync with file written to documentDirectory (persistent)
+ * Path 2: If sharing unavailable or fails, copy to clipboard AND confirm file location
+ * Path 3: Surface written path in panel with copyable string
+ */
+export async function exportDiagnosticReport(options?: ExportReportOptions): Promise<ExportReportResult> {
+  try {
+    const isSummary = Boolean(options?.summaryOnly);
+    const jsonString = isSummary
+      ? JSON.stringify(buildDiagnosticSummary(), null, 2)
+      : serializeReportBounded(buildDiagnosticReport());
+
+    const safeBuildId = (DIAGNOSTIC_BUILD_ID || 'BUILD').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeVersion = (DIAGNOSTIC_VERSION || '1.1.92').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const timestamp = Date.now();
+    const prefix = isSummary ? 'rtl-diagnostic-summary' : 'rtl-diagnostic-report';
+    const fileName = `${prefix}-${safeBuildId}-v${safeVersion}-${timestamp}.json`;
 
     if (Platform.OS === 'web') {
       if (typeof document !== 'undefined') {
@@ -2573,6 +3181,7 @@ export async function exportDiagnosticReport(): Promise<ExportReportResult> {
           shareStatus: 'unavailable',
           fileReady: true,
           filePath: fileName,
+          fileSizeBytes: blob.size,
           shareInvoked: false,
         };
       }
@@ -2585,35 +3194,49 @@ export async function exportDiagnosticReport(): Promise<ExportReportResult> {
       };
     }
 
-    const dir = FileSystem.cacheDirectory || FileSystem.documentDirectory;
+    // Path 1 primary destination: documentDirectory (persistent, not cache)
+    const dir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
     if (!dir) {
+      if (Clipboard && typeof (Clipboard as any).setString === 'function') {
+        try {
+          Clipboard.setString(jsonString);
+        } catch {}
+      }
       return {
         success: false,
         status: 'unavailable',
         shareStatus: 'unavailable',
         fileReady: false,
+        clipboardCopied: true,
         error: 'No writable directory found on device.',
       };
     }
 
-    const filePath = `${dir}${fileName}`;
+    const baseDir = dir.endsWith('/') ? dir : `${dir}/`;
+    const filePath = `${baseDir}${fileName}`;
     await FileSystem.writeAsStringAsync(filePath, jsonString, {
       encoding: FileSystem.EncodingType?.UTF8 ?? 'utf8',
     });
 
-    // Verify written file exists on disk
+    // Verify written file exists on disk and is non-empty
     const fileInfo = await FileSystem.getInfoAsync(filePath).catch(() => null);
-    if (!fileInfo || !fileInfo.exists) {
+    if (!fileInfo || !fileInfo.exists || (fileInfo.size !== undefined && fileInfo.size <= 0)) {
       return {
         success: false,
         status: 'failed',
         shareStatus: 'unavailable',
         fileReady: false,
         error: 'Report file could not be verified on disk.',
+        filePath,
       };
     }
 
-    // File generation is confirmed on disk
+    const fileSizeBytes =
+      fileInfo.size !== undefined && fileInfo.size > 0
+        ? fileInfo.size
+        : getUtf8ByteLength(jsonString);
+
+    // Path 1: Sharing.shareAsync
     const sharingAvailable = await Sharing.isAvailableAsync().catch(() => false);
     if (sharingAvailable) {
       try {
@@ -2621,8 +3244,7 @@ export async function exportDiagnosticReport(): Promise<ExportReportResult> {
           mimeType: 'application/json',
           dialogTitle: getDiagnosticShareDialogTitle(),
         });
-        // Android expo-sharing resolves with null for both share completion and chooser dismissal.
-        // It cannot confirm completion. Report truthful shareStatus: 'unknown' and status: 'userActionRequired'.
+        // Android expo-sharing cannot confirm chooser completion; report truthful userActionRequired/unknown
         return {
           success: false,
           status: 'userActionRequired',
@@ -2630,21 +3252,30 @@ export async function exportDiagnosticReport(): Promise<ExportReportResult> {
           fileReady: true,
           shareInvoked: true,
           filePath,
+          fileSizeBytes,
         };
       } catch (shareErr) {
+        // Path 2 fallback when share throws: copy to clipboard AND report truthful status
+        if (Clipboard && typeof (Clipboard as any).setString === 'function') {
+          try {
+            Clipboard.setString(jsonString);
+          } catch {}
+        }
         return {
           success: false,
           status: 'failed',
           shareStatus: 'unavailable',
           fileReady: true,
           shareInvoked: false,
+          clipboardCopied: true,
           error: shareErr instanceof Error ? shareErr.message : String(shareErr),
           filePath,
+          fileSizeBytes,
         };
       }
     }
 
-    // Native fallback to React Native Share
+    // Native fallback to React Native Share if expo-sharing is unavailable
     if (Share && typeof Share.share === 'function') {
       try {
         const shareResult = await Share.share({
@@ -2661,9 +3292,9 @@ export async function exportDiagnosticReport(): Promise<ExportReportResult> {
             shareInvoked: true,
             error: 'Share dialog dismissed.',
             filePath,
+            fileSizeBytes,
           };
         } else if (shareResult.action === Share.sharedAction) {
-          // On Android, sharedAction is returned even upon dismissal, so report shareStatus: 'unknown' truthfully.
           return {
             success: false,
             status: 'userActionRequired',
@@ -2671,29 +3302,45 @@ export async function exportDiagnosticReport(): Promise<ExportReportResult> {
             fileReady: true,
             shareInvoked: true,
             filePath,
+            fileSizeBytes,
           };
         }
       } catch (rnShareErr) {
+        if (Clipboard && typeof (Clipboard as any).setString === 'function') {
+          try {
+            Clipboard.setString(jsonString);
+          } catch {}
+        }
         return {
           success: false,
           status: 'failed',
           shareStatus: 'unavailable',
           fileReady: true,
           shareInvoked: false,
+          clipboardCopied: true,
           error: rnShareErr instanceof Error ? rnShareErr.message : String(rnShareErr),
           filePath,
+          fileSizeBytes,
         };
       }
     }
 
-    // No sharing module available, but file was written successfully
+    // Path 2: When sharing is unavailable on device, copy to clipboard AND confirm file ready
+    if (Clipboard && typeof (Clipboard as any).setString === 'function') {
+      try {
+        Clipboard.setString(jsonString);
+      } catch {}
+    }
+
     return {
       success: true,
       status: 'fileReady',
       shareStatus: 'unavailable',
       fileReady: true,
       shareInvoked: false,
+      clipboardCopied: true,
       filePath,
+      fileSizeBytes,
     };
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
@@ -2705,4 +3352,8 @@ export async function exportDiagnosticReport(): Promise<ExportReportResult> {
       error: errorMessage,
     };
   }
+}
+
+export async function exportDiagnosticSummary(): Promise<ExportReportResult> {
+  return exportDiagnosticReport({ summaryOnly: true });
 }

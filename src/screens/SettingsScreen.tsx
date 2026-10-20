@@ -1788,7 +1788,11 @@ export default function SettingsScreen({
                         if (womenPinHash) {
                           setPinModalMode('verifyDisableLock');
                         } else {
-                          setWomenLockEnabled(false);
+                          updateSettings((prev) => ({
+                            ...prev,
+                            womenLockEnabled: false,
+                            womenPinHash: null,
+                          }));
                         }
                       } else {
                         if (!womenPinHash) {
@@ -1830,7 +1834,17 @@ export default function SettingsScreen({
                 right={
                   <Toggle
                     checked={womenLockEnabled}
-                    onChange={() => setWomenLockEnabled(!womenLockEnabled)}
+                    onChange={() => {
+                      if (womenLockEnabled) {
+                        updateSettings((prev) => ({
+                          ...prev,
+                          womenLockEnabled: false,
+                          womenPinHash: null,
+                        }));
+                      } else {
+                        setWomenLockEnabled(true);
+                      }
+                    }}
                     label={t("Protect Women's Worship")}
                   />
                 }
@@ -1921,7 +1935,11 @@ export default function SettingsScreen({
                         if (womenPinHash) {
                           setPinModalMode('verifyClearCycle');
                         } else {
-                          clearCycleHistory();
+                          try {
+                            clearCycleHistory();
+                          } catch (err: any) {
+                            Alert.alert(t('Error'), err?.message || String(err));
+                          }
                         }
                       },
                     },
@@ -1989,7 +2007,11 @@ export default function SettingsScreen({
               setConsentOpen(true);
             } else if (pinModalMode === 'verifyDisableLock') {
               setPinModalMode(null);
-              setWomenLockEnabled(false);
+              updateSettings((prev) => ({
+                ...prev,
+                womenLockEnabled: false,
+                womenPinHash: null,
+              }));
             } else if (pinModalMode === 'verifyClearCycle') {
               setPinModalMode(null);
               try {

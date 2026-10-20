@@ -869,11 +869,30 @@ export function clearWomenData(): void {
       deleteMissedFast(item.id);
     }
   }
+  const remainingPeriods = webKV.getAll('women:period:').length;
+  if (remainingPeriods > 0) {
+    throw new Error(`Failed to clear women data: ${remainingPeriods} period entries remain`);
+  }
+  const remainingNifas = webKV.getAll('women:nifas:').length;
+  if (remainingNifas > 0) {
+    throw new Error(`Failed to clear women data: ${remainingNifas} nifas entries remain`);
+  }
+  const remainingMissed = loadMissedFasts().filter((item) => {
+    const reason = (item.reason || '').toLowerCase();
+    return reason.includes('menstru') || reason.includes('post-natal') || reason.includes('postnatal');
+  });
+  if (remainingMissed.length > 0) {
+    throw new Error(`Failed to clear women data: ${remainingMissed.length} missed fast entries remain`);
+  }
 }
 
 /** Delete ONLY cycle/period history (keeps purity/ghusl/nifas/qada). */
 export function clearCycleHistory(): void {
   for (const { key } of webKV.getAll('women:period:')) webKV.delete(key);
+  const remainingPeriods = webKV.getAll('women:period:').length;
+  if (remainingPeriods > 0) {
+    throw new Error(`Failed to clear cycle history: ${remainingPeriods} period entries remain`);
+  }
 }
 
 /* ─── Study Tools (tags & highlights) ──────────────────────────── */

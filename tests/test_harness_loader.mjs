@@ -96,10 +96,12 @@ export function setupHarness() {
     export const log = [];
     let store = {};
     let failTransaction = false;
+    let failDeleteTable = null;
     export function __failNextTransaction(val = true) { failTransaction = val; }
+    export function __failDelete(t) { failDeleteTable = t; }
     export function __seed(t, rows) { store[t] = JSON.parse(JSON.stringify(rows)); }
     export function __dump(t) { return JSON.parse(JSON.stringify(store[t] || [])); }
-    export function __reset() { store = {}; log.length = 0; failTransaction = false; }
+    export function __reset() { store = {}; log.length = 0; failTransaction = false; failDeleteTable = null; }
     let SCHEMA = {};
     export function __schema(s) { SCHEMA = s; }
     export default {
@@ -125,9 +127,25 @@ export function setupHarness() {
           execSync(sql) {
             log.push(['execSync', sql]);
             const m = sql.match(/DELETE FROM (\\w+)/);
-            if (m) store[m[1]] = [];
+            if (m) {
+              if (failDeleteTable === m[1]) throw new Error('Simulated SQLite error deleting from ' + m[1]);
+              store[m[1]] = [];
+            }
           },
           runSync(sql, ...args) {
+            const delMatch = sql.match(/DELETE FROM (\\w+)(?:\\s+WHERE\\s+(\\w+)\\s*=\\s*\\?)?/i);
+            if (delMatch) {
+              const table = delMatch[1];
+              const col = delMatch[2];
+              log.push(['runSync', 'DELETE ' + table]);
+              if (failDeleteTable === table) throw new Error('Simulated SQLite error deleting from ' + table);
+              if (col && args[0] !== undefined) {
+                store[table] = (store[table] || []).filter((r) => r[col] !== args[0]);
+              } else {
+                store[table] = [];
+              }
+              return;
+            }
             const m = sql.match(/INSERT OR REPLACE INTO (\\w+) \\(([^)]*)\\)/);
             log.push(['runSync', m ? m[1] : sql.slice(0, 40)]);
             if (!m) return;
@@ -156,6 +174,21 @@ export function setupHarness() {
           },
           getFirstSync(sql, param) {
             log.push(['getFirstSync', sql, param]);
+            const countMatch = sql.match(/SELECT COUNT\\(\\*\\)\\s+as\\s+count\\s+FROM\\s+(\\w+)(?:\\s+WHERE\\s+(.*))?/i);
+            if (countMatch) {
+              const table = countMatch[1];
+              const where = countMatch[2];
+              const rows = store[table] || [];
+              if (!where) return { count: rows.length };
+              if (where.includes('reason')) {
+                const filtered = rows.filter((r) => {
+                  const reason = (r.reason || '').toLowerCase();
+                  return reason.includes('menstru') || reason.includes('post-natal') || reason.includes('postnatal');
+                });
+                return { count: filtered.length };
+              }
+              return { count: rows.length };
+            }
             return null;
           },
         };
@@ -167,10 +200,12 @@ export function setupHarness() {
     export const store = new Map();
     export const log = [];
     let seq = 0;
+    let responseListeners = [];
     export const SchedulableTriggerInputTypes = { DAILY: 'daily', TIME_INTERVAL: 'timeInterval', DATE: 'date' };
     export function __seed(id, content, trigger) { store.set(id, { identifier: id, content, trigger }); }
     export function __ids() { return [...store.keys()]; }
-    export function __clear() { store.clear(); log.length = 0; seq = 0; }
+    export function __clear() { store.clear(); log.length = 0; seq = 0; responseListeners = []; }
+    export function __emitResponse(response) { for (const l of responseListeners) l(response); }
     export default {
       SchedulableTriggerInputTypes: { DAILY: 'daily', TIME_INTERVAL: 'timeInterval', DATE: 'date' },
       async getAllScheduledNotificationsAsync() { return [...store.values()]; },
@@ -181,12 +216,16 @@ export function setupHarness() {
         store.set(id, { identifier: id, content, trigger });
         return id;
       },
+      addNotificationResponseReceivedListener(listener) {
+        responseListeners.push(listener);
+        return { remove: () => { responseListeners = responseListeners.filter(l => l !== listener); } };
+      },
       async setNotificationCategoryAsync() {},
       async setNotificationChannelAsync() {},
       async getPermissionsAsync() { return { status: 'granted', granted: true }; },
       async requestPermissionsAsync() { return { status: 'granted', granted: true }; },
       async cancelAllScheduledNotificationsAsync() { store.clear(); },
-      async dismissNotificationAsync(id) { store.delete(id); },
+      async dismissNotificationAsync(id) { log.push(['dismiss', id]); store.delete(id); },
       async getPresentedNotificationsAsync() { return []; },
       async setNotificationHandler() {},
     };
@@ -218,6 +257,9 @@ export function setupHarness() {
 
   // 4. Transpile production modules
   transpileFile('settingsWriteQueue.ts', [], 'settingsWriteQueue.mjs');
+  transpileFile('db.native.ts', [
+    ["import * as SQLite from 'expo-sqlite'", "import SQLite from './stubSqlite.mjs'"],
+  ], 'db_native.mjs');
   transpileFile('privacy.ts', [
     ["from '@react-native-async-storage/async-storage'", "from './stubAsyncStorage.mjs'"],
     ["from './settings'", "from './stubSettings.mjs'"],

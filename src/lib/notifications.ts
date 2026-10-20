@@ -803,7 +803,7 @@ export async function cancelPrayerNotifications() {
     for (const n of scheduled) {
       const data = n.content?.data as { type?: string; nowPlaying?: boolean } | undefined;
       const type = data?.type;
-      const isLegacyTypeless = !type && !data?.nowPlaying && n.identifier !== 'now-playing-audio';
+      const isLegacyTypeless = !type && !data?.nowPlaying && n.identifier !== 'quran-now-playing';
       if ((type && OWNED_PRAYER_NOTIFICATION_TYPES.has(type)) || isLegacyTypeless) {
         await Notifications.cancelScheduledNotificationAsync(n.identifier);
       }

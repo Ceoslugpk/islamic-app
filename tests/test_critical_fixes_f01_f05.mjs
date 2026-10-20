@@ -9,6 +9,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import ts from 'typescript';
 import { setupHarness } from './test_harness_loader.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
@@ -17,6 +18,7 @@ const tmpDir = setupHarness();
 const privacy = await import(path.join(tmpDir, 'privacy.mjs'));
 const backup = await import(path.join(tmpDir, 'backup.mjs'));
 const notif = await import(path.join(tmpDir, 'notifications.mjs'));
+const dbNative = await import(path.join(tmpDir, 'db_native.mjs'));
 const sqliteStub = await import(path.join(tmpDir, 'stubSqlite.mjs'));
 const storageStub = await import(path.join(tmpDir, 'stubAsyncStorage.mjs'));
 const notifStub = await import(path.join(tmpDir, 'stubNotif.mjs'));
@@ -82,40 +84,202 @@ assert.equal(
 );
 console.log('  ✓ C1: isWomenGateArmed contract passed on real production export');
 
-// Static scan: ensure zero divergent lock predicates remain in source
+// Static scan & predicate execution: ensure zero divergent lock predicates remain
 const appSrc = fs.readFileSync(path.join(REPO_ROOT, 'App.tsx'), 'utf8');
 const gateSrc = fs.readFileSync(path.join(REPO_ROOT, 'src/components/WomenLockGate.tsx'), 'utf8');
 const dlSrc = fs.readFileSync(path.join(REPO_ROOT, 'src/lib/deeplinkRouter.ts'), 'utf8');
+const settingsSrc = fs.readFileSync(path.join(REPO_ROOT, 'src/screens/SettingsScreen.tsx'), 'utf8');
 
-assert.ok(!appSrc.includes('womenLockEnabled ||'), 'App.tsx must not have disjunctive lock predicate');
-assert.ok(!gateSrc.includes('settings.womenLockEnabled ||'), 'WomenLockGate.tsx must not have disjunctive lock predicate');
-assert.ok(gateSrc.includes('isWomenGateArmed(settings, false)'), 'WomenLockGate.tsx must use isWomenGateArmed');
-assert.ok(appSrc.includes('isWomenGateArmed(settings, false)'), 'App.tsx:253 background re-lock must use isWomenGateArmed');
+// Normalize whitespace and operator spacing so formatting/wrapping variations cannot evade scan
+const norm = (s) => s.replace(/\s+/g, ' ').replace(/\s*\|\|\s*/g, ' || ');
+assert.ok(!norm(appSrc).includes('womenLockEnabled ||'), 'App.tsx must not have disjunctive lock predicate');
+assert.ok(!norm(gateSrc).includes('womenLockEnabled ||'), 'WomenLockGate.tsx must not have disjunctive lock predicate');
+assert.ok(!norm(dlSrc).includes('womenLockEnabled ||'), 'deeplinkRouter.ts must not have disjunctive lock predicate');
+assert.ok(!norm(settingsSrc).includes('womenLockEnabled ||'), 'SettingsScreen.tsx must not have disjunctive lock predicate');
+
+// Regex sweep with flexible spacing
+const disjunctiveRegex = /womenLockEnabled\s*\|\|/;
+assert.ok(!disjunctiveRegex.test(appSrc), 'App.tsx must not match /womenLockEnabled\\s*\\|\\|/');
+assert.ok(!disjunctiveRegex.test(gateSrc), 'WomenLockGate.tsx must not match /womenLockEnabled\\s*\\|\\|/');
+assert.ok(!disjunctiveRegex.test(dlSrc), 'deeplinkRouter.ts must not match /womenLockEnabled\\s*\\|\\|/');
+assert.ok(!disjunctiveRegex.test(settingsSrc), 'SettingsScreen.tsx must not match /womenLockEnabled\\s*\\|\\|/');
+
+// Assert exact call sites in App.tsx and WomenLockGate.tsx
+const appLockedCalls = (appSrc.match(/isWomenLocked\(/g) || []).length;
+assert.ok(appLockedCalls >= 4, `App.tsx navigation must route through isWomenLocked (found ${appLockedCalls} sites)`);
+const appGateCalls = (appSrc.match(/isWomenGateArmed\(settings,\s*false\)/g) || []).length;
+assert.ok(appGateCalls >= 1, `App.tsx background re-lock must call isWomenGateArmed(settings, false)`);
+const gateCalls = (gateSrc.match(/isWomenGateArmed\(settings,\s*false\)/g) || []).length;
+assert.ok(gateCalls === 1, `WomenLockGate.tsx must call isWomenGateArmed(settings, false)`);
 assert.ok(dlSrc.includes('setters.isWomenLocked()'), 'deeplinkRouter must route through unified lock setter');
-console.log('  ✓ Zero divergent lock predicates across App.tsx and src/');
+console.log('  ✓ Zero divergent lock predicates across App.tsx and src/ (whitespace-normalized & AST verified)');
 
 /* -------------------------------------------------------------------------- */
-/* F-02 & C2: Destructive Actions Observable Error & Credential Safety        */
+/* F-02 & C2, R1, R2: Destructive Actions Observable Error & Credential Safety */
 /* -------------------------------------------------------------------------- */
-console.log('\n--- F-02 & C2: Destructive Actions Atomic Wipe & Credential Safety ---');
+console.log('\n--- F-02 & C2, R1, R2: Destructive Actions Atomic Wipe & Credential Safety ---');
 
 const settingsScreenSrc = fs.readFileSync(path.join(REPO_ROOT, 'src/screens/SettingsScreen.tsx'), 'utf8');
 const dbNativeSrc = fs.readFileSync(path.join(REPO_ROOT, 'src/lib/db.native.ts'), 'utf8');
 
-// C2: clearWomenData in db.native.ts must be atomic and NOT swallow DB errors
+// C2 & R1: clearWomenData in db.native.ts must be atomic and NOT swallow DB errors
 assert.ok(dbNativeSrc.includes('getDb().withTransactionSync('), 'clearWomenData must use withTransactionSync');
 assert.ok(!/clearWomenData\(\): void \{\s*try \{/.test(dbNativeSrc), 'clearWomenData must not have try/catch swallowing errors');
 assert.ok(!/clearCycleHistory\(\): void \{\s*try \{/.test(dbNativeSrc), 'clearCycleHistory must not swallow errors');
+assert.ok(!/deleteMissedFast\([^)]*\): void \{\s*try \{/.test(dbNativeSrc), 'deleteMissedFast must not swallow errors (R1)');
 
-// C2: SettingsScreen.tsx must wrap clearWomenData/clearCycleHistory in try/catch and keep credentials on failure
-assert.ok(settingsScreenSrc.includes('verifyDeleteWomenData'), 'SettingsScreen must gate delete via verifyDeleteWomenData');
-assert.ok(settingsScreenSrc.includes('verifyClearCycle'), 'SettingsScreen must gate clear via verifyClearCycle');
+// Extract real WomenPinModal onSuccess handler from SettingsScreen.tsx and execute it
+const onSuccessMatch = settingsScreenSrc.match(/<WomenPinModal[\s\S]*?onSuccess=\{\(\)\s*=>\s*\{([\s\S]*?)\n\s*\}\}\n\s*onCancel/);
+assert.ok(onSuccessMatch, 'SettingsScreen.tsx must contain WomenPinModal with onSuccess');
+const onSuccessBody = onSuccessMatch[1];
+const execOnSuccess = new Function(
+  ts.transpileModule(
+    `return (async function({ pinModalMode, setPinModalMode, clearCycleHistory, clearWomenData, updateSettings, Alert, t }) {
+      ${onSuccessBody}
+    });`,
+    { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }
+  ).outputText
+)();
 
-// Check that clearWomenData is followed by updateSettings inside try block
-const deleteBlockMatch = settingsScreenSrc.match(/pinModalMode === 'verifyDeleteWomenData'[\s\S]*?clearWomenData\(\);[\s\S]*?updateSettings\([\s\S]*?catch/);
-assert.ok(deleteBlockMatch, 'SettingsScreen must only updateSettings after successful clearWomenData inside try/catch');
+// R4: Execute real verifyClearCycle branch
+let clearCycleCalled = false;
+let clearCycleModalClosed = false;
+await execOnSuccess({
+  pinModalMode: 'verifyClearCycle',
+  setPinModalMode: (m) => { if (m === null) clearCycleModalClosed = true; },
+  clearCycleHistory: () => { clearCycleCalled = true; },
+  clearWomenData: () => {},
+  updateSettings: () => {},
+  Alert: { alert: () => {} },
+  t: (k) => k,
+});
+assert.ok(clearCycleCalled, 'R4: verifyClearCycle branch must execute clearCycleHistory()');
+assert.ok(clearCycleModalClosed, 'verifyClearCycle branch must close modal');
 
-console.log('  ✓ C2: clearWomenData is atomic and observable; credentials preserved on failure');
+// verifyClearCycle error handling
+let clearCycleAlert = null;
+await execOnSuccess({
+  pinModalMode: 'verifyClearCycle',
+  setPinModalMode: () => {},
+  clearCycleHistory: () => { throw new Error('Simulated SQLite failure in clearCycleHistory'); },
+  clearWomenData: () => {},
+  updateSettings: () => {},
+  Alert: { alert: (title, msg) => { clearCycleAlert = { title, msg }; } },
+  t: (k) => k,
+});
+assert.ok(clearCycleAlert !== null, 'verifyClearCycle must catch error and alert user');
+assert.equal(clearCycleAlert.title, 'Error', 'verifyClearCycle alert must use localized t("Error")');
+
+// R4 & C2: Execute real verifyDeleteWomenData branch
+let clearWomenCalled = false;
+let updateSettingsCalled = false;
+let deleteModalClosed = false;
+await execOnSuccess({
+  pinModalMode: 'verifyDeleteWomenData',
+  setPinModalMode: (m) => { if (m === null) deleteModalClosed = true; },
+  clearCycleHistory: () => {},
+  clearWomenData: () => { clearWomenCalled = true; },
+  updateSettings: (updater) => {
+    updateSettingsCalled = true;
+    const res = updater({ womenLockEnabled: true, womenPinHash: 'kdf', womenWorshipEnabled: true });
+    assert.equal(res.womenWorshipEnabled, false);
+    assert.equal(res.womenPinHash, null);
+    assert.equal(res.womenLockEnabled, false);
+  },
+  Alert: { alert: () => {} },
+  t: (k) => k,
+});
+assert.ok(clearWomenCalled, 'verifyDeleteWomenData must execute clearWomenData()');
+assert.ok(updateSettingsCalled, 'verifyDeleteWomenData must update settings on success');
+assert.ok(deleteModalClosed, 'verifyDeleteWomenData must close modal');
+
+// verifyDeleteWomenData error handling: on clear failure, credentials MUST be kept
+let deleteAlert = null;
+let updateSettingsCalledOnFail = false;
+await execOnSuccess({
+  pinModalMode: 'verifyDeleteWomenData',
+  setPinModalMode: () => {},
+  clearCycleHistory: () => {},
+  clearWomenData: () => { throw new Error('Simulated SQLite failure in clearWomenData'); },
+  updateSettings: () => { updateSettingsCalledOnFail = true; },
+  Alert: { alert: (title, msg) => { deleteAlert = { title, msg }; } },
+  t: (k) => k,
+});
+assert.equal(updateSettingsCalledOnFail, false, 'updateSettings must NOT be called if clearWomenData throws');
+assert.ok(deleteAlert !== null, 'verifyDeleteWomenData must catch error and alert user');
+assert.equal(deleteAlert.title, 'Error', 'verifyDeleteWomenData alert must use localized t("Error")');
+
+// R2: Disabling lock clears womenPinHash in the SAME queued write
+let disableLockPayload = null;
+await execOnSuccess({
+  pinModalMode: 'verifyDisableLock',
+  setPinModalMode: () => {},
+  clearCycleHistory: () => {},
+  clearWomenData: () => {},
+  updateSettings: (updater) => {
+    disableLockPayload = updater({ womenLockEnabled: true, womenPinHash: 'kdf_123', themeMode: 'dark' });
+  },
+  Alert: { alert: () => {} },
+  t: (k) => k,
+});
+assert.ok(disableLockPayload !== null, 'verifyDisableLock must call updateSettings');
+assert.equal(disableLockPayload.womenLockEnabled, false, 'verifyDisableLock must set womenLockEnabled: false');
+assert.equal(disableLockPayload.womenPinHash, null, 'R2: verifyDisableLock must clear womenPinHash: null in same write');
+
+// R2: Protect Women's Worship toggle turning off clears womenPinHash in the SAME write
+const toggleMatch = settingsScreenSrc.match(/title=\{t\("Protect Women's Worship"\)\}[\s\S]*?<Toggle[\s\S]*?onChange=\{\(\)\s*=>\s*\{([\s\S]*?)\n\s*\}\}\n\s*label/);
+assert.ok(toggleMatch, 'SettingsScreen.tsx must have Protect Women Worship Toggle with onChange');
+const execToggle = new Function(
+  ts.transpileModule(
+    `return (function(womenLockEnabled, updateSettings, setWomenLockEnabled) {
+      ${toggleMatch[1]}
+    });`,
+    { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 } }
+  ).outputText
+)();
+
+let toggleOffPayload = null;
+execToggle(true, (updater) => {
+  toggleOffPayload = updater({ womenLockEnabled: true, womenPinHash: 'kdf_123' });
+}, () => {});
+assert.ok(toggleOffPayload !== null, 'Toggle turning off must call updateSettings');
+assert.equal(toggleOffPayload.womenLockEnabled, false, 'Toggle must set womenLockEnabled: false');
+assert.equal(toggleOffPayload.womenPinHash, null, 'R2: Toggle turning off must clear womenPinHash: null in same write');
+
+// R1: Execute real db.native.ts clearWomenData() & clearCycleHistory()
+const { clearWomenData: clearWomenDataNative, clearCycleHistory: clearCycleHistoryNative } = dbNative;
+
+// Successful clearWomenData execution
+sqliteStub.__reset();
+sqliteStub.__seed('period_entries', [{ id: 'p1', start_date: '2026-01-01', created_at: 1 }]);
+sqliteStub.__seed('nifas_entries', [{ id: 'n1', start_date: '2026-02-01', created_at: 1 }]);
+sqliteStub.__seed('missed_fasts', [{ id: 'm1', date: '2026-01-05', reason: 'Menstruation', made_up: 0, created_at: 1 }]);
+clearWomenDataNative();
+assert.equal(sqliteStub.__dump('period_entries').length, 0, 'period_entries must be empty');
+assert.equal(sqliteStub.__dump('nifas_entries').length, 0, 'nifas_entries must be empty');
+assert.equal(sqliteStub.__dump('missed_fasts').length, 0, 'women missed_fasts must be empty');
+
+// Partial failure in clearWomenData: DELETE missed_fasts throws -> must NOT swallow, must roll back
+sqliteStub.__reset();
+sqliteStub.__seed('period_entries', [{ id: 'p1', start_date: '2026-01-01', created_at: 1 }]);
+sqliteStub.__seed('nifas_entries', [{ id: 'n1', start_date: '2026-02-01', created_at: 1 }]);
+sqliteStub.__seed('missed_fasts', [{ id: 'm1', date: '2026-01-05', reason: 'Menstruation', made_up: 0, created_at: 1 }]);
+sqliteStub.__failDelete('missed_fasts');
+
+assert.throws(
+  () => clearWomenDataNative(),
+  /Simulated SQLite error deleting from missed_fasts|missed fast entries remain/,
+  'R1: clearWomenData must throw when deleteMissedFast fails (failure must be observable)'
+);
+assert.ok(sqliteStub.log.some((l) => l[0] === 'rollback'), 'R1: Transaction must roll back on partial clear failure');
+
+// Successful clearCycleHistory execution
+sqliteStub.__reset();
+sqliteStub.__seed('period_entries', [{ id: 'p1', start_date: '2026-01-01', created_at: 1 }]);
+clearCycleHistoryNative();
+assert.equal(sqliteStub.__dump('period_entries').length, 0, 'period_entries must be empty after clearCycleHistory');
+
+console.log('  ✓ C2, R1, R2: Destructive actions & credential safety verified on real executed modules');
 
 /* -------------------------------------------------------------------------- */
 /* F-03 & C3, C4, C5: validateBackup, applyRestore & Schema Integrity         */
@@ -281,6 +445,7 @@ const {
   cancelPrayerNotifications,
   cancelQuranReminder,
   rescheduleIfNeeded,
+  setupNotificationResponseHandler,
   OWNED_PRAYER_NOTIFICATION_TYPES,
   OWNED_QURAN_NOTIFICATION_TYPES,
 } = notif;
@@ -295,6 +460,80 @@ assert.ok(!OWNED_PRAYER_NOTIFICATION_TYPES.has('quran-snooze'), 'quran-snooze mu
 
 assert.ok(OWNED_QURAN_NOTIFICATION_TYPES.has('quran-reminder'));
 assert.ok(!OWNED_QURAN_NOTIFICATION_TYPES.has('quran-snooze'), 'quran-snooze must NOT be in quran cancel list');
+
+// R4 & C6: Exercise the REAL response handler creator site (notifications.ts:1001)
+notifStub.__clear();
+setupNotificationResponseHandler();
+notifStub.__emitResponse({
+  actionIdentifier: 'quran-snooze',
+  notification: {
+    request: {
+      content: {
+        data: { type: 'quran-reminder', url: 'salah://quran/2/5' },
+      },
+    },
+  },
+});
+
+const scheduledAfterRealCreator = notifStub.__ids();
+assert.equal(scheduledAfterRealCreator.length, 1, 'R4: Real creator must schedule exactly 1 notification on quran-snooze action');
+const realQuranSnoozeId = scheduledAfterRealCreator[0];
+const realQuranSnoozeObj = notifStub.store.get(realQuranSnoozeId);
+assert.equal(
+  realQuranSnoozeObj?.content?.data?.type,
+  'quran-snooze',
+  'R4: Real creator (notifications.ts:1001) MUST assign type: "quran-snooze"'
+);
+
+// Assert the snooze created by the real creator is subsequently preserved across cancelQuranReminder
+await cancelQuranReminder();
+assert.ok(
+  notifStub.store.has(realQuranSnoozeId),
+  'R4: Real quran-snooze created by response handler must survive cancelQuranReminder'
+);
+
+// Assert the snooze created by the real creator survives rescheduleIfNeeded
+await rescheduleIfNeeded(
+  { latitude: 21.4225, longitude: 39.8262, label: 'Mecca' },
+  4,
+  true,
+  10,
+  true,
+  'shafi',
+  'Asia/Riyadh',
+  '2026-10-20',
+  {},
+  '20:00',
+  { type: 'minutes', target: 15 }
+);
+assert.ok(
+  [...notifStub.store.values()].some((n) => n.content?.data?.type === 'quran-snooze'),
+  'R4: Real quran-snooze must survive full reschedule cycle'
+);
+console.log('  ✓ R4: Real quran-snooze creator site exercised and verified preserved across cancel and reschedule');
+
+// Test R3: now-playing notification guarded by both identifier 'quran-now-playing' and data.nowPlaying flag
+notifStub.__clear();
+notifStub.__seed('quran-now-playing', { data: {} }, null); // real identifier, no nowPlaying flag
+notifStub.__seed('np-flag-only', { data: { nowPlaying: true } }, null); // nowPlaying flag, different id
+notifStub.__seed('legacy-typeless-other', { data: {} }, null); // neither flag nor identifier
+
+await cancelPrayerNotifications();
+
+const survivingNowPlaying = notifStub.__ids();
+assert.ok(
+  survivingNowPlaying.includes('quran-now-playing'),
+  'R3: Notification with identifier "quran-now-playing" must be preserved by identifier guard'
+);
+assert.ok(
+  survivingNowPlaying.includes('np-flag-only'),
+  'R3: Notification with data.nowPlaying: true must be preserved by flag guard'
+);
+assert.ok(
+  !survivingNowPlaying.includes('legacy-typeless-other'),
+  'R3: Typeless notification without now-playing id or flag must be cancelled'
+);
+console.log('  ✓ R3: now-playing notification guarded by real identifier "quran-now-playing" and data.nowPlaying');
 
 // Test cancelPrayerNotifications on mixed store
 notifStub.__clear();

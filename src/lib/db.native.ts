@@ -1157,9 +1157,7 @@ export function saveMissedFast(item: MissedFastItem): void {
 }
 
 export function deleteMissedFast(id: string): void {
-  try {
-    getDb().runSync('DELETE FROM missed_fasts WHERE id = ?', id);
-  } catch { /* non-fatal */ }
+  getDb().runSync('DELETE FROM missed_fasts WHERE id = ?', id);
 }
 
 export function loadMissedFasts(): MissedFastItem[] {
@@ -1561,12 +1559,34 @@ export function clearWomenData(): void {
         deleteMissedFast(item.id);
       }
     }
+    const remainingPeriods = getDb().getAllSync('SELECT id FROM period_entries').length;
+    if (remainingPeriods > 0) {
+      throw new Error(`Failed to clear women data: ${remainingPeriods} period entries remain`);
+    }
+    const remainingNifas = getDb().getAllSync('SELECT id FROM nifas_entries').length;
+    if (remainingNifas > 0) {
+      throw new Error(`Failed to clear women data: ${remainingNifas} nifas entries remain`);
+    }
+    // Verify with a direct query. loadMissedFasts() swallows SELECT errors and returns [],
+    // which would let a failed clear report success and the caller wipe the PIN.
+    const remainingWomenFasts = getDb().getAllSync<{ id: string }>(
+      "SELECT id FROM missed_fasts WHERE lower(reason) LIKE '%menstru%' OR lower(reason) LIKE '%post-natal%' OR lower(reason) LIKE '%postnatal%'"
+    ).length;
+    if (remainingWomenFasts > 0) {
+      throw new Error(`Failed to clear women data: ${remainingWomenFasts} missed fast entries remain`);
+    }
   });
 }
 
 /** Delete ONLY cycle/period history (keeps purity/ghusl/nifas/qada). */
 export function clearCycleHistory(): void {
-  getDb().runSync('DELETE FROM period_entries');
+  getDb().withTransactionSync(() => {
+    getDb().runSync('DELETE FROM period_entries');
+    const remainingPeriods = getDb().getAllSync('SELECT id FROM period_entries').length;
+    if (remainingPeriods > 0) {
+      throw new Error(`Failed to clear cycle history: ${remainingPeriods} period entries remain`);
+    }
+  });
 }
 
 
