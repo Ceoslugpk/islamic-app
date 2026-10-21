@@ -35,6 +35,7 @@ import { SheetHeader } from '../components/layout/SheetHeader';
 import { DetailScreen } from '../components/layout/DetailScreen';
 import {
   useSettings,
+  persistLanguageChange,
   QURAN_FONT_SIZE_MIN,
   QURAN_FONT_SIZE_MAX,
   QURAN_FONT_SIZE_STEP,
@@ -1255,14 +1256,10 @@ export default function SettingsScreen({
                     Platform.OS !== 'web' && I18nManager.isRTL !== nextIsRtl;
                   const needsNativeReload =
                     Platform.OS !== 'web' && (isDirectionChange || nativeDirectionMismatch);
-                  const restoreLanguage = () =>
-                    withLanguageWriteTimeout(Promise.resolve(setLanguage(currentLang))).then(() => {
-                      prepareNativeLayoutDirection(currentLang);
-                    });
 
                   // Gated app-state record: what was asked for, and what happened to it.
                   const languageSwitch = beginLanguageSwitch(currentLang, nextLang, {
-                    reloadRequested: needsNativeReload,
+                    reloadRequested: false,
                   });
 
                   isSwitchingLanguageRef.current = true;
@@ -1293,15 +1290,13 @@ export default function SettingsScreen({
                         }
                       })
                       .catch(() => {
-                        void restoreLanguage().catch(() => {}).finally(() => {
-                          languageSwitch.markRejected();
-                          isSwitchingLanguageRef.current = false;
-                          if (mountedRef.current) {
-                            setIsSwitchingLanguage(false);
-                            setSwitchingTargetLang(null);
-                            setLanguageError(t('Failed to save settings. Please try again.'));
-                          }
-                        });
+                        languageSwitch.markRejected();
+                        isSwitchingLanguageRef.current = false;
+                        if (mountedRef.current) {
+                          setIsSwitchingLanguage(false);
+                          setSwitchingTargetLang(null);
+                          setLanguageError(t('Failed to save settings. Please try again.'));
+                        }
                       });
                     return;
                   }
@@ -1316,7 +1311,7 @@ export default function SettingsScreen({
                   // guaranteed to unlock on a bounded timer and inform the user.
                   const RELOAD_TIMEOUT_MS = 1500;
 
-                  const handleReloadFallback = async () => {
+                  const handleReloadFallback = () => {
                     // The switch neither restarted the app nor completed: say so.
                     languageSwitch.markNoRestart();
                     if (reloadTimerRef.current) {
@@ -1326,11 +1321,6 @@ export default function SettingsScreen({
                     if (failSafeTimerRef.current) {
                       clearTimeout(failSafeTimerRef.current);
                       failSafeTimerRef.current = null;
-                    }
-                    try {
-                      await restoreLanguage();
-                    } catch {
-                      // Always unlock below; a later attempt can retry.
                     }
                     isSwitchingLanguageRef.current = false;
                     if (mountedRef.current) {
@@ -1342,7 +1332,7 @@ export default function SettingsScreen({
                     }
                   };
 
-                  withLanguageWriteTimeout(Promise.resolve(setLanguage(nextLang))).then(() => {
+                  withLanguageWriteTimeout(persistLanguageChange(settings, nextLang)).then(() => {
                     languageSwitch.markReloadRequested();
                     onPrepareReload?.();
                     prepareNativeLayoutDirection(nextLang);
@@ -1363,23 +1353,21 @@ export default function SettingsScreen({
                     }, 300);
                   })
                     .catch(() => {
-                      void restoreLanguage().catch(() => {}).finally(() => {
-                        languageSwitch.markRejected();
-                        isSwitchingLanguageRef.current = false;
-                        if (reloadTimerRef.current) {
-                          clearTimeout(reloadTimerRef.current);
-                          reloadTimerRef.current = null;
-                        }
-                        if (failSafeTimerRef.current) {
-                          clearTimeout(failSafeTimerRef.current);
-                          failSafeTimerRef.current = null;
-                        }
-                        if (mountedRef.current) {
-                          setIsSwitchingLanguage(false);
-                          setSwitchingTargetLang(null);
-                          setLanguageError(t('Still could not load. Try again later.'));
-                        }
-                      });
+                      languageSwitch.markRejected();
+                      isSwitchingLanguageRef.current = false;
+                      if (reloadTimerRef.current) {
+                        clearTimeout(reloadTimerRef.current);
+                        reloadTimerRef.current = null;
+                      }
+                      if (failSafeTimerRef.current) {
+                        clearTimeout(failSafeTimerRef.current);
+                        failSafeTimerRef.current = null;
+                      }
+                      if (mountedRef.current) {
+                        setIsSwitchingLanguage(false);
+                        setSwitchingTargetLang(null);
+                        setLanguageError(t('Still could not load. Try again later.'));
+                      }
                     });
                 }
               };

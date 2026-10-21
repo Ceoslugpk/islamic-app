@@ -387,6 +387,15 @@ async function assertRealSettingsLanguagePersistence() {
       DetailScreen: runtimeDetailScreen,
     },
     '../lib/settings': {
+      persistLanguageChange: (settings, language) => {
+        events.push(['persist-start', language]);
+        return new Promise((resolve) => {
+          resolveLanguage = () => {
+            events.push(['persist-done', language]);
+            resolve();
+          };
+        });
+      },
       useSettings: () => ({
         settings: settingsState,
         setLanguage: (language) => {

@@ -3,7 +3,7 @@ import { StyleSheet, View, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../lib/theme';
 import { shortestAngleDelta } from '../lib/qibla';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { AppText } from './ui/AppText';
 
 interface QiblaCompassProps {
@@ -16,6 +16,24 @@ interface QiblaCompassProps {
 }
 
 const TICKS = Array.from({ length: 24 }, (_, i) => i * 15);
+const CARDINAL_EDGE_OFFSET = 22;
+
+export function getCompassCardinalPosition(
+  cardinal: 'east' | 'west',
+  rtl: boolean
+): { start?: number; end?: number } {
+  if (cardinal === 'east') return rtl ? { start: CARDINAL_EDGE_OFFSET } : { end: CARDINAL_EDGE_OFFSET };
+  return rtl ? { end: CARDINAL_EDGE_OFFSET } : { start: CARDINAL_EDGE_OFFSET };
+}
+
+export function resolveQiblaNeedleRotation(
+  rotation: number,
+  bearing: number | null,
+  heading: number | null,
+  isStaticMode: boolean
+): number {
+  return isStaticMode || heading === null ? (bearing ?? 0) : rotation;
+}
 
 export function QiblaCompass({
   rotation,
@@ -26,9 +44,10 @@ export function QiblaCompass({
   size = 280,
 }: QiblaCompassProps) {
   const { colors } = useTheme();
+  const rtl = isRTL();
 
   // Continuous angle tracker to prevent 360-degree wrap spins
-  const targetRotation = isStaticMode || heading === null ? (bearing ?? 0) : rotation;
+  const targetRotation = resolveQiblaNeedleRotation(rotation, bearing, heading, isStaticMode);
   const currentAngleRef = useRef(targetRotation);
   const [animRotation] = useState(() => new Animated.Value(targetRotation));
 
@@ -159,6 +178,7 @@ export function QiblaCompass({
           style={[
             styles.cardinal,
             styles.east,
+            getCompassCardinalPosition('east', rtl),
           ]}
         >
           E
@@ -179,6 +199,7 @@ export function QiblaCompass({
           style={[
             styles.cardinal,
             styles.west,
+            getCompassCardinalPosition('west', rtl),
           ]}
         >
           W
@@ -321,7 +342,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   east: {
-    right: 22,
     top: '50%',
     marginTop: -9,
   },
@@ -330,7 +350,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   west: {
-    left: 22,
     top: '50%',
     marginTop: -9,
   },

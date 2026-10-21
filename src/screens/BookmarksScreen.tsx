@@ -23,6 +23,11 @@ interface BookmarksScreenProps {
   onOpenVerse?: (surah: number, ayah: number) => void;
 }
 
+export function getBookmarkOpenAffordanceLabel(raw: string, rtl: boolean): string {
+  const base = raw.replace(/\s*[→←]\s*$/, '').trim();
+  return rtl ? `${base} ←` : `${base} →`;
+}
+
 function BookmarksScreen({
   onBack,
   backLabel = 'Quran',
@@ -109,11 +114,7 @@ function BookmarksScreen({
 
         <View style={[styles.itemFooter, { alignItems: isRtl ? 'flex-start' : 'flex-end' }]}>
           <AppText variant="link" style={styles.readHint}>
-            {(() => {
-              const raw = t('Tap to open in Reader →');
-              const base = raw.replace(/\s*[→←]\s*$/, '').trim();
-              return isRtl ? `${base} ←` : `${base} →`;
-            })()}
+            {getBookmarkOpenAffordanceLabel(t('Tap to open in Reader →'), isRtl)}
           </AppText>
         </View>
       </PremiumCard>

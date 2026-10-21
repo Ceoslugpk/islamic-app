@@ -10,7 +10,8 @@ import {
 import { useTheme } from '../../lib/theme';
 import { HOME_THEME_TOKENS } from '../../lib/homeThemeTokens';
 import { touchTargetTokens } from '../../lib/buttonTokens';
-import { isRTL, t } from '../../lib/i18n';
+import { getCurrentLanguage, isRTL, t } from '../../lib/i18n';
+import { getTextAlignment } from '../../lib/typography';
 import {
   HEADER_HORIZONTAL_PADDING,
   HEADER_MAX_WIDTH,
@@ -72,6 +73,7 @@ export function SheetHeader({
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const rtl = isRTL();
+  const currentLanguage = getCurrentLanguage();
 
   const childPrefix = testID ?? 'sheet-header';
 
@@ -138,7 +140,7 @@ export function SheetHeader({
                 {
                   fontFamily: rtl ? fontRoles.arabicBold : fontRoles.eyebrowFallback,
                   fontSize: isCompact ? 10 : 11,
-                  textAlign: rtl ? 'right' : 'left',
+                  ...getTextAlignment(t(eyebrow), currentLanguage, 'eyebrow'),
                 },
               ]}
               numberOfLines={1}
@@ -155,7 +157,7 @@ export function SheetHeader({
                 fontFamily: rtl ? fontRoles.titleRtl : fontRoles.titleFallback,
                 fontSize: 22,
                 lineHeight: 26,
-                textAlign: rtl ? 'right' : 'left',
+                ...getTextAlignment(t(title), currentLanguage, 'headerTitle'),
               },
             ]}
             numberOfLines={1}
@@ -172,7 +174,7 @@ export function SheetHeader({
                 {
                   fontFamily: fontRoles.ui,
                   fontSize: isCompact ? 11.5 : 12,
-                  textAlign: rtl ? 'right' : 'left',
+                  ...getTextAlignment(t(subtitle), currentLanguage, 'subtitle'),
                 },
               ]}
               numberOfLines={1}

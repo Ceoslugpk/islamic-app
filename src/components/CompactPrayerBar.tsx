@@ -8,7 +8,8 @@ import {
 } from 'react-native';
 import { useTheme } from '../lib/theme';
 import { HOME_THEME_TOKENS, getPillShadow } from '../lib/homeThemeTokens';
-import { isRTL, t } from '../lib/i18n';
+import { getCurrentLanguage, isRTL, t } from '../lib/i18n';
+import { getTextAlignment } from '../lib/typography';
 import { AppText } from './ui/AppText';
 import { PrayerCountdown } from './PrayerCountdown';
 
@@ -42,6 +43,10 @@ export const CompactPrayerBar = React.memo(function CompactPrayerBar({
   const { mode, tokens: activeText } = useTheme();
   const tokens = HOME_THEME_TOKENS[mode];
   const rtl = isRTL();
+  const currentLanguage = getCurrentLanguage();
+  const prayerNameText = rtl ? t(prayerName) : t(prayerName).toUpperCase();
+  const prayerNameAlignment = getTextAlignment(prayerNameText, currentLanguage, 'eyebrow');
+  const prayerTimeAlignment = getTextAlignment(prayerTime, currentLanguage, 'numeral');
   const shadow = getPillShadow(mode);
 
   const containerStyle: StyleProp<ViewStyle> = [
@@ -70,19 +75,19 @@ export const CompactPrayerBar = React.memo(function CompactPrayerBar({
         />
         <AppText
           variant="eyebrow"
-          style={styles.prayerName}
+          style={[styles.prayerName, prayerNameAlignment]}
           numberOfLines={1}
           ellipsizeMode="tail"
           testID={`${testID}-name`}
         >
-          {rtl ? t(prayerName) : t(prayerName).toUpperCase()}
+          {prayerNameText}
         </AppText>
         <AppText variant="caption" tone="faint" style={styles.separator}>
           ·
         </AppText>
         <AppText
           variant="numeral"
-          style={[styles.prayerTime, { writingDirection: 'ltr' }]}
+          style={[styles.prayerTime, prayerTimeAlignment]}
           numberOfLines={1}
           testID={`${testID}-time`}
         >

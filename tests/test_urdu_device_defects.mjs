@@ -97,9 +97,21 @@ assert.ok(
   dailyContentRailCode.includes("fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular'"),
   'DailyContentRail divine names must use Amiri font in RTL'
 );
+// HomeScreen and PrayerTimeline now resolve direction through the shared
+// getTextAlignment contract (src/lib/typography.ts) instead of hand-rolling the
+// per-direction ternary. The BEHAVIOUR (Urdu/Arabic -> right + rtl; Latin in an
+// RTL locale -> right + ltr) is asserted by
+// tests/test_v1_1_94_urdu_alignment_contract.mjs, which executes the real helper.
+// Here we assert only the invariant that matters locally: these screens must not
+// bypass the contract with a hand-rolled ternary again.
 assert.ok(
-  homeScreenCode.includes("textAlign: isRTL() ? 'right' : 'left'"),
-  'HomeScreen Dua rail texts must align right in RTL'
+  homeScreenCode.includes('getTextAlignment') &&
+    !homeScreenCode.includes("textAlign: isRTL() ? 'right' : 'left'"),
+  'HomeScreen must resolve text alignment through the shared RTL contract, not a hand-rolled ternary'
+);
+assert.ok(
+  prayerTimelineCode.includes('getTextAlignment'),
+  'PrayerTimeline must resolve text alignment through the shared contract'
 );
 assert.ok(
   prayerTimelineCode.includes("isRTL() ? 'Amiri_700Bold' : 'Manrope_700Bold'"),

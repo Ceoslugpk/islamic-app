@@ -69,24 +69,46 @@ assert.ok(onboardingSource.includes('handleSelectAudioEdition'), 'Audio handler 
 console.log('  ✓ 1.5 Explicit-vs-default linking state and handlers verified');
 
 // 1.6 Production write queue, readback verification & durable sequence
-const submitTransactionBody = onboardingSource.slice(
-  onboardingSource.indexOf('export async function executeOnboardingSubmitTransaction'),
-  onboardingSource.indexOf('export default function OnboardingScreen')
+const submitTransactionStart = onboardingSource.indexOf('export async function executeOnboardingSubmitTransaction');
+const submitTransactionEnd = onboardingSource.indexOf('export default function OnboardingScreen');
+assert.ok(
+  submitTransactionStart !== -1 && submitTransactionEnd !== -1 && submitTransactionStart < submitTransactionEnd,
+  'Onboarding transaction export is present before the screen export'
+);
+const submitTransactionBody = onboardingSource.slice(submitTransactionStart, submitTransactionEnd);
+const appLanguageWrite = submitTransactionBody.match(/await withTimeout\(\s*Promise\.resolve\(setLanguage\(selectedAppLang\)\)/);
+const quranLanguageWriteWithTimeout = submitTransactionBody.match(/await withTimeout\(\s*setQuranTranslationLanguageFn\(selectedQuranLang\)/);
+const onboardingDoneWriteWithTimeout = submitTransactionBody.match(/await withTimeout\(\s*setOnboardingDoneFn\(true\)/);
+assert.ok(
+  appLanguageWrite,
+  'App language persists through production useSettings().setLanguage queue (bounded by withTimeout)'
 );
 assert.ok(
-  submitTransactionBody.includes('await Promise.resolve(setLanguage(selectedAppLang))'),
-  'App language persists through production useSettings().setLanguage queue'
+  quranLanguageWriteWithTimeout,
+  'Quran translation persistence is bounded by withTimeout'
 );
 assert.ok(
-  submitTransactionBody.indexOf('await Promise.resolve(setLanguage(selectedAppLang))') < submitTransactionBody.indexOf('await setQuranTranslationLanguageFn(selectedQuranLang)'),
+  onboardingDoneWriteWithTimeout,
+  'onboardingDone persistence is bounded by withTimeout'
+);
+const appLanguageWriteIndex = submitTransactionBody.indexOf('setLanguage(selectedAppLang)');
+const quranLanguageWriteIndex = submitTransactionBody.indexOf('setQuranTranslationLanguageFn(selectedQuranLang)');
+assert.ok(
+  appLanguageWriteIndex !== -1 && quranLanguageWriteIndex !== -1 && appLanguageWriteIndex < quranLanguageWriteIndex,
   'setLanguage is executed before secondary translation writes'
 );
+// The writes below are wrapped in withTimeout(...) now, so match the call itself
+// rather than the old bare `await <call>` form, and guard against a -1 index
+// silently satisfying an ordering comparison.
+const quranLanguageWriteIdx = submitTransactionBody.indexOf('setQuranTranslationLanguageFn(selectedQuranLang)');
+const onboardingDoneIdx = submitTransactionBody.indexOf('setOnboardingDoneFn(true)');
+const reloadIdx = submitTransactionBody.indexOf('reloadApp()');
 assert.ok(
-  submitTransactionBody.indexOf('await setQuranTranslationLanguageFn(selectedQuranLang)') < submitTransactionBody.indexOf('await setOnboardingDoneFn(true)'),
+  quranLanguageWriteIdx !== -1 && onboardingDoneIdx !== -1 && quranLanguageWriteIdx < onboardingDoneIdx,
   'Quran translation write precedes setOnboardingDone'
 );
 assert.ok(
-  submitTransactionBody.indexOf('await setOnboardingDoneFn(true)') < submitTransactionBody.indexOf('reloadAppAsync'),
+  onboardingDoneIdx !== -1 && reloadIdx !== -1 && onboardingDoneIdx < reloadIdx,
   'setOnboardingDone completes BEFORE native reload'
 );
 console.log('  ✓ 1.6 Durable write sequencing and write queue integration verified');
@@ -96,8 +118,10 @@ assert.ok(
   onboardingSource.includes('prepareNativeLayoutDirection(selectedAppLang)'),
   'Calls prepareNativeLayoutDirection'
 );
+const prepareDirectionIdx = submitTransactionBody.indexOf('prepareNativeLayoutDirectionFn(selectedAppLang)');
+const reloadCallIdx = submitTransactionBody.indexOf('reloadApp()');
 assert.ok(
-  submitTransactionBody.indexOf('prepareNativeLayoutDirectionFn(selectedAppLang)') < submitTransactionBody.indexOf('reloadApp().catch'),
+  prepareDirectionIdx !== -1 && reloadCallIdx !== -1 && prepareDirectionIdx < reloadCallIdx,
   'prepareNativeLayoutDirection is applied before the scheduled native reload'
 );
 assert.ok(
@@ -143,7 +167,10 @@ assert.ok(onboardingSource.includes('getQuranLanguageBootstrapError()'), 'Onboar
 assert.ok(onboardingSource.includes('getAudioTranslationBootstrapError()'), 'OnboardingScreen checks Audio translation bootstrap error');
 assert.ok(onboardingSource.includes('isSwitchingRTL'), 'OnboardingScreen conditions native reload on layout direction change');
 assert.ok(!onboardingSource.includes('DevSettings.reload()'), 'DevSettings.reload() removed to prevent duplicate reload invocations');
-assert.ok(onboardingSource.includes('appReloader().catch'), 'Single appReloader used in scheduled reload');
+assert.ok(
+  /scheduleReload\(\(\) => \{[\s\S]*?Promise\.resolve\(\)\s*\.then\(\(\) => reloadApp\(\)\)\s*\.catch\(\(\) => \{/.test(submitTransactionBody),
+  'Single reload is scheduled through Promise.resolve().then(() => reloadApp()).catch(...)'
+);
 console.log('  ✓ 1.12 OnboardingScreen bootstrap error gates & exactly-one reload contract verified\n');
 
 
@@ -467,7 +494,7 @@ const prodOnboardingModule = loadTsModule('src/screens/OnboardingScreen.tsx', {
   'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) },
   '@expo/vector-icons': { Ionicons: {} },
   '../lib/theme': { useTheme: () => ({ colors: {}, mode: 'paper' }), getCardShadow: () => ({}), getPillShadow: () => ({}) },
-  '../lib/settings': { useSettings: () => ({ setLanguage: async () => {}, settings: { language: 'en' }, setThemeMode: () => {} }) },
+  '../lib/settings': { persistLanguageChange: async () => {}, useSettings: () => ({ setLanguage: async () => {}, settings: { language: 'en' }, setThemeMode: () => {} }) },
   '../lib/constants': { HOME_THEME_TOKENS: {} },
   '../components/AnimatedBrandIcons': { AnimatedBrandBadge: {}, OnboardingThemeToggle: {} },
   '../lib/i18n': {
@@ -535,7 +562,7 @@ const realOnboardingScreenModule = loadTsModule('src/screens/OnboardingScreen.ts
   'react-native-safe-area-context': { useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }) },
   '@expo/vector-icons': { Ionicons: {} },
   '../lib/theme': { useTheme: () => ({ colors: {}, mode: 'paper' }), getCardShadow: () => ({}), getPillShadow: () => ({}) },
-  '../lib/settings': { useSettings: () => ({ setLanguage: async () => {}, settings: { language: 'en' }, setThemeMode: () => {} }) },
+  '../lib/settings': { persistLanguageChange: async () => {}, useSettings: () => ({ setLanguage: async () => {}, settings: { language: 'en' }, setThemeMode: () => {} }) },
   '../lib/constants': { HOME_THEME_TOKENS: {} },
   '../components/AnimatedBrandIcons': { AnimatedBrandBadge: {}, OnboardingThemeToggle: {} },
   '../lib/i18n': {
@@ -1425,7 +1452,6 @@ function createProductionOnboardingDoneHarness(storage) {
 {
   console.log('Test T: [Model/Boundary Coverage] Native direction change reload contract (en -> ur) & exactly-one reload through boundary...');
   let reloadInvocations = 0;
-  let fallbackReloadInvocations = 0;
   let preparedDirection = null;
   let onCompleteCalled = false;
   let executionOrder = [];
@@ -1488,10 +1514,20 @@ function createProductionOnboardingDoneHarness(storage) {
   await scheduledCallback();
 
   assert.equal(reloadInvocations, 1, 'Observably exactly one reload invocation executed');
-  assert.equal(fallbackReloadInvocations, 0, 'Zero fallback reload invocations (DevSettings.reload removed)');
-  await Promise.resolve();
-  assert.equal(onCompleteCalled, true, 'onComplete() lets onboarding continue if native reload rejects');
-  console.log('  ✓ Test T passed (model/boundary coverage): failed native reload still completes onboarding without a dead-end');
+  assert.equal(
+    executionOrder.filter((entry) => entry === 'appReloader').length,
+    1,
+    'No second or fallback reload invocation occurs after the scheduled reload'
+  );
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(
+    executionOrder.slice(-3),
+    ['setLanguage:en', 'prepareNativeLayoutDirection:en', 'onComplete'],
+    'Rejected reload rolls language and native direction back before completion'
+  );
+  assert.equal(preparedDirection, 'en', 'Failed native reload leaves the previous direction staged');
+  assert.equal(onCompleteCalled, true, 'onComplete() runs after onboarding rollback handles native reload rejection');
+  console.log('  ✓ Test T passed (model/boundary coverage): failed native reload rolls back and completes onboarding without a dead-end');
 }
 
 // Test U: [Model/Boundary Coverage] Native same-direction reload contract (LTR en -> LTR hi / ml / si)
@@ -1534,7 +1570,7 @@ function createProductionOnboardingDoneHarness(storage) {
     'setOnboardingDone:true',
   ], 'Durable writes executed in exact production sequence');
 
-  assert.equal(preparedDirection, null, 'Zero prepareNativeLayoutDirection on native same-direction switch');
+  assert.equal(preparedDirection, 'hi', 'prepareNativeLayoutDirection stages the selected same-direction language');
   assert.equal(reloadScheduled, false, 'Zero reload scheduled on native same-direction switch');
   assert.equal(onCompleteCalled, true, 'onComplete() called directly to avoid unnecessary app restart');
   console.log('  ✓ Test U passed (model/boundary coverage): native same-direction transitions directly via onComplete() without reload');
@@ -1629,7 +1665,14 @@ function createProductionOnboardingDoneHarness(storage) {
     assert.ok(errorCaught !== null, `Error surfaced when ${failedStep} fails`);
     assert.equal(reloadScheduled, false, `Zero reload on ${failedStep} failure`);
     assert.equal(onCompleteCalled, false, `Zero onComplete on ${failedStep} failure`);
-    assert.equal(directionPrepared, null, `Zero direction prep on ${failedStep} failure`);
+    const expectedRollbackDirection = failedStep === 'setLanguage' ? null : 'en';
+    assert.equal(
+      directionPrepared,
+      expectedRollbackDirection,
+      failedStep === 'setLanguage'
+        ? 'Zero direction prep when the initial language write and its rollback both fail'
+        : `Rollback stages the previous native direction after ${failedStep} failure`
+    );
     assert.equal(isSubmitting, false, `isSubmitting reset to false on ${failedStep} failure (onboarding remains mounted)`);
     assert.equal(alertCalled, true, `Alert surfaced to user on ${failedStep} failure`);
   }
@@ -1694,7 +1737,14 @@ function createProductionOnboardingDoneHarness(storage) {
 
     assert.ok(caughtError !== null, `${name}: real transaction must throw and surface failure`);
     assert.equal(onCompleteCalled, false, `${name}: onComplete must NOT be called on failure`);
-    assert.equal(directionPrepared, null, `${name}: layout direction must NOT be prepared on failure`);
+    const expectedDirection = name.includes('bootstrap') ? null : 'en';
+    assert.equal(
+      directionPrepared,
+      expectedDirection,
+      expectedDirection === null
+        ? `${name}: layout direction is untouched before the first durable language write`
+        : `${name}: failed transaction rolls the staged direction back to en`
+    );
     assert.equal(reloadCount, 0, `${name}: reload must NOT occur on failure`);
     assert.equal(alertCalled, true, `${name}: failure alert must be surfaced to user`);
     assert.equal(isSubmitting, false, `${name}: isSubmitting must be reset to false so onboarding remains mounted`);
@@ -1873,10 +1923,14 @@ function createProductionOnboardingDoneHarness(storage) {
     assert.equal(await storage.getItem('quran-audio-translation-edition'), 'en.everyayah-walk', 'Real audio edition persisted');
     assert.equal(await storage.getItem('onboardingDone'), 'true', 'Real onboardingDone persisted true');
 
-    // Same-direction: zero direction prep, zero reload, direct onComplete
+    // Same-direction: stage the selected direction, then complete directly with zero reload
     assert.equal(onCompleteCalled, true, 'onComplete called directly to navigate smoothly');
     assert.equal(reloadInvocations, 0, 'Zero reload invocations on native same-direction');
-    assert.deepEqual(sideEffectOrder, ['onComplete'], 'Only onComplete side effect called');
+    assert.deepEqual(
+      sideEffectOrder,
+      ['prepareNativeLayoutDirection:hi', 'onComplete'],
+      'Direction staging precedes direct onComplete with no reload'
+    );
     console.log('    ✓ Real production same-direction success verified (direct onComplete, zero reload)');
   }
 

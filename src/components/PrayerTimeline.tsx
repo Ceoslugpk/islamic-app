@@ -14,7 +14,8 @@ import { Card } from './Card';
 import { Hairline } from './Hairline';
 import { formatTime } from '../lib/timeFormat';
 import { DayTimings } from '../lib/prayerTimes';
-import { isRTL, t } from '../lib/i18n';
+import { getCurrentLanguage, isRTL, t } from '../lib/i18n';
+import { getTextAlignment } from '../lib/typography';
 import { AppText } from './ui/AppText';
 
 const USE_NATIVE_DRIVER = Platform.OS !== 'web';
@@ -255,6 +256,7 @@ export function PrayerTimeline({
   streak,
 }: PrayerTimelineProps) {
   const { colors } = useTheme();
+  const currentLanguage = getCurrentLanguage();
   const [reducedMotion, setReducedMotion] = useState(() => {
     if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -292,6 +294,8 @@ export function PrayerTimeline({
       <View style={styles.rowsContainer}>
         {PRAYER_LIST.map((item, index) => {
           const time = timings?.[item.key] || '--:--';
+          const prayerLabel = t(item.label);
+          const formattedTime = formatTime(time, timeFormat);
           const isDone = item.isSalah ? !!completed?.[item.key] : false;
           const isCurrent = currentPrayerSegment === item.key;
           const isFirst = index === 0;
@@ -369,10 +373,11 @@ export function PrayerTimeline({
                             fontFamily: isCurrent
                               ? (isRTL() ? 'Amiri_700Bold' : 'Manrope_700Bold')
                               : (isRTL() ? 'Amiri_400Regular' : 'Manrope_500Medium'),
+                            ...getTextAlignment(prayerLabel, currentLanguage, 'rowTitle'),
                           },
                         ]}
                       >
-                        {t(item.label)}
+                        {prayerLabel}
                       </AppText>
                       {isCurrent && (
                         <View
@@ -403,10 +408,11 @@ export function PrayerTimeline({
                           fontFamily: isCurrent
                             ? 'Manrope_700Bold'
                             : 'Manrope_600SemiBold',
+                          ...getTextAlignment(formattedTime, currentLanguage, 'numeral'),
                         },
                       ]}
                     >
-                      {formatTime(time, timeFormat)}
+                      {formattedTime}
                     </AppText>
                   </View>
 

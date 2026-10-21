@@ -323,6 +323,9 @@ function createSettingsFixture({ nativeIsRTL, setLanguage, reloadAppAsync, timer
     locationMode: 'manual',
   };
 
+  // The direction-changing path persists via the settings MODULE's own
+  // persistLanguageChange (not the context's setLanguage), so spy on it here.
+  const persistedLanguageWrites = [];
   const useSettings = () => ({
     settings: settingsState,
     updateSettings(updater) { Object.assign(settingsState, updater(settingsState)); },
@@ -379,7 +382,7 @@ function createSettingsFixture({ nativeIsRTL, setLanguage, reloadAppAsync, timer
     },
     expo: { reloadAppAsync },
     '../lib/i18n': i18n,
-    '../lib/settings': { __esModule: true, useSettings },
+    '../lib/settings': { __esModule: true, useSettings, persistLanguageChange: async (_settings, language) => { persistedLanguageWrites.push(language); }, },
     '../lib/theme': {
       useTheme: () => ({ colors: themeValue, mode: 'paper' }),
       useThemeTokens: () => ({ tokens: themeValue }),
@@ -454,7 +457,7 @@ function createSettingsFixture({ nativeIsRTL, setLanguage, reloadAppAsync, timer
     __fallback: genericModule,
   });
 
-  return { settings, setterEvents, settingsState, timers, preparationEvents };
+  return { settings, setterEvents, settingsState, timers, preparationEvents, persistedLanguageWrites };
 }
 
 function findLanguagePressable(tree, languageName) {
@@ -519,11 +522,17 @@ console.log('2. A never-settling language write unlocks the real Settings langua
     writeTimeout.fired = true;
     writeTimeout.callback();
     await tick();
-    const rollbackTimeout = timers.find((timer) => timer.delay === 10_000 && !timer.fired);
-    assert.ok(rollbackTimeout, 'rollback must use the same bounded timeout before unlocking');
-    rollbackTimeout.fired = true;
-    rollbackTimeout.callback();
-    await tick();
+    // A failed write must NOT silently revert the user's choice: the silent rollback
+    // WAS the defect fixed in this round. The handler keeps the choice, unlocks, and
+    // surfaces the failure instead - so no second (rollback) bounded timer is armed.
+    assert.ok(
+      !timers.some((timer) => timer.delay === 10_000 && !timer.fired),
+      'a failed language write must not arm a rollback timer (the choice is preserved, not reverted)',
+    );
+    assert.ok(
+      fixture.setterEvents.some((event) => event.value === 'Failed to save settings. Please try again.'),
+      'a failed language write must surface an error to the user',
+    );
     assert.ok(
       fixture.setterEvents.some((event) => event.value === false),
       'the real language handler must clear its disabled state after the write timeout rejects',
@@ -568,7 +577,7 @@ console.log('3. A same-direction native mismatch takes the real reload repair pa
     reloadTimer.fired = true;
     reloadTimer.callback();
     await tick();
-    assert.deepEqual(fixture.languageCalls, ['hi']);
+    assert.deepEqual(fixture.persistedLanguageWrites, ['hi']);
     assert.deepEqual(preparationEvents, ['hi']);
     assert.deepEqual(reloadCalls, ['App language changed']);
     console.log('   PASS: real SettingsScreen repairs a stale native direction even for LTR→LTR');
@@ -578,7 +587,7 @@ console.log('3. A same-direction native mismatch takes the real reload repair pa
   }
 }
 
-console.log('4. A reload rejection restores the old language and stages its old direction');
+console.log('4. A reload rejection preserves the chosen language and stages its direction');
 {
   const originalSetTimeout = globalThis.setTimeout;
   const originalClearTimeout = globalThis.clearTimeout;
@@ -611,13 +620,20 @@ console.log('4. A reload rejection restores the old language and stages its old 
     reloadTimer.callback();
     await tick();
     await tick();
-    assert.deepEqual(languageCalls, ['ur', 'en']);
-    assert.deepEqual(preparationEvents, ['ur', 'en']);
+    // A rejected reload must NOT revert the user's choice: the silent rollback WAS the
+    // defect fixed in this round. The choice stays persisted, its direction is staged for
+    // the next launch, and the user is told to reopen the app.
+    assert.deepEqual(fixture.persistedLanguageWrites, ['ur']);
+    assert.deepEqual(preparationEvents, ['ur']);
+    assert.ok(
+      !languageCalls.includes('en'),
+      'a failed reload must not revert the language choice',
+    );
     assert.ok(
       fixture.setterEvents.some((event) => event.value === false),
-      'reload rejection must unlock the language controls after rollback',
+      'reload rejection must unlock the language controls',
     );
-    console.log('   PASS: reload failure restores persisted language and native direction staging');
+    console.log('   PASS: reload failure preserves the choice and stages the new direction');
   } finally {
     globalThis.setTimeout = originalSetTimeout;
     globalThis.clearTimeout = originalClearTimeout;

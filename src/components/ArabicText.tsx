@@ -70,6 +70,14 @@ export function ArabicText({
     isText: true,
     numberOfLines,
     style,
+    resolvedFontSize: effectiveSize,
+    resolvedLineHeight,
+    explicitLineHeight: typeof lineHeight === 'number'
+      ? lineHeight
+      : (typeof flattenedStyle?.lineHeight === 'number' ? flattenedStyle.lineHeight : resolvedLineHeight),
+    fontFamily: resolvedFamily,
+    textScript: 'arabic',
+    textCategory: 'ui',
     textAlign: align,
     writingDirection: 'rtl',
   });

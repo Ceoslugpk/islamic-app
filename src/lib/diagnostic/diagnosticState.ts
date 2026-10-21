@@ -199,6 +199,10 @@ export interface DiagnosticMeasurementReportItem {
  */
 export type DefectClass =
   | 'textTruncated'
+  | 'lineBoxTooTight'
+  | 'textClipped'
+  | 'lineOverlap'
+  | 'textRectOverlap'
   | 'subTouchTarget'
   | 'offScreen'
   | 'outsideParent'
@@ -213,10 +217,15 @@ export type AppStateDefectClass = 'languageDirectionMismatch' | 'stuckDisabledCo
 export interface DefectItem {
   flag: boolean | null;
   reason?: string;
+  details?: Record<string, string | number | boolean | null>;
 }
 
 export interface ProbeDefects {
   textTruncated: DefectItem;
+  lineBoxTooTight: DefectItem;
+  textClipped: DefectItem;
+  lineOverlap: DefectItem;
+  textRectOverlap: DefectItem;
   subTouchTarget: DefectItem;
   offScreen: DefectItem;
   outsideParent: DefectItem;
@@ -232,6 +241,16 @@ export interface DiagnosticDefectReportItem {
   screen: string;
   parentIdentity?: string;
   reason?: string;
+  details?: Record<string, string | number | boolean | null>;
+}
+
+export interface DiagnosticTextLineMetric {
+  x: number | null;
+  y: number | null;
+  width: number | null;
+  height: number | null;
+  ascender: number | null;
+  descender: number | null;
 }
 
 export type InteractionEffect = 'navigated' | 'stateChanged' | 'noObservableEffect' | 'error';
@@ -471,9 +490,18 @@ export interface AutoProbeRecord {
   reason?: string;
   isText?: boolean;
   isInteractive?: boolean;
+  resolvedFontSize?: number | null;
+  resolvedLineHeight?: number | 'auto' | null;
+  explicitLineHeight?: number | null;
+  fontFamily?: string | null;
+  textScript?: string | null;
+  textCategory?: 'ui' | 'title' | 'numeral' | null;
   numberOfLines?: number;
   reportedLineCount?: number;
   reportedTotalLineHeight?: number;
+  textLines?: DiagnosticTextLineMetric[];
+  horizontalScrollableAncestor?: boolean;
+  measuredContainerHeight?: number | null;
   containerFixedStyleHeight?: number;
   resolvedStyleTextAlign?: string;
   resolvedStyleWritingDirection?: string;
@@ -1572,6 +1600,101 @@ export function isDiagnosticAppStateObserverInstalled(): boolean {
   return appStateObserverInstalled;
 }
 
+/** Small native-layout tolerances: do not turn rounding noise into defects. */
+export const TEXT_LINE_METRIC_TOLERANCE_DP = 1;
+export const TEXT_RECT_OVERLAP_TOLERANCE_DP = 2;
+
+/**
+ * Minimum explicit line-height ratios used by the typography system.  These are
+ * deliberately repeated here as diagnostic policy so a report remains useful
+ * even when a node is a custom Text wrapper rather than AppText.
+ */
+export const TEXT_LINE_HEIGHT_MULTIPLIERS = {
+  latin: { ui: 1.5, title: 1.3, numeral: 1.2 },
+  arabic: 1.8,
+  urdu: 2.2,
+  otherCjkLike: 1.6,
+} as const;
+
+function finiteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function textLineMetrics(
+  probe: Partial<AutoProbeRecord>,
+  options?: { textLines?: Partial<DiagnosticTextLineMetric>[]; lines?: Partial<DiagnosticTextLineMetric>[] },
+): Partial<DiagnosticTextLineMetric>[] | undefined {
+  return options?.textLines ?? options?.lines ?? probe.textLines;
+}
+
+function resolvedTextScript(probe: Partial<AutoProbeRecord>): string {
+  if (probe.textScript) return probe.textScript;
+  const family = probe.fontFamily || '';
+  if (/NastaliqUrdu/i.test(family)) return 'urdu';
+  if (/NaskhArabic|Amiri/i.test(family)) return 'arabic';
+  return 'latin';
+}
+
+function minimumLineHeight(
+  fontSize: number,
+  script: string,
+  category: 'ui' | 'title' | 'numeral' | null | undefined,
+): number {
+  const multiplier = script === 'latin'
+    ? TEXT_LINE_HEIGHT_MULTIPLIERS.latin[category || 'ui']
+    : (script === 'arabic'
+      ? TEXT_LINE_HEIGHT_MULTIPLIERS.arabic
+      : (script === 'urdu' ? TEXT_LINE_HEIGHT_MULTIPLIERS.urdu : TEXT_LINE_HEIGHT_MULTIPLIERS.otherCjkLike));
+  return Math.ceil(fontSize * multiplier);
+}
+
+function isAncestorOrDescendant(
+  probe: Partial<AutoProbeRecord>,
+  sibling: Partial<AutoProbeRecord>,
+  siblings: Partial<AutoProbeRecord>[],
+): boolean {
+  const byId = new Map<string, Partial<AutoProbeRecord>>();
+  for (const item of [probe, ...siblings]) {
+    if (item.id) byId.set(item.id, item);
+  }
+
+  const reachesAncestor = (start: Partial<AutoProbeRecord>, ancestorId?: string): boolean => {
+    if (!ancestorId) return false;
+    let parentId = start.parentIdentity || undefined;
+    for (let i = 0; i < 64 && parentId; i++) {
+      if (parentId === ancestorId) return true;
+      parentId = byId.get(parentId)?.parentIdentity || undefined;
+    }
+    return false;
+  };
+
+  return reachesAncestor(sibling, probe.id) || reachesAncestor(probe, sibling.id);
+}
+
+function sharesTextCoordinateFrame(
+  probe: Partial<AutoProbeRecord>,
+  sibling: Partial<AutoProbeRecord>,
+): boolean {
+  // onLayout x/y are parent-relative. Frame dimensions alone do not prove that
+  // two nodes share a coordinate system, so skip unattributed pairs rather than
+  // reintroducing the false positives this defect class is meant to avoid.
+  return Boolean(
+    probe.parentIdentity &&
+    sibling.parentIdentity &&
+    probe.parentIdentity === sibling.parentIdentity
+  );
+}
+
+function rectangleIntersection(
+  a: Partial<AutoProbeRecord>,
+  b: Partial<AutoProbeRecord>,
+): { x: number; y: number } | null {
+  if (![a.x, a.y, a.width, a.height, b.x, b.y, b.width, b.height].every(finiteNumber)) return null;
+  const x = Math.max(0, Math.min(a.x! + a.width!, b.x! + b.width!) - Math.max(a.x!, b.x!));
+  const y = Math.max(0, Math.min(a.y! + a.height!, b.y! + b.height!) - Math.max(a.y!, b.y!));
+  return { x, y };
+}
+
 export function deriveProbeDefects(
   probe: Partial<AutoProbeRecord>,
   options?: {
@@ -1581,6 +1704,15 @@ export function deriveProbeDefects(
     reportedLineCount?: number;
     reportedTotalLineHeight?: number;
     containerFixedStyleHeight?: number;
+    resolvedFontSize?: number | null;
+    resolvedLineHeight?: number | 'auto' | null;
+    explicitLineHeight?: number | null;
+    fontFamily?: string | null;
+    textScript?: string | null;
+    textCategory?: 'ui' | 'title' | 'numeral' | null;
+    textLines?: Partial<DiagnosticTextLineMetric>[];
+    lines?: Partial<DiagnosticTextLineMetric>[];
+    measuredContainerHeight?: number | null;
     resolvedStyleTextAlign?: string;
     resolvedStyleWritingDirection?: string;
     windowDimensions?: { width: number; height: number };
@@ -1588,6 +1720,7 @@ export function deriveProbeDefects(
     siblings?: Partial<AutoProbeRecord>[];
     hasScrollableAncestor?: boolean;
     scrollable?: boolean;
+    horizontalScrollableAncestor?: boolean;
   }
 ): ProbeDefects {
   const isText = options?.isText ?? probe.isText ?? false;
@@ -1598,6 +1731,14 @@ export function deriveProbeDefects(
   const height = probe.height ?? null;
   const frameWidth = probe.frameWidth ?? null;
   const frameHeight = probe.frameHeight ?? null;
+  const resolvedFontSize = options?.resolvedFontSize ?? probe.resolvedFontSize ?? null;
+  const resolvedLineHeight = options?.resolvedLineHeight ?? probe.resolvedLineHeight ?? null;
+  const explicitLineHeight = options?.explicitLineHeight ?? probe.explicitLineHeight ?? null;
+  const fontFamily = options?.fontFamily ?? probe.fontFamily ?? null;
+  const textScript = options?.textScript ?? probe.textScript ?? resolvedTextScript({ ...probe, fontFamily });
+  const textCategory = options?.textCategory ?? probe.textCategory ?? 'ui';
+  const lines = textLineMetrics(probe, options);
+  const measuredContainerHeight = options?.measuredContainerHeight ?? probe.measuredContainerHeight ?? height;
 
   // 1. textTruncated:
   let textTruncated: DefectItem;
@@ -1623,6 +1764,88 @@ export function deriveProbeDefects(
       textTruncated = { flag: false };
     } else {
       textTruncated = { flag: null, reason: 'Text line layout metrics unavailable' };
+    }
+  }
+
+  // 1b. lineBoxTooTight: only explicit line heights are judged. An unknown
+  // lineHeight is not a defect because platform defaults cannot be reconstructed.
+  let lineBoxTooTight: DefectItem;
+  if (!isText) {
+    lineBoxTooTight = { flag: null, reason: 'Not a text element' };
+  } else if (!finiteNumber(resolvedFontSize) || !finiteNumber(explicitLineHeight) || resolvedFontSize <= 0) {
+    lineBoxTooTight = { flag: null, reason: 'Explicit fontSize and lineHeight unavailable' };
+  } else {
+    const minimum = minimumLineHeight(resolvedFontSize, textScript, textCategory);
+    const ratio = explicitLineHeight / resolvedFontSize;
+    const details = {
+      fontSize: resolvedFontSize,
+      explicitLineHeight,
+      minimumLineHeight: minimum,
+      ratio: Math.round(ratio * 100) / 100,
+      script: textScript,
+      fontFamily: fontFamily || 'unknown',
+      resolvedLineHeight: finiteNumber(resolvedLineHeight) ? resolvedLineHeight : (resolvedLineHeight || 'auto'),
+    };
+    lineBoxTooTight = explicitLineHeight < minimum
+      ? {
+          flag: true,
+          reason: `Explicit lineHeight=${explicitLineHeight}dp is ${ratio.toFixed(2)}x fontSize=${resolvedFontSize}; minimum=${minimum}dp for ${textScript}`,
+          details,
+        }
+      : { flag: false, details };
+  }
+
+  // 1c. textClipped: line boxes are cut by the measured Text container.
+  let textClipped: DefectItem;
+  const lineHeights = lines?.map((line) => line.height);
+  const lineSum = lineHeights && lineHeights.every(finiteNumber)
+    ? lineHeights.reduce((sum, lineHeight) => sum + lineHeight, 0)
+    : (finiteNumber(probe.reportedTotalLineHeight) ? probe.reportedTotalLineHeight : null);
+  if (!isText) {
+    textClipped = { flag: null, reason: 'Not a text element' };
+  } else if (!finiteNumber(lineSum) || !finiteNumber(measuredContainerHeight)) {
+    textClipped = { flag: null, reason: 'Text line boxes or measured container height unavailable' };
+  } else {
+    const excess = lineSum - measuredContainerHeight;
+    const details = {
+      lineSum,
+      measuredContainerHeight,
+      excessPx: Math.round(excess * 100) / 100,
+      lineCount: lines?.length ?? probe.reportedLineCount ?? 0,
+    };
+    textClipped = excess > TEXT_LINE_METRIC_TOLERANCE_DP
+      ? { flag: true, reason: `Line boxes sum=${lineSum}dp exceeds measured container height=${measuredContainerHeight}dp by ${excess.toFixed(1)}dp`, details }
+      : { flag: false, details };
+  }
+
+  // 1d. lineOverlap: compare consecutive native line boxes, not whole Text
+  // rectangles. This is the literal line-on-line overlap reported by the user.
+  let lineOverlap: DefectItem;
+  if (!isText) {
+    lineOverlap = { flag: null, reason: 'Not a text element' };
+  } else if (!lines || lines.length < 2 || lines.some((line) => !finiteNumber(line.y) || !finiteNumber(line.height))) {
+    lineOverlap = { flag: null, reason: 'At least two complete line boxes unavailable' };
+  } else {
+    lineOverlap = { flag: false };
+    for (let i = 0; i < lines.length - 1; i++) {
+      const previous = lines[i];
+      const next = lines[i + 1];
+      const previousBottom = previous.y! + previous.height!;
+      const overlap = previousBottom - next.y!;
+      if (overlap > TEXT_LINE_METRIC_TOLERANCE_DP) {
+        lineOverlap = {
+          flag: true,
+          reason: `Line ${i} bottom=${previousBottom.toFixed(1)}dp overlaps line ${i + 1} y=${next.y!.toFixed(1)}dp by ${overlap.toFixed(1)}dp`,
+          details: {
+            previousLine: i,
+            nextLine: i + 1,
+            previousBottom,
+            nextY: next.y!,
+            overlapPx: Math.round(overlap * 100) / 100,
+          },
+        };
+        break;
+      }
     }
   }
 
@@ -1729,6 +1952,61 @@ export function deriveProbeDefects(
     }
   }
 
+  // 5b. textRectOverlap: use only text siblings in the same coordinate frame.
+  // Ancestor/descendant pairs and scrollable content are expected geometry,
+  // not sibling collisions. The existing generic scroll marker is treated as
+  // a conservative superset of horizontal strips when direction is unknown.
+  let textRectOverlap: DefectItem;
+  const horizontalScrollableAncestor = Boolean(
+    options?.horizontalScrollableAncestor ??
+    probe.horizontalScrollableAncestor ??
+    options?.hasScrollableAncestor ??
+    probe.hasScrollableAncestor ??
+    options?.scrollable ??
+    probe.scrollable
+  );
+  if (!isText) {
+    textRectOverlap = { flag: null, reason: 'Not a text element' };
+  } else if (horizontalScrollableAncestor || !finiteNumber(x) || !finiteNumber(y) || !finiteNumber(width) || !finiteNumber(height)) {
+    textRectOverlap = horizontalScrollableAncestor
+      ? { flag: false, reason: 'Text is inside a horizontal scrolling strip' }
+      : { flag: null, reason: 'Geometry unavailable' };
+  } else {
+    textRectOverlap = { flag: false };
+    for (const sibling of siblings) {
+      if (
+        !sibling ||
+        sibling.id === probe.id ||
+        sibling.isText !== true ||
+        sibling.horizontalScrollableAncestor ||
+        sibling.hasScrollableAncestor ||
+        sibling.scrollable
+      ) continue;
+      if (isAncestorOrDescendant(probe, sibling, siblings) || !sharesTextCoordinateFrame(probe, sibling)) continue;
+      const intersection = rectangleIntersection(probe, sibling);
+      if (!intersection || intersection.x <= TEXT_RECT_OVERLAP_TOLERANCE_DP || intersection.y <= TEXT_RECT_OVERLAP_TOLERANCE_DP) continue;
+      textRectOverlap = {
+        flag: true,
+        reason: `Text rect intersects '${sibling.id || sibling.kind || 'text'}' by ${intersection.x.toFixed(1)}x${intersection.y.toFixed(1)}dp`,
+        details: {
+          otherProbeId: sibling.id || sibling.kind || 'text',
+          overlapWidth: Math.round(intersection.x * 100) / 100,
+          overlapHeight: Math.round(intersection.y * 100) / 100,
+          tolerancePx: TEXT_RECT_OVERLAP_TOLERANCE_DP,
+          x: x!,
+          y: y!,
+          width: width!,
+          height: height!,
+          otherX: sibling.x ?? null,
+          otherY: sibling.y ?? null,
+          otherWidth: sibling.width ?? null,
+          otherHeight: sibling.height ?? null,
+        },
+      };
+      break;
+    }
+  }
+
   // 6. rtlTextAlignMismatch and rtlWritingDirectionSuspicious:
   let rtlTextAlignMismatch: DefectItem;
   let rtlWritingDirectionSuspicious: DefectItem;
@@ -1810,6 +2088,10 @@ export function deriveProbeDefects(
 
   return {
     textTruncated,
+    lineBoxTooTight,
+    textClipped,
+    lineOverlap,
+    textRectOverlap,
     subTouchTarget,
     offScreen,
     outsideParent,
@@ -2650,6 +2932,13 @@ export function recordProbeLayout(
     reportedLineCount?: number;
     reportedTotalLineHeight?: number;
     containerFixedStyleHeight?: number;
+    resolvedFontSize?: number | null;
+    resolvedLineHeight?: number | 'auto' | null;
+    explicitLineHeight?: number | null;
+    fontFamily?: string | null;
+    textScript?: string | null;
+    textCategory?: 'ui' | 'title' | 'numeral' | null;
+    horizontalScrollableAncestor?: boolean;
     resolvedStyleTextAlign?: string;
     resolvedStyleWritingDirection?: string;
     parentIdentity?: string | null;
@@ -2741,6 +3030,13 @@ export function recordProbeLayout(
   const reportedLineCount = meta?.reportedLineCount ?? existing?.reportedLineCount;
   const reportedTotalLineHeight = meta?.reportedTotalLineHeight ?? existing?.reportedTotalLineHeight;
   const containerFixedStyleHeight = meta?.containerFixedStyleHeight ?? existing?.containerFixedStyleHeight;
+  const resolvedFontSize = meta?.resolvedFontSize ?? existing?.resolvedFontSize;
+  const resolvedLineHeight = meta?.resolvedLineHeight ?? existing?.resolvedLineHeight;
+  const explicitLineHeight = meta?.explicitLineHeight ?? existing?.explicitLineHeight;
+  const fontFamily = meta?.fontFamily ?? existing?.fontFamily;
+  const textScript = meta?.textScript ?? existing?.textScript;
+  const textCategory = meta?.textCategory ?? existing?.textCategory;
+  const horizontalScrollableAncestor = meta?.horizontalScrollableAncestor ?? existing?.horizontalScrollableAncestor ?? false;
   const resolvedStyleTextAlign = meta?.resolvedStyleTextAlign ?? existing?.resolvedStyleTextAlign;
   const resolvedStyleWritingDirection = meta?.resolvedStyleWritingDirection ?? existing?.resolvedStyleWritingDirection;
 
@@ -2760,6 +3056,15 @@ export function recordProbeLayout(
     reportedLineCount,
     reportedTotalLineHeight,
     containerFixedStyleHeight,
+    resolvedFontSize,
+    resolvedLineHeight,
+    explicitLineHeight,
+    fontFamily,
+    textScript,
+    textCategory,
+    textLines: existing?.textLines,
+    measuredContainerHeight: height,
+    horizontalScrollableAncestor,
     resolvedStyleTextAlign,
     resolvedStyleWritingDirection,
     parentIdentity,
@@ -2774,6 +3079,15 @@ export function recordProbeLayout(
     reportedLineCount,
     reportedTotalLineHeight,
     containerFixedStyleHeight,
+    resolvedFontSize,
+    resolvedLineHeight,
+    explicitLineHeight,
+    fontFamily,
+    textScript,
+    textCategory,
+    textLines: existing?.textLines,
+    measuredContainerHeight: height,
+    horizontalScrollableAncestor,
     resolvedStyleTextAlign,
     resolvedStyleWritingDirection,
     siblings,
@@ -2826,6 +3140,15 @@ export function recordProbeLayout(
     numberOfLines,
     reportedLineCount,
     reportedTotalLineHeight,
+    resolvedFontSize,
+    resolvedLineHeight,
+    explicitLineHeight,
+    fontFamily,
+    textScript,
+    textCategory,
+    textLines: existing?.textLines,
+    measuredContainerHeight: height,
+    horizontalScrollableAncestor,
     containerFixedStyleHeight,
     resolvedStyleTextAlign,
     resolvedStyleWritingDirection,
@@ -2869,21 +3192,42 @@ export function recordProbeLayout(
 
 export function recordProbeTextLayout(
   id: string,
-  lines: { x?: number; y?: number; width?: number; height?: number }[]
+  lines: Partial<DiagnosticTextLineMetric>[]
 ): void {
   if (!isDiagnosticModeEnabled()) return;
   incrementProbeMutationSeq();
   const probe = probeStore[id];
   if (!probe) return;
 
-  const reportedLineCount = lines.length;
-  let reportedTotalLineHeight = 0;
-  for (const line of lines) {
-    reportedTotalLineHeight += (line.height || 0);
-  }
+  const normalize = (value: unknown): number | null => {
+    if (!finiteNumber(value)) return null;
+    return Math.round(value * 10) / 10;
+  };
+  const textLines: DiagnosticTextLineMetric[] = lines.map((line) => ({
+    x: normalize(line.x),
+    y: normalize(line.y),
+    width: normalize(line.width),
+    height: normalize(line.height),
+    ascender: normalize(line.ascender),
+    descender: normalize(line.descender),
+  }));
+  const reportedLineCount = textLines.length;
+  const reportedTotalLineHeight = textLines.reduce(
+    (sum, line) => sum + (finiteNumber(line.height) ? line.height : 0),
+    0,
+  );
 
   probe.reportedLineCount = reportedLineCount;
   probe.reportedTotalLineHeight = reportedTotalLineHeight;
+  probe.textLines = textLines;
+  probe.measuredContainerHeight = probe.height;
+
+  const siblings: Partial<AutoProbeRecord>[] = Object.values(probeStore).filter((other) =>
+    other.id !== id &&
+    other.screen === probe.screen &&
+    other.frameWidth === probe.frameWidth &&
+    other.frameHeight === probe.frameHeight
+  );
 
   // Re-derive defects with updated text metrics
   probe.defects = deriveProbeDefects(probe, {
@@ -2891,11 +3235,21 @@ export function recordProbeTextLayout(
     numberOfLines: probe.numberOfLines,
     reportedLineCount,
     reportedTotalLineHeight,
+    resolvedFontSize: probe.resolvedFontSize,
+    resolvedLineHeight: probe.resolvedLineHeight,
+    explicitLineHeight: probe.explicitLineHeight,
+    fontFamily: probe.fontFamily,
+    textScript: probe.textScript,
+    textCategory: probe.textCategory,
+    textLines,
+    measuredContainerHeight: probe.height,
     containerFixedStyleHeight: probe.containerFixedStyleHeight,
     resolvedStyleTextAlign: probe.resolvedStyleTextAlign,
     resolvedStyleWritingDirection: probe.resolvedStyleWritingDirection,
     hasScrollableAncestor: probe.hasScrollableAncestor,
     scrollable: probe.scrollable,
+    horizontalScrollableAncestor: probe.horizontalScrollableAncestor,
+    siblings,
   });
 
   notifyListeners();
@@ -3151,11 +3505,18 @@ export interface AutoProbeOptions {
   onPress?: (e?: any) => void;
   disabled?: boolean;
   containerFixedStyleHeight?: number;
+  resolvedFontSize?: number | null;
+  resolvedLineHeight?: number | 'auto' | null;
+  explicitLineHeight?: number | null;
+  fontFamily?: string | null;
+  textScript?: string | null;
+  textCategory?: 'ui' | 'title' | 'numeral' | null;
   testID?: string;
   targetScreen?: string;
   parentIdentity?: string;
   scrollable?: boolean;
   hasScrollableAncestor?: boolean;
+  horizontalScrollableAncestor?: boolean;
 }
 
 /**
@@ -3227,6 +3588,13 @@ export function useAutoProbe(
         isInteractive: options?.isInteractive,
         numberOfLines: options?.numberOfLines,
         containerFixedStyleHeight: fixedStyleHeight,
+        resolvedFontSize: options?.resolvedFontSize,
+        resolvedLineHeight: options?.resolvedLineHeight,
+        explicitLineHeight: options?.explicitLineHeight,
+        fontFamily: options?.fontFamily,
+        textScript: options?.textScript,
+        textCategory: options?.textCategory,
+        horizontalScrollableAncestor: options?.horizontalScrollableAncestor,
         resolvedStyleTextAlign: options?.textAlign,
         resolvedStyleWritingDirection: options?.writingDirection,
         parentIdentity: effectiveParent,
@@ -3357,6 +3725,10 @@ export function buildDiagnosticReport(): DiagnosticReport {
   // Derive defect counts and items
   const defectCounts: Record<DefectClass, number> = {
     textTruncated: 0,
+    lineBoxTooTight: 0,
+    textClipped: 0,
+    lineOverlap: 0,
+    textRectOverlap: 0,
     subTouchTarget: 0,
     offScreen: 0,
     outsideParent: 0,
@@ -3379,6 +3751,7 @@ export function buildDiagnosticReport(): DiagnosticReport {
             screen: p.screen,
             parentIdentity: p.parentIdentity || undefined,
             reason: item.reason,
+            details: item.details,
           });
         }
       });
@@ -3682,6 +4055,7 @@ export function buildDiagnosticSummary(): DiagnosticSummaryReport {
     defectClass: d.defectClass,
     screen: d.screen,
     ...(d.reason ? { reason: d.reason.trim() } : {}),
+    ...(d.details ? { details: d.details } : {}),
   }));
 
   return {

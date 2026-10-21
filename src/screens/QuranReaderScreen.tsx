@@ -69,6 +69,7 @@ import { retry, cancel, remove, surahLoadFailed, tafsirLoadFailed, downloadFaile
 import { t, isRTL } from '../lib/i18n';
 import {
   useSettings,
+  clampQuranLineHeight,
   QURAN_FONT_SIZE_MIN,
   QURAN_FONT_SIZE_MAX,
   QURAN_FONT_SIZE_STEP,
@@ -78,6 +79,7 @@ import {
   QURAN_LINE_HEIGHT_STEP,
   QURAN_LINE_HEIGHT_DEFAULT,
 } from '../lib/settings';
+import { detectScriptFromContent, MIN_SCRIPT_MULTIPLIERS } from '../lib/typography';
 import { TAFSIR_SOURCES } from '../lib/tafsirSources';
 import { Hairline } from '../components/Hairline';
 import { useQuranLanguage } from '../lib/quranLanguageState';
@@ -287,6 +289,33 @@ export function getDisplayedAyahText(
   return stripBismillah(text);
 }
 
+export function getMushafLineHeight(
+  fontSize: number,
+  multiplier: number | null | undefined,
+  content: string | null | undefined,
+  language: string | null | undefined,
+): number {
+  const safeFontSize = Number.isFinite(fontSize) && fontSize > 0 ? fontSize : QURAN_FONT_SIZE_DEFAULT;
+  const safeMultiplier = clampQuranLineHeight(
+    typeof multiplier === 'number' ? multiplier : QURAN_LINE_HEIGHT_DEFAULT,
+  );
+  const script = detectScriptFromContent(content, language);
+  const scriptFloor = script === 'urdu'
+    ? MIN_SCRIPT_MULTIPLIERS.urdu
+    : script === 'arabic'
+      ? MIN_SCRIPT_MULTIPLIERS.arabic
+      : QURAN_LINE_HEIGHT_MIN;
+  return Math.round((safeFontSize + 2) * Math.max(safeMultiplier, scriptFloor));
+}
+
+export function getMushafHeaderLayout(isRtl: boolean) {
+  return {
+    visualOrder: isRtl ? ['page', 'surah', 'juz'] : ['juz', 'surah', 'page'],
+    leadingTextAlign: isRtl ? 'right' : 'left',
+    trailingTextAlign: isRtl ? 'left' : 'right',
+  } as const;
+}
+
 export default function QuranReaderScreen({
   surahNumber,
   initialAyah,
@@ -318,6 +347,7 @@ export default function QuranReaderScreen({
   const [tafsirSourcePickerOpen, setTafsirSourcePickerOpen] = useState<boolean>(false);
   const [scriptPickerOpen, setScriptPickerOpen] = useState<boolean>(false);
   const currentScript: QuranScript = settings?.quranScript || 'uthmani';
+  const mushafPageHeaderLayout = getMushafHeaderLayout(isRTL());
   const selectedScriptOption = QURAN_SCRIPTS.find((s) => s.id === currentScript) || QURAN_SCRIPTS[0];
   const safeSurahNumber = Math.max(1, Math.min(114, surahNumber || 1));
   const cacheKey = `surah:${safeSurahNumber}:${edition?.editionIdentifier || 'en.sahih'}`;
@@ -350,14 +380,13 @@ export default function QuranReaderScreen({
   });
   const [error, setError] = useState<string | null>(null);
   const fontSize = typeof settings?.quranFontSize === 'number' && settings.quranFontSize > 0 ? settings.quranFontSize : QURAN_FONT_SIZE_DEFAULT;
-  const quranLineHeight =
-    typeof settings?.quranLineHeight === 'number' && settings.quranLineHeight > 0
-      ? Math.round(settings.quranLineHeight * 10) / 10
-      : QURAN_LINE_HEIGHT_DEFAULT;
+  const quranLineHeight = clampQuranLineHeight(
+    typeof settings?.quranLineHeight === 'number' ? settings.quranLineHeight : QURAN_LINE_HEIGHT_DEFAULT,
+  );
   const showTranslation = Boolean(settings?.quranShowTranslation);
   const currentTafsirSource = TAFSIR_SOURCES.find((s) => s.id === settings?.tafsirSourceId) || TAFSIR_SOURCES[0];
   const arabicFamilies = (settings?.quranArabicFont && QURAN_FONT_FAMILIES[settings.quranArabicFont]) || QURAN_FONT_FAMILIES.amiri;
-  const ayahLineHeight = Math.round(fontSize * (settings?.quranLineHeight || 1.6));
+  const ayahLineHeight = Math.round(fontSize * quranLineHeight);
   const [readingMode, setReadingMode] = useState<ReadingMode>(() => {
     if (typeof initialPage === 'number' && initialPage >= 1) return 'mushaf';
     try {
@@ -3781,13 +3810,19 @@ export default function QuranReaderScreen({
               <View style={styles.mushafPageCard}>
                 {/* Header strip: Juz, Hizb, Surahs, Page number */}
                 <View style={[styles.mushafPageHeaderStrip, { borderBottomColor: tokens.cardBorder }]}>
-                  <AppText variant="caption" style={styles.mushafPageHeaderLeft}>
+                  <AppText
+                    variant="caption"
+                    style={[styles.mushafPageHeaderLeft, { textAlign: mushafPageHeaderLayout.leadingTextAlign }]}
+                  >
                     {`${t('Juz')} ${mushafPageJuz ?? '—'} • ${t('Hizb')} ${Math.ceil((mushafPageHizbQuarter ?? 0) / 4)}`}
                   </AppText>
                   <AppText variant="rowTitle" style={styles.mushafPageHeaderCenter}>
                     {mushafPageSurahNames}
                   </AppText>
-                  <AppText variant="caption" style={styles.mushafPageHeaderRight}>
+                  <AppText
+                    variant="caption"
+                    style={[styles.mushafPageHeaderRight, { textAlign: mushafPageHeaderLayout.trailingTextAlign }]}
+                  >
                     {`${t('Page')} ${displayedMushafPage}`}
                   </AppText>
                 </View>
@@ -3840,7 +3875,12 @@ export default function QuranReaderScreen({
                               text={getAyahScriptText(a.numberInSurah, a.text)}
                               size={fontSize + 2}
                               fontFamily={arabicFamilies.regular}
-                              lineHeight={Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6))}
+                              lineHeight={getMushafLineHeight(
+                                fontSize,
+                                quranLineHeight,
+                                getAyahScriptText(a.numberInSurah, a.text),
+                                settings?.language,
+                              )}
                               numberInSurah={a.numberInSurah}
                             />
                           </TouchableOpacity>
@@ -3916,7 +3956,16 @@ export default function QuranReaderScreen({
                                         fontFamily: arabicFamilies.regular,
                                         fontSize: fontSize + 2,
                                         color: isSelected ? colors.accent : colors.textPrimary,
-                                        lineHeight: Math.round((fontSize + 2) * (settings?.quranLineHeight || 1.6)),
+                                        lineHeight: getMushafLineHeight(
+                                          fontSize,
+                                          quranLineHeight,
+                                          getDisplayedAyahText(
+                                            a.surah.number,
+                                            a.numberInSurah,
+                                            getAyahScriptText(a.numberInSurah, a.text),
+                                          ),
+                                          settings?.language,
+                                        ),
                                         includeFontPadding: Platform.OS === 'android' ? true : undefined,
                                         writingDirection: 'rtl',
                                       }}

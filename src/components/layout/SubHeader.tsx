@@ -12,7 +12,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../lib/theme';
 import { HOME_THEME_TOKENS } from '../../lib/homeThemeTokens';
 import { getBackIcon } from '../../lib/iconMap';
-import { isRTL, t } from '../../lib/i18n';
+import { getCurrentLanguage, isRTL, t } from '../../lib/i18n';
+import { getTextAlignment } from '../../lib/typography';
 import {
   HEADER_HORIZONTAL_PADDING,
   HEADER_MAX_WIDTH,
@@ -79,6 +80,7 @@ export function SubHeader({
   const { width } = useWindowDimensions();
   const isCompact = width < 440;
   const rtl = isRTL();
+  const currentLanguage = getCurrentLanguage();
 
   const childPrefix = testID && testID !== 'subheader' && testID !== 'sub-header' ? testID : 'sub-header';
   const backIconName = getBackIcon('chevron');
@@ -166,9 +168,9 @@ export function SubHeader({
                 styles.eyebrow,
                 {
                   fontFamily: rtl ? fontRoles.arabicNotoBold : fontRoles.eyebrow,
+                  ...getTextAlignment(t(eyebrow), currentLanguage, 'eyebrow'),
                   fontSize: 11,
                   letterSpacing: 1.8,
-                  textAlign: rtl ? 'right' : 'left',
                 },
               ]}
               numberOfLines={1}
@@ -186,7 +188,7 @@ export function SubHeader({
                 fontFamily: rtl ? fontRoles.titleRtl : fontRoles.title,
                 fontSize: isCompact ? 22 : 24,
                 lineHeight: 28,
-                textAlign: rtl ? 'right' : 'left',
+                ...getTextAlignment(t(title), currentLanguage, 'headerTitle'),
               },
             ]}
             numberOfLines={2}
@@ -205,7 +207,7 @@ export function SubHeader({
                 {
                   fontFamily: rtl ? fontRoles.arabicNoto : fontRoles.subtitle,
                   fontSize: 11,
-                  textAlign: rtl ? 'right' : 'left',
+                  ...getTextAlignment(t(subtitle), currentLanguage, 'subtitle'),
                 },
               ]}
               maxFontSizeMultiplier={1.4}

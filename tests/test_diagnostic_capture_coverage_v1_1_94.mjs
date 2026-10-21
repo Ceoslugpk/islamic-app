@@ -1035,12 +1035,16 @@ function guaranteeDirectionMismatchRecorded(universe) {
       Object.keys(report.defects.countsByClass).sort(),
       [
         'fixedHeightTextRisk',
+        'lineBoxTooTight',
+        'lineOverlap',
         'offScreen',
         'outsideParent',
         'rtlTextAlignMismatch',
         'rtlWritingDirectionSuspicious',
         'siblingOverlap',
         'subTouchTarget',
+        'textClipped',
+        'textRectOverlap',
         'textTruncated',
       ].sort(),
       'countsByClass must stay the probe-defect contract (app-state defects are counted in appState)'

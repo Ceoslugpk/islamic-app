@@ -547,7 +547,7 @@ export const DailyContentRail = React.memo(function DailyContentRail({
   );
 });
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   root: {
     marginBottom: 20,
   },
@@ -587,7 +587,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
     minHeight: 226,
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 0,
     position: 'relative',
     justifyContent: 'space-between',
   },
@@ -597,7 +598,8 @@ const styles = StyleSheet.create({
     minHeight: 223,
     justifyContent: 'space-between',
     zIndex: 1,
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 0,
   },
   todayAccent: {
     height: 3,

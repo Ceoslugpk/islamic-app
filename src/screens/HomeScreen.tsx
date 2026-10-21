@@ -46,7 +46,8 @@ import { GeometricPattern } from '../components/GeometricPattern';
 import { ArabicText } from '../components/ArabicText';
 import { iconSizes } from '../lib/iconMap';
 import { gettingPrayerTimes, preparingDashboard, retry, prayerTimesOfflineError, prayerTimesNeedsConnection } from '../lib/strings';
-import { isRTL, t } from '../lib/i18n';
+import { getCurrentLanguage, isRTL, t } from '../lib/i18n';
+import { getTextAlignment } from '../lib/typography';
 import { useHadithOfDay } from '../lib/useHadithOfDay';
 import { useAyahOfDay, getDayOfYear } from '../lib/useAyahOfDay';
 import { useConnectivity, isAppOnline } from '../lib/useConnectivity';
@@ -186,6 +187,7 @@ const HomeScreen = React.memo(function HomeScreen({
   const homeTokens = HOME_THEME_TOKENS[mode];
   const { settings, setAutoLocation } = useSettings();
   const { haptic } = useHaptics();
+  const currentLanguage = getCurrentLanguage();
 
   const handleOpenReader = useCallback(
     (surah: number, ayah?: number, page?: number) => {
@@ -952,9 +954,7 @@ const HomeScreen = React.memo(function HomeScreen({
             variant="eyebrow"
             style={[
               styles.headerDateLine,
-              {
-                textAlign: isRTL() ? 'right' : 'left',
-              },
+              getTextAlignment(weekdayHijriLabel.toUpperCase(), currentLanguage, 'eyebrow'),
             ]}
           >
             {weekdayHijriLabel.toUpperCase()}
@@ -967,7 +967,7 @@ const HomeScreen = React.memo(function HomeScreen({
               styles.headerGreetingTitle,
               {
                 fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
-                textAlign: isRTL() ? 'right' : 'left',
+                ...getTextAlignment(t('Assalam o Alaikum'), currentLanguage, 'screenTitle'),
                 fontSize: isCompact ? 36 : 42,
                 lineHeight: isCompact ? 40 : 46,
               },
@@ -982,7 +982,7 @@ const HomeScreen = React.memo(function HomeScreen({
             style={[
               styles.headerLocationText,
               {
-                textAlign: isRTL() ? 'right' : 'left',
+                ...getTextAlignment(locDisplay, currentLanguage, 'subtitle'),
                 fontSize: 13.5,
                 lineHeight: 18,
               },
@@ -1120,7 +1120,7 @@ const HomeScreen = React.memo(function HomeScreen({
                             fontSize: isRTL() ? (isCompact ? 34 : 38) : (isCompact ? 38 : 44),
                             lineHeight: isRTL() ? (isCompact ? 40 : 44) : (isCompact ? 42 : 48),
                             color: homeTokens.gold,
-                            writingDirection: 'ltr',
+                            ...getTextAlignment(heroTimeStr, currentLanguage, 'numeral'),
                           },
                         ]}
                         numberOfLines={1}
@@ -1394,7 +1394,7 @@ const HomeScreen = React.memo(function HomeScreen({
                   style={[
                     styles.streakOverline,
                     {
-                      textAlign: isRTL() ? 'right' : 'left',
+                      ...getTextAlignment(t('SALAH STREAK'), currentLanguage, 'eyebrow'),
                     },
                   ]}
                 >
@@ -1406,7 +1406,7 @@ const HomeScreen = React.memo(function HomeScreen({
                     styles.streakBigCount,
                     {
                       fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
-                      textAlign: isRTL() ? 'right' : 'left',
+                      ...getTextAlignment(`${streak} ${t(streak === 1 ? 'day' : 'days')}`, currentLanguage, 'numeral'),
                     },
                   ]}
                 >
@@ -1440,7 +1440,7 @@ const HomeScreen = React.memo(function HomeScreen({
                     style={[
                       styles.streakTitleText,
                       {
-                        textAlign: isRTL() ? 'right' : 'left',
+                        ...getTextAlignment(`${streak} ${t('Day Streak')}`, currentLanguage, 'title'),
                       },
                     ]}
                   >
@@ -1452,7 +1452,7 @@ const HomeScreen = React.memo(function HomeScreen({
                   style={[
                     styles.streakSubText,
                     {
-                      textAlign: isRTL() ? 'right' : 'left',
+                      ...getTextAlignment(`${completedCount} / 5 ${t('Salah Today')}`, currentLanguage, 'subtitle'),
                     },
                   ]}
                 >
@@ -1538,7 +1538,7 @@ const HomeScreen = React.memo(function HomeScreen({
                   style={[
                     styles.sunriseTitle,
                     {
-                      textAlign: isRTL() ? 'right' : 'left',
+                      ...getTextAlignment(t('Sunrise'), currentLanguage, 'title'),
                     },
                   ]}
                 >
@@ -1549,7 +1549,7 @@ const HomeScreen = React.memo(function HomeScreen({
                   style={[
                     styles.sunriseSubtitle,
                     {
-                      textAlign: isRTL() ? 'right' : 'left',
+                      ...getTextAlignment(t('Non-Salah checkpoint'), currentLanguage, 'subtitle'),
                     },
                   ]}
                 >
@@ -1594,13 +1594,13 @@ const HomeScreen = React.memo(function HomeScreen({
             <View style={styles.duaRailHeaderLeft}>
               <AppText
                 variant="sectionTitle"
-                style={[styles.duaAfterPrayerEyebrow, { textAlign: isRTL() ? 'right' : 'left', fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular' }]}
+                style={[styles.duaAfterPrayerEyebrow, { ...getTextAlignment(t('Dua After Prayer'), currentLanguage, 'sectionTitle'), fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular' }]}
               >
                 {t('Dua After Prayer')}
               </AppText>
               <AppText
                 variant="subtitle"
-                style={[styles.duaAfterPrayerContext, { textAlign: isRTL() ? 'right' : 'left' }]}
+                style={[styles.duaAfterPrayerContext, getTextAlignment(hasSpecificPrayerDuas && targetPrayer ? `${t('For')} ${t(targetPrayer)}` : t('Authentic Adhkar'), currentLanguage, 'subtitle')]}
               >
                 {hasSpecificPrayerDuas && targetPrayer ? `${t('For')} ${t(targetPrayer)}` : t('Authentic Adhkar')}
               </AppText>
@@ -1610,7 +1610,7 @@ const HomeScreen = React.memo(function HomeScreen({
             <View style={[styles.duaPaginationWrap, { backgroundColor: homeTokens.ringFill, alignItems: isRTL() ? 'flex-start' : 'flex-end' }]}>
               <AppText
                 variant="caption"
-                style={[styles.duaPaginationText, { textAlign: isRTL() ? 'right' : 'left' }]}
+                style={[styles.duaPaginationText, getTextAlignment(`${Math.max(0, Math.min(activeDuaIndex, allAfterPrayerDuas.length - 1)) + 1} ${t('of')} ${allAfterPrayerDuas.length}`, currentLanguage, 'numeral')]}
               >
                 {Math.max(0, Math.min(activeDuaIndex, allAfterPrayerDuas.length - 1)) + 1} {t('of')} {allAfterPrayerDuas.length}
               </AppText>
@@ -1726,14 +1726,14 @@ const HomeScreen = React.memo(function HomeScreen({
                         {isExpanded && (
                           <AppText
                             variant="body"
-                            style={[styles.duaAfterPrayerTransliteration, { color: homeTokens.muted, textAlign: isRTL() ? 'right' : 'left' }]}
+                            style={[styles.duaAfterPrayerTransliteration, { color: homeTokens.muted }, getTextAlignment(item.transliteration, currentLanguage, 'body')]}
                           >
                             {item.transliteration}
                           </AppText>
                         )}
                         <AppText
                           variant="body"
-                          style={[styles.duaAfterPrayerTranslation, { textAlign: isRTL() ? 'right' : 'left', writingDirection: isRTL() ? 'rtl' : 'ltr' }]}
+                          style={[styles.duaAfterPrayerTranslation, getTextAlignment(item.translation, currentLanguage, 'body')]}
                           numberOfLines={isExpanded ? undefined : 3}
                         >
                           {item.translation}
@@ -1745,7 +1745,7 @@ const HomeScreen = React.memo(function HomeScreen({
                           <Ionicons name="book-outline" size={14} color={homeTokens.gold} />
                           <AppText
                             variant="caption"
-                            style={[styles.duaAfterPrayerRef, { color: homeTokens.muted, textAlign: isRTL() ? 'right' : 'left' }]}
+                            style={[styles.duaAfterPrayerRef, { color: homeTokens.muted }, getTextAlignment(item.reference || item.source || t('Authentic Adhkar'), currentLanguage, 'caption')]}
                             numberOfLines={isExpanded ? undefined : 2}
                           >
                             {item.reference || item.source || t('Authentic Adhkar')}

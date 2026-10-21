@@ -5,40 +5,58 @@ console.log('=== STAGE-2 QA: MUSHARF LINEHEIGHT + CONTINUE READING EXACT POSITIO
 
 const ok = (m) => console.log(`  [ok] ${m}`);
 
-// ── 1. Mushaf lineHeight formula sanity ──
-// Reader computes ayah lineHeight as round(fontSize * quranLineHeight) and the
-// mushaf rows use round((fontSize+2) * lineHeight). Settings clamp line height
-// to [1.4, 2.2] step 0.1, default 1.8. Verify:
-//  - default + clamp constants exist and are sane (1.8 in [1.4, 2.2])
-//  - the formula never collapses (lineHeight >= fontSize) across the full
-//    font-size range at every allowed line-height value
-//  - mushaf ayah (fontSize+2) rows are always taller than cards (fontSize),
-//    i.e. mushaf rows have strictly more vertical room (no-overlap requirement)
+// ── 1. Mushaf lineHeight bounds + no-overlap sweep ──
+// The clamp bounds are DERIVED from the real module rather than pinned as
+// literals: this test previously hardcoded `1.4` and therefore had to be edited
+// every time the floor moved - and worse, it would have PASSED while the floor
+// sat below the script contract. The floor is now asserted against the contract.
+// Behaviour of the resolver itself (per-script floors for Urdu/Arabic/Latin) is
+// covered by tests/test_v1_1_94_lineheight_layout.mjs, which executes the real
+// `getMushafLineHeight` export; do not duplicate it here.
 const settingsCode = fs.readFileSync('src/lib/settings.tsx', 'utf8');
 const readerCode = fs.readFileSync('src/screens/QuranReaderScreen.tsx', 'utf8');
 
-const MIN = 1.4, MAX = 3.0, STEP = 0.1, DEFAULT = 2.2;
-assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_MIN = 1.4'), 'line-height min is 1.4');
-assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_MAX = 3.0'), 'line-height max is 3.0');
-assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_DEFAULT = 2.2'), 'line-height default is 2.2');
-assert.ok(settingsCode.includes('QURAN_LINE_HEIGHT_STEP = 0.1'), 'line-height step is 0.1');
-assert.ok(settingsCode.includes('quranLineHeight: QURAN_LINE_HEIGHT_DEFAULT'), 'settings default applies line-height 2.2');
+function readConst(code, name, file) {
+  const match = code.match(new RegExp(`${name}\\s*=\\s*([0-9.]+)`));
+  assert.ok(match, `${name} must be defined in ${file}`);
+  return Number(match[1]);
+}
 
-// clamp function exists and bounds correctly
+const MIN = readConst(settingsCode, 'QURAN_LINE_HEIGHT_MIN', 'src/lib/settings.tsx');
+const MAX = readConst(settingsCode, 'QURAN_LINE_HEIGHT_MAX', 'src/lib/settings.tsx');
+const STEP = readConst(settingsCode, 'QURAN_LINE_HEIGHT_STEP', 'src/lib/settings.tsx');
+const DEFAULT = readConst(settingsCode, 'QURAN_LINE_HEIGHT_DEFAULT', 'src/lib/settings.tsx');
+
+assert.ok(MAX > MIN, `line-height max ${MAX} must exceed min ${MIN}`);
+assert.ok(DEFAULT >= MIN && DEFAULT <= MAX, `default ${DEFAULT} must sit within [${MIN}, ${MAX}]`);
+
+// The regression guard that matters: the floor may rise but must never fall back
+// below the Arabic-script contract floor (1.8x). See src/lib/typography.ts.
+const ARABIC_CONTRACT_FLOOR = 1.8;
+assert.ok(
+  MIN >= ARABIC_CONTRACT_FLOOR,
+  `line-height min ${MIN} must not fall below the Arabic contract floor ${ARABIC_CONTRACT_FLOOR}`,
+);
+ok(`line-height bounds derived from the real module: [${MIN}, ${MAX}] step ${STEP}, default ${DEFAULT}, floor >= contract ${ARABIC_CONTRACT_FLOOR}`);
+
+// clamp function exists and clamps to the derived bounds
 assert.ok(settingsCode.includes('export function clampQuranLineHeight'), 'clampQuranLineHeight exported');
 assert.ok(
   settingsCode.includes('Math.max(QURAN_LINE_HEIGHT_MIN, Math.min(QURAN_LINE_HEIGHT_MAX, rounded))'),
   'clampQuranLineHeight clamps to [min,max]'
 );
 
-// formula: reader ayahLineHeight = round(fontSize * lineHeight)
+// The reader resolves its line box through the shared, script-aware resolver
+// (a raw `settings.quranLineHeight` multiplication is exactly the bug that let
+// Urdu/Arabic rows go tighter than the contract floor).
 assert.ok(
-  readerCode.includes('Math.round(fontSize * (settings?.quranLineHeight || 1.6))'),
-  'cards ayahLineHeight = round(fontSize * lineHeight)'
+  readerCode.includes('export function getMushafLineHeight'),
+  'reader must expose getMushafLineHeight so the script floor is testable',
 );
-// mushaf rows: fontSize + 2 in page and tajweed renderers
-const mushafMatches = (readerCode.match(/Math\.round\(\(fontSize \+ 2\) \* \(settings\?\.quranLineHeight \|\| 1\.6\)\)/g) || []);
-assert.strictEqual(mushafMatches.length, 2, `mushaf lineHeight formula must cover page and tajweed renderers, got ${mushafMatches.length}`);
+assert.ok(
+  readerCode.includes('MIN_SCRIPT_MULTIPLIERS.urdu') && readerCode.includes('MIN_SCRIPT_MULTIPLIERS.arabic'),
+  'reader line box must apply the Urdu/Arabic script floors',
+);
 
 // numeric sweep: no overlap/negative metrics anywhere in range
 for (let fs = 18; fs <= 40; fs += 2) {
@@ -52,7 +70,7 @@ for (let fs = 18; fs <= 40; fs += 2) {
     lh = Math.round((lh + STEP) * 10) / 10;
   }
 }
-ok(`lineHeight sweep: all ${(MAX - MIN) / STEP + 1} allowed line-heights x all 12 font sizes pass no-overlap (mushaf row > card row)`);
+ok(`lineHeight sweep: all ${Math.round((MAX - MIN) / STEP) + 1} allowed line-heights x all 12 font sizes pass no-overlap (mushaf row > card row)`);
 
 // ── 2. Continue Reading exact-position chain (static assertions) ──
 // Chain: getContinueReadingPosition (marker-first, bounds-validated) →

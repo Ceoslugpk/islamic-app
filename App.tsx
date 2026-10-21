@@ -16,6 +16,7 @@ import {
   AppState,
   BackHandler,
   AccessibilityInfo,
+  Alert,
   useColorScheme,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -92,7 +93,11 @@ import PrayerRemindersScreen from './src/screens/PrayerRemindersScreen';
 import MosqueFinderScreen from './src/screens/MosqueFinderScreen';
 import WomenCycleScreen from './src/screens/WomenCycleScreen';
 import { WomenLockGate } from './src/components/WomenLockGate';
-import { isWomenGateArmed, isWomenLocked } from './src/lib/privacy';
+import {
+  isWomenGateArmed,
+  isWomenLocked,
+  resolveWomenSettingsAccess,
+} from './src/lib/privacy';
 import WomenPurityScreen from './src/screens/WomenPurityScreen';
 import WomenGuidanceScreen from './src/screens/WomenGuidanceScreen';
 import WomenQadaScreen from './src/screens/WomenQadaScreen';
@@ -215,6 +220,46 @@ export function isTopLevelScreen(
   );
 }
 
+export const APP_HEADER_DIRECTIONAL_STYLES = {
+  bismillahWrap: {
+    justifyContent: 'flex-end' as const,
+    paddingHorizontal: 8,
+    paddingEnd: 16,
+  },
+  headerLogoBadge: {
+    marginEnd: 8,
+  },
+  headerLogo: {
+    marginEnd: 8,
+  },
+  headerSeal: {
+    marginEnd: 9,
+  },
+} as const;
+
+export function resolveAppHeaderLayout(direction: 'ltr' | 'rtl') {
+  const physicalEnd = direction === 'rtl' ? 'left' : 'right';
+  return {
+    justification: APP_HEADER_DIRECTIONAL_STYLES.bismillahWrap.justifyContent,
+    bismillahPadding: {
+      edge: physicalEnd,
+      value: APP_HEADER_DIRECTIONAL_STYLES.bismillahWrap.paddingEnd,
+    },
+    logoBadgeGap: {
+      edge: physicalEnd,
+      value: APP_HEADER_DIRECTIONAL_STYLES.headerLogoBadge.marginEnd,
+    },
+    logoGap: {
+      edge: physicalEnd,
+      value: APP_HEADER_DIRECTIONAL_STYLES.headerLogo.marginEnd,
+    },
+    sealGap: {
+      edge: physicalEnd,
+      value: APP_HEADER_DIRECTIONAL_STYLES.headerSeal.marginEnd,
+    },
+  };
+}
+
 const NAVIGATION_BRIDGE_ENABLED =
   (typeof __DEV__ !== 'undefined' && __DEV__) ||
   process.env.EXPO_PUBLIC_NAVIGATION_PROOF === '1';
@@ -264,6 +309,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const [pendingWomenScreen, setPendingWomenScreen] = useState<ToolsView | null>(null);
   const [pendingWomenTab, setPendingWomenTab] = useState<'tools' | 'library'>('tools');
   const [womenPinModalOpen, setWomenPinModalOpen] = useState(false);
+  const [womenPinModalMode, setWomenPinModalMode] = useState<'verify' | 'set'>('verify');
 
   // Background re-lock: when app moves to background/inactive, re-lock sensitive session
   useEffect(() => {
@@ -304,12 +350,17 @@ function Root({ splashDone }: { splashDone: boolean }) {
   const handleOpenWomenFromSettings = useCallback(
     (key: 'women-cycle' | 'women-purity' | 'women-guidance' | 'women-qada') => {
       setSettingsOpen(false);
-      if (!settings.womenWorshipEnabled) return;
+      const access = resolveWomenSettingsAccess(settings, womenUnlocked);
+      if (access === 'feature-disabled') {
+        Alert.alert(t("Women's Worship"), t("Show women's worship tools (period tracking, purity, fiqh)"));
+        return;
+      }
       setTab('tools');
       const isLocked = isWomenLocked(settings, womenUnlocked);
-      if (isLocked) {
+      if (access === 'set-pin' || isLocked) {
         setPendingWomenTab('tools');
         setPendingWomenScreen({ screen: key });
+        setWomenPinModalMode(access === 'set-pin' ? 'set' : 'verify');
         setWomenPinModalOpen(true);
         return;
       }
@@ -909,11 +960,16 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
   const openToolsItem = useCallback((key: ToolsItemKey) => {
     if (key.startsWith('women-')) {
-      if (!settings.womenWorshipEnabled) return;
+      const access = resolveWomenSettingsAccess(settings, womenUnlocked);
+      if (access === 'feature-disabled') {
+        Alert.alert(t("Women's Worship"), t("Show women's worship tools (period tracking, purity, fiqh)"));
+        return;
+      }
       const isLocked = isWomenLocked(settings, womenUnlocked);
-      if (isLocked) {
+      if (access === 'set-pin' || isLocked) {
         setPendingWomenTab('tools');
         setPendingWomenScreen({ screen: key as any });
+        setWomenPinModalMode(access === 'set-pin' ? 'set' : 'verify');
         setWomenPinModalOpen(true);
         return;
       }
@@ -946,11 +1002,16 @@ function Root({ splashDone }: { splashDone: boolean }) {
 
   const openLibraryItem = useCallback((key: LibraryItemKey) => {
     if (key.startsWith('women-')) {
-      if (!settings.womenWorshipEnabled) return;
+      const access = resolveWomenSettingsAccess(settings, womenUnlocked);
+      if (access === 'feature-disabled') {
+        Alert.alert(t("Women's Worship"), t("Show women's worship tools (period tracking, purity, fiqh)"));
+        return;
+      }
       const isLocked = isWomenLocked(settings, womenUnlocked);
-      if (isLocked) {
+      if (access === 'set-pin' || isLocked) {
         setPendingWomenTab('library');
         setPendingWomenScreen({ screen: key as any });
+        setWomenPinModalMode(access === 'set-pin' ? 'set' : 'verify');
         setWomenPinModalOpen(true);
         return;
       }
@@ -1640,11 +1701,12 @@ function Root({ splashDone }: { splashDone: boolean }) {
       <WomenPinModal
         visible={womenPinModalOpen}
         currentHash={settings.womenPinHash}
-        mode="verify"
+        mode={womenPinModalMode}
         onSetPin={setWomenPinHash}
         onSuccess={() => {
           setWomenUnlocked(true);
           setWomenPinModalOpen(false);
+          setWomenPinModalMode('verify');
           if (pendingWomenScreen) {
             if (pendingWomenTab === 'library') {
               setLibrary({ screen: pendingWomenScreen.screen as any });
@@ -1656,6 +1718,7 @@ function Root({ splashDone }: { splashDone: boolean }) {
         }}
         onCancel={() => {
           setWomenPinModalOpen(false);
+          setWomenPinModalMode('verify');
           setPendingWomenScreen(null);
         }}
       />
@@ -1911,10 +1974,8 @@ const styles = StyleSheet.create({
     // Push the Bismillah toward the gear with a comfortable gap instead of
     // dead-centering it between the logo and the gear (user: it felt too
     // close to the ISLAMIC wordmark).
-    justifyContent: 'flex-end',
-    paddingHorizontal: 8,
+    ...APP_HEADER_DIRECTIONAL_STYLES.bismillahWrap,
     // Comfortable gap before the gear so it never feels attached.
-    paddingRight: 16,
     minWidth: 0,
     // Cap the middle slot so a wide Arabic Basmala can never overflow
     // left into the ISLAMIC wordmark (or right into the gear). The text
@@ -1942,17 +2003,17 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   headerLogoBadge: {
-    marginRight: 8,
+    ...APP_HEADER_DIRECTIONAL_STYLES.headerLogoBadge,
   },
   headerLogo: {
     width: 22,
     height: 22,
-    marginRight: 8,
+    ...APP_HEADER_DIRECTIONAL_STYLES.headerLogo,
   },
   headerSeal: {
     width: 11,
     height: 11,
-    marginRight: 9,
+    ...APP_HEADER_DIRECTIONAL_STYLES.headerSeal,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -11,7 +11,8 @@ import {
 } from 'react-native';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, fontRoles } from '../../theme/tokens';
-import { isRTL } from '../../lib/i18n';
+import { getCurrentLanguage } from '../../lib/i18n';
+import { getTextAlignment } from '../../lib/typography';
 import { useAutoProbe } from '../../lib/diagnostic';
 import { AppText } from './AppText';
 
@@ -41,7 +42,10 @@ export function InputField({
 }: InputFieldProps) {
   const { mode, colors } = useTheme();
   const tokens = themeTokens[mode];
-  const rtl = isRTL();
+  const currentLanguage = getCurrentLanguage();
+  const labelAlignment = getTextAlignment(label, currentLanguage, 'caption');
+  const inputAlignment = getTextAlignment(value || rest.placeholder || label, currentLanguage, 'body');
+  const feedbackAlignment = getTextAlignment(errorText || helperText, currentLanguage, 'caption');
 
   const borderColor = errorText
     ? colors.destructive
@@ -67,7 +71,7 @@ export function InputField({
           style={[
             styles.label,
             {
-              textAlign: rtl ? 'right' : 'left',
+              ...labelAlignment,
             },
             labelStyle,
           ]}
@@ -84,8 +88,7 @@ export function InputField({
             backgroundColor,
             borderColor,
             color: colors.textPrimary,
-            textAlign: rtl ? 'right' : 'left',
-            writingDirection: rtl ? 'rtl' : 'ltr',
+            ...inputAlignment,
           },
           inputStyle,
         ]}
@@ -103,7 +106,7 @@ export function InputField({
           style={[
             styles.errorText,
             {
-              textAlign: rtl ? 'right' : 'left',
+              ...feedbackAlignment,
             },
           ]}
         >
@@ -115,7 +118,7 @@ export function InputField({
           style={[
             styles.helperText,
             {
-              textAlign: rtl ? 'right' : 'left',
+              ...feedbackAlignment,
             },
           ]}
         >

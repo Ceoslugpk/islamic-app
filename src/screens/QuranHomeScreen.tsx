@@ -23,7 +23,8 @@ import { SURAHS_114 } from '../lib/surahs114';
 import { useDiagnosticTarget, isDiagnosticModeEnabled } from '../lib/diagnostic';
 import { ArabicText, QURAN_FONT_FAMILIES } from '../components/ArabicText';
 import { GeometricPattern } from '../components/GeometricPattern';
-import { isRTL, t } from '../lib/i18n';
+import { getCurrentLanguage, isRTL, t } from '../lib/i18n';
+import { getTextAlignment } from '../lib/typography';
 import { LastReadPosition, loadLastReadPosition, loadQuranCache } from '../lib/db';
 import { getContinueReadingPosition, addReadingPositionListener, ReadingPosition } from '../lib/continuing';
 import { getLocalizedSurahName, getLocalizedLanguageName, normalizeSearchText } from '../lib/surahNamesLocalized';
@@ -244,6 +245,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
   const horizontalPadding = isCompact ? 12 : isNarrow ? 16 : 20;
 
   const { language, edition, flag } = useQuranLanguage();
+  const currentLanguage = getCurrentLanguage();
   const [langPickerOpen, setLangPickerOpen] = useState(false);
   const [translatedNames, setTranslatedNames] = useState<Record<number, string> | null>(null);
   const { progress: preloadProgress, startPreload, pausePreload } = useQuranPreload();
@@ -594,6 +596,16 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
         : (cached && typeof cached.ayah === 'number' ? cached.ayah : undefined);
     })();
 
+    const searchPlaceholder = verseRef
+      ? `${t('Jumping to')} ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || t('Surah')} ${verseRef?.ayah}…`
+      : searchFilter === 'name'
+      ? t('Search surah name…')
+      : searchFilter === 'meaning'
+      ? t('Search meaning…')
+      : t('Search surah name or meaning…');
+    const searchAlignment = getTextAlignment(inputQuery || searchPlaceholder, currentLanguage, 'body');
+    const surahCountText = filteredSurahs.length === 114 ? '114' : `${filteredSurahs.length} / 114`;
+
     return (
       <View style={styles.headerArea}>
         {/* Match the title hierarchy used by the Home, Library, and Tools tabs. */}
@@ -644,19 +656,10 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                 color: tokens.text,
                 fontSize: isCompact ? (isRTL() ? 13.5 : 12.5) : (isRTL() ? 14.5 : 13.5),
                 fontFamily: isRTL() ? fontRoles.arabicNoto : 'Manrope_500Medium',
-                textAlign: isRTL() ? 'right' : 'left',
-                writingDirection: isRTL() ? 'rtl' : 'ltr',
+                ...searchAlignment,
               },
             ]}
-            placeholder={
-              verseRef
-                ? `${t('Jumping to')} ${surahs?.find((s) => s.number === verseRef?.surah)?.englishName || t('Surah')} ${verseRef?.ayah}…`
-                : searchFilter === 'name'
-                ? t('Search surah name…')
-                : searchFilter === 'meaning'
-                ? t('Search meaning…')
-                : t('Search surah name or meaning…')
-            }
+            placeholder={searchPlaceholder}
             placeholderTextColor={tokens.muted}
             accessibilityLabel={t('Search surah name or meaning…')}
             value={inputQuery}
@@ -1149,7 +1152,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                   styles.heroBadgeText,
                   {
                     color: mode === 'paper' ? HOME_THEME_TOKENS.paper.gold : tokens.gold,
-                    textAlign: isRTL() ? 'right' : 'left',
+                    ...getTextAlignment(resumeTarget ? t('CONTINUE READING') : t('START READING'), currentLanguage, 'eyebrow'),
                   },
                 ]}
                 maxFontSizeMultiplier={1.2}
@@ -1167,7 +1170,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                   styles.heroSurahName,
                   {
                     fontSize: isCompact ? 23 : 27,
-                    textAlign: isRTL() ? 'right' : 'left',
+                    ...getTextAlignment(heroLatinName, currentLanguage, 'onHeroTitle'),
                     fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
                   },
                 ]}
@@ -1196,7 +1199,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                 styles.heroSubtitle,
                 {
                   fontSize: isCompact ? 11.5 : 12,
-                  textAlign: isRTL() ? 'right' : 'left',
+                  ...getTextAlignment(heroAyahInfo, currentLanguage, 'onHeroSubtitle'),
                 },
               ]}
               numberOfLines={2}
@@ -1261,7 +1264,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
               <View style={styles.tileTextCol}>
                 <AppText
                   variant="sectionTitle"
-                  style={[styles.tileTitle, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  style={[styles.tileTitle, getTextAlignment(t('Audio Center'), currentLanguage, 'sectionTitle')]}
                   numberOfLines={1}
                   maxFontSizeMultiplier={1.2}
                 >
@@ -1269,7 +1272,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                 </AppText>
                 <AppText
                   variant="caption"
-                  style={[styles.tileSub, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  style={[styles.tileSub, getTextAlignment(t('Reciters & Playlists'), currentLanguage, 'caption')]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                   maxFontSizeMultiplier={1.2}
@@ -1309,7 +1312,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
               <View style={styles.tileTextCol}>
                 <AppText
                   variant="sectionTitle"
-                  style={[styles.tileTitle, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  style={[styles.tileTitle, getTextAlignment(t('Tafsir'), currentLanguage, 'sectionTitle')]}
                   numberOfLines={1}
                   maxFontSizeMultiplier={1.2}
                 >
@@ -1317,7 +1320,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                 </AppText>
                 <AppText
                   variant="caption"
-                  style={[styles.tileSub, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  style={[styles.tileSub, getTextAlignment(t('Jalalayn Commentary'), currentLanguage, 'caption')]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                   maxFontSizeMultiplier={1.2}
@@ -1360,7 +1363,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
               <View style={styles.tileTextCol}>
                 <AppText
                   variant="sectionTitle"
-                  style={[styles.tileTitle, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  style={[styles.tileTitle, getTextAlignment(t('Topics'), currentLanguage, 'sectionTitle')]}
                   numberOfLines={1}
                   maxFontSizeMultiplier={1.2}
                 >
@@ -1368,7 +1371,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                 </AppText>
                 <AppText
                   variant="caption"
-                  style={[styles.tileSub, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  style={[styles.tileSub, getTextAlignment(t('Thematic Passages'), currentLanguage, 'caption')]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                   maxFontSizeMultiplier={1.2}
@@ -1408,7 +1411,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
               <View style={styles.tileTextCol}>
                 <AppText
                   variant="sectionTitle"
-                  style={[styles.tileTitle, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  style={[styles.tileTitle, getTextAlignment(t('Compare'), currentLanguage, 'sectionTitle')]}
                   numberOfLines={1}
                   maxFontSizeMultiplier={1.2}
                 >
@@ -1416,7 +1419,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
                 </AppText>
                 <AppText
                   variant="caption"
-                  style={[styles.tileSub, { textAlign: isRTL() ? 'right' : 'left' }]}
+                  style={[styles.tileSub, getTextAlignment(t('Dual Translations'), currentLanguage, 'caption')]}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                   maxFontSizeMultiplier={1.2}
@@ -1550,7 +1553,7 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
               styles.surahsTitle,
               {
                 fontFamily: isRTL() ? 'Amiri_700Bold' : 'InstrumentSerif_400Regular',
-                textAlign: isRTL() ? 'right' : 'left',
+                ...getTextAlignment(t('Surahs'), currentLanguage, 'title'),
               },
             ]}
             maxFontSizeMultiplier={1.2}
@@ -1561,17 +1564,17 @@ const QuranHomeScreen = React.memo(function QuranHomeScreen({
             variant="caption"
             style={[
               styles.surahsCount,
-              { color: tokens.gold, textAlign: isRTL() ? 'left' : 'right' },
+              { color: tokens.gold, ...getTextAlignment(surahCountText, currentLanguage, 'numeral') },
             ]}
             maxFontSizeMultiplier={1.2}
           >
-            {filteredSurahs.length === 114 ? '114' : `${filteredSurahs.length} / 114`}
+            {surahCountText}
           </AppText>
         </View>
       </View>
     );
   }, [
-    tokens, mode, isCompact, horizontalPadding,
+    tokens, mode, isCompact, horizontalPadding, currentLanguage,
     inputQuery, searchHistory, searchFilter, verseRef,
     preloadProgress, startPreload, pausePreload, setQuranPreloadRequested,
     bookmarkCount, noteCount, filteredSurahs,

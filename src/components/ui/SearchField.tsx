@@ -13,7 +13,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../lib/theme';
 import { themeTokens, fontRoles } from '../../theme/tokens';
-import { isRTL, t } from '../../lib/i18n';
+import { getCurrentLanguage, isRTL, t } from '../../lib/i18n';
+import { getTextAlignment } from '../../lib/typography';
 import { useAutoProbe } from '../../lib/diagnostic';
 
 export interface SearchFieldProps extends Omit<TextInputProps, 'style'> {
@@ -45,6 +46,9 @@ export function SearchField({
   const { mode, colors } = useTheme();
   const tokens = themeTokens[mode];
   const rtl = isRTL();
+  const currentLanguage = getCurrentLanguage();
+  const resolvedPlaceholder = placeholder ?? t('Search…');
+  const inputAlignment = getTextAlignment(value || resolvedPlaceholder, currentLanguage, 'body');
 
   const handleClear = () => {
     onChangeText('');
@@ -86,18 +90,17 @@ export function SearchField({
           styles.input,
           {
             color: colors.textPrimary,
-            textAlign: rtl ? 'right' : 'left',
+            ...inputAlignment,
             fontFamily: rtl ? fontRoles.arabicNoto : fontRoles.ui,
-            writingDirection: rtl ? 'rtl' : 'ltr',
             fontSize: rtl ? 15 : 14,
           },
           inputStyle,
         ]}
         value={value}
         onChangeText={onChangeText}
-        placeholder={placeholder ?? t('Search…')}
+        placeholder={resolvedPlaceholder}
         placeholderTextColor={colors.textMuted}
-        accessibilityLabel={rest.accessibilityLabel ?? (placeholder ?? t('Search…'))}
+        accessibilityLabel={rest.accessibilityLabel ?? resolvedPlaceholder}
         autoCorrect={false}
         clearButtonMode="never"
         {...rest}

@@ -8,11 +8,12 @@ import {
 } from 'react-native';
 import { useTheme } from '../../lib/theme';
 import { fontRoles } from '../../theme/tokens';
-import { getCurrentLanguage, isRtlLanguage } from '../../lib/i18n';
+import { getCurrentLanguage } from '../../lib/i18n';
 import {
   TypographyScript,
   detectScriptFromContent,
   calculateScriptLineHeight,
+  getTextAlignment,
 } from '../../lib/typography';
 import { useAutoProbe } from '../../lib/diagnostic';
 
@@ -174,9 +175,6 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
   const currentLang = getCurrentLanguage();
   const textContent = extractString(children);
   const script = detectScriptFromContent(textContent, currentLang);
-  const isRtlLocale = typeof isRtlLanguage === 'function'
-    ? isRtlLanguage(currentLang)
-    : (currentLang === 'ur' || currentLang === 'ar' || currentLang === 'ps');
 
   let resolvedColor: string;
   if (tone === 'danger') {
@@ -243,14 +241,11 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
       )
     : undefined;
 
-  const defaultTextAlign = (isRtlLocale || isTallScript) ? 'right' : 'left';
-  const defaultWritingDirection = variant === 'numeral'
-    ? 'ltr'
-    : (isTallScript ? 'rtl' : (isRtlLocale ? (script === 'latin' ? 'ltr' : 'rtl') : 'ltr'));
+  const resolvedAlignment = getTextAlignment(textContent, currentLang, variant);
 
   const alignmentStyle: TextStyle = {
-    textAlign: flattenedStyle?.textAlign ?? defaultTextAlign,
-    writingDirection: flattenedStyle?.writingDirection ?? defaultWritingDirection,
+    textAlign: flattenedStyle?.textAlign ?? resolvedAlignment.textAlign,
+    writingDirection: flattenedStyle?.writingDirection ?? resolvedAlignment.writingDirection,
   };
 
   const scriptStyle: TextStyle | undefined = isTallScript ? {
@@ -260,10 +255,10 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
     fontStyle: 'normal',
     letterSpacing: 0,
     textTransform: 'none',
-    writingDirection: flattenedStyle?.writingDirection ?? 'rtl',
-    textAlign: flattenedStyle?.textAlign ?? 'right',
+    writingDirection: flattenedStyle?.writingDirection ?? resolvedAlignment.writingDirection,
+    textAlign: flattenedStyle?.textAlign ?? resolvedAlignment.textAlign,
   } : /^(Amiri|NotoNaskhArabic|NotoNastaliqUrdu)_/.test(flattenedStyle?.fontFamily ?? '')
-    ? { fontFamily: typographyStyle.fontFamily, writingDirection: 'ltr' }
+    ? { fontFamily: typographyStyle.fontFamily, writingDirection: resolvedAlignment.writingDirection }
     : undefined;
 
   const isLetterSpacedEyebrow = variant === 'eyebrow';
@@ -285,6 +280,18 @@ export const AppText = forwardRef<Text, AppTextProps>(function AppText(
     isText: true,
     numberOfLines: rest.numberOfLines,
     style,
+    resolvedFontSize: effectiveFontSize,
+    resolvedLineHeight: safeLineHeight ?? typographyStyle.lineHeight ?? 'auto',
+    explicitLineHeight: typeof flattenedStyle?.lineHeight === 'number'
+      ? flattenedStyle.lineHeight
+      : (typeof typographyStyle.lineHeight === 'number' ? typographyStyle.lineHeight : null),
+    fontFamily: typeof scriptStyle?.fontFamily === 'string'
+      ? scriptStyle.fontFamily
+      : (typeof flattenedStyle?.fontFamily === 'string'
+        ? flattenedStyle.fontFamily
+        : (typeof typographyStyle.fontFamily === 'string' ? typographyStyle.fontFamily : null)),
+    textScript: script,
+    textCategory: VARIANT_CONFIGS[variant].category,
     textAlign: alignmentStyle.textAlign,
     writingDirection: alignmentStyle.writingDirection,
     onPress: rest.onPress,

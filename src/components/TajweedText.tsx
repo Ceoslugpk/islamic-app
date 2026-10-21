@@ -37,6 +37,12 @@ export function TajweedText({
 
   const autoProbe = useAutoProbe(undefined, 'TajweedText', {
     isText: true,
+    resolvedFontSize: size,
+    resolvedLineHeight,
+    explicitLineHeight: typeof lineHeight === 'number' ? lineHeight : resolvedLineHeight,
+    fontFamily: resolvedFamily,
+    textScript: 'arabic',
+    textCategory: 'ui',
     writingDirection: 'rtl',
     textAlign: 'right',
   });

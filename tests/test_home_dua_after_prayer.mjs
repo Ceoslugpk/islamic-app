@@ -169,7 +169,14 @@ const homeScreenSrc = fs.readFileSync('src/screens/HomeScreen.tsx', 'utf8');
 const dailyRailSrc = fs.readFileSync('src/components/DailyContentRail.tsx', 'utf8');
 const quickActionsSrc = fs.readFileSync('src/components/QuickActionsStrip.tsx', 'utf8');
 assert.ok(homeScreenSrc.includes('styles.heroTopRowRtl'), 'RTL prayer hero must use its stacked layout');
-assert.ok(homeScreenSrc.includes("writingDirection: 'ltr'"), 'Prayer time digits must retain LTR order in RTL');
+// The hero prayer time now resolves its direction through the shared contract's
+// `numeral` path instead of an inline `writingDirection: 'ltr'`. That path yields
+// LTR for numerals (behaviourally asserted in
+// tests/test_v1_1_94_urdu_alignment_contract.mjs), so assert the delegation here.
+assert.ok(
+  homeScreenSrc.includes("getTextAlignment(heroTimeStr, currentLanguage, 'numeral')"),
+  'Prayer time digits must resolve through the numeral contract (LTR order in RTL)'
+);
 assert.ok(homeScreenSrc.includes('styles.heroTimeWrapRtl'), 'RTL prayer time must align to the card edge without clipping');
 assert.ok(dailyRailSrc.includes('styles.todayAccent'), 'TODAY inspiration cards must use the Dua card accent treatment');
 assert.ok(dailyRailSrc.includes('minHeight: 226'), 'TODAY card height must accommodate translated content responsively');

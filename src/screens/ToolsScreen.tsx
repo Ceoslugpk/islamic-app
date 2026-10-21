@@ -999,7 +999,7 @@ function UtilityRowItem({
 
 /* ─── Stylesheet ─────────────────────────────────────────────────────────── */
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   root: {
     flex: 1,
     minHeight: '100%',
@@ -1118,7 +1118,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
   },
   trackerTileInner: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 0,
     minHeight: 83.5,
     borderRadius: 17,
     borderWidth: 1,

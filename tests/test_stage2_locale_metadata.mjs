@@ -330,6 +330,18 @@ async function assertRealSettingsLanguagePersistence() {
       DetailScreen: runtimeDetailScreen,
     },
     '../lib/settings': {
+      // Keep this list in sync with src/lib/settings.tsx: the real SettingsScreen imports
+      // persistLanguageChange directly (not only via the context), so a stub missing it
+      // crashes the switch path and fails the suite for the wrong reason.
+      persistLanguageChange: (settings, language) => {
+        events.push(['persist-start', language]);
+        return new Promise((resolve) => {
+          resolveLanguage = () => {
+            events.push(['persist-done', language]);
+            resolve();
+          };
+        });
+      },
       useSettings: () => ({
         settings: settingsState,
         setLanguage: (language) => {

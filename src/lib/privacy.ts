@@ -40,6 +40,26 @@ export function isWomenGateArmed(
   return Boolean(settings?.womenLockEnabled && !womenUnlocked);
 }
 
+export type WomenSettingsAccess = 'feature-disabled' | 'set-pin' | 'pin-required' | 'open';
+
+/**
+ * Resolve the visible outcome for a Women's Worship link from Settings.
+ *
+ * A lock toggle without a stored PIN is an incomplete custom-PIN setup for
+ * this entry point. Send the user to the existing PIN-creation flow instead
+ * of navigating into a screen whose PIN prompt cannot verify anything.
+ * PIN-protected sessions remain blocked until the PIN unlocks them.
+ */
+export function resolveWomenSettingsAccess(
+  settings: WomenLockSettings | null | undefined,
+  womenUnlocked: boolean
+): WomenSettingsAccess {
+  if (!settings?.womenWorshipEnabled) return 'feature-disabled';
+  if (settings.womenLockEnabled && !settings.womenPinHash) return 'set-pin';
+  if (isWomenLocked(settings, womenUnlocked)) return 'pin-required';
+  return 'open';
+}
+
 /**
  * Legacy deterministic salted hash for local 4-digit PIN protection.
  * Kept for transparent backward compatibility with existing stored hashes.

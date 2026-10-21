@@ -95,6 +95,55 @@ export function detectScriptFromContent(
   return 'latin';
 }
 
+export interface TypographyTextAlignment {
+  textAlign: 'left' | 'right';
+  writingDirection: 'ltr' | 'rtl';
+}
+
+function isRtlLanguageCode(language?: string | null): boolean {
+  if (!language) return false;
+  const normalized = language.toLowerCase().trim();
+  const matches = (code: string) =>
+    normalized === code || normalized.startsWith(`${code}-`) || normalized.startsWith(`${code}_`);
+
+  return ['ur', 'ar', 'ps', 'ckb', 'fa', 'ug', 'he', 'sd', 'dv'].some(matches) || normalized === 'ku-arab';
+}
+
+/**
+ * Resolve the text alignment contract for a rendered string.
+ *
+ * Script wins over locale: Arabic/Perso-Arabic content is always right-aligned
+ * and RTL-directed, even when it appears in an LTR locale or uses the numeral
+ * variant. Latin and numeric content in an RTL locale intentionally stays
+ * right-aligned while remaining LTR-directed, so times, counts, and Latin
+ * names retain their natural ordering. LTR locales keep their normal left/LTR
+ * treatment. The variant is part of the shared contract so callers can pass
+ * the same semantic variant as AppText; it only makes the numeric-LTR intent
+ * explicit after script detection.
+ */
+export function getTextAlignment(
+  content: string | null | undefined,
+  language: string | null | undefined,
+  variant: string = 'body',
+): TypographyTextAlignment {
+  const normalizedLanguage = language?.toLowerCase().trim() || null;
+  const script = detectScriptFromContent(content, normalizedLanguage);
+  const isTallScript = script === 'arabic' || script === 'urdu';
+  const isRtlLocale = isRtlLanguageCode(normalizedLanguage);
+  const isNumericVariant = variant === 'numeral' && script === 'latin';
+
+  if (isTallScript) {
+    return { textAlign: 'right', writingDirection: 'rtl' };
+  }
+
+  return {
+    textAlign: isRtlLocale ? 'right' : 'left',
+    writingDirection: isNumericVariant || script === 'latin'
+      ? 'ltr'
+      : (isRtlLocale ? 'rtl' : 'ltr'),
+  };
+}
+
 export function calculateScriptLineHeight(
   fontSize: number,
   script: TypographyScript,

@@ -21,7 +21,7 @@ import { DetailScreen } from '../components/layout/DetailScreen';
 import { PremiumCard } from '../components/ui';
 import { Hairline } from '../components/Hairline';
 import { CalendarGridSkeleton } from '../components/Skeleton';
-import { t } from '../lib/i18n';
+import { isRTL, t } from '../lib/i18n';
 import { hScrollRTLStyle } from '../lib/rtl';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -35,6 +35,11 @@ const HIJRI_CHIP_LABELS: string[] = [
   'Raj', 'Sha', 'Ram', 'Shaw', 'Dhu Q', 'Dhu H',
 ];
 
+export function getCalendarNavGlyph(direction: 'previous' | 'next', rtl: boolean): '‹' | '›' {
+  if (direction === 'previous') return rtl ? '›' : '‹';
+  return rtl ? '‹' : '›';
+}
+
 export default function CalendarScreen({
   onBack,
   backLabel = 'Tools',
@@ -46,6 +51,7 @@ export default function CalendarScreen({
   const { width } = useWindowDimensions();
   const isCompact = width < 380;
   const paddingH = isCompact ? 16 : 20;
+  const rtl = isRTL();
 
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
@@ -272,7 +278,7 @@ export default function CalendarScreen({
             ]}
           >
             <TouchableOpacity onPress={() => shift(-1)} accessibilityLabel={t('Previous month')} style={styles.navBtn}>
-              <AppText variant="title" highlight style={styles.navArrow}>‹</AppText>
+              <AppText variant="title" highlight style={styles.navArrow}>{getCalendarNavGlyph('previous', rtl)}</AppText>
             </TouchableOpacity>
             <View style={styles.navTitle}>
               <AppText variant="title" style={styles.monthName}>
@@ -283,7 +289,7 @@ export default function CalendarScreen({
               </AppText>
             </View>
             <TouchableOpacity onPress={() => shift(1)} accessibilityLabel={t('Next month')} style={styles.navBtn}>
-              <AppText variant="title" highlight style={styles.navArrow}>›</AppText>
+              <AppText variant="title" highlight style={styles.navArrow}>{getCalendarNavGlyph('next', rtl)}</AppText>
             </TouchableOpacity>
           </View>
 

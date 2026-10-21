@@ -219,6 +219,7 @@ const toolsOverrides = {
   },
   '../theme/tokens': { themeTokens, GOLD_GRADIENT: ['#000000', '#000000'] },
   '../lib/settings': {
+    persistLanguageChange: async () => {},
     useSettings: () => ({ settings: { locationMode: 'manual', autoLocation: null, manualLocation: null, methodId: 2 } }),
   },
   '../lib/useLocation': { useLocation: () => ({ location: null }) },
